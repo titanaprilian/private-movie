@@ -10,7 +10,7 @@ async function insertVideo(): Promise<{ id: string }> {
   const rows = await db
     .insert(videos)
     .values({
-      id: `video-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       sourceUrl:
         "https://otakudesu.blog/episode/delete-endpoint-episode-1-sub-indo/",
       source: "otakudesu",
@@ -34,7 +34,7 @@ describe("DELETE /videos/:id", () => {
 
   describe("authentication", () => {
     it("returns 401 when authorization header is missing", async () => {
-      const missingId = `video-${crypto.randomUUID()}`;
+      const missingId = crypto.randomUUID();
 
       const response = await request(app, {
         method: "DELETE",
@@ -45,7 +45,7 @@ describe("DELETE /videos/:id", () => {
     });
 
     it("returns 401 when authorization token is invalid or expired", async () => {
-      const missingId = `video-${crypto.randomUUID()}`;
+      const missingId = crypto.randomUUID();
 
       const invalidTokenResponse = await request(app, {
         method: "DELETE",
@@ -70,7 +70,7 @@ describe("DELETE /videos/:id", () => {
   describe("error handling", () => {
     it("returns 404 when attempting to delete a video that does not exist", async () => {
       const { accessToken } = await registerUser(app);
-      const missingId = `video-${crypto.randomUUID()}`;
+      const missingId = crypto.randomUUID();
 
       const response = await request(app, {
         method: "DELETE",

@@ -6,7 +6,10 @@ import {
 import { errorResponse, successResponse } from "../../lib/response";
 import { createSaveVideoService } from "./index";
 import { VideoParseError } from "./internal/parse";
-import { createVideoRepositoryInternal } from "./internal/repository";
+import {
+  createVideoRepositoryInternal,
+  VideoNotFoundError,
+} from "./internal/repository";
 
 export interface VideoRoutesOptions {
   db: Parameters<typeof createSaveVideoService>[0];
@@ -79,6 +82,80 @@ export const videoRoutes = (options: VideoRoutesOptions) => {
           sourceUrl: t.String({ format: "uri" }),
           source: t.Literal("otakudesu"),
           html: t.String(),
+        }),
+      }
+    )
+    .patch(
+      "/videos/:id",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const updated = await repository.updateVideo(params.id, body);
+          return successResponse(updated);
+        } catch (error) {
+          if (error instanceof VideoNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          title: t.Optional(t.String()),
+          videoUrl: t.Optional(t.String()),
+          videoType: t.Optional(t.Nullable(t.String())),
+          metadata: t.Optional(t.Record(t.String(), t.Unknown())),
+        }),
+      }
+    )
+    .delete(
+      "/videos/:id",
+      async ({ params, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const deleted = await repository.deleteVideo(params.id);
+          return successResponse(deleted);
+        } catch (error) {
+          if (error instanceof VideoNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
         }),
       }
     );

@@ -13,7 +13,7 @@ async function insertVideo(sourceUrl: string): Promise<{ id: string }> {
   const rows = await db
     .insert(videos)
     .values({
-      id: `video-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       sourceUrl,
       source: "otakudesu",
       title: "original-title",
@@ -28,7 +28,7 @@ async function insertVideo(sourceUrl: string): Promise<{ id: string }> {
 }
 
 describe("video repository deleteVideo", () => {
-  const repository = createVideoRepositoryInternal(db) as any;
+  const repository = createVideoRepositoryInternal(db);
 
   beforeEach(async () => {
     await db.delete(videos);
@@ -51,7 +51,7 @@ describe("video repository deleteVideo", () => {
   });
 
   it("throws an explicit error when the video id does not exist", async () => {
-    const missingId = `video-${crypto.randomUUID()}`;
+    const missingId = crypto.randomUUID();
 
     const result = repository.deleteVideo(missingId);
     await expect(result).rejects.toSatisfy(
@@ -62,7 +62,7 @@ describe("video repository deleteVideo", () => {
 });
 
 describe("video repository updateVideo", () => {
-  const repository = createVideoRepositoryInternal(db) as any;
+  const repository = createVideoRepositoryInternal(db);
 
   beforeEach(async () => {
     await db.delete(videos);
@@ -111,7 +111,7 @@ describe("video repository updateVideo", () => {
   });
 
   it("throws VideoNotFoundError when updating a non-existent video id", async () => {
-    const missingId = `video-${crypto.randomUUID()}`;
+    const missingId = crypto.randomUUID();
 
     const result = repository.updateVideo(missingId, {
       title: "Should Fail",

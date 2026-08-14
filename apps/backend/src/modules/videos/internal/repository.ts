@@ -4,8 +4,22 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { videos, type VideoRow } from "@repo/db";
 import type { ParsedMetadata } from "./parse";
 
+export class VideoNotFoundError extends Error {
+  constructor(message = "Video not found") {
+    super(message);
+    this.name = "VideoNotFoundError";
+  }
+}
+
 export const DEFAULT_LIST_LIMIT = 20;
 export const MAX_LIST_LIMIT = 100;
+
+export interface UpdateVideoInput {
+  title: string;
+  videoUrl: string;
+  videoType: string | null;
+  metadata: Record<string, unknown>;
+}
 
 export interface VideoUpsertInput {
   sourceUrl: string;
@@ -97,6 +111,46 @@ export function createVideoRepositoryInternal<
         videos: rows,
         total: totalRows[0]?.value ?? 0,
       };
+    },
+
+    async updateVideo(
+      id: string,
+      input: Partial<UpdateVideoInput>
+    ): Promise<VideoRow> {
+      const now = new Date();
+      const updateData: Record<string, unknown> = {
+        updatedAt: now,
+      };
+
+      if (input.title !== undefined) updateData.title = input.title;
+      if (input.videoUrl !== undefined) updateData.videoUrl = input.videoUrl;
+      if (input.videoType !== undefined) updateData.videoType = input.videoType;
+      if (input.metadata !== undefined) updateData.metadata = input.metadata;
+
+      const [row] = await db
+        .update(videos)
+        .set(updateData)
+        .where(eq(videos.id, id))
+        .returning();
+
+      if (!row) {
+        throw new VideoNotFoundError(`Video with id ${id} not found`);
+      }
+
+      return row;
+    },
+
+    async deleteVideo(id: string): Promise<VideoRow> {
+      const [row] = await db
+        .delete(videos)
+        .where(eq(videos.id, id))
+        .returning();
+
+      if (!row) {
+        throw new VideoNotFoundError(`Video with id ${id} not found`);
+      }
+
+      return row;
     },
   };
 }
