@@ -66,4 +66,5 @@ export interface AuthenticationService {
   logout(token: string): Promise<any>;
   logoutAll(userId: string): Promise<any>;
   refresh(token: string | { refreshToken: string }): Promise<any>;
+  verifyAccessToken(token: string): Promise<string>;
 }

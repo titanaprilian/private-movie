@@ -10,7 +10,6 @@ import {
 } from "@repo/contracts";
 import { errorResponse, successResponse } from "../../lib/response";
 import { createAuthenticationServiceInternal } from "./internal/authentication-service";
-import { verifyJwt } from "./internal/jwt";
 
 export interface AuthRoutesOptions {
   db?: Parameters<typeof createAuthenticationServiceInternal>[0];
@@ -129,8 +128,8 @@ export const authRoutes = (options: AuthRoutesOptions) => {
         }
         const token = authHeader.substring(7);
         try {
-          const payload = verifyJwt(token);
-          const user = await auth.getUserProfile(payload.sub);
+          const userId = await auth.verifyAccessToken(token);
+          const user = await auth.getUserProfile(userId);
           return successResponse(user);
         } catch (error) {
           if (error instanceof UserNotFoundError) {
@@ -181,8 +180,8 @@ export const authRoutes = (options: AuthRoutesOptions) => {
         }
         const token = authHeader.substring(7);
         try {
-          const payload = verifyJwt(token);
-          await auth.logoutAll(payload.sub);
+          const userId = await auth.verifyAccessToken(token);
+          await auth.logoutAll(userId);
           refreshToken.set({
             value: "",
             httpOnly: true,

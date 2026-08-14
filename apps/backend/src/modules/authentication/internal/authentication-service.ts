@@ -15,7 +15,7 @@ import {
 } from "@repo/contracts";
 import { users, refreshTokens, type NewUserRow } from "@repo/db";
 import { hashPassword, verifyPassword } from "./password";
-import { signJwt, hashRefreshToken } from "./jwt";
+import { signJwt, verifyJwt, hashRefreshToken } from "./jwt";
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -308,6 +308,24 @@ export function createAuthenticationServiceInternal<
         accessToken,
         refreshToken: rawRefreshToken,
       };
+    },
+
+    async verifyAccessToken(token: string): Promise<string> {
+      if (!token || typeof token !== "string") {
+        throw new UnauthorizedError("missing or invalid token");
+      }
+      try {
+        const payload = verifyJwt(token);
+        if (!payload || !payload.sub) {
+          throw new UnauthorizedError("invalid token payload");
+        }
+        return payload.sub;
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          throw error;
+        }
+        throw new UnauthorizedError("invalid or expired token");
+      }
     },
   };
 }
