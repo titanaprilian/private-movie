@@ -24,11 +24,11 @@ Transport concerns live **inside** each domain module but must never leak out of
 Tests live in `test/` at the app root:
 
 - `test/unit/<feature>/<name>.test.ts` — Unit tests for services and internal logic
-- `test/integration/<feature>/<name>.test.ts` — Integration tests for HTTP endpoints against the real `test_db` database
+- `test/integration/<feature>/<name>.test.ts` — Integration tests for HTTP endpoints against the real `private_movie_test` database
 - `test/utils/` — Shared test helpers (fixtures, factories, setup)
-- `test/global-setup.ts` — Ensures `test_db` exists, runs Drizzle migrations (runs once before all integration tests)
+- `test/global-setup.ts` — Ensures `private_movie_test` exists, runs Drizzle migrations (runs once before all integration tests)
 - `test/setup.ts` — Per-test setup: registers a global `beforeEach(truncateAll)` and installs a `Bun.password` polyfill under Node/Vitest
 
 Use Vitest via `packages/config-vitest`. Run `turbo run test --filter=@repo/backend` for fast feedback on unit tests, `turbo run test:integration --filter=@repo/backend` for integration tests (non-cacheable, requires a running Postgres database or CI service container), or `turbo run test` from the monorepo root to run all tests. Test scripts must be invoked via `bun run test` / `bun run test:integration`; bare `bun test` invokes Bun's own test runner and is not supported.
 
-Test environment variables are loaded from a committed `.env.test` file in `apps/backend/` using `node --env-file=.env.test` in front of the Vitest invocation. This populates `NODE_ENV=test`, `DATABASE_URL`, and `JWT_SECRET` before any setup file or test runs. `test/utils/db.ts` holds a long-lived `postgres` + `drizzle` connection that is reused for the entire test process; its exported `truncateAll()` deletes from `users`, `refreshTokens`, and `system` before each test.
+Test environment variables are loaded from a committed `.env.test` file in `apps/backend/` using `node --env-file=.env.test` in front of the Vitest invocation. This populates `NODE_ENV=test`, `DATABASE_URL`, and `JWT_SECRET` before any setup file or test runs. `test/utils/db.ts` holds a long-lived `postgres` + `drizzle` connection that is reused for the entire test process; its exported `truncateAll()` deletes from `users`, `refreshTokens`, `system`, and `videos` before each test.

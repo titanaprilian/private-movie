@@ -6,7 +6,7 @@ export type DbClient = PostgresJsDatabase & {
   $client: postgres.Sql;
 };
 
-export const DEFAULT_DATABASE_URL = "postgres://postgres:root_password@localhost:5432/postgres";
+export const DEFAULT_DATABASE_URL = "postgres://postgres:root_password@localhost:5432/private_movie";
 
 export const MIGRATIONS_FOLDER = fileURLToPath(new URL("../drizzle", import.meta.url));
 
