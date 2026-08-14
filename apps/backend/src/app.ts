@@ -6,6 +6,7 @@ import { rateLimit } from "@elysiajs/rate-limit";
 import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
 import { healthRoutes } from "./modules/health/http";
+import { videoRoutes } from "./modules/videos/http";
 import { InternalServerError } from "./lib/errors";
 
 export interface CreateAppDeps {
@@ -43,6 +44,15 @@ export const createApp = (deps: CreateAppDeps) => {
     .onError(({ code, set }) => {
       if (code === "NOT_FOUND") {
         return;
+      }
+      if (code === "VALIDATION") {
+        set.status = 400;
+        return {
+          error: {
+            code: "VALIDATION",
+            message: "request validation failed",
+          },
+        };
       }
       return errorResponse(set, 500, new InternalServerError());
     })
@@ -88,7 +98,8 @@ export const createApp = (deps: CreateAppDeps) => {
       })
     )
     .use(healthRoutes({ db }))
-    .use(authRoutes({ authService: auth }));
+    .use(authRoutes({ authService: auth }))
+    .use(videoRoutes({ db, authService: auth }));
 };
 
 export type App = ReturnType<typeof createApp>;
