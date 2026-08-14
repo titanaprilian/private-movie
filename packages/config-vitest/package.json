@@ -1,0 +1,22 @@
+{
+  "name": "@repo/config-vitest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./vitest.base": "./vitest.base.ts",
+    "./vitest.node": "./vitest.node.ts",
+    "./vitest.react": "./vitest.react.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "vitest": "^3.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}

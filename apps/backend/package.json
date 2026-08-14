@@ -1,0 +1,48 @@
+{
+  "name": "@repo/backend",
+  "version": "1.0.50",
+  "type": "module",
+  "scripts": {
+    "test": "node --env-file=.env.test ./node_modules/.bin/vitest run",
+    "test:integration": "node --env-file=.env.test ./node_modules/.bin/vitest run --config vitest.integration.config.ts",
+    "dev": "bun run --env-file=.env --watch src/index.ts",
+    "build": "tsc -p tsconfig.client.json && bun build src/index.ts --target=bun --outfile=dist/index.js",
+    "start": "bun dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.4.2",
+    "@elysiajs/rate-limit": "npm:elysia-rate-limit@4.6.2",
+    "@repo/contracts": "workspace:*",
+    "@repo/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "elysia": "latest"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
+    "@eslint/js": "^10.0.1",
+    "@repo/config-vitest": "workspace:*",
+    "bun-types": "latest",
+    "eslint": "^10.8.0",
+    "postgres": "^3.4.9",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^3.1.0"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "development": "./src/client.ts",
+      "default": "./dist/client.js"
+    }
+  }
+}
