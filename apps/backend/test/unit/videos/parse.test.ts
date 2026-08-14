@@ -1,0 +1,188 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+  VideoParseError,
+  parseVideoPage,
+} from "@/modules/videos/internal/parse";
+
+type ParsedEpisode = { label: string; url: string };
+type ParsedHost = { host: string; url: string };
+type ParsedDownloadLink = {
+  quality: string;
+  size: string | null;
+  hosts: ParsedHost[];
+};
+
+const fixtures = {
+  minimal: resolve(
+    import.meta.dirname,
+    "../../fixtures/videos/sample-a.html"
+  ),
+  full: resolve(import.meta.dirname, "../../fixtures/videos/sample-b.html"),
+};
+
+const readFixture = (path: string): string => readFileSync(path, "utf8");
+
+describe("parseVideoPage", () => {
+  describe("minimal variant (sample-a, odvidhide embed)", () => {
+    const result = parseVideoPage(readFixture(fixtures.minimal));
+
+    it("extracts the title from the page heading", () => {
+      expect(result.title).toBe(
+        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+      );
+    });
+
+    it("extracts the iframe src as videoUrl, host-agnostic", () => {
+      expect(result.videoUrl).toBe("https://odvidhide.com/embed/sylmpeaf3wzs");
+    });
+
+    it("leaves videoType null when there is no info block", () => {
+      expect(result.videoType).toBeNull();
+    });
+
+    it("parses the episode list excluding the placeholder option", () => {
+      const episodes = result.metadata.episodes;
+      expect(episodes).toHaveLength(7);
+      expect(
+        episodes?.some((episode: ParsedEpisode) => episode.url === "0")
+      ).toBe(false);
+      expect(
+        episodes?.some(
+          (episode: ParsedEpisode) => episode.label === "Pilih Episode Lainnya"
+        )
+      ).toBe(false);
+      expect(episodes?.[0]).toEqual({
+        label: "Episode 7",
+        url: "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/",
+      });
+    });
+
+    it("omits download links and other absent metadata keys", () => {
+      expect(result.metadata.downloadLinks).toBeUndefined();
+      expect(result.metadata.genres).toBeUndefined();
+      expect(result.metadata.duration).toBeUndefined();
+      expect(result.metadata.posterUrl).toBeUndefined();
+    });
+
+    it("keeps the anime page URL in metadata", () => {
+      expect(result.metadata.animePageUrl).toBe(
+        "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+      );
+    });
+  });
+
+  describe("full variant (sample-b, desustream embed + info block)", () => {
+    const result = parseVideoPage(readFixture(fixtures.full));
+
+    it("extracts the title and the desustream embed videoUrl", () => {
+      expect(result.title).toBe(
+        "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia"
+      );
+      expect(result.videoUrl).toBe(
+        "https://desustream.net/dstream/arcg/?id=WEwyVVQydlgxSStTNXI4ak1JTTVtZXh5eUR4enRMbjUzTHpYa1VvVTlGai85K1MrTFRYaGViZVl0anN4YkxucFIrWWhrVHBZOU96Y3duZXBqcW1RS1E9PQ=="
+      );
+    });
+
+    it("reads videoType from the info block", () => {
+      expect(result.videoType).toBe("TV");
+    });
+
+    it("extracts genres from the info block", () => {
+      expect(result.metadata.genres).toEqual(["Action", "Fantasy"]);
+    });
+
+    it("extracts the duration string from the info block", () => {
+      expect(result.metadata.duration).toBe("23 min. per ep.");
+    });
+
+    it("extracts the poster image URL from .cukder", () => {
+      expect(result.metadata.posterUrl).toBe(
+        "https://otakudesu.blog/wp-content/uploads/2026/07/157173.jpg"
+      );
+    });
+
+    it("parses download links with quality, size, and host lists", () => {
+      const downloadLinks = result.metadata.downloadLinks;
+      expect(downloadLinks).toHaveLength(6);
+
+      const qualities = downloadLinks?.map(
+        (entry: ParsedDownloadLink) => entry.quality
+      );
+      expect(qualities).toEqual([
+        "Mp4 360p",
+        "Mp4 480p",
+        "Mp4 720p",
+        "MKV 480p",
+        "MKV 720p",
+        "MKV 1080p",
+      ]);
+
+      expect(downloadLinks?.[0]).toEqual({
+        quality: "Mp4 360p",
+        size: "40.7 MB",
+        hosts: [
+          {
+            host: "Filedon",
+            url: "https://link.desustream.com/?id=Uk83OUt2T214S3VpS0ZVRndDV3NlYWNtWm9RbTYzZ2ljbUxvNG4ydUMrdXo0dz09",
+          },
+          {
+            host: "Pdrain",
+            url: "https://link.desustream.com/?id=Uk83OUt2T214S3UwS0VFRnlDNndOcTBuWjVFZzR5QjRNMVcrdFc2RkM3dUE=",
+          },
+          {
+            host: "Acefile",
+            url: "https://link.desustream.com/?id=Uk83OUt2T214S3VsSWx3R3pTYW5lYWNtWnBSZ3Z6NC9MQWpwdWh2d1ZPYU03NUZrL2FKUUducjRGUUI5enVaSU1GaU0vQldNaHFKZjBIQk05QXdT",
+          },
+          { host: "GoFile", url: "https://link.desustream.com/?id=Uk83OUt2T214S3VqTGw4SnlDL3NQcXRtTGQwSisyZExaV21KN0E9PQ==" },
+          {
+            host: "Mega",
+            url: "https://link.desustream.com/?id=Uk83OUt2T214S3VwSkY0QmlpUzRlS0lnSlpkZ3pHVkRjVWlHNUh2Z0grREwyOGg5eWFKZ1hpZjZTV2RTMU9aalJVRDluV25Ec1BjRmlFazd6QWtTL1BlM3F3YXJhamxCRHc9PQ==",
+          },
+          {
+            host: "VikingFile",
+            url: "https://link.desustream.com/?id=Uk83OUt2T214S3V5S0ZJSnlpMmtQcWdzWjVFZzR5QnJNM0crNEZ6Mkg3elArYjA9",
+          },
+        ],
+      });
+    });
+
+    it("extracts nothing from the mirror switcher section", () => {
+      const urls = result.metadata.downloadLinks?.flatMap(
+        (entry: ParsedDownloadLink) => entry.hosts.map((host) => host.url)
+      );
+      expect(urls?.every((url: string) => url.startsWith("http"))).toBe(true);
+      expect(urls?.some((url: string) => url === "#")).toBe(false);
+    });
+
+    it("parses the episode list excluding the placeholder option", () => {
+      const episodes = result.metadata.episodes;
+      expect(episodes).toHaveLength(6);
+      expect(episodes?.[0]).toEqual({
+        label: "Episode 6",
+        url: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+      });
+    });
+  });
+
+  describe("validation errors", () => {
+    it("throws when the #venkonten container is missing", () => {
+      expect(() => parseVideoPage("<div><p>no container</p></div>")).toThrow(
+        VideoParseError
+      );
+    });
+
+    it("throws when the title is missing", () => {
+      const html =
+        '<div id="venkonten"><div class="responsive-embed-stream"><iframe src="https://example.com/embed/abc"></iframe></div></div>';
+      expect(() => parseVideoPage(html)).toThrow(VideoParseError);
+    });
+
+    it("throws when the iframe or its src is missing", () => {
+      const html =
+        '<div id="venkonten"><h1 class="posttl">Some Episode</h1><div class="responsive-embed-stream"></div></div>';
+      expect(() => parseVideoPage(html)).toThrow(VideoParseError);
+    });
+  });
+});
