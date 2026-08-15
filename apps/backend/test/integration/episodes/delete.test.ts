@@ -1,14 +1,14 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { videos } from "@repo/db";
+import { episodes } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
 
-async function insertVideo(): Promise<{ id: string }> {
+async function insertEpisode(): Promise<{ id: string }> {
   const now = new Date();
   const rows = await db
-    .insert(videos)
+    .insert(episodes)
     .values({
       id: crypto.randomUUID(),
       sourceUrl:
@@ -25,7 +25,7 @@ async function insertVideo(): Promise<{ id: string }> {
   return rows[0];
 }
 
-describe("DELETE /videos/:id", () => {
+describe("DELETE /episodes/:id", () => {
   let app: App;
 
   beforeAll(async () => {
@@ -38,7 +38,7 @@ describe("DELETE /videos/:id", () => {
 
       const response = await request(app, {
         method: "DELETE",
-        path: `/videos/${missingId}`,
+        path: `/episodes/${missingId}`,
       });
 
       expect(response.status).toBe(401);
@@ -49,7 +49,7 @@ describe("DELETE /videos/:id", () => {
 
       const invalidTokenResponse = await request(app, {
         method: "DELETE",
-        path: `/videos/${missingId}`,
+        path: `/episodes/${missingId}`,
         headers: authHeaders("invalid-token-string"),
       });
       expect(invalidTokenResponse.status).toBe(401);
@@ -60,7 +60,7 @@ describe("DELETE /videos/:id", () => {
       );
       const expiredTokenResponse = await request(app, {
         method: "DELETE",
-        path: `/videos/${missingId}`,
+        path: `/episodes/${missingId}`,
         headers: authHeaders(expiredToken),
       });
       expect(expiredTokenResponse.status).toBe(401);
@@ -68,31 +68,31 @@ describe("DELETE /videos/:id", () => {
   });
 
   describe("error handling", () => {
-    it("returns 404 when attempting to delete a video that does not exist", async () => {
+    it("returns 404 when attempting to delete an episode that does not exist", async () => {
       const { accessToken } = await registerUser(app);
       const missingId = crypto.randomUUID();
 
       const response = await request(app, {
         method: "DELETE",
-        path: `/videos/${missingId}`,
+        path: `/episodes/${missingId}`,
         headers: authHeaders(accessToken),
       });
 
       expect(response.status).toBe(404);
       const body = response.body as { error: { code: string; message: string } };
       expect(body.error).toBeDefined();
-      expect(body.error.code).toBe("VIDEO_NOT_FOUND");
+      expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
   });
 
   describe("happy path", () => {
-    it("hard-deletes the video by UUID and returns 200 with the deleted record", async () => {
+    it("hard-deletes the episode by UUID and returns 200 with the deleted record", async () => {
       const { accessToken } = await registerUser(app);
-      const video = await insertVideo();
+      const episode = await insertEpisode();
 
       const response = await request(app, {
         method: "DELETE",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         headers: authHeaders(accessToken),
       });
 
@@ -101,15 +101,15 @@ describe("DELETE /videos/:id", () => {
         data: { id: string; sourceUrl: string; title: string };
       };
       expect(body.data).toBeDefined();
-      expect(body.data.id).toBe(video.id);
+      expect(body.data.id).toBe(episode.id);
       expect(body.data.sourceUrl).toBe(
         "https://otakudesu.blog/episode/delete-endpoint-episode-1-sub-indo/"
       );
 
       const remaining = await db
         .select()
-        .from(videos)
-        .where(eq(videos.id, video.id));
+        .from(episodes)
+        .where(eq(episodes.id, episode.id));
       expect(remaining).toHaveLength(0);
     });
   });

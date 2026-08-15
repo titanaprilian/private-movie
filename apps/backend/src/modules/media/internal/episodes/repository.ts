@@ -1,27 +1,27 @@
 import { randomUUID } from "node:crypto";
 import { count, desc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { videos, type VideoRow } from "@repo/db";
+import { episodes, type EpisodeRow } from "@repo/db";
 import type { ParsedMetadata } from "./parse";
 
-export class VideoNotFoundError extends Error {
-  constructor(message = "Video not found") {
+export class EpisodeNotFoundError extends Error {
+  constructor(message = "Episode not found") {
     super(message);
-    this.name = "VideoNotFoundError";
+    this.name = "EpisodeNotFoundError";
   }
 }
 
 export const DEFAULT_LIST_LIMIT = 20;
 export const MAX_LIST_LIMIT = 100;
 
-export interface UpdateVideoInput {
+export interface UpdateEpisodeInput {
   title: string;
   videoUrl: string;
   videoType: string | null;
   metadata: Record<string, unknown>;
 }
 
-export interface VideoUpsertInput {
+export interface EpisodeUpsertInput {
   sourceUrl: string;
   source: string;
   title: string;
@@ -30,26 +30,26 @@ export interface VideoUpsertInput {
   metadata: ParsedMetadata;
 }
 
-export interface VideoListParams {
+export interface EpisodeListParams {
   page: number;
   limit?: number;
   source?: string;
 }
 
-export interface VideoListResult {
-  videos: VideoRow[];
+export interface EpisodeListResult {
+  episodes: EpisodeRow[];
   total: number;
 }
 
-export function createVideoRepositoryInternal<
+export function createEpisodeRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
 >(db: PgDatabase<THKT, TSchema>) {
   return {
-    async upsert(input: VideoUpsertInput): Promise<VideoRow> {
+    async upsert(input: EpisodeUpsertInput): Promise<EpisodeRow> {
       const now = new Date();
       const [row] = await db
-        .insert(videos)
+        .insert(episodes)
         .values({
           id: randomUUID(),
           sourceUrl: input.sourceUrl,
@@ -62,7 +62,7 @@ export function createVideoRepositoryInternal<
           updatedAt: now,
         })
         .onConflictDoUpdate({
-          target: videos.sourceUrl,
+          target: episodes.sourceUrl,
           set: {
             source: input.source,
             title: input.title,
@@ -76,15 +76,15 @@ export function createVideoRepositoryInternal<
       return row;
     },
 
-    async findBySourceUrl(sourceUrl: string): Promise<VideoRow | null> {
+    async findBySourceUrl(sourceUrl: string): Promise<EpisodeRow | null> {
       const [row] = await db
         .select()
-        .from(videos)
-        .where(eq(videos.sourceUrl, sourceUrl));
+        .from(episodes)
+        .where(eq(episodes.sourceUrl, sourceUrl));
       return row ?? null;
     },
 
-    async list(params: VideoListParams): Promise<VideoListResult> {
+    async list(params: EpisodeListParams): Promise<EpisodeListResult> {
       const limit = Math.max(
         1,
         Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT)
@@ -93,30 +93,30 @@ export function createVideoRepositoryInternal<
       const offset = (page - 1) * limit;
 
       const where = params.source
-        ? eq(videos.source, params.source)
+        ? eq(episodes.source, params.source)
         : undefined;
 
       const [rows, totalRows] = await Promise.all([
         db
           .select()
-          .from(videos)
+          .from(episodes)
           .where(where)
-          .orderBy(desc(videos.createdAt))
+          .orderBy(desc(episodes.createdAt))
           .limit(limit)
           .offset(offset),
-        db.select({ value: count() }).from(videos).where(where),
+        db.select({ value: count() }).from(episodes).where(where),
       ]);
 
       return {
-        videos: rows,
+        episodes: rows,
         total: totalRows[0]?.value ?? 0,
       };
     },
 
-    async updateVideo(
+    async updateEpisode(
       id: string,
-      input: Partial<UpdateVideoInput>
-    ): Promise<VideoRow> {
+      input: Partial<UpdateEpisodeInput>
+    ): Promise<EpisodeRow> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
         updatedAt: now,
@@ -128,26 +128,26 @@ export function createVideoRepositoryInternal<
       if (input.metadata !== undefined) updateData.metadata = input.metadata;
 
       const [row] = await db
-        .update(videos)
+        .update(episodes)
         .set(updateData)
-        .where(eq(videos.id, id))
+        .where(eq(episodes.id, id))
         .returning();
 
       if (!row) {
-        throw new VideoNotFoundError(`Video with id ${id} not found`);
+        throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
       }
 
       return row;
     },
 
-    async deleteVideo(id: string): Promise<VideoRow> {
+    async deleteEpisode(id: string): Promise<EpisodeRow> {
       const [row] = await db
-        .delete(videos)
-        .where(eq(videos.id, id))
+        .delete(episodes)
+        .where(eq(episodes.id, id))
         .returning();
 
       if (!row) {
-        throw new VideoNotFoundError(`Video with id ${id} not found`);
+        throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
       }
 
       return row;

@@ -1,11 +1,11 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { videos } from "@repo/db";
+import { episodes } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
 
-async function insertTestVideo(overrides?: Partial<{
+async function insertTestEpisode(overrides?: Partial<{
   id: string;
   sourceUrl: string;
   source: string;
@@ -34,7 +34,7 @@ async function insertTestVideo(overrides?: Partial<{
   const metadata = overrides?.metadata ?? { initial: true };
   const now = new Date();
 
-  await db.insert(videos).values({
+  await db.insert(episodes).values({
     id,
     sourceUrl,
     source,
@@ -49,7 +49,7 @@ async function insertTestVideo(overrides?: Partial<{
   return { id, sourceUrl, source, title, videoType, videoUrl, metadata };
 }
 
-describe("PATCH /videos/:id", () => {
+describe("PATCH /episodes/:id", () => {
   let app: App;
 
   beforeAll(async () => {
@@ -58,11 +58,11 @@ describe("PATCH /videos/:id", () => {
 
   describe("authentication", () => {
     it("returns 401 when authorization header is missing", async () => {
-      const video = await insertTestVideo();
+      const episode = await insertTestEpisode();
 
       const response = await request(app, {
         method: "PATCH",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         body: {
           title: "New Title",
         },
@@ -75,11 +75,11 @@ describe("PATCH /videos/:id", () => {
     });
 
     it("returns 401 when authorization token is invalid or expired", async () => {
-      const video = await insertTestVideo();
+      const episode = await insertTestEpisode();
 
       const invalidTokenResponse = await request(app, {
         method: "PATCH",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         headers: authHeaders("invalid-token-string"),
         body: {
           title: "New Title",
@@ -94,7 +94,7 @@ describe("PATCH /videos/:id", () => {
       );
       const expiredTokenResponse = await request(app, {
         method: "PATCH",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         headers: authHeaders(expiredToken),
         body: {
           title: "New Title",
@@ -106,13 +106,13 @@ describe("PATCH /videos/:id", () => {
   });
 
   describe("error handling", () => {
-    it("returns 404 when video ID does not exist", async () => {
+    it("returns 404 when episode ID does not exist", async () => {
       const { accessToken } = await registerUser(app);
       const nonexistentId = crypto.randomUUID();
 
       const response = await request(app, {
         method: "PATCH",
-        path: `/videos/${nonexistentId}`,
+        path: `/episodes/${nonexistentId}`,
         headers: authHeaders(accessToken),
         body: {
           title: "Updated Title",
@@ -122,18 +122,18 @@ describe("PATCH /videos/:id", () => {
       expect(response.status).toBe(404);
       const body = response.body as { error: { code: string; message: string } };
       expect(body.error).toBeDefined();
-      expect(body.error.code).toBe("VIDEO_NOT_FOUND");
+      expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
   });
 
   describe("partial update behavior", () => {
     it("successfully updates title only (1 field)", async () => {
       const { accessToken } = await registerUser(app);
-      const video = await insertTestVideo();
+      const episode = await insertTestEpisode();
 
       const response = await request(app, {
         method: "PATCH",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         headers: authHeaders(accessToken),
         body: {
           title: "Updated Title Only",
@@ -151,25 +151,25 @@ describe("PATCH /videos/:id", () => {
         };
       };
 
-      expect(body.data.id).toBe(video.id);
+      expect(body.data.id).toBe(episode.id);
       expect(body.data.title).toBe("Updated Title Only");
-      expect(body.data.videoUrl).toBe(video.videoUrl);
+      expect(body.data.videoUrl).toBe(episode.videoUrl);
 
       // Verify in DB
-      const rows = await db.select().from(videos).where(eq(videos.id, video.id));
+      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows).toHaveLength(1);
       expect(rows[0].title).toBe("Updated Title Only");
-      expect(rows[0].videoUrl).toBe(video.videoUrl);
+      expect(rows[0].videoUrl).toBe(episode.videoUrl);
     });
 
     it("successfully updates videoUrl only (1 field)", async () => {
       const { accessToken } = await registerUser(app);
-      const video = await insertTestVideo();
+      const episode = await insertTestEpisode();
       const newVideoUrl = "https://example.com/new-embed-link";
 
       const response = await request(app, {
         method: "PATCH",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         headers: authHeaders(accessToken),
         body: {
           videoUrl: newVideoUrl,
@@ -181,21 +181,21 @@ describe("PATCH /videos/:id", () => {
         data: { id: string; title: string; videoUrl: string };
       };
 
-      expect(body.data.title).toBe(video.title);
+      expect(body.data.title).toBe(episode.title);
       expect(body.data.videoUrl).toBe(newVideoUrl);
 
-      const rows = await db.select().from(videos).where(eq(videos.id, video.id));
+      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows[0].videoUrl).toBe(newVideoUrl);
-      expect(rows[0].title).toBe(video.title);
+      expect(rows[0].title).toBe(episode.title);
     });
 
     it("successfully updates videoType only (1 field)", async () => {
       const { accessToken } = await registerUser(app);
-      const video = await insertTestVideo();
+      const episode = await insertTestEpisode();
 
       const response = await request(app, {
         method: "PATCH",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         headers: authHeaders(accessToken),
         body: {
           videoType: "Movie",
@@ -209,18 +209,18 @@ describe("PATCH /videos/:id", () => {
 
       expect(body.data.videoType).toBe("Movie");
 
-      const rows = await db.select().from(videos).where(eq(videos.id, video.id));
+      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows[0].videoType).toBe("Movie");
     });
 
     it("successfully updates metadata only (1 field)", async () => {
       const { accessToken } = await registerUser(app);
-      const video = await insertTestVideo();
+      const episode = await insertTestEpisode();
       const newMetadata = { season: 2, episode: 10 };
 
       const response = await request(app, {
         method: "PATCH",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         headers: authHeaders(accessToken),
         body: {
           metadata: newMetadata,
@@ -234,13 +234,13 @@ describe("PATCH /videos/:id", () => {
 
       expect(body.data.metadata).toEqual(newMetadata);
 
-      const rows = await db.select().from(videos).where(eq(videos.id, video.id));
+      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows[0].metadata).toEqual(newMetadata);
     });
 
     it("successfully updates all 4 allowed fields simultaneously (title, videoUrl, videoType, metadata)", async () => {
       const { accessToken } = await registerUser(app);
-      const video = await insertTestVideo();
+      const episode = await insertTestEpisode();
 
       const patchPayload = {
         title: "All Fields Updated",
@@ -251,7 +251,7 @@ describe("PATCH /videos/:id", () => {
 
       const response = await request(app, {
         method: "PATCH",
-        path: `/videos/${video.id}`,
+        path: `/episodes/${episode.id}`,
         headers: authHeaders(accessToken),
         body: patchPayload,
       });
@@ -272,7 +272,7 @@ describe("PATCH /videos/:id", () => {
       expect(body.data.videoType).toBe(patchPayload.videoType);
       expect(body.data.metadata).toEqual(patchPayload.metadata);
 
-      const rows = await db.select().from(videos).where(eq(videos.id, video.id));
+      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows[0].title).toBe(patchPayload.title);
       expect(rows[0].videoUrl).toBe(patchPayload.videoUrl);
       expect(rows[0].videoType).toBe(patchPayload.videoType);

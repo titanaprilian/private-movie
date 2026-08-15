@@ -4,36 +4,38 @@ import {
   type AuthenticationService,
 } from "@repo/contracts";
 import { errorResponse, successResponse } from "../../lib/response";
-import { createSaveVideoService } from "./index";
-import { VideoParseError } from "./internal/parse";
+import { createSaveEpisodeService } from "./index";
+import { EpisodeParseError } from "./internal/episodes/parse";
 import {
-  createVideoRepositoryInternal,
-  VideoNotFoundError,
-} from "./internal/repository";
+  createEpisodeRepositoryInternal,
+  EpisodeNotFoundError,
+} from "./internal/episodes/repository";
+import { createSeriesRepositoryInternal } from "./internal/series/repository";
 
-export interface VideoRoutesOptions {
-  db: Parameters<typeof createSaveVideoService>[0];
+export interface MediaRoutesOptions {
+  db: Parameters<typeof createSaveEpisodeService>[0];
   authService: AuthenticationService;
 }
 
-export const videoRoutes = (options: VideoRoutesOptions) => {
-  const videos = createSaveVideoService(options.db);
-  const repository = createVideoRepositoryInternal(options.db);
+export const mediaRoutes = (options: MediaRoutesOptions) => {
+  const episodes = createSaveEpisodeService(options.db);
+  const episodeRepository = createEpisodeRepositoryInternal(options.db);
+  const seriesRepository = createSeriesRepositoryInternal(options.db);
 
-  return new Elysia({ name: "video-routes" })
+  return new Elysia({ name: "media-routes" })
     .get(
-      "/videos",
+      "/episodes",
       async ({ query }) => {
         const page = query.page ?? 1;
         const limit = query.limit ?? 20;
         const { source } = query;
-        const result = await repository.list({
+        const result = await episodeRepository.list({
           page,
           limit,
           source,
         });
         return successResponse({
-          videos: result.videos,
+          episodes: result.episodes,
           meta: {
             total: result.total,
             page,
@@ -50,7 +52,7 @@ export const videoRoutes = (options: VideoRoutesOptions) => {
       }
     )
     .post(
-      "/videos",
+      "/episodes",
       async ({ body, headers, set }) => {
         const authHeader = headers["authorization"];
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -68,10 +70,10 @@ export const videoRoutes = (options: VideoRoutesOptions) => {
         }
 
         try {
-          const saved = await videos.saveVideoFromHtml(body);
+          const saved = await episodes.saveEpisodeFromHtml(body);
           return successResponse(saved);
         } catch (error) {
-          if (error instanceof VideoParseError) {
+          if (error instanceof EpisodeParseError) {
             return errorResponse(set, 400, error);
           }
           throw error;
@@ -86,7 +88,7 @@ export const videoRoutes = (options: VideoRoutesOptions) => {
       }
     )
     .patch(
-      "/videos/:id",
+      "/episodes/:id",
       async ({ params, body, headers, set }) => {
         const authHeader = headers["authorization"];
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -104,10 +106,10 @@ export const videoRoutes = (options: VideoRoutesOptions) => {
         }
 
         try {
-          const updated = await repository.updateVideo(params.id, body);
+          const updated = await episodeRepository.updateEpisode(params.id, body);
           return successResponse(updated);
         } catch (error) {
-          if (error instanceof VideoNotFoundError) {
+          if (error instanceof EpisodeNotFoundError) {
             return errorResponse(set, 404, error);
           }
           throw error;
@@ -126,7 +128,7 @@ export const videoRoutes = (options: VideoRoutesOptions) => {
       }
     )
     .delete(
-      "/videos/:id",
+      "/episodes/:id",
       async ({ params, headers, set }) => {
         const authHeader = headers["authorization"];
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -144,10 +146,10 @@ export const videoRoutes = (options: VideoRoutesOptions) => {
         }
 
         try {
-          const deleted = await repository.deleteVideo(params.id);
+          const deleted = await episodeRepository.deleteEpisode(params.id);
           return successResponse(deleted);
         } catch (error) {
-          if (error instanceof VideoNotFoundError) {
+          if (error instanceof EpisodeNotFoundError) {
             return errorResponse(set, 404, error);
           }
           throw error;
@@ -156,6 +158,28 @@ export const videoRoutes = (options: VideoRoutesOptions) => {
       {
         params: t.Object({
           id: t.String({ format: "uuid" }),
+        }),
+      }
+    )
+    .get(
+      "/series",
+      async () => {
+        const all = await seriesRepository.list();
+        return successResponse(all);
+      }
+    )
+    .get(
+      "/series/:id",
+      async ({ params, set }) => {
+        const s = await seriesRepository.findById(params.id);
+        if (!s) {
+          return errorResponse(set, 404, new Error("Series not found"));
+        }
+        return successResponse(s);
+      },
+      {
+        params: t.Object({
+          id: t.String(),
         }),
       }
     );

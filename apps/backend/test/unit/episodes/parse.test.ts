@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  VideoParseError,
-  parseVideoPage,
-} from "@/modules/videos/internal/parse";
+  EpisodeParseError,
+  parseEpisodePage,
+} from "@/modules/media/internal/episodes/parse";
 
 type ParsedEpisode = { label: string; url: string };
 type ParsedHost = { host: string; url: string };
@@ -17,16 +17,16 @@ type ParsedDownloadLink = {
 const fixtures = {
   minimal: resolve(
     import.meta.dirname,
-    "../../fixtures/videos/sample-a.html"
+    "../../fixtures/episodes/sample-a.html"
   ),
-  full: resolve(import.meta.dirname, "../../fixtures/videos/sample-b.html"),
+  full: resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
 };
 
 const readFixture = (path: string): string => readFileSync(path, "utf8");
 
-describe("parseVideoPage", () => {
+describe("parseEpisodePage", () => {
   describe("minimal variant (sample-a, odvidhide embed)", () => {
-    const result = parseVideoPage(readFixture(fixtures.minimal));
+    const result = parseEpisodePage(readFixture(fixtures.minimal));
 
     it("extracts the title from the page heading", () => {
       expect(result.title).toBe(
@@ -74,7 +74,7 @@ describe("parseVideoPage", () => {
   });
 
   describe("full variant (sample-b, desustream embed + info block)", () => {
-    const result = parseVideoPage(readFixture(fixtures.full));
+    const result = parseEpisodePage(readFixture(fixtures.full));
 
     it("extracts the title and the desustream embed videoUrl", () => {
       expect(result.title).toBe(
@@ -168,21 +168,21 @@ describe("parseVideoPage", () => {
 
   describe("validation errors", () => {
     it("throws when the #venkonten container is missing", () => {
-      expect(() => parseVideoPage("<div><p>no container</p></div>")).toThrow(
-        VideoParseError
+      expect(() => parseEpisodePage("<div><p>no container</p></div>")).toThrow(
+        EpisodeParseError
       );
     });
 
     it("throws when the title is missing", () => {
       const html =
         '<div id="venkonten"><div class="responsive-embed-stream"><iframe src="https://example.com/embed/abc"></iframe></div></div>';
-      expect(() => parseVideoPage(html)).toThrow(VideoParseError);
+      expect(() => parseEpisodePage(html)).toThrow(EpisodeParseError);
     });
 
     it("throws when the iframe or its src is missing", () => {
       const html =
         '<div id="venkonten"><h1 class="posttl">Some Episode</h1><div class="responsive-embed-stream"></div></div>';
-      expect(() => parseVideoPage(html)).toThrow(VideoParseError);
+      expect(() => parseEpisodePage(html)).toThrow(EpisodeParseError);
     });
   });
 });

@@ -6,7 +6,7 @@ import { rateLimit } from "@elysiajs/rate-limit";
 import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
 import { healthRoutes } from "./modules/health/http";
-import { videoRoutes } from "./modules/videos/http";
+import { mediaRoutes } from "./modules/media/http";
 import { InternalServerError } from "./lib/errors";
 
 export interface CreateAppDeps {
@@ -99,7 +99,7 @@ export const createApp = (deps: CreateAppDeps) => {
     )
     .use(healthRoutes({ db }))
     .use(authRoutes({ authService: auth }))
-    .use(videoRoutes({ db, authService: auth }));
+    .use(mediaRoutes({ db, authService: auth }));
 };
 
 export type App = ReturnType<typeof createApp>;

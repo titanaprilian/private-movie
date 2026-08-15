@@ -1,10 +1,10 @@
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
 
-export class VideoParseError extends Error {
+export class EpisodeParseError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "VideoParseError";
+    this.name = "EpisodeParseError";
   }
 }
 
@@ -25,7 +25,7 @@ export type ParsedMetadata = {
   downloadLinks?: ParsedDownloadLink[];
 };
 
-export type ParsedVideoPage = {
+export type ParsedEpisodePage = {
   title: string;
   videoUrl: string;
   videoType: string | null;
@@ -53,21 +53,21 @@ const readInfoRow = (
 
 type ParsedPage = ReturnType<ReturnType<typeof cheerio.load>>;
 
-export const parseVideoPage = (html: string): ParsedVideoPage => {
+export const parseEpisodePage = (html: string): ParsedEpisodePage => {
   const load = cheerio.load(html, null, false);
   const box = load("#venkonten");
   if (box.length === 0) {
-    throw new VideoParseError("missing #venkonten container");
+    throw new EpisodeParseError("missing #venkonten container");
   }
 
   const title = box.find("h1.posttl").text().trim();
   if (!title) {
-    throw new VideoParseError("missing title");
+    throw new EpisodeParseError("missing title");
   }
 
   const videoUrl = box.find(".responsive-embed-stream iframe").attr("src");
   if (!videoUrl) {
-    throw new VideoParseError("missing iframe src");
+    throw new EpisodeParseError("missing iframe src");
   }
 
   const videoType = readInfoRow(box, load, "Tipe");

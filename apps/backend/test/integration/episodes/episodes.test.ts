@@ -2,22 +2,22 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq, count } from "drizzle-orm";
-import { videos } from "@repo/db";
+import { episodes } from "@repo/db";
 import { buildApp, request } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
 import type { App } from "../../utils/app";
 
 const sampleAHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/videos/sample-a.html"),
+  resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
   "utf8"
 );
 const sampleBHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/videos/sample-b.html"),
+  resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
   "utf8"
 );
 
-describe("POST /videos", () => {
+describe("POST /episodes", () => {
   let app: App;
 
   beforeAll(async () => {
@@ -25,14 +25,14 @@ describe("POST /videos", () => {
   });
 
   describe("happy path", () => {
-    it("creates a video record from minimal fixture (sample-a) and returns 200 with saved record", async () => {
+    it("creates an episode record from minimal fixture (sample-a) and returns 200 with saved record", async () => {
       const { accessToken } = await registerUser(app);
       const sourceUrl =
         "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/";
 
       const response = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -76,8 +76,8 @@ describe("POST /videos", () => {
       // Verify row is persisted in DB
       const rows = await db
         .select()
-        .from(videos)
-        .where(eq(videos.sourceUrl, sourceUrl));
+        .from(episodes)
+        .where(eq(episodes.sourceUrl, sourceUrl));
       expect(rows).toHaveLength(1);
       expect(rows[0].id).toBe(body.data.id);
       expect(rows[0].sourceUrl).toBe(sourceUrl);
@@ -87,14 +87,14 @@ describe("POST /videos", () => {
       expect(rows[0].videoUrl).toBe(body.data.videoUrl);
     });
 
-    it("creates a video record from full fixture (sample-b) and returns 200 with saved record", async () => {
+    it("creates an episode record from full fixture (sample-b) and returns 200 with saved record", async () => {
       const { accessToken } = await registerUser(app);
       const sourceUrl =
         "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/";
 
       const response = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -146,8 +146,8 @@ describe("POST /videos", () => {
       // Verify row is persisted in DB
       const rows = await db
         .select()
-        .from(videos)
-        .where(eq(videos.sourceUrl, sourceUrl));
+        .from(episodes)
+        .where(eq(episodes.sourceUrl, sourceUrl));
       expect(rows).toHaveLength(1);
       expect(rows[0].title).toBe(body.data.title);
       expect(rows[0].videoType).toBe("TV");
@@ -158,7 +158,7 @@ describe("POST /videos", () => {
     it("returns 401 when authorization header is missing", async () => {
       const response = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         body: {
           sourceUrl: "https://otakudesu.blog/episode/test-episode/",
           source: "otakudesu",
@@ -172,7 +172,7 @@ describe("POST /videos", () => {
     it("returns 401 when authorization token is invalid or expired", async () => {
       const invalidTokenResponse = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders("invalid-token-string"),
         body: {
           sourceUrl: "https://otakudesu.blog/episode/test-episode/",
@@ -189,7 +189,7 @@ describe("POST /videos", () => {
       );
       const expiredTokenResponse = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(expiredToken),
         body: {
           sourceUrl: "https://otakudesu.blog/episode/test-episode/",
@@ -209,7 +209,7 @@ describe("POST /videos", () => {
       // Missing sourceUrl
       const response1 = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           source: "otakudesu",
@@ -221,7 +221,7 @@ describe("POST /videos", () => {
       // Invalid sourceUrl (not URI format)
       const response2 = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl: "not-a-valid-url",
@@ -234,7 +234,7 @@ describe("POST /videos", () => {
       // Invalid source enum value
       const response3 = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl:
@@ -248,7 +248,7 @@ describe("POST /videos", () => {
       // Missing html
       const response4 = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl:
@@ -259,14 +259,14 @@ describe("POST /videos", () => {
       expect(response4.status).toBe(400);
     });
 
-    it("returns 400 with parse-error code VIDEO_PARSE when HTML is unparseable", async () => {
+    it("returns 400 with parse-error code EPISODE_PARSE when HTML is unparseable", async () => {
       const { accessToken } = await registerUser(app);
       const invalidHtml =
         "<html><body><div id='venkonten'><h1>Title</h1></div></body></html>";
 
       const response = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl:
@@ -279,7 +279,7 @@ describe("POST /videos", () => {
       expect(response.status).toBe(400);
       const body = response.body as { error: { code: string; message: string } };
       expect(body.error).toBeDefined();
-      expect(body.error.code).toBe("VIDEO_PARSE");
+      expect(body.error.code).toBe("EPISODE_PARSE");
     });
   });
 
@@ -292,7 +292,7 @@ describe("POST /videos", () => {
       // First submission with sample-a (minimal)
       const firstResponse = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -305,7 +305,7 @@ describe("POST /videos", () => {
       // Second submission with same sourceUrl but sample-b (full)
       const secondResponse = await request(app, {
         method: "POST",
-        path: "/videos",
+        path: "/episodes",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -329,15 +329,15 @@ describe("POST /videos", () => {
         "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia"
       );
 
-      // Verify total row count in videos table is strictly 1
-      const totalCount = await db.select({ value: count() }).from(videos);
+      // Verify total row count in episodes table is strictly 1
+      const totalCount = await db.select({ value: count() }).from(episodes);
       expect(totalCount[0].value).toBe(1);
 
       // Verify the single row has the updated fields
       const rows = await db
         .select()
-        .from(videos)
-        .where(eq(videos.sourceUrl, sourceUrl));
+        .from(episodes)
+        .where(eq(episodes.sourceUrl, sourceUrl));
       expect(rows).toHaveLength(1);
       expect(rows[0].title).toBe(
         "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia"
