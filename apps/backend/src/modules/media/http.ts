@@ -58,42 +58,6 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       }
     )
     .post(
-      "/trigger-scrape",
-      async ({ body, headers, set }) => {
-        const authHeader = headers["authorization"];
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-          return errorResponse(
-            set,
-            401,
-            new UnauthorizedError("missing or invalid authorization header")
-          );
-        }
-        const token = authHeader.substring(7);
-        try {
-          await options.authService.verifyAccessToken(token);
-        } catch {
-          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
-        }
-
-        try {
-          const saved = await episodes.saveEpisodeFromHtml(body);
-          return successResponse(saved);
-        } catch (error) {
-          if (error instanceof EpisodeParseError) {
-            return errorResponse(set, 400, error);
-          }
-          throw error;
-        }
-      },
-      {
-        body: t.Object({
-          sourceUrl: t.String({ format: "uri" }),
-          source: t.Literal("otakudesu"),
-          html: t.String(),
-        }),
-      }
-    )
-    .post(
       "/preview-scrape",
       async ({ body, headers, set }) => {
         const authHeader = headers["authorization"];

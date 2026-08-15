@@ -76,7 +76,6 @@ export interface SaveEpisodeServiceOptions {
 }
 
 export interface MediaService {
-  saveEpisodeFromHtml(input: SaveEpisodeInput): Promise<EpisodeRow>;
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
 }
@@ -99,41 +98,6 @@ export function createMediaService<
   const fetchHtml = options?.fetchHtml ?? defaultFetchHtml;
 
   return {
-    async saveEpisodeFromHtml(input: SaveEpisodeInput): Promise<EpisodeRow> {
-      const parsed = parsers[input.source](input.html);
-      let seriesId: string | null = null;
-
-      if (parsed.metadata.animePageUrl) {
-        try {
-          const seriesHtml = await fetchHtml(parsed.metadata.animePageUrl);
-          const parsedSeries = parseSeriesPage(
-            seriesHtml,
-            parsed.metadata.animePageUrl
-          );
-          const seriesRow = await seriesRepository.upsert({
-            sourceUrl: parsed.metadata.animePageUrl,
-            source: input.source,
-            title: parsedSeries.title,
-            description: parsedSeries.description ?? null,
-            posterUrl: parsedSeries.posterUrl ?? null,
-          });
-          seriesId = seriesRow.id;
-        } catch {
-          // If fetching or parsing series fails, proceed without seriesId
-        }
-      }
-
-      return episodeRepository.upsert({
-        sourceUrl: input.sourceUrl,
-        source: input.source,
-        title: parsed.title,
-        videoType: parsed.videoType,
-        videoUrl: parsed.videoUrl,
-        metadata: parsed.metadata,
-        seriesId,
-      });
-    },
-
     async previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult> {
       const parsed = parsers[input.source](input.html);
       const warnings: string[] = [];
