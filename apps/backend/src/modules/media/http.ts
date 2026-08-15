@@ -93,6 +93,87 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
       }
     )
+    .post(
+      "/preview-scrape",
+      async ({ body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const result = await episodes.previewScrape(body);
+          return successResponse(result);
+        } catch (error) {
+          if (error instanceof EpisodeParseError) {
+            return errorResponse(set, 400, error);
+          }
+          throw error;
+        }
+      },
+      {
+        body: t.Object({
+          sourceUrl: t.String({ format: "uri" }),
+          source: t.Literal("otakudesu"),
+          html: t.String(),
+        }),
+      }
+    )
+    .post(
+      "/save-media",
+      async ({ body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const saved = await episodes.saveMedia(body);
+        return successResponse(saved);
+      },
+      {
+        body: t.Object({
+          episode: t.Object({
+            sourceUrl: t.String({ format: "uri" }),
+            source: t.Literal("otakudesu"),
+            title: t.String(),
+            videoType: t.Nullable(t.String()),
+            videoUrl: t.String(),
+            metadata: t.Record(t.String(), t.Unknown()),
+          }),
+          series: t.Optional(
+            t.Nullable(
+              t.Object({
+                sourceUrl: t.String({ format: "uri" }),
+                source: t.Literal("otakudesu"),
+                title: t.String(),
+                description: t.Nullable(t.String()),
+                posterUrl: t.Nullable(t.String()),
+              })
+            )
+          ),
+        }),
+      }
+    )
     .patch(
       "/episodes/:id",
       async ({ params, body, headers, set }) => {
