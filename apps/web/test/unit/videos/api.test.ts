@@ -4,6 +4,7 @@ import {
   episodesQueryOptions,
   fetchSeriesDetail,
   seriesDetailQueryOptions,
+  saveMedia,
 } from '@/modules/videos/internal/api';
 
 describe('videos api', () => {
@@ -143,5 +144,74 @@ describe('videos api', () => {
 
     expect(options.queryKey).toEqual(['series', 'series-1']);
     expect(typeof options.queryFn).toBe('function');
+  });
+
+  it('saveMedia posts payload to backend API and returns saved media', async () => {
+    const mockSavedResult = {
+      data: {
+        episode: {
+          id: 'ep-saved-1',
+          sourceUrl: 'https://otakudesu.cloud/ep1',
+          source: 'otakudesu',
+          title: 'Saved Episode Title',
+          videoUrl: 'https://stream.com/saved.mp4',
+          createdAt: '2025-01-10T00:00:00.000Z',
+          updatedAt: '2025-01-10T00:00:00.000Z',
+        },
+        series: null,
+      },
+    };
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(JSON.stringify(mockSavedResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+    );
+
+    const result = await saveMedia({
+      episode: {
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Saved Episode Title',
+        videoType: 'mp4',
+        videoUrl: 'https://stream.com/saved.mp4',
+        metadata: {},
+      },
+    });
+
+    expect(result.episode.id).toBe('ep-saved-1');
+    expect(fetchSpy).toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+  });
+
+  it('saveMedia throws error when backend API fails', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({ error: { code: 'BAD_REQUEST', message: 'Invalid payload' } }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+    );
+
+    await expect(
+      saveMedia({
+        episode: {
+          sourceUrl: 'invalid',
+          source: 'otakudesu',
+          title: 'Title',
+          videoType: null,
+          videoUrl: 'invalid',
+          metadata: {},
+        },
+      })
+    ).rejects.toThrow('Failed to save media');
+
+    fetchSpy.mockRestore();
   });
 });

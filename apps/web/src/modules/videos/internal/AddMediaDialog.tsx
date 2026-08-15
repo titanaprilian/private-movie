@@ -1,6 +1,11 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
+import { saveMedia } from './api';
 
 export function AddMediaDialog() {
+  const queryClient = useQueryClient();
+
   const isOpen = useScrapeWorkerStore((state) => state.isOpen);
   const step = useScrapeWorkerStore((state) => state.step);
   const sourceUrl = useScrapeWorkerStore((state) => state.sourceUrl);
@@ -11,11 +16,22 @@ export function AddMediaDialog() {
   const previewData = useScrapeWorkerStore((state) => state.previewData);
 
   const closeDialog = useScrapeWorkerStore((state) => state.closeDialog);
+  const reset = useScrapeWorkerStore((state) => state.reset);
   const setSourceUrl = useScrapeWorkerStore((state) => state.setSourceUrl);
   const setSource = useScrapeWorkerStore((state) => state.setSource);
   const setHtml = useScrapeWorkerStore((state) => state.setHtml);
   const submitPreview = useScrapeWorkerStore((state) => state.submitPreview);
   const backToStep1 = useScrapeWorkerStore((state) => state.backToStep1);
+
+  const saveMutation = useMutation({
+    mutationFn: saveMedia,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['episodes'] });
+      queryClient.invalidateQueries({ queryKey: ['series'] });
+      toast.success('Media saved successfully');
+      reset();
+    },
+  });
 
   if (!isOpen) return null;
 
@@ -239,6 +255,27 @@ export function AddMediaDialog() {
                   No linked series metadata parsed from this episode page.
                 </div>
               )}
+              {/* Save Mutation Error */}
+              {saveMutation.error && (
+                <div className="p-3 rounded border border-red-200 dark:border-red-900/50 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs mono flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>
+                    {saveMutation.error instanceof Error
+                      ? saveMutation.error.message
+                      : 'Failed to save media'}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -290,16 +327,47 @@ export function AddMediaDialog() {
               <button
                 type="button"
                 onClick={backToStep1}
-                className="px-3.5 py-1.5 rounded border border-c text-xs font-medium hover-bg transition-colors cursor-pointer"
+                disabled={saveMutation.isPending}
+                className="px-3.5 py-1.5 rounded border border-c text-xs font-medium hover-bg transition-colors cursor-pointer disabled:opacity-50"
               >
                 ← Back to Edit
               </button>
               <button
                 type="button"
-                onClick={closeDialog}
-                className="px-4 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                onClick={() => {
+                  if (previewData?.episode) {
+                    saveMutation.mutate({
+                      episode: previewData.episode,
+                      series: previewData.series,
+                    });
+                  }
+                }}
+                disabled={saveMutation.isPending || !previewData?.episode}
+                className="px-4 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
-                Close Preview
+                {saveMutation.isPending && (
+                  <svg
+                    className="animate-spin w-3.5 h-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
+                  </svg>
+                )}
+                {saveMutation.isPending ? 'Saving...' : 'Save'}
               </button>
             </>
           )}

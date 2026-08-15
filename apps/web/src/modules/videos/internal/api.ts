@@ -138,3 +138,59 @@ export async function previewScrape(
 
   return res.data.data as PreviewScrapeResult;
 }
+
+export interface SaveMediaParams {
+  episode: {
+    sourceUrl: string;
+    source: 'otakudesu' | string;
+    title: string;
+    videoType: string | null;
+    videoUrl: string;
+    metadata: Record<string, unknown>;
+  };
+  series?: {
+    sourceUrl: string;
+    source: 'otakudesu' | string;
+    title: string;
+    description: string | null;
+    posterUrl: string | null;
+  } | null;
+}
+
+export interface SaveMediaResult {
+  episode: Episode;
+  series: SeriesDetails | null;
+}
+
+export async function saveMedia(
+  params: SaveMediaParams
+): Promise<SaveMediaResult> {
+  const res = await api['save-media'].post({
+    episode: params.episode as {
+      sourceUrl: string;
+      source: 'otakudesu';
+      title: string;
+      videoType: string | null;
+      videoUrl: string;
+      metadata: Record<string, unknown>;
+    },
+    series: params.series
+      ? {
+          sourceUrl: params.series.sourceUrl,
+          source: params.series.source as 'otakudesu',
+          title: params.series.title,
+          description: params.series.description,
+          posterUrl: params.series.posterUrl,
+        }
+      : undefined,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to save media'
+    );
+  }
+
+  return res.data.data as SaveMediaResult;
+}

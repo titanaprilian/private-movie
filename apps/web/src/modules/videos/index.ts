@@ -7,6 +7,7 @@ export {
   fetchSeriesDetail,
   seriesDetailQueryOptions,
   previewScrape,
+  saveMedia,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
 export type {
@@ -18,4 +19,6 @@ export type {
   SeriesDetails as Series,
   PreviewScrapeParams,
   PreviewScrapeResult,
+  SaveMediaParams,
+  SaveMediaResult,
 } from './internal/api';
