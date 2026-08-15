@@ -29,6 +29,18 @@ export interface EpisodesListResponse {
   };
 }
 
+export interface SeriesDetails {
+  id: string;
+  sourceUrl: string;
+  source: string;
+  title: string;
+  description?: string | null;
+  posterUrl?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  episodes: Episode[];
+}
+
 export interface FetchEpisodesParams {
   page?: number;
   limit?: number;
@@ -61,4 +73,68 @@ export function episodesQueryOptions(params?: FetchEpisodesParams) {
     queryKey: ['episodes', params],
     queryFn: () => fetchEpisodes(params),
   });
+}
+
+export async function fetchSeriesDetail(id: string): Promise<SeriesDetails> {
+  const res = await api.series[id].get();
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to fetch series details'
+    );
+  }
+
+  return res.data.data as SeriesDetails;
+}
+
+export function seriesDetailQueryOptions(id: string) {
+  return queryOptions({
+    queryKey: ['series', id],
+    queryFn: () => fetchSeriesDetail(id),
+  });
+}
+
+export interface PreviewScrapeParams {
+  sourceUrl: string;
+  source: 'otakudesu';
+  html: string;
+}
+
+export interface PreviewScrapeResult {
+  episode: {
+    sourceUrl: string;
+    source: string;
+    title: string;
+    videoType: string | null;
+    videoUrl: string;
+    metadata: Record<string, unknown>;
+  };
+  series: {
+    sourceUrl: string;
+    source: string;
+    title: string;
+    description: string | null;
+    posterUrl: string | null;
+  } | null;
+  warnings: string[];
+}
+
+export async function previewScrape(
+  params: PreviewScrapeParams
+): Promise<PreviewScrapeResult> {
+  const res = await api['preview-scrape'].post({
+    sourceUrl: params.sourceUrl,
+    source: params.source,
+    html: params.html,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to scrape preview'
+    );
+  }
+
+  return res.data.data as PreviewScrapeResult;
 }

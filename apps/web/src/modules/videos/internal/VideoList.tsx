@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { episodesQueryOptions } from './api';
+import { AddMediaDialog } from './AddMediaDialog';
+import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 
 export function VideoList() {
   const { data } = useSuspenseQuery(episodesQueryOptions());
   const [filterText, setFilterText] = useState('');
+  const openDialog = useScrapeWorkerStore((state) => state.openDialog);
 
   const episodes = data?.episodes ?? [];
 
@@ -27,6 +30,7 @@ export function VideoList() {
         </div>
         <button
           type="button"
+          onClick={openDialog}
           className="px-3 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
         >
           Add Video
@@ -131,6 +135,7 @@ export function VideoList() {
           </div>
         </div>
       </div>
+      <AddMediaDialog />
     </div>
   );
 }

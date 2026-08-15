@@ -94,4 +94,13 @@ describe('VideoList component', () => {
     expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(3);
     expect(screen.getAllByRole('button', { name: 'Play' })).toHaveLength(3);
   });
+
+  it('opens AddMediaDialog when Add Video button is clicked', async () => {
+    const { user } = renderVideoList();
+
+    const addBtn = screen.getByRole('button', { name: 'Add Video' });
+    await user.click(addBtn);
+
+    expect(screen.getByText('Add Media Wizard')).toBeInTheDocument();
+  });
 });

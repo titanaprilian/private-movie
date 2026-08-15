@@ -1,19 +1,30 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { MOCK_SERIES } from './seriesData';
-
-export type { Episode, Series } from './seriesData';
+import { seriesDetailQueryOptions } from './api';
+import { AddMediaDialog } from './AddMediaDialog';
+import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 
 export interface SeriesDetailViewProps {
   seriesId: string;
 }
 
 export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
-  const series = MOCK_SERIES.find((s) => s.id === seriesId);
+  const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));
+  const openDialog = useScrapeWorkerStore((state) => state.openDialog);
+
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(
-    series?.episodes[0]?.id ?? null
+    null
   );
   const [filterText, setFilterText] = useState<string>('');
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 p-4 text-xs text-muted mono">
+        Loading series...
+      </div>
+    );
+  }
 
   if (!series) {
     return (
@@ -28,22 +39,25 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
     );
   }
 
-  const filteredEpisodes = series.episodes.filter((episode) => {
+  const episodes = series.episodes ?? [];
+
+  const filteredEpisodes = episodes.filter((episode) => {
+    const text = filterText.toLowerCase();
     const matchesSearch =
-      episode.title.toLowerCase().includes(filterText.toLowerCase()) ||
-      episode.description.toLowerCase().includes(filterText.toLowerCase());
+      episode.title.toLowerCase().includes(text) ||
+      (episode.description?.toLowerCase().includes(text) ?? false);
     return matchesSearch;
   });
 
   const selectedEpisode =
-    filteredEpisodes.find((e) => e.id === selectedEpisodeId) ??
+    (selectedEpisodeId
+      ? filteredEpisodes.find((e) => e.id === selectedEpisodeId)
+      : null) ??
     filteredEpisodes[0] ??
     null;
 
   const handleAddEpisode = () => {
-    toast.success('video.create', {
-      description: 'New episode prototype dialog triggered.',
-    });
+    openDialog();
   };
 
   const handlePlay = (title: string) => {
@@ -74,7 +88,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
               {series.title}
             </h1>
             <span className="text-xs mono px-2 py-0.5 rounded border border-c bg-sidebar text-muted">
-              {series.episodes.length} episodes
+              {episodes.length} episodes
             </span>
           </div>
           <p className="text-xs text-muted mt-0.5">{series.description}</p>
@@ -136,6 +150,13 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
             ) : (
               filteredEpisodes.map((episode) => {
                 const isSelected = selectedEpisode?.id === episode.id;
+                const formattedDate = episode.createdAt
+                  ? typeof episode.createdAt === 'string'
+                    ? episode.createdAt.split('T')[0]
+                    : new Date(episode.createdAt).toISOString().split('T')[0]
+                  : '';
+                const tags = episode.tags ?? [];
+
                 return (
                   <button
                     key={episode.id}
@@ -160,9 +181,11 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                       >
                         <polygon points="5 3 19 12 5 21 5 3" />
                       </svg>
-                      <span className="absolute bottom-1 right-1 text-[9px] mono px-1 rounded bg-black/75 text-white">
-                        {episode.duration}
-                      </span>
+                      {episode.duration && (
+                        <span className="absolute bottom-1 right-1 text-[9px] mono px-1 rounded bg-black/75 text-white">
+                          {episode.duration}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -170,12 +193,12 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                         {episode.title}
                       </div>
                       <div className="text-xs mono text-muted mt-0.5 flex items-center gap-2">
-                        <span>{episode.createdAt}</span>
+                        <span>{formattedDate}</span>
                         <span>•</span>
                         <span>{episode.source}</span>
                       </div>
                       <div className="flex flex-wrap gap-1 mt-1.5">
-                        {episode.tags.map((tag) => (
+                        {tags.map((tag) => (
                           <span
                             key={tag}
                             className="text-[10px] mono px-1.5 py-0.2 rounded border border-c bg-card text-muted"
@@ -209,7 +232,9 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   </div>
                   <p className="text-xs mono text-muted mt-0.5">
                     ID: {selectedEpisode.id} • Created{' '}
-                    {selectedEpisode.createdAt}
+                    {typeof selectedEpisode.createdAt === 'string'
+                      ? selectedEpisode.createdAt.split('T')[0]
+                      : new Date(selectedEpisode.createdAt).toISOString().split('T')[0]}
                   </p>
                 </div>
 
@@ -293,7 +318,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                 </button>
                 <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-between text-white text-xs mono">
                   <span>{selectedEpisode.title}</span>
-                  <span>{selectedEpisode.duration}</span>
+                  <span>{selectedEpisode.duration ?? 'N/A'}</span>
                 </div>
               </div>
 
@@ -303,7 +328,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   Description
                 </h3>
                 <p className="text-sm text-current leading-relaxed">
-                  {selectedEpisode.description}
+                  {selectedEpisode.description || 'No description provided.'}
                 </p>
               </div>
 
@@ -316,25 +341,25 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   <div>
                     <div className="text-muted">Duration</div>
                     <div className="font-semibold text-current mt-0.5">
-                      {selectedEpisode.duration}
+                      {selectedEpisode.duration ?? 'N/A'}
                     </div>
                   </div>
                   <div>
                     <div className="text-muted">Resolution</div>
                     <div className="font-semibold text-current mt-0.5">
-                      {selectedEpisode.resolution}
+                      {selectedEpisode.resolution ?? 'N/A'}
                     </div>
                   </div>
                   <div>
                     <div className="text-muted">Format</div>
                     <div className="font-semibold text-current mt-0.5">
-                      {selectedEpisode.format}
+                      {selectedEpisode.format ?? 'N/A'}
                     </div>
                   </div>
                   <div>
                     <div className="text-muted">File Size</div>
                     <div className="font-semibold text-current mt-0.5">
-                      {selectedEpisode.size}
+                      {selectedEpisode.size ?? 'N/A'}
                     </div>
                   </div>
                   <div>
@@ -346,7 +371,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   <div>
                     <div className="text-muted">Tags</div>
                     <div className="flex flex-wrap gap-1 mt-0.5">
-                      {selectedEpisode.tags.map((t) => (
+                      {(selectedEpisode.tags ?? []).map((t) => (
                         <span
                           key={t}
                           className="px-1.5 py-0.2 rounded border border-c bg-card text-[10px]"
@@ -366,6 +391,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
           )}
         </div>
       </div>
+      <AddMediaDialog />
     </div>
   );
 }
