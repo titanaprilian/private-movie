@@ -7,20 +7,22 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 describe('videos.index route loader', () => {
-  it('pre-fetches episode query data using queryClient.ensureQueryData', async () => {
+  it('pre-fetches series list query data using queryClient.ensureQueryData', async () => {
     const ensureQueryDataSpy = vi
       .spyOn(queryClient, 'ensureQueryData')
       .mockResolvedValueOnce({
-        episodes: [],
+        series: [],
         meta: { total: 0, page: 1, limit: 20 },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
     // Call loader defined on Route
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (Route as any).loader();
 
     expect(ensureQueryDataSpy).toHaveBeenCalled();
     const callArg = ensureQueryDataSpy.mock.calls[0][0];
-    expect(callArg.queryKey).toEqual(['episodes', undefined]);
+    expect(callArg.queryKey).toEqual(['series', 'list', undefined]);
 
     ensureQueryDataSpy.mockRestore();
   });

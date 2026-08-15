@@ -1,4 +1,4 @@
-export { VideoList } from './internal/VideoList';
+export { SeriesGrid } from './internal/SeriesGrid';
 export { SeriesDetailView } from './internal/SeriesDetailView';
 export { AddMediaDialog } from './internal/AddMediaDialog';
 export {
