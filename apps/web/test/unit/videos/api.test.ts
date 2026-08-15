@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   fetchEpisodes,
   episodesQueryOptions,
+  fetchSeries,
+  seriesListQueryOptions,
   fetchSeriesDetail,
   seriesDetailQueryOptions,
   saveMedia,
@@ -118,6 +120,112 @@ describe('videos api', () => {
     const options = episodesQueryOptions({ page: 2, limit: 10 });
 
     expect(options.queryKey).toEqual(['episodes', { page: 2, limit: 10 }]);
+    expect(typeof options.queryFn).toBe('function');
+  });
+
+  it('fetchSeries returns series list and metadata from backend API', async () => {
+    const mockData = {
+      data: {
+        series: [
+          {
+            id: 'series-1',
+            sourceUrl: 'https://otakudesu.cloud/anime/series-1',
+            source: 'otakudesu',
+            title: 'Series Title 1',
+            description: 'Description 1',
+            posterUrl: 'https://otakudesu.cloud/poster1.jpg',
+            createdAt: '2025-01-10T00:00:00.000Z',
+            updatedAt: '2025-01-10T00:00:00.000Z',
+          },
+        ],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 20,
+        },
+      },
+    };
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+    );
+
+    const result = await fetchSeries({ page: 1, limit: 20 });
+
+    expect(result.series).toHaveLength(1);
+    expect(result.series[0].id).toBe('series-1');
+    expect(result.series[0].title).toBe('Series Title 1');
+    expect(result.meta.total).toBe(1);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('fetchSeries strips undefined query parameters from API request URL', async () => {
+    const mockData = {
+      data: {
+        series: [],
+        meta: {
+          total: 0,
+          page: 1,
+          limit: 20,
+        },
+      },
+    };
+
+    let requestedUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        requestedUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    await fetchSeries({ page: undefined, limit: 20 });
+
+    expect(requestedUrl).not.toContain('undefined');
+    expect(requestedUrl).toContain('limit=20');
+    expect(requestedUrl).not.toContain('page=');
+
+    await fetchSeries();
+
+    expect(requestedUrl).not.toContain('undefined');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('fetchSeries throws error when backend API returns failure', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({ error: { code: 'INTERNAL_ERROR', message: 'Database error' } }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+    );
+
+    await expect(fetchSeries()).rejects.toThrow('Failed to fetch series');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('seriesListQueryOptions returns query key and queryFn', () => {
+    const options = seriesListQueryOptions({ page: 1, limit: 20 });
+
+    expect(options.queryKey).toEqual(['series', 'list', { page: 1, limit: 20 }]);
     expect(typeof options.queryFn).toBe('function');
   });
 

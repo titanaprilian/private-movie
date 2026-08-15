@@ -29,6 +29,26 @@ export interface EpisodesListResponse {
   };
 }
 
+export interface SeriesItem {
+  id: string;
+  sourceUrl: string;
+  source: string;
+  title: string;
+  description?: string | null;
+  posterUrl?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface SeriesListResponse {
+  series: SeriesItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
+
 export interface SeriesDetails {
   id: string;
   sourceUrl: string;
@@ -39,6 +59,46 @@ export interface SeriesDetails {
   createdAt: Date | string;
   updatedAt: Date | string;
   episodes: Episode[];
+}
+
+export interface FetchSeriesParams {
+  page?: number;
+  limit?: number;
+  source?: 'otakudesu';
+}
+
+export async function fetchSeries(
+  params?: FetchSeriesParams
+): Promise<SeriesListResponse> {
+  const rawQuery = {
+    page: params?.page,
+    limit: params?.limit,
+    source: params?.source,
+  };
+
+  const query = Object.fromEntries(
+    Object.entries(rawQuery).filter(([, value]) => value !== undefined)
+  );
+
+  const res = await api.series.get({
+    $query: query as { page?: number; limit?: number; source?: 'otakudesu' },
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to fetch series'
+    );
+  }
+
+  return res.data.data as SeriesListResponse;
+}
+
+export function seriesListQueryOptions(params?: FetchSeriesParams) {
+  return queryOptions({
+    queryKey: ['series', 'list', params],
+    queryFn: () => fetchSeries(params),
+  });
 }
 
 export interface FetchEpisodesParams {

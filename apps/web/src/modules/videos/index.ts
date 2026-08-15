@@ -4,6 +4,8 @@ export { AddMediaDialog } from './internal/AddMediaDialog';
 export {
   fetchEpisodes,
   episodesQueryOptions,
+  fetchSeries,
+  seriesListQueryOptions,
   fetchSeriesDetail,
   seriesDetailQueryOptions,
   previewScrape,
@@ -15,6 +17,9 @@ export type {
   Episode as ApiEpisode,
   FetchEpisodesParams,
   EpisodesListResponse,
+  SeriesItem,
+  FetchSeriesParams,
+  SeriesListResponse,
   SeriesDetails,
   SeriesDetails as Series,
   PreviewScrapeParams,
