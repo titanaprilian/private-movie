@@ -21,6 +21,12 @@ export interface SeriesUpsertInput {
   posterUrl: string | null;
 }
 
+export interface UpdateSeriesInput {
+  title?: string;
+  description?: string | null;
+  posterUrl?: string | null;
+}
+
 export interface SeriesListParams {
   page: number;
   limit?: number;
@@ -132,6 +138,50 @@ export function createSeriesRepositoryInternal<
         series: rows,
         total: totalRows[0]?.value ?? 0,
       };
+    },
+
+    async updateSeries(
+      id: string,
+      input: UpdateSeriesInput
+    ): Promise<SeriesRow> {
+      const now = new Date();
+      const updateData: Record<string, unknown> = {
+        updatedAt: now,
+      };
+
+      if (input.title !== undefined) updateData.title = input.title;
+      if (input.description !== undefined) updateData.description = input.description;
+      if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
+
+      const [row] = await db
+        .update(series)
+        .set(updateData)
+        .where(eq(series.id, id))
+        .returning();
+
+      if (!row) {
+        throw new SeriesNotFoundError(`Series with id ${id} not found`);
+      }
+
+      return row;
+    },
+
+    async deleteSeries(id: string): Promise<SeriesRow> {
+      await db
+        .update(episodes)
+        .set({ seriesId: null })
+        .where(eq(episodes.seriesId, id));
+
+      const [row] = await db
+        .delete(series)
+        .where(eq(series.id, id))
+        .returning();
+
+      if (!row) {
+        throw new SeriesNotFoundError(`Series with id ${id} not found`);
+      }
+
+      return row;
     },
   };
 }

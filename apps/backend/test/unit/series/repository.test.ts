@@ -144,3 +144,72 @@ describe("series repository findByIdWithEpisodes", () => {
     expect(result).toBeNull();
   });
 });
+
+describe("series repository updateSeries", () => {
+  const repository = createSeriesRepositoryInternal(db);
+
+  beforeEach(async () => {
+    await db.delete(episodes);
+    await db.delete(series);
+  });
+
+  it("partially updates series fields and returns updated row", async () => {
+    const s = await insertSeries({ title: "Original Title" });
+
+    const updated = await repository.updateSeries(s.id, {
+      title: "Updated Title",
+      description: "New Description",
+      posterUrl: "https://example.com/new-poster.jpg",
+    });
+
+    expect(updated.id).toBe(s.id);
+    expect(updated.title).toBe("Updated Title");
+    expect(updated.description).toBe("New Description");
+    expect(updated.posterUrl).toBe("https://example.com/new-poster.jpg");
+  });
+
+  it("throws SeriesNotFoundError when updating non-existent series", async () => {
+    await expect(
+      repository.updateSeries(crypto.randomUUID(), { title: "New Title" })
+    ).rejects.toThrow("Series with id");
+  });
+});
+
+describe("series repository deleteSeries", () => {
+  const repository = createSeriesRepositoryInternal(db);
+
+  beforeEach(async () => {
+    await db.delete(episodes);
+    await db.delete(series);
+  });
+
+  it("hard-deletes an existing series and returns deleted row", async () => {
+    const s = await insertSeries({ title: "To Be Deleted" });
+
+    const deleted = await repository.deleteSeries(s.id);
+
+    expect(deleted.id).toBe(s.id);
+    expect(deleted.title).toBe("To Be Deleted");
+
+    const found = await repository.findById(s.id);
+    expect(found).toBeNull();
+  });
+
+  it("unlinks child episodes before deleting series", async () => {
+    const s = await insertSeries({ title: "Series with Episode" });
+    await insertEpisodeForSeries(s.id, { title: "Child Episode" });
+
+    const deleted = await repository.deleteSeries(s.id);
+
+    expect(deleted.id).toBe(s.id);
+
+    const found = await repository.findById(s.id);
+    expect(found).toBeNull();
+  });
+
+  it("throws SeriesNotFoundError when deleting non-existent series", async () => {
+    await expect(
+      repository.deleteSeries(crypto.randomUUID())
+    ).rejects.toThrow("Series with id");
+  });
+});

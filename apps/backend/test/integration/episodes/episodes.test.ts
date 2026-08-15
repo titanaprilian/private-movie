@@ -17,7 +17,7 @@ const sampleBHtml = readFileSync(
   "utf8"
 );
 
-describe("POST /episodes", () => {
+describe("POST /trigger-scrape", () => {
   let app: App;
 
   beforeAll(async () => {
@@ -32,7 +32,7 @@ describe("POST /episodes", () => {
 
       const response = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -115,7 +115,7 @@ describe("POST /episodes", () => {
 
       const response = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -179,7 +179,7 @@ describe("POST /episodes", () => {
     it("returns 401 when authorization header is missing", async () => {
       const response = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         body: {
           sourceUrl: "https://otakudesu.blog/episode/test-episode/",
           source: "otakudesu",
@@ -193,7 +193,7 @@ describe("POST /episodes", () => {
     it("returns 401 when authorization token is invalid or expired", async () => {
       const invalidTokenResponse = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders("invalid-token-string"),
         body: {
           sourceUrl: "https://otakudesu.blog/episode/test-episode/",
@@ -210,7 +210,7 @@ describe("POST /episodes", () => {
       );
       const expiredTokenResponse = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(expiredToken),
         body: {
           sourceUrl: "https://otakudesu.blog/episode/test-episode/",
@@ -230,7 +230,7 @@ describe("POST /episodes", () => {
       // Missing sourceUrl
       const response1 = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           source: "otakudesu",
@@ -242,7 +242,7 @@ describe("POST /episodes", () => {
       // Invalid sourceUrl (not URI format)
       const response2 = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl: "not-a-valid-url",
@@ -255,7 +255,7 @@ describe("POST /episodes", () => {
       // Invalid source enum value
       const response3 = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl:
@@ -269,7 +269,7 @@ describe("POST /episodes", () => {
       // Missing html
       const response4 = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl:
@@ -287,7 +287,7 @@ describe("POST /episodes", () => {
 
       const response = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl:
@@ -311,7 +311,7 @@ describe("POST /episodes", () => {
 
       const response = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl:
@@ -340,7 +340,7 @@ describe("POST /episodes", () => {
 
       const response = await request(failingApp, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -370,7 +370,7 @@ describe("POST /episodes", () => {
 
       const response = await request(invalidSeriesApp, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -398,7 +398,7 @@ describe("POST /episodes", () => {
         "https://otakudesu.blog/episode/same-series-ep-1-sub-indo/";
       const resp1 = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl: sourceUrl1,
@@ -413,7 +413,7 @@ describe("POST /episodes", () => {
         "https://otakudesu.blog/episode/same-series-ep-2-sub-indo/";
       const resp2 = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl: sourceUrl2,
@@ -455,7 +455,7 @@ describe("POST /episodes", () => {
       const ep1Url = "https://otakudesu.blog/episode/diff-series-1-ep-1/";
       await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl: ep1Url,
@@ -468,7 +468,7 @@ describe("POST /episodes", () => {
       const ep2Url = "https://otakudesu.blog/episode/diff-series-2-ep-1/";
       await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl: ep2Url,
@@ -495,7 +495,7 @@ describe("POST /episodes", () => {
       // First submission with sample-a (minimal)
       const firstResponse = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,
@@ -508,7 +508,7 @@ describe("POST /episodes", () => {
       // Second submission with same sourceUrl but sample-b (full)
       const secondResponse = await request(app, {
         method: "POST",
-        path: "/episodes",
+        path: "/trigger-scrape",
         headers: authHeaders(accessToken),
         body: {
           sourceUrl,

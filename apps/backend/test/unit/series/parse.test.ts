@@ -4,11 +4,11 @@ import { describe, expect, it } from "vitest";
 import {
   parseSeriesPage,
   SeriesParseError,
-} from "../../../src/modules/media/internal/series/parse";
+} from "@/modules/media/internal/series/parse";
 
 describe("parseSeriesPage", () => {
   const sampleSeriesListHtml = fs.readFileSync(
-    path.join(__dirname, "../../fixtures/episodes/sample-series-list.html"),
+    path.resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
     "utf8"
   );
 
