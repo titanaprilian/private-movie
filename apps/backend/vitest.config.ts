@@ -13,6 +13,8 @@ export default mergeConfig(
     test: {
       dir: "./test/unit",
       passWithNoTests: true,
+      fileParallelism: false,
+      setupFiles: ["./test/setup.ts"],
     },
   }),
 );

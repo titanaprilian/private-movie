@@ -61,6 +61,21 @@ describe("GET /series", () => {
     app = await buildApp();
   });
 
+  it("returns empty array when database contains 0 series", async () => {
+    const response = await request(app, { path: "/series" });
+
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        series: unknown[];
+        meta: { total: number; page: number; limit: number };
+      };
+    };
+
+    expect(body.data.series).toEqual([]);
+    expect(body.data.meta).toEqual({ total: 0, page: 1, limit: 20 });
+  });
+
   it("returns paginated series with correct meta fields on happy path", async () => {
     for (let i = 0; i < 3; i++) {
       await insertSeriesRow({
@@ -142,6 +157,41 @@ describe("GET /series", () => {
     });
 
     expect(response.status).toBe(400);
+  });
+
+  it("invalid limit < 1 or page < 1 returns 400", async () => {
+    const responseLimit = await request(app, {
+      path: "/series?limit=0",
+    });
+    expect(responseLimit.status).toBe(400);
+
+    const responsePage = await request(app, {
+      path: "/series?page=0",
+    });
+    expect(responsePage.status).toBe(400);
+  });
+
+  it("pagination boundary: page beyond total items returns empty series list", async () => {
+    for (let i = 0; i < 3; i++) {
+      await insertSeriesRow({ title: `Boundary Series ${i}` });
+    }
+
+    const response = await request(app, {
+      path: "/series?page=10&limit=2",
+    });
+
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        series: unknown[];
+        meta: { total: number; page: number; limit: number };
+      };
+    };
+
+    expect(body.data.series).toEqual([]);
+    expect(body.data.meta.total).toBe(3);
+    expect(body.data.meta.page).toBe(10);
+    expect(body.data.meta.limit).toBe(2);
   });
 
   it("unauthenticated request succeeds with no auth header", async () => {

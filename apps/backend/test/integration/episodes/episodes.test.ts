@@ -280,10 +280,10 @@ describe("POST /episodes", () => {
       expect(response4.status).toBe(400);
     });
 
-    it("returns 400 with parse-error code EPISODE_PARSE when HTML is unparseable", async () => {
+    it("returns 400 with parse-error code EPISODE_PARSE when HTML is missing #venkonten", async () => {
       const { accessToken } = await registerUser(app);
       const invalidHtml =
-        "<html><body><div id='venkonten'><h1>Title</h1></div></body></html>";
+        "<html><body><div id='other'><h1>Title</h1></div></body></html>";
 
       const response = await request(app, {
         method: "POST",
@@ -301,6 +301,188 @@ describe("POST /episodes", () => {
       const body = response.body as { error: { code: string; message: string } };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe("EPISODE_PARSE");
+      expect(body.error.message).toContain("missing #venkonten container");
+    });
+
+    it("returns 400 with parse-error code EPISODE_PARSE when HTML is missing iframe src", async () => {
+      const { accessToken } = await registerUser(app);
+      const invalidHtml =
+        "<html><body><div id='venkonten'><h1 class='posttl'>Title</h1></div></body></html>";
+
+      const response = await request(app, {
+        method: "POST",
+        path: "/episodes",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl:
+            "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/",
+          source: "otakudesu",
+          html: invalidHtml,
+        },
+      });
+
+      expect(response.status).toBe(400);
+      const body = response.body as { error: { code: string; message: string } };
+      expect(body.error).toBeDefined();
+      expect(body.error.code).toBe("EPISODE_PARSE");
+      expect(body.error.message).toContain("missing iframe src");
+    });
+
+    it("saves episode successfully with null seriesId when fetchHtml fails/throws error", async () => {
+      const failingApp = await buildApp({
+        fetchHtml: async () => {
+          throw new Error("Network timeout fetching series page");
+        },
+      });
+      const { accessToken } = await registerUser(failingApp);
+      const sourceUrl =
+        "https://otakudesu.blog/episode/fetch-fail-ep-1-sub-indo/";
+
+      const response = await request(failingApp, {
+        method: "POST",
+        path: "/episodes",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl,
+          source: "otakudesu",
+          html: sampleAHtml,
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const rows = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.sourceUrl, sourceUrl));
+      expect(rows).toHaveLength(1);
+      expect(rows[0].seriesId).toBeNull();
+    });
+
+    it("saves episode successfully with null seriesId when fetched series HTML is invalid/unparseable", async () => {
+      const invalidSeriesApp = await buildApp({
+        fetchHtml: async () => {
+          return "<html><body><p>No title here</p></body></html>";
+        },
+      });
+      const { accessToken } = await registerUser(invalidSeriesApp);
+      const sourceUrl =
+        "https://otakudesu.blog/episode/invalid-series-ep-1-sub-indo/";
+
+      const response = await request(invalidSeriesApp, {
+        method: "POST",
+        path: "/episodes",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl,
+          source: "otakudesu",
+          html: sampleAHtml,
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const rows = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.sourceUrl, sourceUrl));
+      expect(rows).toHaveLength(1);
+      expect(rows[0].seriesId).toBeNull();
+    });
+  });
+
+  describe("series linkage and multi-episode behavior", () => {
+    it("links multiple episodes saved for the same series to one single series record", async () => {
+      const { accessToken } = await registerUser(app);
+
+      // Episode 1
+      const sourceUrl1 =
+        "https://otakudesu.blog/episode/same-series-ep-1-sub-indo/";
+      const resp1 = await request(app, {
+        method: "POST",
+        path: "/episodes",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl: sourceUrl1,
+          source: "otakudesu",
+          html: sampleAHtml,
+        },
+      });
+      expect(resp1.status).toBe(200);
+
+      // Episode 2 (with same sample-a HTML pointing to same animePageUrl)
+      const sourceUrl2 =
+        "https://otakudesu.blog/episode/same-series-ep-2-sub-indo/";
+      const resp2 = await request(app, {
+        method: "POST",
+        path: "/episodes",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl: sourceUrl2,
+          source: "otakudesu",
+          html: sampleAHtml,
+        },
+      });
+      expect(resp2.status).toBe(200);
+
+      // Verify DB: two episodes, but only 1 series row
+      const seriesRows = await db
+        .select()
+        .from(series)
+        .where(
+          eq(
+            series.sourceUrl,
+            "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+          )
+        );
+      expect(seriesRows).toHaveLength(1);
+
+      const ep1Row = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.sourceUrl, sourceUrl1));
+      const ep2Row = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.sourceUrl, sourceUrl2));
+
+      expect(ep1Row[0].seriesId).toBe(seriesRows[0].id);
+      expect(ep2Row[0].seriesId).toBe(seriesRows[0].id);
+    });
+
+    it("links episodes from different series to separate series records", async () => {
+      const { accessToken } = await registerUser(app);
+
+      // Episode from Series 1 (sample-a)
+      const ep1Url = "https://otakudesu.blog/episode/diff-series-1-ep-1/";
+      await request(app, {
+        method: "POST",
+        path: "/episodes",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl: ep1Url,
+          source: "otakudesu",
+          html: sampleAHtml,
+        },
+      });
+
+      // Episode from Series 2 (sample-b)
+      const ep2Url = "https://otakudesu.blog/episode/diff-series-2-ep-1/";
+      await request(app, {
+        method: "POST",
+        path: "/episodes",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl: ep2Url,
+          source: "otakudesu",
+          html: sampleBHtml,
+        },
+      });
+
+      const ep1 = (await db.select().from(episodes).where(eq(episodes.sourceUrl, ep1Url)))[0];
+      const ep2 = (await db.select().from(episodes).where(eq(episodes.sourceUrl, ep2Url)))[0];
+
+      expect(ep1.seriesId).toBeDefined();
+      expect(ep2.seriesId).toBeDefined();
+      expect(ep1.seriesId).not.toBe(ep2.seriesId);
     });
   });
 
