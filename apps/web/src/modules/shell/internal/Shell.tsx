@@ -87,8 +87,8 @@ export function Shell({ children }: ShellProps) {
             </svg>
             {!sidebarCollapsed && <span>Dashboard</span>}
           </Link>
-          <a
-            href="#"
+          <Link
+            to="/videos"
             className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
           >
             <svg
@@ -100,65 +100,11 @@ export function Shell({ children }: ShellProps) {
               strokeWidth="2"
               className="shrink-0"
             >
-              <path d="M18 20V10M12 20V4M6 20v-6" />
+              <polygon points="23 7 16 12 23 17 23 7" />
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
             </svg>
-            {!sidebarCollapsed && <span>Analytics</span>}
-          </a>
-          <a
-            href="#"
-            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="shrink-0"
-            >
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-            </svg>
-            {!sidebarCollapsed && <span>Customers</span>}
-          </a>
-          <a
-            href="#"
-            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="shrink-0"
-            >
-              <path d="M20.59 13.41L11 3.83V3H3v8h.83l9.58 9.59a2 2 0 002.83 0l4.35-4.35a2 2 0 000-2.83z" />
-              <circle cx="6.5" cy="6.5" r="1" />
-            </svg>
-            {!sidebarCollapsed && <span>Orders</span>}
-          </a>
-          <a
-            href="#"
-            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="shrink-0"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09A1.65 1.65 0 0015 4.6a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-            </svg>
-            {!sidebarCollapsed && <span>Settings</span>}
-          </a>
+            {!sidebarCollapsed && <span>Videos</span>}
+          </Link>
         </nav>
 
         {/* User Profile at bottom */}
@@ -230,34 +176,13 @@ export function Shell({ children }: ShellProps) {
           >
             Dashboard
           </Link>
-          <a
-            href="#"
+          <Link
+            to="/videos"
             onClick={() => setIsMobileOpen(false)}
             className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
           >
-            Analytics
-          </a>
-          <a
-            href="#"
-            onClick={() => setIsMobileOpen(false)}
-            className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
-          >
-            Customers
-          </a>
-          <a
-            href="#"
-            onClick={() => setIsMobileOpen(false)}
-            className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
-          >
-            Orders
-          </a>
-          <a
-            href="#"
-            onClick={() => setIsMobileOpen(false)}
-            className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
-          >
-            Settings
-          </a>
+            Videos
+          </Link>
         </nav>
         <div className="p-3 border-t border-c">
           <Link

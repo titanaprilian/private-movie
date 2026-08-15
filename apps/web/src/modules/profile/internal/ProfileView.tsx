@@ -79,7 +79,8 @@ export function ProfileView() {
 
         <div className="px-4 py-3 border-t border-c bg-sidebar flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <span className="text-xs text-muted">
-            End your current session on this device or invalidate all active sessions
+            End your current session on this device or invalidate all active
+            sessions
           </span>
           <div className="flex items-center gap-2">
             <LogoutButton />
@@ -94,7 +95,9 @@ export function ProfileView() {
                 <DialogHeader>
                   <DialogTitle>Logout All Devices</DialogTitle>
                   <DialogDescription>
-                    Are you sure you want to log out of all devices? This will invalidate all your current active sessions across all devices.
+                    Are you sure you want to log out of all devices? This will
+                    invalidate all your current active sessions across all
+                    devices.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>

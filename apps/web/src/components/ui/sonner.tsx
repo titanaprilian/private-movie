@@ -76,10 +76,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
             'group toast mono w-[320px] bg-[var(--card)] text-[var(--fg)] border border-[var(--border)] border-l-[3px] rounded-[6px] p-[0.7rem_0.875rem] flex gap-[0.625rem] items-start shadow-[0_4px_14px_rgba(0,0,0,0.08)]',
           title: 'text-xs text-[var(--muted)] mono font-normal',
           description: 'text-sm mt-0.5 text-[var(--fg)] mono font-normal',
-          success: 'group-[.toaster]:border-l-[#22c55e] [border-left-color:#22c55e]',
-          error: 'group-[.toaster]:border-l-[#ef4444] [border-left-color:#ef4444]',
+          success:
+            'group-[.toaster]:border-l-[#22c55e] [border-left-color:#22c55e]',
+          error:
+            'group-[.toaster]:border-l-[#ef4444] [border-left-color:#ef4444]',
           info: 'group-[.toaster]:border-l-[#818cf8] [border-left-color:#818cf8]',
-          warning: 'group-[.toaster]:border-l-[#f59e0b] [border-left-color:#f59e0b]',
+          warning:
+            'group-[.toaster]:border-l-[#f59e0b] [border-left-color:#f59e0b]',
           closeButton: 'text-[var(--muted)] hover:text-current shrink-0 mt-0.5',
           actionButton:
             'group-[.toast]:bg-[var(--primary)] group-[.toast]:text-[var(--primary-fg)]',

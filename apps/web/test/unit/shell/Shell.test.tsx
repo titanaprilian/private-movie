@@ -40,6 +40,23 @@ describe('Shell layout component', () => {
     expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
   });
 
+  it('renders primary navigation links and omits deprecated template links', () => {
+    renderWithProviders(
+      <Shell>
+        <div>Content</div>
+      </Shell>
+    );
+
+    const videosLinks = screen.getAllByRole('link', { name: /videos/i });
+    expect(videosLinks.length).toBeGreaterThan(0);
+    expect(videosLinks[0]).toHaveAttribute('href', '/videos');
+
+    expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+    expect(screen.queryByText('Customers')).not.toBeInTheDocument();
+    expect(screen.queryByText('Orders')).not.toBeInTheDocument();
+    expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+  });
+
   it('toggles sidebar collapse state and updates desktop sidebar width and label visibility', async () => {
     const { user } = renderWithProviders(
       <Shell>

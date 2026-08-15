@@ -31,7 +31,9 @@ describe('DashboardView component', () => {
     await user.click(addButton);
 
     expect(await screen.findByText('item.create')).toBeInTheDocument();
-    expect(screen.getByText('new item created successfully')).toBeInTheDocument();
+    expect(
+      screen.getByText('new item created successfully')
+    ).toBeInTheDocument();
   });
 
   it('renders metrics grid with correct placeholder values and trends', () => {

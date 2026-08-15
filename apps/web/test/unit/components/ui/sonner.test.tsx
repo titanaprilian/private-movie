@@ -19,7 +19,9 @@ describe('Sonner Toaster component', () => {
   it('renders success toast with SVG icon, border color, and custom class mapping', async () => {
     renderWithProviders(<Toaster />);
     act(() => {
-      toast.success('item.create', { description: 'item created successfully' });
+      toast.success('item.create', {
+        description: 'item created successfully',
+      });
     });
 
     const toastElement = await screen.findByText('item.create');
@@ -27,7 +29,8 @@ describe('Sonner Toaster component', () => {
     const descriptionElement = screen.getByText('item created successfully');
     expect(descriptionElement).toBeInTheDocument();
 
-    const toastCard = toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
+    const toastCard =
+      toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'success');
     expect(toastCard?.className).toContain('toast');
     expect(toastCard?.className).toContain('mono');
@@ -47,7 +50,8 @@ describe('Sonner Toaster component', () => {
     expect(toastElement).toBeInTheDocument();
     expect(screen.getByText('invalid credentials')).toBeInTheDocument();
 
-    const toastCard = toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
+    const toastCard =
+      toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'error');
 
     const icon = toastCard?.querySelector('svg');
@@ -65,7 +69,8 @@ describe('Sonner Toaster component', () => {
     expect(toastElement).toBeInTheDocument();
     expect(screen.getByText('workspace up to date')).toBeInTheDocument();
 
-    const toastCard = toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
+    const toastCard =
+      toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'info');
 
     const icon = toastCard?.querySelector('svg');
@@ -83,7 +88,8 @@ describe('Sonner Toaster component', () => {
     expect(toastElement).toBeInTheDocument();
     expect(screen.getByText('expires in 5 minutes')).toBeInTheDocument();
 
-    const toastCard = toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
+    const toastCard =
+      toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'warning');
 
     const icon = toastCard?.querySelector('svg');

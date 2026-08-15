@@ -14,6 +14,8 @@ import { Route as FormRouteImport } from './routes/form'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as VideosIndexRouteImport } from './routes/videos.index'
+import { Route as VideosSeriesIdRouteImport } from './routes/videos.$seriesId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +42,16 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VideosIndexRoute = VideosIndexRouteImport.update({
+  id: '/videos/',
+  path: '/videos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VideosSeriesIdRoute = VideosSeriesIdRouteImport.update({
+  id: '/videos/$seriesId',
+  path: '/videos/$seriesId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +59,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/videos/$seriesId': typeof VideosSeriesIdRoute
+  '/videos/': typeof VideosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +68,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/videos/$seriesId': typeof VideosSeriesIdRoute
+  '/videos': typeof VideosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +78,37 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/videos/$seriesId': typeof VideosSeriesIdRoute
+  '/videos/': typeof VideosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/form' | '/login' | '/profile' | '/register'
+  fullPaths:
+    | '/'
+    | '/form'
+    | '/login'
+    | '/profile'
+    | '/register'
+    | '/videos/$seriesId'
+    | '/videos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/form' | '/login' | '/profile' | '/register'
-  id: '__root__' | '/' | '/form' | '/login' | '/profile' | '/register'
+  to:
+    | '/'
+    | '/form'
+    | '/login'
+    | '/profile'
+    | '/register'
+    | '/videos/$seriesId'
+    | '/videos'
+  id:
+    | '__root__'
+    | '/'
+    | '/form'
+    | '/login'
+    | '/profile'
+    | '/register'
+    | '/videos/$seriesId'
+    | '/videos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +117,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
+  VideosSeriesIdRoute: typeof VideosSeriesIdRoute
+  VideosIndexRoute: typeof VideosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +158,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/videos/': {
+      id: '/videos/'
+      path: '/videos'
+      fullPath: '/videos/'
+      preLoaderRoute: typeof VideosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/videos/$seriesId': {
+      id: '/videos/$seriesId'
+      path: '/videos/$seriesId'
+      fullPath: '/videos/$seriesId'
+      preLoaderRoute: typeof VideosSeriesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +181,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
+  VideosSeriesIdRoute: VideosSeriesIdRoute,
+  VideosIndexRoute: VideosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
