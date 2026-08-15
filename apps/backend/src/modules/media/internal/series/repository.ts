@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { series, type SeriesRow } from "@repo/db";
+import { episodes, series, type EpisodeRow, type SeriesRow } from "@repo/db";
 
 export class SeriesNotFoundError extends Error {
   constructor(message = "Series not found") {
@@ -10,6 +10,9 @@ export class SeriesNotFoundError extends Error {
   }
 }
 
+export const DEFAULT_LIST_LIMIT = 20;
+export const MAX_LIST_LIMIT = 100;
+
 export interface SeriesUpsertInput {
   sourceUrl: string;
   source: string;
@@ -17,6 +20,19 @@ export interface SeriesUpsertInput {
   description: string | null;
   posterUrl: string | null;
 }
+
+export interface SeriesListParams {
+  page: number;
+  limit?: number;
+  source?: string;
+}
+
+export interface SeriesListResult {
+  series: SeriesRow[];
+  total: number;
+}
+
+export type SeriesWithEpisodes = SeriesRow & { episodes: EpisodeRow[] };
 
 export function createSeriesRepositoryInternal<
   THKT extends PgQueryResultHKT,
@@ -67,8 +83,55 @@ export function createSeriesRepositoryInternal<
       return row ?? null;
     },
 
-    async list(): Promise<SeriesRow[]> {
-      return db.select().from(series).orderBy(series.title);
+    async findByIdWithEpisodes(id: string): Promise<SeriesWithEpisodes | null> {
+      const [seriesRow] = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, id));
+
+      if (!seriesRow) {
+        return null;
+      }
+
+      const childEpisodes = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.seriesId, id))
+        .orderBy(desc(episodes.createdAt));
+
+      return {
+        ...seriesRow,
+        episodes: childEpisodes,
+      };
+    },
+
+    async list(params: SeriesListParams): Promise<SeriesListResult> {
+      const limit = Math.max(
+        1,
+        Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT)
+      );
+      const page = Math.max(1, params.page);
+      const offset = (page - 1) * limit;
+
+      const where = params.source
+        ? eq(series.source, params.source)
+        : undefined;
+
+      const [rows, totalRows] = await Promise.all([
+        db
+          .select()
+          .from(series)
+          .where(where)
+          .orderBy(desc(series.createdAt))
+          .limit(limit)
+          .offset(offset),
+        db.select({ value: count() }).from(series).where(where),
+      ]);
+
+      return {
+        series: rows,
+        total: totalRows[0]?.value ?? 0,
+      };
     },
   };
 }

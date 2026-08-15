@@ -22,15 +22,30 @@ export interface RequestResult {
  * integration tests inside a `beforeAll` hook to share one Elysia instance per
  * test file.
  */
-export async function buildApp(): Promise<App> {
+export async function buildApp(options?: {
+  fetchHtml?: (url: string) => Promise<string>;
+}): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
   const { createDbClient } = await import("@repo/db");
+  const { readFileSync } = await import("node:fs");
+  const { resolve } = await import("node:path");
 
   const db = createDbClient(process.env.DATABASE_URL);
   const auth = createAuthenticationService(db);
 
-  return createApp({ db, auth });
+  const defaultFetchHtml = async () => {
+    return readFileSync(
+      resolve(import.meta.dirname, "../fixtures/episodes/sample-series-list.html"),
+      "utf8"
+    );
+  };
+
+  return createApp({
+    db,
+    auth,
+    fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
+  });
 }
 
 /**

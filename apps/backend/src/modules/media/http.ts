@@ -4,21 +4,27 @@ import {
   type AuthenticationService,
 } from "@repo/contracts";
 import { errorResponse, successResponse } from "../../lib/response";
-import { createSaveEpisodeService } from "./index";
+import { createSaveEpisodeService, type FetchHtmlFn } from "./index";
 import { EpisodeParseError } from "./internal/episodes/parse";
 import {
   createEpisodeRepositoryInternal,
   EpisodeNotFoundError,
 } from "./internal/episodes/repository";
-import { createSeriesRepositoryInternal } from "./internal/series/repository";
+import {
+  createSeriesRepositoryInternal,
+  SeriesNotFoundError,
+} from "./internal/series/repository";
 
 export interface MediaRoutesOptions {
   db: Parameters<typeof createSaveEpisodeService>[0];
   authService: AuthenticationService;
+  fetchHtml?: FetchHtmlFn;
 }
 
 export const mediaRoutes = (options: MediaRoutesOptions) => {
-  const episodes = createSaveEpisodeService(options.db);
+  const episodes = createSaveEpisodeService(options.db, {
+    fetchHtml: options.fetchHtml,
+  });
   const episodeRepository = createEpisodeRepositoryInternal(options.db);
   const seriesRepository = createSeriesRepositoryInternal(options.db);
 
@@ -163,17 +169,42 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
     )
     .get(
       "/series",
-      async () => {
-        const all = await seriesRepository.list();
-        return successResponse(all);
+      async ({ query }) => {
+        const page = query.page ?? 1;
+        const limit = query.limit ?? 20;
+        const { source } = query;
+        const result = await seriesRepository.list({
+          page,
+          limit,
+          source,
+        });
+        return successResponse({
+          series: result.series,
+          meta: {
+            total: result.total,
+            page,
+            limit,
+          },
+        });
+      },
+      {
+        query: t.Object({
+          page: t.Optional(t.Number({ default: 1, minimum: 1 })),
+          limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
+          source: t.Optional(t.Literal("otakudesu")),
+        }),
       }
     )
     .get(
       "/series/:id",
       async ({ params, set }) => {
-        const s = await seriesRepository.findById(params.id);
+        const s = await seriesRepository.findByIdWithEpisodes(params.id);
         if (!s) {
-          return errorResponse(set, 404, new Error("Series not found"));
+          return errorResponse(
+            set,
+            404,
+            new SeriesNotFoundError(`Series with id ${params.id} not found`)
+          );
         }
         return successResponse(s);
       },

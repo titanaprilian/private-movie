@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq, count } from "drizzle-orm";
-import { episodes } from "@repo/db";
+import { episodes, series } from "@repo/db";
 import { buildApp, request } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
@@ -85,6 +85,27 @@ describe("POST /episodes", () => {
       expect(rows[0].title).toBe(body.data.title);
       expect(rows[0].videoType).toBeNull();
       expect(rows[0].videoUrl).toBe(body.data.videoUrl);
+      expect(rows[0].seriesId).toBeDefined();
+      expect(rows[0].seriesId).not.toBeNull();
+
+      // Verify series row is persisted in DB
+      const seriesRows = await db
+        .select()
+        .from(series)
+        .where(
+          eq(
+            series.sourceUrl,
+            "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+          )
+        );
+      expect(seriesRows).toHaveLength(1);
+      expect(seriesRows[0].id).toBe(rows[0].seriesId);
+      expect(seriesRows[0].title).toBe(
+        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru"
+      );
+      expect(seriesRows[0].posterUrl).toBe(
+        "https://otakudesu.blog/wp-content/uploads/2026/07/Tsuihou-sareta-Tensei-Juukishi-wa-Game-Chishiki-de-Musou-suru.jpg"
+      );
     });
 
     it("creates an episode record from full fixture (sample-b) and returns 200 with saved record", async () => {

@@ -7,11 +7,13 @@ import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes } from "./modules/media/http";
+import type { FetchHtmlFn } from "./modules/media";
 import { InternalServerError } from "./lib/errors";
 
 export interface CreateAppDeps {
   db: DbClient;
   auth: AuthenticationService;
+  fetchHtml?: FetchHtmlFn;
 }
 
 function getAllowedOrigin(): string | undefined {
@@ -99,7 +101,7 @@ export const createApp = (deps: CreateAppDeps) => {
     )
     .use(healthRoutes({ db }))
     .use(authRoutes({ authService: auth }))
-    .use(mediaRoutes({ db, authService: auth }));
+    .use(mediaRoutes({ db, authService: auth, fetchHtml: deps.fetchHtml }));
 };
 
 export type App = ReturnType<typeof createApp>;

@@ -28,6 +28,7 @@ export interface EpisodeUpsertInput {
   videoType: string | null;
   videoUrl: string;
   metadata: ParsedMetadata;
+  seriesId?: string | null;
 }
 
 export interface EpisodeListParams {
@@ -58,6 +59,7 @@ export function createEpisodeRepositoryInternal<
           videoType: input.videoType,
           videoUrl: input.videoUrl,
           metadata: input.metadata,
+          seriesId: input.seriesId ?? null,
           createdAt: now,
           updatedAt: now,
         })
@@ -69,6 +71,7 @@ export function createEpisodeRepositoryInternal<
             videoType: input.videoType,
             videoUrl: input.videoUrl,
             metadata: input.metadata,
+            seriesId: input.seriesId ?? undefined,
             updatedAt: now,
           },
         })
