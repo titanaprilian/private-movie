@@ -56,6 +56,47 @@ describe('videos api', () => {
     fetchSpy.mockRestore();
   });
 
+  it('fetchEpisodes strips undefined query parameters from API request URL', async () => {
+    const mockData = {
+      data: {
+        episodes: [],
+        meta: {
+          total: 0,
+          page: 1,
+          limit: 20,
+        },
+      },
+    };
+
+    let requestedUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        requestedUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    await fetchEpisodes({ page: undefined, limit: 20 });
+
+    expect(requestedUrl).not.toContain('undefined');
+    expect(requestedUrl).toContain('limit=20');
+    expect(requestedUrl).not.toContain('page=');
+
+    await fetchEpisodes();
+
+    expect(requestedUrl).not.toContain('undefined');
+
+    fetchSpy.mockRestore();
+  });
+
   it('fetchEpisodes throws error when backend API returns failure', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
       async () =>

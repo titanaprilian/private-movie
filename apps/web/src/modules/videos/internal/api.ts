@@ -50,12 +50,18 @@ export interface FetchEpisodesParams {
 export async function fetchEpisodes(
   params?: FetchEpisodesParams
 ): Promise<EpisodesListResponse> {
+  const rawQuery = {
+    page: params?.page,
+    limit: params?.limit,
+    source: params?.source,
+  };
+
+  const query = Object.fromEntries(
+    Object.entries(rawQuery).filter(([, value]) => value !== undefined)
+  );
+
   const res = await api.episodes.get({
-    $query: {
-      page: params?.page,
-      limit: params?.limit,
-      source: params?.source,
-    },
+    $query: query as { page?: number; limit?: number; source?: 'otakudesu' },
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
