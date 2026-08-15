@@ -1,9 +1,26 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { seriesDetailQueryOptions } from './api';
+import { seriesDetailQueryOptions, type SeriesDetails } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
+
+type Episode = SeriesDetails['episodes'][number];
+
+function getEpisodeTags(episode: Episode): string[] {
+  if (episode.tags && episode.tags.length > 0) {
+    return episode.tags;
+  }
+  if (
+    episode.metadata &&
+    typeof episode.metadata === 'object' &&
+    'genres' in episode.metadata &&
+    Array.isArray((episode.metadata as { genres?: unknown }).genres)
+  ) {
+    return (episode.metadata as { genres: string[] }).genres;
+  }
+  return [];
+}
 
 export interface SeriesDetailViewProps {
   seriesId: string;
@@ -155,7 +172,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                     ? episode.createdAt.split('T')[0]
                     : new Date(episode.createdAt).toISOString().split('T')[0]
                   : '';
-                const tags = episode.tags ?? [];
+                const tags = getEpisodeTags(episode);
 
                 return (
                   <button
@@ -226,9 +243,15 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                     <h2 className="text-lg font-semibold">
                       {selectedEpisode.title}
                     </h2>
-                    <span className="text-[10px] mono px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      Ready
-                    </span>
+                    {selectedEpisode.videoUrl ? (
+                      <span className="text-[10px] mono px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        Ready
+                      </span>
+                    ) : (
+                      <span className="text-[10px] mono px-2 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        No Stream
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs mono text-muted mt-0.5">
                     ID: {selectedEpisode.id} • Created{' '}
@@ -300,26 +323,30 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
 
               {/* Video Player Preview Box */}
               <div className="aspect-video w-full rounded border border-c bg-zinc-950 flex flex-col items-center justify-center relative overflow-hidden group shadow-inner">
-                <button
-                  onClick={() => handlePlay(selectedEpisode.title)}
-                  type="button"
-                  className="w-14 h-14 rounded-full bg-primary/90 text-primary-fg flex items-center justify-center transition-transform transform group-hover:scale-110 cursor-pointer shadow-lg"
-                  aria-label={`Play ${selectedEpisode.title}`}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="ml-1"
-                  >
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                </button>
-                <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-between text-white text-xs mono">
-                  <span>{selectedEpisode.title}</span>
-                  <span>{selectedEpisode.duration ?? 'N/A'}</span>
-                </div>
+                {selectedEpisode.videoUrl ? (
+                  <iframe
+                    src={selectedEpisode.videoUrl}
+                    title={selectedEpisode.title}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-muted text-xs mono">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="mb-2 opacity-50"
+                    >
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                    <span>No Stream Available</span>
+                  </div>
+                )}
               </div>
 
               {/* Episode Description */}
@@ -371,7 +398,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   <div>
                     <div className="text-muted">Tags</div>
                     <div className="flex flex-wrap gap-1 mt-0.5">
-                      {(selectedEpisode.tags ?? []).map((t) => (
+                      {getEpisodeTags(selectedEpisode).map((t) => (
                         <span
                           key={t}
                           className="px-1.5 py-0.2 rounded border border-c bg-card text-[10px]"

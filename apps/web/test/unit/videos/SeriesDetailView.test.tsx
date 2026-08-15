@@ -45,6 +45,22 @@ const mockSeries: SeriesDetails = {
       createdAt: '2026-08-12',
       updatedAt: '2026-08-12',
     },
+    {
+      id: 'dm-03',
+      sourceUrl: 'https://otakudesu.cloud/dm-03',
+      source: 'otakudesu',
+      title: 'Episode Without Video Stream',
+      videoUrl: '',
+      description: 'Episode with missing videoUrl and fallback metadata genres.',
+      duration: '10:00',
+      tags: null,
+      metadata: { genres: ['Action', 'Drama'] },
+      resolution: '720p',
+      format: 'MP4',
+      size: '300 MB',
+      createdAt: '2026-08-14',
+      updatedAt: '2026-08-14',
+    },
   ],
 };
 
@@ -174,5 +190,41 @@ describe('SeriesDetailView component', () => {
     const deleteButton = screen.getByRole('button', { name: /delete/i });
     await user.click(deleteButton);
     expect(await screen.findByText(/video.delete/i)).toBeInTheDocument();
+  });
+
+  it('renders iframe player with videoUrl when available and displays Ready badge', async () => {
+    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    const iframe = screen.getByTitle('Intro to Deep Modules') as HTMLIFrameElement;
+    expect(iframe).toBeInTheDocument();
+    expect(iframe.src).toBe('https://stream.com/dm-01.mp4');
+    expect(screen.getByText('Ready')).toBeInTheDocument();
+  });
+
+  it('renders fallback UI and No Stream badge when videoUrl is missing', async () => {
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    const noStreamEpisode = screen.getAllByText('Episode Without Video Stream')[0];
+    await user.click(noStreamEpisode);
+
+    expect(screen.queryByTitle('Episode Without Video Stream')).not.toBeInTheDocument();
+    expect(screen.getByText('No Stream Available')).toBeInTheDocument();
+    expect(screen.getByText('No Stream')).toBeInTheDocument();
+  });
+
+  it('extracts and renders metadata.genres when tags is null or empty', async () => {
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    const noStreamEpisode = screen.getAllByText('Episode Without Video Stream')[0];
+    await user.click(noStreamEpisode);
+
+    expect(screen.getAllByText('Action').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Drama').length).toBeGreaterThan(0);
   });
 });
