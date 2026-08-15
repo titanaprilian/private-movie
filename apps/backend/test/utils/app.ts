@@ -36,7 +36,7 @@ export async function buildApp(options?: {
 
   const defaultFetchHtml = async () => {
     return readFileSync(
-      resolve(import.meta.dirname, "../fixtures/episodes/sample-series-list.html"),
+      resolve(import.meta.dirname, "../fixtures/series/sample-series-list.html"),
       "utf8"
     );
   };
