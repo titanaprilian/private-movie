@@ -1,15 +1,12 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { SeriesCatalog } from '@/modules/video-grid';
+import { createFileRoute } from '@tanstack/react-router';
+import { VideoList, episodesQueryOptions } from '@/modules/videos';
+import { queryClient } from '@/lib/queryClient';
 
 export const Route = createFileRoute('/videos/')({
+  loader: () => queryClient.ensureQueryData(episodesQueryOptions()),
   component: VideosIndexPage,
 });
 
 function VideosIndexPage() {
-  const navigate = useNavigate();
-  return (
-    <SeriesCatalog
-      onNavigate={(seriesId) => navigate({ to: '/videos/$seriesId', params: { seriesId } })}
-    />
-  );
+  return <VideoList />;
 }

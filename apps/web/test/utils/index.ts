@@ -1,19 +1,48 @@
 import '@testing-library/jest-dom';
 import { render, type RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactElement } from 'react';
+import React, { Suspense } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+export function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+}
+
+export interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
+  queryClient?: QueryClient;
+}
 
 /**
  * Custom render function that wraps components with shared application providers.
- * Extend this helper as global providers (e.g. QueryClientProvider, router mocks) are added.
  */
 export function renderWithProviders(
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
+  ui: React.ReactElement,
+  options?: RenderWithProvidersOptions
 ) {
+  const { queryClient: clientOption, ...renderOpts } = options ?? {};
+  const queryClient = clientOption ?? createTestQueryClient();
+
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      React.createElement(
+        Suspense,
+        { fallback: React.createElement('div', null, 'Loading...') },
+        children
+      )
+    );
+
   return {
     user: userEvent.setup(),
-    ...render(ui, { ...options }),
+    queryClient,
+    ...render(ui, { wrapper: Wrapper, ...renderOpts }),
   };
 }
 

@@ -1,50 +1,21 @@
-export interface Video {
-  id: string;
-  title: string;
-  source: string;
-  date: string;
-  thumbnailColor: string;
-}
-
-const DUMMY_VIDEOS: Video[] = [
-  {
-    id: '1',
-    title: 'Sunset Reel',
-    source: 'YouTube',
-    date: '2025-01-12',
-    thumbnailColor: '#f59e0b',
-  },
-  {
-    id: '2',
-    title: 'Mountain Drone',
-    source: 'Vimeo',
-    date: '2025-01-10',
-    thumbnailColor: '#10b981',
-  },
-  {
-    id: '3',
-    title: 'City Timelapse',
-    source: 'YouTube',
-    date: '2025-01-08',
-    thumbnailColor: '#3b82f6',
-  },
-  {
-    id: '4',
-    title: 'Ocean Dive',
-    source: 'Vimeo',
-    date: '2025-01-05',
-    thumbnailColor: '#06b6d4',
-  },
-  {
-    id: '5',
-    title: 'Forest Walk',
-    source: 'YouTube',
-    date: '2025-01-02',
-    thumbnailColor: '#22c55e',
-  },
-];
+import { useState } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { episodesQueryOptions } from './api';
 
 export function VideoList() {
+  const { data } = useSuspenseQuery(episodesQueryOptions());
+  const [filterText, setFilterText] = useState('');
+
+  const episodes = data?.episodes ?? [];
+
+  const filteredEpisodes = episodes.filter((video) => {
+    const text = filterText.toLowerCase();
+    return (
+      video.title.toLowerCase().includes(text) ||
+      video.source.toLowerCase().includes(text)
+    );
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
@@ -67,12 +38,14 @@ export function VideoList() {
           <div className="flex items-center gap-2 flex-1">
             <input
               type="text"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
               placeholder="Filter videos..."
               className="w-full max-w-xs px-3 py-1.5 rounded border border-c bg-transparent text-sm"
             />
           </div>
           <span className="text-xs text-muted">
-            {DUMMY_VIDEOS.length} total
+            {episodes.length} total
           </span>
         </div>
         <div className="overflow-x-auto">
@@ -87,8 +60,13 @@ export function VideoList() {
               </tr>
             </thead>
             <tbody>
-              {DUMMY_VIDEOS.map((video, index) => {
-                const isLast = index === DUMMY_VIDEOS.length - 1;
+              {filteredEpisodes.map((video, index) => {
+                const isLast = index === filteredEpisodes.length - 1;
+                const formattedDate = video.createdAt
+                  ? typeof video.createdAt === 'string'
+                    ? video.createdAt.split('T')[0]
+                    : new Date(video.createdAt).toISOString().split('T')[0]
+                  : '';
                 return (
                   <tr
                     key={video.id}
@@ -96,16 +74,17 @@ export function VideoList() {
                   >
                     <td className="px-4 py-2">
                       <div
-                        className="w-10 h-10 rounded border border-c"
-                        style={{ backgroundColor: video.thumbnailColor }}
+                        className="w-10 h-10 rounded border border-c bg-muted/20 flex items-center justify-center text-xs font-mono"
                         aria-label={`${video.title} thumbnail`}
-                      />
+                      >
+                        {video.title.charAt(0).toUpperCase()}
+                      </div>
                     </td>
                     <td className="px-4 py-2 font-medium">{video.title}</td>
                     <td className="px-4 py-2 text-muted mono">
                       {video.source}
                     </td>
-                    <td className="px-4 py-2 text-muted mono">{video.date}</td>
+                    <td className="px-4 py-2 text-muted mono">{formattedDate}</td>
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-end gap-2">
                         <button
