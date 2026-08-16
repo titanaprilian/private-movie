@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CustomVideoPlayer } from './CustomVideoPlayer';
+
 import { Button } from '@/components/ui/button';
 
 type Episode = SeriesDetails['episodes'][number];
@@ -493,17 +495,14 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
               </div>
 
               {/* Video Player Preview Box */}
-              <div className="aspect-video w-full rounded border border-c bg-zinc-950 flex flex-col items-center justify-center relative overflow-hidden group shadow-inner">
+              <div className="w-full">
                 {selectedEpisode.videoUrl ? (
-                  <iframe
+                  <CustomVideoPlayer
                     src={selectedEpisode.videoUrl}
                     title={selectedEpisode.title}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-muted text-xs mono">
+                  <div className="aspect-video w-full rounded border border-c bg-zinc-950 flex flex-col items-center justify-center text-muted text-xs mono">
                     <svg
                       width="24"
                       height="24"

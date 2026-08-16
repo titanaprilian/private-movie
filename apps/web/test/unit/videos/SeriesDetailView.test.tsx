@@ -111,15 +111,12 @@ describe('SeriesDetailView component', () => {
     }
   });
 
-  it('renders details pane on the right for the default selected episode without redundant play button', async () => {
+  it('renders details pane on the right for the default selected episode', async () => {
     renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     expect(firstEpisodeHeading()).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /^play$/i })
-    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
   });
@@ -209,14 +206,14 @@ describe('SeriesDetailView component', () => {
     await user.click(confirmDeleteButton);
   });
 
-  it('renders iframe player with videoUrl when available and displays Ready badge', async () => {
+  it('renders custom video player with videoUrl when available and displays Ready badge', async () => {
     renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-    const iframe = screen.getByTitle('Intro to Deep Modules') as HTMLIFrameElement;
-    expect(iframe).toBeInTheDocument();
-    expect(iframe.src).toBe('https://stream.com/dm-01.mp4');
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    expect(video).toBeInTheDocument();
+    expect(video.src).toBe('https://stream.com/dm-01.mp4');
     expect(screen.getByText('Ready')).toBeInTheDocument();
   });
 

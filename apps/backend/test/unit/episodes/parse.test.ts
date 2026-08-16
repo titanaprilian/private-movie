@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   EpisodeParseError,
+  extractRawStreamUrl,
   parseEpisodeOrder,
   parseEpisodePage,
 } from "@/modules/media/internal/episodes/parse";
@@ -52,8 +53,9 @@ describe("parseEpisodePage", () => {
       );
     });
 
-    it("extracts the iframe src as videoUrl, host-agnostic", () => {
-      expect(result.videoUrl).toBe("https://odvidhide.com/embed/sylmpeaf3wzs");
+    it("extracts the iframe src as embedUrl and extracts raw mp4 if present", () => {
+      expect(result.embedUrl).toBe("https://odvidhide.com/embed/sylmpeaf3wzs");
+      expect(result.videoUrl).toBeNull();
     });
 
     it("leaves videoType null when there is no info block", () => {
@@ -94,12 +96,15 @@ describe("parseEpisodePage", () => {
   describe("full variant (sample-b, desustream embed + info block)", () => {
     const result = parseEpisodePage(readFixture(fixtures.full));
 
-    it("extracts the title and the desustream embed videoUrl", () => {
+    it("extracts the title and the desustream embed embedUrl and decodes videoUrl", () => {
       expect(result.title).toBe(
         "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia"
       );
+      expect(result.embedUrl).toBe(
+        "https://desustream.net/dstream/arcg/?id=aHR0cHM6Ly9kZXN1c3RyZWFtLm5ldC9zdHJlYW0vc2FtcGxlLTYubXA0"
+      );
       expect(result.videoUrl).toBe(
-        "https://desustream.net/dstream/arcg/?id=WEwyVVQydlgxSStTNXI4ak1JTTVtZXh5eUR4enRMbjUzTHpYa1VvVTlGai85K1MrTFRYaGViZVl0anN4YkxucFIrWWhrVHBZOU96Y3duZXBqcW1RS1E9PQ=="
+        "https://desustream.net/stream/sample-6.mp4"
       );
     });
 
@@ -181,6 +186,27 @@ describe("parseEpisodePage", () => {
         label: "Episode 6",
         url: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
       });
+    });
+  });
+
+  describe("extractRawStreamUrl", () => {
+    it("extracts direct .mp4 URL from obfuscated base64 id param in embedUrl", () => {
+      // Base64 encoded "https://cdn.example.com/video/ep1.mp4"
+      const encoded = btoa("https://cdn.example.com/video/ep1.mp4");
+      const url = `https://desustream.net/dstream/arcg/?id=${encoded}`;
+      expect(extractRawStreamUrl(url)).toBe("https://cdn.example.com/video/ep1.mp4");
+    });
+
+    it("handles double-encoded base64 id param containing .mp4 URL", () => {
+      const first = btoa("https://cdn.example.com/video/ep2.mp4");
+      const second = btoa(first);
+      const url = `https://desustream.net/dstream/arcg/?id=${second}`;
+      expect(extractRawStreamUrl(url)).toBe("https://cdn.example.com/video/ep2.mp4");
+    });
+
+    it("returns null when id param is missing or cannot be decoded into .mp4 URL", () => {
+      expect(extractRawStreamUrl("https://odvidhide.com/embed/sylmpeaf3wzs")).toBeNull();
+      expect(extractRawStreamUrl("https://desustream.net/dstream/arcg/?id=invalidBase64!")).toBeNull();
     });
   });
 

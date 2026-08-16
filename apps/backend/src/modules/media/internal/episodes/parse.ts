@@ -27,7 +27,8 @@ export type ParsedMetadata = {
 
 export type ParsedEpisodePage = {
   title: string;
-  videoUrl: string;
+  embedUrl: string;
+  videoUrl: string | null;
   videoType: string | null;
   metadata: ParsedMetadata;
 };
@@ -69,6 +70,36 @@ export function parseEpisodeOrder(title: string): number | null {
   return null;
 }
 
+export function extractRawStreamUrl(embedUrl: string): string | null {
+  try {
+    const parsedUrl = new URL(embedUrl);
+    const idParam = parsedUrl.searchParams.get("id");
+    if (!idParam) return null;
+
+    let decoded = atob(idParam);
+    // If double-encoded or contains base64 string after first decoding
+    if (decoded.includes("=")) {
+      try {
+        const secondDecode = atob(decoded);
+        if (secondDecode.includes(".mp4") || secondDecode.includes("http")) {
+          decoded = secondDecode;
+        }
+      } catch {
+        // use single decoded
+      }
+    }
+
+    const mp4Match = decoded.match(/(https?:\/\/[^\s"'<>]+\.mp4[^\s"'<>]*)/i);
+    if (mp4Match) {
+      return mp4Match[1];
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 export const parseEpisodePage = (html: string): ParsedEpisodePage => {
   const load = cheerio.load(html, null, false);
   const box = load("#venkonten");
@@ -81,10 +112,12 @@ export const parseEpisodePage = (html: string): ParsedEpisodePage => {
     throw new EpisodeParseError("missing title");
   }
 
-  const videoUrl = box.find(".responsive-embed-stream iframe").attr("src");
-  if (!videoUrl) {
+  const embedUrl = box.find(".responsive-embed-stream iframe").attr("src");
+  if (!embedUrl) {
     throw new EpisodeParseError("missing iframe src");
   }
+
+  const videoUrl = extractRawStreamUrl(embedUrl);
 
   const videoType = readInfoRow(box, load, "Tipe");
   const duration = readInfoRow(box, load, "Duration");
@@ -138,5 +171,5 @@ export const parseEpisodePage = (html: string): ParsedEpisodePage => {
     .get();
   if (downloadLinks.length > 0) metadata.downloadLinks = downloadLinks;
 
-  return { title, videoUrl, videoType, metadata };
+  return { title, embedUrl, videoUrl, videoType, metadata };
 };

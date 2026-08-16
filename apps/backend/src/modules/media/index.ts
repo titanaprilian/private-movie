@@ -31,7 +31,8 @@ export interface PreviewScrapeResult {
     source: VideoSource;
     title: string;
     videoType: string | null;
-    videoUrl: string;
+    embedUrl: string;
+    videoUrl: string | null;
     metadata: ParsedMetadata;
   };
   series: {
@@ -128,6 +129,7 @@ export function createMediaService<
           source: input.source,
           title: parsed.title,
           videoType: parsed.videoType,
+          embedUrl: parsed.embedUrl,
           videoUrl: parsed.videoUrl,
           metadata: parsed.metadata,
         },
