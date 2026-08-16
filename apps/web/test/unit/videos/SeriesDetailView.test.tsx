@@ -98,6 +98,7 @@ describe('SeriesDetailView component', () => {
     expect(
       screen.getByText(`${mockSeries.episodes.length} episodes`)
     ).toBeInTheDocument();
+    expect(screen.getByText(mockSeries.description!)).toBeInTheDocument();
   });
 
   it('renders a scrollable list of episodes in the left pane', async () => {
@@ -175,7 +176,7 @@ describe('SeriesDetailView component', () => {
 
     const user = userEvent.setup();
 
-    const addButton = screen.getByRole('button', { name: /\+ add episode/i });
+    const addButton = screen.getByRole('button', { name: /add episode/i });
     await user.click(addButton);
     expect(await screen.findByText('Add Media Wizard')).toBeInTheDocument();
 

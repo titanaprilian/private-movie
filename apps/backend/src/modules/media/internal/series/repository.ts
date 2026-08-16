@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { count, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, series, type EpisodeRow, type SeriesRow } from "@repo/db";
 
@@ -103,7 +103,7 @@ export function createSeriesRepositoryInternal<
         .select()
         .from(episodes)
         .where(eq(episodes.seriesId, id))
-        .orderBy(desc(episodes.createdAt));
+        .orderBy(asc(episodes.order), asc(episodes.createdAt));
 
       return {
         ...seriesRow,

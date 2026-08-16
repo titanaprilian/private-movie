@@ -110,7 +110,7 @@ describe("series repository findByIdWithEpisodes", () => {
     await db.delete(series);
   });
 
-  it("returns series row along with child episodes array ordered by createdAt desc", async () => {
+  it("returns series row along with child episodes array ordered by order asc then createdAt asc", async () => {
     const s = await insertSeries({ title: "Parent Series" });
     const ep1 = await insertEpisodeForSeries(s.id, {
       title: "Episode 1",
@@ -126,8 +126,8 @@ describe("series repository findByIdWithEpisodes", () => {
     expect(result?.id).toBe(s.id);
     expect(result?.title).toBe("Parent Series");
     expect(result?.episodes).toHaveLength(2);
-    expect(result?.episodes[0].id).toBe(ep2.id);
-    expect(result?.episodes[1].id).toBe(ep1.id);
+    expect(result?.episodes[0].id).toBe(ep1.id);
+    expect(result?.episodes[1].id).toBe(ep2.id);
   });
 
   it("returns series with empty episodes array if series has no episodes", async () => {

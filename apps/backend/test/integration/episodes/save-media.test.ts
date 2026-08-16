@@ -184,6 +184,60 @@ describe("POST /save-media", () => {
       expect(epRows).toHaveLength(1);
       expect(epRows[0].seriesId).toBe(body.data.series.id);
     });
+
+    it("parses order from episode title when present and defaults to max + 1 when unnumbered", async () => {
+      const { accessToken } = await registerUser(app);
+      const seriesSourceUrl = "https://otakudesu.blog/anime/order-test-series/";
+      const seriesPayload = {
+        sourceUrl: seriesSourceUrl,
+        source: "otakudesu" as const,
+        title: "Order Test Series",
+        description: "Anime for testing order",
+        posterUrl: null,
+      };
+
+      // 1. Save Episode 12 with explicit number in title
+      const res1 = await request(app, {
+        method: "POST",
+        path: "/save-media",
+        headers: authHeaders(accessToken),
+        body: {
+          episode: {
+            sourceUrl: "https://otakudesu.blog/episode/order-test-12/",
+            source: "otakudesu",
+            title: "Order Test Series Episode 12 Sub Indo",
+            videoType: "TV",
+            videoUrl: "https://odvidhide.com/embed/12",
+            metadata: {},
+          },
+          series: seriesPayload,
+        },
+      });
+      expect(res1.status).toBe(200);
+      const ep1Body = res1.body as { data: { episode: { order: number } } };
+      expect(ep1Body.data.episode.order).toBe(12);
+
+      // 2. Save unnumbered episode for same series -> should receive max(12) + 1 = 13
+      const res2 = await request(app, {
+        method: "POST",
+        path: "/save-media",
+        headers: authHeaders(accessToken),
+        body: {
+          episode: {
+            sourceUrl: "https://otakudesu.blog/episode/order-test-special/",
+            source: "otakudesu",
+            title: "Order Test Series Movie Special",
+            videoType: "Special",
+            videoUrl: "https://odvidhide.com/embed/special",
+            metadata: {},
+          },
+          series: seriesPayload,
+        },
+      });
+      expect(res2.status).toBe(200);
+      const ep2Body = res2.body as { data: { episode: { order: number } } };
+      expect(ep2Body.data.episode.order).toBe(13);
+    });
   });
 
   describe("error handling", () => {

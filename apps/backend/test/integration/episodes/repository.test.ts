@@ -33,12 +33,12 @@ describe("episode repository list", () => {
     await db.delete(episodes);
   });
 
-  it("defaults limit to 20 and returns episodes ordered by createdAt desc", async () => {
+  it("defaults limit to 20 and returns episodes ordered by order asc then createdAt asc", async () => {
     for (let i = 0; i < 25; i++) {
       await insertEpisode({
         index: i,
         source: "otakudesu",
-        title: `episode-${i}`,
+        title: `Episode ${i + 1}`,
         createdAt: new Date(2026, 0, i + 1),
       });
     }
@@ -49,8 +49,7 @@ describe("episode repository list", () => {
     expect(result.total).toBe(25);
     for (let i = 1; i < result.episodes.length; i++) {
       expect(
-        result.episodes[i - 1].createdAt.getTime() >=
-          result.episodes[i].createdAt.getTime()
+        result.episodes[i - 1].order <= result.episodes[i].order
       ).toBe(true);
     }
   });

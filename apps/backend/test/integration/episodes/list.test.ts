@@ -14,6 +14,7 @@ function makeTitle(source: string, index: number): string {
 async function insertEpisode(options: {
   source: string;
   title: string;
+  order?: number;
   createdAt: Date;
 }): Promise<void> {
   await db.insert(episodes).values({
@@ -21,6 +22,7 @@ async function insertEpisode(options: {
     sourceUrl: makeVideoUrl(Math.floor(Math.random() * 1e9)),
     source: options.source,
     title: options.title,
+    order: options.order ?? 1,
     videoType: null,
     videoUrl: "https://odvidhide.com/embed/test",
     metadata: {},
@@ -40,7 +42,7 @@ describe("GET /episodes", () => {
     for (let i = 0; i < 3; i++) {
       await insertEpisode({
         source: "otakudesu",
-        title: makeTitle("otakudesu", i),
+        title: makeTitle("otakudesu", i + 1),
         createdAt: new Date(`2026-08-0${i + 1}T00:00:00.000Z`),
       });
     }
@@ -60,8 +62,8 @@ describe("GET /episodes", () => {
     expect(body.data.episodes).toHaveLength(2);
     expect(body.data.meta).toEqual({ total: 3, page: 1, limit: 2 });
     expect(body.data.episodes.map((v) => v.title)).toEqual([
-      makeTitle("otakudesu", 2),
       makeTitle("otakudesu", 1),
+      makeTitle("otakudesu", 2),
     ]);
   });
 
@@ -170,21 +172,24 @@ describe("GET /episodes", () => {
     expect(response.status).toBe(200);
   });
 
-  it("results are ordered by createdAt descending", async () => {
+  it("results are ordered by order ascending, then createdAt ascending", async () => {
     await insertEpisode({
       source: "otakudesu",
-      title: "oldest",
+      title: "Episode 3",
+      order: 3,
       createdAt: new Date("2026-08-01T00:00:00.000Z"),
     });
     await insertEpisode({
       source: "otakudesu",
-      title: "middle",
-      createdAt: new Date("2026-08-02T00:00:00.000Z"),
+      title: "Episode 1",
+      order: 1,
+      createdAt: new Date("2026-08-03T00:00:00.000Z"),
     });
     await insertEpisode({
       source: "otakudesu",
-      title: "newest",
-      createdAt: new Date("2026-08-03T00:00:00.000Z"),
+      title: "Episode 2",
+      order: 2,
+      createdAt: new Date("2026-08-02T00:00:00.000Z"),
     });
 
     const response = await request(app, { path: "/episodes" });
@@ -195,9 +200,9 @@ describe("GET /episodes", () => {
     };
 
     expect(body.data.episodes.map((v) => v.title)).toEqual([
-      "newest",
-      "middle",
-      "oldest",
+      "Episode 1",
+      "Episode 2",
+      "Episode 3",
     ]);
   });
 });

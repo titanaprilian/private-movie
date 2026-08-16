@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   EpisodeParseError,
+  parseEpisodeOrder,
   parseEpisodePage,
 } from "@/modules/media/internal/episodes/parse";
 
@@ -23,6 +24,23 @@ const fixtures = {
 };
 
 const readFixture = (path: string): string => readFileSync(path, "utf8");
+
+describe("parseEpisodeOrder", () => {
+  it("extracts integer from various title formats", () => {
+    expect(parseEpisodeOrder("Episode 12")).toBe(12);
+    expect(parseEpisodeOrder("One Piece Episode 1080 Subtitle Indonesia")).toBe(1080);
+    expect(parseEpisodeOrder("Eps 5 Sub Indo")).toBe(5);
+    expect(parseEpisodeOrder("Ep. 03")).toBe(3);
+    expect(parseEpisodeOrder("Ep 004")).toBe(4);
+    expect(parseEpisodeOrder("#15")).toBe(15);
+    expect(parseEpisodeOrder("Bleach 366 Sub Indo")).toBe(366);
+  });
+
+  it("returns null for titles without clear episode numbers", () => {
+    expect(parseEpisodeOrder("Movie Special")).toBeNull();
+    expect(parseEpisodeOrder("Special OVA 2024")).toBeNull();
+  });
+});
 
 describe("parseEpisodePage", () => {
   describe("minimal variant (sample-a, odvidhide embed)", () => {

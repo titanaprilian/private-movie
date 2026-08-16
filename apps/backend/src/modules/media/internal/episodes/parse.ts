@@ -53,6 +53,22 @@ const readInfoRow = (
 
 type ParsedPage = ReturnType<ReturnType<typeof cheerio.load>>;
 
+export function parseEpisodeOrder(title: string): number | null {
+  const match = title.match(/(?:episode|eps|ep|#)\.?\s*(\d+)/i);
+  if (match) {
+    const num = parseInt(match[1], 10);
+    if (!Number.isNaN(num)) return num;
+  }
+
+  const numMatch = title.match(/\b(\d+)\b/);
+  if (numMatch) {
+    const num = parseInt(numMatch[1], 10);
+    if (!Number.isNaN(num) && (num < 1900 || num > 2100)) return num;
+  }
+
+  return null;
+}
+
 export const parseEpisodePage = (html: string): ParsedEpisodePage => {
   const load = cheerio.load(html, null, false);
   const box = load("#venkonten");

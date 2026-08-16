@@ -168,8 +168,8 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
   return (
     <div className="space-y-4">
       {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight">
               {series.title}
@@ -178,26 +178,29 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
               {episodes.length} episodes
             </span>
           </div>
-          <p className="text-xs text-muted mt-0.5">{series.description}</p>
+
+          <button
+            onClick={handleAddEpisode}
+            type="button"
+            className="bg-primary text-primary-fg hover:opacity-90 px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Episode
+          </button>
         </div>
 
-        <button
-          onClick={handleAddEpisode}
-          type="button"
-          className="bg-primary text-primary-fg hover:opacity-90 px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer self-start sm:self-auto flex items-center gap-1.5"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          + Add Episode
-        </button>
+        {series.description && (
+          <p className="text-xs text-muted leading-relaxed break-words">{series.description}</p>
+        )}
       </div>
 
       {/* Filter bar */}

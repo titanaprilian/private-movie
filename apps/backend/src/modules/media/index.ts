@@ -1,6 +1,6 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { EpisodeRow, SeriesRow } from "@repo/db";
-import { parseEpisodePage, type ParsedMetadata } from "./internal/episodes/parse";
+import { parseEpisodeOrder, parseEpisodePage, type ParsedMetadata } from "./internal/episodes/parse";
 import { createEpisodeRepositoryInternal } from "./internal/episodes/repository";
 import { parseSeriesPage } from "./internal/series/parse";
 import { createSeriesRepositoryInternal } from "./internal/series/repository";
@@ -151,10 +151,24 @@ export function createMediaService<
         seriesId = seriesRow.id;
       }
 
+      let order = parseEpisodeOrder(input.episode.title);
+      if (order === null) {
+        const existing = await episodeRepository.findBySourceUrl(
+          input.episode.sourceUrl
+        );
+        if (existing) {
+          order = existing.order;
+        } else {
+          const maxOrder = await episodeRepository.getMaxOrder(seriesId);
+          order = maxOrder + 1;
+        }
+      }
+
       const episodeRow = await episodeRepository.upsert({
         sourceUrl: input.episode.sourceUrl,
         source: input.episode.source,
         title: input.episode.title,
+        order,
         videoType: input.episode.videoType ?? null,
         videoUrl: input.episode.videoUrl,
         metadata: input.episode.metadata as ParsedMetadata,

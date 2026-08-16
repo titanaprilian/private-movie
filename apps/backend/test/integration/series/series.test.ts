@@ -239,8 +239,8 @@ describe("GET /series/:id", () => {
     expect(body.data.id).toBe(seriesRow.id);
     expect(body.data.title).toBe("Parent Series");
     expect(body.data.episodes).toHaveLength(2);
-    expect(body.data.episodes[0].id).toBe(ep2.id);
-    expect(body.data.episodes[1].id).toBe(ep1.id);
+    expect(body.data.episodes[0].id).toBe(ep1.id);
+    expect(body.data.episodes[1].id).toBe(ep2.id);
   });
 
   it("returns series with empty episodes array if series has no linked episodes", async () => {

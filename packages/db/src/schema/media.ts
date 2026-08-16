@@ -1,4 +1,4 @@
-import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const series = pgTable("series", {
   id: text("id").primaryKey(),
@@ -19,6 +19,7 @@ export const episodes = pgTable("episodes", {
   sourceUrl: text("source_url").notNull().unique(),
   source: text("source").notNull(),
   title: text("title").notNull(),
+  order: integer("order").notNull().default(1),
   videoType: text("video_type"),
   videoUrl: text("video_url").notNull(),
   description: text("description"),

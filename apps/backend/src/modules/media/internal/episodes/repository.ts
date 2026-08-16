@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { count, desc, eq } from "drizzle-orm";
+import { asc, count, eq, isNull, max } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, type EpisodeRow } from "@repo/db";
 import type { ParsedMetadata } from "./parse";
@@ -26,6 +26,7 @@ export interface EpisodeUpsertInput {
   sourceUrl: string;
   source: string;
   title: string;
+  order?: number;
   videoType: string | null;
   videoUrl: string;
   metadata: ParsedMetadata;
@@ -57,6 +58,7 @@ export function createEpisodeRepositoryInternal<
           sourceUrl: input.sourceUrl,
           source: input.source,
           title: input.title,
+          order: input.order ?? 1,
           videoType: input.videoType,
           videoUrl: input.videoUrl,
           metadata: input.metadata,
@@ -69,6 +71,7 @@ export function createEpisodeRepositoryInternal<
           set: {
             source: input.source,
             title: input.title,
+            ...(input.order !== undefined ? { order: input.order } : {}),
             videoType: input.videoType,
             videoUrl: input.videoUrl,
             metadata: input.metadata,
@@ -88,6 +91,17 @@ export function createEpisodeRepositoryInternal<
       return row ?? null;
     },
 
+    async getMaxOrder(seriesId: string | null): Promise<number> {
+      const whereClause = seriesId
+        ? eq(episodes.seriesId, seriesId)
+        : isNull(episodes.seriesId);
+      const [result] = await db
+        .select({ maxOrder: max(episodes.order) })
+        .from(episodes)
+        .where(whereClause);
+      return result?.maxOrder ?? 0;
+    },
+
     async list(params: EpisodeListParams): Promise<EpisodeListResult> {
       const limit = Math.max(
         1,
@@ -105,7 +119,7 @@ export function createEpisodeRepositoryInternal<
           .select()
           .from(episodes)
           .where(where)
-          .orderBy(desc(episodes.createdAt))
+          .orderBy(asc(episodes.order), asc(episodes.createdAt))
           .limit(limit)
           .offset(offset),
         db.select({ value: count() }).from(episodes).where(where),
