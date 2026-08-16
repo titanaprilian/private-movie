@@ -8,6 +8,7 @@ import {
   seriesDetailQueryOptions,
   saveMedia,
   updateEpisode,
+  updateEpisodeOrders,
 } from '@/modules/videos/internal/api';
 
 describe('videos api', () => {
@@ -395,6 +396,39 @@ describe('videos api', () => {
 
     expect(result.id).toBe('ep-1');
     expect(result.description).toBe('New Description');
+    expect(fetchSpy).toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+  });
+
+  it('updateEpisodeOrders patches episode orders array to backend API', async () => {
+    const mockResult = {
+      data: {
+        success: true,
+      },
+    };
+
+    let patchUrl = '';
+    let patchBody = '';
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        patchUrl = typeof input === 'string' ? input : (input as Request).url;
+        patchBody = init?.body as string;
+        return new Response(JSON.stringify(mockResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    await updateEpisodeOrders('series-1', [
+      { id: 'ep-2', order: 1 },
+      { id: 'ep-1', order: 2 },
+    ]);
+
+    expect(patchUrl).toContain('/series/series-1/episodes/order');
+    expect(patchBody).toContain('ep-2');
     expect(fetchSpy).toHaveBeenCalled();
 
     fetchSpy.mockRestore();

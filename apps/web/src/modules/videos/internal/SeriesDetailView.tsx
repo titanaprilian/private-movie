@@ -1,7 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { seriesDetailQueryOptions, type SeriesDetails, updateEpisode, deleteEpisode } from './api';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  type DropResult,
+} from '@hello-pangea/dnd';
+import {
+  seriesDetailQueryOptions,
+  type SeriesDetails,
+  updateEpisode,
+  deleteEpisode,
+  updateEpisodeOrders,
+} from './api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
@@ -43,6 +55,14 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
 
   const queryClient = useQueryClient();
 
+  const [localEpisodes, setLocalEpisodes] = useState<Episode[]>([]);
+
+  useEffect(() => {
+    if (series?.episodes) {
+      setLocalEpisodes(series.episodes);
+    }
+  }, [series?.episodes]);
+
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateEpisode>[1] }) =>
       updateEpisode(id, data),
@@ -73,6 +93,14 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
         description: `Failed to delete: ${error.message}`,
       });
     }
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: (orders: { id: string; order: number }[]) =>
+      updateEpisodeOrders(seriesId, orders),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+    },
   });
 
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(
@@ -109,7 +137,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
     );
   }
 
-  const episodes = series.episodes ?? [];
+  const episodes = localEpisodes;
 
   const filteredEpisodes = episodes.filter((episode) => {
     const text = filterText.toLowerCase();
@@ -125,6 +153,46 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
       : null) ??
     filteredEpisodes[0] ??
     null;
+
+  const handleDragEnd = (result: DropResult) => {
+    const { destination, source } = result;
+
+    if (!destination || destination.index === source.index) {
+      return;
+    }
+
+    const previousEpisodes = [...localEpisodes];
+    const nextEpisodes = Array.from(localEpisodes);
+    const [moved] = nextEpisodes.splice(source.index, 1);
+    nextEpisodes.splice(destination.index, 0, moved);
+
+    setLocalEpisodes(nextEpisodes);
+
+    queryClient.setQueryData(
+      ['series', seriesId],
+      (old: SeriesDetails | undefined) =>
+        old ? { ...old, episodes: nextEpisodes } : old
+    );
+
+    const newOrders = nextEpisodes.map((ep, index) => ({
+      id: ep.id,
+      order: index + 1,
+    }));
+
+    reorderMutation.mutate(newOrders, {
+      onError: (error) => {
+        setLocalEpisodes(previousEpisodes);
+        queryClient.setQueryData(
+          ['series', seriesId],
+          (old: SeriesDetails | undefined) =>
+            old ? { ...old, episodes: previousEpisodes } : old
+        );
+        toast.error('video.reorder', {
+          description: `Failed to reorder episodes: ${error.message}`,
+        });
+      },
+    });
+  };
 
   const handleAddEpisode = () => {
     openDialog();
@@ -232,77 +300,125 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
             </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-[var(--border)]">
-            {filteredEpisodes.length === 0 ? (
-              <div className="p-4 text-xs text-muted text-center mono">
-                No episodes match search.
-              </div>
-            ) : (
-              filteredEpisodes.map((episode) => {
-                const isSelected = selectedEpisode?.id === episode.id;
-                const formattedDate = episode.createdAt
-                  ? typeof episode.createdAt === 'string'
-                    ? episode.createdAt.split('T')[0]
-                    : new Date(episode.createdAt).toISOString().split('T')[0]
-                  : '';
-                const tags = getEpisodeTags(episode);
-
-                return (
-                  <button
-                    key={episode.id}
-                    onClick={() => setSelectedEpisodeId(episode.id)}
-                    type="button"
-                    className={`w-full text-left p-3 flex gap-3 items-start transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'active-bg bg-[var(--active)] border-l-2 border-[var(--primary)]'
-                        : 'hover-bg'
-                    }`}
-                  >
-                    {/* Thumbnail placeholder */}
-                    <div className="w-20 h-12 rounded border border-c bg-black/10 dark:bg-white/10 shrink-0 flex items-center justify-center relative overflow-hidden">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="text-muted"
-                      >
-                        <polygon points="5 3 19 12 5 21 5 3" />
-                      </svg>
-                      {episode.duration && (
-                        <span className="absolute bottom-1 right-1 text-[9px] mono px-1 rounded bg-black/75 text-white">
-                          {episode.duration}
-                        </span>
-                      )}
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="episodes-list" isDropDisabled={filterText.trim().length > 0}>
+              {(droppableProvided) => (
+                <div
+                  ref={droppableProvided.innerRef}
+                  {...droppableProvided.droppableProps}
+                  className="flex-1 overflow-y-auto divide-y divide-[var(--border)]"
+                >
+                  {filteredEpisodes.length === 0 ? (
+                    <div className="p-4 text-xs text-muted text-center mono">
+                      No episodes match search.
                     </div>
+                  ) : (
+                    filteredEpisodes.map((episode, index) => {
+                      const isSelected = selectedEpisode?.id === episode.id;
+                      const formattedDate = episode.createdAt
+                        ? typeof episode.createdAt === 'string'
+                          ? episode.createdAt.split('T')[0]
+                          : new Date(episode.createdAt).toISOString().split('T')[0]
+                        : '';
+                      const tags = getEpisodeTags(episode);
 
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate text-current">
-                        {episode.title}
-                      </div>
-                      <div className="text-xs mono text-muted mt-0.5 flex items-center gap-2">
-                        <span>{formattedDate}</span>
-                        <span>•</span>
-                        <span>{episode.source}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[10px] mono px-1.5 py-0.2 rounded border border-c bg-card text-muted"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
+                      return (
+                        <Draggable
+                          key={episode.id}
+                          draggableId={episode.id}
+                          index={index}
+                          isDragDisabled={filterText.trim().length > 0}
+                        >
+                          {(draggableProvided, snapshot) => (
+                            <div
+                              ref={draggableProvided.innerRef}
+                              {...draggableProvided.draggableProps}
+                              className={`w-full text-left p-3 flex gap-2 items-start transition-colors ${
+                                isSelected
+                                  ? 'active-bg bg-[var(--active)] border-l-2 border-[var(--primary)]'
+                                  : 'hover-bg'
+                              } ${snapshot.isDragging ? 'bg-[var(--active)] opacity-80 shadow-md' : ''}`}
+                            >
+                              <div
+                                {...draggableProvided.dragHandleProps}
+                                className="p-1 cursor-grab active:cursor-grabbing text-muted hover:text-current shrink-0 self-center"
+                                title="Drag to reorder"
+                                aria-label={`Reorder ${episode.title}`}
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <circle cx="9" cy="5" r="1" />
+                                  <circle cx="9" cy="12" r="1" />
+                                  <circle cx="9" cy="19" r="1" />
+                                  <circle cx="15" cy="5" r="1" />
+                                  <circle cx="15" cy="12" r="1" />
+                                  <circle cx="15" cy="19" r="1" />
+                                </svg>
+                              </div>
+
+                              <button
+                                onClick={() => setSelectedEpisodeId(episode.id)}
+                                type="button"
+                                className="flex-1 flex gap-3 items-start text-left cursor-pointer bg-transparent border-0 p-0"
+                              >
+                                {/* Thumbnail placeholder */}
+                                <div className="w-20 h-12 rounded border border-c bg-black/10 dark:bg-white/10 shrink-0 flex items-center justify-center relative overflow-hidden">
+                                  <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    className="text-muted"
+                                  >
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                  </svg>
+                                  {episode.duration && (
+                                    <span className="absolute bottom-1 right-1 text-[9px] mono px-1 rounded bg-black/75 text-white">
+                                      {episode.duration}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium truncate text-current">
+                                    {episode.title}
+                                  </div>
+                                  <div className="text-xs mono text-muted mt-0.5 flex items-center gap-2">
+                                    <span>{formattedDate}</span>
+                                    <span>•</span>
+                                    <span>{episode.source}</span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {tags.map((tag) => (
+                                      <span
+                                        key={tag}
+                                        className="text-[10px] mono px-1.5 py-0.2 rounded border border-c bg-card text-muted"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })
+                  )}
+                  {droppableProvided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         </div>
 
         {/* Right Pane: Episode detail & preview layout */}

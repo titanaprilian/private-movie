@@ -299,6 +299,55 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
       }
     )
+    .patch(
+      "/series/:id/episodes/order",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const seriesRow = await seriesRepository.findById(params.id);
+        if (!seriesRow) {
+          return errorResponse(
+            set,
+            404,
+            new SeriesNotFoundError(`Series with id ${params.id} not found`)
+          );
+        }
+
+        try {
+          await episodeRepository.updateOrders(body);
+          return successResponse({ success: true });
+        } catch (error) {
+          if (error instanceof EpisodeNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Array(
+          t.Object({
+            id: t.String({ format: "uuid" }),
+            order: t.Number(),
+          })
+        ),
+      }
+    )
     .delete(
       "/series/:id",
       async ({ params, headers, set }) => {

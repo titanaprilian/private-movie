@@ -295,3 +295,22 @@ export async function deleteEpisode(id: string): Promise<Episode> {
   return res.data.data as Episode;
 }
 
+export interface ReorderEpisodeItem {
+  id: string;
+  order: number;
+}
+
+export async function updateEpisodeOrders(
+  seriesId: string,
+  orders: ReorderEpisodeItem[]
+): Promise<void> {
+  const res = await (api.series as any)[seriesId].episodes.order.patch(orders);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to reorder episodes'
+    );
+  }
+}
+

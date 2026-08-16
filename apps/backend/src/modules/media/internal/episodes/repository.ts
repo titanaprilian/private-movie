@@ -22,6 +22,11 @@ export interface UpdateEpisodeInput {
   metadata: Record<string, unknown>;
 }
 
+export interface EpisodeOrderUpdateInput {
+  id: string;
+  order: number;
+}
+
 export interface EpisodeUpsertInput {
   sourceUrl: string;
   source: string;
@@ -157,6 +162,26 @@ export function createEpisodeRepositoryInternal<
       }
 
       return row;
+    },
+
+    async updateOrders(items: EpisodeOrderUpdateInput[]): Promise<void> {
+      await db.transaction(async (tx) => {
+        const now = new Date();
+        for (const item of items) {
+          const [updated] = await tx
+            .update(episodes)
+            .set({
+              order: item.order,
+              updatedAt: now,
+            })
+            .where(eq(episodes.id, item.id))
+            .returning({ id: episodes.id });
+
+          if (!updated) {
+            throw new EpisodeNotFoundError(`Episode with id ${item.id} not found`);
+          }
+        }
+      });
     },
 
     async deleteEpisode(id: string): Promise<EpisodeRow> {

@@ -244,4 +244,14 @@ describe('SeriesDetailView component', () => {
     expect(screen.getAllByText('Action').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Drama').length).toBeGreaterThan(0);
   });
+
+  it('renders drag handles for episode reordering', async () => {
+    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    for (const episode of mockSeries.episodes) {
+      expect(screen.getByLabelText(`Reorder ${episode.title}`)).toBeInTheDocument();
+    }
+  });
 });

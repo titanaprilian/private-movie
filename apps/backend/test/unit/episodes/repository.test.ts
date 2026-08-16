@@ -136,3 +136,48 @@ describe("episode repository updateEpisode", () => {
     );
   });
 });
+
+describe("episode repository updateOrders", () => {
+  const repository = createEpisodeRepositoryInternal(db);
+
+  beforeEach(async () => {
+    await db.delete(episodes);
+  });
+
+  it("updates order for multiple episodes in a transaction", async () => {
+    const ep1 = await insertEpisode(makeVideoUrl(101));
+    const ep2 = await insertEpisode(makeVideoUrl(102));
+
+    await repository.updateOrders([
+      { id: ep1.id, order: 5 },
+      { id: ep2.id, order: 10 },
+    ]);
+
+    const updated1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
+    const updated2 = await db.select().from(episodes).where(eq(episodes.id, ep2.id));
+
+    expect(updated1[0].order).toBe(5);
+    expect(updated2[0].order).toBe(10);
+  });
+
+  it("rolls back transaction if any episode in batch does not exist", async () => {
+    const ep1 = await insertEpisode(makeVideoUrl(201));
+    const initialEp1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
+    const initialOrder = initialEp1[0].order;
+
+    const missingId = crypto.randomUUID();
+
+    await expect(
+      repository.updateOrders([
+        { id: ep1.id, order: 99 },
+        { id: missingId, order: 100 },
+      ])
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof Error && error.name === "EpisodeNotFoundError"
+    );
+
+    const checkEp1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
+    expect(checkEp1[0].order).toBe(initialOrder);
+  });
+});
