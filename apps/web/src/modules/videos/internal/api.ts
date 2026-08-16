@@ -297,6 +297,19 @@ export async function deleteEpisode(id: string): Promise<Episode> {
   return res.data.data as Episode;
 }
 
+export async function resolveEpisode(id: string): Promise<Episode> {
+  const res = await (api.episodes as any)[id].resolve.post();
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to resolve episode stream'
+    );
+  }
+
+  return res.data.data as Episode;
+}
+
 export interface ReorderEpisodeItem {
   id: string;
   order: number;

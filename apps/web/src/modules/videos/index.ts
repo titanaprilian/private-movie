@@ -12,6 +12,7 @@ export {
   seriesDetailQueryOptions,
   previewScrape,
   saveMedia,
+  resolveEpisode,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
 export type {

@@ -13,6 +13,7 @@ import {
   updateEpisode,
   deleteEpisode,
   updateEpisodeOrders,
+  resolveEpisode,
 } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
@@ -103,6 +104,21 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
       updateEpisodeOrders(seriesId, orders),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+    },
+  });
+
+  const resolveMutation = useMutation({
+    mutationFn: (id: string) => resolveEpisode(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+      toast.success('video.resolve', {
+        description: 'Successfully resolved stream',
+      });
+    },
+    onError: (error: Error) => {
+      toast.error('video.resolve', {
+        description: `Failed to resolve stream: ${error.message}`,
+      });
     },
   });
 
@@ -243,6 +259,11 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
     if (!selectedEpisode) return;
     deleteMutation.mutate(selectedEpisode.id);
     setIsDeleteDialogOpen(false);
+  };
+
+  const handleResolveStream = () => {
+    if (!selectedEpisode) return;
+    resolveMutation.mutate(selectedEpisode.id);
   };
 
   return (
@@ -462,8 +483,35 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
                   </p>
                 </div>
 
-                {/* Actions: Edit, Delete */}
+                {/* Actions: Edit, Delete, Resolve Stream */}
                 <div className="flex items-center gap-2">
+                  {!selectedEpisode.videoUrl && selectedEpisode.embedUrl && (
+                    <button
+                      onClick={handleResolveStream}
+                      disabled={resolveMutation.isPending}
+                      type="button"
+                      className="bg-primary text-primary-fg hover:opacity-90 disabled:opacity-50 px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      {resolveMutation.isPending ? (
+                        <>
+                          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Resolving...
+                        </>
+                      ) : (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path d="M12 8v4l3 3" />
+                          </svg>
+                          Resolve Stream
+                        </>
+                      )}
+                    </button>
+                  )}
+
                   <button
                     onClick={handleEdit}
                     type="button"
