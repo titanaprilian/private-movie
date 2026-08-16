@@ -7,6 +7,7 @@ import {
   fetchSeriesDetail,
   seriesDetailQueryOptions,
   saveMedia,
+  updateEpisode,
 } from '@/modules/videos/internal/api';
 
 describe('videos api', () => {
@@ -360,6 +361,41 @@ describe('videos api', () => {
         },
       })
     ).rejects.toThrow('Failed to save media');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('updateEpisode patches episode payload including description and returns updated episode', async () => {
+    const mockUpdatedResult = {
+      data: {
+        id: 'ep-1',
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Updated Episode',
+        videoType: 'mp4',
+        videoUrl: 'https://stream.com/1-updated.mp4',
+        description: 'New Description',
+        createdAt: '2025-01-10T00:00:00.000Z',
+        updatedAt: '2025-01-10T00:00:00.000Z',
+      },
+    };
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(JSON.stringify(mockUpdatedResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+    );
+
+    const result = await updateEpisode('ep-1', {
+      title: 'Updated Episode',
+      description: 'New Description',
+    });
+
+    expect(result.id).toBe('ep-1');
+    expect(result.description).toBe('New Description');
+    expect(fetchSpy).toHaveBeenCalled();
 
     fetchSpy.mockRestore();
   });

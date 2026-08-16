@@ -110,15 +110,15 @@ describe('SeriesDetailView component', () => {
     }
   });
 
-  it('renders details pane on the right for the default selected episode', async () => {
+  it('renders details pane on the right for the default selected episode without redundant play button', async () => {
     renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     expect(firstEpisodeHeading()).toBeInTheDocument();
     expect(
-      screen.getAllByRole('button', { name: /play/i }).length
-    ).toBeGreaterThan(0);
+      screen.queryByRole('button', { name: /^play$/i })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
   });
@@ -163,7 +163,7 @@ describe('SeriesDetailView component', () => {
     expect(screen.getByText(/unknown-series/)).toBeInTheDocument();
   });
 
-  it('triggers toast notifications when mock actions are clicked', async () => {
+  it('opens custom Edit and Delete dialogs when edit and delete buttons are clicked', async () => {
     renderWithProviders(
       <>
         <SeriesDetailView seriesId={mockSeries.id} />
@@ -179,27 +179,33 @@ describe('SeriesDetailView component', () => {
     await user.click(addButton);
     expect(await screen.findByText('Add Media Wizard')).toBeInTheDocument();
 
-    const playButtons = screen.getAllByRole('button', { name: /play/i });
-    await user.click(playButtons[0]);
-    expect(await screen.findByText(/video.play/i)).toBeInTheDocument();
-
+    // Test Edit Dialog
     const editButton = screen.getByRole('button', { name: /edit/i });
-    
-    // Mock window.prompt
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('New Title');
     await user.click(editButton);
-    
-    expect(promptSpy).toHaveBeenCalledWith('Enter new title for episode:', 'Intro to Deep Modules');
-    promptSpy.mockRestore();
 
+    expect(await screen.findByRole('heading', { name: 'Edit Episode' })).toBeInTheDocument();
+    
+    const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
+    const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
+    const urlInput = screen.getByLabelText('Video URL') as HTMLInputElement;
+
+    expect(titleInput.value).toBe(firstEpisode.title);
+    expect(descInput.value).toBe(firstEpisode.description);
+    expect(urlInput.value).toBe(firstEpisode.videoUrl);
+
+    // Save changes
+    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
+    await user.click(saveButton);
+
+    // Test Delete Dialog
     const deleteButton = screen.getByRole('button', { name: /delete/i });
-    
-    // Mock window.confirm
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     await user.click(deleteButton);
-    
-    expect(confirmSpy).toHaveBeenCalledWith('Are you sure you want to delete Intro to Deep Modules?');
-    confirmSpy.mockRestore();
+
+    expect(await screen.findByRole('heading', { name: 'Delete Episode' })).toBeInTheDocument();
+    expect(screen.getByText(`Are you sure you want to delete "${firstEpisode.title}"? This action cannot be undone.`)).toBeInTheDocument();
+
+    const confirmDeleteButton = screen.getByRole('button', { name: /^delete$/i });
+    await user.click(confirmDeleteButton);
   });
 
   it('renders iframe player with videoUrl when available and displays Ready badge', async () => {

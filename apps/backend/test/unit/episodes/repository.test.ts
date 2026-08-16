@@ -91,22 +91,36 @@ describe("episode repository updateEpisode", () => {
     });
     expect(updatedType.videoType).toBe("Movie");
 
+    // Update description only
+    const updatedDesc = await repository.updateEpisode(existing.id, {
+      description: "Updated episode description",
+    });
+    expect(updatedDesc.description).toBe("Updated episode description");
+
+    // Clear description with null
+    const clearedDesc = await repository.updateEpisode(existing.id, {
+      description: null,
+    });
+    expect(clearedDesc.description).toBeNull();
+
     // Update metadata only
     const updatedMeta = await repository.updateEpisode(existing.id, {
       metadata: { customField: "customValue" },
     });
     expect(updatedMeta.metadata).toEqual({ customField: "customValue" });
 
-    // Update all 4 allowed fields
+    // Update all 5 allowed fields
     const updatedAll = await repository.updateEpisode(existing.id, {
       title: "Final Title",
       videoUrl: "https://example.com/final-embed",
       videoType: "OVA",
+      description: "Final Description",
       metadata: { episodes: [1, 2, 3] },
     });
     expect(updatedAll.title).toBe("Final Title");
     expect(updatedAll.videoUrl).toBe("https://example.com/final-embed");
     expect(updatedAll.videoType).toBe("OVA");
+    expect(updatedAll.description).toBe("Final Description");
     expect(updatedAll.metadata).toEqual({ episodes: [1, 2, 3] });
   });
 

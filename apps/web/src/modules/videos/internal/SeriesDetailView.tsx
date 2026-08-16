@@ -4,6 +4,17 @@ import { toast } from 'sonner';
 import { seriesDetailQueryOptions, type SeriesDetails, updateEpisode, deleteEpisode } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 type Episode = SeriesDetails['episodes'][number];
 
@@ -69,6 +80,14 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
   );
   const [filterText, setFilterText] = useState<string>('');
 
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const [editTitle, setEditTitle] = useState('');
+  const [editVideoUrl, setEditVideoUrl] = useState('');
+  const [editVideoType, setEditVideoType] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+
   if (isLoading) {
     return (
       <div className="space-y-4 p-4 text-xs text-muted mono">
@@ -111,30 +130,39 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
     openDialog();
   };
 
-  const handlePlay = (title: string) => {
-    toast.info('video.play', {
-      description: `Playing ${title}`,
-    });
-  };
-
   const handleEdit = () => {
     if (!selectedEpisode) return;
-    const newTitle = window.prompt('Enter new title for episode:', selectedEpisode.title);
-    if (newTitle !== null && newTitle.trim() !== '' && newTitle !== selectedEpisode.title) {
-      updateMutation.mutate({
-        id: selectedEpisode.id,
-        data: {
-          title: newTitle.trim(),
-        },
-      });
-    }
+    setEditTitle(selectedEpisode.title ?? '');
+    setEditVideoUrl(selectedEpisode.videoUrl ?? '');
+    setEditVideoType(selectedEpisode.videoType ?? '');
+    setEditDescription(selectedEpisode.description ?? '');
+    setIsEditDialogOpen(true);
+  };
+
+  const handleConfirmEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEpisode) return;
+    updateMutation.mutate({
+      id: selectedEpisode.id,
+      data: {
+        title: editTitle,
+        videoUrl: editVideoUrl,
+        videoType: editVideoType || null,
+        description: editDescription || null,
+      },
+    });
+    setIsEditDialogOpen(false);
   };
 
   const handleDelete = () => {
     if (!selectedEpisode) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedEpisode.title}?`)) {
-      deleteMutation.mutate(selectedEpisode.id);
-    }
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedEpisode) return;
+    deleteMutation.mutate(selectedEpisode.id);
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -303,26 +331,8 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   </p>
                 </div>
 
-                {/* Mock Actions: Play, Edit, Delete */}
+                {/* Actions: Edit, Delete */}
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePlay(selectedEpisode.title)}
-                    type="button"
-                    className="bg-primary text-primary-fg hover:opacity-90 px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                    Play
-                  </button>
-
                   <button
                     onClick={handleEdit}
                     type="button"
@@ -461,6 +471,96 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
         </div>
       </div>
       <AddMediaDialog />
+
+      {/* Edit Episode Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Episode</DialogTitle>
+            <DialogDescription>
+              Update the details of this episode.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleConfirmEdit} className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Episode title"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-description">Description</Label>
+              <textarea
+                id="edit-description"
+                rows={3}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Episode description"
+                className="flex w-full rounded border border-c bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-video-url">Video URL</Label>
+              <Input
+                id="edit-video-url"
+                value={editVideoUrl}
+                onChange={(e) => setEditVideoUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-video-type">Video Type</Label>
+              <Input
+                id="edit-video-type"
+                value={editVideoType}
+                onChange={(e) => setEditVideoType(e.target.value)}
+                placeholder="e.g. mp4, embed"
+              />
+            </div>
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Episode Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Episode</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedEpisode?.title ? `"${selectedEpisode.title}"` : 'this episode'}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

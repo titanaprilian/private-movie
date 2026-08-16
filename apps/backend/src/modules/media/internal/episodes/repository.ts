@@ -18,6 +18,7 @@ export interface UpdateEpisodeInput {
   title: string;
   videoUrl: string;
   videoType: string | null;
+  description?: string | null;
   metadata: Record<string, unknown>;
 }
 
@@ -128,6 +129,7 @@ export function createEpisodeRepositoryInternal<
       if (input.title !== undefined) updateData.title = input.title;
       if (input.videoUrl !== undefined) updateData.videoUrl = input.videoUrl;
       if (input.videoType !== undefined) updateData.videoType = input.videoType;
+      if (input.description !== undefined) updateData.description = input.description;
       if (input.metadata !== undefined) updateData.metadata = input.metadata;
 
       const [row] = await db

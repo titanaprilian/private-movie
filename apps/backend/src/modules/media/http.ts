@@ -174,6 +174,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           title: t.Optional(t.String()),
           videoUrl: t.Optional(t.String()),
           videoType: t.Optional(t.Nullable(t.String())),
+          description: t.Optional(t.Nullable(t.String())),
           metadata: t.Optional(t.Record(t.String(), t.Unknown())),
         }),
       }

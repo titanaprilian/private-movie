@@ -213,6 +213,30 @@ describe("PATCH /episodes/:id", () => {
       expect(rows[0].videoType).toBe("Movie");
     });
 
+    it("successfully updates description only (1 field)", async () => {
+      const { accessToken } = await registerUser(app);
+      const episode = await insertTestEpisode();
+
+      const response = await request(app, {
+        method: "PATCH",
+        path: `/episodes/${episode.id}`,
+        headers: authHeaders(accessToken),
+        body: {
+          description: "New Episode Description",
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: { id: string; description: string | null };
+      };
+
+      expect(body.data.description).toBe("New Episode Description");
+
+      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
+      expect(rows[0].description).toBe("New Episode Description");
+    });
+
     it("successfully updates metadata only (1 field)", async () => {
       const { accessToken } = await registerUser(app);
       const episode = await insertTestEpisode();
@@ -238,7 +262,7 @@ describe("PATCH /episodes/:id", () => {
       expect(rows[0].metadata).toEqual(newMetadata);
     });
 
-    it("successfully updates all 4 allowed fields simultaneously (title, videoUrl, videoType, metadata)", async () => {
+    it("successfully updates all 5 allowed fields simultaneously (title, videoUrl, videoType, description, metadata)", async () => {
       const { accessToken } = await registerUser(app);
       const episode = await insertTestEpisode();
 
@@ -246,6 +270,7 @@ describe("PATCH /episodes/:id", () => {
         title: "All Fields Updated",
         videoUrl: "https://example.com/all-fields",
         videoType: "OVA",
+        description: "Updated description for all fields",
         metadata: { tags: ["action", "drama"] },
       };
 
@@ -263,6 +288,7 @@ describe("PATCH /episodes/:id", () => {
           title: string;
           videoUrl: string;
           videoType: string | null;
+          description: string | null;
           metadata: Record<string, unknown>;
         };
       };
@@ -270,12 +296,14 @@ describe("PATCH /episodes/:id", () => {
       expect(body.data.title).toBe(patchPayload.title);
       expect(body.data.videoUrl).toBe(patchPayload.videoUrl);
       expect(body.data.videoType).toBe(patchPayload.videoType);
+      expect(body.data.description).toBe(patchPayload.description);
       expect(body.data.metadata).toEqual(patchPayload.metadata);
 
       const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows[0].title).toBe(patchPayload.title);
       expect(rows[0].videoUrl).toBe(patchPayload.videoUrl);
       expect(rows[0].videoType).toBe(patchPayload.videoType);
+      expect(rows[0].description).toBe(patchPayload.description);
       expect(rows[0].metadata).toEqual(patchPayload.metadata);
     });
   });

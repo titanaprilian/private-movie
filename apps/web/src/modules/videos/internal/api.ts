@@ -265,6 +265,7 @@ export interface UpdateEpisodeData {
   title?: string;
   videoUrl?: string;
   videoType?: string | null;
+  description?: string | null;
   metadata?: Record<string, unknown>;
 }
 
