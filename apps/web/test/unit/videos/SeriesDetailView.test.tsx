@@ -184,12 +184,22 @@ describe('SeriesDetailView component', () => {
     expect(await screen.findByText(/video.play/i)).toBeInTheDocument();
 
     const editButton = screen.getByRole('button', { name: /edit/i });
+    
+    // Mock window.prompt
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('New Title');
     await user.click(editButton);
-    expect(await screen.findByText(/video.edit/i)).toBeInTheDocument();
+    
+    expect(promptSpy).toHaveBeenCalledWith('Enter new title for episode:', 'Intro to Deep Modules');
+    promptSpy.mockRestore();
 
     const deleteButton = screen.getByRole('button', { name: /delete/i });
+    
+    // Mock window.confirm
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     await user.click(deleteButton);
-    expect(await screen.findByText(/video.delete/i)).toBeInTheDocument();
+    
+    expect(confirmSpy).toHaveBeenCalledWith('Are you sure you want to delete Intro to Deep Modules?');
+    confirmSpy.mockRestore();
   });
 
   it('renders iframe player with videoUrl when available and displays Ready badge', async () => {

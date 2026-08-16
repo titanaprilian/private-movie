@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { seriesDetailQueryOptions, type SeriesDetails } from './api';
+import { seriesDetailQueryOptions, type SeriesDetails, updateEpisode, deleteEpisode } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 
@@ -29,6 +29,39 @@ export interface SeriesDetailViewProps {
 export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
   const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));
   const openDialog = useScrapeWorkerStore((state) => state.openDialog);
+
+  const queryClient = useQueryClient();
+
+  const updateMutation = useMutation({
+    mutationFn: updateEpisode,
+    onSuccess: (updatedEpisode) => {
+      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+      toast.success('video.edit', {
+        description: `Successfully updated ${updatedEpisode.title}`,
+      });
+    },
+    onError: (error) => {
+      toast.error('video.edit', {
+        description: `Failed to update: ${error.message}`,
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteEpisode,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+      // variables is { id, seriesId }
+      toast.success('video.delete', {
+        description: `Successfully deleted episode`,
+      });
+    },
+    onError: (error) => {
+      toast.error('video.delete', {
+        description: `Failed to delete: ${error.message}`,
+      });
+    }
+  });
 
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(
     null
@@ -83,16 +116,22 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
     });
   };
 
-  const handleEdit = (title: string) => {
-    toast.info('video.edit', {
-      description: `Editing ${title}`,
-    });
+  const handleEdit = () => {
+    if (!selectedEpisode) return;
+    const newTitle = window.prompt('Enter new title for episode:', selectedEpisode.title);
+    if (newTitle !== null && newTitle.trim() !== '' && newTitle !== selectedEpisode.title) {
+      updateMutation.mutate({
+        id: selectedEpisode.id,
+        title: newTitle.trim(),
+      });
+    }
   };
 
-  const handleDelete = (title: string) => {
-    toast.error('video.delete', {
-      description: `Deleted ${title}`,
-    });
+  const handleDelete = () => {
+    if (!selectedEpisode) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedEpisode.title}?`)) {
+      deleteMutation.mutate(selectedEpisode.id);
+    }
   };
 
   return (
@@ -282,7 +321,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   </button>
 
                   <button
-                    onClick={() => handleEdit(selectedEpisode.title)}
+                    onClick={handleEdit}
                     type="button"
                     className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
                   >
@@ -301,7 +340,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   </button>
 
                   <button
-                    onClick={() => handleDelete(selectedEpisode.title)}
+                    onClick={handleDelete}
                     type="button"
                     className="border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
                   >

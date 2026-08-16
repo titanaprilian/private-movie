@@ -260,3 +260,37 @@ export async function saveMedia(
 
   return res.data.data as SaveMediaResult;
 }
+
+export interface UpdateEpisodeData {
+  title?: string;
+  videoUrl?: string;
+  videoType?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export async function updateEpisode(id: string, data: UpdateEpisodeData): Promise<Episode> {
+  const res = await api.episodes[id].patch(data);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to update episode'
+    );
+  }
+
+  return res.data.data as Episode;
+}
+
+export async function deleteEpisode(id: string): Promise<Episode> {
+  const res = await api.episodes[id].delete();
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to delete episode'
+    );
+  }
+
+  return res.data.data as Episode;
+}
+
