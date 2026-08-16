@@ -43,7 +43,7 @@ export const createApp = (deps: CreateAppDeps) => {
         maxAge: 86400,
       })
     )
-    .onError(({ code, set }) => {
+    .onError(({ code, set, error }) => {
       if (code === "NOT_FOUND") {
         return;
       }
@@ -56,7 +56,7 @@ export const createApp = (deps: CreateAppDeps) => {
           },
         };
       }
-      return errorResponse(set, 500, new InternalServerError());
+      console.error(error); return errorResponse(set, 500, new InternalServerError());
     })
     .use(
       rateLimit({
