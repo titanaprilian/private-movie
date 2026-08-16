@@ -121,7 +121,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             source: t.Literal("otakudesu"),
             title: t.String(),
             videoType: t.Nullable(t.String()),
-            videoUrl: t.String(),
+            embedUrl: t.Optional(t.Nullable(t.String())),
+            videoUrl: t.Optional(t.Nullable(t.String())),
             metadata: t.Record(t.String(), t.Unknown()),
           }),
           series: t.Optional(
@@ -172,7 +173,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
         body: t.Object({
           title: t.Optional(t.String()),
-          videoUrl: t.Optional(t.String()),
+          embedUrl: t.Optional(t.Nullable(t.String())),
+          videoUrl: t.Optional(t.Nullable(t.String())),
           videoType: t.Optional(t.Nullable(t.String())),
           description: t.Optional(t.Nullable(t.String())),
           metadata: t.Optional(t.Record(t.String(), t.Unknown())),

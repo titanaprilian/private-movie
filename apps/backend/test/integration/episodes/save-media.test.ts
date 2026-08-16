@@ -76,7 +76,8 @@ describe("POST /save-media", () => {
             source: "otakudesu",
             title: "Integration Test Episode 1",
             videoType: "TV",
-            videoUrl: "https://odvidhide.com/embed/integ1",
+            embedUrl: "https://odvidhide.com/embed/integ1",
+            videoUrl: "https://stream.example.com/video1.mp4",
             metadata: { duration: "24 min" },
           },
           series: null,
@@ -113,6 +114,8 @@ describe("POST /save-media", () => {
       expect(epRows).toHaveLength(1);
       expect(epRows[0].id).toBe(body.data.episode.id);
       expect(epRows[0].seriesId).toBeNull();
+      expect(epRows[0].embedUrl).toBe("https://odvidhide.com/embed/integ1");
+      expect(epRows[0].videoUrl).toBe("https://stream.example.com/video1.mp4");
     });
 
     it("creates episode and series records and links them when series payload is provided", async () => {

@@ -49,9 +49,10 @@ function getEpisodeTags(episode: Episode): string[] {
 
 export interface SeriesDetailViewProps {
   seriesId: string;
+  initialOrder?: number;
 }
 
-export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
+export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewProps) {
   const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));
   const openDialog = useScrapeWorkerStore((state) => state.openDialog);
 
@@ -109,6 +110,15 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
     null
   );
   const [filterText, setFilterText] = useState<string>('');
+
+  useEffect(() => {
+    if (initialOrder !== undefined && localEpisodes.length > 0) {
+      const match = localEpisodes.find((e) => e.order === initialOrder);
+      if (match) {
+        setSelectedEpisodeId(match.id);
+      }
+    }
+  }, [initialOrder, localEpisodes]);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -500,7 +510,25 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
                   <CustomVideoPlayer
                     src={selectedEpisode.videoUrl}
                     title={selectedEpisode.title}
+                    seriesId={seriesId}
+                    currentOrder={selectedEpisode.order ?? 1}
+                    onNextEpisode={() => {
+                      const currentOrd = selectedEpisode.order ?? 1;
+                      const nextEp = episodes.find((e) => (e.order ?? 1) === currentOrd + 1);
+                      if (nextEp) {
+                        setSelectedEpisodeId(nextEp.id);
+                      }
+                    }}
                   />
+                ) : selectedEpisode.embedUrl ? (
+                  <div className="aspect-video w-full rounded border border-c bg-black overflow-hidden">
+                    <iframe
+                      src={selectedEpisode.embedUrl}
+                      title={selectedEpisode.title}
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  </div>
                 ) : (
                   <div className="aspect-video w-full rounded border border-c bg-zinc-950 flex flex-col items-center justify-center text-muted text-xs mono">
                     <svg

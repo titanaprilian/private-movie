@@ -18,7 +18,8 @@ async function insertEpisode(sourceUrl: string): Promise<{ id: string }> {
       source: "otakudesu",
       title: "original-title",
       videoType: null,
-      videoUrl: "https://odvidhide.com/embed/test",
+      embedUrl: "https://odvidhide.com/embed/test",
+      videoUrl: "https://example.com/stream.mp4",
       metadata: {},
       createdAt: now,
       updatedAt: now,
@@ -26,6 +27,44 @@ async function insertEpisode(sourceUrl: string): Promise<{ id: string }> {
     .returning();
   return rows[0];
 }
+
+describe("episode repository upsert", () => {
+  const repository = createEpisodeRepositoryInternal(db);
+
+  beforeEach(async () => {
+    await db.delete(episodes);
+  });
+
+  it("inserts new episode storing both embedUrl and videoUrl fields", async () => {
+    const row = await repository.upsert({
+      sourceUrl: makeVideoUrl(50),
+      source: "otakudesu",
+      title: "Episode 50",
+      videoType: "TV",
+      embedUrl: "https://odvidhide.com/embed/ep50",
+      videoUrl: "https://cdn.example.com/ep50.mp4",
+      metadata: { duration: "24 min" },
+    });
+
+    expect(row.embedUrl).toBe("https://odvidhide.com/embed/ep50");
+    expect(row.videoUrl).toBe("https://cdn.example.com/ep50.mp4");
+
+    // Conflict update
+    const updated = await repository.upsert({
+      sourceUrl: makeVideoUrl(50),
+      source: "otakudesu",
+      title: "Episode 50 Updated",
+      videoType: "TV",
+      embedUrl: "https://odvidhide.com/embed/ep50-v2",
+      videoUrl: "https://cdn.example.com/ep50-v2.mp4",
+      metadata: { duration: "25 min" },
+    });
+
+    expect(updated.id).toBe(row.id);
+    expect(updated.embedUrl).toBe("https://odvidhide.com/embed/ep50-v2");
+    expect(updated.videoUrl).toBe("https://cdn.example.com/ep50-v2.mp4");
+  });
+});
 
 describe("episode repository deleteEpisode", () => {
   const repository = createEpisodeRepositoryInternal(db);
@@ -68,7 +107,7 @@ describe("episode repository updateEpisode", () => {
     await db.delete(episodes);
   });
 
-  it("partially updates episode title, videoUrl, videoType, metadata and returns updated row", async () => {
+  it("partially updates episode title, embedUrl, videoUrl, videoType, metadata and returns updated row", async () => {
     const existing = await insertEpisode(makeVideoUrl(10));
 
     // Update title only
@@ -76,14 +115,21 @@ describe("episode repository updateEpisode", () => {
       title: "Updated Title",
     });
     expect(updatedTitle.title).toBe("Updated Title");
-    expect(updatedTitle.videoUrl).toBe("https://odvidhide.com/embed/test");
+    expect(updatedTitle.embedUrl).toBe("https://odvidhide.com/embed/test");
+    expect(updatedTitle.videoUrl).toBe("https://example.com/stream.mp4");
+
+    // Update embedUrl only
+    const updatedEmbed = await repository.updateEpisode(existing.id, {
+      embedUrl: "https://example.com/embed-new",
+    });
+    expect(updatedEmbed.embedUrl).toBe("https://example.com/embed-new");
 
     // Update videoUrl only
     const updatedUrl = await repository.updateEpisode(existing.id, {
-      videoUrl: "https://example.com/embed-new",
+      videoUrl: "https://example.com/stream-new.mp4",
     });
     expect(updatedUrl.title).toBe("Updated Title");
-    expect(updatedUrl.videoUrl).toBe("https://example.com/embed-new");
+    expect(updatedUrl.videoUrl).toBe("https://example.com/stream-new.mp4");
 
     // Update videoType only
     const updatedType = await repository.updateEpisode(existing.id, {

@@ -16,7 +16,8 @@ export const MAX_LIST_LIMIT = 100;
 
 export interface UpdateEpisodeInput {
   title: string;
-  videoUrl: string;
+  embedUrl?: string | null;
+  videoUrl?: string | null;
   videoType: string | null;
   description?: string | null;
   metadata: Record<string, unknown>;
@@ -33,7 +34,8 @@ export interface EpisodeUpsertInput {
   title: string;
   order?: number;
   videoType: string | null;
-  videoUrl: string;
+  embedUrl?: string | null;
+  videoUrl?: string | null;
   metadata: ParsedMetadata;
   seriesId?: string | null;
 }
@@ -65,7 +67,8 @@ export function createEpisodeRepositoryInternal<
           title: input.title,
           order: input.order ?? 1,
           videoType: input.videoType,
-          videoUrl: input.videoUrl,
+          embedUrl: input.embedUrl ?? null,
+          videoUrl: input.videoUrl ?? null,
           metadata: input.metadata,
           seriesId: input.seriesId ?? null,
           createdAt: now,
@@ -78,7 +81,8 @@ export function createEpisodeRepositoryInternal<
             title: input.title,
             ...(input.order !== undefined ? { order: input.order } : {}),
             videoType: input.videoType,
-            videoUrl: input.videoUrl,
+            embedUrl: input.embedUrl ?? null,
+            videoUrl: input.videoUrl ?? null,
             metadata: input.metadata,
             seriesId: input.seriesId ?? undefined,
             updatedAt: now,
@@ -146,6 +150,7 @@ export function createEpisodeRepositoryInternal<
       };
 
       if (input.title !== undefined) updateData.title = input.title;
+      if (input.embedUrl !== undefined) updateData.embedUrl = input.embedUrl;
       if (input.videoUrl !== undefined) updateData.videoUrl = input.videoUrl;
       if (input.videoType !== undefined) updateData.videoType = input.videoType;
       if (input.description !== undefined) updateData.description = input.description;

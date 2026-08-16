@@ -6,8 +6,10 @@ export interface Episode {
   sourceUrl: string;
   source: string;
   title: string;
+  order?: number;
   videoType?: string | null;
-  videoUrl: string;
+  embedUrl?: string | null;
+  videoUrl?: string | null;
   description?: string | null;
   duration?: string | null;
   tags?: string[] | null;

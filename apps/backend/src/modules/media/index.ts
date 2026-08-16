@@ -50,7 +50,8 @@ export interface SaveMediaEpisodeInput {
   source: VideoSource;
   title: string;
   videoType?: string | null;
-  videoUrl: string;
+  embedUrl?: string | null;
+  videoUrl?: string | null;
   metadata: Record<string, unknown>;
 }
 
@@ -172,7 +173,8 @@ export function createMediaService<
         title: input.episode.title,
         order,
         videoType: input.episode.videoType ?? null,
-        videoUrl: input.episode.videoUrl,
+        embedUrl: input.episode.embedUrl ?? null,
+        videoUrl: input.episode.videoUrl ?? null,
         metadata: input.episode.metadata as ParsedMetadata,
         seriesId,
       });
