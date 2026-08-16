@@ -4,7 +4,12 @@ import {
   type AuthenticationService,
 } from "@repo/contracts";
 import { errorResponse, successResponse } from "../../lib/response";
-import { createSaveEpisodeService, type FetchHtmlFn } from "./index";
+import {
+  createSaveEpisodeService,
+  type FetchHtmlFn,
+  MissingEmbedUrlError,
+  StreamNotFoundError,
+} from "./index";
 import { EpisodeParseError } from "./internal/episodes/parse";
 import {
   createEpisodeRepositoryInternal,
@@ -178,6 +183,46 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           videoType: t.Optional(t.Nullable(t.String())),
           description: t.Optional(t.Nullable(t.String())),
           metadata: t.Optional(t.Record(t.String(), t.Unknown())),
+        }),
+      }
+    )
+    .post(
+      "/episodes/:id/resolve",
+      async ({ params, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const updated = await episodes.resolveEpisode(params.id);
+          return successResponse(updated);
+        } catch (error) {
+          if (error instanceof EpisodeNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          if (error instanceof MissingEmbedUrlError) {
+            return errorResponse(set, 400, error);
+          }
+          if (error instanceof StreamNotFoundError) {
+            return errorResponse(set, 400, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
         }),
       }
     )

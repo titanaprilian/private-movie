@@ -1,13 +1,15 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { EpisodeRow, SeriesRow } from "@repo/db";
 import { parseEpisodeOrder, parseEpisodePage, type ParsedMetadata } from "./internal/episodes/parse";
-import { createEpisodeRepositoryInternal } from "./internal/episodes/repository";
+import { createEpisodeRepositoryInternal, EpisodeNotFoundError } from "./internal/episodes/repository";
+import { extractVideoStream, MissingEmbedUrlError, StreamNotFoundError } from "./internal/episodes/resolver";
 import { parseSeriesPage } from "./internal/series/parse";
 import { createSeriesRepositoryInternal } from "./internal/series/repository";
 
 export type VideoSource = "otakudesu";
 
 export type { EpisodeRow as SavedEpisode, SeriesRow as SavedSeries } from "@repo/db";
+export { MissingEmbedUrlError, StreamNotFoundError } from "./internal/episodes/resolver";
 
 export type FetchHtmlFn = (url: string) => Promise<string>;
 
@@ -80,6 +82,7 @@ export interface SaveEpisodeServiceOptions {
 export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
+  resolveEpisode(id: string): Promise<EpisodeRow>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -183,6 +186,27 @@ export function createMediaService<
         episode: episodeRow,
         series: seriesRow,
       };
+    },
+
+    async resolveEpisode(id: string): Promise<EpisodeRow> {
+      const episode = await episodeRepository.findById(id);
+      if (!episode) {
+        throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
+      }
+      if (!episode.embedUrl) {
+        throw new MissingEmbedUrlError("Episode has no embed URL");
+      }
+      let html: string;
+      try {
+        html = await fetchHtml(episode.embedUrl);
+      } catch (err) {
+        throw new StreamNotFoundError(`Failed to fetch embed URL: ${(err as Error).message}`);
+      }
+      const videoUrl = extractVideoStream(html);
+      if (!videoUrl) {
+        throw new StreamNotFoundError("No video stream found on embed page");
+      }
+      return episodeRepository.updateEpisode(id, { videoUrl });
     },
   };
 }

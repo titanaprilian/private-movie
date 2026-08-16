@@ -100,6 +100,14 @@ export function createEpisodeRepositoryInternal<
       return row ?? null;
     },
 
+    async findById(id: string): Promise<EpisodeRow | null> {
+      const [row] = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, id));
+      return row ?? null;
+    },
+
     async getMaxOrder(seriesId: string | null): Promise<number> {
       const whereClause = seriesId
         ? eq(episodes.seriesId, seriesId)
