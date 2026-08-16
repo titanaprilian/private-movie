@@ -33,7 +33,8 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: updateEpisode,
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateEpisode>[1] }) =>
+      updateEpisode(id, data),
     onSuccess: (updatedEpisode) => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
       toast.success('video.edit', {
@@ -49,7 +50,7 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
 
   const deleteMutation = useMutation({
     mutationFn: deleteEpisode,
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
       // variables is { id, seriesId }
       toast.success('video.delete', {
@@ -122,7 +123,9 @@ export function SeriesDetailView({ seriesId }: SeriesDetailViewProps) {
     if (newTitle !== null && newTitle.trim() !== '' && newTitle !== selectedEpisode.title) {
       updateMutation.mutate({
         id: selectedEpisode.id,
-        title: newTitle.trim(),
+        data: {
+          title: newTitle.trim(),
+        },
       });
     }
   };
