@@ -117,7 +117,7 @@ const mockSeries: SeriesDetails = {
 const firstEpisode = mockSeries.episodes[0];
 
 function firstEpisodeHeading() {
-  return screen.getByRole('heading', { name: firstEpisode.title });
+  return screen.getByRole('heading', { level: 2, name: firstEpisode.title });
 }
 
 describe('SeriesDetailView component', () => {
@@ -183,7 +183,7 @@ describe('SeriesDetailView component', () => {
     await user.click(secondItem);
 
     expect(
-      screen.getByRole('heading', { name: secondEpisode.title })
+      screen.getByRole('heading', { level: 2, name: secondEpisode.title })
     ).toBeInTheDocument();
     expect(screen.getByText(secondEpisode.description!)).toBeInTheDocument();
   });
@@ -298,150 +298,6 @@ describe('SeriesDetailView component', () => {
     for (const episode of mockSeries.episodes) {
       expect(screen.getByLabelText(`Reorder ${episode.title}`)).toBeInTheDocument();
     }
-  });
-
-  it('renders "Resolve Stream" button when videoUrl is null/empty and embedUrl is present', async () => {
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    // Default episode (dm-01) has videoUrl, so "Resolve Stream" button should not be present
-    expect(screen.queryByRole('button', { name: /resolve stream/i })).not.toBeInTheDocument();
-
-    // Click episode dm-03 which has embedUrl but no videoUrl
-    const episodeWithEmbed = screen.getAllByText('Episode Without Video Stream')[0];
-    await user.click(episodeWithEmbed);
-
-    expect(screen.getByRole('button', { name: /resolve stream/i })).toBeInTheDocument();
-
-    // Click episode dm-04 which has no embedUrl and no videoUrl
-    const episodeNoEmbed = screen.getAllByText('Episode Without Any Stream')[0];
-    await user.click(episodeNoEmbed);
-
-    expect(screen.queryByRole('button', { name: /resolve stream/i })).not.toBeInTheDocument();
-  });
-
-  it('triggers resolve mutation with loading state and refreshes data on success', async () => {
-    let resolved = false;
-
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-
-      if (url.includes('/episodes/dm-03/resolve')) {
-        resolved = true;
-        return new Response(
-          JSON.stringify({
-            data: {
-              ...mockSeries.episodes[2],
-              videoSources: [
-                ...mockSeries.episodes[2].videoSources,
-                {
-                  id: 'vs-3-res',
-                  type: 'direct',
-                  url: 'https://stream.com/dm-03-resolved.mp4',
-                  label: 'Server 1 (Resolved)',
-                },
-              ],
-            },
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      if (url.includes('/series/deep-modules')) {
-        const episodes = resolved
-          ? mockSeries.episodes.map((ep) =>
-              ep.id === 'dm-03'
-                ? {
-                    ...ep,
-                    videoSources: [
-                      ...ep.videoSources,
-                      {
-                        id: 'vs-3-res',
-                        type: 'direct',
-                        url: 'https://stream.com/dm-03-resolved.mp4',
-                        label: 'Server 1 (Resolved)',
-                      },
-                    ],
-                  }
-                : ep
-            )
-          : mockSeries.episodes;
-        return new Response(JSON.stringify({ data: { ...mockSeries, episodes } }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
-    });
-
-    const { user } = renderWithProviders(
-      <>
-        <SeriesDetailView seriesId={mockSeries.id} />
-        <Toaster />
-      </>
-    );
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    const episodeWithEmbed = screen.getAllByText('Episode Without Video Stream')[0];
-    await user.click(episodeWithEmbed);
-
-    const resolveBtn = screen.getByRole('button', { name: /resolve stream/i });
-    expect(resolveBtn).toBeInTheDocument();
-
-    await user.click(resolveBtn);
-
-    // Assert that loading state or success happens and custom video player is mounted
-    expect(await screen.findByTestId('custom-video-element')).toBeInTheDocument();
-  });
-
-  it('displays error toast when stream resolution fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-
-      if (url.includes('/episodes/dm-03/resolve')) {
-        return new Response(
-          JSON.stringify({
-            error: { code: 'STREAM_NOT_FOUND', message: 'No video stream found' },
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      if (url.includes('/series/deep-modules')) {
-        return new Response(JSON.stringify({ data: mockSeries }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
-    });
-
-    const { user } = renderWithProviders(
-      <>
-        <SeriesDetailView seriesId={mockSeries.id} />
-        <Toaster />
-      </>
-    );
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    const episodeWithEmbed = screen.getAllByText('Episode Without Video Stream')[0];
-    await user.click(episodeWithEmbed);
-
-    const resolveBtn = screen.getByRole('button', { name: /resolve stream/i });
-    await user.click(resolveBtn);
-
-    expect(await screen.findByText(/Failed to resolve stream/i)).toBeInTheDocument();
   });
 
   it('renders source selector button group with Direct and Embed sections', async () => {

@@ -14,7 +14,6 @@ export {
   seriesDetailQueryOptions,
   previewScrape,
   saveMedia,
-  resolveEpisode,
   addVideoSource,
   addVideoSources,
   updateVideoSource,

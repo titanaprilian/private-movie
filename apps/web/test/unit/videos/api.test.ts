@@ -10,7 +10,6 @@ import {
   saveMedia,
   updateEpisode,
   updateEpisodeOrders,
-  resolveEpisode,
   addVideoSource,
   updateVideoSource,
   deleteVideoSource,
@@ -708,71 +707,6 @@ describe('videos api', () => {
     expect(patchUrl).toContain('/series/series-1/episodes/order');
     expect(patchBody).toContain('ep-2');
     expect(fetchSpy).toHaveBeenCalled();
-
-    fetchSpy.mockRestore();
-  });
-
-  it('resolveEpisode posts resolve request to backend API and returns updated episode with videoSources', async () => {
-    const mockResult = {
-      data: {
-        id: 'ep-1',
-        sourceUrl: 'https://otakudesu.cloud/ep1',
-        source: 'otakudesu',
-        title: 'Resolved Episode',
-        videoSources: [
-          {
-            id: 'vs-embed-1',
-            type: 'embed',
-            url: 'https://desustream.net/dstream/arcg/?id=sample',
-            label: 'Server 1',
-            quality: '720p',
-          },
-          {
-            id: 'vs-direct-1',
-            type: 'direct',
-            url: 'https://stream.com/1-resolved.mp4',
-            label: 'Server 1 (Resolved)',
-            quality: '720p',
-          },
-        ],
-        createdAt: '2025-01-10T00:00:00.000Z',
-        updatedAt: '2025-01-10T00:00:00.000Z',
-      },
-    };
-
-    let postUrl = '';
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
-      async (input) => {
-        postUrl = typeof input === 'string' ? input : (input as Request).url;
-        return new Response(JSON.stringify(mockResult), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-    );
-
-    const result = await resolveEpisode('ep-1');
-
-    expect(postUrl).toContain('/episodes/ep-1/resolve');
-    expect(result.id).toBe('ep-1');
-    expect(result.videoSources).toHaveLength(2);
-
-    fetchSpy.mockRestore();
-  });
-
-  it('resolveEpisode throws error when backend API resolution fails', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
-      async () =>
-        new Response(
-          JSON.stringify({ error: { code: 'STREAM_NOT_FOUND', message: 'No video stream found' } }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        )
-    );
-
-    await expect(resolveEpisode('ep-1')).rejects.toThrow('Failed to resolve episode stream');
 
     fetchSpy.mockRestore();
   });
