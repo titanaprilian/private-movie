@@ -53,9 +53,14 @@ describe("parseEpisodePage", () => {
       );
     });
 
-    it("extracts the iframe src as embedUrl and extracts raw mp4 if present", () => {
-      expect(result.embedUrl).toBe("https://odvidhide.com/embed/sylmpeaf3wzs");
-      expect(result.videoUrl).toBeNull();
+    it("extracts the iframe src as an embed video source", () => {
+      expect(result.videoSources).toEqual([
+        {
+          type: "embed",
+          url: "https://odvidhide.com/embed/sylmpeaf3wzs",
+          label: "Server Embed",
+        },
+      ]);
     });
 
     it("leaves videoType null when there is no info block", () => {
@@ -96,16 +101,38 @@ describe("parseEpisodePage", () => {
   describe("full variant (sample-b, desustream embed + info block)", () => {
     const result = parseEpisodePage(readFixture(fixtures.full));
 
-    it("extracts the title and the desustream embed embedUrl and decodes videoUrl", () => {
+    it("extracts title and video sources including embed, decoded direct stream, and download links", () => {
       expect(result.title).toBe(
         "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia"
       );
-      expect(result.embedUrl).toBe(
-        "https://desustream.net/dstream/arcg/?id=aHR0cHM6Ly9kZXN1c3RyZWFtLm5ldC9zdHJlYW0vc2FtcGxlLTYubXA0"
+
+      const embedSource = result.videoSources.find((s) => s.type === "embed");
+      expect(embedSource).toEqual({
+        type: "embed",
+        url: "https://desustream.net/dstream/arcg/?id=aHR0cHM6Ly9kZXN1c3RyZWFtLm5ldC9zdHJlYW0vc2FtcGxlLTYubXA0",
+        label: "Server Embed",
+      });
+
+      const directStreamSource = result.videoSources.find(
+        (s) => s.url === "https://desustream.net/stream/sample-6.mp4"
       );
-      expect(result.videoUrl).toBe(
-        "https://desustream.net/stream/sample-6.mp4"
+      expect(directStreamSource).toEqual({
+        type: "direct",
+        url: "https://desustream.net/stream/sample-6.mp4",
+        label: "Server Direct",
+      });
+
+      const downloadSources = result.videoSources.filter(
+        (s) => s.type === "direct" && s.quality !== undefined && s.quality !== null
       );
+      expect(downloadSources).toHaveLength(36);
+
+      expect(downloadSources[0]).toEqual({
+        type: "direct",
+        url: "https://link.desustream.com/?id=Uk83OUt2T214S3VpS0ZVRndDV3NlYWNtWm9RbTYzZ2ljbUxvNG4ydUMrdXo0dz09",
+        label: "Filedon (Mp4 360p)",
+        quality: "Mp4 360p",
+      });
     });
 
     it("reads videoType from the info block", () => {

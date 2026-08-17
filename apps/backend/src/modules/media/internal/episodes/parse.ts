@@ -16,6 +16,13 @@ export type ParsedDownloadLink = {
   hosts: ParsedHost[];
 };
 
+export type ParsedVideoSource = {
+  type: "embed" | "direct";
+  url: string;
+  label: string;
+  quality?: string | null;
+};
+
 export type ParsedMetadata = {
   genres?: string[];
   duration?: string;
@@ -27,8 +34,7 @@ export type ParsedMetadata = {
 
 export type ParsedEpisodePage = {
   title: string;
-  embedUrl: string;
-  videoUrl: string | null;
+  videoSources: ParsedVideoSource[];
   videoType: string | null;
   metadata: ParsedMetadata;
 };
@@ -117,7 +123,22 @@ export const parseEpisodePage = (html: string): ParsedEpisodePage => {
     throw new EpisodeParseError("missing iframe src");
   }
 
-  const videoUrl = extractRawStreamUrl(embedUrl);
+  const videoSources: ParsedVideoSource[] = [
+    {
+      type: "embed",
+      url: embedUrl,
+      label: "Server Embed",
+    },
+  ];
+
+  const rawStreamUrl = extractRawStreamUrl(embedUrl);
+  if (rawStreamUrl) {
+    videoSources.push({
+      type: "direct",
+      url: rawStreamUrl,
+      label: "Server Direct",
+    });
+  }
 
   const videoType = readInfoRow(box, load, "Tipe");
   const duration = readInfoRow(box, load, "Duration");
@@ -169,7 +190,26 @@ export const parseEpisodePage = (html: string): ParsedEpisodePage => {
       return { quality, size, hosts };
     })
     .get();
-  if (downloadLinks.length > 0) metadata.downloadLinks = downloadLinks;
 
-  return { title, embedUrl, videoUrl, videoType, metadata };
+  if (downloadLinks.length > 0) {
+    metadata.downloadLinks = downloadLinks;
+    for (const linkGroup of downloadLinks) {
+      for (const hostItem of linkGroup.hosts) {
+        if (
+          hostItem.url &&
+          hostItem.url !== "#" &&
+          hostItem.url.startsWith("http")
+        ) {
+          videoSources.push({
+            type: "direct",
+            url: hostItem.url,
+            label: `${hostItem.host}${linkGroup.quality ? ` (${linkGroup.quality})` : ""}`,
+            quality: linkGroup.quality || null,
+          });
+        }
+      }
+    }
+  }
+
+  return { title, videoSources, videoType, metadata };
 };
