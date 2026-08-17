@@ -13,12 +13,9 @@ import {
   updateEpisode,
   deleteEpisode,
   updateEpisodeOrders,
-  addVideoSources,
-  updateVideoSource,
-  deleteVideoSource,
-  type VideoSource,
 } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
+import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
   Dialog,
@@ -49,104 +46,6 @@ function getEpisodeTags(episode: Episode): string[] {
     return (episode.metadata as { genres: string[] }).genres;
   }
   return [];
-}
-
-function EditSourceRow({
-  source,
-  onUpdate,
-  onDelete,
-  isPending,
-}: {
-  source: VideoSource;
-  onUpdate: (updates: { type: 'direct' | 'embed'; label: string; url: string; quality?: string | null }) => void;
-  onDelete: () => void;
-  isPending: boolean;
-}) {
-  const [label, setLabel] = useState(source.label);
-  const [url, setUrl] = useState(source.url);
-  const [type, setType] = useState<'direct' | 'embed'>(source.type);
-  const [quality, setQuality] = useState(source.quality ?? '');
-
-  useEffect(() => {
-    setLabel(source.label);
-    setUrl(source.url);
-    setType(source.type);
-    setQuality(source.quality ?? '');
-  }, [source]);
-
-  return (
-    <div className="p-3 border border-c rounded bg-card space-y-2 text-xs">
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <Label className="text-[10px] text-muted">Label</Label>
-          <Input
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            className="text-xs h-8"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted">Type</Label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as 'direct' | 'embed')}
-            className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
-          >
-            <option value="direct">Direct</option>
-            <option value="embed">Embed</option>
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <Label className="text-[10px] text-muted">URL</Label>
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className="text-xs h-8"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted">Quality</Label>
-          <Input
-            value={quality}
-            onChange={(e) => setQuality(e.target.value)}
-            placeholder="e.g. 720p"
-            className="text-xs h-8"
-          />
-        </div>
-      </div>
-      <div className="flex items-center justify-between pt-1 gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="text-xs h-7 border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-          disabled={isPending}
-          onClick={onDelete}
-        >
-          Remove Source
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="text-xs h-7"
-          disabled={isPending}
-          onClick={() =>
-            onUpdate({
-              type,
-              label,
-              url,
-              quality: quality || null,
-            })
-          }
-        >
-          Update Source
-        </Button>
-      </div>
-    </div>
-  );
 }
 
 export interface SeriesDetailViewProps {
@@ -208,60 +107,6 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
     },
   });
 
-  const addSourceMutation = useMutation({
-    mutationFn: ({
-      episodeId,
-      source,
-    }: {
-      episodeId: string;
-      source: { type: 'embed' | 'direct'; url: string; label: string; quality?: string | null };
-    }) => addVideoSources(episodeId, source),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
-      toast.success('video.source.add', { description: 'Video source added' });
-    },
-    onError: (error: Error) => {
-      toast.error('video.source.add', {
-        description: `Failed to add source: ${error.message}`,
-      });
-    },
-  });
-
-  const updateSourceMutation = useMutation({
-    mutationFn: ({
-      episodeId,
-      sourceId,
-      updates,
-    }: {
-      episodeId: string;
-      sourceId: string;
-      updates: { type?: 'embed' | 'direct'; url?: string; label?: string; quality?: string | null };
-    }) => updateVideoSource(episodeId, sourceId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
-      toast.success('video.source.update', { description: 'Video source updated' });
-    },
-    onError: (error: Error) => {
-      toast.error('video.source.update', {
-        description: `Failed to update source: ${error.message}`,
-      });
-    },
-  });
-
-  const deleteSourceMutation = useMutation({
-    mutationFn: ({ episodeId, sourceId }: { episodeId: string; sourceId: string }) =>
-      deleteVideoSource(episodeId, sourceId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
-      toast.success('video.source.delete', { description: 'Video source removed' });
-    },
-    onError: (error: Error) => {
-      toast.error('video.source.delete', {
-        description: `Failed to remove source: ${error.message}`,
-      });
-    },
-  });
-
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(
     null
   );
@@ -285,15 +130,11 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
   const [editDescription, setEditDescription] = useState('');
-
-  const [newSourceLabel, setNewSourceLabel] = useState('');
-  const [newSourceUrl, setNewSourceUrl] = useState('');
-  const [newSourceType, setNewSourceType] = useState<'direct' | 'embed'>('direct');
-  const [newSourceQuality, setNewSourceQuality] = useState('');
 
   if (isLoading) {
     return (
@@ -623,8 +464,26 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
                   </p>
                 </div>
 
-                {/* Actions: Edit, Delete */}
+                {/* Actions: Manage Sources, Edit, Delete */}
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsManageSourcesOpen(true)}
+                    type="button"
+                    className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Manage Sources
+                  </button>
+
                   <button
                     onClick={handleEdit}
                     type="button"
@@ -884,123 +743,6 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
                 placeholder="e.g. mp4, embed"
               />
             </div>
-
-            {/* Video Sources Management Section */}
-            <div className="border-t border-c pt-4 space-y-3">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Video Sources
-              </Label>
-
-              {/* Existing sources list */}
-              {selectedEpisode?.videoSources && selectedEpisode.videoSources.length > 0 ? (
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                  {selectedEpisode.videoSources.map((source) => (
-                    <EditSourceRow
-                      key={source.id}
-                      source={source}
-                      onUpdate={(updates) => {
-                        updateSourceMutation.mutate({
-                          episodeId: selectedEpisode.id,
-                          sourceId: source.id,
-                          updates,
-                        });
-                      }}
-                      onDelete={() => {
-                        deleteSourceMutation.mutate({
-                          episodeId: selectedEpisode.id,
-                          sourceId: source.id,
-                        });
-                      }}
-                      isPending={updateSourceMutation.isPending || deleteSourceMutation.isPending}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-xs text-muted mono italic">No video sources configured.</div>
-              )}
-
-              {/* Add new source section */}
-              <div className="p-3 border border-c rounded bg-sidebar space-y-2">
-                <div className="text-xs font-medium mono text-muted uppercase">Add Video Source</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="new-source-label" className="text-[10px] text-muted">Label</Label>
-                    <Input
-                      id="new-source-label"
-                      placeholder="New source label"
-                      value={newSourceLabel}
-                      onChange={(e) => setNewSourceLabel(e.target.value)}
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-source-type" className="text-[10px] text-muted">Type</Label>
-                    <select
-                      id="new-source-type"
-                      value={newSourceType}
-                      onChange={(e) => setNewSourceType(e.target.value as 'direct' | 'embed')}
-                      className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
-                    >
-                      <option value="direct">Direct</option>
-                      <option value="embed">Embed</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="new-source-url" className="text-[10px] text-muted">URL</Label>
-                    <Input
-                      id="new-source-url"
-                      placeholder="New source URL"
-                      value={newSourceUrl}
-                      onChange={(e) => setNewSourceUrl(e.target.value)}
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-source-quality" className="text-[10px] text-muted">Quality</Label>
-                    <Input
-                      id="new-source-quality"
-                      placeholder="Quality (e.g. 720p)"
-                      value={newSourceQuality}
-                      onChange={(e) => setNewSourceQuality(e.target.value)}
-                      className="text-xs h-8"
-                    />
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="w-full text-xs h-8 mt-1"
-                  disabled={addSourceMutation.isPending || !newSourceLabel.trim() || !newSourceUrl.trim()}
-                  onClick={() => {
-                    if (!selectedEpisode) return;
-                    addSourceMutation.mutate(
-                      {
-                        episodeId: selectedEpisode.id,
-                        source: {
-                          type: newSourceType,
-                          label: newSourceLabel,
-                          url: newSourceUrl,
-                          quality: newSourceQuality || null,
-                        },
-                      },
-                      {
-                        onSuccess: () => {
-                          setNewSourceLabel('');
-                          setNewSourceUrl('');
-                          setNewSourceQuality('');
-                          setNewSourceType('direct');
-                        },
-                      }
-                    );
-                  }}
-                >
-                  Add Source
-                </Button>
-              </div>
-            </div>
             <DialogFooter className="pt-2">
               <Button
                 type="button"
@@ -1014,6 +756,14 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Manage Sources Dialog */}
+      <ManageSourcesDialog
+        open={isManageSourcesOpen}
+        onOpenChange={setIsManageSourcesOpen}
+        episode={selectedEpisode}
+        seriesId={seriesId}
+      />
 
       {/* Delete Episode Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

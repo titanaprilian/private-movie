@@ -347,7 +347,7 @@ describe('SeriesDetailView component', () => {
     expect(iframe.src).toBe('https://embed.com/dm-01');
   });
 
-  it('allows adding, updating, and removing video sources in edit dialog', async () => {
+  it('allows adding, updating, and removing video sources in manage sources dialog', async () => {
     let sourceAdded = false;
     let sourceUpdated = false;
     let sourceDeleted = false;
@@ -418,16 +418,17 @@ describe('SeriesDetailView component', () => {
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-    // Open edit dialog
-    const editBtn = screen.getByRole('button', { name: /edit/i });
-    await user.click(editBtn);
+    // Open manage sources dialog
+    const manageSourcesBtn = screen.getByRole('button', { name: /manage sources/i });
+    await user.click(manageSourcesBtn);
 
-    expect(await screen.findByRole('heading', { name: 'Edit Episode' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Manage Sources' })).toBeInTheDocument();
 
-    // Verify existing video sources are displayed in edit dialog
-    expect(screen.getByDisplayValue('Server 1')).toBeInTheDocument();
+    // Verify tabs exist
+    expect(screen.getByRole('tab', { name: 'Add from URL' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Edit Existing' })).toBeInTheDocument();
 
-    // Add source
+    // Add source in "Add from URL" tab (active by default)
     const newLabelInput = screen.getByPlaceholderText(/New source label/i);
     const newUrlInput = screen.getByPlaceholderText(/New source URL/i);
     const addSourceBtn = screen.getByRole('button', { name: /Add Source/i });
@@ -437,6 +438,13 @@ describe('SeriesDetailView component', () => {
     await user.click(addSourceBtn);
 
     expect(sourceAdded).toBe(true);
+
+    // Switch to "Edit Existing" tab
+    const editExistingTab = screen.getByRole('tab', { name: 'Edit Existing' });
+    await user.click(editExistingTab);
+
+    // Verify existing video sources are displayed
+    expect(screen.getByDisplayValue('Server 1')).toBeInTheDocument();
 
     // Update source
     const updateSourceBtn = screen.getAllByRole('button', { name: /Update Source|Save Source/i })[0];
