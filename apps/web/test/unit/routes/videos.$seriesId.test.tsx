@@ -35,7 +35,14 @@ describe('videos/$seriesId route component', () => {
                   sourceUrl: 'https://otakudesu.cloud/dm-01',
                   source: 'otakudesu',
                   title: 'Intro to Deep Modules',
-                  videoUrl: 'https://stream.com/1.mp4',
+                  videoSources: [
+                    {
+                      id: 'vs-1',
+                      type: 'direct',
+                      url: 'https://stream.com/1.mp4',
+                      label: 'Server 1',
+                    },
+                  ],
                   createdAt: '2026-08-10',
                   updatedAt: '2026-08-10',
                 },

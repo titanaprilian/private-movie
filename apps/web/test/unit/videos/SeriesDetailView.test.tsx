@@ -26,6 +26,20 @@ const mockSeries: SeriesDetails = {
           type: 'direct',
           url: 'https://stream.com/dm-01.mp4',
           label: 'Server 1',
+          quality: '1080p',
+        },
+        {
+          id: 'vs-1b',
+          type: 'direct',
+          url: 'https://stream.com/dm-01-720p.mp4',
+          label: 'Server 2',
+          quality: '720p',
+        },
+        {
+          id: 'vs-1c',
+          type: 'embed',
+          url: 'https://embed.com/dm-01',
+          label: 'Embed Stream',
         },
       ],
       description: 'Learn the core concepts of Deep Modules architecture.',
@@ -221,11 +235,9 @@ describe('SeriesDetailView component', () => {
     
     const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
     const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
-    const urlInput = screen.getByLabelText('Video URL') as HTMLInputElement;
 
     expect(titleInput.value).toBe(firstEpisode.title);
     expect(descInput.value).toBe(firstEpisode.description);
-    expect(urlInput.value).toBe(firstEpisode.videoSources[0].url);
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: 'Save Changes' });
@@ -430,5 +442,156 @@ describe('SeriesDetailView component', () => {
     await user.click(resolveBtn);
 
     expect(await screen.findByText(/Failed to resolve stream/i)).toBeInTheDocument();
+  });
+
+  it('renders source selector button group with Direct and Embed sections', async () => {
+    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    expect(screen.getByText('Direct')).toBeInTheDocument();
+    expect(screen.getByText('Embed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Server 1/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Server 2/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Embed Stream/i })).toBeInTheDocument();
+  });
+
+  it('auto-plays the first source when an episode is selected', async () => {
+    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    expect(video).toBeInTheDocument();
+    expect(video.src).toBe(firstEpisode.videoSources[0].url);
+  });
+
+  it('clicking a source button switches the active video source', async () => {
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    // Initially playing first source (direct - Server 1)
+    let video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    expect(video.src).toBe('https://stream.com/dm-01.mp4');
+
+    // Click Server 2 (direct 720p)
+    const server2Btn = screen.getByRole('button', { name: /Server 2/i });
+    await user.click(server2Btn);
+
+    video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    expect(video.src).toBe('https://stream.com/dm-01-720p.mp4');
+
+    // Click Embed Stream button
+    const embedBtn = screen.getByRole('button', { name: /Embed Stream/i });
+    await user.click(embedBtn);
+
+    const iframe = screen.getByTitle(firstEpisode.title) as HTMLIFrameElement;
+    expect(iframe).toBeInTheDocument();
+    expect(iframe.src).toBe('https://embed.com/dm-01');
+  });
+
+  it('allows adding, updating, and removing video sources in edit dialog', async () => {
+    let sourceAdded = false;
+    let sourceUpdated = false;
+    let sourceDeleted = false;
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const method = init?.method?.toUpperCase() ?? 'GET';
+
+      if (url.includes('/episodes/dm-01/sources') && method === 'POST') {
+        sourceAdded = true;
+        return new Response(
+          JSON.stringify({
+            data: {
+              ...firstEpisode,
+              videoSources: [
+                ...firstEpisode.videoSources,
+                { id: 'vs-new', type: 'direct', url: 'https://stream.com/new.mp4', label: 'New Server', quality: '1080p' }
+              ]
+            }
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (url.includes('/episodes/dm-01/sources/vs-1') && method === 'PATCH') {
+        sourceUpdated = true;
+        return new Response(
+          JSON.stringify({
+            data: {
+              ...firstEpisode,
+              videoSources: firstEpisode.videoSources.map(s => s.id === 'vs-1' ? { ...s, label: 'Updated Server 1' } : s)
+            }
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (url.includes('/episodes/dm-01/sources/vs-1') && method === 'DELETE') {
+        sourceDeleted = true;
+        return new Response(
+          JSON.stringify({
+            data: {
+              ...firstEpisode,
+              videoSources: firstEpisode.videoSources.filter(s => s.id !== 'vs-1')
+            }
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: mockSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <SeriesDetailView seriesId={mockSeries.id} />
+        <Toaster />
+      </>
+    );
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    // Open edit dialog
+    const editBtn = screen.getByRole('button', { name: /edit/i });
+    await user.click(editBtn);
+
+    expect(await screen.findByRole('heading', { name: 'Edit Episode' })).toBeInTheDocument();
+
+    // Verify existing video sources are displayed in edit dialog
+    expect(screen.getByDisplayValue('Server 1')).toBeInTheDocument();
+
+    // Add source
+    const newLabelInput = screen.getByPlaceholderText(/New source label/i);
+    const newUrlInput = screen.getByPlaceholderText(/New source URL/i);
+    const addSourceBtn = screen.getByRole('button', { name: /Add Source/i });
+
+    await user.type(newLabelInput, 'New Server');
+    await user.type(newUrlInput, 'https://stream.com/new.mp4');
+    await user.click(addSourceBtn);
+
+    expect(sourceAdded).toBe(true);
+
+    // Update source
+    const updateSourceBtn = screen.getAllByRole('button', { name: /Update Source|Save Source/i })[0];
+    await user.click(updateSourceBtn);
+
+    expect(sourceUpdated).toBe(true);
+
+    // Remove source
+    const removeSourceBtn = screen.getAllByRole('button', { name: /Remove Source|Delete Source/i })[0];
+    await user.click(removeSourceBtn);
+
+    expect(sourceDeleted).toBe(true);
   });
 });

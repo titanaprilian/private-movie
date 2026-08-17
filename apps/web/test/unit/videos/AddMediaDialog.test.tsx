@@ -100,6 +100,48 @@ describe('AddMediaDialog component', () => {
     expect(screen.getByText(/Step 2/i)).toBeInTheDocument();
   });
 
+  it('renders multiple video sources in Step 2 preview', async () => {
+    const mockResult: apiModule.PreviewScrapeResult = {
+      episode: {
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Multi-Source Episode',
+        videoType: 'mp4',
+        videoSources: [
+          {
+            type: 'direct',
+            url: 'https://stream.com/direct1.mp4',
+            label: 'Direct Server 1',
+            quality: '1080p',
+          },
+          {
+            type: 'embed',
+            url: 'https://embed.com/server2',
+            label: 'Embed Server 2',
+          },
+        ],
+        metadata: {},
+      },
+      series: null,
+      warnings: [],
+    };
+
+    vi.mocked(apiModule.previewScrape).mockResolvedValueOnce(mockResult);
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/ep1');
+    await user.type(screen.getByLabelText(/Raw HTML/i), '<html><body>Content</body></html>');
+    await user.click(screen.getByRole('button', { name: /Preview Scrape/i }));
+
+    expect(await screen.findByText('Multi-Source Episode')).toBeInTheDocument();
+    expect(screen.getByText('Direct Server 1')).toBeInTheDocument();
+    expect(screen.getByText('Embed Server 2')).toBeInTheDocument();
+    expect(screen.getByText('https://stream.com/direct1.mp4')).toBeInTheDocument();
+    expect(screen.getByText('https://embed.com/server2')).toBeInTheDocument();
+  });
+
   it('triggers saveMedia mutation on hitting Save in Step 2, invalidates cache queries, notifies toast, and resets wizard state', async () => {
     const mockPreviewResult: apiModule.PreviewScrapeResult = {
       episode: {

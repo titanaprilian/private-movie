@@ -196,10 +196,35 @@ export function AddMediaDialog() {
                     <p className="text-xs mono text-muted mt-0.5 truncate">
                       Source: {previewData.episode.sourceUrl}
                     </p>
-                    <p className="text-xs mono text-primary mt-0.5 truncate">
-                      Video: {previewData.episode.videoSources?.[0]?.url ?? '-'}
-                    </p>
                   </div>
+
+                  {previewData.episode.videoSources && previewData.episode.videoSources.length > 0 && (
+                    <div className="pt-2">
+                      <span className="text-[10px] mono uppercase tracking-wider text-muted block mb-1">
+                        Video Sources ({previewData.episode.videoSources.length})
+                      </span>
+                      <div className="space-y-1.5">
+                        {previewData.episode.videoSources.map((src, i) => (
+                          <div key={i} className="p-2 bg-sidebar rounded border border-c text-xs mono flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 truncate">
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium ${
+                                src.type === 'direct'
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-800'
+                                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
+                              }`}>
+                                {src.type}
+                              </span>
+                              <span className="font-semibold">{src.label}</span>
+                              {src.quality && (
+                                <span className="text-muted text-[10px]">({src.quality})</span>
+                              )}
+                            </div>
+                            <span className="text-muted truncate max-w-[200px]">{src.url}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {previewData.episode.metadata && (
                     <div className="pt-2">
