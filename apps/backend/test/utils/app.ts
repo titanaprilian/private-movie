@@ -1,4 +1,5 @@
 import type { createApp } from "@/app";
+import type { FetchFn } from "@/modules/media";
 
 export type App = ReturnType<typeof createApp>;
 
@@ -23,7 +24,7 @@ export interface RequestResult {
  * test file.
  */
 export async function buildApp(options?: {
-  fetchHtml?: (url: string) => Promise<string>;
+  fetchHtml?: FetchFn;
 }): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
@@ -34,11 +35,16 @@ export async function buildApp(options?: {
   const db = createDbClient(process.env.DATABASE_URL);
   const auth = createAuthenticationService(db);
 
-  const defaultFetchHtml = async () => {
-    return readFileSync(
-      resolve(import.meta.dirname, "../fixtures/series/sample-series-list.html"),
-      "utf8"
-    );
+  const defaultFetchHtml: FetchFn = {
+    async get() {
+      return readFileSync(
+        resolve(import.meta.dirname, "../fixtures/series/sample-series-list.html"),
+        "utf8"
+      );
+    },
+    async post() {
+      throw new Error("post() is not used in this test helper");
+    },
   };
 
   return createApp({

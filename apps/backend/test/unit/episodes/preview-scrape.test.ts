@@ -16,14 +16,17 @@ const sampleSeriesHtml = readFileSync(
 describe("previewScrape unit service", () => {
   it("successfully previews episode and series data when animePageUrl is present", async () => {
     const service = createMediaService(null as never, {
-      fetchHtml: async (url) => {
-        if (
-          url ===
-          "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
-        ) {
-          return sampleSeriesHtml;
-        }
-        throw new Error(`Unexpected fetch URL: ${url}`);
+      fetchHtml: {
+        get: async (url) => {
+          if (
+            url ===
+            "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+          ) {
+            return sampleSeriesHtml;
+          }
+          throw new Error(`Unexpected fetch URL: ${url}`);
+        },
+        post: async () => "",
       },
     });
 
@@ -65,8 +68,11 @@ describe("previewScrape unit service", () => {
 
   it("returns series as null with warning when series fetch throws an error", async () => {
     const service = createMediaService(null as never, {
-      fetchHtml: async () => {
-        throw new Error("Network error fetching series");
+      fetchHtml: {
+        get: async () => {
+          throw new Error("Network error fetching series");
+        },
+        post: async () => "",
       },
     });
 
@@ -83,7 +89,10 @@ describe("previewScrape unit service", () => {
 
   it("returns series as null with warning when fetched series HTML fails parsing", async () => {
     const service = createMediaService(null as never, {
-      fetchHtml: async () => "<html><body><p>No series title</p></body></html>",
+      fetchHtml: {
+        get: async () => "<html><body><p>No series title</p></body></html>",
+        post: async () => "",
+      },
     });
 
     const result = await service.previewScrape({
@@ -99,7 +108,10 @@ describe("previewScrape unit service", () => {
 
   it("returns series as null without warning when animePageUrl is not present in episode HTML", async () => {
     const service = createMediaService(null as never, {
-      fetchHtml: async () => sampleSeriesHtml,
+      fetchHtml: {
+        get: async () => sampleSeriesHtml,
+        post: async () => "",
+      },
     });
 
     const htmlWithoutAnimePageUrl = sampleAHtml.replace(

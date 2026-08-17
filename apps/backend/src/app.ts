@@ -7,13 +7,13 @@ import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes } from "./modules/media/http";
-import type { FetchHtmlFn } from "./modules/media";
+import type { FetchFn } from "./modules/media";
 import { InternalServerError } from "./lib/errors";
 
 export interface CreateAppDeps {
   db: DbClient;
   auth: AuthenticationService;
-  fetchHtml?: FetchHtmlFn;
+  fetchHtml?: FetchFn;
 }
 
 function getAllowedOrigin(): string | undefined {

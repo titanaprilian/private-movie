@@ -12,14 +12,30 @@ export type { EpisodeRow as SavedEpisode, SeriesRow as SavedSeries } from "@repo
 export type { EpisodeWithVideoSources };
 export { VideoSourceNotFoundError } from "./internal/video-sources/repository";
 
-export type FetchHtmlFn = (url: string) => Promise<string>;
+export type FetchFn = {
+  get(url: string): Promise<string>;
+  post(url: string, body: string): Promise<string>;
+};
 
-export const defaultFetchHtml: FetchHtmlFn = async (url: string) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch HTML from ${url}: ${response.statusText}`);
-  }
-  return response.text();
+export const defaultFetchFn: FetchFn = {
+  async get(url: string) {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch HTML from ${url}: ${response.statusText}`);
+    }
+    return response.text();
+  },
+  async post(url: string, body: string) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to POST to ${url}: ${response.statusText}`);
+    }
+    return response.text();
+  },
 };
 
 export interface SaveEpisodeInput {
@@ -89,7 +105,7 @@ export interface SaveMediaResult {
 }
 
 export interface SaveEpisodeServiceOptions {
-  fetchHtml?: FetchHtmlFn;
+  fetchHtml?: FetchFn;
 }
 
 export interface MediaService {
@@ -113,7 +129,7 @@ export function createMediaService<
   const episodeRepository = createEpisodeRepositoryInternal(db);
   const seriesRepository = createSeriesRepositoryInternal(db);
   const videoSourceRepository = createVideoSourceRepositoryInternal(db);
-  const fetchHtml = options?.fetchHtml ?? defaultFetchHtml;
+  const fetchHtml = options?.fetchHtml ?? defaultFetchFn;
 
   return {
     async previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult> {
@@ -123,7 +139,7 @@ export function createMediaService<
 
       if (parsed.metadata.animePageUrl) {
         try {
-          const seriesHtml = await fetchHtml(parsed.metadata.animePageUrl);
+          const seriesHtml = await fetchHtml.get(parsed.metadata.animePageUrl);
           const parsedSeries = parseSeriesPage(
             seriesHtml,
             parsed.metadata.animePageUrl

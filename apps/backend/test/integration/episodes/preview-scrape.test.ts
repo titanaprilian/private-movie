@@ -22,14 +22,17 @@ describe("POST /preview-scrape", () => {
 
   beforeAll(async () => {
     app = await buildApp({
-      fetchHtml: async (url) => {
-        if (
-          url ===
-          "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
-        ) {
-          return sampleSeriesHtml;
-        }
-        throw new Error(`Failed to fetch ${url}`);
+      fetchHtml: {
+        get: async (url) => {
+          if (
+            url ===
+            "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+          ) {
+            return sampleSeriesHtml;
+          }
+          throw new Error(`Failed to fetch ${url}`);
+        },
+        post: async () => "",
       },
     });
   });
@@ -197,8 +200,11 @@ describe("POST /preview-scrape", () => {
 
     it("returns 200 with series: null and warning when series fetch fails", async () => {
       const failingApp = await buildApp({
-        fetchHtml: async () => {
-          throw new Error("Network timeout fetching series page");
+        fetchHtml: {
+          get: async () => {
+            throw new Error("Network timeout fetching series page");
+          },
+          post: async () => "",
         },
       });
       const { accessToken } = await registerUser(failingApp);

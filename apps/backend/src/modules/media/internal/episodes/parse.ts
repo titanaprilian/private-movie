@@ -23,6 +23,18 @@ export type ParsedVideoSource = {
   quality?: string | null;
 };
 
+export type ParsedMirrorPayload = {
+  id: number;
+  i: number;
+  q: string;
+  label: string;
+};
+
+export type ParsedAjaxActions = {
+  nonceAction: string;
+  mirrorAction: string;
+};
+
 export type ParsedMetadata = {
   genres?: string[];
   duration?: string;
@@ -37,6 +49,8 @@ export type ParsedEpisodePage = {
   videoSources: ParsedVideoSource[];
   videoType: string | null;
   metadata: ParsedMetadata;
+  mirrorPayloads: ParsedMirrorPayload[];
+  ajaxActions: ParsedAjaxActions | null;
 };
 
 const readInfoRow = (
@@ -75,6 +89,46 @@ export function parseEpisodeOrder(title: string): number | null {
 
   return null;
 }
+
+const decodeMirrorContent = (
+  encoded: string
+): Omit<ParsedMirrorPayload, "label"> => {
+  const json = Buffer.from(encoded, "base64").toString("utf8");
+  const parsed = JSON.parse(json) as { id: number; i: number; q: string };
+  return { id: parsed.id, i: parsed.i, q: parsed.q };
+};
+
+const extractMirrorPayloads = (
+  box: ParsedPage,
+  load: CheerioAPI
+): ParsedMirrorPayload[] =>
+  box
+    .find(".mirrorstream .m720p li a[data-content]")
+    .map((_, el) => {
+      const encoded = load(el).attr("data-content") as string;
+      const label = load(el).text().trim();
+      return { ...decodeMirrorContent(encoded), label };
+    })
+    .get();
+
+export const extractAjaxActions = (html: string): ParsedAjaxActions | null => {
+  const load = cheerio.load(html, null, false);
+  const scriptContent = load("script")
+    .map((_, el) => load(el).html() ?? "")
+    .get()
+    .join("\n");
+  if (!scriptContent) return null;
+
+  const nonceAction = scriptContent.match(
+    /\{\s*action\s*:\s*["']([a-f0-9]{32})["']\s*\}/
+  )?.[1];
+  const mirrorAction = scriptContent.match(
+    /\{[^}]*nonce\s*:[^}]*action\s*:\s*["']([a-f0-9]{32})["']/
+  )?.[1];
+  if (!nonceAction || !mirrorAction) return null;
+
+  return { nonceAction, mirrorAction };
+};
 
 export const parseEpisodePage = (html: string): ParsedEpisodePage => {
   const load = cheerio.load(html, null, false);
@@ -156,5 +210,8 @@ export const parseEpisodePage = (html: string): ParsedEpisodePage => {
     metadata.downloadLinks = downloadLinks;
   }
 
-  return { title, videoSources, videoType, metadata };
+  const mirrorPayloads = extractMirrorPayloads(box, load);
+  const ajaxActions = extractAjaxActions(html);
+
+  return { title, videoSources, videoType, metadata, mirrorPayloads, ajaxActions };
 };

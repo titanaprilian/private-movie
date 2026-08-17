@@ -6,7 +6,7 @@ import {
 import { errorResponse, successResponse } from "../../lib/response";
 import {
   createSaveEpisodeService,
-  type FetchHtmlFn,
+  type FetchFn,
   VideoSourceNotFoundError,
 } from "./index";
 import { EpisodeParseError } from "./internal/episodes/parse";
@@ -23,7 +23,7 @@ import { createVideoSourceRepositoryInternal } from "./internal/video-sources/re
 export interface MediaRoutesOptions {
   db: Parameters<typeof createSaveEpisodeService>[0];
   authService: AuthenticationService;
-  fetchHtml?: FetchHtmlFn;
+  fetchHtml?: FetchFn;
 }
 
 export const mediaRoutes = (options: MediaRoutesOptions) => {

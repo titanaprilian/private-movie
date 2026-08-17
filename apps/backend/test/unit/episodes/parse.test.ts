@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   EpisodeParseError,
+  extractAjaxActions,
   parseEpisodeOrder,
   parseEpisodePage,
 } from "@/modules/media/internal/episodes/parse";
@@ -94,6 +95,14 @@ describe("parseEpisodePage", () => {
       expect(result.metadata.animePageUrl).toBe(
         "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
       );
+    });
+
+    it("falls back to an empty mirror payload list when the m720p section is missing", () => {
+      expect(result.mirrorPayloads).toEqual([]);
+    });
+
+    it("leaves ajax actions null when no action script is present", () => {
+      expect(result.ajaxActions).toBeNull();
     });
   });
 
@@ -191,6 +200,53 @@ describe("parseEpisodePage", () => {
       expect(episodes?.[0]).toEqual({
         label: "Episode 6",
         url: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+      });
+    });
+
+    it("extracts mirror payloads with decoded data-content from the m720p section", () => {
+      expect(result.mirrorPayloads).toEqual([
+        { id: 201406, i: 0, q: "720p", label: "ondesu2hd" },
+        { id: 201406, i: 1, q: "720p", label: "odstream" },
+        { id: 201406, i: 2, q: "720p", label: "filedon" },
+        { id: 201406, i: 3, q: "720p", label: "vidhide" },
+        { id: 201406, i: 4, q: "720p", label: "mega" },
+      ]);
+    });
+
+    it("extracts the AJAX action names from the inline script", () => {
+      expect(result.ajaxActions).toEqual({
+        nonceAction: "aa1208d27f29ca340c92c66d1926f13f",
+        mirrorAction: "2a3505c93b0035d3f455df82bf976b84",
+      });
+    });
+  });
+
+  describe("extractAjaxActions", () => {
+    it("returns null when no script tags exist", () => {
+      expect(extractAjaxActions("<html><body><p>plain</p></body></html>")).toBeNull();
+    });
+
+    it("returns null when the script lacks the expected action patterns", () => {
+      const html =
+        '<script>$(document).ready(function(){console.log("hi");});</script>';
+      expect(extractAjaxActions(html)).toBeNull();
+    });
+
+    it("extracts both action names from a minified mirrorstream script", () => {
+      const html =
+        '<script>window.__x__nonce=null,$(\'.mirrorstream a[href^="#"]\').on("click",function(a){a.preventDefault();const n=a.currentTarget,e=JSON.parse(atob(n.dataset.content));$.ajax("https://otakudesu.blog/wp-admin/admin-ajax.php",{method:"POST",processData:!0,cache:!0,data:{...e,nonce:window.__x__nonce,action:"2a3505c93b0035d3f455df82bf976b84"}}).done(({data:a})=>{document.getElementById("pembed").innerHTML=atob(a)}).fail(function(){}):$.ajax("https://otakudesu.blog/wp-admin/admin-ajax.php",{method:"POST",processData:!0,cache:!0,data:{action:"aa1208d27f29ca340c92c66d1926f13f"}}).done(({data:a})=>{window.__x__nonce=a;}).fail(function(){})});</script>';
+      expect(extractAjaxActions(html)).toEqual({
+        nonceAction: "aa1208d27f29ca340c92c66d1926f13f",
+        mirrorAction: "2a3505c93b0035d3f455df82bf976b84",
+      });
+    });
+
+    it("handles single-quoted action strings and whitespace", () => {
+      const html =
+        '<script>data:{ action : \'aa1208d27f29ca340c92c66d1926f13f\' },data:{ ...e, nonce: n, action : \'2a3505c93b0035d3f455df82bf976b84\' }</script>';
+      expect(extractAjaxActions(html)).toEqual({
+        nonceAction: "aa1208d27f29ca340c92c66d1926f13f",
+        mirrorAction: "2a3505c93b0035d3f455df82bf976b84",
       });
     });
   });
