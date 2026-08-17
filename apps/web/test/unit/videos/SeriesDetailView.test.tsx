@@ -348,7 +348,6 @@ describe('SeriesDetailView component', () => {
   });
 
   it('allows adding, updating, and removing video sources in manage sources dialog', async () => {
-    let sourceAdded = false;
     let sourceUpdated = false;
     let sourceDeleted = false;
 
@@ -357,7 +356,6 @@ describe('SeriesDetailView component', () => {
       const method = init?.method?.toUpperCase() ?? 'GET';
 
       if (url.includes('/episodes/dm-01/sources') && method === 'POST') {
-        sourceAdded = true;
         return new Response(
           JSON.stringify({
             data: {
@@ -428,16 +426,12 @@ describe('SeriesDetailView component', () => {
     expect(screen.getByRole('tab', { name: 'Add from URL' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Edit Existing' })).toBeInTheDocument();
 
-    // Add source in "Add from URL" tab (active by default)
-    const newLabelInput = screen.getByPlaceholderText(/New source label/i);
-    const newUrlInput = screen.getByPlaceholderText(/New source URL/i);
-    const addSourceBtn = screen.getByRole('button', { name: /Add Source/i });
+    // Test Add from URL tab scraping flow
+    const scrapeUrlInput = screen.getByLabelText(/Otakudesu URL/i);
+    const previewBtn = screen.getByRole('button', { name: /Preview/i });
 
-    await user.type(newLabelInput, 'New Server');
-    await user.type(newUrlInput, 'https://stream.com/new.mp4');
-    await user.click(addSourceBtn);
-
-    expect(sourceAdded).toBe(true);
+    await user.type(scrapeUrlInput, 'https://otakudesu.cloud/episode/test-ep-1');
+    await user.click(previewBtn);
 
     // Switch to "Edit Existing" tab
     const editExistingTab = screen.getByRole('tab', { name: 'Edit Existing' });

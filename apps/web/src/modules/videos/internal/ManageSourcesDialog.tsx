@@ -6,7 +6,9 @@ import {
   addVideoSources,
   updateVideoSource,
   deleteVideoSource,
+  previewScrape,
   type VideoSource,
+  type VideoSourceInput,
 } from './api';
 import {
   Dialog,
@@ -135,27 +137,40 @@ export function ManageSourcesDialog({
 }: ManageSourcesDialogProps) {
   const queryClient = useQueryClient();
 
-  const [newSourceLabel, setNewSourceLabel] = useState('');
-  const [newSourceUrl, setNewSourceUrl] = useState('');
-  const [newSourceType, setNewSourceType] = useState<'direct' | 'embed'>('direct');
-  const [newSourceQuality, setNewSourceQuality] = useState('');
+  const [activeTab, setActiveTab] = useState<'add-url' | 'edit-existing'>('add-url');
+  const [scrapeUrl, setScrapeUrl] = useState('');
+  const [htmlContent, setHtmlContent] = useState('');
+  const [extractedSources, setExtractedSources] = useState<VideoSourceInput[] | null>(null);
 
-  const addSourceMutation = useMutation({
-    mutationFn: ({ episodeId, source }: { episodeId: string; source: Parameters<typeof addVideoSources>[1] }) =>
-      addVideoSources(episodeId, source),
+  const previewMutation = useMutation({
+    mutationFn: (params: { sourceUrl: string; source: 'otakudesu'; html: string }) =>
+      previewScrape(params),
+    onSuccess: (data) => {
+      setExtractedSources(data.episode.videoSources || []);
+    },
+    onError: (error) => {
+      toast.error('video.scrape_preview', {
+        description: `Failed to scrape URL: ${error.message}`,
+      });
+    },
+  });
+
+  const saveSourcesMutation = useMutation({
+    mutationFn: ({ episodeId, sources }: { episodeId: string; sources: VideoSourceInput[] }) =>
+      addVideoSources(episodeId, sources),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
       toast.success('video.source_add', {
-        description: 'Successfully added video source',
+        description: 'Successfully saved video sources',
       });
-      setNewSourceLabel('');
-      setNewSourceUrl('');
-      setNewSourceQuality('');
-      setNewSourceType('direct');
+      setScrapeUrl('');
+      setHtmlContent('');
+      setExtractedSources(null);
+      setActiveTab('edit-existing');
     },
     onError: (error) => {
       toast.error('video.source_add', {
-        description: `Failed to add source: ${error.message}`,
+        description: `Failed to save sources: ${error.message}`,
       });
     },
   });
@@ -204,82 +219,106 @@ export function ManageSourcesDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="add-url" className="w-full">
+        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'add-url' | 'edit-existing')} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="add-url">Add from URL</TabsTrigger>
             <TabsTrigger value="edit-existing">Edit Existing</TabsTrigger>
           </TabsList>
 
           <TabsContent value="add-url" className="mt-4 space-y-3">
-            <div className="p-3 border border-c rounded bg-sidebar space-y-2">
-              <div className="text-xs font-medium mono text-muted uppercase">Add Video Source</div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="manage-new-source-label" className="text-[10px] text-muted">Label</Label>
-                  <Input
-                    id="manage-new-source-label"
-                    placeholder="New source label"
-                    value={newSourceLabel}
-                    onChange={(e) => setNewSourceLabel(e.target.value)}
-                    className="text-xs h-8"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="manage-new-source-type" className="text-[10px] text-muted">Type</Label>
-                  <select
-                    id="manage-new-source-type"
-                    value={newSourceType}
-                    onChange={(e) => setNewSourceType(e.target.value as 'direct' | 'embed')}
-                    className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
-                  >
-                    <option value="direct">Direct</option>
-                    <option value="embed">Embed</option>
-                  </select>
-                </div>
+            <div className="p-3 border border-c rounded bg-sidebar space-y-3">
+              <div className="text-xs font-medium mono text-muted uppercase">Scrape Otakudesu URL</div>
+              
+              <div>
+                <Label htmlFor="scrape-url" className="text-[10px] text-muted">Otakudesu URL</Label>
+                <Input
+                  id="scrape-url"
+                  placeholder="https://otakudesu.cloud/episode/..."
+                  value={scrapeUrl}
+                  onChange={(e) => setScrapeUrl(e.target.value)}
+                  className="text-xs h-8"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="manage-new-source-url" className="text-[10px] text-muted">URL</Label>
-                  <Input
-                    id="manage-new-source-url"
-                    placeholder="New source URL"
-                    value={newSourceUrl}
-                    onChange={(e) => setNewSourceUrl(e.target.value)}
-                    className="text-xs h-8"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="manage-new-source-quality" className="text-[10px] text-muted">Quality</Label>
-                  <Input
-                    id="manage-new-source-quality"
-                    placeholder="Quality (e.g. 720p)"
-                    value={newSourceQuality}
-                    onChange={(e) => setNewSourceQuality(e.target.value)}
-                    className="text-xs h-8"
-                  />
-                </div>
+
+              <div>
+                <Label htmlFor="scrape-html" className="text-[10px] text-muted">Page HTML Content (Optional/Required if offline)</Label>
+                <textarea
+                  id="scrape-html"
+                  placeholder="Paste page HTML source code..."
+                  value={htmlContent}
+                  onChange={(e) => setHtmlContent(e.target.value)}
+                  className="w-full h-20 p-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary resize-y"
+                />
               </div>
+
               <Button
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="w-full text-xs h-8 mt-1"
-                disabled={addSourceMutation.isPending || !newSourceLabel.trim() || !newSourceUrl.trim()}
+                className="w-full text-xs h-8"
+                disabled={previewMutation.isPending || !scrapeUrl.trim()}
                 onClick={() => {
-                  addSourceMutation.mutate({
-                    episodeId: episode.id,
-                    source: {
-                      type: newSourceType,
-                      label: newSourceLabel,
-                      url: newSourceUrl,
-                      quality: newSourceQuality || null,
-                    },
+                  previewMutation.mutate({
+                    sourceUrl: scrapeUrl,
+                    source: 'otakudesu',
+                    html: htmlContent,
                   });
                 }}
               >
-                Add Source
+                {previewMutation.isPending ? 'Previewing...' : 'Preview'}
               </Button>
             </div>
+
+            {extractedSources !== null && (
+              <div className="p-3 border border-c rounded bg-card space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold">Extracted Sources ({extractedSources.length})</span>
+                </div>
+
+                {extractedSources.length > 0 ? (
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {extractedSources.map((src, i) => (
+                      <div key={i} className="p-2 bg-sidebar rounded border border-c text-xs mono flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium ${
+                            src.type === 'direct'
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-800'
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
+                          }`}>
+                            {src.type}
+                          </span>
+                          <span className="font-semibold">{src.label}</span>
+                          {src.quality && (
+                            <span className="text-muted text-[10px]">({src.quality})</span>
+                          )}
+                        </div>
+                        <span className="text-muted truncate max-w-[150px]">{src.url}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted mono italic py-2 text-center">
+                    No video sources found.
+                  </div>
+                )}
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="default"
+                  className="w-full text-xs h-8"
+                  disabled={saveSourcesMutation.isPending || extractedSources.length === 0}
+                  onClick={() => {
+                    saveSourcesMutation.mutate({
+                      episodeId: episode.id,
+                      sources: extractedSources,
+                    });
+                  }}
+                >
+                  {saveSourcesMutation.isPending ? 'Saving...' : 'Save Sources'}
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="edit-existing" className="mt-4 space-y-3">
