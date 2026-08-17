@@ -20,7 +20,7 @@ function getAllowedOrigin(): string | undefined {
   if (process.env.NODE_ENV === "development") {
     return "http://localhost:5173";
   }
-  return process.env.CORS_ORIGIN;
+  return process.env.CORS_ORIGIN || "http://localhost:5173";
 }
 
 export const createApp = (deps: CreateAppDeps) => {
