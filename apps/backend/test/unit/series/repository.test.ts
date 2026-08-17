@@ -48,7 +48,6 @@ async function insertEpisodeForSeries(
       source: "otakudesu",
       title: overrides?.title ?? "Episode Title",
       videoType: null,
-      videoUrl: "https://example.com/video.mp4",
       metadata: {},
       seriesId,
       createdAt: now,

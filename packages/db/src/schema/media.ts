@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
 
 export const series = pgTable("series", {
   id: text("id").primaryKey(),
@@ -21,8 +21,6 @@ export const episodes = pgTable("episodes", {
   title: text("title").notNull(),
   order: integer("order").notNull().default(1),
   videoType: text("video_type"),
-  embedUrl: text("embed_url"),
-  videoUrl: text("video_url"),
   description: text("description"),
   duration: text("duration"),
   tags: text("tags").array(),
@@ -37,3 +35,25 @@ export const episodes = pgTable("episodes", {
 
 export type EpisodeRow = typeof episodes.$inferSelect;
 export type NewEpisodeRow = typeof episodes.$inferInsert;
+
+export const videoSources = pgTable(
+  "video_sources",
+  {
+    id: text("id").primaryKey(),
+    episodeId: text("episode_id")
+      .notNull()
+      .references(() => episodes.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    url: text("url").notNull(),
+    label: text("label").notNull(),
+    quality: text("quality"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    unique("video_sources_episode_id_url_unique").on(table.episodeId, table.url),
+  ]
+);
+
+export type VideoSourceRow = typeof videoSources.$inferSelect;
+export type NewVideoSourceRow = typeof videoSources.$inferInsert;

@@ -44,7 +44,6 @@ async function insertEpisodeRow(options: {
     source: "otakudesu",
     title: options.title ?? "Test Episode",
     videoType: null,
-    videoUrl: "https://odvidhide.com/embed/test",
     metadata: {},
     seriesId: options.seriesId ?? null,
     createdAt: now,

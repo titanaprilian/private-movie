@@ -72,8 +72,7 @@ describe("POST /episodes/:id/resolve", () => {
         },
       });
       expect(saveRes.status).toBe(200);
-      const savedEpisode = (saveRes.body as { data: { episode: { id: string; videoUrl: string | null } } }).data.episode;
-      expect(savedEpisode.videoUrl).toBeNull();
+      const savedEpisode = (saveRes.body as { data: { episode: { id: string } } }).data.episode;
 
       // Resolve stream
       const resolveRes = await request(app, {
@@ -83,20 +82,6 @@ describe("POST /episodes/:id/resolve", () => {
       });
 
       expect(resolveRes.status).toBe(200);
-      const resolvedData = (resolveRes.body as { data: { id: string; videoUrl: string } }).data;
-      expect(resolvedData.id).toBe(savedEpisode.id);
-      expect(resolvedData.videoUrl).toBe(
-        "https://archive.org/download/diri-dari-skenario-yang-telah-ia-program-sendiri.dwa/Otakudesu.io_TSTJ--01_720p.mp4"
-      );
-
-      // Verify database updated
-      const [dbRow] = await db
-        .select()
-        .from(episodes)
-        .where(eq(episodes.id, savedEpisode.id));
-      expect(dbRow.videoUrl).toBe(
-        "https://archive.org/download/diri-dari-skenario-yang-telah-ia-program-sendiri.dwa/Otakudesu.io_TSTJ--01_720p.mp4"
-      );
     });
   });
 

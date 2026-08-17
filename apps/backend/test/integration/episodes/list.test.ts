@@ -24,7 +24,6 @@ async function insertEpisode(options: {
     title: options.title,
     order: options.order ?? 1,
     videoType: null,
-    videoUrl: "https://odvidhide.com/embed/test",
     metadata: {},
     createdAt: options.createdAt,
     updatedAt: options.createdAt,

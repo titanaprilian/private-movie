@@ -20,5 +20,5 @@ export const db = drizzle(sql);
  * test via the global `beforeEach` registered in `test/setup.ts`.
  */
 export async function truncateAll(): Promise<void> {
-  await sql.unsafe("TRUNCATE TABLE refresh_tokens, users, system, episodes, series CASCADE");
+  await sql.unsafe("TRUNCATE TABLE refresh_tokens, users, system, video_sources, episodes, series CASCADE");
 }

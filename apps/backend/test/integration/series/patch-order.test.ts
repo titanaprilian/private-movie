@@ -34,7 +34,6 @@ async function insertTestEpisode(seriesId: string, order: number): Promise<{ id:
     title: `Episode ${order}`,
     order,
     videoType: null,
-    videoUrl: "https://odvidhide.com/embed/test",
     metadata: {},
     seriesId,
     createdAt: now,

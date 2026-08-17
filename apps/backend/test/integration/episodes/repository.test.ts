@@ -19,8 +19,6 @@ async function insertEpisode(options: {
     source: options.source,
     title: options.title,
     videoType: null,
-    embedUrl: "https://odvidhide.com/embed/test",
-    videoUrl: "https://example.com/stream.mp4",
     metadata: {},
     createdAt: options.createdAt,
     updatedAt: options.createdAt,
@@ -129,56 +127,5 @@ describe("episode repository list", () => {
 
     expect(result.episodes).toHaveLength(1);
     expect(result.total).toBe(2);
-  });
-});
-
-describe("episode repository persistence of embedUrl and videoUrl", () => {
-  const repository = createEpisodeRepositoryInternal(db);
-
-  beforeEach(async () => {
-    await db.delete(episodes);
-  });
-
-  it("persists and retrieves both embedUrl and videoUrl on upsert", async () => {
-    const created = await repository.upsert({
-      sourceUrl: "https://otakudesu.blog/episode/integ-persist-1/",
-      source: "otakudesu",
-      title: "Episode 1 Persistence",
-      videoType: "TV",
-      embedUrl: "https://odvidhide.com/embed/integ1",
-      videoUrl: "https://stream.example.com/video1.mp4",
-      metadata: {},
-    });
-
-    expect(created.embedUrl).toBe("https://odvidhide.com/embed/integ1");
-    expect(created.videoUrl).toBe("https://stream.example.com/video1.mp4");
-
-    const fetched = await repository.findBySourceUrl("https://otakudesu.blog/episode/integ-persist-1/");
-    expect(fetched).not.toBeNull();
-    expect(fetched?.embedUrl).toBe("https://odvidhide.com/embed/integ1");
-    expect(fetched?.videoUrl).toBe("https://stream.example.com/video1.mp4");
-  });
-
-  it("updates both embedUrl and videoUrl on updateEpisode", async () => {
-    const created = await repository.upsert({
-      sourceUrl: "https://otakudesu.blog/episode/integ-persist-2/",
-      source: "otakudesu",
-      title: "Episode 2 Persistence",
-      videoType: "TV",
-      embedUrl: "https://odvidhide.com/embed/integ2",
-      videoUrl: null,
-      metadata: {},
-    });
-
-    expect(created.embedUrl).toBe("https://odvidhide.com/embed/integ2");
-    expect(created.videoUrl).toBeNull();
-
-    const updated = await repository.updateEpisode(created.id, {
-      embedUrl: "https://odvidhide.com/embed/integ2-updated",
-      videoUrl: "https://stream.example.com/video2.mp4",
-    });
-
-    expect(updated.embedUrl).toBe("https://odvidhide.com/embed/integ2-updated");
-    expect(updated.videoUrl).toBe("https://stream.example.com/video2.mp4");
   });
 });

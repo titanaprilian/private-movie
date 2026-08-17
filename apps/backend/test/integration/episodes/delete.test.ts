@@ -16,7 +16,6 @@ async function insertEpisode(): Promise<{ id: string }> {
       source: "otakudesu",
       title: "delete-endpoint",
       videoType: null,
-      videoUrl: "https://odvidhide.com/embed/test",
       metadata: {},
       createdAt: now,
       updatedAt: now,

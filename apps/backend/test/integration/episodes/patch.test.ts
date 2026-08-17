@@ -20,8 +20,6 @@ async function insertTestEpisode(overrides?: Partial<{
   source: string;
   title: string;
   videoType: string | null;
-  embedUrl: string | null;
-  videoUrl: string | null;
   metadata: Record<string, unknown>;
 }> {
   const id = overrides?.id ?? crypto.randomUUID();
@@ -31,8 +29,6 @@ async function insertTestEpisode(overrides?: Partial<{
   const source = overrides?.source ?? "otakudesu";
   const title = overrides?.title ?? "Original Title";
   const videoType = overrides?.videoType ?? null;
-  const embedUrl = overrides?.embedUrl ?? "https://odvidhide.com/embed/original";
-  const videoUrl = overrides?.videoUrl ?? "https://example.com/stream.mp4";
   const metadata = overrides?.metadata ?? { initial: true };
   const now = new Date();
 
@@ -42,14 +38,12 @@ async function insertTestEpisode(overrides?: Partial<{
     source,
     title,
     videoType,
-    embedUrl,
-    videoUrl,
     metadata,
     createdAt: now,
     updatedAt: now,
   });
 
-  return { id, sourceUrl, source, title, videoType, embedUrl, videoUrl, metadata };
+  return { id, sourceUrl, source, title, videoType, metadata };
 }
 
 describe("PATCH /episodes/:id", () => {
@@ -156,67 +150,11 @@ describe("PATCH /episodes/:id", () => {
 
       expect(body.data.id).toBe(episode.id);
       expect(body.data.title).toBe("Updated Title Only");
-      expect(body.data.videoUrl).toBe(episode.videoUrl);
 
       // Verify in DB
       const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows).toHaveLength(1);
       expect(rows[0].title).toBe("Updated Title Only");
-      expect(rows[0].videoUrl).toBe(episode.videoUrl);
-    });
-
-    it("successfully updates embedUrl only (1 field)", async () => {
-      const { accessToken } = await registerUser(app);
-      const episode = await insertTestEpisode();
-      const newEmbedUrl = "https://example.com/new-embed-link";
-
-      const response = await request(app, {
-        method: "PATCH",
-        path: `/episodes/${episode.id}`,
-        headers: authHeaders(accessToken),
-        body: {
-          embedUrl: newEmbedUrl,
-        },
-      });
-
-      expect(response.status).toBe(200);
-      const body = response.body as {
-        data: { id: string; title: string; embedUrl: string };
-      };
-
-      expect(body.data.title).toBe(episode.title);
-      expect(body.data.embedUrl).toBe(newEmbedUrl);
-
-      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
-      expect(rows[0].embedUrl).toBe(newEmbedUrl);
-      expect(rows[0].title).toBe(episode.title);
-    });
-
-    it("successfully updates videoUrl only (1 field)", async () => {
-      const { accessToken } = await registerUser(app);
-      const episode = await insertTestEpisode();
-      const newVideoUrl = "https://example.com/new-embed-link";
-
-      const response = await request(app, {
-        method: "PATCH",
-        path: `/episodes/${episode.id}`,
-        headers: authHeaders(accessToken),
-        body: {
-          videoUrl: newVideoUrl,
-        },
-      });
-
-      expect(response.status).toBe(200);
-      const body = response.body as {
-        data: { id: string; title: string; videoUrl: string };
-      };
-
-      expect(body.data.title).toBe(episode.title);
-      expect(body.data.videoUrl).toBe(newVideoUrl);
-
-      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
-      expect(rows[0].videoUrl).toBe(newVideoUrl);
-      expect(rows[0].title).toBe(episode.title);
     });
 
     it("successfully updates videoType only (1 field)", async () => {
@@ -298,7 +236,6 @@ describe("PATCH /episodes/:id", () => {
 
       const patchPayload = {
         title: "All Fields Updated",
-        videoUrl: "https://example.com/all-fields",
         videoType: "OVA",
         description: "Updated description for all fields",
         metadata: { tags: ["action", "drama"] },
@@ -316,7 +253,6 @@ describe("PATCH /episodes/:id", () => {
         data: {
           id: string;
           title: string;
-          videoUrl: string;
           videoType: string | null;
           description: string | null;
           metadata: Record<string, unknown>;
@@ -324,14 +260,12 @@ describe("PATCH /episodes/:id", () => {
       };
 
       expect(body.data.title).toBe(patchPayload.title);
-      expect(body.data.videoUrl).toBe(patchPayload.videoUrl);
       expect(body.data.videoType).toBe(patchPayload.videoType);
       expect(body.data.description).toBe(patchPayload.description);
       expect(body.data.metadata).toEqual(patchPayload.metadata);
 
       const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows[0].title).toBe(patchPayload.title);
-      expect(rows[0].videoUrl).toBe(patchPayload.videoUrl);
       expect(rows[0].videoType).toBe(patchPayload.videoType);
       expect(rows[0].description).toBe(patchPayload.description);
       expect(rows[0].metadata).toEqual(patchPayload.metadata);

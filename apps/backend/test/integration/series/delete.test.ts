@@ -33,7 +33,6 @@ async function insertEpisodeRow(seriesId: string): Promise<{ id: string }> {
       source: "otakudesu",
       title: "Episode in Series",
       videoType: null,
-      videoUrl: "https://odvidhide.com/embed/test",
       metadata: {},
       seriesId,
       createdAt: now,

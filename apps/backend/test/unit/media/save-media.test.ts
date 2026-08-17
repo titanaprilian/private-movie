@@ -137,7 +137,6 @@ describe("createMediaService saveMedia", () => {
     expect(updatedResult.series!.title).toBe("Updated Series Title");
     expect(updatedResult.series!.description).toBe("New description");
     expect(updatedResult.episode.title).toBe("Updated Episode Title");
-    expect(updatedResult.episode.videoUrl).toBe("https://odvidhide.com/embed/new");
 
     const epRows = await db
       .select()

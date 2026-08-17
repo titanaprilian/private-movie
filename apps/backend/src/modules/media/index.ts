@@ -5,6 +5,7 @@ import { createEpisodeRepositoryInternal, EpisodeNotFoundError } from "./interna
 import { extractVideoStream, MissingEmbedUrlError, StreamNotFoundError } from "./internal/episodes/resolver";
 import { parseSeriesPage } from "./internal/series/parse";
 import { createSeriesRepositoryInternal } from "./internal/series/repository";
+import { createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
 
 export type VideoSource = "otakudesu";
 
@@ -100,6 +101,7 @@ export function createMediaService<
 ): MediaService {
   const episodeRepository = createEpisodeRepositoryInternal(db);
   const seriesRepository = createSeriesRepositoryInternal(db);
+  const videoSourceRepository = createVideoSourceRepositoryInternal(db);
   const fetchHtml = options?.fetchHtml ?? defaultFetchHtml;
 
   return {
@@ -176,11 +178,26 @@ export function createMediaService<
         title: input.episode.title,
         order,
         videoType: input.episode.videoType ?? null,
-        embedUrl: input.episode.embedUrl ?? null,
-        videoUrl: input.episode.videoUrl ?? null,
         metadata: input.episode.metadata as ParsedMetadata,
         seriesId,
       });
+
+      if (input.episode.embedUrl) {
+        await videoSourceRepository.upsert({
+          episodeId: episodeRow.id,
+          type: "embed",
+          url: input.episode.embedUrl,
+          label: "Server Embed",
+        });
+      }
+      if (input.episode.videoUrl) {
+        await videoSourceRepository.upsert({
+          episodeId: episodeRow.id,
+          type: "direct",
+          url: input.episode.videoUrl,
+          label: "Server Direct",
+        });
+      }
 
       return {
         episode: episodeRow,
@@ -193,20 +210,37 @@ export function createMediaService<
       if (!episode) {
         throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
       }
-      if (!episode.embedUrl) {
+      const sources = await videoSourceRepository.findByEpisodeId(id);
+      const embedSources = sources.filter((s) => s.type === "embed");
+
+      if (embedSources.length === 0) {
         throw new MissingEmbedUrlError("Episode has no embed URL");
       }
-      let html: string;
-      try {
-        html = await fetchHtml(episode.embedUrl);
-      } catch (err) {
-        throw new StreamNotFoundError(`Failed to fetch embed URL: ${(err as Error).message}`);
+
+      let resolvedAny = false;
+      for (const src of embedSources) {
+        try {
+          const html = await fetchHtml(src.url);
+          const directUrl = extractVideoStream(html);
+          if (directUrl) {
+            await videoSourceRepository.upsert({
+              episodeId: id,
+              type: "direct",
+              url: directUrl,
+              label: `${src.label} (Direct)`,
+            });
+            resolvedAny = true;
+          }
+        } catch {
+          // ignore error during resolve attempt
+        }
       }
-      const videoUrl = extractVideoStream(html);
-      if (!videoUrl) {
+
+      if (!resolvedAny) {
         throw new StreamNotFoundError("No video stream found on embed page");
       }
-      return episodeRepository.updateEpisode(id, { videoUrl });
+
+      return episode;
     },
   };
 }
