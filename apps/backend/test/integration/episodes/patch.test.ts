@@ -11,8 +11,6 @@ async function insertTestEpisode(overrides?: Partial<{
   source: string;
   title: string;
   videoType: string | null;
-  embedUrl: string | null;
-  videoUrl: string | null;
   metadata: Record<string, unknown>;
 }>): Promise<{
   id: string;
@@ -142,7 +140,6 @@ describe("PATCH /episodes/:id", () => {
         data: {
           id: string;
           title: string;
-          videoUrl: string;
           videoType: string | null;
           metadata: Record<string, unknown>;
         };
@@ -230,7 +227,7 @@ describe("PATCH /episodes/:id", () => {
       expect(rows[0].metadata).toEqual(newMetadata);
     });
 
-    it("successfully updates all 5 allowed fields simultaneously (title, videoUrl, videoType, description, metadata)", async () => {
+    it("successfully updates all allowed fields simultaneously (title, videoType, description, metadata)", async () => {
       const { accessToken } = await registerUser(app);
       const episode = await insertTestEpisode();
 

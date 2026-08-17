@@ -59,8 +59,12 @@ describe("POST /preview-scrape", () => {
             source: string;
             title: string;
             videoType: string | null;
-            embedUrl: string;
-            videoUrl: string | null;
+            videoSources: Array<{
+              type: string;
+              url: string;
+              label: string;
+              quality?: string | null;
+            }>;
             metadata: Record<string, unknown>;
           };
           series: {
@@ -80,10 +84,13 @@ describe("POST /preview-scrape", () => {
       expect(body.data.episode.title).toBe(
         "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
       );
-      expect(body.data.episode.embedUrl).toBe(
-        "https://odvidhide.com/embed/sylmpeaf3wzs"
-      );
-      expect(body.data.episode.videoUrl).toBeNull();
+      expect(body.data.episode.videoSources).toBeInstanceOf(Array);
+      expect(body.data.episode.videoSources.length).toBeGreaterThan(0);
+      expect(body.data.episode.videoSources[0]).toMatchObject({
+        type: "embed",
+        url: "https://odvidhide.com/embed/sylmpeaf3wzs",
+        label: "Server Embed",
+      });
 
       expect(body.data.series).not.toBeNull();
       expect(body.data.series?.sourceUrl).toBe(

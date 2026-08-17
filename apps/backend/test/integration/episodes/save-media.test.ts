@@ -29,7 +29,13 @@ describe("POST /save-media", () => {
             source: "otakudesu",
             title: "Test Episode",
             videoType: "TV",
-            videoUrl: "https://odvidhide.com/embed/test",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://odvidhide.com/embed/test",
+                label: "Server Embed",
+              },
+            ],
             metadata: {},
           },
           series: null,
@@ -50,7 +56,13 @@ describe("POST /save-media", () => {
             source: "otakudesu",
             title: "Test Episode",
             videoType: "TV",
-            videoUrl: "https://odvidhide.com/embed/test",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://odvidhide.com/embed/test",
+                label: "Server Embed",
+              },
+            ],
             metadata: {},
           },
           series: null,
@@ -76,8 +88,18 @@ describe("POST /save-media", () => {
             source: "otakudesu",
             title: "Integration Test Episode 1",
             videoType: "TV",
-            embedUrl: "https://odvidhide.com/embed/integ1",
-            videoUrl: "https://stream.example.com/video1.mp4",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://odvidhide.com/embed/integ1",
+                label: "Server Embed",
+              },
+              {
+                type: "direct",
+                url: "https://stream.example.com/video1.mp4",
+                label: "Server Direct",
+              },
+            ],
             metadata: { duration: "24 min" },
           },
           series: null,
@@ -93,7 +115,6 @@ describe("POST /save-media", () => {
             source: string;
             title: string;
             videoType: string | null;
-            videoUrl: string;
             seriesId: string | null;
           };
           series: null;
@@ -131,7 +152,13 @@ describe("POST /save-media", () => {
             source: "otakudesu",
             title: "Integration Test Episode 2",
             videoType: "TV",
-            videoUrl: "https://odvidhide.com/embed/integ2",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://odvidhide.com/embed/integ2",
+                label: "Server Embed",
+              },
+            ],
             metadata: { episodeNumber: 2 },
           },
           series: {
@@ -208,7 +235,13 @@ describe("POST /save-media", () => {
             source: "otakudesu",
             title: "Order Test Series Episode 12 Sub Indo",
             videoType: "TV",
-            videoUrl: "https://odvidhide.com/embed/12",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://odvidhide.com/embed/test",
+                label: "Server Embed",
+              },
+            ],
             metadata: {},
           },
           series: seriesPayload,
@@ -229,7 +262,13 @@ describe("POST /save-media", () => {
             source: "otakudesu",
             title: "Order Test Series Movie Special",
             videoType: "Special",
-            videoUrl: "https://odvidhide.com/embed/special",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://odvidhide.com/embed/special",
+                label: "Server Embed",
+              },
+            ],
             metadata: {},
           },
           series: seriesPayload,
@@ -267,7 +306,6 @@ describe("POST /save-media", () => {
             source: "otakudesu",
             title: "Test Episode",
             videoType: null,
-            videoUrl: "https://odvidhide.com/embed/test",
             metadata: {},
           },
         },

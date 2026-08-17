@@ -204,7 +204,7 @@ export async function previewScrape(
     );
   }
 
-  return res.data.data as PreviewScrapeResult;
+  return res.data.data as unknown as PreviewScrapeResult;
 }
 
 export interface SaveMediaParams {

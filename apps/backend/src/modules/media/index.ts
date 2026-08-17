@@ -28,14 +28,20 @@ export interface SaveEpisodeInput {
   html: string;
 }
 
+export interface PreviewScrapeVideoSource {
+  type: "embed" | "direct";
+  url: string;
+  label: string;
+  quality?: string | null;
+}
+
 export interface PreviewScrapeResult {
   episode: {
     sourceUrl: string;
     source: VideoSource;
     title: string;
     videoType: string | null;
-    embedUrl: string;
-    videoUrl: string | null;
+    videoSources: PreviewScrapeVideoSource[];
     metadata: ParsedMetadata;
   };
   series: {
@@ -48,13 +54,19 @@ export interface PreviewScrapeResult {
   warnings: string[];
 }
 
+export interface SaveMediaEpisodeVideoSourceInput {
+  type: "embed" | "direct";
+  url: string;
+  label: string;
+  quality?: string | null;
+}
+
 export interface SaveMediaEpisodeInput {
   sourceUrl: string;
   source: VideoSource;
   title: string;
   videoType?: string | null;
-  embedUrl?: string | null;
-  videoUrl?: string | null;
+  videoSources?: SaveMediaEpisodeVideoSourceInput[];
   metadata: Record<string, unknown>;
 }
 
@@ -135,8 +147,7 @@ export function createMediaService<
           source: input.source,
           title: parsed.title,
           videoType: parsed.videoType,
-          embedUrl: parsed.videoSources.find((s) => s.type === "embed")?.url ?? "",
-          videoUrl: parsed.videoSources.find((s) => s.type === "direct")?.url ?? null,
+          videoSources: parsed.videoSources,
           metadata: parsed.metadata,
         },
         series,
@@ -145,64 +156,65 @@ export function createMediaService<
     },
 
     async saveMedia(input: SaveMediaInput): Promise<SaveMediaResult> {
-      let seriesId: string | null = null;
-      let seriesRow: SeriesRow | null = null;
+      return await db.transaction(async (tx) => {
+        const episodeRepositoryTx = createEpisodeRepositoryInternal(tx);
+        const seriesRepositoryTx = createSeriesRepositoryInternal(tx);
+        const videoSourceRepositoryTx = createVideoSourceRepositoryInternal(tx);
 
-      if (input.series) {
-        seriesRow = await seriesRepository.upsert({
-          sourceUrl: input.series.sourceUrl,
-          source: input.series.source,
-          title: input.series.title,
-          description: input.series.description ?? null,
-          posterUrl: input.series.posterUrl ?? null,
-        });
-        seriesId = seriesRow.id;
-      }
+        let seriesId: string | null = null;
+        let seriesRow: SeriesRow | null = null;
 
-      let order = parseEpisodeOrder(input.episode.title);
-      if (order === null) {
-        const existing = await episodeRepository.findBySourceUrl(
-          input.episode.sourceUrl
-        );
-        if (existing) {
-          order = existing.order;
-        } else {
-          const maxOrder = await episodeRepository.getMaxOrder(seriesId);
-          order = maxOrder + 1;
+        if (input.series) {
+          seriesRow = await seriesRepositoryTx.upsert({
+            sourceUrl: input.series.sourceUrl,
+            source: input.series.source,
+            title: input.series.title,
+            description: input.series.description ?? null,
+            posterUrl: input.series.posterUrl ?? null,
+          });
+          seriesId = seriesRow.id;
         }
-      }
 
-      const episodeRow = await episodeRepository.upsert({
-        sourceUrl: input.episode.sourceUrl,
-        source: input.episode.source,
-        title: input.episode.title,
-        order,
-        videoType: input.episode.videoType ?? null,
-        metadata: input.episode.metadata as ParsedMetadata,
-        seriesId,
+        let order = parseEpisodeOrder(input.episode.title);
+        if (order === null) {
+          const existing = await episodeRepositoryTx.findBySourceUrl(
+            input.episode.sourceUrl
+          );
+          if (existing) {
+            order = existing.order;
+          } else {
+            const maxOrder = await episodeRepositoryTx.getMaxOrder(seriesId);
+            order = maxOrder + 1;
+          }
+        }
+
+        const episodeRow = await episodeRepositoryTx.upsert({
+          sourceUrl: input.episode.sourceUrl,
+          source: input.episode.source,
+          title: input.episode.title,
+          order,
+          videoType: input.episode.videoType ?? null,
+          metadata: input.episode.metadata as ParsedMetadata,
+          seriesId,
+        });
+
+        if (input.episode.videoSources && input.episode.videoSources.length > 0) {
+          for (const vs of input.episode.videoSources) {
+            await videoSourceRepositoryTx.upsert({
+              episodeId: episodeRow.id,
+              type: vs.type,
+              url: vs.url,
+              label: vs.label,
+              quality: vs.quality ?? null,
+            });
+          }
+        }
+
+        return {
+          episode: episodeRow,
+          series: seriesRow,
+        };
       });
-
-      if (input.episode.embedUrl) {
-        await videoSourceRepository.upsert({
-          episodeId: episodeRow.id,
-          type: "embed",
-          url: input.episode.embedUrl,
-          label: "Server Embed",
-        });
-      }
-      if (input.episode.videoUrl) {
-        await videoSourceRepository.upsert({
-          episodeId: episodeRow.id,
-          type: "direct",
-          url: input.episode.videoUrl,
-          label: "Server Direct",
-        });
-      }
-
-      return {
-        episode: episodeRow,
-        series: seriesRow,
-      };
     },
 
     async resolveEpisode(id: string): Promise<EpisodeRow> {
@@ -228,6 +240,7 @@ export function createMediaService<
               type: "direct",
               url: directUrl,
               label: `${src.label} (Direct)`,
+              quality: src.quality ?? null,
             });
             resolvedAny = true;
           }

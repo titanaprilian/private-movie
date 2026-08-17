@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, series } from "@repo/db";
+import { episodes, series, videoSources } from "@repo/db";
 import { createMediaService } from "@/modules/media";
 import { db } from "../../utils/db";
 
@@ -8,17 +8,31 @@ describe("createMediaService saveMedia", () => {
   const service = createMediaService(db);
 
   beforeEach(async () => {
+    await db.delete(videoSources);
     await db.delete(episodes);
     await db.delete(series);
   });
 
-  it("saves an episode without series and returns saved episode with series null", async () => {
+  it("saves an episode with multiple video sources in a single transaction", async () => {
     const episodeInput = {
       sourceUrl: "https://otakudesu.blog/episode/save-media-unit-1/",
       source: "otakudesu" as const,
       title: "Unit Test Episode 1",
       videoType: "TV",
-      videoUrl: "https://odvidhide.com/embed/test1",
+      videoSources: [
+        {
+          type: "embed" as const,
+          url: "https://odvidhide.com/embed/test1",
+          label: "Server Embed",
+          quality: "720p",
+        },
+        {
+          type: "direct" as const,
+          url: "https://stream.example.com/direct1.mp4",
+          label: "Server Direct",
+          quality: "1080p",
+        },
+      ],
       metadata: { episodeNumber: 1 },
     };
 
@@ -34,13 +48,36 @@ describe("createMediaService saveMedia", () => {
     expect(result.episode.seriesId).toBeNull();
     expect(result.series).toBeNull();
 
-    // Verify row in DB
+    // Verify episode row in DB
     const epRows = await db
       .select()
       .from(episodes)
       .where(eq(episodes.sourceUrl, episodeInput.sourceUrl));
     expect(epRows).toHaveLength(1);
     expect(epRows[0].id).toBe(result.episode.id);
+
+    // Verify video sources rows in DB created in transaction
+    const vsRows = await db
+      .select()
+      .from(videoSources)
+      .where(eq(videoSources.episodeId, result.episode.id));
+    expect(vsRows).toHaveLength(2);
+    expect(vsRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "embed",
+          url: "https://odvidhide.com/embed/test1",
+          label: "Server Embed",
+          quality: "720p",
+        }),
+        expect.objectContaining({
+          type: "direct",
+          url: "https://stream.example.com/direct1.mp4",
+          label: "Server Direct",
+          quality: "1080p",
+        }),
+      ])
+    );
   });
 
   it("saves series and episode linked via seriesId when series is provided", async () => {
@@ -57,7 +94,13 @@ describe("createMediaService saveMedia", () => {
       source: "otakudesu" as const,
       title: "Unit Test Episode 2",
       videoType: "TV",
-      videoUrl: "https://odvidhide.com/embed/test2",
+      videoSources: [
+        {
+          type: "embed" as const,
+          url: "https://odvidhide.com/embed/test2",
+          label: "Server Embed",
+        },
+      ],
       metadata: { episodeNumber: 2 },
     };
 
@@ -106,7 +149,13 @@ describe("createMediaService saveMedia", () => {
       source: "otakudesu" as const,
       title: "Original Episode Title",
       videoType: null,
-      videoUrl: "https://odvidhide.com/embed/old",
+      videoSources: [
+        {
+          type: "embed" as const,
+          url: "https://odvidhide.com/embed/old",
+          label: "Old Embed",
+        },
+      ],
       metadata: {},
     };
 
@@ -126,7 +175,13 @@ describe("createMediaService saveMedia", () => {
     const updatedEpisodeInput = {
       ...episodeInput,
       title: "Updated Episode Title",
-      videoUrl: "https://odvidhide.com/embed/new",
+      videoSources: [
+        {
+          type: "embed" as const,
+          url: "https://odvidhide.com/embed/new",
+          label: "New Embed",
+        },
+      ],
     };
 
     const updatedResult = await service.saveMedia({

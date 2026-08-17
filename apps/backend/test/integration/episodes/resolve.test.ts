@@ -66,7 +66,13 @@ describe("POST /episodes/:id/resolve", () => {
             source: "otakudesu",
             title: "Test Episode 1",
             videoType: null,
-            embedUrl: "https://desustream.net/dstream/arcg/?id=sample",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://desustream.net/dstream/arcg/?id=sample",
+                label: "Server Embed",
+              },
+            ],
             metadata: {},
           },
         },
@@ -113,7 +119,6 @@ describe("POST /episodes/:id/resolve", () => {
             source: "otakudesu",
             title: "No Embed Episode",
             videoType: null,
-            embedUrl: null,
             metadata: {},
           },
         },
@@ -144,7 +149,13 @@ describe("POST /episodes/:id/resolve", () => {
             source: "otakudesu",
             title: "No Video Stream Episode",
             videoType: null,
-            embedUrl: "https://example.com/no-video",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://example.com/no-video",
+                label: "Server Embed",
+              },
+            ],
             metadata: {},
           },
         },

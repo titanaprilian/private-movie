@@ -41,6 +41,13 @@ describe("previewScrape unit service", () => {
       "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/"
     );
     expect(result.episode.source).toBe("otakudesu");
+    expect(result.episode.videoSources).toBeInstanceOf(Array);
+    expect(result.episode.videoSources.length).toBeGreaterThan(0);
+    expect(result.episode.videoSources[0]).toMatchObject({
+      type: "embed",
+      url: "https://odvidhide.com/embed/sylmpeaf3wzs",
+      label: "Server Embed",
+    });
 
     expect(result.series).not.toBeNull();
     expect(result.series?.sourceUrl).toBe(
