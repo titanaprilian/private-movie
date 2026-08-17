@@ -1,6 +1,21 @@
 import { queryOptions } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
+export interface VideoSource {
+  id: string;
+  type: 'embed' | 'direct';
+  url: string;
+  label: string;
+  quality?: string | null;
+}
+
+export interface VideoSourceInput {
+  type: 'embed' | 'direct';
+  url: string;
+  label: string;
+  quality?: string | null;
+}
+
 export interface Episode {
   id: string;
   sourceUrl: string;
@@ -8,8 +23,7 @@ export interface Episode {
   title: string;
   order?: number;
   videoType?: string | null;
-  embedUrl?: string | null;
-  videoUrl?: string | null;
+  videoSources: VideoSource[];
   description?: string | null;
   duration?: string | null;
   tags?: string[] | null;
@@ -143,6 +157,26 @@ export function episodesQueryOptions(params?: FetchEpisodesParams) {
   });
 }
 
+export async function fetchEpisode(id: string): Promise<Episode> {
+  const res = await api.episodes[id].get();
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to fetch episode'
+    );
+  }
+
+  return res.data.data as unknown as Episode;
+}
+
+export function episodeQueryOptions(id: string) {
+  return queryOptions({
+    queryKey: ['episodes', id],
+    queryFn: () => fetchEpisode(id),
+  });
+}
+
 export async function fetchSeriesDetail(id: string): Promise<SeriesDetails> {
   const res = await api.series[id].get();
 
@@ -175,7 +209,7 @@ export interface PreviewScrapeResult {
     source: string;
     title: string;
     videoType: string | null;
-    videoUrl: string;
+    videoSources: VideoSourceInput[];
     metadata: Record<string, unknown>;
   };
   series: {
@@ -213,7 +247,7 @@ export interface SaveMediaParams {
     source: 'otakudesu' | string;
     title: string;
     videoType: string | null;
-    videoUrl: string;
+    videoSources?: VideoSourceInput[];
     metadata: Record<string, unknown>;
   };
   series?: {
@@ -239,7 +273,12 @@ export async function saveMedia(
       source: 'otakudesu';
       title: string;
       videoType: string | null;
-      videoUrl: string;
+      videoSources?: Array<{
+        type: 'embed' | 'direct';
+        url: string;
+        label: string;
+        quality?: string | null;
+      }>;
       metadata: Record<string, unknown>;
     },
     series: params.series
@@ -260,12 +299,11 @@ export async function saveMedia(
     );
   }
 
-  return res.data.data as SaveMediaResult;
+  return res.data.data as unknown as SaveMediaResult;
 }
 
 export interface UpdateEpisodeData {
   title?: string;
-  videoUrl?: string;
   videoType?: string | null;
   description?: string | null;
   metadata?: Record<string, unknown>;
@@ -310,6 +348,76 @@ export async function resolveEpisode(id: string): Promise<Episode> {
   return res.data.data as Episode;
 }
 
+export interface AddVideoSourceInput {
+  type: 'embed' | 'direct';
+  url: string;
+  label: string;
+  quality?: string | null;
+}
+
+export async function addVideoSource(
+  episodeId: string,
+  source: AddVideoSourceInput | AddVideoSourceInput[]
+): Promise<Episode> {
+  const videoSources = Array.isArray(source) ? source : [source];
+  const res = await (api.episodes as any)[episodeId].sources.post({
+    videoSources,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to add video source'
+    );
+  }
+
+  return res.data.data as unknown as Episode;
+}
+
+export const addVideoSources = addVideoSource;
+
+export interface UpdateVideoSourceInput {
+  type?: 'embed' | 'direct';
+  url?: string;
+  label?: string;
+  quality?: string | null;
+}
+
+export async function updateVideoSource(
+  episodeId: string,
+  sourceId: string,
+  updates: UpdateVideoSourceInput
+): Promise<Episode> {
+  const res = await (api.episodes as any)[episodeId].sources[sourceId].patch(
+    updates
+  );
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to update video source'
+    );
+  }
+
+  return res.data.data as unknown as Episode;
+}
+
+export async function deleteVideoSource(
+  episodeId: string,
+  sourceId: string
+): Promise<Episode> {
+  const res = await (api.episodes as any)[episodeId].sources[sourceId].delete();
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to delete video source'
+    );
+  }
+
+  return res.data.data as unknown as Episode;
+}
+
 export interface ReorderEpisodeItem {
   id: string;
   order: number;
@@ -328,4 +436,5 @@ export async function updateEpisodeOrders(
     );
   }
 }
+
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  fetchEpisode,
   fetchEpisodes,
   episodesQueryOptions,
   fetchSeries,
@@ -10,9 +11,55 @@ import {
   updateEpisode,
   updateEpisodeOrders,
   resolveEpisode,
+  addVideoSource,
+  updateVideoSource,
+  deleteVideoSource,
+  type Episode,
+  type VideoSource,
 } from '@/modules/videos/internal/api';
 
 describe('videos api', () => {
+  it('Episode type includes videoSources array instead of embedUrl and videoUrl', () => {
+    const mockSource: VideoSource = {
+      id: 'src-1',
+      type: 'direct',
+      url: 'https://stream.com/1.mp4',
+      label: 'Server 1',
+      quality: '1080p',
+    };
+
+    const mockEpisode: Episode = {
+      id: 'ep-1',
+      sourceUrl: 'https://otakudesu.cloud/ep1',
+      source: 'otakudesu',
+      title: 'Episode 1',
+      videoSources: [mockSource],
+      createdAt: '2025-01-10T00:00:00.000Z',
+      updatedAt: '2025-01-10T00:00:00.000Z',
+    };
+
+    expect(mockEpisode.videoSources).toHaveLength(1);
+    expect(mockEpisode.videoSources[0].id).toBe('src-1');
+    expect('embedUrl' in mockEpisode).toBe(false);
+    expect('videoUrl' in mockEpisode).toBe(false);
+  });
+
+  it('VideoSource type has id, type, url, label, and quality fields', () => {
+    const source: VideoSource = {
+      id: 'vs-100',
+      type: 'embed',
+      url: 'https://embed.com/1',
+      label: 'Embed Server 1',
+      quality: '720p',
+    };
+
+    expect(source.id).toBe('vs-100');
+    expect(source.type).toBe('embed');
+    expect(source.url).toBe('https://embed.com/1');
+    expect(source.label).toBe('Embed Server 1');
+    expect(source.quality).toBe('720p');
+  });
+
   it('fetchEpisodes returns episode list and metadata from backend API', async () => {
     const mockData = {
       data: {
@@ -23,7 +70,15 @@ describe('videos api', () => {
             source: 'otakudesu',
             title: 'Episode 1: Dawn',
             videoType: 'mp4',
-            videoUrl: 'https://stream.com/1.mp4',
+            videoSources: [
+              {
+                id: 'vs-1',
+                type: 'direct',
+                url: 'https://stream.com/1.mp4',
+                label: 'Server 1',
+                quality: '1080p',
+              },
+            ],
             description: 'First episode',
             duration: '24m',
             tags: ['action'],
@@ -56,7 +111,51 @@ describe('videos api', () => {
 
     expect(result.episodes).toHaveLength(1);
     expect(result.episodes[0].id).toBe('ep-1');
+    expect(result.episodes[0].videoSources).toHaveLength(1);
+    expect(result.episodes[0].videoSources[0].label).toBe('Server 1');
     expect(result.meta.total).toBe(1);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('fetchEpisode returns episode with nested video sources', async () => {
+    const mockEpisodeData = {
+      data: {
+        id: 'ep-1',
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Episode 1',
+        videoSources: [
+          {
+            id: 'vs-1',
+            type: 'embed',
+            url: 'https://embed.com/1',
+            label: 'Embed Server',
+            quality: '720p',
+          },
+        ],
+        createdAt: '2025-01-10T00:00:00.000Z',
+        updatedAt: '2025-01-10T00:00:00.000Z',
+      },
+    };
+
+    let requestedUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        requestedUrl = typeof input === 'string' ? input : (input as Request).url;
+        return new Response(JSON.stringify(mockEpisodeData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const episode = await fetchEpisode('ep-1');
+
+    expect(requestedUrl).toContain('/episodes/ep-1');
+    expect(episode.id).toBe('ep-1');
+    expect(episode.videoSources).toHaveLength(1);
+    expect(episode.videoSources[0].type).toBe('embed');
 
     fetchSpy.mockRestore();
   });
@@ -249,7 +348,15 @@ describe('videos api', () => {
             sourceUrl: 'https://otakudesu.cloud/ep1',
             source: 'otakudesu',
             title: 'Episode 1',
-            videoUrl: 'https://stream.com/1.mp4',
+            videoSources: [
+              {
+                id: 'vs-1',
+                type: 'direct',
+                url: 'https://stream.com/1.mp4',
+                label: 'Server 1',
+                quality: '1080p',
+              },
+            ],
             createdAt: '2025-01-10T00:00:00.000Z',
             updatedAt: '2025-01-10T00:00:00.000Z',
           },
@@ -270,6 +377,7 @@ describe('videos api', () => {
     expect(result.id).toBe('series-1');
     expect(result.title).toBe('Test Series Title');
     expect(result.episodes).toHaveLength(1);
+    expect(result.episodes[0].videoSources).toHaveLength(1);
 
     fetchSpy.mockRestore();
   });
@@ -306,7 +414,15 @@ describe('videos api', () => {
           sourceUrl: 'https://otakudesu.cloud/ep1',
           source: 'otakudesu',
           title: 'Saved Episode Title',
-          videoUrl: 'https://stream.com/saved.mp4',
+          videoSources: [
+            {
+              id: 'vs-1',
+              type: 'direct',
+              url: 'https://stream.com/saved.mp4',
+              label: 'Direct Stream',
+              quality: '1080p',
+            },
+          ],
           createdAt: '2025-01-10T00:00:00.000Z',
           updatedAt: '2025-01-10T00:00:00.000Z',
         },
@@ -328,12 +444,20 @@ describe('videos api', () => {
         source: 'otakudesu',
         title: 'Saved Episode Title',
         videoType: 'mp4',
-        videoUrl: 'https://stream.com/saved.mp4',
+        videoSources: [
+          {
+            type: 'direct',
+            url: 'https://stream.com/saved.mp4',
+            label: 'Direct Stream',
+            quality: '1080p',
+          },
+        ],
         metadata: {},
       },
     });
 
     expect(result.episode.id).toBe('ep-saved-1');
+    expect(result.episode.videoSources).toHaveLength(1);
     expect(fetchSpy).toHaveBeenCalled();
 
     fetchSpy.mockRestore();
@@ -358,7 +482,7 @@ describe('videos api', () => {
           source: 'otakudesu',
           title: 'Title',
           videoType: null,
-          videoUrl: 'invalid',
+          videoSources: [],
           metadata: {},
         },
       })
@@ -375,7 +499,15 @@ describe('videos api', () => {
         source: 'otakudesu',
         title: 'Updated Episode',
         videoType: 'mp4',
-        videoUrl: 'https://stream.com/1-updated.mp4',
+        videoSources: [
+          {
+            id: 'vs-1',
+            type: 'direct',
+            url: 'https://stream.com/1-updated.mp4',
+            label: 'Server 1',
+            quality: '1080p',
+          },
+        ],
         description: 'New Description',
         createdAt: '2025-01-10T00:00:00.000Z',
         updatedAt: '2025-01-10T00:00:00.000Z',
@@ -398,6 +530,151 @@ describe('videos api', () => {
     expect(result.id).toBe('ep-1');
     expect(result.description).toBe('New Description');
     expect(fetchSpy).toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+  });
+
+  it('addVideoSource(episodeId, source) calls the correct endpoint', async () => {
+    const mockEpisodeWithNewSource = {
+      data: {
+        id: 'ep-1',
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Episode 1',
+        videoSources: [
+          {
+            id: 'vs-new-1',
+            type: 'direct',
+            url: 'https://stream.com/new.mp4',
+            label: 'Server 2',
+            quality: '1080p',
+          },
+        ],
+        createdAt: '2025-01-10T00:00:00.000Z',
+        updatedAt: '2025-01-10T00:00:00.000Z',
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl = typeof input === 'string' ? input : (input as Request).url;
+        postBody = init?.body as string;
+        return new Response(JSON.stringify(mockEpisodeWithNewSource), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const result = await addVideoSource('ep-1', {
+      type: 'direct',
+      url: 'https://stream.com/new.mp4',
+      label: 'Server 2',
+      quality: '1080p',
+    });
+
+    expect(postUrl).toContain('/episodes/ep-1/sources');
+    expect(JSON.parse(postBody)).toEqual({
+      videoSources: [
+        {
+          type: 'direct',
+          url: 'https://stream.com/new.mp4',
+          label: 'Server 2',
+          quality: '1080p',
+        },
+      ],
+    });
+    expect(result.id).toBe('ep-1');
+    expect(result.videoSources).toHaveLength(1);
+    expect(result.videoSources[0].id).toBe('vs-new-1');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('updateVideoSource(episodeId, sourceId, updates) calls the correct endpoint', async () => {
+    const mockUpdatedResult = {
+      data: {
+        id: 'ep-1',
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Episode 1',
+        videoSources: [
+          {
+            id: 'vs-1',
+            type: 'direct',
+            url: 'https://stream.com/updated.mp4',
+            label: 'Updated Server',
+            quality: '1080p',
+          },
+        ],
+        createdAt: '2025-01-10T00:00:00.000Z',
+        updatedAt: '2025-01-10T00:00:00.000Z',
+      },
+    };
+
+    let patchUrl = '';
+    let patchBody = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        patchUrl = typeof input === 'string' ? input : (input as Request).url;
+        patchBody = init?.body as string;
+        return new Response(JSON.stringify(mockUpdatedResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const result = await updateVideoSource('ep-1', 'vs-1', {
+      label: 'Updated Server',
+      url: 'https://stream.com/updated.mp4',
+    });
+
+    expect(patchUrl).toContain('/episodes/ep-1/sources/vs-1');
+    expect(JSON.parse(patchBody)).toEqual({
+      label: 'Updated Server',
+      url: 'https://stream.com/updated.mp4',
+    });
+    expect(result.id).toBe('ep-1');
+    expect(result.videoSources[0].label).toBe('Updated Server');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('deleteVideoSource(episodeId, sourceId) calls the correct endpoint', async () => {
+    const mockDeleteResult = {
+      data: {
+        id: 'ep-1',
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Episode 1',
+        videoSources: [],
+        createdAt: '2025-01-10T00:00:00.000Z',
+        updatedAt: '2025-01-10T00:00:00.000Z',
+      },
+    };
+
+    let deleteUrl = '';
+    let deleteMethod = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        deleteUrl = typeof input === 'string' ? input : (input as Request).url;
+        deleteMethod = init?.method ?? 'GET';
+        return new Response(JSON.stringify(mockDeleteResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const result = await deleteVideoSource('ep-1', 'vs-1');
+
+    expect(deleteUrl).toContain('/episodes/ep-1/sources/vs-1');
+    expect(deleteMethod).toBe('DELETE');
+    expect(result.id).toBe('ep-1');
+    expect(result.videoSources).toHaveLength(0);
 
     fetchSpy.mockRestore();
   });
@@ -435,15 +712,29 @@ describe('videos api', () => {
     fetchSpy.mockRestore();
   });
 
-  it('resolveEpisode posts resolve request to backend API and returns updated episode', async () => {
+  it('resolveEpisode posts resolve request to backend API and returns updated episode with videoSources', async () => {
     const mockResult = {
       data: {
         id: 'ep-1',
         sourceUrl: 'https://otakudesu.cloud/ep1',
         source: 'otakudesu',
         title: 'Resolved Episode',
-        embedUrl: 'https://desustream.net/dstream/arcg/?id=sample',
-        videoUrl: 'https://stream.com/1-resolved.mp4',
+        videoSources: [
+          {
+            id: 'vs-embed-1',
+            type: 'embed',
+            url: 'https://desustream.net/dstream/arcg/?id=sample',
+            label: 'Server 1',
+            quality: '720p',
+          },
+          {
+            id: 'vs-direct-1',
+            type: 'direct',
+            url: 'https://stream.com/1-resolved.mp4',
+            label: 'Server 1 (Resolved)',
+            quality: '720p',
+          },
+        ],
         createdAt: '2025-01-10T00:00:00.000Z',
         updatedAt: '2025-01-10T00:00:00.000Z',
       },
@@ -464,7 +755,7 @@ describe('videos api', () => {
 
     expect(postUrl).toContain('/episodes/ep-1/resolve');
     expect(result.id).toBe('ep-1');
-    expect(result.videoUrl).toBe('https://stream.com/1-resolved.mp4');
+    expect(result.videoSources).toHaveLength(2);
 
     fetchSpy.mockRestore();
   });
@@ -486,3 +777,4 @@ describe('videos api', () => {
     fetchSpy.mockRestore();
   });
 });
+

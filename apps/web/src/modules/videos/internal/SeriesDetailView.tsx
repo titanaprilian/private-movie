@@ -182,6 +182,11 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
     filteredEpisodes[0] ??
     null;
 
+  const directSource = selectedEpisode?.videoSources?.find((s) => s.type === 'direct');
+  const embedSource = selectedEpisode?.videoSources?.find((s) => s.type === 'embed');
+  const videoUrl = directSource?.url;
+  const embedUrl = embedSource?.url;
+
   const handleDragEnd = (result: DropResult) => {
     const { destination, source } = result;
 
@@ -229,7 +234,7 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
   const handleEdit = () => {
     if (!selectedEpisode) return;
     setEditTitle(selectedEpisode.title ?? '');
-    setEditVideoUrl(selectedEpisode.videoUrl ?? '');
+    setEditVideoUrl(videoUrl ?? '');
     setEditVideoType(selectedEpisode.videoType ?? '');
     setEditDescription(selectedEpisode.description ?? '');
     setIsEditDialogOpen(true);
@@ -242,7 +247,6 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
       id: selectedEpisode.id,
       data: {
         title: editTitle,
-        videoUrl: editVideoUrl,
         videoType: editVideoType || null,
         description: editDescription || null,
       },
@@ -465,7 +469,7 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
                     <h2 className="text-lg font-semibold">
                       {selectedEpisode.title}
                     </h2>
-                    {selectedEpisode.videoUrl ? (
+                    {videoUrl ? (
                       <span className="text-[10px] mono px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                         Ready
                       </span>
@@ -485,7 +489,7 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
 
                 {/* Actions: Edit, Delete, Resolve Stream */}
                 <div className="flex items-center gap-2">
-                  {!selectedEpisode.videoUrl && selectedEpisode.embedUrl && (
+                  {!videoUrl && embedUrl && (
                     <button
                       onClick={handleResolveStream}
                       disabled={resolveMutation.isPending}
@@ -554,9 +558,9 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
 
               {/* Video Player Preview Box */}
               <div className="w-full">
-                {selectedEpisode.videoUrl ? (
+                {videoUrl ? (
                   <CustomVideoPlayer
-                    src={selectedEpisode.videoUrl}
+                    src={videoUrl}
                     title={selectedEpisode.title}
                     seriesId={seriesId}
                     currentOrder={selectedEpisode.order ?? 1}
@@ -568,10 +572,10 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
                       }
                     }}
                   />
-                ) : selectedEpisode.embedUrl ? (
+                ) : embedUrl ? (
                   <div className="aspect-video w-full rounded border border-c bg-black overflow-hidden">
                     <iframe
-                      src={selectedEpisode.embedUrl}
+                      src={embedUrl}
                       title={selectedEpisode.title}
                       allowFullScreen
                       className="w-full h-full border-0"

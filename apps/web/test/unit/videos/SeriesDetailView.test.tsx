@@ -20,7 +20,14 @@ const mockSeries: SeriesDetails = {
       sourceUrl: 'https://otakudesu.cloud/dm-01',
       source: 'otakudesu',
       title: 'Intro to Deep Modules',
-      videoUrl: 'https://stream.com/dm-01.mp4',
+      videoSources: [
+        {
+          id: 'vs-1',
+          type: 'direct',
+          url: 'https://stream.com/dm-01.mp4',
+          label: 'Server 1',
+        },
+      ],
       description: 'Learn the core concepts of Deep Modules architecture.',
       duration: '12:34',
       tags: ['Architecture', 'Core'],
@@ -35,7 +42,14 @@ const mockSeries: SeriesDetails = {
       sourceUrl: 'https://otakudesu.cloud/dm-02',
       source: 'otakudesu',
       title: 'TanStack Router Setup',
-      videoUrl: 'https://stream.com/dm-02.mp4',
+      videoSources: [
+        {
+          id: 'vs-2',
+          type: 'direct',
+          url: 'https://stream.com/dm-02.mp4',
+          label: 'Server 1',
+        },
+      ],
       description: 'Step-by-step guide to file-based routing.',
       duration: '15:42',
       tags: ['Routing', 'React'],
@@ -50,8 +64,14 @@ const mockSeries: SeriesDetails = {
       sourceUrl: 'https://otakudesu.cloud/dm-03',
       source: 'otakudesu',
       title: 'Episode Without Video Stream',
-      videoUrl: '',
-      embedUrl: 'https://desustream.net/dstream/arcg/?id=sample',
+      videoSources: [
+        {
+          id: 'vs-3',
+          type: 'embed',
+          url: 'https://desustream.net/dstream/arcg/?id=sample',
+          label: 'Server 1',
+        },
+      ],
       description: 'Episode with missing videoUrl and fallback metadata genres.',
       duration: '10:00',
       tags: null,
@@ -67,8 +87,7 @@ const mockSeries: SeriesDetails = {
       sourceUrl: 'https://otakudesu.cloud/dm-04',
       source: 'otakudesu',
       title: 'Episode Without Any Stream',
-      videoUrl: null,
-      embedUrl: null,
+      videoSources: [],
       description: 'Episode with no videoUrl and no embedUrl.',
       duration: '10:00',
       tags: null,
@@ -206,7 +225,7 @@ describe('SeriesDetailView component', () => {
 
     expect(titleInput.value).toBe(firstEpisode.title);
     expect(descInput.value).toBe(firstEpisode.description);
-    expect(urlInput.value).toBe(firstEpisode.videoUrl);
+    expect(urlInput.value).toBe(firstEpisode.videoSources[0].url);
 
     // Save changes
     const saveButton = screen.getByRole('button', { name: 'Save Changes' });
@@ -302,7 +321,15 @@ describe('SeriesDetailView component', () => {
           JSON.stringify({
             data: {
               ...mockSeries.episodes[2],
-              videoUrl: 'https://stream.com/dm-03-resolved.mp4',
+              videoSources: [
+                ...mockSeries.episodes[2].videoSources,
+                {
+                  id: 'vs-3-res',
+                  type: 'direct',
+                  url: 'https://stream.com/dm-03-resolved.mp4',
+                  label: 'Server 1 (Resolved)',
+                },
+              ],
             },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
@@ -313,7 +340,18 @@ describe('SeriesDetailView component', () => {
         const episodes = resolved
           ? mockSeries.episodes.map((ep) =>
               ep.id === 'dm-03'
-                ? { ...ep, videoUrl: 'https://stream.com/dm-03-resolved.mp4' }
+                ? {
+                    ...ep,
+                    videoSources: [
+                      ...ep.videoSources,
+                      {
+                        id: 'vs-3-res',
+                        type: 'direct',
+                        url: 'https://stream.com/dm-03-resolved.mp4',
+                        label: 'Server 1 (Resolved)',
+                      },
+                    ],
+                  }
                 : ep
             )
           : mockSeries.episodes;

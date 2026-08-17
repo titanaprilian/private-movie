@@ -56,7 +56,13 @@ describe('AddMediaDialog component', () => {
         source: 'otakudesu',
         title: 'Parsed Test Episode',
         videoType: 'mp4',
-        videoUrl: 'https://stream.com/video.mp4',
+        videoSources: [
+          {
+            type: 'direct',
+            url: 'https://stream.com/video.mp4',
+            label: 'Server 1',
+          },
+        ],
         metadata: {
           resolution: '1080p',
           duration: '24m',
@@ -101,7 +107,13 @@ describe('AddMediaDialog component', () => {
         source: 'otakudesu',
         title: 'Parsed Test Episode',
         videoType: 'mp4',
-        videoUrl: 'https://stream.com/video.mp4',
+        videoSources: [
+          {
+            type: 'direct',
+            url: 'https://stream.com/video.mp4',
+            label: 'Server 1',
+          },
+        ],
         metadata: {
           resolution: '1080p',
         },
@@ -123,7 +135,14 @@ describe('AddMediaDialog component', () => {
         source: 'otakudesu',
         title: 'Parsed Test Episode',
         videoType: 'mp4',
-        videoUrl: 'https://stream.com/video.mp4',
+        videoSources: [
+          {
+            id: 'vs-1',
+            type: 'direct',
+            url: 'https://stream.com/video.mp4',
+            label: 'Server 1',
+          },
+        ],
         createdAt: '2025-01-10T00:00:00.000Z',
         updatedAt: '2025-01-10T00:00:00.000Z',
       },

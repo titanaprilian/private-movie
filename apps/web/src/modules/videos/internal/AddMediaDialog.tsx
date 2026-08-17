@@ -197,7 +197,7 @@ export function AddMediaDialog() {
                       Source: {previewData.episode.sourceUrl}
                     </p>
                     <p className="text-xs mono text-primary mt-0.5 truncate">
-                      Video: {previewData.episode.videoUrl}
+                      Video: {previewData.episode.videoSources?.[0]?.url ?? '-'}
                     </p>
                   </div>
 

@@ -56,7 +56,13 @@ describe('useScrapeWorkerStore', () => {
         source: 'otakudesu',
         title: 'Test Episode 1',
         videoType: 'mp4',
-        videoUrl: 'https://video.stream/ep1.mp4',
+        videoSources: [
+          {
+            type: 'direct',
+            url: 'https://video.stream/ep1.mp4',
+            label: 'Server 1',
+          },
+        ],
         metadata: { animePageUrl: 'https://otakudesu.cloud/anime/test' },
       },
       series: {

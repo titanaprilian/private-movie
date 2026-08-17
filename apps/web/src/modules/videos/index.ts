@@ -4,6 +4,8 @@ export { AddMediaDialog } from './internal/AddMediaDialog';
 export { CustomVideoPlayer } from './internal/CustomVideoPlayer';
 export type { CustomVideoPlayerProps } from './internal/CustomVideoPlayer';
 export {
+  fetchEpisode,
+  episodeQueryOptions,
   fetchEpisodes,
   episodesQueryOptions,
   fetchSeries,
@@ -13,11 +15,19 @@ export {
   previewScrape,
   saveMedia,
   resolveEpisode,
+  addVideoSource,
+  addVideoSources,
+  updateVideoSource,
+  deleteVideoSource,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
 export type {
   Episode,
   Episode as ApiEpisode,
+  VideoSource,
+  VideoSourceInput,
+  AddVideoSourceInput,
+  UpdateVideoSourceInput,
   FetchEpisodesParams,
   EpisodesListResponse,
   SeriesItem,
