@@ -203,23 +203,23 @@ export function AddMediaDialog() {
                       <span className="text-[10px] mono uppercase tracking-wider text-muted block mb-1">
                         Video Sources ({previewData.episode.videoSources.length})
                       </span>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                         {previewData.episode.videoSources.map((src, i) => (
                           <div key={i} className="p-2 bg-sidebar rounded border border-c text-xs mono flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 truncate">
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium ${
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium shrink-0 ${
                                 src.type === 'direct'
                                   ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-800'
                                   : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
                               }`}>
                                 {src.type}
                               </span>
-                              <span className="font-semibold">{src.label}</span>
+                              <span className="font-semibold truncate">{src.label}</span>
                               {src.quality && (
-                                <span className="text-muted text-[10px]">({src.quality})</span>
+                                <span className="text-muted text-[10px] shrink-0">({src.quality})</span>
                               )}
                             </div>
-                            <span className="text-muted truncate max-w-[200px]">{src.url}</span>
+                            <span className="text-muted truncate max-w-[200px]" title={src.url}>{src.url}</span>
                           </div>
                         ))}
                       </div>
@@ -344,7 +344,7 @@ export function AddMediaDialog() {
                     />
                   </svg>
                 )}
-                {isLoading ? 'Scraping...' : 'Preview Scrape'}
+                {isLoading ? 'Resolving mirrors...' : 'Preview Scrape'}
               </button>
             </>
           ) : (

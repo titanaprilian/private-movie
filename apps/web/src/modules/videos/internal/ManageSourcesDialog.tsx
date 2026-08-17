@@ -141,12 +141,14 @@ export function ManageSourcesDialog({
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
   const [extractedSources, setExtractedSources] = useState<VideoSourceInput[] | null>(null);
+  const [previewWarnings, setPreviewWarnings] = useState<string[]>([]);
 
   const previewMutation = useMutation({
     mutationFn: (params: { sourceUrl: string; source: 'otakudesu'; html: string }) =>
       previewScrape(params),
     onSuccess: (data) => {
       setExtractedSources(data.episode.videoSources || []);
+      setPreviewWarnings(data.warnings || []);
     },
     onError: (error) => {
       toast.error('video.scrape_preview', {
@@ -166,6 +168,7 @@ export function ManageSourcesDialog({
       setScrapeUrl('');
       setHtmlContent('');
       setExtractedSources(null);
+      setPreviewWarnings([]);
       setActiveTab('edit-existing');
     },
     onError: (error) => {
@@ -265,7 +268,7 @@ export function ManageSourcesDialog({
                   });
                 }}
               >
-                {previewMutation.isPending ? 'Previewing...' : 'Preview'}
+                {previewMutation.isPending ? 'Resolving mirrors...' : 'Preview'}
               </Button>
             </div>
 
@@ -274,6 +277,28 @@ export function ManageSourcesDialog({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold">Extracted Sources ({extractedSources.length})</span>
                 </div>
+
+                {previewWarnings.length > 0 && (
+                  <div className="space-y-1.5">
+                    {previewWarnings.map((warning, index) => (
+                      <div
+                        key={index}
+                        className="p-2 rounded border border-amber-200 dark:border-amber-900/50 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2"
+                      >
+                        <svg
+                          className="w-3 h-3 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01" />
+                        </svg>
+                        <span>{warning}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {extractedSources.length > 0 ? (
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
