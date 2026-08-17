@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   EpisodeParseError,
-  extractRawStreamUrl,
   parseEpisodeOrder,
   parseEpisodePage,
 } from "@/modules/media/internal/episodes/parse";
@@ -101,38 +100,18 @@ describe("parseEpisodePage", () => {
   describe("full variant (sample-b, desustream embed + info block)", () => {
     const result = parseEpisodePage(readFixture(fixtures.full));
 
-    it("extracts title and video sources including embed, decoded direct stream, and download links", () => {
+    it("extracts title and video sources containing only embed sources", () => {
       expect(result.title).toBe(
         "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia"
       );
 
-      const embedSource = result.videoSources.find((s) => s.type === "embed");
-      expect(embedSource).toEqual({
-        type: "embed",
-        url: "https://desustream.net/dstream/arcg/?id=aHR0cHM6Ly9kZXN1c3RyZWFtLm5ldC9zdHJlYW0vc2FtcGxlLTYubXA0",
-        label: "Server Embed",
-      });
-
-      const directStreamSource = result.videoSources.find(
-        (s) => s.url === "https://desustream.net/stream/sample-6.mp4"
-      );
-      expect(directStreamSource).toEqual({
-        type: "direct",
-        url: "https://desustream.net/stream/sample-6.mp4",
-        label: "Server Direct",
-      });
-
-      const downloadSources = result.videoSources.filter(
-        (s) => s.type === "direct" && s.quality !== undefined && s.quality !== null
-      );
-      expect(downloadSources).toHaveLength(36);
-
-      expect(downloadSources[0]).toEqual({
-        type: "direct",
-        url: "https://link.desustream.com/?id=Uk83OUt2T214S3VpS0ZVRndDV3NlYWNtWm9RbTYzZ2ljbUxvNG4ydUMrdXo0dz09",
-        label: "Filedon (Mp4 360p)",
-        quality: "Mp4 360p",
-      });
+      expect(result.videoSources).toEqual([
+        {
+          type: "embed",
+          url: "https://desustream.net/dstream/arcg/?id=aHR0cHM6Ly9kZXN1c3RyZWFtLm5ldC9zdHJlYW0vc2FtcGxlLTYubXA0",
+          label: "Server Embed",
+        },
+      ]);
     });
 
     it("reads videoType from the info block", () => {
@@ -213,27 +192,6 @@ describe("parseEpisodePage", () => {
         label: "Episode 6",
         url: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
       });
-    });
-  });
-
-  describe("extractRawStreamUrl", () => {
-    it("extracts direct .mp4 URL from obfuscated base64 id param in embedUrl", () => {
-      // Base64 encoded "https://cdn.example.com/video/ep1.mp4"
-      const encoded = btoa("https://cdn.example.com/video/ep1.mp4");
-      const url = `https://desustream.net/dstream/arcg/?id=${encoded}`;
-      expect(extractRawStreamUrl(url)).toBe("https://cdn.example.com/video/ep1.mp4");
-    });
-
-    it("handles double-encoded base64 id param containing .mp4 URL", () => {
-      const first = btoa("https://cdn.example.com/video/ep2.mp4");
-      const second = btoa(first);
-      const url = `https://desustream.net/dstream/arcg/?id=${second}`;
-      expect(extractRawStreamUrl(url)).toBe("https://cdn.example.com/video/ep2.mp4");
-    });
-
-    it("returns null when id param is missing or cannot be decoded into .mp4 URL", () => {
-      expect(extractRawStreamUrl("https://odvidhide.com/embed/sylmpeaf3wzs")).toBeNull();
-      expect(extractRawStreamUrl("https://desustream.net/dstream/arcg/?id=invalidBase64!")).toBeNull();
     });
   });
 

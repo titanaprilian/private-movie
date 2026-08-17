@@ -2,7 +2,6 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { SeriesRow } from "@repo/db";
 import { parseEpisodeOrder, parseEpisodePage, type ParsedMetadata } from "./internal/episodes/parse";
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
-import { extractVideoStream, MissingEmbedUrlError, StreamNotFoundError } from "./internal/episodes/resolver";
 import { parseSeriesPage } from "./internal/series/parse";
 import { createSeriesRepositoryInternal } from "./internal/series/repository";
 import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
@@ -11,7 +10,6 @@ export type VideoSource = "otakudesu";
 
 export type { EpisodeRow as SavedEpisode, SeriesRow as SavedSeries } from "@repo/db";
 export type { EpisodeWithVideoSources };
-export { MissingEmbedUrlError, StreamNotFoundError } from "./internal/episodes/resolver";
 export { VideoSourceNotFoundError } from "./internal/video-sources/repository";
 
 export type FetchHtmlFn = (url: string) => Promise<string>;
@@ -97,7 +95,6 @@ export interface SaveEpisodeServiceOptions {
 export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
-  resolveEpisode(id: string): Promise<EpisodeWithVideoSources>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -219,46 +216,6 @@ export function createMediaService<
           series: seriesRow,
         };
       });
-    },
-
-    async resolveEpisode(id: string): Promise<EpisodeWithVideoSources> {
-      const episode = await episodeRepository.findById(id);
-      if (!episode) {
-        throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
-      }
-      const sources = await videoSourceRepository.findByEpisodeId(id);
-      const embedSources = sources.filter((s) => s.type === "embed");
-
-      if (embedSources.length === 0) {
-        throw new MissingEmbedUrlError("Episode has no embed URL");
-      }
-
-      let resolvedAny = false;
-      for (const src of embedSources) {
-        try {
-          const html = await fetchHtml(src.url);
-          const directUrl = extractVideoStream(html);
-          if (directUrl) {
-            await videoSourceRepository.upsert({
-              episodeId: id,
-              type: "direct",
-              url: directUrl,
-              label: `${src.label} (Direct)`,
-              quality: src.quality ?? null,
-            });
-            resolvedAny = true;
-          }
-        } catch {
-          // ignore error during resolve attempt
-        }
-      }
-
-      if (!resolvedAny) {
-        throw new StreamNotFoundError("No video stream found on embed page");
-      }
-
-      const updatedEpisode = await episodeRepository.findById(id);
-      return updatedEpisode!;
     },
   };
 }
