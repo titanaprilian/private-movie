@@ -137,10 +137,13 @@ export function ManageSourcesDialog({
 }: ManageSourcesDialogProps) {
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'add-url' | 'edit-existing'>('add-url');
+  const [activeTab, setActiveTab] = useState<'add-url' | 'add-direct' | 'edit-existing'>('add-url');
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [extractedSources, setExtractedSources] = useState<VideoSourceInput[] | null>(null);
   const [previewWarnings, setPreviewWarnings] = useState<string[]>([]);
+  const [directUrl, setDirectUrl] = useState('');
+  const [directLabel, setDirectLabel] = useState('');
+  const [directQuality, setDirectQuality] = useState('');
 
   const previewMutation = useMutation({
     mutationFn: (params: { sourceUrl: string; source: 'otakudesu' }) =>
@@ -165,6 +168,9 @@ export function ManageSourcesDialog({
         description: 'Successfully saved video sources',
       });
       setScrapeUrl('');
+      setDirectUrl('');
+      setDirectLabel('');
+      setDirectQuality('');
       setExtractedSources(null);
       setPreviewWarnings([]);
       setActiveTab('edit-existing');
@@ -220,9 +226,10 @@ export function ManageSourcesDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'add-url' | 'edit-existing')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'add-url' | 'add-direct' | 'edit-existing')} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="add-url">Add from URL</TabsTrigger>
+            <TabsTrigger value="add-direct">Add Direct Video</TabsTrigger>
             <TabsTrigger value="edit-existing">Edit Existing</TabsTrigger>
           </TabsList>
 
@@ -330,6 +337,67 @@ export function ManageSourcesDialog({
                 </Button>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="add-direct" className="mt-4 space-y-3">
+            <div className="p-3 border border-c rounded bg-card space-y-3">
+              <div className="text-xs font-medium mono text-muted uppercase">Add Direct Video Source</div>
+
+              <div>
+                <Label htmlFor="direct-url" className="text-[10px] text-muted">Video URL</Label>
+                <Input
+                  id="direct-url"
+                  placeholder="https://example.com/video.mp4"
+                  value={directUrl}
+                  onChange={(e) => setDirectUrl(e.target.value)}
+                  className="text-xs h-8"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="direct-label" className="text-[10px] text-muted">Label</Label>
+                  <Input
+                    id="direct-label"
+                    placeholder="e.g. Server A, 480p"
+                    value={directLabel}
+                    onChange={(e) => setDirectLabel(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="direct-quality" className="text-[10px] text-muted">Quality</Label>
+                  <Input
+                    id="direct-quality"
+                    placeholder="e.g. 720p, 1080p"
+                    value={directQuality}
+                    onChange={(e) => setDirectQuality(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                className="w-full text-xs h-8"
+                disabled={saveSourcesMutation.isPending || !directUrl.trim() || !directLabel.trim()}
+                onClick={() => {
+                  saveSourcesMutation.mutate({
+                    episodeId: episode.id,
+                    sources: [{
+                      type: 'direct',
+                      url: directUrl.trim(),
+                      label: directLabel.trim(),
+                      quality: directQuality.trim() || null,
+                    }],
+                  });
+                }}
+              >
+                {saveSourcesMutation.isPending ? 'Saving...' : 'Add Video Source'}
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="edit-existing" className="mt-4 space-y-3">
