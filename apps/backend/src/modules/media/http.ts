@@ -6,6 +6,7 @@ import {
 import { errorResponse, successResponse } from "../../lib/response";
 import {
   createSaveEpisodeService,
+  EpisodeFetchError,
   type FetchFn,
   VideoSourceNotFoundError,
 } from "./index";
@@ -267,6 +268,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           const result = await episodes.previewScrape(body);
           return successResponse(result);
         } catch (error) {
+          if (error instanceof EpisodeFetchError) {
+            return errorResponse(set, 400, error);
+          }
           if (error instanceof EpisodeParseError) {
             return errorResponse(set, 400, error);
           }
@@ -280,7 +284,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
           source: t.Literal("otakudesu"),
-          html: t.String(),
+          html: t.Optional(t.String()),
         }),
       }
     )

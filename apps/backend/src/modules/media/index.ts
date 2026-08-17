@@ -39,10 +39,17 @@ export const defaultFetchFn: FetchFn = {
   },
 };
 
+export class EpisodeFetchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EpisodeFetchError";
+  }
+}
+
 export interface SaveEpisodeInput {
   sourceUrl: string;
   source: VideoSource;
-  html: string;
+  html?: string;
 }
 
 export interface PreviewScrapeVideoSource {
@@ -134,7 +141,17 @@ export function createMediaService<
 
   return {
     async previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult> {
-      const parsed = parsers[input.source](input.html);
+      let html = input.html;
+      if (!html) {
+        try {
+          html = await fetchHtml.get(input.sourceUrl);
+        } catch (error) {
+          throw new EpisodeFetchError(
+            `Failed to fetch HTML from ${input.sourceUrl}: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+      const parsed = parsers[input.source](html);
       const warnings: string[] = [];
       let series: PreviewScrapeResult["series"] = null;
 

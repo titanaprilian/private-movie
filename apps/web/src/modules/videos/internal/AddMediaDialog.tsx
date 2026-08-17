@@ -10,7 +10,6 @@ export function AddMediaDialog() {
   const step = useScrapeWorkerStore((state) => state.step);
   const sourceUrl = useScrapeWorkerStore((state) => state.sourceUrl);
   const source = useScrapeWorkerStore((state) => state.source);
-  const html = useScrapeWorkerStore((state) => state.html);
   const isLoading = useScrapeWorkerStore((state) => state.isLoading);
   const error = useScrapeWorkerStore((state) => state.error);
   const previewData = useScrapeWorkerStore((state) => state.previewData);
@@ -19,7 +18,6 @@ export function AddMediaDialog() {
   const reset = useScrapeWorkerStore((state) => state.reset);
   const setSourceUrl = useScrapeWorkerStore((state) => state.setSourceUrl);
   const setSource = useScrapeWorkerStore((state) => state.setSource);
-  const setHtml = useScrapeWorkerStore((state) => state.setHtml);
   const submitPreview = useScrapeWorkerStore((state) => state.submitPreview);
   const backToStep1 = useScrapeWorkerStore((state) => state.backToStep1);
 
@@ -51,7 +49,7 @@ export function AddMediaDialog() {
             </div>
             <p className="text-xs text-muted mt-0.5">
               {step === 1
-                ? 'Input source URL and raw HTML content for scraping.'
+                ? 'Input source URL for scraping.'
                 : 'Read-only preview of parsed metadata and warnings.'}
             </p>
           </div>
@@ -111,23 +109,6 @@ export function AddMediaDialog() {
                 >
                   <option value="otakudesu">Otakudesu</option>
                 </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="media-raw-html"
-                  className="text-xs mono uppercase tracking-wide text-muted font-medium mb-1.5 block"
-                >
-                  Raw HTML Content
-                </label>
-                <textarea
-                  id="media-raw-html"
-                  rows={10}
-                  value={html}
-                  onChange={(e) => setHtml(e.target.value)}
-                  placeholder="Paste page HTML source code here..."
-                  className="w-full px-3 py-2 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary resize-y"
-                />
               </div>
 
               {error && (
@@ -319,7 +300,7 @@ export function AddMediaDialog() {
               <button
                 type="button"
                 onClick={() => void submitPreview()}
-                disabled={isLoading || !sourceUrl.trim() || !html.trim()}
+                disabled={isLoading || !sourceUrl.trim()}
                 className="px-4 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
                 {isLoading && (

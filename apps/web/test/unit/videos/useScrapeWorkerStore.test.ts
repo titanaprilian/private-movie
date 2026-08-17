@@ -25,7 +25,6 @@ describe('useScrapeWorkerStore', () => {
     expect(state.step).toBe(1);
     expect(state.sourceUrl).toBe('');
     expect(state.source).toBe('otakudesu');
-    expect(state.html).toBe('');
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
     expect(state.previewData).toBeNull();
@@ -41,12 +40,10 @@ describe('useScrapeWorkerStore', () => {
 
   it('updates form state fields', () => {
     useScrapeWorkerStore.getState().setSourceUrl('https://otakudesu.cloud/ep1');
-    useScrapeWorkerStore.getState().setHtml('<html>test</html>');
 
     expect(useScrapeWorkerStore.getState().sourceUrl).toBe(
       'https://otakudesu.cloud/ep1'
     );
-    expect(useScrapeWorkerStore.getState().html).toBe('<html>test</html>');
   });
 
   it('successfully submits preview and transitions to step 2', async () => {
@@ -78,7 +75,6 @@ describe('useScrapeWorkerStore', () => {
     vi.mocked(apiModule.previewScrape).mockResolvedValueOnce(mockPreviewData);
 
     useScrapeWorkerStore.getState().setSourceUrl('https://otakudesu.cloud/ep1');
-    useScrapeWorkerStore.getState().setHtml('<html>test</html>');
 
     const promise = useScrapeWorkerStore.getState().submitPreview();
 
@@ -99,7 +95,6 @@ describe('useScrapeWorkerStore', () => {
     );
 
     useScrapeWorkerStore.getState().setSourceUrl('https://otakudesu.cloud/ep1');
-    useScrapeWorkerStore.getState().setHtml('invalid');
 
     const success = await useScrapeWorkerStore.getState().submitPreview();
 

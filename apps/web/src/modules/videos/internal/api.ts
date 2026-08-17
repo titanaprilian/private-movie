@@ -200,7 +200,7 @@ export function seriesDetailQueryOptions(id: string) {
 export interface PreviewScrapeParams {
   sourceUrl: string;
   source: 'otakudesu';
-  html: string;
+  html?: string;
 }
 
 export interface PreviewScrapeResult {

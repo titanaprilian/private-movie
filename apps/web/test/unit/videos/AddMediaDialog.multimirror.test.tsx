@@ -81,7 +81,6 @@ describe('AddMediaDialog component — multi-mirror scenarios', () => {
     const { user } = renderWithProviders(<AddMediaDialog />);
 
     await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/ep1');
-    await user.type(screen.getByLabelText(/Raw HTML/i), '<html><body>Content</body></html>');
     await user.click(screen.getByRole('button', { name: /Preview Scrape/i }));
 
     expect(await screen.findByText('Multi-Mirror Episode')).toBeInTheDocument();
@@ -103,7 +102,6 @@ describe('AddMediaDialog component — multi-mirror scenarios', () => {
     const { user } = renderWithProviders(<AddMediaDialog />);
 
     await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/ep1');
-    await user.type(screen.getByLabelText(/Raw HTML/i), '<html>content</html>');
 
     const btn = screen.getByRole('button', { name: /Preview Scrape/i });
     await user.click(btn);
@@ -112,6 +110,8 @@ describe('AddMediaDialog component — multi-mirror scenarios', () => {
     await waitFor(() => {
       expect(screen.getByText('Resolving mirrors...')).toBeInTheDocument();
     }, { timeout: 3000 });
+
+    resolvePromise(mockMultiMirrorResult);
   });
 
   it('displays partial failure warning when some mirrors fail to resolve', async () => {
@@ -147,7 +147,6 @@ describe('AddMediaDialog component — multi-mirror scenarios', () => {
     const { user } = renderWithProviders(<AddMediaDialog />);
 
     await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/ep1');
-    await user.type(screen.getByLabelText(/Raw HTML/i), '<html>content</html>');
 
     const btn = screen.getByRole('button', { name: /Preview Scrape/i });
     await user.click(btn);

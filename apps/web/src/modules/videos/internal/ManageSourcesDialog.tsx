@@ -139,12 +139,11 @@ export function ManageSourcesDialog({
 
   const [activeTab, setActiveTab] = useState<'add-url' | 'edit-existing'>('add-url');
   const [scrapeUrl, setScrapeUrl] = useState('');
-  const [htmlContent, setHtmlContent] = useState('');
   const [extractedSources, setExtractedSources] = useState<VideoSourceInput[] | null>(null);
   const [previewWarnings, setPreviewWarnings] = useState<string[]>([]);
 
   const previewMutation = useMutation({
-    mutationFn: (params: { sourceUrl: string; source: 'otakudesu'; html: string }) =>
+    mutationFn: (params: { sourceUrl: string; source: 'otakudesu' }) =>
       previewScrape(params),
     onSuccess: (data) => {
       setExtractedSources(data.episode.videoSources || []);
@@ -166,7 +165,6 @@ export function ManageSourcesDialog({
         description: 'Successfully saved video sources',
       });
       setScrapeUrl('');
-      setHtmlContent('');
       setExtractedSources(null);
       setPreviewWarnings([]);
       setActiveTab('edit-existing');
@@ -243,17 +241,6 @@ export function ManageSourcesDialog({
                 />
               </div>
 
-              <div>
-                <Label htmlFor="scrape-html" className="text-[10px] text-muted">Page HTML Content (Optional/Required if offline)</Label>
-                <textarea
-                  id="scrape-html"
-                  placeholder="Paste page HTML source code..."
-                  value={htmlContent}
-                  onChange={(e) => setHtmlContent(e.target.value)}
-                  className="w-full h-20 p-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary resize-y"
-                />
-              </div>
-
               <Button
                 type="button"
                 size="sm"
@@ -264,7 +251,6 @@ export function ManageSourcesDialog({
                   previewMutation.mutate({
                     sourceUrl: scrapeUrl,
                     source: 'otakudesu',
-                    html: htmlContent,
                   });
                 }}
               >

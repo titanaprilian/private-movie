@@ -9,7 +9,6 @@ export interface ScrapeWorkerState {
   step: 1 | 2;
   sourceUrl: string;
   source: 'otakudesu';
-  html: string;
   isLoading: boolean;
   error: string | null;
   previewData: PreviewScrapeResult | null;
@@ -20,7 +19,6 @@ export interface ScrapeWorkerState {
   reset: () => void;
   setSourceUrl: (sourceUrl: string) => void;
   setSource: (source: 'otakudesu') => void;
-  setHtml: (html: string) => void;
   setStep: (step: 1 | 2) => void;
   backToStep1: () => void;
   submitPreview: () => Promise<boolean>;
@@ -31,7 +29,6 @@ const initialState = {
   step: 1 as const,
   sourceUrl: '',
   source: 'otakudesu' as const,
-  html: '',
   isLoading: false,
   error: null,
   previewData: null,
@@ -45,15 +42,14 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
   reset: () => set({ ...initialState }),
   setSourceUrl: (sourceUrl: string) => set({ sourceUrl, error: null }),
   setSource: (source: 'otakudesu') => set({ source, error: null }),
-  setHtml: (html: string) => set({ html, error: null }),
   setStep: (step: 1 | 2) => set({ step }),
   backToStep1: () => set({ step: 1 }),
 
   submitPreview: async () => {
-    const { sourceUrl, source, html } = get();
+    const { sourceUrl, source } = get();
 
-    if (!sourceUrl.trim() || !html.trim()) {
-      set({ error: 'Source URL and HTML content are required.' });
+    if (!sourceUrl.trim()) {
+      set({ error: 'Source URL is required.' });
       return false;
     }
 
@@ -63,7 +59,6 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
       const data = await previewScrape({
         sourceUrl: sourceUrl.trim(),
         source,
-        html,
       });
 
       set({
@@ -75,7 +70,7 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
       return true;
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : 'Failed to parse page HTML';
+        err instanceof Error ? err.message : 'Failed to preview scrape URL';
       set({
         isLoading: false,
         error: message,

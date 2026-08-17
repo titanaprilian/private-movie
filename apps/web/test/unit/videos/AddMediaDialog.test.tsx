@@ -43,7 +43,6 @@ describe('AddMediaDialog component', () => {
     expect(screen.getByText('Add Media Wizard')).toBeInTheDocument();
     expect(screen.getByText(/Step 1/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Source URL/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Raw HTML/i)).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /Preview Scrape/i })
     ).toBeInTheDocument();
@@ -84,10 +83,8 @@ describe('AddMediaDialog component', () => {
     const { user } = renderWithProviders(<AddMediaDialog />);
 
     const urlInput = screen.getByLabelText(/Source URL/i);
-    const htmlInput = screen.getByLabelText(/Raw HTML/i);
 
     await user.type(urlInput, 'https://otakudesu.cloud/ep1');
-    await user.type(htmlInput, '<html><body>Episode 1</body></html>');
 
     const submitBtn = screen.getByRole('button', { name: /Preview Scrape/i });
     await user.click(submitBtn);
@@ -132,7 +129,6 @@ describe('AddMediaDialog component', () => {
     const { user } = renderWithProviders(<AddMediaDialog />);
 
     await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/ep1');
-    await user.type(screen.getByLabelText(/Raw HTML/i), '<html><body>Content</body></html>');
     await user.click(screen.getByRole('button', { name: /Preview Scrape/i }));
 
     expect(await screen.findByText('Multi-Source Episode')).toBeInTheDocument();
@@ -200,10 +196,8 @@ describe('AddMediaDialog component', () => {
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     const urlInput = screen.getByLabelText(/Source URL/i);
-    const htmlInput = screen.getByLabelText(/Raw HTML/i);
 
     await user.type(urlInput, 'https://otakudesu.cloud/ep1');
-    await user.type(htmlInput, '<html><body>Episode 1</body></html>');
 
     const previewBtn = screen.getByRole('button', { name: /Preview Scrape/i });
     await user.click(previewBtn);

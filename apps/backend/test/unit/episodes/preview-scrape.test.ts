@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createMediaService, type FetchFn } from "@/modules/media";
+import { createMediaService, EpisodeFetchError, type FetchFn } from "@/modules/media";
 import { EpisodeParseError } from "@/modules/media/internal/episodes/parse";
 import { MirrorResolveError } from "@/modules/media/internal/episodes/resolve";
 
@@ -58,6 +58,56 @@ function buildMirrorFetchFn(options?: {
 }
 
 describe("previewScrape unit service", () => {
+  it("fetches episode HTML automatically when html is omitted", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: {
+        get: async (url) => {
+          if (
+            url ===
+            "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/"
+          ) {
+            return sampleAHtml;
+          }
+          if (
+            url ===
+            "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+          ) {
+            return sampleSeriesHtml;
+          }
+          throw new Error(`Unexpected fetch URL: ${url}`);
+        },
+        post: async () => "",
+      },
+    });
+
+    const result = await service.previewScrape({
+      sourceUrl: "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/",
+      source: "otakudesu",
+    });
+
+    expect(result.episode).toBeDefined();
+    expect(result.episode.title).toBe(
+      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+    );
+  });
+
+  it("throws EpisodeFetchError when fetching episode HTML fails", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: {
+        get: async () => {
+          throw new Error("Network error fetching episode");
+        },
+        post: async () => "",
+      },
+    });
+
+    await expect(
+      service.previewScrape({
+        sourceUrl: "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/",
+        source: "otakudesu",
+      })
+    ).rejects.toThrow(EpisodeFetchError);
+  });
   it("successfully previews episode and series data when animePageUrl is present", async () => {
     const service = createMediaService(null as never, {
       fetchHtml: {

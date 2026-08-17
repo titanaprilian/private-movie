@@ -66,6 +66,12 @@ describe("POST /preview-scrape", () => {
         get: async (url) => {
           if (
             url ===
+            "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/"
+          ) {
+            return sampleAHtml;
+          }
+          if (
+            url ===
             "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
           ) {
             return sampleSeriesHtml;
@@ -78,6 +84,32 @@ describe("POST /preview-scrape", () => {
   });
 
   describe("happy path", () => {
+    it("previews scrape with URL only (no html field) by fetching HTML automatically", async () => {
+      const { accessToken } = await registerUser(app);
+      const sourceUrl =
+        "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/";
+
+      const response = await request(app, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl,
+          source: "otakudesu",
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          episode: { title: string };
+        };
+      };
+      expect(body.data.episode.title).toBe(
+        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+      );
+    });
+
     it("returns parsed episode and series data without saving to DB", async () => {
       const { accessToken } = await registerUser(app);
       const sourceUrl =
@@ -307,6 +339,24 @@ describe("POST /preview-scrape", () => {
   });
 
   describe("error handling and warnings", () => {
+    it("returns 400 with EPISODE_FETCH when HTML fetch fails", async () => {
+      const { accessToken } = await registerUser(app);
+
+      const response = await request(app, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl: "https://otakudesu.blog/episode/failed-fetch/",
+          source: "otakudesu",
+        },
+      });
+
+      expect(response.status).toBe(400);
+      const body = response.body as { error: { code: string; message: string } };
+      expect(body.error.code).toBe("EPISODE_FETCH");
+    });
+
     it("returns 400 when body is schema-invalid", async () => {
       const { accessToken } = await registerUser(app);
 

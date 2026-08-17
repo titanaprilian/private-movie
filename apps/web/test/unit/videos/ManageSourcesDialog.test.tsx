@@ -103,7 +103,6 @@ describe('ManageSourcesDialog component', () => {
     expect(apiModule.previewScrape).toHaveBeenCalledWith({
       sourceUrl: 'https://otakudesu.cloud/ep1',
       source: 'otakudesu',
-      html: '',
     });
 
     // Verify preview extracted sources displayed
