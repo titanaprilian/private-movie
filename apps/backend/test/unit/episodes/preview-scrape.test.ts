@@ -1,17 +1,61 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createMediaService } from "@/modules/media";
+import { createMediaService, type FetchFn } from "@/modules/media";
 import { EpisodeParseError } from "@/modules/media/internal/episodes/parse";
+import { MirrorResolveError } from "@/modules/media/internal/episodes/resolve";
 
 const sampleAHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
+  "utf8"
+);
+const sampleBHtml = readFileSync(
+  resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
   "utf8"
 );
 const sampleSeriesHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
   "utf8"
 );
+
+const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
+const MIRROR_ACTION = "2a3505c93b0035d3f455df82bf976b84";
+const sampleBAnimePageUrl =
+  "https://otakudesu.blog/anime/katainaka-ossan-kensei-naru-s2-sub-indo/";
+
+function buildMirrorFetchFn(options?: {
+  failNonce?: boolean;
+  failMirrorIndexes?: number[];
+}): FetchFn {
+  const failMirrorIndexes = options?.failMirrorIndexes ?? [];
+  return {
+    async get(url) {
+      if (url === sampleBAnimePageUrl) {
+        return sampleSeriesHtml;
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    },
+    async post(_url, body) {
+      const params = new URLSearchParams(body);
+      const action = params.get("action") ?? "";
+      if (action === NONCE_ACTION) {
+        if (options?.failNonce) {
+          throw new Error("nonce fetch failed");
+        }
+        return JSON.stringify({ data: "fake-nonce-123" });
+      }
+      if (action === MIRROR_ACTION) {
+        const i = parseInt(params.get("i") ?? "-1", 10);
+        if (failMirrorIndexes.includes(i)) {
+          throw new Error(`mirror request failed for index ${i}`);
+        }
+        const html = `<div id="pembed"><iframe src="https://player.example.com/embed/mirror-${i}" frameborder="0"></iframe></div>`;
+        return JSON.stringify({ data: Buffer.from(html).toString("base64") });
+      }
+      throw new Error(`unknown action: ${action}`);
+    },
+  };
+}
 
 describe("previewScrape unit service", () => {
   it("successfully previews episode and series data when animePageUrl is present", async () => {
@@ -140,5 +184,132 @@ describe("previewScrape unit service", () => {
         html: "<html><body>Invalid</body></html>",
       })
     ).rejects.toThrow(EpisodeParseError);
+  });
+});
+
+describe("previewScrape mirror resolution", () => {
+  it("resolves all 720p mirrors and returns them as embed video sources", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: buildMirrorFetchFn(),
+    });
+
+    const result = await service.previewScrape({
+      sourceUrl: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+      source: "otakudesu",
+      html: sampleBHtml,
+    });
+
+    expect(result.episode.videoSources).toHaveLength(5);
+    expect(result.episode.videoSources).toEqual([
+      {
+        type: "embed",
+        url: "https://player.example.com/embed/mirror-0",
+        label: "ondesu2hd",
+        quality: "720p",
+      },
+      {
+        type: "embed",
+        url: "https://player.example.com/embed/mirror-1",
+        label: "odstream",
+        quality: "720p",
+      },
+      {
+        type: "embed",
+        url: "https://player.example.com/embed/mirror-2",
+        label: "filedon",
+        quality: "720p",
+      },
+      {
+        type: "embed",
+        url: "https://player.example.com/embed/mirror-3",
+        label: "vidhide",
+        quality: "720p",
+      },
+      {
+        type: "embed",
+        url: "https://player.example.com/embed/mirror-4",
+        label: "mega",
+        quality: "720p",
+      },
+    ]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("skips failed mirrors and returns the successfully resolved ones", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: buildMirrorFetchFn({ failMirrorIndexes: [2] }),
+    });
+
+    const result = await service.previewScrape({
+      sourceUrl: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+      source: "otakudesu",
+      html: sampleBHtml,
+    });
+
+    expect(result.episode.videoSources).toHaveLength(4);
+    expect(result.episode.videoSources.map((vs) => vs.label)).toEqual([
+      "ondesu2hd",
+      "odstream",
+      "vidhide",
+      "mega",
+    ]);
+    expect(
+      result.episode.videoSources.every((vs) => vs.quality === "720p")
+    ).toBe(true);
+  });
+
+  it("throws MirrorResolveError when all mirrors fail to resolve", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: buildMirrorFetchFn({ failMirrorIndexes: [0, 1, 2, 3, 4] }),
+    });
+
+    await expect(
+      service.previewScrape({
+        sourceUrl: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+        source: "otakudesu",
+        html: sampleBHtml,
+      })
+    ).rejects.toThrow(MirrorResolveError);
+  });
+
+  it("throws MirrorResolveError when the nonce fetch fails", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: buildMirrorFetchFn({ failNonce: true }),
+    });
+
+    await expect(
+      service.previewScrape({
+        sourceUrl: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+        source: "otakudesu",
+        html: sampleBHtml,
+      })
+    ).rejects.toThrow(/failed to fetch nonce/i);
+  });
+
+  it("falls back to the default embed source with a warning when AJAX actions are missing", async () => {
+    const htmlWithoutActions = sampleBHtml.replace(
+      /<script>\s*window\.__x__nonce=null[\s\S]*?<\/script>/,
+      ""
+    );
+    const service = createMediaService(null as never, {
+      fetchHtml: buildMirrorFetchFn(),
+    });
+
+    const result = await service.previewScrape({
+      sourceUrl: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+      source: "otakudesu",
+      html: htmlWithoutActions,
+    });
+
+    expect(result.episode.videoSources).toEqual([
+      {
+        type: "embed",
+        url: "https://desustream.net/dstream/arcg/?id=aHR0cHM6Ly9kZXN1c3RyZWFtLm5ldC9zdHJlYW0vc2FtcGxlLTYubXA0",
+        label: "Server Embed",
+      },
+    ]);
+    expect(result.warnings).toEqual([
+      "Failed to extract AJAX actions; mirror resolution skipped",
+    ]);
   });
 });

@@ -6,16 +6,56 @@ import { episodes, series } from "@repo/db";
 import { buildApp, request } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
+import type { FetchFn } from "@/modules/media";
 import type { App } from "../../utils/app";
 
 const sampleAHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
   "utf8"
 );
+const sampleBHtml = readFileSync(
+  resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
+  "utf8"
+);
 const sampleSeriesHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
   "utf8"
 );
+
+const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
+const MIRROR_ACTION = "2a3505c93b0035d3f455df82bf976b84";
+const sampleBAnimePageUrl =
+  "https://otakudesu.blog/anime/katainaka-ossan-kensei-naru-s2-sub-indo/";
+
+function buildMirrorFetchFn(options?: {
+  failMirrorIndexes?: number[];
+}): FetchFn {
+  const failMirrorIndexes = options?.failMirrorIndexes ?? [];
+  return {
+    async get(url) {
+      if (url === sampleBAnimePageUrl) {
+        return sampleSeriesHtml;
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    },
+    async post(_url, body) {
+      const params = new URLSearchParams(body);
+      const action = params.get("action") ?? "";
+      if (action === NONCE_ACTION) {
+        return JSON.stringify({ data: "fake-nonce-123" });
+      }
+      if (action === MIRROR_ACTION) {
+        const i = parseInt(params.get("i") ?? "-1", 10);
+        if (failMirrorIndexes.includes(i)) {
+          throw new Error(`mirror request failed for index ${i}`);
+        }
+        const html = `<div id="pembed"><iframe src="https://player.example.com/embed/mirror-${i}" frameborder="0"></iframe></div>`;
+        return JSON.stringify({ data: Buffer.from(html).toString("base64") });
+      }
+      throw new Error(`unknown action: ${action}`);
+    },
+  };
+}
 
 describe("POST /preview-scrape", () => {
   let app: App;
@@ -158,6 +198,111 @@ describe("POST /preview-scrape", () => {
       });
 
       expect(expiredTokenResponse.status).toBe(401);
+    });
+  });
+
+  describe("mirror resolution", () => {
+    let mirrorApp: App;
+
+    beforeAll(async () => {
+      mirrorApp = await buildApp({ fetchHtml: buildMirrorFetchFn() });
+    });
+
+    it("returns all resolved 720p mirrors in videoSources", async () => {
+      const { accessToken } = await registerUser(mirrorApp);
+      const sourceUrl =
+        "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/";
+
+      const response = await request(mirrorApp, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl,
+          source: "otakudesu",
+          html: sampleBHtml,
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          episode: {
+            videoSources: Array<{
+              type: string;
+              url: string;
+              label: string;
+              quality?: string | null;
+            }>;
+          };
+          warnings: string[];
+        };
+      };
+      expect(body.data.episode.videoSources).toEqual([
+        { type: "embed", url: "https://player.example.com/embed/mirror-0", label: "ondesu2hd", quality: "720p" },
+        { type: "embed", url: "https://player.example.com/embed/mirror-1", label: "odstream", quality: "720p" },
+        { type: "embed", url: "https://player.example.com/embed/mirror-2", label: "filedon", quality: "720p" },
+        { type: "embed", url: "https://player.example.com/embed/mirror-3", label: "vidhide", quality: "720p" },
+        { type: "embed", url: "https://player.example.com/embed/mirror-4", label: "mega", quality: "720p" },
+      ]);
+      expect(body.data.warnings).toEqual([]);
+    });
+
+    it("returns only the successfully resolved mirrors on partial failure", async () => {
+      const failingApp = await buildApp({
+        fetchHtml: buildMirrorFetchFn({ failMirrorIndexes: [2] }),
+      });
+      const { accessToken } = await registerUser(failingApp);
+
+      const response = await request(failingApp, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl:
+            "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+          source: "otakudesu",
+          html: sampleBHtml,
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          episode: {
+            videoSources: Array<{ label: string }>;
+          };
+        };
+      };
+      expect(body.data.episode.videoSources.map((vs) => vs.label)).toEqual([
+        "ondesu2hd",
+        "odstream",
+        "vidhide",
+        "mega",
+      ]);
+    });
+
+    it("returns 400 with MIRROR_RESOLVE when zero mirrors resolve", async () => {
+      const failingApp = await buildApp({
+        fetchHtml: buildMirrorFetchFn({ failMirrorIndexes: [0, 1, 2, 3, 4] }),
+      });
+      const { accessToken } = await registerUser(failingApp);
+
+      const response = await request(failingApp, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl:
+            "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+          source: "otakudesu",
+          html: sampleBHtml,
+        },
+      });
+
+      expect(response.status).toBe(400);
+      const body = response.body as { error: { code: string } };
+      expect(body.error.code).toBe("MIRROR_RESOLVE");
     });
   });
 

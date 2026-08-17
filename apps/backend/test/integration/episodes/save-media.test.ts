@@ -1,10 +1,54 @@
 import { describe, expect, it, beforeAll, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
-import { episodes, series } from "@repo/db";
+import { episodes, series, videoSources } from "@repo/db";
 import { buildApp, request } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import { db } from "../../utils/db";
+import type { FetchFn } from "@/modules/media";
 import type { App } from "../../utils/app";
+
+const sampleBHtml = readFileSync(
+  resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
+  "utf8"
+);
+const sampleSeriesHtml = readFileSync(
+  resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
+  "utf8"
+);
+
+const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
+const MIRROR_ACTION = "2a3505c93b0035d3f455df82bf976b84";
+const sampleBAnimePageUrl =
+  "https://otakudesu.blog/anime/katainaka-ossan-kensei-naru-s2-sub-indo/";
+
+function buildPartialFailureFetchFn(): FetchFn {
+  return {
+    async get(url) {
+      if (url === sampleBAnimePageUrl) {
+        return sampleSeriesHtml;
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    },
+    async post(_url, body) {
+      const params = new URLSearchParams(body);
+      const action = params.get("action") ?? "";
+      if (action === NONCE_ACTION) {
+        return JSON.stringify({ data: "fake-nonce-123" });
+      }
+      if (action === MIRROR_ACTION) {
+        const i = parseInt(params.get("i") ?? "-1", 10);
+        if (i === 2) {
+          throw new Error(`mirror request failed for index ${i}`);
+        }
+        const html = `<div id="pembed"><iframe src="https://player.example.com/embed/mirror-${i}" frameborder="0"></iframe></div>`;
+        return JSON.stringify({ data: Buffer.from(html).toString("base64") });
+      }
+      throw new Error(`unknown action: ${action}`);
+    },
+  };
+}
 
 describe("POST /save-media", () => {
   let app: App;
@@ -277,6 +321,119 @@ describe("POST /save-media", () => {
       expect(res2.status).toBe(200);
       const ep2Body = res2.body as { data: { episode: { order: number } } };
       expect(ep2Body.data.episode.order).toBe(13);
+    });
+  });
+
+  describe("resolved mirror sources", () => {
+    const resolvedMirrors = [
+      { type: "embed" as const, url: "https://player.example.com/embed/mirror-0", label: "ondesu2hd", quality: "720p" },
+      { type: "embed" as const, url: "https://player.example.com/embed/mirror-1", label: "odstream", quality: "720p" },
+      { type: "embed" as const, url: "https://player.example.com/embed/mirror-2", label: "filedon", quality: "720p" },
+      { type: "embed" as const, url: "https://player.example.com/embed/mirror-3", label: "vidhide", quality: "720p" },
+      { type: "embed" as const, url: "https://player.example.com/embed/mirror-4", label: "mega", quality: "720p" },
+    ];
+
+    it("saves all resolved mirrors as separate video source rows", async () => {
+      const { accessToken } = await registerUser(app);
+      const epSourceUrl =
+        "https://otakudesu.blog/episode/save-media-mirrors-1/";
+
+      const response = await request(app, {
+        method: "POST",
+        path: "/save-media",
+        headers: authHeaders(accessToken),
+        body: {
+          episode: {
+            sourceUrl: epSourceUrl,
+            source: "otakudesu",
+            title: "Mirrors Episode 1",
+            videoType: "TV",
+            videoSources: resolvedMirrors,
+            metadata: {},
+          },
+          series: null,
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as { data: { episode: { id: string } } };
+
+      const vsRows = await db
+        .select()
+        .from(videoSources)
+        .where(eq(videoSources.episodeId, body.data.episode.id));
+      expect(vsRows).toHaveLength(5);
+      expect(vsRows.map((row) => row.label)).toEqual([
+        "ondesu2hd",
+        "odstream",
+        "filedon",
+        "vidhide",
+        "mega",
+      ]);
+      expect(
+        vsRows.every(
+          (row) =>
+            row.type === "embed" &&
+            row.quality === "720p" &&
+            row.url.startsWith("https://player.example.com/embed/mirror-")
+        )
+      ).toBe(true);
+    });
+
+    it("saves only the successfully resolved mirrors when some fail during preview", async () => {
+      const previewApp = await buildApp({
+        fetchHtml: buildPartialFailureFetchFn(),
+      });
+      const { accessToken } = await registerUser(previewApp);
+
+      const preview = await request(previewApp, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl:
+            "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+          source: "otakudesu",
+          html: sampleBHtml,
+        },
+      });
+      expect(preview.status).toBe(200);
+      const previewBody = preview.body as {
+        data: {
+          episode: {
+            sourceUrl: string;
+            source: string;
+            title: string;
+            videoType: string | null;
+            videoSources: typeof resolvedMirrors;
+            metadata: Record<string, unknown>;
+          };
+        };
+      };
+
+      const save = await request(previewApp, {
+        method: "POST",
+        path: "/save-media",
+        headers: authHeaders(accessToken),
+        body: {
+          episode: previewBody.data.episode,
+          series: null,
+        },
+      });
+      expect(save.status).toBe(200);
+      const saveBody = save.body as { data: { episode: { id: string } } };
+
+      const vsRows = await db
+        .select()
+        .from(videoSources)
+        .where(eq(videoSources.episodeId, saveBody.data.episode.id));
+      expect(vsRows).toHaveLength(4);
+      expect(vsRows.map((row) => row.label).sort()).toEqual([
+        "mega",
+        "odstream",
+        "ondesu2hd",
+        "vidhide",
+      ]);
     });
   });
 

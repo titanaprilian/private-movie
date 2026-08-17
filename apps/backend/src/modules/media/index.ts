@@ -2,6 +2,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { SeriesRow } from "@repo/db";
 import { parseEpisodeOrder, parseEpisodePage, type ParsedMetadata } from "./internal/episodes/parse";
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
+import { resolveMirrors } from "./internal/episodes/resolve";
 import { parseSeriesPage } from "./internal/series/parse";
 import { createSeriesRepositoryInternal } from "./internal/series/repository";
 import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
@@ -156,13 +157,36 @@ export function createMediaService<
         }
       }
 
+      let videoSources: PreviewScrapeVideoSource[] = parsed.videoSources;
+
+      if (parsed.mirrorPayloads.length > 0) {
+        if (!parsed.ajaxActions) {
+          warnings.push(
+            "Failed to extract AJAX actions; mirror resolution skipped"
+          );
+        } else {
+          const resolved = await resolveMirrors({
+            payloads: parsed.mirrorPayloads,
+            fetchFn: fetchHtml,
+            nonceAction: parsed.ajaxActions.nonceAction,
+            mirrorAction: parsed.ajaxActions.mirrorAction,
+          });
+          videoSources = resolved.map((mirror) => ({
+            type: "embed",
+            url: mirror.url,
+            label: mirror.label,
+            quality: "720p",
+          }));
+        }
+      }
+
       return {
         episode: {
           sourceUrl: input.sourceUrl,
           source: input.source,
           title: parsed.title,
           videoType: parsed.videoType,
-          videoSources: parsed.videoSources,
+          videoSources,
           metadata: parsed.metadata,
         },
         series,

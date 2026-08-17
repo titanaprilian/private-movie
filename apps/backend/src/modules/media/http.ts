@@ -10,6 +10,7 @@ import {
   VideoSourceNotFoundError,
 } from "./index";
 import { EpisodeParseError } from "./internal/episodes/parse";
+import { MirrorResolveError } from "./internal/episodes/resolve";
 import {
   createEpisodeRepositoryInternal,
   EpisodeNotFoundError,
@@ -267,6 +268,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           return successResponse(result);
         } catch (error) {
           if (error instanceof EpisodeParseError) {
+            return errorResponse(set, 400, error);
+          }
+          if (error instanceof MirrorResolveError) {
             return errorResponse(set, 400, error);
           }
           throw error;
