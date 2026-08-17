@@ -9,6 +9,7 @@ import {
   type FetchHtmlFn,
   MissingEmbedUrlError,
   StreamNotFoundError,
+  VideoSourceNotFoundError,
 } from "./index";
 import { EpisodeParseError } from "./internal/episodes/parse";
 import {
@@ -19,6 +20,7 @@ import {
   createSeriesRepositoryInternal,
   SeriesNotFoundError,
 } from "./internal/series/repository";
+import { createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
 
 export interface MediaRoutesOptions {
   db: Parameters<typeof createSaveEpisodeService>[0];
@@ -32,6 +34,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
   });
   const episodeRepository = createEpisodeRepositoryInternal(options.db);
   const seriesRepository = createSeriesRepositoryInternal(options.db);
+  const videoSourceRepository = createVideoSourceRepositoryInternal(options.db);
 
   return new Elysia({ name: "media-routes" })
     .get(
@@ -59,6 +62,187 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           page: t.Optional(t.Number({ default: 1, minimum: 1 })),
           limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
           source: t.Optional(t.Literal("otakudesu")),
+        }),
+      }
+    )
+    .get(
+      "/episodes/:id",
+      async ({ params, set }) => {
+        const episode = await episodeRepository.findById(params.id);
+        if (!episode) {
+          return errorResponse(
+            set,
+            404,
+            new EpisodeNotFoundError(`Episode with id ${params.id} not found`)
+          );
+        }
+        return successResponse(episode);
+      },
+      {
+        params: t.Object({
+          id: t.String(),
+        }),
+      }
+    )
+    .post(
+      "/episodes/:id/sources",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const episode = await episodeRepository.findById(params.id);
+        if (!episode) {
+          return errorResponse(
+            set,
+            404,
+            new EpisodeNotFoundError(`Episode with id ${params.id} not found`)
+          );
+        }
+
+        for (const source of body.videoSources) {
+          await videoSourceRepository.upsert({
+            episodeId: params.id,
+            type: source.type,
+            url: source.url,
+            label: source.label,
+            quality: source.quality ?? null,
+          });
+        }
+
+        const updated = await episodeRepository.findById(params.id);
+        return successResponse(updated);
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          videoSources: t.Array(
+            t.Object({
+              type: t.Union([t.Literal("embed"), t.Literal("direct")]),
+              url: t.String(),
+              label: t.String(),
+              quality: t.Optional(t.Nullable(t.String())),
+            })
+          ),
+        }),
+      }
+    )
+    .patch(
+      "/episodes/:id/sources/:sourceId",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const episode = await episodeRepository.findById(params.id);
+        if (!episode) {
+          return errorResponse(
+            set,
+            404,
+            new EpisodeNotFoundError(`Episode with id ${params.id} not found`)
+          );
+        }
+
+        const source = await videoSourceRepository.findById(params.sourceId);
+        if (!source || source.episodeId !== params.id) {
+          return errorResponse(
+            set,
+            404,
+            new VideoSourceNotFoundError(
+              `Video source with id ${params.sourceId} not found`
+            )
+          );
+        }
+
+        await videoSourceRepository.update(params.sourceId, body);
+
+        const updatedEpisode = await episodeRepository.findById(params.id);
+        return successResponse(updatedEpisode);
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+          sourceId: t.String(),
+        }),
+        body: t.Object({
+          type: t.Optional(t.Union([t.Literal("embed"), t.Literal("direct")])),
+          url: t.Optional(t.String()),
+          label: t.Optional(t.String()),
+          quality: t.Optional(t.Nullable(t.String())),
+        }),
+      }
+    )
+    .delete(
+      "/episodes/:id/sources/:sourceId",
+      async ({ params, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const episode = await episodeRepository.findById(params.id);
+        if (!episode) {
+          return errorResponse(
+            set,
+            404,
+            new EpisodeNotFoundError(`Episode with id ${params.id} not found`)
+          );
+        }
+
+        const source = await videoSourceRepository.findById(params.sourceId);
+        if (!source || source.episodeId !== params.id) {
+          return errorResponse(
+            set,
+            404,
+            new VideoSourceNotFoundError(
+              `Video source with id ${params.sourceId} not found`
+            )
+          );
+        }
+
+        await videoSourceRepository.delete(params.sourceId);
+
+        const updatedEpisode = await episodeRepository.findById(params.id);
+        return successResponse(updatedEpisode);
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+          sourceId: t.String(),
         }),
       }
     )

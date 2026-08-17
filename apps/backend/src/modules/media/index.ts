@@ -1,16 +1,18 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import type { EpisodeRow, SeriesRow } from "@repo/db";
+import type { SeriesRow } from "@repo/db";
 import { parseEpisodeOrder, parseEpisodePage, type ParsedMetadata } from "./internal/episodes/parse";
-import { createEpisodeRepositoryInternal, EpisodeNotFoundError } from "./internal/episodes/repository";
+import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
 import { extractVideoStream, MissingEmbedUrlError, StreamNotFoundError } from "./internal/episodes/resolver";
 import { parseSeriesPage } from "./internal/series/parse";
 import { createSeriesRepositoryInternal } from "./internal/series/repository";
-import { createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
+import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
 
 export type VideoSource = "otakudesu";
 
 export type { EpisodeRow as SavedEpisode, SeriesRow as SavedSeries } from "@repo/db";
+export type { EpisodeWithVideoSources };
 export { MissingEmbedUrlError, StreamNotFoundError } from "./internal/episodes/resolver";
+export { VideoSourceNotFoundError } from "./internal/video-sources/repository";
 
 export type FetchHtmlFn = (url: string) => Promise<string>;
 
@@ -84,7 +86,7 @@ export interface SaveMediaInput {
 }
 
 export interface SaveMediaResult {
-  episode: EpisodeRow;
+  episode: EpisodeWithVideoSources;
   series: SeriesRow | null;
 }
 
@@ -95,7 +97,7 @@ export interface SaveEpisodeServiceOptions {
 export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
-  resolveEpisode(id: string): Promise<EpisodeRow>;
+  resolveEpisode(id: string): Promise<EpisodeWithVideoSources>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -210,14 +212,16 @@ export function createMediaService<
           }
         }
 
+        const episodeWithSources = await episodeRepositoryTx.findById(episodeRow.id);
+
         return {
-          episode: episodeRow,
+          episode: episodeWithSources!,
           series: seriesRow,
         };
       });
     },
 
-    async resolveEpisode(id: string): Promise<EpisodeRow> {
+    async resolveEpisode(id: string): Promise<EpisodeWithVideoSources> {
       const episode = await episodeRepository.findById(id);
       if (!episode) {
         throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
@@ -253,7 +257,8 @@ export function createMediaService<
         throw new StreamNotFoundError("No video stream found on embed page");
       }
 
-      return episode;
+      const updatedEpisode = await episodeRepository.findById(id);
+      return updatedEpisode!;
     },
   };
 }

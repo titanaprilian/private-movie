@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { asc, count, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq, inArray } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, series, type EpisodeRow, type SeriesRow } from "@repo/db";
+import { episodes, series, videoSources, type EpisodeRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
+import type { EpisodeWithVideoSources } from "../episodes/repository";
 
 export class SeriesNotFoundError extends Error {
   constructor(message = "Series not found") {
@@ -38,7 +39,7 @@ export interface SeriesListResult {
   total: number;
 }
 
-export type SeriesWithEpisodes = SeriesRow & { episodes: EpisodeRow[] };
+export type SeriesWithEpisodes = SeriesRow & { episodes: EpisodeWithVideoSources[] };
 
 export function createSeriesRepositoryInternal<
   THKT extends PgQueryResultHKT,
@@ -105,9 +106,31 @@ export function createSeriesRepositoryInternal<
         .where(eq(episodes.seriesId, id))
         .orderBy(asc(episodes.order), asc(episodes.createdAt));
 
+      const episodeIds = childEpisodes.map((ep) => ep.id);
+      const sourcesMap = new Map<string, VideoSourceRow[]>();
+
+      if (episodeIds.length > 0) {
+        const sources = await db
+          .select()
+          .from(videoSources)
+          .where(inArray(videoSources.episodeId, episodeIds))
+          .orderBy(asc(videoSources.createdAt));
+
+        for (const s of sources) {
+          const list = sourcesMap.get(s.episodeId) ?? [];
+          list.push(s);
+          sourcesMap.set(s.episodeId, list);
+        }
+      }
+
+      const episodesWithSources = childEpisodes.map((ep) => ({
+        ...ep,
+        videoSources: sourcesMap.get(ep.id) ?? [],
+      }));
+
       return {
         ...seriesRow,
-        episodes: childEpisodes,
+        episodes: episodesWithSources,
       };
     },
 

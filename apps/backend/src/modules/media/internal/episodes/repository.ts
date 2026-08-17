@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { asc, count, eq, isNull, max } from "drizzle-orm";
+import { asc, count, eq, inArray, isNull, max } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, type EpisodeRow } from "@repo/db";
+import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@repo/db";
 import type { ParsedMetadata } from "./parse";
 
 export class EpisodeNotFoundError extends Error {
@@ -13,6 +13,10 @@ export class EpisodeNotFoundError extends Error {
 
 export const DEFAULT_LIST_LIMIT = 20;
 export const MAX_LIST_LIMIT = 100;
+
+export type EpisodeWithVideoSources = EpisodeRow & {
+  videoSources: VideoSourceRow[];
+};
 
 export interface UpdateEpisodeInput {
   title: string;
@@ -43,7 +47,7 @@ export interface EpisodeListParams {
 }
 
 export interface EpisodeListResult {
-  episodes: EpisodeRow[];
+  episodes: EpisodeWithVideoSources[];
   total: number;
 }
 
@@ -92,12 +96,23 @@ export function createEpisodeRepositoryInternal<
       return row ?? null;
     },
 
-    async findById(id: string): Promise<EpisodeRow | null> {
+    async findById(id: string): Promise<EpisodeWithVideoSources | null> {
       const [row] = await db
         .select()
         .from(episodes)
         .where(eq(episodes.id, id));
-      return row ?? null;
+      if (!row) return null;
+
+      const sources = await db
+        .select()
+        .from(videoSources)
+        .where(eq(videoSources.episodeId, id))
+        .orderBy(asc(videoSources.createdAt));
+
+      return {
+        ...row,
+        videoSources: sources,
+      };
     },
 
     async getMaxOrder(seriesId: string | null): Promise<number> {
@@ -134,8 +149,30 @@ export function createEpisodeRepositoryInternal<
         db.select({ value: count() }).from(episodes).where(where),
       ]);
 
+      const episodeIds = rows.map((r) => r.id);
+      const sourcesMap = new Map<string, VideoSourceRow[]>();
+
+      if (episodeIds.length > 0) {
+        const sources = await db
+          .select()
+          .from(videoSources)
+          .where(inArray(videoSources.episodeId, episodeIds))
+          .orderBy(asc(videoSources.createdAt));
+
+        for (const s of sources) {
+          const list = sourcesMap.get(s.episodeId) ?? [];
+          list.push(s);
+          sourcesMap.set(s.episodeId, list);
+        }
+      }
+
+      const episodesWithSources = rows.map((ep) => ({
+        ...ep,
+        videoSources: sourcesMap.get(ep.id) ?? [],
+      }));
+
       return {
-        episodes: rows,
+        episodes: episodesWithSources,
         total: totalRows[0]?.value ?? 0,
       };
     },
@@ -143,7 +180,7 @@ export function createEpisodeRepositoryInternal<
     async updateEpisode(
       id: string,
       input: Partial<UpdateEpisodeInput>
-    ): Promise<EpisodeRow> {
+    ): Promise<EpisodeWithVideoSources> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
         updatedAt: now,
@@ -164,7 +201,16 @@ export function createEpisodeRepositoryInternal<
         throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
       }
 
-      return row;
+      const sources = await db
+        .select()
+        .from(videoSources)
+        .where(eq(videoSources.episodeId, id))
+        .orderBy(asc(videoSources.createdAt));
+
+      return {
+        ...row,
+        videoSources: sources,
+      };
     },
 
     async updateOrders(items: EpisodeOrderUpdateInput[]): Promise<void> {
