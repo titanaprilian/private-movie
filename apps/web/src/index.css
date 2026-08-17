@@ -88,6 +88,12 @@ body {
   color: var(--primary);
   border-left: 2px solid var(--primary);
 }
+[role="tab"][data-state="active"],
+[role="tab"][aria-selected="true"] {
+  background-color: var(--primary);
+  color: var(--primary-fg);
+  font-weight: 600;
+}
 .grid-pattern {
   background-image:
     linear-gradient(var(--border) 1px, transparent 1px),

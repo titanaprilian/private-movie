@@ -419,7 +419,7 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     // Open manage sources dialog
-    const manageSourcesBtn = screen.getByRole('button', { name: /manage sources/i });
+    const manageSourcesBtn = screen.getByRole('button', { name: /^sources$/i });
     await user.click(manageSourcesBtn);
 
     expect(await screen.findByRole('heading', { name: 'Manage Sources' })).toBeInTheDocument();
