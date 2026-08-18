@@ -111,6 +111,38 @@ const extractMirrorPayloads = (
     })
     .get();
 
+const QUALITY_PATTERN = /(?:^|[^a-zA-Z])(\d{3,4}p)(?:$|[^a-zA-Z])/i;
+
+export function extractDirectVideoSources(
+  html: string
+): ParsedVideoSource[] {
+  const load = cheerio.load(html, null, false);
+  const sources: ParsedVideoSource[] = [];
+
+  load("video[src]").each((_, el) => {
+    const src = load(el).attr("src");
+    if (!src || !src.endsWith(".mp4")) return;
+
+    try {
+      const urlObj = new URL(src);
+      const pathname = urlObj.pathname;
+      const extIndex = pathname.lastIndexOf(".mp4");
+      if (extIndex === -1) return;
+
+      const label = pathname.substring(pathname.lastIndexOf("/") + 1, extIndex);
+
+      const qualityMatch = label.match(QUALITY_PATTERN);
+      const quality = qualityMatch ? qualityMatch[1].toLowerCase() : null;
+
+      sources.push({ type: "direct", url: src, label, quality });
+    } catch {
+      return;
+    }
+  });
+
+  return sources;
+}
+
 export const extractAjaxActions = (html: string): ParsedAjaxActions | null => {
   const load = cheerio.load(html, null, false);
   const scriptContent = load("script")

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   EpisodeParseError,
   extractAjaxActions,
+  extractDirectVideoSources,
   parseEpisodeOrder,
   parseEpisodePage,
 } from "@/modules/media/internal/episodes/parse";
@@ -269,5 +270,106 @@ describe("parseEpisodePage", () => {
         '<div id="venkonten"><h1 class="posttl">Some Episode</h1><div class="responsive-embed-stream"></div></div>';
       expect(() => parseEpisodePage(html)).toThrow(EpisodeParseError);
     });
+  });
+});
+
+describe("extractDirectVideoSources", () => {
+  const mp4FixturePath = resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-mp4-video.html"
+  );
+  const readFixture = (path: string): string => readFileSync(path, "utf8");
+
+  it("extracts video sources from the MP4 fixture HTML", () => {
+    const html = readFixture(mp4FixturePath);
+    const result = extractDirectVideoSources(html);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      type: "direct" as const,
+      url: "https://archive.org/download/diri-dari-skenario-yang-telah-ia-program-sendiri.dwa/Otakudesu.io_TSTJ--01_720p.mp4",
+      label: "Otakudesu.io_TSTJ--01_720p",
+      quality: "720p",
+    });
+  });
+
+  it("returns an empty array when no <video> tags exist", () => {
+    const html = "<html><body><p>no videos here</p></body></html>";
+    expect(extractDirectVideoSources(html)).toEqual([]);
+  });
+
+  it("returns an empty array for HTML without any video elements with .mp4 src", () => {
+    const html = `
+      <div>
+        <video><source src="https://example.com/stream.m3u8"></video>
+        <video><source src="https://example.com/video.webm"></video>
+      </div>
+    `;
+    expect(extractDirectVideoSources(html)).toEqual([]);
+  });
+
+  it("returns an empty array for a plain string with no video tags", () => {
+    expect(extractDirectVideoSources("just some text")).toEqual([]);
+    expect(extractDirectVideoSources("")).toEqual([]);
+  });
+
+  it("extracts multiple direct MP4 sources when multiple video tags exist", () => {
+    const html = `
+      <div>
+        <video src="https://example.com/video_480p.mp4"></video>
+        <video src="https://example.com/movie_1080p.mp4"></video>
+      </div>
+    `;
+    const result = extractDirectVideoSources(html);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      type: "direct",
+      url: "https://example.com/video_480p.mp4",
+      label: "video_480p",
+      quality: "480p",
+    });
+    expect(result[1]).toEqual({
+      type: "direct",
+      url: "https://example.com/movie_1080p.mp4",
+      label: "movie_1080p",
+      quality: "1080p",
+    });
+  });
+
+  it("extracts quality from filename matching patterns like 720p, 1080p, 480p case-insensitively", () => {
+    const html = `
+      <div>
+        <video src="https://example.com/file_480P.mp4"></video>
+        <video src="https://example.com/file_XS.mp4"></video>
+      </div>
+    `;
+    const result = extractDirectVideoSources(html);
+    expect(result).toHaveLength(2);
+    expect(result[0].quality).toBe("480p");
+    expect(result[1].quality).toBeNull();
+  });
+
+  it("sets quality to null when no quality pattern is found in the filename", () => {
+    const html = `<video src="https://example.com/myvideo.mp4"></video>`;
+    const result = extractDirectVideoSources(html);
+    expect(result).toHaveLength(1);
+    expect(result[0].label).toBe("myvideo");
+    expect(result[0].quality).toBeNull();
+  });
+
+  it("derives label from basename between last / and .mp4", () => {
+    const html = `<video src="https://example.com/path/to/filename.mkv.mp4"></video>`;
+    const result = extractDirectVideoSources(html);
+    expect(result[0].url).toBe("https://example.com/path/to/filename.mkv.mp4");
+    expect(result[0].label).toBe("filename.mkv");
+  });
+
+  it("handles video tags where src is on the video element itself (not a child source tag)", () => {
+    const html = `<video preload="none" src="https://archive.org/video/test_720p.mp4" style="width:100%"></video>`;
+    const result = extractDirectVideoSources(html);
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe("https://archive.org/video/test_720p.mp4");
+    expect(result[0].label).toBe("test_720p");
+    expect(result[0].quality).toBe("720p");
   });
 });
