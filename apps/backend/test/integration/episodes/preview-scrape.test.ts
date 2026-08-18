@@ -406,6 +406,33 @@ describe("POST /preview-scrape", () => {
       expect(body.error.code).toBe("EPISODE_PARSE");
     });
 
+    it("returns 400 Bad Request with EPISODE_MISSING_FIELDS and missingFields array when HTML is missing required episode fields", async () => {
+      const { accessToken } = await registerUser(app);
+      const malformedHtml = '<div id="venkonten"><p>no title or iframe</p></div>';
+
+      const response = await request(app, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl:
+            "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/",
+          source: "otakudesu",
+          html: malformedHtml,
+        },
+      });
+
+      expect(response.status).toBe(400);
+      const body = response.body as {
+        error: {
+          code: string;
+          missingFields?: string[];
+        };
+      };
+      expect(body.error.code).toBe("EPISODE_MISSING_FIELDS");
+      expect(body.error.missingFields).toEqual(["title", "embedUrl"]);
+    });
+
     it("returns 200 with series: null and warning when series fetch fails", async () => {
       const failingApp = await buildApp({
         fetchHtml: {

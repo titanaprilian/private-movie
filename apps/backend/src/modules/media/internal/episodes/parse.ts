@@ -8,6 +8,16 @@ export class EpisodeParseError extends Error {
   }
 }
 
+export class EpisodeMissingFieldsError extends Error {
+  missingFields: string[];
+
+  constructor(missingFields: string[]) {
+    super(`Missing episode fields: ${missingFields.join(", ")}`);
+    this.name = "EpisodeMissingFieldsError";
+    this.missingFields = missingFields;
+  }
+}
+
 export type ParsedEpisode = { label: string; url: string };
 export type ParsedHost = { host: string; url: string };
 export type ParsedDownloadLink = {

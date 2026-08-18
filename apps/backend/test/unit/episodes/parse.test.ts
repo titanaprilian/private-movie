@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  EpisodeMissingFieldsError,
   EpisodeParseError,
   extractAjaxActions,
   extractDirectVideoSources,
@@ -257,6 +258,20 @@ describe("parseEpisodePage", () => {
       expect(() => parseEpisodePage("<div><p>no container</p></div>")).toThrow(
         EpisodeParseError
       );
+    });
+
+    it("throws EpisodeMissingFieldsError accumulating missing fields when both title and iframe are missing", () => {
+      const html = '<div id="venkonten"><p>no title or embed</p></div>';
+      try {
+        parseEpisodePage(html);
+        expect.fail("should have thrown EpisodeMissingFieldsError");
+      } catch (err) {
+        expect(err).toBeInstanceOf(EpisodeMissingFieldsError);
+        expect((err as EpisodeMissingFieldsError).missingFields).toEqual([
+          "title",
+          "embedUrl",
+        ]);
+      }
     });
 
     it("throws when the title is missing", () => {
