@@ -4,7 +4,7 @@ import { episodes, videoSources } from "@repo/db";
 import {
   createVideoSourceRepositoryInternal,
   VideoSourceNotFoundError,
-} from "@/modules/media/internal/video-sources/repository";
+} from "@repo/media-service";
 import { db } from "../../utils/db";
 
 async function insertTestEpisode(): Promise<{ id: string }> {

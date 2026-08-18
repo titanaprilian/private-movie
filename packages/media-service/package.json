@@ -1,0 +1,30 @@
+{
+  "name": "@repo/media-service",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@repo/db": "workspace:*",
+    "@repo/media-scraper": "workspace:*",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@repo/config-vitest": "workspace:*",
+    "bun-types": "latest",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}

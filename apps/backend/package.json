@@ -19,6 +19,7 @@
     "@repo/contracts": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/media-scraper": "workspace:*",
+    "@repo/media-service": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "elysia": "latest"
   },

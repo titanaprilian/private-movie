@@ -6,21 +6,17 @@ import {
 import { errorResponse, successResponse } from "../../lib/response";
 import {
   createSaveEpisodeService,
-  EpisodeFetchError,
-  SeriesFetchError,
-  type FetchFn,
-  VideoSourceNotFoundError,
-} from "./index";
-import { EpisodeMissingFieldsError, EpisodeParseError, SeriesParseError, MirrorResolveError } from "@repo/media-scraper";
-import {
   createEpisodeRepositoryInternal,
-  EpisodeNotFoundError,
-} from "./internal/episodes/repository";
-import {
   createSeriesRepositoryInternal,
+  createVideoSourceRepositoryInternal,
+  EpisodeFetchError,
+  EpisodeNotFoundError,
+  SeriesFetchError,
   SeriesNotFoundError,
-} from "./internal/series/repository";
-import { createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
+  VideoSourceNotFoundError,
+  type FetchFn,
+} from "@repo/media-service";
+import { EpisodeMissingFieldsError, EpisodeParseError, SeriesParseError, MirrorResolveError } from "@repo/media-scraper";
 
 export interface MediaRoutesOptions {
   db: Parameters<typeof createSaveEpisodeService>[0];

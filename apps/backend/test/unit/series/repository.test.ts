@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { episodes, series } from "@repo/db";
-import { createSeriesRepositoryInternal } from "@/modules/media/internal/series/repository";
+import { createSeriesRepositoryInternal } from "@repo/media-service";
 import { db } from "../../utils/db";
 
 async function insertSeries(overrides?: {

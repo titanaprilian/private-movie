@@ -7,7 +7,7 @@ import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes } from "./modules/media/http";
-import type { FetchFn } from "./modules/media";
+import type { FetchFn } from "@repo/media-service";
 import { InternalServerError } from "./lib/errors";
 
 export interface CreateAppDeps {

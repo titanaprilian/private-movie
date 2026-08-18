@@ -6,7 +6,7 @@ import { episodes, series } from "@repo/db";
 import { buildApp, request } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
-import type { FetchFn } from "@/modules/media";
+import type { FetchFn } from "@repo/media-service";
 import type { App } from "../../utils/app";
 
 const sampleAHtml = readFileSync(

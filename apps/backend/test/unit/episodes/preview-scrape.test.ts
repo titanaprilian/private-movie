@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createMediaService, EpisodeFetchError, type FetchFn } from "@/modules/media";
+import { createMediaService, EpisodeFetchError, type FetchFn } from "@repo/media-service";
 import { EpisodeParseError, MirrorResolveError, extractDirectVideoSources } from "@repo/media-scraper";
 
 const sampleAHtml = readFileSync(

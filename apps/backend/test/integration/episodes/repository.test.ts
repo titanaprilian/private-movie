@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { episodes } from "@repo/db";
-import { createEpisodeRepositoryInternal } from "@/modules/media/internal/episodes/repository";
+import { createEpisodeRepositoryInternal } from "@repo/media-service";
 import { db } from "../../utils/db";
 
 function makeVideoUrl(index: number): string {

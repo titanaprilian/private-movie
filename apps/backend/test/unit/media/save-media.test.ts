@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { episodes, series, videoSources } from "@repo/db";
-import { createMediaService } from "@/modules/media";
+import { createMediaService } from "@repo/media-service";
 import { db } from "../../utils/db";
 
 describe("createMediaService saveMedia", () => {

@@ -1,5 +1,5 @@
 import type { createApp } from "@/app";
-import type { FetchFn } from "@/modules/media";
+import type { FetchFn } from "@repo/media-service";
 
 export type App = ReturnType<typeof createApp>;
 

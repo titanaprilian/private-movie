@@ -18,7 +18,7 @@
         "@repo/contracts": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/media-scraper": "workspace:*",
-        "cheerio": "^1.2.0",
+        "@repo/media-service": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "elysia": "latest",
       },
@@ -127,6 +127,21 @@
       "version": "0.1.0",
       "dependencies": {
         "cheerio": "^1.2.0",
+      },
+      "devDependencies": {
+        "@repo/config-vitest": "workspace:*",
+        "bun-types": "latest",
+        "typescript": "^5.8.0",
+        "vitest": "^3.1.0",
+      },
+    },
+    "packages/media-service": {
+      "name": "@repo/media-service",
+      "version": "0.1.0",
+      "dependencies": {
+        "@repo/db": "workspace:*",
+        "@repo/media-scraper": "workspace:*",
+        "drizzle-orm": "^0.45.2",
       },
       "devDependencies": {
         "@repo/config-vitest": "workspace:*",
@@ -392,6 +407,8 @@
     "@repo/db": ["@repo/db@workspace:packages/db"],
 
     "@repo/media-scraper": ["@repo/media-scraper@workspace:packages/media-scraper"],
+
+    "@repo/media-service": ["@repo/media-service@workspace:packages/media-service"],
 
     "@repo/web": ["@repo/web@workspace:apps/web"],
 
