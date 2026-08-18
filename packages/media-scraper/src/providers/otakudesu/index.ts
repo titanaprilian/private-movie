@@ -30,8 +30,44 @@ export class OtakudesuProvider implements MediaProvider {
   public parseSeriesHtml(html: string, targetUrl?: string): ScrapedSeries {
     const load = cheerio.load(html, null, false);
 
+    const blocks = load(".episodelist").toArray();
+    let targetBlocks: typeof blocks = [];
+
+    if (blocks.length > 0) {
+      const positiveBlocks = blocks.filter((block) => {
+        const headerText =
+          load(block).find(".smokelister .monktit").text().trim() ||
+          load(block).find(".smokelister, .monktit").text().trim();
+        const lowerHeader = headerText.toLowerCase();
+        const isPositive =
+          lowerHeader.includes("streaming") || lowerHeader.includes("episode");
+        const isBlacklisted =
+          lowerHeader.includes("batch") || lowerHeader.includes("lengkap");
+        return isPositive && !isBlacklisted;
+      });
+
+      if (positiveBlocks.length > 0) {
+        targetBlocks = positiveBlocks;
+      } else {
+        targetBlocks = blocks.filter((block) => {
+          const headerText =
+            load(block).find(".smokelister .monktit").text().trim() ||
+            load(block).find(".smokelister, .monktit").text().trim();
+          const lowerHeader = headerText.toLowerCase();
+          const isBlacklisted =
+            lowerHeader.includes("batch") || lowerHeader.includes("lengkap");
+          return !isBlacklisted;
+        });
+      }
+    }
+
     const episodes: ScrapedEpisodeRef[] = [];
-    load(".episodelist ul li").each((_, li) => {
+    const selection =
+      targetBlocks.length > 0
+        ? load(targetBlocks).find("ul li")
+        : load(".episodelist ul li");
+
+    selection.each((_, li) => {
       const anchor = load(li).find("span a, a").first();
       if (anchor.length === 0) return;
 

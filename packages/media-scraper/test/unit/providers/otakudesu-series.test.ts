@@ -13,6 +13,11 @@ describe("OtakudesuProvider series parsing", () => {
     "utf8"
   );
 
+  const sampleOneSeasonHtml = fs.readFileSync(
+    path.resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
+    "utf8"
+  );
+
   const provider = new OtakudesuProvider();
 
   const createMockFetchFn = (html: string): FetchFn => ({
@@ -147,5 +152,90 @@ describe("OtakudesuProvider series parsing", () => {
     await expect(
       provider.parseSeries("https://otakudesu.blog/anime/empty", fetchFn)
     ).rejects.toThrowError(new SeriesParseError("missing series title"));
+  });
+
+  it("extracts episodes exclusively from the 'Streaming' section in modern 3-block layout", () => {
+    const html = `
+      <div id="venkonten">
+        <h1 class="posttl">Test Anime</h1>
+        <div class="episodelist">
+          <div class="smokelister">
+            <span class="monktit">Test Anime Batch</span>
+          </div>
+          <ul>
+            <li><a href="https://otakudesu.blog/batch/ep-1-12/">Batch 1-12</a><span class="zeebr">1 Jan 2026</span></li>
+          </ul>
+        </div>
+        <div class="episodelist">
+          <div class="smokelister">
+            <span class="monktit">Test Anime Episode List (Link Download Episode + Streaming)</span>
+          </div>
+          <ul>
+            <li><a href="https://otakudesu.blog/episode/ep-2/">Test Anime Episode 2</a><span class="zeebr">2 Jan 2026</span></li>
+            <li><a href="https://otakudesu.blog/episode/ep-1/">Test Anime Episode 1</a><span class="zeebr">1 Jan 2026</span></li>
+          </ul>
+        </div>
+        <div class="episodelist">
+          <div class="smokelister">
+            <span class="monktit">Test Anime Lengkap (Link Download Episode + Batch)</span>
+          </div>
+          <ul>
+            <li><a href="https://otakudesu.blog/lengkap/full/">Lengkap Full Season</a><span class="zeebr">1 Jan 2026</span></li>
+          </ul>
+        </div>
+      </div>
+    `;
+
+    const result = provider.parseSeriesHtml(html);
+    expect(result.episodes).toHaveLength(2);
+    expect(result.episodes[0].title).toBe("Test Anime Episode 2");
+    expect(result.episodes[0].url).toBe("https://otakudesu.blog/episode/ep-2/");
+    expect(result.episodes[1].title).toBe("Test Anime Episode 1");
+    expect(result.episodes[1].url).toBe("https://otakudesu.blog/episode/ep-1/");
+  });
+
+  it("fallback logic excludes blocks titled with 'Batch' or 'Lengkap' when no streaming header matches", () => {
+    const html = `
+      <div id="venkonten">
+        <h1 class="posttl">Test Fallback Anime</h1>
+        <div class="episodelist">
+          <div class="smokelister">
+            <span class="monktit">Batch Downloads</span>
+          </div>
+          <ul>
+            <li><a href="https://otakudesu.blog/batch/b1/">Batch Link</a></li>
+          </ul>
+        </div>
+        <div class="episodelist">
+          <div class="smokelister">
+            <span class="monktit">Lengkap Season</span>
+          </div>
+          <ul>
+            <li><a href="https://otakudesu.blog/lengkap/l1/">Lengkap Link</a></li>
+          </ul>
+        </div>
+        <div class="episodelist">
+          <div class="smokelister">
+            <span class="monktit">Daftar Links</span>
+          </div>
+          <ul>
+            <li><a href="https://otakudesu.blog/episode/ep-fallback/">Fallback Episode</a><span class="zeebr">3 Jan 2026</span></li>
+          </ul>
+        </div>
+      </div>
+    `;
+
+    const result = provider.parseSeriesHtml(html);
+    expect(result.episodes).toHaveLength(1);
+    expect(result.episodes[0].title).toBe("Fallback Episode");
+    expect(result.episodes[0].url).toBe("https://otakudesu.blog/episode/ep-fallback/");
+  });
+
+  it("parses sample-one-season.html fixture without batch links", () => {
+    const result = provider.parseSeriesHtml(sampleOneSeasonHtml);
+    expect(result.title).toBe("Grand Blue Season 3 Subtitle Indonesia");
+    expect(result.episodes).toHaveLength(7);
+    expect(result.episodes[0].title).toBe("Grand Blue Season 3 Episode 7 Subtitle Indonesia");
+    expect(result.episodes[6].title).toBe("Grand Blue Season 3 Episode 1 Subtitle Indonesia");
   });
 });
