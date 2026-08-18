@@ -232,10 +232,41 @@ export async function previewScrape(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
+    const errValue = res.error?.value as
+      | {
+          error?: {
+            code?: string;
+            message?: string;
+            missingFields?: string[];
+          };
+          code?: string;
+          message?: string;
+          missingFields?: string[];
+        }
+      | undefined;
+
+    const code = errValue?.error?.code || errValue?.code;
+    const missingFields =
+      errValue?.error?.missingFields || errValue?.missingFields;
+    const message =
+      errValue?.error?.message ||
+      errValue?.message ||
       (res.error?.value as { message?: string })?.message ||
-        'Failed to scrape preview'
-    );
+      'Failed to scrape preview';
+
+    if (code === 'EPISODE_MISSING_FIELDS' || Array.isArray(missingFields)) {
+      const err = new Error(message) as Error & {
+        code: string;
+        missingFields: string[];
+      };
+      err.code = 'EPISODE_MISSING_FIELDS';
+      err.missingFields = Array.isArray(missingFields)
+        ? missingFields
+        : ['title', 'embedUrl'];
+      throw err;
+    }
+
+    throw new Error(message);
   }
 
   return res.data.data as unknown as PreviewScrapeResult;

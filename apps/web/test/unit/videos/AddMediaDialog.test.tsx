@@ -338,4 +338,163 @@ describe('AddMediaDialog component', () => {
       expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
     });
   });
+
+  it('pauses batch saving when previewScrape returns EPISODE_MISSING_FIELDS, renders missing fields inputs, bypasses broken page on continue, and resumes remaining batch', async () => {
+    const mockSeriesPreviewResult: apiModule.PreviewScrapeSeriesResult = {
+      series: {
+        sourceUrl: 'https://otakudesu.cloud/anime/test-series/',
+        source: 'otakudesu',
+        title: 'Test Series Batch',
+        description: 'Series description',
+        posterUrl: 'https://otakudesu.cloud/poster.jpg',
+      },
+      episodes: [
+        {
+          title: 'Episode 1',
+          url: 'https://otakudesu.cloud/episode/ep1',
+          date: '10 Jan 2025',
+        },
+        {
+          title: 'Episode 2',
+          url: 'https://otakudesu.cloud/episode/ep2',
+          date: '17 Jan 2025',
+        },
+        {
+          title: 'Episode 3',
+          url: 'https://otakudesu.cloud/episode/ep3',
+          date: '24 Jan 2025',
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.previewScrapeSeries).mockResolvedValueOnce(mockSeriesPreviewResult);
+
+    vi.mocked(apiModule.previewScrape).mockImplementation(async (params) => {
+      if (params.sourceUrl.includes('ep1')) {
+        return {
+          episode: {
+            sourceUrl: params.sourceUrl,
+            source: params.source,
+            title: 'Episode 1',
+            videoType: null,
+            metadata: { publishedDate: '10 Jan 2025' },
+            videoSources: [],
+          },
+          series: null,
+          warnings: [],
+        };
+      }
+      if (params.sourceUrl.includes('ep2')) {
+        const err = new Error('Missing required fields') as Error & {
+          code: string;
+          missingFields: string[];
+        };
+        err.code = 'EPISODE_MISSING_FIELDS';
+        err.missingFields = ['title', 'embedUrl'];
+        throw err;
+      }
+      return {
+        episode: {
+          sourceUrl: params.sourceUrl,
+          source: params.source,
+          title: 'Episode 3',
+          videoType: null,
+          metadata: { publishedDate: '24 Jan 2025' },
+          videoSources: [],
+        },
+        series: null,
+        warnings: [],
+      };
+    });
+
+    vi.mocked(apiModule.saveMedia).mockResolvedValue({
+      episode: {
+        id: 'ep-saved',
+        sourceUrl: '',
+        source: 'otakudesu',
+        title: '',
+        videoSources: [],
+        createdAt: '',
+        updatedAt: '',
+      },
+      series: null,
+    });
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user, queryClient } = renderWithProviders(<AddMediaDialog />);
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const urlInput = screen.getByLabelText(/Source URL/i);
+    await user.type(urlInput, 'https://otakudesu.cloud/anime/test-series/');
+
+    const previewBtn = screen.getByRole('button', { name: /Preview Scrape/i });
+    await user.click(previewBtn);
+
+    expect(await screen.findByText('Test Series Batch')).toBeInTheDocument();
+
+    const saveBtn = screen.getByRole('button', { name: /^Save$/i });
+    await user.click(saveBtn);
+
+    expect(await screen.findByText(/Missing Required Fields \(Episode #2\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('title')).toBeInTheDocument();
+    expect(screen.getByLabelText('embedUrl')).toBeInTheDocument();
+
+    expect(apiModule.saveMedia).toHaveBeenCalledTimes(1);
+    expect(apiModule.saveMedia).toHaveBeenNthCalledWith(1, {
+      episode: {
+        sourceUrl: 'https://otakudesu.cloud/episode/ep1',
+        source: 'otakudesu',
+        title: 'Episode 1',
+        videoType: null,
+        metadata: { publishedDate: '10 Jan 2025' },
+        videoSources: [],
+      },
+      series: mockSeriesPreviewResult.series,
+    });
+
+    await user.type(screen.getByLabelText('title'), 'Episode 2 Manual Title');
+    await user.type(screen.getByLabelText('embedUrl'), 'https://embed.com/ep2');
+
+    const continueBtn = screen.getByRole('button', { name: /Continue/i });
+    await user.click(continueBtn);
+
+    await waitFor(() => {
+      expect(apiModule.saveMedia).toHaveBeenCalledTimes(3);
+      expect(apiModule.saveMedia).toHaveBeenNthCalledWith(2, {
+        episode: {
+          sourceUrl: 'https://otakudesu.cloud/episode/ep2',
+          source: 'otakudesu',
+          title: 'Episode 2 Manual Title',
+          videoType: null,
+          videoSources: [
+            {
+              type: 'embed',
+              url: 'https://embed.com/ep2',
+              label: 'Manual',
+            },
+          ],
+          metadata: { publishedDate: '17 Jan 2025' },
+        },
+        series: mockSeriesPreviewResult.series,
+      });
+      expect(apiModule.saveMedia).toHaveBeenNthCalledWith(3, {
+        episode: {
+          sourceUrl: 'https://otakudesu.cloud/episode/ep3',
+          source: 'otakudesu',
+          title: 'Episode 3',
+          videoType: null,
+          metadata: { publishedDate: '24 Jan 2025' },
+          videoSources: [],
+        },
+        series: mockSeriesPreviewResult.series,
+      });
+    });
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['episodes'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });
+      expect(toast.success).toHaveBeenCalled();
+      expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
+    });
+  });
 });

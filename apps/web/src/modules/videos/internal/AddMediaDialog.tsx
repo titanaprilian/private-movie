@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
-import { saveMedia, previewScrape } from './api';
+import { saveMedia, previewScrape, type VideoSourceInput } from './api';
 
 export function AddMediaDialog() {
   const queryClient = useQueryClient();
@@ -17,8 +17,8 @@ export function AddMediaDialog() {
   const seriesPreviewData = useScrapeWorkerStore((state) => state.seriesPreviewData);
   const isBatch = useScrapeWorkerStore((state) => state.isBatch);
 
-  const closeDialog = useScrapeWorkerStore((state) => state.closeDialog);
-  const reset = useScrapeWorkerStore((state) => state.reset);
+  const closeDialogStore = useScrapeWorkerStore((state) => state.closeDialog);
+  const resetStore = useScrapeWorkerStore((state) => state.reset);
   const setSourceUrl = useScrapeWorkerStore((state) => state.setSourceUrl);
   const setSource = useScrapeWorkerStore((state) => state.setSource);
   const submitPreview = useScrapeWorkerStore((state) => state.submitPreview);
@@ -30,7 +30,31 @@ export function AddMediaDialog() {
   } | null>(null);
   const [batchError, setBatchError] = useState<string | null>(null);
 
-  const isBatchSaving = batchProgress !== null;
+  const [missingFieldsPrompt, setMissingFieldsPrompt] = useState<{
+    index: number;
+    missingFields: string[];
+  } | null>(null);
+  const [missingFieldsInputs, setMissingFieldsInputs] = useState<
+    Record<string, string>
+  >({});
+
+  const isBatchSaving = batchProgress !== null || missingFieldsPrompt !== null;
+
+  const closeDialog = () => {
+    setMissingFieldsPrompt(null);
+    setMissingFieldsInputs({});
+    setBatchProgress(null);
+    setBatchError(null);
+    closeDialogStore();
+  };
+
+  const reset = () => {
+    setMissingFieldsPrompt(null);
+    setMissingFieldsInputs({});
+    setBatchProgress(null);
+    setBatchError(null);
+    resetStore();
+  };
 
   const saveMutation = useMutation({
     mutationFn: saveMedia,
@@ -42,25 +66,64 @@ export function AddMediaDialog() {
     },
   });
 
-  const handleBatchSave = async () => {
+  const runBatchSave = async (startIndex: number) => {
     if (!seriesPreviewData || !seriesPreviewData.episodes.length) return;
 
     const total = seriesPreviewData.episodes.length;
-    setBatchProgress({ current: 0, total });
+    setBatchProgress({ current: startIndex + 1, total });
     setBatchError(null);
 
     try {
-      for (let i = 0; i < total; i++) {
+      for (let i = startIndex; i < total; i++) {
         const ep = seriesPreviewData.episodes[i];
         setBatchProgress({ current: i + 1, total });
-        
-        // Fetch full episode details including video sources
-        const epData = await previewScrape({
-          sourceUrl: ep.url,
-          source: seriesPreviewData.series.source
-        });
 
-        const episodePayload = { ...epData.episode };
+        let episodePayload: {
+          sourceUrl: string;
+          source: string;
+          title: string;
+          videoType: string | null;
+          videoSources?: VideoSourceInput[];
+          metadata: Record<string, unknown>;
+        };
+
+        try {
+          const epData = await previewScrape({
+            sourceUrl: ep.url,
+            source: seriesPreviewData.series.source,
+          });
+          episodePayload = { ...epData.episode };
+        } catch (err: unknown) {
+          const errObj = err as {
+            code?: string;
+            missingFields?: string[];
+            error?: { code?: string; missingFields?: string[] };
+          };
+          const code = errObj?.code || errObj?.error?.code;
+          const fields = errObj?.missingFields || errObj?.error?.missingFields;
+
+          if (
+            code === 'EPISODE_MISSING_FIELDS' ||
+            (Array.isArray(fields) && fields.length > 0)
+          ) {
+            const missingFieldsList =
+              Array.isArray(fields) && fields.length > 0
+                ? fields
+                : ['title', 'embedUrl'];
+            const initialInputs: Record<string, string> = {};
+            for (const field of missingFieldsList) {
+              initialInputs[field] = '';
+            }
+            setMissingFieldsInputs(initialInputs);
+            setMissingFieldsPrompt({
+              index: i,
+              missingFields: missingFieldsList,
+            });
+            return;
+          }
+          throw err;
+        }
+
         if (ep.date) {
           episodePayload.metadata = {
             ...episodePayload.metadata,
@@ -88,7 +151,68 @@ export function AddMediaDialog() {
       const msg =
         err instanceof Error ? err.message : 'Failed to save batch episodes';
       setBatchError(msg);
-    } finally {
+      setBatchProgress(null);
+    }
+  };
+
+  const handleBatchSave = async () => {
+    await runBatchSave(0);
+  };
+
+  const handleContinueMissingFields = async () => {
+    if (!missingFieldsPrompt || !seriesPreviewData) return;
+
+    const { index } = missingFieldsPrompt;
+    const ep = seriesPreviewData.episodes[index];
+
+    const titleValue = missingFieldsInputs['title'] || ep.title;
+    const embedUrlValue = missingFieldsInputs['embedUrl'];
+
+    const videoSources: VideoSourceInput[] = [];
+    if (embedUrlValue) {
+      videoSources.push({
+        type: 'embed',
+        url: embedUrlValue,
+        label: 'Manual',
+      });
+    }
+
+    const episodePayload = {
+      sourceUrl: ep.url,
+      source: seriesPreviewData.series.source,
+      title: titleValue,
+      videoType: missingFieldsInputs['videoType'] || null,
+      videoSources: videoSources.length > 0 ? videoSources : undefined,
+      metadata: {
+        ...(ep.date ? { publishedDate: ep.date } : {}),
+        ...Object.fromEntries(
+          Object.entries(missingFieldsInputs).filter(
+            ([k]) => k !== 'title' && k !== 'embedUrl' && k !== 'videoType'
+          )
+        ),
+      },
+    };
+
+    setMissingFieldsPrompt(null);
+    setMissingFieldsInputs({});
+
+    try {
+      await saveMedia({
+        episode: episodePayload,
+        series: {
+          sourceUrl: seriesPreviewData.series.sourceUrl,
+          source: seriesPreviewData.series.source,
+          title: seriesPreviewData.series.title,
+          description: seriesPreviewData.series.description,
+          posterUrl: seriesPreviewData.series.posterUrl,
+        },
+      });
+
+      await runBatchSave(index + 1);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : 'Failed to save batch episodes';
+      setBatchError(msg);
       setBatchProgress(null);
     }
   };
@@ -214,6 +338,80 @@ export function AddMediaDialog() {
                         width: `${(batchProgress.current / batchProgress.total) * 100}%`,
                       }}
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Missing Fields Pause Form */}
+              {missingFieldsPrompt && (
+                <div className="p-4 rounded border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 space-y-4">
+                  <div className="flex items-center justify-between border-b border-amber-200 dark:border-amber-800/60 pb-2">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01" />
+                      </svg>
+                      <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                        Missing Required Fields (Episode #{missingFieldsPrompt.index + 1})
+                      </span>
+                    </div>
+                    <span className="text-[10px] mono px-2 py-0.5 rounded bg-amber-200/50 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300">
+                      Batch Paused
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                    Scraping missing mandatory parameters for episode link{' '}
+                    <code className="mono bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">
+                      {seriesPreviewData?.episodes[missingFieldsPrompt.index]?.url}
+                    </code>
+                    . Provide values below to resume batch save.
+                  </p>
+
+                  <div className="space-y-3">
+                    {missingFieldsPrompt.missingFields.map((field) => (
+                      <div key={field}>
+                        <label
+                          htmlFor={`missing-field-${field}`}
+                          className="text-xs mono uppercase tracking-wide font-medium text-amber-900 dark:text-amber-200 mb-1 block"
+                        >
+                          {field}
+                        </label>
+                        <input
+                          id={`missing-field-${field}`}
+                          name={field}
+                          aria-label={field}
+                          type="text"
+                          placeholder={`Enter ${field}...`}
+                          value={missingFieldsInputs[field] || ''}
+                          onChange={(e) =>
+                            setMissingFieldsInputs((prev) => ({
+                              ...prev,
+                              [field]: e.target.value,
+                            }))
+                          }
+                          className="w-full px-3 py-2 rounded border border-amber-300 dark:border-amber-700 bg-card text-xs mono focus:outline-none focus:border-primary"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => void handleContinueMissingFields()}
+                      disabled={missingFieldsPrompt.missingFields.some(
+                        (field) => !missingFieldsInputs[field]?.trim()
+                      )}
+                      className="px-4 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+                    >
+                      Continue
+                    </button>
                   </div>
                 </div>
               )}
@@ -561,7 +759,7 @@ export function AddMediaDialog() {
                     />
                   </svg>
                 )}
-                {isBatchSaving
+                {batchProgress
                   ? `Saving (${batchProgress.current}/${batchProgress.total})...`
                   : saveMutation.isPending
                     ? 'Saving...'
