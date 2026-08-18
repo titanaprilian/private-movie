@@ -1,29 +1,43 @@
-import { createTestQueryClient, renderWithProviders, screen } from '../../utils';
+import { createTestQueryClient, renderWithProviders, screen, fireEvent } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
 import { SeriesGrid, seriesListQueryOptions } from '@/modules/videos';
+
+const mockNavigate = vi.fn();
+let mockSearchState: { page?: number; q?: string } = { page: 1, q: undefined };
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
     to,
     params,
+    search,
     className,
     onClick,
   }: {
     children: React.ReactNode;
     to: string;
     params?: Record<string, string>;
+    search?: any;
     className?: string;
     onClick?: () => void;
   }) => {
-    const href = params ? to.replace('$seriesId', params.seriesId) : to;
+    let href = params ? to.replace('$seriesId', params.seriesId) : to;
+    if (search) {
+      const searchObj = typeof search === 'function' ? search(mockSearchState) : search;
+      const searchParams = new URLSearchParams();
+      if (searchObj.page) searchParams.set('page', String(searchObj.page));
+      if (searchObj.q) searchParams.set('q', searchObj.q);
+      const str = searchParams.toString();
+      if (str) href += `?${str}`;
+    }
     return (
       <a href={href} className={className} onClick={onClick}>
         {children}
       </a>
     );
   },
-  useNavigate: () => vi.fn(),
+  useSearch: () => mockSearchState,
+  useNavigate: () => mockNavigate,
 }));
 
 const mockSeriesResponse = {
@@ -61,9 +75,14 @@ const mockSeriesResponse = {
   },
 };
 
-function renderSeriesGrid() {
+function renderSeriesGrid(
+  customResponse = mockSeriesResponse,
+  searchState: { page?: number; q?: string } = { page: 1, q: undefined }
+) {
+  mockSearchState = searchState;
+  mockNavigate.mockReset();
   const queryClient = createTestQueryClient();
-  queryClient.setQueryData(seriesListQueryOptions().queryKey, mockSeriesResponse);
+  queryClient.setQueryData(seriesListQueryOptions(searchState).queryKey, customResponse);
   return renderWithProviders(<SeriesGrid />, { queryClient });
 }
 
@@ -99,14 +118,42 @@ describe('SeriesGrid component', () => {
     expect(img).toHaveAttribute('src', 'https://example.com/solo-leveling.jpg');
   });
 
-  it('filters series cards when typing in filter input', async () => {
-    const { user } = renderSeriesGrid();
+  it('triggers debounced navigate when typing in filter input', () => {
+    vi.useFakeTimers();
+    renderSeriesGrid();
 
     const input = screen.getByPlaceholderText('Filter series...');
-    await user.type(input, 'Solo');
+    fireEvent.change(input, { target: { value: 'Solo' } });
 
-    expect(screen.getByText('Solo Leveling')).toBeInTheDocument();
-    expect(screen.queryByText('Frieren: Beyond Journey\'s End')).not.toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(500);
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(searchFn({})).toEqual({ q: 'Solo', page: 1 });
+
+    vi.useRealTimers();
+  });
+
+  it('renders pagination bar when total exceeds page limit', () => {
+    const paginatedResponse = {
+      ...mockSeriesResponse,
+      meta: {
+        total: 25,
+        page: 1,
+        limit: 20,
+      },
+    };
+    renderSeriesGrid(paginatedResponse);
+
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Previous')).toHaveClass('opacity-50');
+    const nextLink = screen.getByText('Next').closest('a');
+    expect(nextLink).toHaveAttribute('href', '/videos?page=2');
   });
 
   it('navigates to /videos/$seriesId when clicking a series card', () => {
