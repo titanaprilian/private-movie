@@ -17,6 +17,7 @@
         "@elysiajs/rate-limit": "npm:elysia-rate-limit@4.6.2",
         "@repo/contracts": "workspace:*",
         "@repo/db": "workspace:*",
+        "@repo/media-scraper": "workspace:*",
         "cheerio": "^1.2.0",
         "drizzle-orm": "^0.45.2",
         "elysia": "latest",
@@ -117,6 +118,19 @@
         "@repo/config-vitest": "workspace:*",
         "bun-types": "latest",
         "drizzle-kit": "^0.31.10",
+        "typescript": "^5.8.0",
+        "vitest": "^3.1.0",
+      },
+    },
+    "packages/media-scraper": {
+      "name": "@repo/media-scraper",
+      "version": "0.1.0",
+      "dependencies": {
+        "cheerio": "^1.2.0",
+      },
+      "devDependencies": {
+        "@repo/config-vitest": "workspace:*",
+        "bun-types": "latest",
         "typescript": "^5.8.0",
         "vitest": "^3.1.0",
       },
@@ -376,6 +390,8 @@
     "@repo/contracts": ["@repo/contracts@workspace:packages/contracts"],
 
     "@repo/db": ["@repo/db@workspace:packages/db"],
+
+    "@repo/media-scraper": ["@repo/media-scraper@workspace:packages/media-scraper"],
 
     "@repo/web": ["@repo/web@workspace:apps/web"],
 
