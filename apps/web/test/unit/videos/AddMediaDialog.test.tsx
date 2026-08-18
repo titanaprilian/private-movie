@@ -251,6 +251,23 @@ describe('AddMediaDialog component', () => {
     };
 
     vi.mocked(apiModule.previewScrapeSeries).mockResolvedValueOnce(mockSeriesPreviewResult);
+    
+    // Mock previewScrape for the individual episodes inside the loop
+    vi.mocked(apiModule.previewScrape).mockImplementation(async (params) => {
+      return {
+        episode: {
+          sourceUrl: params.sourceUrl,
+          source: params.source,
+          title: params.sourceUrl.includes('ep1') ? 'Grand Blue S3 Episode 1' : 'Grand Blue S3 Episode 2',
+          videoType: null,
+          metadata: params.sourceUrl.includes('ep1') ? { publishedDate: '10 Jan 2025' } : { publishedDate: '17 Jan 2025' },
+          videoSources: [],
+        },
+        series: null,
+        warnings: [],
+      };
+    });
+
     vi.mocked(apiModule.saveMedia).mockResolvedValue({
       episode: {
         id: 'ep-saved',
@@ -293,6 +310,7 @@ describe('AddMediaDialog component', () => {
             title: 'Grand Blue S3 Episode 1',
             videoType: null,
             metadata: { publishedDate: '10 Jan 2025' },
+            videoSources: [],
           },
           series: mockSeriesPreviewResult.series,
         }
@@ -306,6 +324,7 @@ describe('AddMediaDialog component', () => {
             title: 'Grand Blue S3 Episode 2',
             videoType: null,
             metadata: { publishedDate: '17 Jan 2025' },
+            videoSources: [],
           },
           series: mockSeriesPreviewResult.series,
         }

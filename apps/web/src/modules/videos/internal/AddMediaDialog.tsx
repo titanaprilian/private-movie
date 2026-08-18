@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
-import { saveMedia } from './api';
+import { saveMedia, previewScrape } from './api';
 
 export function AddMediaDialog() {
   const queryClient = useQueryClient();
@@ -53,14 +53,23 @@ export function AddMediaDialog() {
       for (let i = 0; i < total; i++) {
         const ep = seriesPreviewData.episodes[i];
         setBatchProgress({ current: i + 1, total });
+        
+        // Fetch full episode details including video sources
+        const epData = await previewScrape({
+          sourceUrl: ep.url,
+          source: seriesPreviewData.series.source
+        });
+
+        const episodePayload = { ...epData.episode };
+        if (ep.date) {
+          episodePayload.metadata = {
+            ...episodePayload.metadata,
+            publishedDate: ep.date,
+          };
+        }
+
         await saveMedia({
-          episode: {
-            sourceUrl: ep.url,
-            source: seriesPreviewData.series.source,
-            title: ep.title,
-            videoType: null,
-            metadata: ep.date ? { publishedDate: ep.date } : {},
-          },
+          episode: episodePayload,
           series: {
             sourceUrl: seriesPreviewData.series.sourceUrl,
             source: seriesPreviewData.series.source,
