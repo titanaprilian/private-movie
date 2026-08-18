@@ -7,10 +7,17 @@ export class SeriesParseError extends Error {
   }
 }
 
+export interface ParsedEpisodeItem {
+  title: string;
+  url: string;
+  date: string | null;
+}
+
 export interface ParsedSeriesPage {
   title: string;
   posterUrl: string | null;
   description: string | null;
+  episodes: ParsedEpisodeItem[];
 }
 
 export const parseSeriesPage = (
@@ -18,6 +25,25 @@ export const parseSeriesPage = (
   targetUrl?: string
 ): ParsedSeriesPage => {
   const load = cheerio.load(html, null, false);
+
+  const episodes: ParsedEpisodeItem[] = [];
+  load(".episodelist ul li").each((_, li) => {
+    const anchor = load(li).find("span a, a").first();
+    if (anchor.length === 0) return;
+
+    const url = anchor.attr("href");
+    const title = anchor.text().trim();
+    if (!url || !title) return;
+
+    const dateText = load(li).find(".zeebr").text().trim();
+    const date = dateText ? dateText : null;
+
+    episodes.push({
+      title,
+      url,
+      date,
+    });
+  });
 
   // Strategy 1: Search list items (e.g. sample-series-list.html) for link matching targetUrl
   if (targetUrl) {
@@ -43,7 +69,7 @@ export const parseSeriesPage = (
         null;
       const description = container.find(".sinopc").text().trim() || null;
       if (title) {
-        return { title, posterUrl, description };
+        return { title, posterUrl, description, episodes };
       }
     }
   }
@@ -66,6 +92,7 @@ export const parseSeriesPage = (
       title: singleTitle,
       posterUrl: singlePoster || null,
       description: singleDesc,
+      episodes,
     };
   }
 
@@ -82,6 +109,7 @@ export const parseSeriesPage = (
         title,
         posterUrl,
         description: null,
+        episodes,
       };
     }
   }

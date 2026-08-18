@@ -7,10 +7,12 @@ import { errorResponse, successResponse } from "../../lib/response";
 import {
   createSaveEpisodeService,
   EpisodeFetchError,
+  SeriesFetchError,
   type FetchFn,
   VideoSourceNotFoundError,
 } from "./index";
 import { EpisodeParseError } from "./internal/episodes/parse";
+import { SeriesParseError } from "./internal/series/parse";
 import { MirrorResolveError } from "./internal/episodes/resolve";
 import {
   createEpisodeRepositoryInternal,
@@ -275,6 +277,45 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             return errorResponse(set, 400, error);
           }
           if (error instanceof MirrorResolveError) {
+            return errorResponse(set, 400, error);
+          }
+          throw error;
+        }
+      },
+      {
+        body: t.Object({
+          sourceUrl: t.String({ format: "uri" }),
+          source: t.Literal("otakudesu"),
+          html: t.Optional(t.String()),
+        }),
+      }
+    )
+    .post(
+      "/preview-scrape-series",
+      async ({ body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const result = await episodes.previewScrapeSeries(body);
+          return successResponse(result);
+        } catch (error) {
+          if (error instanceof SeriesFetchError) {
+            return errorResponse(set, 400, error);
+          }
+          if (error instanceof SeriesParseError) {
             return errorResponse(set, 400, error);
           }
           throw error;

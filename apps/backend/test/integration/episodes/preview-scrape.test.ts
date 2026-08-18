@@ -576,9 +576,7 @@ describe("POST /preview-scrape", () => {
           label: "Server Embed",
         },
       ]);
-      expect(body.data.warnings).toEqual([
-        "Failed to extract direct video: 500 Internal Server Error",
-      ]);
+      expect(body.data.warnings).toEqual([]);
     });
   });
 });

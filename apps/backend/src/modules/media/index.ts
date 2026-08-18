@@ -52,6 +52,13 @@ export class EpisodeFetchError extends Error {
   }
 }
 
+export class SeriesFetchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SeriesFetchError";
+  }
+}
+
 export interface SaveEpisodeInput {
   sourceUrl: string;
   source: VideoSource;
@@ -82,6 +89,21 @@ export interface PreviewScrapeResult {
     posterUrl: string | null;
   } | null;
   warnings: string[];
+}
+
+export interface PreviewScrapeSeriesResult {
+  series: {
+    sourceUrl: string;
+    source: VideoSource;
+    title: string;
+    description: string | null;
+    posterUrl: string | null;
+  };
+  episodes: Array<{
+    title: string;
+    url: string;
+    date: string | null;
+  }>;
 }
 
 export interface SaveMediaEpisodeVideoSourceInput {
@@ -124,6 +146,7 @@ export interface SaveEpisodeServiceOptions {
 
 export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
+  previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
 }
 
@@ -257,6 +280,34 @@ export function createMediaService<
         },
         series,
         warnings,
+      };
+    },
+
+    async previewScrapeSeries(
+      input: SaveEpisodeInput
+    ): Promise<PreviewScrapeSeriesResult> {
+      let html = input.html;
+      if (!html) {
+        try {
+          html = await fetchHtml.get(input.sourceUrl);
+        } catch (error) {
+          throw new SeriesFetchError(
+            `Failed to fetch HTML from ${input.sourceUrl}: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+        }
+      }
+      const parsed = parseSeriesPage(html, input.sourceUrl);
+      return {
+        series: {
+          sourceUrl: input.sourceUrl,
+          source: input.source,
+          title: parsed.title,
+          description: parsed.description ?? null,
+          posterUrl: parsed.posterUrl ?? null,
+        },
+        episodes: parsed.episodes,
       };
     },
 
