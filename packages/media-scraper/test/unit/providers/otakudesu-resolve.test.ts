@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { FetchFn } from "@/modules/media";
 import {
-  ResolvedMirror,
-  resolveMirrors,
   MirrorResolveError,
-} from "@/modules/media/internal/episodes/resolve";
+  resolveMirrors,
+  type FetchFn,
+  type ResolvedMirror,
+} from "../../../src";
 
 const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
 const MIRROR_ACTION = "2a3505c93b0035d3f455df82bf976b84";

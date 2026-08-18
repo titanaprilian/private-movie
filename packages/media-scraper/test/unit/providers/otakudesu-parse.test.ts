@@ -8,15 +8,9 @@ import {
   extractDirectVideoSources,
   parseEpisodeOrder,
   parseEpisodePage,
-} from "@/modules/media/internal/episodes/parse";
-
-type ParsedEpisode = { label: string; url: string };
-type ParsedHost = { host: string; url: string };
-type ParsedDownloadLink = {
-  quality: string;
-  size: string | null;
-  hosts: ParsedHost[];
-};
+  type ScrapedDownloadLink,
+  type ScrapedEpisodeRef,
+} from "../../../src";
 
 const fixtures = {
   minimal: resolve(
@@ -73,11 +67,11 @@ describe("parseEpisodePage", () => {
       const episodes = result.metadata.episodes;
       expect(episodes).toHaveLength(7);
       expect(
-        episodes?.some((episode: ParsedEpisode) => episode.url === "0")
+        episodes?.some((episode) => episode.url === "0")
       ).toBe(false);
       expect(
         episodes?.some(
-          (episode: ParsedEpisode) => episode.label === "Pilih Episode Lainnya"
+          (episode) => episode.label === "Pilih Episode Lainnya"
         )
       ).toBe(false);
       expect(episodes?.[0]).toEqual({
@@ -148,7 +142,7 @@ describe("parseEpisodePage", () => {
       expect(downloadLinks).toHaveLength(6);
 
       const qualities = downloadLinks?.map(
-        (entry: ParsedDownloadLink) => entry.quality
+        (entry: ScrapedDownloadLink) => entry.quality
       );
       expect(qualities).toEqual([
         "Mp4 360p",
@@ -190,7 +184,7 @@ describe("parseEpisodePage", () => {
 
     it("extracts nothing from the mirror switcher section", () => {
       const urls = result.metadata.downloadLinks?.flatMap(
-        (entry: ParsedDownloadLink) => entry.hosts.map((host) => host.url)
+        (entry: ScrapedDownloadLink) => entry.hosts.map((host) => host.url)
       );
       expect(urls?.every((url: string) => url.startsWith("http"))).toBe(true);
       expect(urls?.some((url: string) => url === "#")).toBe(false);
@@ -293,7 +287,6 @@ describe("extractDirectVideoSources", () => {
     import.meta.dirname,
     "../../fixtures/episodes/sample-mp4-video.html"
   );
-  const readFixture = (path: string): string => readFileSync(path, "utf8");
 
   it("extracts video sources from the MP4 fixture HTML", () => {
     const html = readFixture(mp4FixturePath);

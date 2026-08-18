@@ -8,6 +8,17 @@ import type {
   ScrapedSeries,
   ScrapedVideoSource,
 } from "../../types";
+import {
+  extractDirectVideoSources,
+  mappedEpisodePageToScrapedEpisode,
+  parseEpisodePage,
+  type ParsedAjaxActions,
+  type ParsedMirrorPayload,
+} from "./parse";
+import { resolveMirrors } from "./resolve";
+
+export * from "./parse";
+export * from "./resolve";
 
 export class OtakudesuProvider implements MediaProvider {
   public readonly name = "otakudesu";
@@ -120,18 +131,74 @@ export class OtakudesuProvider implements MediaProvider {
     return this.parseSeriesHtml(html, url);
   }
 
+  public parseEpisodeHtml(html: string): ScrapedEpisode {
+    const parsed = parseEpisodePage(html);
+    return mappedEpisodePageToScrapedEpisode(parsed);
+  }
+
   public async parseEpisode(
-    _url: string,
-    _fetchFn: FetchFn
+    url: string,
+    fetchFn: FetchFn
   ): Promise<ScrapedEpisode> {
-    throw new Error("Method not implemented.");
+    const html = await fetchFn.get(url);
+    return this.parseEpisodeHtml(html);
   }
 
   public async resolveVideoSources(
-    _url: string,
-    _fetchFn: FetchFn,
-    _context?: Record<string, unknown>
+    url: string,
+    fetchFn: FetchFn,
+    context?: Record<string, unknown>
   ): Promise<ScrapedVideoSource[]> {
-    throw new Error("Method not implemented.");
+    let mirrorPayloads: ParsedMirrorPayload[] | undefined = context?.mirrorPayloads as
+      | ParsedMirrorPayload[]
+      | undefined;
+    let ajaxActions: ParsedAjaxActions | null | undefined = context?.ajaxActions as
+      | ParsedAjaxActions
+      | null
+      | undefined;
+    let initialSources: ScrapedVideoSource[] =
+      (context?.initialSources as ScrapedVideoSource[]) ?? [];
+
+    if (!mirrorPayloads || ajaxActions === undefined) {
+      const html = (context?.html as string) ?? (await fetchFn.get(url));
+      const parsed = parseEpisodePage(html);
+      mirrorPayloads = parsed.mirrorPayloads;
+      ajaxActions = parsed.ajaxActions;
+      if (initialSources.length === 0) {
+        initialSources = parsed.videoSources;
+      }
+    }
+
+    let embedSources: ScrapedVideoSource[] = [];
+
+    if (ajaxActions && mirrorPayloads && mirrorPayloads.length > 0) {
+      const resolved = await resolveMirrors({
+        payloads: mirrorPayloads,
+        fetchFn,
+        nonceAction: ajaxActions.nonceAction,
+        mirrorAction: ajaxActions.mirrorAction,
+      });
+
+      embedSources = resolved.map((m) => ({
+        type: "embed" as const,
+        url: m.url,
+        label: m.label,
+      }));
+    } else {
+      embedSources = initialSources;
+    }
+
+    const directSources: ScrapedVideoSource[] = [];
+    for (const source of embedSources) {
+      try {
+        const iframeHtml = await fetchFn.get(source.url);
+        const extracted = extractDirectVideoSources(iframeHtml);
+        directSources.push(...extracted);
+      } catch {
+        // Ignore fetch errors for individual embed iframe URLs
+      }
+    }
+
+    return [...embedSources, ...directSources];
   }
 }
