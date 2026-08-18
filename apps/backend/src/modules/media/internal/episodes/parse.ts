@@ -119,9 +119,42 @@ export function extractDirectVideoSources(
   const load = cheerio.load(html, null, false);
   const sources: ParsedVideoSource[] = [];
 
+  // Extract from JS <script> block first (typical for desustream.net Playerjs)
+  const scripts = load("script:not([src])").get();
+  for (const script of scripts) {
+    const content = load(script).html();
+    if (!content) continue;
+
+    // Look for `file:"https://...mp4"` or `file: "https://...mp4"` or `file:'...'`
+    const match = content.match(/file\s*:\s*["']([^"']+\.mp4)["']/i);
+    if (match && match[1]) {
+      const src = match[1];
+      try {
+        const urlObj = new URL(src);
+        const pathname = urlObj.pathname;
+        const extIndex = pathname.lastIndexOf(".mp4");
+        if (extIndex !== -1) {
+          const label = pathname.substring(pathname.lastIndexOf("/") + 1, extIndex);
+          const qualityMatch = label.match(QUALITY_PATTERN);
+          const quality = qualityMatch ? qualityMatch[1].toLowerCase() : null;
+
+          sources.push({ type: "direct", url: src, label, quality });
+          // If we found it in JS, we can stop searching scripts
+          break;
+        }
+      } catch {
+        // invalid URL, keep searching
+      }
+    }
+  }
+
+  // Also check for literal <video src="..."> tags (as a fallback)
   load("video[src]").each((_, el) => {
     const src = load(el).attr("src");
     if (!src || !src.endsWith(".mp4")) return;
+    
+    // Avoid adding duplicates if we already found the same URL in JS
+    if (sources.some(s => s.url === src)) return;
 
     try {
       const urlObj = new URL(src);

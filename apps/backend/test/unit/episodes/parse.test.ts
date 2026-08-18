@@ -364,12 +364,61 @@ describe("extractDirectVideoSources", () => {
     expect(result[0].label).toBe("filename.mkv");
   });
 
-  it("handles video tags where src is on the video element itself (not a child source tag)", () => {
+  it("extracts from literal <video> tags", () => {
     const html = `<video preload="none" src="https://archive.org/video/test_720p.mp4" style="width:100%"></video>`;
     const result = extractDirectVideoSources(html);
     expect(result).toHaveLength(1);
     expect(result[0].url).toBe("https://archive.org/video/test_720p.mp4");
     expect(result[0].label).toBe("test_720p");
     expect(result[0].quality).toBe("720p");
+  });
+
+  it("extracts video sources from JavaScript Playerjs configuration (raw desustream iframe)", () => {
+    const html = `
+      <html>
+        <body>
+          <script type="text/javascript">
+            var vs = {id:"playerjs", file:"https://archive.org/download/ealdream-pertamdaw/Otakudesu.io_MST.S3--04_1080p.mp4"};
+            var playerjs = new Playerjs(vs);
+          </script>
+        </body>
+      </html>
+    `;
+    const result = extractDirectVideoSources(html);
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe("https://archive.org/download/ealdream-pertamdaw/Otakudesu.io_MST.S3--04_1080p.mp4");
+    expect(result[0].label).toBe("Otakudesu.io_MST.S3--04_1080p");
+    expect(result[0].quality).toBe("1080p");
+  });
+
+  it("extracts multiple sources checking both JavaScript config and literal tags", () => {
+    const html = `
+      <html>
+        <body>
+          <script type="text/javascript">
+            var jsCfg = { file: "https://example.com/js_720p.mp4" };
+          </script>
+          <video src="https://example.com/tag_480p.mp4"></video>
+        </body>
+      </html>
+    `;
+    const result = extractDirectVideoSources(html);
+    expect(result).toHaveLength(2);
+    expect(result[0].url).toBe("https://example.com/js_720p.mp4");
+    expect(result[1].url).toBe("https://example.com/tag_480p.mp4");
+  });
+
+  it("deduplicates if the same MP4 exists in both JS config and <video> tag", () => {
+    const html = `
+      <html>
+        <body>
+          <script>var config = {file: "https://example.com/same_720p.mp4"};</script>
+          <video src="https://example.com/same_720p.mp4"></video>
+        </body>
+      </html>
+    `;
+    const result = extractDirectVideoSources(html);
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe("https://example.com/same_720p.mp4");
   });
 });
