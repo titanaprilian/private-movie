@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
+import {
+  useScrapeWorkerStore,
+  type EditableEpisodeDraft,
+} from './store/useScrapeWorkerStore';
 import { saveMedia, previewScrape, type VideoSourceInput } from './api';
 
 export function AddMediaDialog() {
@@ -27,6 +30,8 @@ export function AddMediaDialog() {
   const backToStep1 = useScrapeWorkerStore((state) => state.backToStep1);
   const updateEditablePreviewSeries = useScrapeWorkerStore((state) => state.updateEditablePreviewSeries);
   const updateEditablePreviewEpisode = useScrapeWorkerStore((state) => state.updateEditablePreviewEpisode);
+  const addEditablePreviewEpisode = useScrapeWorkerStore((state) => state.addEditablePreviewEpisode);
+  const deleteEditablePreviewEpisode = useScrapeWorkerStore((state) => state.deleteEditablePreviewEpisode);
 
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -80,7 +85,7 @@ export function AddMediaDialog() {
 
     try {
       for (let i = startIndex; i < total; i++) {
-        const ep = episodesList[i];
+        const ep = episodesList[i] as EditableEpisodeDraft;
         setBatchProgress({ current: i + 1, total });
 
         let episodePayload: {
@@ -92,45 +97,62 @@ export function AddMediaDialog() {
           metadata: Record<string, unknown>;
         };
 
-        try {
-          const epData = await previewScrape({
+        if (ep.embedUrl?.trim()) {
+          episodePayload = {
             sourceUrl: ep.url,
             source: seriesPreviewData.series.source,
-          });
-          episodePayload = {
-            ...epData.episode,
             title: ep.title,
-            sourceUrl: ep.url,
+            videoType: null,
+            videoSources: [
+              {
+                type: 'embed',
+                url: ep.embedUrl.trim(),
+                label: 'Manual',
+              },
+            ],
+            metadata: {},
           };
-        } catch (err: unknown) {
-          const errObj = err as {
-            code?: string;
-            missingFields?: string[];
-            error?: { code?: string; missingFields?: string[] };
-          };
-          const code = errObj?.code || errObj?.error?.code;
-          const fields = errObj?.missingFields || errObj?.error?.missingFields;
-
-          if (
-            code === 'EPISODE_MISSING_FIELDS' ||
-            (Array.isArray(fields) && fields.length > 0)
-          ) {
-            const missingFieldsList =
-              Array.isArray(fields) && fields.length > 0
-                ? fields
-                : ['title', 'embedUrl'];
-            const initialInputs: Record<string, string> = {};
-            for (const field of missingFieldsList) {
-              initialInputs[field] = '';
-            }
-            setMissingFieldsInputs(initialInputs);
-            setMissingFieldsPrompt({
-              index: i,
-              missingFields: missingFieldsList,
+        } else {
+          try {
+            const epData = await previewScrape({
+              sourceUrl: ep.url,
+              source: seriesPreviewData.series.source,
             });
-            return;
+            episodePayload = {
+              ...epData.episode,
+              title: ep.title,
+              sourceUrl: ep.url,
+            };
+          } catch (err: unknown) {
+            const errObj = err as {
+              code?: string;
+              missingFields?: string[];
+              error?: { code?: string; missingFields?: string[] };
+            };
+            const code = errObj?.code || errObj?.error?.code;
+            const fields = errObj?.missingFields || errObj?.error?.missingFields;
+
+            if (
+              code === 'EPISODE_MISSING_FIELDS' ||
+              (Array.isArray(fields) && fields.length > 0)
+            ) {
+              const missingFieldsList =
+                Array.isArray(fields) && fields.length > 0
+                  ? fields
+                  : ['title', 'embedUrl'];
+              const initialInputs: Record<string, string> = {};
+              for (const field of missingFieldsList) {
+                initialInputs[field] = '';
+              }
+              setMissingFieldsInputs(initialInputs);
+              setMissingFieldsPrompt({
+                index: i,
+                missingFields: missingFieldsList,
+              });
+              return;
+            }
+            throw err;
           }
-          throw err;
         }
 
         if (ep.date) {
@@ -550,7 +572,7 @@ export function AddMediaDialog() {
                     </span>
                   </div>
                   <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                    {(editablePreviewEpisodes || seriesPreviewData!.episodes).map((ep, i) => (
+                    {(editablePreviewEpisodes || seriesPreviewData!.episodes).map((ep: EditableEpisodeDraft, i) => (
                       <div
                         key={i}
                         className="p-3 bg-sidebar rounded border border-c space-y-2 text-xs"
@@ -574,6 +596,23 @@ export function AddMediaDialog() {
                               className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs font-semibold focus:outline-none focus:border-primary"
                             />
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => deleteEditablePreviewEpisode(i)}
+                            aria-label={`Delete episode #${i + 1}`}
+                            title="Delete episode"
+                            className="p-1 rounded hover-bg border border-c text-muted hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer shrink-0"
+                          >
+                            <svg
+                              className="w-3.5 h-3.5"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                          </button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
@@ -619,8 +658,46 @@ export function AddMediaDialog() {
                             />
                           </div>
                         </div>
+                        <div>
+                          <label
+                            htmlFor={`episode-embed-url-${i}`}
+                            className="text-[9px] mono uppercase text-muted block mb-0.5"
+                          >
+                            Embed URL (optional)
+                          </label>
+                          <input
+                            id={`episode-embed-url-${i}`}
+                            aria-label={`Embed URL #${i + 1}`}
+                            type="text"
+                            value={ep.embedUrl || ''}
+                            onChange={(e) =>
+                              updateEditablePreviewEpisode(i, {
+                                embedUrl: e.target.value,
+                              })
+                            }
+                            placeholder="https://embed... (bypasses scrape)"
+                            className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
+                          />
+                        </div>
                       </div>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => addEditablePreviewEpisode()}
+                      className="w-full py-2 rounded border border-dashed border-c text-xs mono font-medium text-muted hover:text-fg hover-bg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <svg
+                        className="w-3.5 h-3.5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                      + Add Episode
+                    </button>
                   </div>
                 </div>
               )}

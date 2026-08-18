@@ -20,6 +20,7 @@ export interface EditableEpisodeDraft {
   title: string;
   url: string;
   date: string | null;
+  embedUrl?: string;
 }
 
 export interface ScrapeWorkerState {
@@ -51,6 +52,8 @@ export interface ScrapeWorkerState {
     index: number,
     updates: Partial<EditableEpisodeDraft>
   ) => void;
+  addEditablePreviewEpisode: () => void;
+  deleteEditablePreviewEpisode: (index: number) => void;
 }
 
 const initialState = {
@@ -92,6 +95,21 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
       if (index >= 0 && index < nextEpisodes.length) {
         nextEpisodes[index] = { ...nextEpisodes[index], ...updates };
       }
+      return { editablePreviewEpisodes: nextEpisodes };
+    }),
+  addEditablePreviewEpisode: () =>
+    set((state) => ({
+      editablePreviewEpisodes: [
+        ...(state.editablePreviewEpisodes || []),
+        { title: '', url: '', date: null },
+      ],
+    })),
+  deleteEditablePreviewEpisode: (index) =>
+    set((state) => {
+      if (!state.editablePreviewEpisodes) return {};
+      const nextEpisodes = state.editablePreviewEpisodes.filter(
+        (_, i) => i !== index
+      );
       return { editablePreviewEpisodes: nextEpisodes };
     }),
 

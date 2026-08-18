@@ -217,4 +217,94 @@ describe('useScrapeWorkerStore', () => {
     useScrapeWorkerStore.getState().backToStep1();
     expect(useScrapeWorkerStore.getState().step).toBe(1);
   });
+
+  it('allows adding an empty episode draft row', () => {
+    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
+      {
+        title: 'Episode 1',
+        url: 'https://otakudesu.cloud/episode/ep-1',
+        date: '10 Jan 2025',
+      },
+    ]);
+
+    useScrapeWorkerStore.getState().addEditablePreviewEpisode();
+
+    const episodes = useScrapeWorkerStore.getState().editablePreviewEpisodes;
+    expect(episodes).toHaveLength(2);
+    expect(episodes?.[1]).toEqual({
+      title: '',
+      url: '',
+      date: null,
+    });
+  });
+
+  it('allows setting an optional embedUrl on an episode draft row via updateEditablePreviewEpisode', () => {
+    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
+      {
+        title: 'Episode 1',
+        url: 'https://otakudesu.cloud/episode/ep-1',
+        date: '10 Jan 2025',
+      },
+    ]);
+
+    useScrapeWorkerStore.getState().updateEditablePreviewEpisode(0, {
+      embedUrl: 'https://embed.com/ep1',
+    });
+
+    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes?.[0]).toEqual({
+      title: 'Episode 1',
+      url: 'https://otakudesu.cloud/episode/ep-1',
+      date: '10 Jan 2025',
+      embedUrl: 'https://embed.com/ep1',
+    });
+  });
+
+  it('allows clearing an embedUrl on an episode draft row', () => {
+    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
+      {
+        title: 'Episode 1',
+        url: 'https://otakudesu.cloud/episode/ep-1',
+        date: '10 Jan 2025',
+        embedUrl: 'https://embed.com/ep1',
+      },
+    ]);
+
+    useScrapeWorkerStore.getState().updateEditablePreviewEpisode(0, {
+      embedUrl: '',
+    });
+
+    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes?.[0]).toEqual({
+      title: 'Episode 1',
+      url: 'https://otakudesu.cloud/episode/ep-1',
+      date: '10 Jan 2025',
+      embedUrl: '',
+    });
+  });
+
+  it('allows deleting an episode draft row by index', () => {
+    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
+      {
+        title: 'Episode 1',
+        url: 'https://otakudesu.cloud/episode/ep-1',
+        date: '10 Jan 2025',
+      },
+      {
+        title: 'Episode 2',
+        url: 'https://otakudesu.cloud/episode/ep-2',
+        date: '11 Jan 2025',
+      },
+      {
+        title: 'Episode 3',
+        url: 'https://otakudesu.cloud/episode/ep-3',
+        date: '12 Jan 2025',
+      },
+    ]);
+
+    useScrapeWorkerStore.getState().deleteEditablePreviewEpisode(1);
+
+    const episodes = useScrapeWorkerStore.getState().editablePreviewEpisodes;
+    expect(episodes).toHaveLength(2);
+    expect(episodes?.[0].title).toBe('Episode 1');
+    expect(episodes?.[1].title).toBe('Episode 3');
+  });
 });
