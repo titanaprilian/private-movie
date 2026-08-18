@@ -1,6 +1,12 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { SeriesRow } from "@repo/db";
-import { parseEpisodeOrder, parseEpisodePage, type ParsedMetadata } from "./internal/episodes/parse";
+import {
+  extractDirectVideoSources,
+  parseEpisodePage,
+  parseEpisodeOrder,
+  type ParsedMetadata,
+  type ParsedVideoSource,
+} from "./internal/episodes/parse";
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
 import { resolveMirrors } from "./internal/episodes/resolve";
 import { parseSeriesPage } from "./internal/series/parse";
@@ -155,6 +161,20 @@ export function createMediaService<
       const warnings: string[] = [];
       let series: PreviewScrapeResult["series"] = null;
 
+      // Extract direct video sources from the primary embed iframe
+      let directSources: ParsedVideoSource[] = [];
+      const embedSource = parsed.videoSources.find(
+        (vs) => vs.type === "embed"
+      );
+      if (embedSource?.url) {
+        try {
+          const iframeHtml = await fetchHtml.get(embedSource.url);
+          directSources = extractDirectVideoSources(iframeHtml);
+        } catch {
+          // will retry with resolved mirrors below
+        }
+      }
+
       if (parsed.metadata.animePageUrl) {
         try {
           const seriesHtml = await fetchHtml.get(parsed.metadata.animePageUrl);
@@ -194,7 +214,36 @@ export function createMediaService<
             label: mirror.label,
             quality: "720p",
           }));
+
+          // If the primary embed iframe had no direct MP4, try resolved mirrors
+          if (directSources.length === 0 && resolved.length > 0) {
+            const desuMirror = resolved.find(
+              (m) => m.url.includes("desustream.net") || m.label.toLowerCase().includes("odstream")
+            );
+            if (desuMirror?.url) {
+              try {
+                const mirrorHtml = await fetchHtml.get(desuMirror.url);
+                directSources = extractDirectVideoSources(mirrorHtml);
+              } catch {
+                // no warning, just skip — embed sources are still present
+              }
+            }
+          }
         }
+      }
+
+      // Merge direct sources into videoSources
+      if (directSources.length > 0) {
+        const directPreview = directSources.map(
+          (ds) =>
+            ({
+              type: ds.type,
+              url: ds.url,
+              label: ds.label,
+              quality: ds.quality ?? null,
+            }) as PreviewScrapeVideoSource
+        );
+        videoSources.push(...directPreview);
       }
 
       return {
