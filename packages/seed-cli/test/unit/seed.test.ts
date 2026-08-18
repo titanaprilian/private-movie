@@ -335,4 +335,35 @@ describe("runSeed", () => {
     expect(logs.some((l) => l.includes("Episodes Inserted"))).toBe(true);
     expect(logs.some((l) => l.includes("Episodes Failed"))).toBe(true);
   });
+
+  it("limits number of processed items when maxItems or SEED_MAX_ITEMS is set", async () => {
+    const jsonContent = JSON.stringify([
+      { title: "Anime 1", url: "https://otakudesu.blog/anime/1" },
+      { title: "Anime 2", url: "https://otakudesu.blog/anime/2" },
+      { title: "Anime 3", url: "https://otakudesu.blog/anime/3" },
+    ]);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(jsonContent);
+
+    mockFindBySourceUrl.mockResolvedValue(null);
+    const mockProvider = {
+      canHandle: () => true,
+      parseSeries: vi.fn().mockResolvedValue({ title: "Anime", episodes: [] }),
+    };
+    vi.spyOn(MediaScraper, "getProviderForUrl").mockReturnValue(mockProvider as any);
+
+    await runSeed({
+      jsonPath: "/tmp/sample.json",
+      db: mockDb,
+      logFn: mockLog,
+      maxItems: 1,
+      deps: {
+        seriesRepository: { findBySourceUrl: mockFindBySourceUrl },
+        mediaService: { saveMedia: mockSaveMedia },
+      },
+    });
+
+    expect(mockFindBySourceUrl).toHaveBeenCalledTimes(1);
+    expect(logs.some((l) => l.includes("Found 1 series to process."))).toBe(true);
+  });
 });

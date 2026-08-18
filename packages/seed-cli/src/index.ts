@@ -39,6 +39,7 @@ export interface SeedOptions {
   logFn?: (message: string) => void;
   batchSize?: number;
   batchDelayMs?: number;
+  maxItems?: number;
   sleepFn?: (ms: number) => Promise<void>;
   deps?: SeedDeps;
 }
@@ -61,8 +62,13 @@ export async function runSeed(options: SeedOptions = {}): Promise<void> {
     ? parseInt(process.env.SEED_BATCH_DELAY_MS, 10)
     : 2000;
 
+  const defaultMaxItems = process.env.SEED_MAX_ITEMS
+    ? parseInt(process.env.SEED_MAX_ITEMS, 10)
+    : undefined;
+
   const batchSize = options.batchSize ?? defaultBatchSize;
   const batchDelayMs = options.batchDelayMs ?? defaultBatchDelayMs;
+  const maxItems = options.maxItems ?? defaultMaxItems;
   const sleepFn =
     options.sleepFn ??
     ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
@@ -73,9 +79,13 @@ export async function runSeed(options: SeedOptions = {}): Promise<void> {
   }
 
   const rawData = fs.readFileSync(jsonPath, "utf-8");
-  const seriesList: SeriesListItem[] = JSON.parse(rawData);
+  let seriesList: SeriesListItem[] = JSON.parse(rawData);
 
-  log(`Found ${seriesList.length} series in file.`);
+  if (maxItems !== undefined && maxItems > 0) {
+    seriesList = seriesList.slice(0, maxItems);
+  }
+
+  log(`Found ${seriesList.length} series to process.`);
   log(`Batch configuration: process ${batchSize} series, delay ${batchDelayMs}ms between batches.`);
 
   let db: DbClient | undefined;

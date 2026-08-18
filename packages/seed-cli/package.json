@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "seed": "bun src/index.ts",
+    "db:seed": "bun src/index.ts",
     "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
