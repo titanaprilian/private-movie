@@ -2,8 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createMediaService, EpisodeFetchError, type FetchFn } from "@/modules/media";
-import { EpisodeParseError, extractDirectVideoSources } from "@/modules/media/internal/episodes/parse";
-import { MirrorResolveError } from "@/modules/media/internal/episodes/resolve";
+import { EpisodeParseError, MirrorResolveError, extractDirectVideoSources } from "@repo/media-scraper";
 
 const sampleAHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),

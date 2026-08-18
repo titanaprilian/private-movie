@@ -1,15 +1,18 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { SeriesRow } from "@repo/db";
 import {
+  MediaScraper,
   extractDirectVideoSources,
-  parseEpisodePage,
   parseEpisodeOrder,
+  resolveMirrors,
   type ParsedMetadata,
   type ParsedVideoSource,
-} from "./internal/episodes/parse";
+  type ParsedMirrorPayload,
+  type ParsedAjaxActions,
+  type ParsedDownloadLink,
+  type FetchFn as ScraperFetchFn,
+} from "@repo/media-scraper";
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
-import { resolveMirrors } from "./internal/episodes/resolve";
-import { parseSeriesPage } from "./internal/series/parse";
 import { createSeriesRepositoryInternal } from "./internal/series/repository";
 import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
 
@@ -18,7 +21,12 @@ export type VideoSource = "otakudesu";
 export type { EpisodeRow as SavedEpisode, SeriesRow as SavedSeries } from "@repo/db";
 export type { EpisodeWithVideoSources };
 export { VideoSourceNotFoundError } from "./internal/video-sources/repository";
-export { EpisodeParseError, EpisodeMissingFieldsError } from "./internal/episodes/parse";
+export {
+  EpisodeParseError,
+  EpisodeMissingFieldsError,
+  SeriesParseError,
+  MirrorResolveError,
+} from "@repo/media-scraper";
 
 export type FetchFn = {
   get(url: string): Promise<string>;
@@ -153,10 +161,6 @@ export interface MediaService {
 
 export type SaveEpisodeService = MediaService;
 
-const parsers: Record<VideoSource, typeof parseEpisodePage> = {
-  otakudesu: parseEpisodePage,
-};
-
 export function createMediaService<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown> = Record<string, unknown>,
@@ -171,6 +175,11 @@ export function createMediaService<
 
   return {
     async previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult> {
+      const provider = MediaScraper.getProviderForUrl(input.sourceUrl);
+      if (!provider) {
+        throw new EpisodeFetchError(`No provider found for ${input.sourceUrl}`);
+      }
+
       let html = input.html;
       if (!html) {
         try {
@@ -181,13 +190,24 @@ export function createMediaService<
           );
         }
       }
-      const parsed = parsers[input.source](html);
+
+      const effectiveFetch: ScraperFetchFn = {
+        get: async (url: string) => {
+          if (url === input.sourceUrl && html) {
+            return html;
+          }
+          return fetchHtml.get(url);
+        },
+        post: (url: string, body: string) => fetchHtml.post(url, body),
+      };
+
+      const scraped = await provider.parseEpisode(input.sourceUrl, effectiveFetch);
       const warnings: string[] = [];
       let series: PreviewScrapeResult["series"] = null;
 
       // Extract direct video sources from the primary embed iframe
       let directSources: ParsedVideoSource[] = [];
-      const embedSource = parsed.videoSources.find(
+      const embedSource = scraped.videoSources.find(
         (vs) => vs.type === "embed"
       );
       if (embedSource?.url) {
@@ -199,38 +219,42 @@ export function createMediaService<
         }
       }
 
-      if (parsed.metadata.animePageUrl) {
+      if (scraped.animePageUrl) {
         try {
-          const seriesHtml = await fetchHtml.get(parsed.metadata.animePageUrl);
-          const parsedSeries = parseSeriesPage(
-            seriesHtml,
-            parsed.metadata.animePageUrl
-          );
+          const seriesResult = await provider.parseSeries(scraped.animePageUrl, fetchHtml);
           series = {
-            sourceUrl: parsed.metadata.animePageUrl,
+            sourceUrl: scraped.animePageUrl,
             source: input.source,
-            title: parsedSeries.title,
-            description: parsedSeries.description ?? null,
-            posterUrl: parsedSeries.posterUrl ?? null,
+            title: seriesResult.title,
+            description: seriesResult.description ?? null,
+            posterUrl: seriesResult.posterUrl ?? null,
           };
         } catch {
           warnings.push("Failed to fetch series details");
         }
       }
 
-      let videoSources: PreviewScrapeVideoSource[] = parsed.videoSources;
+      let videoSources: PreviewScrapeVideoSource[] = scraped.videoSources.map((vs) => ({
+        type: vs.type,
+        url: vs.url,
+        label: vs.label,
+        ...(vs.quality !== undefined ? { quality: vs.quality } : {}),
+      }));
 
-      if (parsed.mirrorPayloads.length > 0) {
-        if (!parsed.ajaxActions) {
+      const mirrorPayloads = (scraped.providerData?.mirrorPayloads ?? []) as ParsedMirrorPayload[];
+      const ajaxActions = (scraped.providerData?.ajaxActions ?? null) as ParsedAjaxActions | null;
+
+      if (mirrorPayloads.length > 0) {
+        if (!ajaxActions) {
           warnings.push(
             "Failed to extract AJAX actions; mirror resolution skipped"
           );
         } else {
           const resolved = await resolveMirrors({
-            payloads: parsed.mirrorPayloads,
+            payloads: mirrorPayloads,
             fetchFn: fetchHtml,
-            nonceAction: parsed.ajaxActions.nonceAction,
-            mirrorAction: parsed.ajaxActions.mirrorAction,
+            nonceAction: ajaxActions.nonceAction,
+            mirrorAction: ajaxActions.mirrorAction,
           });
           videoSources = resolved.map((mirror) => ({
             type: "embed",
@@ -270,14 +294,27 @@ export function createMediaService<
         videoSources.push(...directPreview);
       }
 
+      const metadata: ParsedMetadata = {};
+      if (scraped.genres) metadata.genres = scraped.genres;
+      if (scraped.duration) metadata.duration = scraped.duration;
+      if (scraped.posterUrl) metadata.posterUrl = scraped.posterUrl;
+      if (scraped.animePageUrl) metadata.animePageUrl = scraped.animePageUrl;
+      if (scraped.downloadLinks) metadata.downloadLinks = scraped.downloadLinks as ParsedDownloadLink[];
+      if (scraped.episodes) {
+        metadata.episodes = scraped.episodes.map((ep) => ({
+          label: ep.title,
+          url: ep.url,
+        }));
+      }
+
       return {
         episode: {
           sourceUrl: input.sourceUrl,
           source: input.source,
-          title: parsed.title,
-          videoType: parsed.videoType,
+          title: scraped.title,
+          videoType: scraped.videoType ?? null,
           videoSources,
-          metadata: parsed.metadata,
+          metadata,
         },
         series,
         warnings,
@@ -287,6 +324,11 @@ export function createMediaService<
     async previewScrapeSeries(
       input: SaveEpisodeInput
     ): Promise<PreviewScrapeSeriesResult> {
+      const provider = MediaScraper.getProviderForUrl(input.sourceUrl);
+      if (!provider) {
+        throw new SeriesFetchError(`No provider found for ${input.sourceUrl}`);
+      }
+
       let html = input.html;
       if (!html) {
         try {
@@ -299,7 +341,18 @@ export function createMediaService<
           );
         }
       }
-      const parsed = parseSeriesPage(html, input.sourceUrl);
+
+      const effectiveFetch: ScraperFetchFn = {
+        get: async (url: string) => {
+          if (url === input.sourceUrl && html) {
+            return html;
+          }
+          return fetchHtml.get(url);
+        },
+        post: (url: string, body: string) => fetchHtml.post(url, body),
+      };
+
+      const parsed = await provider.parseSeries(input.sourceUrl, effectiveFetch);
       return {
         series: {
           sourceUrl: input.sourceUrl,
@@ -308,7 +361,11 @@ export function createMediaService<
           description: parsed.description ?? null,
           posterUrl: parsed.posterUrl ?? null,
         },
-        episodes: parsed.episodes,
+        episodes: parsed.episodes.map((ep) => ({
+          title: ep.title,
+          url: ep.url,
+          date: ep.date ?? null,
+        })),
       };
     },
 

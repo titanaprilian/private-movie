@@ -11,9 +11,7 @@ import {
   type FetchFn,
   VideoSourceNotFoundError,
 } from "./index";
-import { EpisodeMissingFieldsError, EpisodeParseError } from "./internal/episodes/parse";
-import { SeriesParseError } from "./internal/series/parse";
-import { MirrorResolveError } from "./internal/episodes/resolve";
+import { EpisodeMissingFieldsError, EpisodeParseError, SeriesParseError, MirrorResolveError } from "@repo/media-scraper";
 import {
   createEpisodeRepositoryInternal,
   EpisodeNotFoundError,

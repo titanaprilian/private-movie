@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { asc, count, eq, inArray, isNull, max } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@repo/db";
-import type { ParsedMetadata } from "./parse";
+import type { ParsedMetadata } from "@repo/media-scraper";
 
 export class EpisodeNotFoundError extends Error {
   constructor(message = "Episode not found") {

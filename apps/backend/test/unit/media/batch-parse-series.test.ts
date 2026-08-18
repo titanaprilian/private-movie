@@ -2,18 +2,20 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  parseSeriesPage,
+  OtakudesuProvider,
   SeriesParseError,
-} from "@/modules/media/internal/series/parse";
+} from "@repo/media-scraper";
 
 const sampleOneSeasonHtml = fs.readFileSync(
   path.resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
   "utf8"
 );
 
+const provider = new OtakudesuProvider();
+
 describe("parseSeriesPage - batch scraping", () => {
   it("extracts an episodes array with title, url, and date from sample-one-season.html using .episodelist ul li span a selectors", () => {
-    const result = parseSeriesPage(sampleOneSeasonHtml);
+    const result = provider.parseSeriesHtml(sampleOneSeasonHtml);
 
     expect(result.title).toBe("Grand Blue Season 3 Subtitle Indonesia");
     expect(result.posterUrl).toBeDefined();
@@ -35,7 +37,7 @@ describe("parseSeriesPage - batch scraping", () => {
   });
 
   it("returns episodes with correct order (newest first) matching the episode list in sample-one-season.html", () => {
-    const result = parseSeriesPage(sampleOneSeasonHtml);
+    const result = provider.parseSeriesHtml(sampleOneSeasonHtml);
 
     expect(result.episodes).toBeDefined();
     expect(Array.isArray(result.episodes)).toBe(true);

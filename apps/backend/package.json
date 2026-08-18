@@ -19,7 +19,6 @@
     "@repo/contracts": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/media-scraper": "workspace:*",
-    "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",
     "elysia": "latest"
   },

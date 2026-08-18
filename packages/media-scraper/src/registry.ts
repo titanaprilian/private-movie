@@ -1,11 +1,12 @@
 import type { MediaProvider } from "./types";
+import { OtakudesuProvider } from "./providers/otakudesu";
 
 export class MediaScraper {
   private static defaultRegistry = new MediaScraper();
 
   private providers: MediaProvider[] = [];
 
-  constructor(providers: MediaProvider[] = []) {
+  constructor(providers: MediaProvider[] = [new OtakudesuProvider()]) {
     this.providers = [...providers];
   }
 
@@ -22,7 +23,7 @@ export class MediaScraper {
   }
 
   public static unregisterAll(): void {
-    this.defaultRegistry = new MediaScraper();
+    this.defaultRegistry = new MediaScraper([]);
   }
 
   public static getProviderForUrl(url: string): MediaProvider | null {
