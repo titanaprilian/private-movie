@@ -2,20 +2,35 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  parseSeriesPage,
+  OtakudesuProvider,
   SeriesParseError,
-} from "@/modules/media/internal/series/parse";
+  type FetchFn,
+} from "../../../src";
 
-describe("parseSeriesPage", () => {
+describe("OtakudesuProvider series parsing", () => {
   const sampleSeriesListHtml = fs.readFileSync(
-    path.resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
+    path.resolve(import.meta.dirname, "../../fixtures/sample-series-list.html"),
     "utf8"
   );
 
-  it("extracts series title and poster from sample-series-list.html using targetUrl", () => {
+  const provider = new OtakudesuProvider();
+
+  const createMockFetchFn = (html: string): FetchFn => ({
+    get: async () => html,
+    post: async () => "",
+  });
+
+  it("identifies matching URLs with canHandle", () => {
+    expect(provider.canHandle("https://otakudesu.blog/anime/test")).toBe(true);
+    expect(provider.canHandle("https://otakudesu.cloud/anime/test")).toBe(true);
+    expect(provider.canHandle("https://other-domain.com/anime/test")).toBe(false);
+  });
+
+  it("extracts series title and poster from sample-series-list.html using targetUrl", async () => {
     const targetUrl =
       "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/";
-    const result = parseSeriesPage(sampleSeriesListHtml, targetUrl);
+    const fetchFn = createMockFetchFn(sampleSeriesListHtml);
+    const result = await provider.parseSeries(targetUrl, fetchFn);
 
     expect(result.title).toBe(
       "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru"
@@ -25,10 +40,11 @@ describe("parseSeriesPage", () => {
     );
   });
 
-  it("extracts series title and poster from sample-series-list.html using targetUrl without trailing slash", () => {
+  it("extracts series title and poster from sample-series-list.html using targetUrl without trailing slash", async () => {
     const targetUrl =
       "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo";
-    const result = parseSeriesPage(sampleSeriesListHtml, targetUrl);
+    const fetchFn = createMockFetchFn(sampleSeriesListHtml);
+    const result = await provider.parseSeries(targetUrl, fetchFn);
 
     expect(result.title).toBe(
       "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru"
@@ -38,8 +54,10 @@ describe("parseSeriesPage", () => {
     );
   });
 
-  it("extracts first series title and poster from sample-series-list.html when no targetUrl matches", () => {
-    const result = parseSeriesPage(sampleSeriesListHtml);
+  it("extracts first series title and poster from sample-series-list.html when no targetUrl matches", async () => {
+    const targetUrl = "https://otakudesu.blog/anime/unknown-series/";
+    const fetchFn = createMockFetchFn(sampleSeriesListHtml);
+    const result = await provider.parseSeries(targetUrl, fetchFn);
 
     expect(result.title).toBe("Uchi no Otouto-domo ga Sumimasen");
     expect(result.posterUrl).toBe(
@@ -47,7 +65,7 @@ describe("parseSeriesPage", () => {
     );
   });
 
-  it("extracts series title and poster from single series HTML structure with fallback selectors", () => {
+  it("extracts series title and poster from single series HTML structure with fallback selectors", async () => {
     const html = `
       <div id="venkonten">
         <div class="fotoanime">
@@ -60,13 +78,14 @@ describe("parseSeriesPage", () => {
       </div>
     `;
 
-    const result = parseSeriesPage(html);
+    const fetchFn = createMockFetchFn(html);
+    const result = await provider.parseSeries("https://otakudesu.blog/anime/my-awesome-anime", fetchFn);
     expect(result.title).toBe("My Awesome Anime");
     expect(result.posterUrl).toBe("https://example.com/poster.jpg");
     expect(result.description).toBe("This is a great anime series summary.");
   });
 
-  it("extracts series info from single series HTML with alternative selectors (.posttl, .thumb img, .sinopsis)", () => {
+  it("extracts series info from single series HTML with alternative selectors (.posttl, .thumb img, .sinopsis)", async () => {
     const html = `
       <div id="venkonten">
         <h1 class="posttl">Alternative Title Anime</h1>
@@ -79,13 +98,14 @@ describe("parseSeriesPage", () => {
       </div>
     `;
 
-    const result = parseSeriesPage(html);
+    const fetchFn = createMockFetchFn(html);
+    const result = await provider.parseSeries("https://otakudesu.blog/anime/alt-anime", fetchFn);
     expect(result.title).toBe("Alternative Title Anime");
     expect(result.posterUrl).toBe("https://example.com/alt-poster.jpg");
     expect(result.description).toBe("Alternative synopsis description text.");
   });
 
-  it("extracts series info using strategy 1 with link title attribute and container poster", () => {
+  it("extracts series info using strategy 1 with link title attribute and container poster", async () => {
     const html = `
       <div class="detpost">
         <a href="https://otakudesu.blog/anime/my-series/" title="Title From Attribute"></a>
@@ -95,16 +115,17 @@ describe("parseSeriesPage", () => {
       </div>
     `;
 
-    const result = parseSeriesPage(
-      html,
-      "https://otakudesu.blog/anime/my-series/"
+    const fetchFn = createMockFetchFn(html);
+    const result = await provider.parseSeries(
+      "https://otakudesu.blog/anime/my-series/",
+      fetchFn
     );
     expect(result.title).toBe("Title From Attribute");
     expect(result.posterUrl).toBe("https://example.com/container-poster.png");
     expect(result.description).toBeNull();
   });
 
-  it("extracts series info using strategy 3 fallback (.detpost a with title attribute)", () => {
+  it("extracts series info using strategy 3 fallback (.detpost a with title attribute)", async () => {
     const html = `
       <div class="detpost">
         <a href="https://otakudesu.blog/anime/fallback-series/" title="Fallback Series Title">
@@ -113,16 +134,18 @@ describe("parseSeriesPage", () => {
       </div>
     `;
 
-    const result = parseSeriesPage(html);
+    const fetchFn = createMockFetchFn(html);
+    const result = await provider.parseSeries("https://otakudesu.blog/anime/some-series", fetchFn);
     expect(result.title).toBe("Fallback Series Title");
     expect(result.posterUrl).toBe("https://example.com/fallback-poster.jpg");
     expect(result.description).toBeNull();
   });
 
-  it("throws SeriesParseError with 'missing series title' when HTML is empty or malformed", () => {
+  it("throws SeriesParseError with 'missing series title' when HTML is empty or malformed", async () => {
     const html = `<div><p>Empty page with no title</p></div>`;
-    expect(() => parseSeriesPage(html)).toThrowError(
-      new SeriesParseError("missing series title")
-    );
+    const fetchFn = createMockFetchFn(html);
+    await expect(
+      provider.parseSeries("https://otakudesu.blog/anime/empty", fetchFn)
+    ).rejects.toThrowError(new SeriesParseError("missing series title"));
   });
 });
