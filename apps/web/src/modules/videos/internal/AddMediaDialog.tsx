@@ -16,6 +16,7 @@ export function AddMediaDialog() {
   const previewData = useScrapeWorkerStore((state) => state.previewData);
   const seriesPreviewData = useScrapeWorkerStore((state) => state.seriesPreviewData);
   const editablePreviewSeries = useScrapeWorkerStore((state) => state.editablePreviewSeries);
+  const editablePreviewEpisodes = useScrapeWorkerStore((state) => state.editablePreviewEpisodes);
   const isBatch = useScrapeWorkerStore((state) => state.isBatch);
 
   const closeDialogStore = useScrapeWorkerStore((state) => state.closeDialog);
@@ -25,6 +26,7 @@ export function AddMediaDialog() {
   const submitPreview = useScrapeWorkerStore((state) => state.submitPreview);
   const backToStep1 = useScrapeWorkerStore((state) => state.backToStep1);
   const updateEditablePreviewSeries = useScrapeWorkerStore((state) => state.updateEditablePreviewSeries);
+  const updateEditablePreviewEpisode = useScrapeWorkerStore((state) => state.updateEditablePreviewEpisode);
 
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -69,15 +71,16 @@ export function AddMediaDialog() {
   });
 
   const runBatchSave = async (startIndex: number) => {
-    if (!seriesPreviewData || !seriesPreviewData.episodes.length) return;
+    const episodesList = editablePreviewEpisodes || seriesPreviewData?.episodes;
+    if (!episodesList || !episodesList.length || !seriesPreviewData) return;
 
-    const total = seriesPreviewData.episodes.length;
+    const total = episodesList.length;
     setBatchProgress({ current: startIndex + 1, total });
     setBatchError(null);
 
     try {
       for (let i = startIndex; i < total; i++) {
-        const ep = seriesPreviewData.episodes[i];
+        const ep = episodesList[i];
         setBatchProgress({ current: i + 1, total });
 
         let episodePayload: {
@@ -94,7 +97,11 @@ export function AddMediaDialog() {
             sourceUrl: ep.url,
             source: seriesPreviewData.series.source,
           });
-          episodePayload = { ...epData.episode };
+          episodePayload = {
+            ...epData.episode,
+            title: ep.title,
+            sourceUrl: ep.url,
+          };
         } catch (err: unknown) {
           const errObj = err as {
             code?: string;
@@ -172,10 +179,11 @@ export function AddMediaDialog() {
   };
 
   const handleContinueMissingFields = async () => {
-    if (!missingFieldsPrompt || !seriesPreviewData) return;
+    const episodesList = editablePreviewEpisodes || seriesPreviewData?.episodes;
+    if (!missingFieldsPrompt || !episodesList || !seriesPreviewData) return;
 
     const { index } = missingFieldsPrompt;
-    const ep = seriesPreviewData.episodes[index];
+    const ep = episodesList[index];
 
     const titleValue = missingFieldsInputs['title'] || ep.title;
     const embedUrlValue = missingFieldsInputs['embedUrl'];
@@ -533,35 +541,83 @@ export function AddMediaDialog() {
               )}
 
               {/* Extracted Episodes List / Table */}
-              {seriesPreviewData?.episodes && seriesPreviewData.episodes.length > 0 && (
+              {(editablePreviewEpisodes || seriesPreviewData?.episodes) && (
                 <div className="bg-card border border-c rounded p-4 space-y-3">
                   <div className="flex items-center justify-between border-b border-c pb-2">
                     <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
-                      Extracted Batch Episodes ({seriesPreviewData.episodes.length})
+                      Extracted Batch Episodes (
+                      {(editablePreviewEpisodes || seriesPreviewData!.episodes).length})
                     </span>
                   </div>
-                  <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                    {seriesPreviewData.episodes.map((ep, i) => (
+                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                    {(editablePreviewEpisodes || seriesPreviewData!.episodes).map((ep, i) => (
                       <div
                         key={i}
-                        className="p-2 bg-sidebar rounded border border-c text-xs flex items-center justify-between gap-2"
+                        className="p-3 bg-sidebar rounded border border-c space-y-2 text-xs"
                       >
-                        <div className="flex items-center gap-2 truncate">
-                          <span className="text-[10px] mono text-muted shrink-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] mono text-muted shrink-0 font-semibold">
                             #{i + 1}
                           </span>
-                          <span className="font-semibold truncate text-current">
-                            {ep.title}
-                          </span>
+                          <div className="flex-1">
+                            <input
+                              id={`episode-title-${i}`}
+                              aria-label={`Episode Title #${i + 1}`}
+                              type="text"
+                              value={ep.title}
+                              onChange={(e) =>
+                                updateEditablePreviewEpisode(i, {
+                                  title: e.target.value,
+                                })
+                              }
+                              placeholder="Episode Title"
+                              className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs font-semibold focus:outline-none focus:border-primary"
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-muted text-[10px] mono shrink-0">
-                          {ep.date && <span>{ep.date}</span>}
-                          <span
-                            className="truncate max-w-[150px]"
-                            title={ep.url}
-                          >
-                            {ep.url}
-                          </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label
+                              htmlFor={`episode-date-${i}`}
+                              className="text-[9px] mono uppercase text-muted block mb-0.5"
+                            >
+                              Date
+                            </label>
+                            <input
+                              id={`episode-date-${i}`}
+                              aria-label={`Episode Date #${i + 1}`}
+                              type="text"
+                              value={ep.date || ''}
+                              onChange={(e) =>
+                                updateEditablePreviewEpisode(i, {
+                                  date: e.target.value || null,
+                                })
+                              }
+                              placeholder="Publish Date (optional)"
+                              className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`episode-url-${i}`}
+                              className="text-[9px] mono uppercase text-muted block mb-0.5"
+                            >
+                              Source URL
+                            </label>
+                            <input
+                              id={`episode-url-${i}`}
+                              aria-label={`Episode URL #${i + 1}`}
+                              type="text"
+                              value={ep.url}
+                              onChange={(e) =>
+                                updateEditablePreviewEpisode(i, {
+                                  url: e.target.value,
+                                })
+                              }
+                              placeholder="https://..."
+                              className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}

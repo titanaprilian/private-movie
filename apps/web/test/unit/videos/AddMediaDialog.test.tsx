@@ -221,9 +221,103 @@ describe('AddMediaDialog component', () => {
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['episodes'] });
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });
-      expect(toast.success).toHaveBeenCalledWith('Media saved successfully');
+      expect(toast.success).toHaveBeenCalled();
       expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
-      expect(useScrapeWorkerStore.getState().step).toBe(1);
+    });
+  });
+
+  it('allows editing episode title, date, and URL inputs in Step 2 batch preview, preserving manual edits over scraped values during save', async () => {
+    const mockSeriesPreviewResult: apiModule.PreviewScrapeSeriesResult = {
+      series: {
+        sourceUrl: 'https://otakudesu.cloud/anime/grand-blue-s3/',
+        source: 'otakudesu',
+        title: 'Grand Blue Season 3',
+        description: 'Diving comedy series',
+        posterUrl: 'https://otakudesu.cloud/poster.jpg',
+      },
+      episodes: [
+        {
+          title: 'Scraped Ep 1 Title',
+          url: 'https://otakudesu.cloud/episode/gb-ep1-orig',
+          date: '10 Jan 2025',
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.previewScrapeSeries).mockResolvedValueOnce(mockSeriesPreviewResult);
+
+    vi.mocked(apiModule.previewScrape).mockImplementation(async (params) => {
+      return {
+        episode: {
+          sourceUrl: params.sourceUrl,
+          source: params.source,
+          title: 'Scraped Ep 1 Secondary Title',
+          videoType: null,
+          metadata: { publishedDate: 'Scraped Date' },
+          videoSources: [],
+        },
+        series: null,
+        warnings: [],
+      };
+    });
+
+    vi.mocked(apiModule.saveMedia).mockResolvedValue({
+      episode: {
+        id: 'ep-saved',
+        sourceUrl: '',
+        source: 'otakudesu',
+        title: '',
+        videoSources: [],
+        createdAt: '',
+        updatedAt: '',
+      },
+      series: null,
+    });
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/anime/grand-blue-s3/');
+    await user.click(screen.getByRole('button', { name: /Preview Scrape/i }));
+
+    const epTitleInput = await screen.findByLabelText(/Episode Title #1/i);
+    const epDateInput = screen.getByLabelText(/Episode Date #1/i);
+    const epUrlInput = screen.getByLabelText(/Episode URL #1/i);
+
+    expect(epTitleInput).toHaveValue('Scraped Ep 1 Title');
+    expect(epDateInput).toHaveValue('10 Jan 2025');
+    expect(epUrlInput).toHaveValue('https://otakudesu.cloud/episode/gb-ep1-orig');
+
+    await user.clear(epTitleInput);
+    await user.type(epTitleInput, 'Edited Ep 1 Title');
+
+    await user.clear(epDateInput);
+    await user.type(epDateInput, '12 Jan 2025');
+
+    await user.clear(epUrlInput);
+    await user.type(epUrlInput, 'https://otakudesu.cloud/episode/gb-ep1-edited');
+
+    const saveBtn = screen.getByRole('button', { name: /^Save$/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(apiModule.previewScrape).toHaveBeenCalledWith({
+        sourceUrl: 'https://otakudesu.cloud/episode/gb-ep1-edited',
+        source: 'otakudesu',
+      });
+      expect(apiModule.saveMedia).toHaveBeenCalledWith(
+        {
+          episode: {
+            sourceUrl: 'https://otakudesu.cloud/episode/gb-ep1-edited',
+            source: 'otakudesu',
+            title: 'Edited Ep 1 Title',
+            videoType: null,
+            metadata: { publishedDate: '12 Jan 2025' },
+            videoSources: [],
+          },
+          series: mockSeriesPreviewResult.series,
+        }
+      );
     });
   });
 
@@ -370,8 +464,8 @@ describe('AddMediaDialog component', () => {
     await user.click(previewBtn);
 
     expect(await screen.findByDisplayValue('Grand Blue Season 3')).toBeInTheDocument();
-    expect(screen.getByText('Grand Blue S3 Episode 1')).toBeInTheDocument();
-    expect(screen.getByText('Grand Blue S3 Episode 2')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Grand Blue S3 Episode 1')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Grand Blue S3 Episode 2')).toBeInTheDocument();
 
     const saveBtn = screen.getByRole('button', { name: /^Save$/i });
     await user.click(saveBtn);

@@ -16,6 +16,12 @@ export interface EditableSeriesDraft {
   posterUrl: string | null;
 }
 
+export interface EditableEpisodeDraft {
+  title: string;
+  url: string;
+  date: string | null;
+}
+
 export interface ScrapeWorkerState {
   isOpen: boolean;
   step: 1 | 2;
@@ -26,6 +32,7 @@ export interface ScrapeWorkerState {
   previewData: PreviewScrapeResult | null;
   seriesPreviewData: PreviewScrapeSeriesResult | null;
   editablePreviewSeries: EditableSeriesDraft | null;
+  editablePreviewEpisodes: EditableEpisodeDraft[] | null;
   isBatch: boolean;
 
   // Actions
@@ -39,6 +46,11 @@ export interface ScrapeWorkerState {
   submitPreview: () => Promise<boolean>;
   setEditablePreviewSeries: (series: EditableSeriesDraft | null) => void;
   updateEditablePreviewSeries: (updates: Partial<EditableSeriesDraft>) => void;
+  setEditablePreviewEpisodes: (episodes: EditableEpisodeDraft[] | null) => void;
+  updateEditablePreviewEpisode: (
+    index: number,
+    updates: Partial<EditableEpisodeDraft>
+  ) => void;
 }
 
 const initialState = {
@@ -51,6 +63,7 @@ const initialState = {
   previewData: null,
   seriesPreviewData: null,
   editablePreviewSeries: null,
+  editablePreviewEpisodes: null,
   isBatch: false,
 };
 
@@ -71,6 +84,16 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
         ? { ...state.editablePreviewSeries, ...updates }
         : null,
     })),
+  setEditablePreviewEpisodes: (episodes) => set({ editablePreviewEpisodes: episodes }),
+  updateEditablePreviewEpisode: (index, updates) =>
+    set((state) => {
+      if (!state.editablePreviewEpisodes) return {};
+      const nextEpisodes = [...state.editablePreviewEpisodes];
+      if (index >= 0 && index < nextEpisodes.length) {
+        nextEpisodes[index] = { ...nextEpisodes[index], ...updates };
+      }
+      return { editablePreviewEpisodes: nextEpisodes };
+    }),
 
   submitPreview: async () => {
     const { sourceUrl, source } = get();
@@ -97,6 +120,9 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
           isBatch: true,
           seriesPreviewData: data,
           editablePreviewSeries: data.series ? { ...data.series } : null,
+          editablePreviewEpisodes: data.episodes
+            ? data.episodes.map((ep) => ({ ...ep }))
+            : null,
           previewData: null,
           step: 2,
           error: null,
@@ -112,6 +138,7 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
           isBatch: false,
           previewData: data,
           editablePreviewSeries: data.series ? { ...data.series } : null,
+          editablePreviewEpisodes: null,
           seriesPreviewData: null,
           step: 2,
           error: null,
@@ -127,6 +154,7 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
         previewData: null,
         seriesPreviewData: null,
         editablePreviewSeries: null,
+        editablePreviewEpisodes: null,
         isBatch: false,
         step: 1,
       });

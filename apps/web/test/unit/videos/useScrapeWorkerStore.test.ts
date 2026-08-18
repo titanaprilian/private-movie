@@ -30,6 +30,7 @@ describe('useScrapeWorkerStore', () => {
     expect(state.error).toBeNull();
     expect(state.previewData).toBeNull();
     expect(state.editablePreviewSeries).toBeNull();
+    expect(state.editablePreviewEpisodes).toBeNull();
   });
 
   it('opens and closes dialog', () => {
@@ -144,7 +145,36 @@ describe('useScrapeWorkerStore', () => {
     expect(useScrapeWorkerStore.getState().isBatch).toBe(true);
     expect(useScrapeWorkerStore.getState().seriesPreviewData).toEqual(mockSeriesData);
     expect(useScrapeWorkerStore.getState().editablePreviewSeries).toEqual(mockSeriesData.series);
+    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes).toEqual(mockSeriesData.episodes);
     expect(useScrapeWorkerStore.getState().previewData).toBeNull();
+  });
+
+  it('allows setting and updating editablePreviewEpisodes draft state', () => {
+    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
+      {
+        title: 'Original Episode 1',
+        url: 'https://otakudesu.cloud/episode/ep-1',
+        date: '10 Jan 2025',
+      },
+      {
+        title: 'Original Episode 2',
+        url: 'https://otakudesu.cloud/episode/ep-2',
+        date: '11 Jan 2025',
+      },
+    ]);
+
+    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes).toHaveLength(2);
+
+    useScrapeWorkerStore.getState().updateEditablePreviewEpisode(0, {
+      title: 'Custom Edited Title Ep 1',
+      url: 'https://otakudesu.cloud/episode/ep-1-custom',
+    });
+
+    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes?.[0]).toEqual({
+      title: 'Custom Edited Title Ep 1',
+      url: 'https://otakudesu.cloud/episode/ep-1-custom',
+      date: '10 Jan 2025',
+    });
   });
 
   it('allows setting and updating editablePreviewSeries draft state', () => {
