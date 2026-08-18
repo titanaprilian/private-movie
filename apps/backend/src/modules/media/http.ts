@@ -11,7 +11,7 @@ import {
   type FetchFn,
   VideoSourceNotFoundError,
 } from "./index";
-import { EpisodeParseError } from "./internal/episodes/parse";
+import { EpisodeMissingFieldsError, EpisodeParseError } from "./internal/episodes/parse";
 import { SeriesParseError } from "./internal/series/parse";
 import { MirrorResolveError } from "./internal/episodes/resolve";
 import {
@@ -271,6 +271,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           return successResponse(result);
         } catch (error) {
           if (error instanceof EpisodeFetchError) {
+            return errorResponse(set, 400, error);
+          }
+          if (error instanceof EpisodeMissingFieldsError) {
             return errorResponse(set, 400, error);
           }
           if (error instanceof EpisodeParseError) {

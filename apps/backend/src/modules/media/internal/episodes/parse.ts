@@ -8,7 +8,7 @@ export class EpisodeParseError extends Error {
   }
 }
 
-export class EpisodeMissingFieldsError extends Error {
+export class EpisodeMissingFieldsError extends EpisodeParseError {
   missingFields: string[];
 
   constructor(missingFields: string[]) {
@@ -212,20 +212,26 @@ export const parseEpisodePage = (html: string): ParsedEpisodePage => {
     throw new EpisodeParseError("missing #venkonten container");
   }
 
+  const missingFields: string[] = [];
+
   const title = box.find("h1.posttl").text().trim();
   if (!title) {
-    throw new EpisodeParseError("missing title");
+    missingFields.push("title");
   }
 
   const embedUrl = box.find(".responsive-embed-stream iframe").attr("src");
   if (!embedUrl) {
-    throw new EpisodeParseError("missing iframe src");
+    missingFields.push("embedUrl");
+  }
+
+  if (missingFields.length > 0) {
+    throw new EpisodeMissingFieldsError(missingFields);
   }
 
   const videoSources: ParsedVideoSource[] = [
     {
       type: "embed",
-      url: embedUrl,
+      url: embedUrl!,
       label: "Server Embed",
     },
   ];

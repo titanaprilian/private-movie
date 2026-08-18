@@ -18,6 +18,7 @@ export type VideoSource = "otakudesu";
 export type { EpisodeRow as SavedEpisode, SeriesRow as SavedSeries } from "@repo/db";
 export type { EpisodeWithVideoSources };
 export { VideoSourceNotFoundError } from "./internal/video-sources/repository";
+export { EpisodeParseError, EpisodeMissingFieldsError } from "./internal/episodes/parse";
 
 export type FetchFn = {
   get(url: string): Promise<string>;
