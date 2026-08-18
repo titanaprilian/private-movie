@@ -241,6 +241,40 @@ export async function previewScrape(
   return res.data.data as unknown as PreviewScrapeResult;
 }
 
+export interface PreviewScrapeSeriesResult {
+  series: {
+    sourceUrl: string;
+    source: 'otakudesu';
+    title: string;
+    description: string | null;
+    posterUrl: string | null;
+  };
+  episodes: Array<{
+    title: string;
+    url: string;
+    date: string | null;
+  }>;
+}
+
+export async function previewScrapeSeries(
+  params: PreviewScrapeParams
+): Promise<PreviewScrapeSeriesResult> {
+  const res = await api['preview-scrape-series'].post({
+    sourceUrl: params.sourceUrl,
+    source: params.source,
+    html: params.html,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to scrape series preview'
+    );
+  }
+
+  return res.data.data as unknown as PreviewScrapeSeriesResult;
+}
+
 export interface SaveMediaParams {
   episode: {
     sourceUrl: string;

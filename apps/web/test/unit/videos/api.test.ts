@@ -7,6 +7,7 @@ import {
   seriesListQueryOptions,
   fetchSeriesDetail,
   seriesDetailQueryOptions,
+  previewScrapeSeries,
   saveMedia,
   updateEpisode,
   updateEpisodeOrders,
@@ -403,6 +404,61 @@ describe('videos api', () => {
 
     expect(options.queryKey).toEqual(['series', 'series-1']);
     expect(typeof options.queryFn).toBe('function');
+  });
+
+  it('previewScrapeSeries posts payload to backend API and returns parsed series and episodes batch', async () => {
+    const mockSeriesResult = {
+      data: {
+        series: {
+          sourceUrl: 'https://otakudesu.cloud/anime/test-series',
+          source: 'otakudesu',
+          title: 'Batch Series Title',
+          description: 'Batch series description',
+          posterUrl: 'https://otakudesu.cloud/poster.jpg',
+        },
+        episodes: [
+          {
+            title: 'Batch Episode 1',
+            url: 'https://otakudesu.cloud/episode/ep-1',
+            date: '10 Jan 2025',
+          },
+          {
+            title: 'Batch Episode 2',
+            url: 'https://otakudesu.cloud/episode/ep-2',
+            date: '17 Jan 2025',
+          },
+        ],
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl = typeof input === 'string' ? input : (input as Request).url;
+        postBody = init?.body as string;
+        return new Response(JSON.stringify(mockSeriesResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const result = await previewScrapeSeries({
+      sourceUrl: 'https://otakudesu.cloud/anime/test-series',
+      source: 'otakudesu',
+    });
+
+    expect(postUrl).toContain('/preview-scrape-series');
+    expect(JSON.parse(postBody)).toEqual({
+      sourceUrl: 'https://otakudesu.cloud/anime/test-series',
+      source: 'otakudesu',
+    });
+    expect(result.series.title).toBe('Batch Series Title');
+    expect(result.episodes).toHaveLength(2);
+    expect(result.episodes[0].title).toBe('Batch Episode 1');
+
+    fetchSpy.mockRestore();
   });
 
   it('saveMedia posts payload to backend API and returns saved media', async () => {

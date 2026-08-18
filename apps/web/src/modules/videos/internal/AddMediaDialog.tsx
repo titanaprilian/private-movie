@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
@@ -13,6 +14,8 @@ export function AddMediaDialog() {
   const isLoading = useScrapeWorkerStore((state) => state.isLoading);
   const error = useScrapeWorkerStore((state) => state.error);
   const previewData = useScrapeWorkerStore((state) => state.previewData);
+  const seriesPreviewData = useScrapeWorkerStore((state) => state.seriesPreviewData);
+  const isBatch = useScrapeWorkerStore((state) => state.isBatch);
 
   const closeDialog = useScrapeWorkerStore((state) => state.closeDialog);
   const reset = useScrapeWorkerStore((state) => state.reset);
@@ -20,6 +23,14 @@ export function AddMediaDialog() {
   const setSource = useScrapeWorkerStore((state) => state.setSource);
   const submitPreview = useScrapeWorkerStore((state) => state.submitPreview);
   const backToStep1 = useScrapeWorkerStore((state) => state.backToStep1);
+
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
+  const [batchError, setBatchError] = useState<string | null>(null);
+
+  const isBatchSaving = batchProgress !== null;
 
   const saveMutation = useMutation({
     mutationFn: saveMedia,
@@ -30,6 +41,48 @@ export function AddMediaDialog() {
       reset();
     },
   });
+
+  const handleBatchSave = async () => {
+    if (!seriesPreviewData || !seriesPreviewData.episodes.length) return;
+
+    const total = seriesPreviewData.episodes.length;
+    setBatchProgress({ current: 0, total });
+    setBatchError(null);
+
+    try {
+      for (let i = 0; i < total; i++) {
+        const ep = seriesPreviewData.episodes[i];
+        setBatchProgress({ current: i + 1, total });
+        await saveMedia({
+          episode: {
+            sourceUrl: ep.url,
+            source: seriesPreviewData.series.source,
+            title: ep.title,
+            videoType: null,
+            metadata: ep.date ? { publishedDate: ep.date } : {},
+          },
+          series: {
+            sourceUrl: seriesPreviewData.series.sourceUrl,
+            source: seriesPreviewData.series.source,
+            title: seriesPreviewData.series.title,
+            description: seriesPreviewData.series.description,
+            posterUrl: seriesPreviewData.series.posterUrl,
+          },
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['episodes'] });
+      queryClient.invalidateQueries({ queryKey: ['series'] });
+      toast.success('Media saved successfully');
+      reset();
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : 'Failed to save batch episodes';
+      setBatchError(msg);
+    } finally {
+      setBatchProgress(null);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -125,6 +178,126 @@ export function AddMediaDialog() {
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                   <span>{error}</span>
+                </div>
+              )}
+            </div>
+          ) : isBatch ? (
+            <div className="space-y-5">
+              {/* Batch Saving Progress */}
+              {batchProgress && (
+                <div className="p-3 rounded border border-primary/30 bg-primary/10 text-xs mono space-y-2">
+                  <div className="flex items-center justify-between text-primary font-medium">
+                    <span>
+                      Saving episode {batchProgress.current} of{' '}
+                      {batchProgress.total}...
+                    </span>
+                    <span>
+                      {Math.round(
+                        (batchProgress.current / batchProgress.total) * 100
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-card border border-c rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-200"
+                      style={{
+                        width: `${(batchProgress.current / batchProgress.total) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Series Card */}
+              {seriesPreviewData?.series && (
+                <div className="bg-card border border-c rounded p-4 space-y-3">
+                  <div className="flex items-center justify-between border-b border-c pb-2">
+                    <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+                      Parsed Series Metadata
+                    </span>
+                    <span className="text-[10px] mono px-2 py-0.5 rounded bg-muted/20 border border-c text-muted">
+                      {seriesPreviewData.episodes.length} Episodes
+                    </span>
+                  </div>
+
+                  <div className="flex gap-4">
+                    {seriesPreviewData.series.posterUrl && (
+                      <img
+                        src={seriesPreviewData.series.posterUrl}
+                        alt={seriesPreviewData.series.title}
+                        className="w-16 h-24 object-cover rounded border border-c shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-current">
+                        {seriesPreviewData.series.title}
+                      </h3>
+                      {seriesPreviewData.series.description && (
+                        <p className="text-xs text-muted mt-1 leading-relaxed line-clamp-3">
+                          {seriesPreviewData.series.description}
+                        </p>
+                      )}
+                      <p className="text-xs mono text-muted mt-1 truncate">
+                        Series URL: {seriesPreviewData.series.sourceUrl}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Extracted Episodes List / Table */}
+              {seriesPreviewData?.episodes && seriesPreviewData.episodes.length > 0 && (
+                <div className="bg-card border border-c rounded p-4 space-y-3">
+                  <div className="flex items-center justify-between border-b border-c pb-2">
+                    <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+                      Extracted Batch Episodes ({seriesPreviewData.episodes.length})
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                    {seriesPreviewData.episodes.map((ep, i) => (
+                      <div
+                        key={i}
+                        className="p-2 bg-sidebar rounded border border-c text-xs flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="text-[10px] mono text-muted shrink-0">
+                            #{i + 1}
+                          </span>
+                          <span className="font-semibold truncate text-current">
+                            {ep.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted text-[10px] mono shrink-0">
+                          {ep.date && <span>{ep.date}</span>}
+                          <span
+                            className="truncate max-w-[150px]"
+                            title={ep.url}
+                          >
+                            {ep.url}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Batch Error */}
+              {batchError && (
+                <div className="p-3 rounded border border-red-200 dark:border-red-900/50 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs mono flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>{batchError}</span>
                 </div>
               )}
             </div>
@@ -333,7 +506,7 @@ export function AddMediaDialog() {
               <button
                 type="button"
                 onClick={backToStep1}
-                disabled={saveMutation.isPending}
+                disabled={saveMutation.isPending || isBatchSaving}
                 className="px-3.5 py-1.5 rounded border border-c text-xs font-medium hover-bg transition-colors cursor-pointer disabled:opacity-50"
               >
                 ← Back to Edit
@@ -341,17 +514,23 @@ export function AddMediaDialog() {
               <button
                 type="button"
                 onClick={() => {
-                  if (previewData?.episode) {
+                  if (isBatch) {
+                    void handleBatchSave();
+                  } else if (previewData?.episode) {
                     saveMutation.mutate({
                       episode: previewData.episode,
                       series: previewData.series,
                     });
                   }
                 }}
-                disabled={saveMutation.isPending || !previewData?.episode}
+                disabled={
+                  isBatch
+                    ? isBatchSaving || !seriesPreviewData?.episodes.length
+                    : saveMutation.isPending || !previewData?.episode
+                }
                 className="px-4 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
-                {saveMutation.isPending && (
+                {(saveMutation.isPending || isBatchSaving) && (
                   <svg
                     className="animate-spin w-3.5 h-3.5"
                     viewBox="0 0 24 24"
@@ -373,7 +552,11 @@ export function AddMediaDialog() {
                     />
                   </svg>
                 )}
-                {saveMutation.isPending ? 'Saving...' : 'Save'}
+                {isBatchSaving
+                  ? `Saving (${batchProgress.current}/${batchProgress.total})...`
+                  : saveMutation.isPending
+                    ? 'Saving...'
+                    : 'Save'}
               </button>
             </>
           )}

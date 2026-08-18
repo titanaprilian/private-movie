@@ -20,6 +20,7 @@ vi.mock('@/modules/videos/internal/api', async () => {
   return {
     ...actual,
     previewScrape: vi.fn(),
+    previewScrapeSeries: vi.fn(),
     saveMedia: vi.fn(),
   };
 });
@@ -223,6 +224,99 @@ describe('AddMediaDialog component', () => {
       expect(toast.success).toHaveBeenCalledWith('Media saved successfully');
       expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
       expect(useScrapeWorkerStore.getState().step).toBe(1);
+    });
+  });
+
+  it('renders batch series preview in Step 2 and iteratively calls saveMedia for each episode when Save is clicked', async () => {
+    const mockSeriesPreviewResult: apiModule.PreviewScrapeSeriesResult = {
+      series: {
+        sourceUrl: 'https://otakudesu.cloud/anime/grand-blue-s3/',
+        source: 'otakudesu',
+        title: 'Grand Blue Season 3',
+        description: 'Diving comedy series',
+        posterUrl: 'https://otakudesu.cloud/poster.jpg',
+      },
+      episodes: [
+        {
+          title: 'Grand Blue S3 Episode 1',
+          url: 'https://otakudesu.cloud/episode/gb-s3-ep1',
+          date: '10 Jan 2025',
+        },
+        {
+          title: 'Grand Blue S3 Episode 2',
+          url: 'https://otakudesu.cloud/episode/gb-s3-ep2',
+          date: '17 Jan 2025',
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.previewScrapeSeries).mockResolvedValueOnce(mockSeriesPreviewResult);
+    vi.mocked(apiModule.saveMedia).mockResolvedValue({
+      episode: {
+        id: 'ep-saved',
+        sourceUrl: '',
+        source: 'otakudesu',
+        title: '',
+        videoSources: [],
+        createdAt: '',
+        updatedAt: '',
+      },
+      series: null,
+    });
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user, queryClient } = renderWithProviders(<AddMediaDialog />);
+
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const urlInput = screen.getByLabelText(/Source URL/i);
+    await user.type(urlInput, 'https://otakudesu.cloud/anime/grand-blue-s3/');
+
+    const previewBtn = screen.getByRole('button', { name: /Preview Scrape/i });
+    await user.click(previewBtn);
+
+    expect(await screen.findByText('Grand Blue Season 3')).toBeInTheDocument();
+    expect(screen.getByText('Grand Blue S3 Episode 1')).toBeInTheDocument();
+    expect(screen.getByText('Grand Blue S3 Episode 2')).toBeInTheDocument();
+
+    const saveBtn = screen.getByRole('button', { name: /^Save$/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(apiModule.saveMedia).toHaveBeenCalledTimes(2);
+      expect(apiModule.saveMedia).toHaveBeenNthCalledWith(
+        1,
+        {
+          episode: {
+            sourceUrl: 'https://otakudesu.cloud/episode/gb-s3-ep1',
+            source: 'otakudesu',
+            title: 'Grand Blue S3 Episode 1',
+            videoType: null,
+            metadata: { publishedDate: '10 Jan 2025' },
+          },
+          series: mockSeriesPreviewResult.series,
+        }
+      );
+      expect(apiModule.saveMedia).toHaveBeenNthCalledWith(
+        2,
+        {
+          episode: {
+            sourceUrl: 'https://otakudesu.cloud/episode/gb-s3-ep2',
+            source: 'otakudesu',
+            title: 'Grand Blue S3 Episode 2',
+            videoType: null,
+            metadata: { publishedDate: '17 Jan 2025' },
+          },
+          series: mockSeriesPreviewResult.series,
+        }
+      );
+    });
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['episodes'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });
+      expect(toast.success).toHaveBeenCalled();
+      expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
     });
   });
 });

@@ -9,6 +9,7 @@ vi.mock('@/modules/videos/internal/api', async () => {
   return {
     ...actual,
     previewScrape: vi.fn(),
+    previewScrapeSeries: vi.fn(),
   };
 });
 
@@ -103,6 +104,44 @@ describe('useScrapeWorkerStore', () => {
     expect(useScrapeWorkerStore.getState().step).toBe(1);
     expect(useScrapeWorkerStore.getState().previewData).toBeNull();
     expect(useScrapeWorkerStore.getState().error).toBe('Invalid HTML payload');
+  });
+
+  it('calls previewScrapeSeries when sourceUrl matches a series URL signature (/anime/)', async () => {
+    const mockSeriesData: apiModule.PreviewScrapeSeriesResult = {
+      series: {
+        sourceUrl: 'https://otakudesu.cloud/anime/grand-blue-s3-sub-indo/',
+        source: 'otakudesu',
+        title: 'Grand Blue Season 3',
+        description: 'Diving club anime',
+        posterUrl: 'https://otakudesu.cloud/poster.jpg',
+      },
+      episodes: [
+        {
+          title: 'Episode 1',
+          url: 'https://otakudesu.cloud/episode/gb-ep-1',
+          date: '10 Jan 2025',
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.previewScrapeSeries).mockResolvedValueOnce(mockSeriesData);
+
+    useScrapeWorkerStore
+      .getState()
+      .setSourceUrl('https://otakudesu.cloud/anime/grand-blue-s3-sub-indo/');
+
+    const success = await useScrapeWorkerStore.getState().submitPreview();
+
+    expect(success).toBe(true);
+    expect(apiModule.previewScrapeSeries).toHaveBeenCalledWith({
+      sourceUrl: 'https://otakudesu.cloud/anime/grand-blue-s3-sub-indo/',
+      source: 'otakudesu',
+    });
+    expect(apiModule.previewScrape).not.toHaveBeenCalled();
+    expect(useScrapeWorkerStore.getState().step).toBe(2);
+    expect(useScrapeWorkerStore.getState().isBatch).toBe(true);
+    expect(useScrapeWorkerStore.getState().seriesPreviewData).toEqual(mockSeriesData);
+    expect(useScrapeWorkerStore.getState().previewData).toBeNull();
   });
 
   it('allows navigating back to step 1 from step 2', () => {

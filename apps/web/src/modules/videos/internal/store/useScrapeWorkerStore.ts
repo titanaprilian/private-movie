@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 import {
   previewScrape,
+  previewScrapeSeries,
   type PreviewScrapeResult,
+  type PreviewScrapeSeriesResult,
 } from '../api';
+
+export const isSeriesUrl = (url: string) => /\/anime\//i.test(url);
 
 export interface ScrapeWorkerState {
   isOpen: boolean;
@@ -12,6 +16,8 @@ export interface ScrapeWorkerState {
   isLoading: boolean;
   error: string | null;
   previewData: PreviewScrapeResult | null;
+  seriesPreviewData: PreviewScrapeSeriesResult | null;
+  isBatch: boolean;
 
   // Actions
   openDialog: () => void;
@@ -32,6 +38,8 @@ const initialState = {
   isLoading: false,
   error: null,
   previewData: null,
+  seriesPreviewData: null,
+  isBatch: false,
 };
 
 export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
@@ -53,20 +61,41 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
       return false;
     }
 
+    const trimmedUrl = sourceUrl.trim();
+    const isBatch = isSeriesUrl(trimmedUrl);
+
     set({ isLoading: true, error: null });
 
     try {
-      const data = await previewScrape({
-        sourceUrl: sourceUrl.trim(),
-        source,
-      });
+      if (isBatch) {
+        const data = await previewScrapeSeries({
+          sourceUrl: trimmedUrl,
+          source,
+        });
 
-      set({
-        isLoading: false,
-        previewData: data,
-        step: 2,
-        error: null,
-      });
+        set({
+          isLoading: false,
+          isBatch: true,
+          seriesPreviewData: data,
+          previewData: null,
+          step: 2,
+          error: null,
+        });
+      } else {
+        const data = await previewScrape({
+          sourceUrl: trimmedUrl,
+          source,
+        });
+
+        set({
+          isLoading: false,
+          isBatch: false,
+          previewData: data,
+          seriesPreviewData: null,
+          step: 2,
+          error: null,
+        });
+      }
       return true;
     } catch (err: unknown) {
       const message =
@@ -75,6 +104,8 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
         isLoading: false,
         error: message,
         previewData: null,
+        seriesPreviewData: null,
+        isBatch: false,
         step: 1,
       });
       return false;
