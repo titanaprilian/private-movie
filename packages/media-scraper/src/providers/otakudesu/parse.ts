@@ -6,6 +6,7 @@ import type {
   ScrapedDownloadLink,
   ScrapedEpisode,
   ScrapedEpisodeRef,
+  ScrapedFullListItem,
   ScrapedVideoSource,
 } from "../../types";
 
@@ -303,4 +304,32 @@ export function mappedEpisodePageToScrapedEpisode(
       ajaxActions: parsed.ajaxActions,
     },
   };
+}
+
+export function parseFullListHtml(html: string): ScrapedFullListItem[] {
+  const load = cheerio.load(html, null, false);
+  const items: ScrapedFullListItem[] = [];
+  const seenUrls = new Set<string>();
+
+  const anchors = load(
+    ".daftarkartun .jdlbar ul li a, .bariskelom .penzbar .jdlbar ul li a, a.hodebgst"
+  );
+
+  anchors.each((_, el) => {
+    const $a = load(el);
+    const url = $a.attr("href")?.trim();
+    const title = $a.text().trim().replace(/\s+/g, " ");
+    const fullTitle = $a.attr("title")?.trim().replace(/\s+/g, " ");
+
+    if (url && title && !seenUrls.has(url)) {
+      seenUrls.add(url);
+      items.push({
+        title,
+        ...(fullTitle ? { fullTitle } : {}),
+        url,
+      });
+    }
+  });
+
+  return items;
 }

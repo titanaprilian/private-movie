@@ -9,6 +9,12 @@ export interface ScrapedEpisodeRef {
   date?: string | null;
 }
 
+export interface ScrapedFullListItem {
+  title: string;
+  fullTitle?: string;
+  url: string;
+}
+
 export interface ScrapedSeries {
   title: string;
   posterUrl?: string | null;

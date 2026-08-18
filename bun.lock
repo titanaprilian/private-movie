@@ -150,6 +150,21 @@
         "vitest": "^3.1.0",
       },
     },
+    "packages/seed-cli": {
+      "name": "@repo/seed-cli",
+      "version": "0.1.0",
+      "dependencies": {
+        "@repo/db": "workspace:*",
+        "@repo/media-scraper": "workspace:*",
+        "@repo/media-service": "workspace:*",
+      },
+      "devDependencies": {
+        "@repo/config-vitest": "workspace:*",
+        "bun-types": "latest",
+        "typescript": "^5.8.0",
+        "vitest": "^3.1.0",
+      },
+    },
   },
   "packages": {
     "@adobe/css-tools": ["@adobe/css-tools@4.5.0", "", {}, "sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q=="],
@@ -409,6 +424,8 @@
     "@repo/media-scraper": ["@repo/media-scraper@workspace:packages/media-scraper"],
 
     "@repo/media-service": ["@repo/media-service@workspace:packages/media-service"],
+
+    "@repo/seed-cli": ["@repo/seed-cli@workspace:packages/seed-cli"],
 
     "@repo/web": ["@repo/web@workspace:apps/web"],
 

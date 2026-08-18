@@ -8,6 +8,7 @@ import {
   extractDirectVideoSources,
   parseEpisodeOrder,
   parseEpisodePage,
+  parseFullListHtml,
   type ScrapedDownloadLink,
   type ScrapedEpisodeRef,
 } from "../../../src";
@@ -18,6 +19,10 @@ const fixtures = {
     "../../fixtures/episodes/sample-a.html"
   ),
   full: resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
+  fullList: resolve(
+    import.meta.dirname,
+    "../../fixtures/sample-full-list.html"
+  ),
 };
 
 const readFixture = (path: string): string => readFileSync(path, "utf8");
@@ -428,5 +433,25 @@ describe("extractDirectVideoSources", () => {
     const result = extractDirectVideoSources(html);
     expect(result).toHaveLength(1);
     expect(result[0].url).toBe("https://example.com/same_720p.mp4");
+  });
+});
+
+describe("parseFullListHtml", () => {
+  it("parses anime entries from sample-full-list.html fixture", () => {
+    const html = readFixture(fixtures.fullList);
+    const items = parseFullListHtml(html);
+
+    expect(items.length).toBe(1856);
+    expect(items).toContainEqual({
+      title: "#Compass 2.0: Sentou Setsuri Kaiseki System",
+      fullTitle:
+        "#Compass 2.0: Sentou Setsuri Kaiseki System (Episode 1 – 12) Subtitle Indonesia",
+      url: "https://otakudesu.blog/anime/compass-20-sub-indo/",
+    });
+  });
+
+  it("returns an empty array when no matching anime links exist", () => {
+    const html = "<html><body><div>no list here</div></body></html>";
+    expect(parseFullListHtml(html)).toEqual([]);
   });
 });

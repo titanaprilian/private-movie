@@ -40,6 +40,7 @@ export interface SeedOptions {
   batchSize?: number;
   batchDelayMs?: number;
   maxItems?: number;
+  offset?: number;
   sleepFn?: (ms: number) => Promise<void>;
   deps?: SeedDeps;
 }
@@ -65,10 +66,14 @@ export async function runSeed(options: SeedOptions = {}): Promise<void> {
   const defaultMaxItems = process.env.SEED_MAX_ITEMS
     ? parseInt(process.env.SEED_MAX_ITEMS, 10)
     : undefined;
+  const defaultOffset = process.env.SEED_OFFSET
+    ? parseInt(process.env.SEED_OFFSET, 10)
+    : undefined;
 
   const batchSize = options.batchSize ?? defaultBatchSize;
   const batchDelayMs = options.batchDelayMs ?? defaultBatchDelayMs;
   const maxItems = options.maxItems ?? defaultMaxItems;
+  const offset = options.offset ?? defaultOffset;
   const sleepFn =
     options.sleepFn ??
     ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
@@ -81,8 +86,11 @@ export async function runSeed(options: SeedOptions = {}): Promise<void> {
   const rawData = fs.readFileSync(jsonPath, "utf-8");
   let seriesList: SeriesListItem[] = JSON.parse(rawData);
 
-  if (maxItems !== undefined && maxItems > 0) {
-    seriesList = seriesList.slice(0, maxItems);
+  const startIdx = offset && offset > 0 ? offset : 0;
+  const endIdx = maxItems !== undefined && maxItems > 0 ? startIdx + maxItems : undefined;
+
+  if (startIdx > 0 || endIdx !== undefined) {
+    seriesList = seriesList.slice(startIdx, endIdx);
   }
 
   log(`Found ${seriesList.length} series to process.`);
