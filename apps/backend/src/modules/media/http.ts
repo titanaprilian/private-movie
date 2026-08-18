@@ -459,11 +459,12 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       async ({ query }) => {
         const page = query.page ?? 1;
         const limit = query.limit ?? 20;
-        const { source } = query;
+        const { source, q } = query;
         const result = await seriesRepository.list({
           page,
           limit,
           source,
+          q,
         });
         return successResponse({
           series: result.series,
@@ -479,6 +480,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           page: t.Optional(t.Number({ default: 1, minimum: 1 })),
           limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
           source: t.Optional(t.Literal("otakudesu")),
+          q: t.Optional(t.String()),
         }),
       }
     )

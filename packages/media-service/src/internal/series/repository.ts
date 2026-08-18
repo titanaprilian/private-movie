@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, series, videoSources, type EpisodeRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
@@ -32,6 +32,7 @@ export interface SeriesListParams {
   page: number;
   limit?: number;
   source?: string;
+  q?: string;
 }
 
 export interface SeriesListResult {
@@ -142,9 +143,28 @@ export function createSeriesRepositoryInternal<
       const page = Math.max(1, params.page);
       const offset = (page - 1) * limit;
 
-      const where = params.source
-        ? eq(series.source, params.source)
-        : undefined;
+      const conditions = [];
+
+      if (params.source) {
+        conditions.push(eq(series.source, params.source));
+      }
+
+      if (params.q && params.q.trim() !== "") {
+        const pattern = `%${params.q.trim()}%`;
+        conditions.push(
+          or(
+            ilike(series.title, pattern),
+            ilike(series.description, pattern)
+          )
+        );
+      }
+
+      const where =
+        conditions.length > 0
+          ? conditions.length === 1
+            ? conditions[0]
+            : and(...conditions)
+          : undefined;
 
       const [rows, totalRows] = await Promise.all([
         db

@@ -7,6 +7,7 @@ async function insertSeriesRow(options?: {
   title?: string;
   source?: string;
   sourceUrl?: string;
+  description?: string | null;
   createdAt?: Date;
 }): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
@@ -14,6 +15,8 @@ async function insertSeriesRow(options?: {
     options?.sourceUrl ?? `https://otakudesu.blog/anime/series-${id}/`;
   const title = options?.title ?? `Series ${id}`;
   const source = options?.source ?? "otakudesu";
+  const description =
+    options?.description !== undefined ? options.description : "Sample Description";
   const now = options?.createdAt ?? new Date();
 
   await db.insert(series).values({
@@ -21,7 +24,7 @@ async function insertSeriesRow(options?: {
     sourceUrl,
     source,
     title,
-    description: "Sample Description",
+    description,
     posterUrl: "https://example.com/poster.jpg",
     createdAt: now,
     updatedAt: now,
@@ -199,6 +202,41 @@ describe("GET /series", () => {
     const response = await request(app, { path: "/series" });
 
     expect(response.status).toBe(200);
+  });
+
+  it("queries with ?q=... and returns filtered results matching title or description", async () => {
+    await insertSeriesRow({
+      title: "Attack on Titan",
+      description: "Humanity fights against giant humanoids.",
+    });
+    await insertSeriesRow({
+      title: "Death Note",
+      description: "A high school student discovers a supernatural notebook.",
+    });
+
+    const titleSearch = await request(app, { path: "/series?q=attack" });
+    expect(titleSearch.status).toBe(200);
+    const titleBody = titleSearch.body as {
+      data: {
+        series: { title: string }[];
+        meta: { total: number };
+      };
+    };
+    expect(titleBody.data.series).toHaveLength(1);
+    expect(titleBody.data.series[0].title).toBe("Attack on Titan");
+    expect(titleBody.data.meta.total).toBe(1);
+
+    const descSearch = await request(app, { path: "/series?q=notebook" });
+    expect(descSearch.status).toBe(200);
+    const descBody = descSearch.body as {
+      data: {
+        series: { title: string }[];
+        meta: { total: number };
+      };
+    };
+    expect(descBody.data.series).toHaveLength(1);
+    expect(descBody.data.series[0].title).toBe("Death Note");
+    expect(descBody.data.meta.total).toBe(1);
   });
 });
 

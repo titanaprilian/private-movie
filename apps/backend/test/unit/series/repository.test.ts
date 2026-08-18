@@ -7,6 +7,7 @@ async function insertSeries(overrides?: {
   title?: string;
   source?: string;
   sourceUrl?: string;
+  description?: string | null;
   createdAt?: Date;
 }): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
@@ -14,6 +15,7 @@ async function insertSeries(overrides?: {
     overrides?.sourceUrl ?? `https://otakudesu.blog/anime/series-${id}/`;
   const title = overrides?.title ?? `Series ${id}`;
   const source = overrides?.source ?? "otakudesu";
+  const description = overrides?.description !== undefined ? overrides.description : "Test Description";
   const now = overrides?.createdAt ?? new Date();
 
   const [row] = await db
@@ -23,7 +25,7 @@ async function insertSeries(overrides?: {
       sourceUrl,
       source,
       title,
-      description: "Test Description",
+      description,
       posterUrl: "https://example.com/poster.jpg",
       createdAt: now,
       updatedAt: now,
@@ -98,6 +100,24 @@ describe("series repository list", () => {
     const filtered = await repository.list({ page: 1, limit: 10, source: "otakudesu" });
     expect(filtered.total).toBe(1);
     expect(filtered.series[0].source).toBe("otakudesu");
+  });
+
+  it("filters by q parameter matching title or description case-insensitively", async () => {
+    await insertSeries({ title: "Naruto Shippuden", description: "Ninja adventures" });
+    await insertSeries({ title: "One Piece", description: "Pirate king search for treasure" });
+    await insertSeries({ title: "Bleach", description: "Soul Reaper story" });
+
+    const titleMatch = await repository.list({ page: 1, limit: 10, q: "naruto" });
+    expect(titleMatch.total).toBe(1);
+    expect(titleMatch.series[0].title).toBe("Naruto Shippuden");
+
+    const descMatch = await repository.list({ page: 1, limit: 10, q: "TREASURE" });
+    expect(descMatch.total).toBe(1);
+    expect(descMatch.series[0].title).toBe("One Piece");
+
+    const noMatch = await repository.list({ page: 1, limit: 10, q: "nonexistent" });
+    expect(noMatch.total).toBe(0);
+    expect(noMatch.series).toHaveLength(0);
   });
 });
 
