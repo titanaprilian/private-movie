@@ -175,4 +175,164 @@ describe("runSeed", () => {
       },
     });
   });
+
+  it("respects batch size and triggers sleepFn at batch boundaries", async () => {
+    const jsonContent = JSON.stringify([
+      { title: "Anime 1", url: "https://otakudesu.blog/anime/1" },
+      { title: "Anime 2", url: "https://otakudesu.blog/anime/2" },
+      { title: "Anime 3", url: "https://otakudesu.blog/anime/3" },
+    ]);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(jsonContent);
+
+    mockFindBySourceUrl.mockResolvedValue(null);
+
+    const mockProvider = {
+      canHandle: () => true,
+      parseSeries: vi.fn().mockResolvedValue({
+        title: "Anime",
+        episodes: [],
+      }),
+    };
+    vi.spyOn(MediaScraper, "getProviderForUrl").mockReturnValue(mockProvider as any);
+
+    const mockSleep = vi.fn().mockResolvedValue(undefined);
+
+    await runSeed({
+      jsonPath: "/tmp/sample.json",
+      db: mockDb,
+      logFn: mockLog,
+      batchSize: 2,
+      batchDelayMs: 500,
+      sleepFn: mockSleep,
+      deps: {
+        seriesRepository: { findBySourceUrl: mockFindBySourceUrl },
+        mediaService: { saveMedia: mockSaveMedia },
+      },
+    });
+
+    expect(mockSleep).toHaveBeenCalledTimes(1);
+    expect(mockSleep).toHaveBeenCalledWith(500);
+    expect(logs.some((l) => l.includes("Waiting 500ms"))).toBe(true);
+  });
+
+  it("reads batch size and delay from environment variables", async () => {
+    process.env.SEED_BATCH_SIZE = "1";
+    process.env.SEED_BATCH_DELAY_MS = "100";
+
+    const jsonContent = JSON.stringify([
+      { title: "Anime 1", url: "https://otakudesu.blog/anime/1" },
+      { title: "Anime 2", url: "https://otakudesu.blog/anime/2" },
+    ]);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(jsonContent);
+
+    mockFindBySourceUrl.mockResolvedValue(null);
+    const mockProvider = {
+      canHandle: () => true,
+      parseSeries: vi.fn().mockResolvedValue({ title: "Anime", episodes: [] }),
+    };
+    vi.spyOn(MediaScraper, "getProviderForUrl").mockReturnValue(mockProvider as any);
+
+    const mockSleep = vi.fn().mockResolvedValue(undefined);
+
+    try {
+      await runSeed({
+        jsonPath: "/tmp/sample.json",
+        db: mockDb,
+        logFn: mockLog,
+        sleepFn: mockSleep,
+        deps: {
+          seriesRepository: { findBySourceUrl: mockFindBySourceUrl },
+          mediaService: { saveMedia: mockSaveMedia },
+        },
+      });
+
+      expect(mockSleep).toHaveBeenCalledTimes(1);
+      expect(mockSleep).toHaveBeenCalledWith(100);
+    } finally {
+      delete process.env.SEED_BATCH_SIZE;
+      delete process.env.SEED_BATCH_DELAY_MS;
+    }
+  });
+
+  it("skips duplicate series in the same JSON file run", async () => {
+    const jsonContent = JSON.stringify([
+      { title: "Anime 1", url: "https://otakudesu.blog/anime/same" },
+      { title: "Anime 1 Dup", url: "https://otakudesu.blog/anime/same" },
+    ]);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(jsonContent);
+
+    mockFindBySourceUrl.mockResolvedValue(null);
+    const mockProvider = {
+      canHandle: () => true,
+      parseSeries: vi.fn().mockResolvedValue({ title: "Anime 1", episodes: [] }),
+    };
+    vi.spyOn(MediaScraper, "getProviderForUrl").mockReturnValue(mockProvider as any);
+
+    await runSeed({
+      jsonPath: "/tmp/sample.json",
+      db: mockDb,
+      logFn: mockLog,
+      deps: {
+        seriesRepository: { findBySourceUrl: mockFindBySourceUrl },
+        mediaService: { saveMedia: mockSaveMedia },
+      },
+    });
+
+    expect(mockFindBySourceUrl).toHaveBeenCalledTimes(1);
+    expect(logs.some((l) => l.includes("already processed in this run"))).toBe(true);
+  });
+
+  it("continues processing remaining episodes when one episode fails and outputs detailed summary", async () => {
+    const jsonContent = JSON.stringify([
+      { title: "Multi Ep Anime", url: "https://otakudesu.blog/anime/multi" },
+    ]);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(jsonContent);
+
+    mockFindBySourceUrl.mockResolvedValue(null);
+
+    const mockParseSeries = vi.fn().mockResolvedValue({
+      title: "Multi Ep Anime",
+      episodes: [
+        { title: "Ep 1", url: "https://otakudesu.blog/ep/1" },
+        { title: "Ep 2", url: "https://otakudesu.blog/ep/2" },
+      ],
+    });
+
+    const mockParseEpisode = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith("/1")) {
+        throw new Error("Episode 1 network failure");
+      }
+      return Promise.resolve({
+        title: "Ep 2 Title",
+        videoSources: [],
+      });
+    });
+
+    const mockProvider = {
+      canHandle: () => true,
+      parseSeries: mockParseSeries,
+      parseEpisode: mockParseEpisode,
+    };
+    vi.spyOn(MediaScraper, "getProviderForUrl").mockReturnValue(mockProvider as any);
+
+    await runSeed({
+      jsonPath: "/tmp/sample.json",
+      db: mockDb,
+      logFn: mockLog,
+      deps: {
+        seriesRepository: { findBySourceUrl: mockFindBySourceUrl },
+        mediaService: { saveMedia: mockSaveMedia },
+      },
+    });
+
+    expect(mockSaveMedia).toHaveBeenCalledTimes(1);
+    expect(logs.some((l) => l.includes("Error processing episode"))).toBe(true);
+    expect(logs.some((l) => l.includes("SEEDING SUMMARY"))).toBe(true);
+    expect(logs.some((l) => l.includes("Episodes Inserted"))).toBe(true);
+    expect(logs.some((l) => l.includes("Episodes Failed"))).toBe(true);
+  });
 });
