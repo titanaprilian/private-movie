@@ -21,6 +21,10 @@ const sampleSeriesHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
   "utf8"
 );
+const sampleMp4VideoHtml = readFileSync(
+  resolve(import.meta.dirname, "../../fixtures/episodes/sample-mp4-video.html"),
+  "utf8"
+);
 
 const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
 const MIRROR_ACTION = "2a3505c93b0035d3f455df82bf976b84";
@@ -35,6 +39,12 @@ function buildMirrorFetchFn(options?: {
     async get(url) {
       if (url === sampleBAnimePageUrl) {
         return sampleSeriesHtml;
+      }
+      if (
+        url.startsWith("https://desustream.net/dstream/arcg/?id=") ||
+        url.startsWith("https://odvidhide.com/embed/")
+      ) {
+        return "<html><body></body></html>";
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
     },
@@ -75,6 +85,9 @@ describe("POST /preview-scrape", () => {
             "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
           ) {
             return sampleSeriesHtml;
+          }
+          if (url.startsWith("https://odvidhide.com/embed/")) {
+            return "<html><body></body></html>";
           }
           throw new Error(`Failed to fetch ${url}`);
         },
@@ -396,7 +409,10 @@ describe("POST /preview-scrape", () => {
     it("returns 200 with series: null and warning when series fetch fails", async () => {
       const failingApp = await buildApp({
         fetchHtml: {
-          get: async () => {
+          get: async (url) => {
+            if (url.startsWith("https://odvidhide.com/embed/")) {
+              return "<html><body></body></html>";
+            }
             throw new Error("Network timeout fetching series page");
           },
           post: async () => "",
@@ -425,6 +441,144 @@ describe("POST /preview-scrape", () => {
       };
       expect(body.data.series).toBeNull();
       expect(body.data.warnings).toEqual(["Failed to fetch series details"]);
+    });
+  });
+
+  describe("direct video extraction", () => {
+    it("returns direct MP4 video source alongside embed source when iframe contains a video tag", async () => {
+      const directApp = await buildApp({
+        fetchHtml: {
+          get: async (url) => {
+            if (
+              url ===
+              "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/"
+            ) {
+              return sampleAHtml;
+            }
+            if (
+              url ===
+              "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+            ) {
+              return sampleSeriesHtml;
+            }
+            if (url === "https://odvidhide.com/embed/sylmpeaf3wzs") {
+              return sampleMp4VideoHtml;
+            }
+            throw new Error(`Unexpected fetch URL: ${url}`);
+          },
+          post: async () => "",
+        },
+      });
+
+      const { accessToken } = await registerUser(directApp);
+      const sourceUrl =
+        "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/";
+
+      const response = await request(directApp, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl,
+          source: "otakudesu",
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          episode: {
+            videoSources: Array<{
+              type: string;
+              url: string;
+              label: string;
+              quality?: string | null;
+            }>;
+          };
+          warnings: string[];
+        };
+      };
+
+      expect(body.data.episode.videoSources).toEqual([
+        {
+          type: "embed",
+          url: "https://odvidhide.com/embed/sylmpeaf3wzs",
+          label: "Server Embed",
+        },
+        {
+          type: "direct",
+          url: "https://archive.org/download/diri-dari-skenario-yang-telah-ia-program-sendiri.dwa/Otakudesu.io_TSTJ--01_720p.mp4",
+          label: "Otakudesu.io_TSTJ--01_720p",
+          quality: "720p",
+        },
+      ]);
+      expect(body.data.warnings).toEqual([]);
+    });
+
+    it("returns warning when fetching player iframe fails with 500 error", async () => {
+      const errorApp = await buildApp({
+        fetchHtml: {
+          get: async (url) => {
+            if (
+              url ===
+              "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/"
+            ) {
+              return sampleAHtml;
+            }
+            if (
+              url ===
+              "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+            ) {
+              return sampleSeriesHtml;
+            }
+            if (url === "https://odvidhide.com/embed/sylmpeaf3wzs") {
+              throw new Error("500 Internal Server Error");
+            }
+            throw new Error(`Unexpected fetch URL: ${url}`);
+          },
+          post: async () => "",
+        },
+      });
+
+      const { accessToken } = await registerUser(errorApp);
+      const sourceUrl =
+        "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/";
+
+      const response = await request(errorApp, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl,
+          source: "otakudesu",
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          episode: {
+            videoSources: Array<{
+              type: string;
+              url: string;
+              label: string;
+              quality?: string | null;
+            }>;
+          };
+          warnings: string[];
+        };
+      };
+
+      expect(body.data.episode.videoSources).toEqual([
+        {
+          type: "embed",
+          url: "https://odvidhide.com/embed/sylmpeaf3wzs",
+          label: "Server Embed",
+        },
+      ]);
+      expect(body.data.warnings).toEqual([
+        "Failed to extract direct video: 500 Internal Server Error",
+      ]);
     });
   });
 });
