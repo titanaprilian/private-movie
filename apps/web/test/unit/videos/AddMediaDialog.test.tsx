@@ -91,7 +91,7 @@ describe('AddMediaDialog component', () => {
     await user.click(submitBtn);
 
     expect(await screen.findByText('Parsed Test Episode')).toBeInTheDocument();
-    expect(screen.getByText('Parsed Test Series')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Parsed Test Series')).toBeInTheDocument();
     expect(
       screen.getByText('Series details missing episode count')
     ).toBeInTheDocument();
@@ -227,6 +227,83 @@ describe('AddMediaDialog component', () => {
     });
   });
 
+  it('allows editing series inputs in Step 2 and passes overridden series metadata to saveMedia on Save', async () => {
+    const mockPreviewResult: apiModule.PreviewScrapeResult = {
+      episode: {
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Parsed Test Episode',
+        videoType: 'mp4',
+        videoSources: [],
+        metadata: {},
+      },
+      series: {
+        sourceUrl: 'https://otakudesu.cloud/series/1',
+        source: 'otakudesu',
+        title: 'Original Series Title',
+        description: 'Original description',
+        posterUrl: 'https://otakudesu.cloud/original.jpg',
+      },
+      warnings: [],
+    };
+
+    vi.mocked(apiModule.previewScrape).mockResolvedValueOnce(mockPreviewResult);
+    vi.mocked(apiModule.saveMedia).mockResolvedValueOnce({
+      episode: {
+        id: 'ep-1',
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+        title: 'Parsed Test Episode',
+        videoSources: [],
+        createdAt: '2025-01-10T00:00:00.000Z',
+        updatedAt: '2025-01-10T00:00:00.000Z',
+      },
+      series: null,
+    });
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/ep1');
+    await user.click(screen.getByRole('button', { name: /Preview Scrape/i }));
+
+    const titleInput = await screen.findByLabelText(/Series Title/i);
+    const descInput = screen.getByLabelText(/Description/i);
+    const posterInput = screen.getByLabelText(/Poster URL/i);
+
+    expect(titleInput).toHaveValue('Original Series Title');
+    expect(descInput).toHaveValue('Original description');
+    expect(posterInput).toHaveValue('https://otakudesu.cloud/original.jpg');
+
+    await user.clear(titleInput);
+    await user.type(titleInput, 'Custom Overridden Title');
+
+    await user.clear(descInput);
+    await user.type(descInput, 'Custom Overridden Description');
+
+    await user.clear(posterInput);
+    await user.type(posterInput, 'https://otakudesu.cloud/custom-poster.jpg');
+
+    const saveBtn = screen.getByRole('button', { name: /^Save$/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(apiModule.saveMedia).toHaveBeenCalledWith(
+        {
+          episode: mockPreviewResult.episode,
+          series: {
+            sourceUrl: 'https://otakudesu.cloud/series/1',
+            source: 'otakudesu',
+            title: 'Custom Overridden Title',
+            description: 'Custom Overridden Description',
+            posterUrl: 'https://otakudesu.cloud/custom-poster.jpg',
+          },
+        },
+        expect.anything()
+      );
+    });
+  });
+
   it('renders batch series preview in Step 2 and iteratively calls saveMedia for each episode when Save is clicked', async () => {
     const mockSeriesPreviewResult: apiModule.PreviewScrapeSeriesResult = {
       series: {
@@ -292,7 +369,7 @@ describe('AddMediaDialog component', () => {
     const previewBtn = screen.getByRole('button', { name: /Preview Scrape/i });
     await user.click(previewBtn);
 
-    expect(await screen.findByText('Grand Blue Season 3')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('Grand Blue Season 3')).toBeInTheDocument();
     expect(screen.getByText('Grand Blue S3 Episode 1')).toBeInTheDocument();
     expect(screen.getByText('Grand Blue S3 Episode 2')).toBeInTheDocument();
 
@@ -430,7 +507,7 @@ describe('AddMediaDialog component', () => {
     const previewBtn = screen.getByRole('button', { name: /Preview Scrape/i });
     await user.click(previewBtn);
 
-    expect(await screen.findByText('Test Series Batch')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('Test Series Batch')).toBeInTheDocument();
 
     const saveBtn = screen.getByRole('button', { name: /^Save$/i });
     await user.click(saveBtn);

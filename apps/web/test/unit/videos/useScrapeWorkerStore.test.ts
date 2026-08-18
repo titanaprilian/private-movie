@@ -29,6 +29,7 @@ describe('useScrapeWorkerStore', () => {
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
     expect(state.previewData).toBeNull();
+    expect(state.editablePreviewSeries).toBeNull();
   });
 
   it('opens and closes dialog', () => {
@@ -87,6 +88,7 @@ describe('useScrapeWorkerStore', () => {
     expect(useScrapeWorkerStore.getState().isLoading).toBe(false);
     expect(useScrapeWorkerStore.getState().step).toBe(2);
     expect(useScrapeWorkerStore.getState().previewData).toEqual(mockPreviewData);
+    expect(useScrapeWorkerStore.getState().editablePreviewSeries).toEqual(mockPreviewData.series);
     expect(useScrapeWorkerStore.getState().error).toBeNull();
   });
 
@@ -141,7 +143,41 @@ describe('useScrapeWorkerStore', () => {
     expect(useScrapeWorkerStore.getState().step).toBe(2);
     expect(useScrapeWorkerStore.getState().isBatch).toBe(true);
     expect(useScrapeWorkerStore.getState().seriesPreviewData).toEqual(mockSeriesData);
+    expect(useScrapeWorkerStore.getState().editablePreviewSeries).toEqual(mockSeriesData.series);
     expect(useScrapeWorkerStore.getState().previewData).toBeNull();
+  });
+
+  it('allows setting and updating editablePreviewSeries draft state', () => {
+    useScrapeWorkerStore.getState().setEditablePreviewSeries({
+      sourceUrl: 'https://otakudesu.cloud/anime/test',
+      source: 'otakudesu',
+      title: 'Original Title',
+      description: 'Original Description',
+      posterUrl: 'https://otakudesu.cloud/poster.jpg',
+    });
+
+    expect(useScrapeWorkerStore.getState().editablePreviewSeries).toEqual({
+      sourceUrl: 'https://otakudesu.cloud/anime/test',
+      source: 'otakudesu',
+      title: 'Original Title',
+      description: 'Original Description',
+      posterUrl: 'https://otakudesu.cloud/poster.jpg',
+    });
+
+    useScrapeWorkerStore.getState().updateEditablePreviewSeries({
+      title: 'Edited Title',
+      description: 'Edited Description',
+    });
+
+    expect(useScrapeWorkerStore.getState().editablePreviewSeries?.title).toBe(
+      'Edited Title'
+    );
+    expect(
+      useScrapeWorkerStore.getState().editablePreviewSeries?.description
+    ).toBe('Edited Description');
+    expect(
+      useScrapeWorkerStore.getState().editablePreviewSeries?.posterUrl
+    ).toBe('https://otakudesu.cloud/poster.jpg');
   });
 
   it('allows navigating back to step 1 from step 2', () => {

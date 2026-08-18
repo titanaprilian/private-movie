@@ -8,6 +8,14 @@ import {
 
 export const isSeriesUrl = (url: string) => /\/anime\//i.test(url);
 
+export interface EditableSeriesDraft {
+  sourceUrl: string;
+  source: string;
+  title: string;
+  description: string | null;
+  posterUrl: string | null;
+}
+
 export interface ScrapeWorkerState {
   isOpen: boolean;
   step: 1 | 2;
@@ -17,6 +25,7 @@ export interface ScrapeWorkerState {
   error: string | null;
   previewData: PreviewScrapeResult | null;
   seriesPreviewData: PreviewScrapeSeriesResult | null;
+  editablePreviewSeries: EditableSeriesDraft | null;
   isBatch: boolean;
 
   // Actions
@@ -28,6 +37,8 @@ export interface ScrapeWorkerState {
   setStep: (step: 1 | 2) => void;
   backToStep1: () => void;
   submitPreview: () => Promise<boolean>;
+  setEditablePreviewSeries: (series: EditableSeriesDraft | null) => void;
+  updateEditablePreviewSeries: (updates: Partial<EditableSeriesDraft>) => void;
 }
 
 const initialState = {
@@ -39,6 +50,7 @@ const initialState = {
   error: null,
   previewData: null,
   seriesPreviewData: null,
+  editablePreviewSeries: null,
   isBatch: false,
 };
 
@@ -52,6 +64,13 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
   setSource: (source: 'otakudesu') => set({ source, error: null }),
   setStep: (step: 1 | 2) => set({ step }),
   backToStep1: () => set({ step: 1 }),
+  setEditablePreviewSeries: (series) => set({ editablePreviewSeries: series }),
+  updateEditablePreviewSeries: (updates) =>
+    set((state) => ({
+      editablePreviewSeries: state.editablePreviewSeries
+        ? { ...state.editablePreviewSeries, ...updates }
+        : null,
+    })),
 
   submitPreview: async () => {
     const { sourceUrl, source } = get();
@@ -77,6 +96,7 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
           isLoading: false,
           isBatch: true,
           seriesPreviewData: data,
+          editablePreviewSeries: data.series ? { ...data.series } : null,
           previewData: null,
           step: 2,
           error: null,
@@ -91,6 +111,7 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
           isLoading: false,
           isBatch: false,
           previewData: data,
+          editablePreviewSeries: data.series ? { ...data.series } : null,
           seriesPreviewData: null,
           step: 2,
           error: null,
@@ -105,6 +126,7 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
         error: message,
         previewData: null,
         seriesPreviewData: null,
+        editablePreviewSeries: null,
         isBatch: false,
         step: 1,
       });

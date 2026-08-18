@@ -15,6 +15,7 @@ export function AddMediaDialog() {
   const error = useScrapeWorkerStore((state) => state.error);
   const previewData = useScrapeWorkerStore((state) => state.previewData);
   const seriesPreviewData = useScrapeWorkerStore((state) => state.seriesPreviewData);
+  const editablePreviewSeries = useScrapeWorkerStore((state) => state.editablePreviewSeries);
   const isBatch = useScrapeWorkerStore((state) => state.isBatch);
 
   const closeDialogStore = useScrapeWorkerStore((state) => state.closeDialog);
@@ -23,6 +24,7 @@ export function AddMediaDialog() {
   const setSource = useScrapeWorkerStore((state) => state.setSource);
   const submitPreview = useScrapeWorkerStore((state) => state.submitPreview);
   const backToStep1 = useScrapeWorkerStore((state) => state.backToStep1);
+  const updateEditablePreviewSeries = useScrapeWorkerStore((state) => state.updateEditablePreviewSeries);
 
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -131,15 +133,25 @@ export function AddMediaDialog() {
           };
         }
 
+        const seriesPayload = editablePreviewSeries
+          ? {
+              sourceUrl: editablePreviewSeries.sourceUrl,
+              source: editablePreviewSeries.source,
+              title: editablePreviewSeries.title,
+              description: editablePreviewSeries.description,
+              posterUrl: editablePreviewSeries.posterUrl,
+            }
+          : {
+              sourceUrl: seriesPreviewData.series.sourceUrl,
+              source: seriesPreviewData.series.source,
+              title: seriesPreviewData.series.title,
+              description: seriesPreviewData.series.description,
+              posterUrl: seriesPreviewData.series.posterUrl,
+            };
+
         await saveMedia({
           episode: episodePayload,
-          series: {
-            sourceUrl: seriesPreviewData.series.sourceUrl,
-            source: seriesPreviewData.series.source,
-            title: seriesPreviewData.series.title,
-            description: seriesPreviewData.series.description,
-            posterUrl: seriesPreviewData.series.posterUrl,
-          },
+          series: seriesPayload,
         });
       }
 
@@ -197,15 +209,25 @@ export function AddMediaDialog() {
     setMissingFieldsInputs({});
 
     try {
+      const seriesPayload = editablePreviewSeries
+        ? {
+            sourceUrl: editablePreviewSeries.sourceUrl,
+            source: editablePreviewSeries.source,
+            title: editablePreviewSeries.title,
+            description: editablePreviewSeries.description,
+            posterUrl: editablePreviewSeries.posterUrl,
+          }
+        : {
+            sourceUrl: seriesPreviewData.series.sourceUrl,
+            source: seriesPreviewData.series.source,
+            title: seriesPreviewData.series.title,
+            description: seriesPreviewData.series.description,
+            posterUrl: seriesPreviewData.series.posterUrl,
+          };
+
       await saveMedia({
         episode: episodePayload,
-        series: {
-          sourceUrl: seriesPreviewData.series.sourceUrl,
-          source: seriesPreviewData.series.source,
-          title: seriesPreviewData.series.title,
-          description: seriesPreviewData.series.description,
-          posterUrl: seriesPreviewData.series.posterUrl,
-        },
+        series: seriesPayload,
       });
 
       await runBatchSave(index + 1);
@@ -417,36 +439,93 @@ export function AddMediaDialog() {
               )}
 
               {/* Series Card */}
-              {seriesPreviewData?.series && (
+              {editablePreviewSeries && (
                 <div className="bg-card border border-c rounded p-4 space-y-3">
                   <div className="flex items-center justify-between border-b border-c pb-2">
                     <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
                       Parsed Series Metadata
                     </span>
-                    <span className="text-[10px] mono px-2 py-0.5 rounded bg-muted/20 border border-c text-muted">
-                      {seriesPreviewData.episodes.length} Episodes
-                    </span>
+                    {seriesPreviewData?.episodes && (
+                      <span className="text-[10px] mono px-2 py-0.5 rounded bg-muted/20 border border-c text-muted">
+                        {seriesPreviewData.episodes.length} Episodes
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex gap-4">
-                    {seriesPreviewData.series.posterUrl && (
+                    {editablePreviewSeries.posterUrl && (
                       <img
-                        src={seriesPreviewData.series.posterUrl}
-                        alt={seriesPreviewData.series.title}
+                        src={editablePreviewSeries.posterUrl}
+                        alt={editablePreviewSeries.title}
                         className="w-16 h-24 object-cover rounded border border-c shrink-0"
                       />
                     )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-current">
-                        {seriesPreviewData.series.title}
-                      </h3>
-                      {seriesPreviewData.series.description && (
-                        <p className="text-xs text-muted mt-1 leading-relaxed line-clamp-3">
-                          {seriesPreviewData.series.description}
-                        </p>
-                      )}
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div>
+                        <label
+                          htmlFor="series-title-batch"
+                          className="text-[10px] mono uppercase tracking-wider font-semibold text-muted mb-1 block"
+                        >
+                          Series Title
+                        </label>
+                        <input
+                          id="series-title-batch"
+                          aria-label="Series Title"
+                          type="text"
+                          value={editablePreviewSeries.title}
+                          onChange={(e) =>
+                            updateEditablePreviewSeries({
+                              title: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="series-description-batch"
+                          className="text-[10px] mono uppercase tracking-wider font-semibold text-muted mb-1 block"
+                        >
+                          Description
+                        </label>
+                        <textarea
+                          id="series-description-batch"
+                          aria-label="Description"
+                          value={editablePreviewSeries.description || ''}
+                          onChange={(e) =>
+                            updateEditablePreviewSeries({
+                              description: e.target.value || null,
+                            })
+                          }
+                          rows={2}
+                          className="w-full px-3 py-1.5 rounded border border-c bg-transparent text-xs focus:outline-none focus:border-primary resize-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="series-poster-url-batch"
+                          className="text-[10px] mono uppercase tracking-wider font-semibold text-muted mb-1 block"
+                        >
+                          Poster URL
+                        </label>
+                        <input
+                          id="series-poster-url-batch"
+                          aria-label="Poster URL"
+                          type="text"
+                          value={editablePreviewSeries.posterUrl || ''}
+                          onChange={(e) =>
+                            updateEditablePreviewSeries({
+                              posterUrl: e.target.value || null,
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
+                        />
+                      </div>
+
                       <p className="text-xs mono text-muted mt-1 truncate">
-                        Series URL: {seriesPreviewData.series.sourceUrl}
+                        Series URL: {editablePreviewSeries.sourceUrl}
                       </p>
                     </div>
                   </div>
@@ -614,7 +693,7 @@ export function AddMediaDialog() {
               )}
 
               {/* Series Summary Card */}
-              {previewData?.series ? (
+              {editablePreviewSeries ? (
                 <div className="bg-card border border-c rounded p-4 space-y-3">
                   <div className="border-b border-c pb-2">
                     <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
@@ -622,18 +701,82 @@ export function AddMediaDialog() {
                     </span>
                   </div>
 
-                  <div>
-                    <h3 className="text-sm font-semibold text-current">
-                      {previewData.series.title}
-                    </h3>
-                    {previewData.series.description && (
-                      <p className="text-xs text-muted mt-1 leading-relaxed">
-                        {previewData.series.description}
-                      </p>
+                  <div className="flex gap-4">
+                    {editablePreviewSeries.posterUrl && (
+                      <img
+                        src={editablePreviewSeries.posterUrl}
+                        alt={editablePreviewSeries.title}
+                        className="w-16 h-24 object-cover rounded border border-c shrink-0"
+                      />
                     )}
-                    <p className="text-xs mono text-muted mt-1 truncate">
-                      Series URL: {previewData.series.sourceUrl}
-                    </p>
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div>
+                        <label
+                          htmlFor="series-title"
+                          className="text-[10px] mono uppercase tracking-wider font-semibold text-muted mb-1 block"
+                        >
+                          Series Title
+                        </label>
+                        <input
+                          id="series-title"
+                          aria-label="Series Title"
+                          type="text"
+                          value={editablePreviewSeries.title}
+                          onChange={(e) =>
+                            updateEditablePreviewSeries({
+                              title: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="series-description"
+                          className="text-[10px] mono uppercase tracking-wider font-semibold text-muted mb-1 block"
+                        >
+                          Description
+                        </label>
+                        <textarea
+                          id="series-description"
+                          aria-label="Description"
+                          value={editablePreviewSeries.description || ''}
+                          onChange={(e) =>
+                            updateEditablePreviewSeries({
+                              description: e.target.value || null,
+                            })
+                          }
+                          rows={2}
+                          className="w-full px-3 py-1.5 rounded border border-c bg-transparent text-xs focus:outline-none focus:border-primary resize-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="series-poster-url"
+                          className="text-[10px] mono uppercase tracking-wider font-semibold text-muted mb-1 block"
+                        >
+                          Poster URL
+                        </label>
+                        <input
+                          id="series-poster-url"
+                          aria-label="Poster URL"
+                          type="text"
+                          value={editablePreviewSeries.posterUrl || ''}
+                          onChange={(e) =>
+                            updateEditablePreviewSeries({
+                              posterUrl: e.target.value || null,
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
+                        />
+                      </div>
+
+                      <p className="text-xs mono text-muted mt-1 truncate">
+                        Series URL: {editablePreviewSeries.sourceUrl}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -726,7 +869,15 @@ export function AddMediaDialog() {
                   } else if (previewData?.episode) {
                     saveMutation.mutate({
                       episode: previewData.episode,
-                      series: previewData.series,
+                      series: editablePreviewSeries
+                        ? {
+                            sourceUrl: editablePreviewSeries.sourceUrl,
+                            source: editablePreviewSeries.source,
+                            title: editablePreviewSeries.title,
+                            description: editablePreviewSeries.description,
+                            posterUrl: editablePreviewSeries.posterUrl,
+                          }
+                        : previewData.series,
                     });
                   }
                 }}
