@@ -266,6 +266,41 @@ describe('videos api', () => {
     fetchSpy.mockRestore();
   });
 
+  it('fetchSeries passes q search query parameter to backend API request URL', async () => {
+    const mockData = {
+      data: {
+        series: [],
+        meta: {
+          total: 0,
+          page: 1,
+          limit: 20,
+        },
+      },
+    };
+
+    let requestedUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        requestedUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    await fetchSeries({ page: 1, limit: 20, q: 'naruto' });
+
+    expect(requestedUrl).toContain('q=naruto');
+
+    fetchSpy.mockRestore();
+  });
+
   it('fetchSeries strips undefined query parameters from API request URL', async () => {
     const mockData = {
       data: {
@@ -325,9 +360,9 @@ describe('videos api', () => {
   });
 
   it('seriesListQueryOptions returns query key and queryFn', () => {
-    const options = seriesListQueryOptions({ page: 1, limit: 20 });
+    const options = seriesListQueryOptions({ page: 1, limit: 20, q: 'naruto' });
 
-    expect(options.queryKey).toEqual(['series', 'list', { page: 1, limit: 20 }]);
+    expect(options.queryKey).toEqual(['series', 'list', { page: 1, limit: 20, q: 'naruto' }]);
     expect(typeof options.queryFn).toBe('function');
   });
 

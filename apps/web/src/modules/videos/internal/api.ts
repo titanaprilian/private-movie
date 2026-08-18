@@ -80,6 +80,7 @@ export interface SeriesDetails {
 export interface FetchSeriesParams {
   page?: number;
   limit?: number;
+  q?: string;
   source?: 'otakudesu';
 }
 
@@ -89,6 +90,7 @@ export async function fetchSeries(
   const rawQuery = {
     page: params?.page,
     limit: params?.limit,
+    q: params?.q,
     source: params?.source,
   };
 
@@ -97,7 +99,7 @@ export async function fetchSeries(
   );
 
   const res = await api.series.get({
-    $query: query as { page?: number; limit?: number; source?: 'otakudesu' },
+    $query: query as { page?: number; limit?: number; q?: string; source?: 'otakudesu' },
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
