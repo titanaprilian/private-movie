@@ -1,0 +1,20 @@
+{
+  "name": "@repo/seed-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "seed": "bun src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/db": "workspace:*",
+    "@repo/media-scraper": "workspace:*",
+    "@repo/media-service": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.8.0"
+  }
+}
