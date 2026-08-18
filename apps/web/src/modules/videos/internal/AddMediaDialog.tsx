@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  type DropResult,
+} from '@hello-pangea/dnd';
+import {
   useScrapeWorkerStore,
   type EditableEpisodeDraft,
 } from './store/useScrapeWorkerStore';
@@ -32,6 +38,12 @@ export function AddMediaDialog() {
   const updateEditablePreviewEpisode = useScrapeWorkerStore((state) => state.updateEditablePreviewEpisode);
   const addEditablePreviewEpisode = useScrapeWorkerStore((state) => state.addEditablePreviewEpisode);
   const deleteEditablePreviewEpisode = useScrapeWorkerStore((state) => state.deleteEditablePreviewEpisode);
+  const reorderEditablePreviewEpisodes = useScrapeWorkerStore((state) => state.reorderEditablePreviewEpisodes);
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    reorderEditablePreviewEpisodes(result.source.index, result.destination.index);
+  };
 
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -571,37 +583,163 @@ export function AddMediaDialog() {
                       {(editablePreviewEpisodes || seriesPreviewData!.episodes).length})
                     </span>
                   </div>
-                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                    {(editablePreviewEpisodes || seriesPreviewData!.episodes).map((ep: EditableEpisodeDraft, i) => (
-                      <div
-                        key={i}
-                        className="p-3 bg-sidebar rounded border border-c space-y-2 text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] mono text-muted shrink-0 font-semibold">
-                            #{i + 1}
-                          </span>
-                          <div className="flex-1">
-                            <input
-                              id={`episode-title-${i}`}
-                              aria-label={`Episode Title #${i + 1}`}
-                              type="text"
-                              value={ep.title}
-                              onChange={(e) =>
-                                updateEditablePreviewEpisode(i, {
-                                  title: e.target.value,
-                                })
-                              }
-                              placeholder="Episode Title"
-                              className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs font-semibold focus:outline-none focus:border-primary"
-                            />
-                          </div>
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="episodes-list">
+                      {(droppableProvided) => (
+                        <div
+                          ref={droppableProvided.innerRef}
+                          {...droppableProvided.droppableProps}
+                          className="space-y-3 max-h-72 overflow-y-auto pr-1"
+                        >
+                          {(editablePreviewEpisodes || seriesPreviewData!.episodes).map(
+                            (ep: EditableEpisodeDraft, i) => {
+                              const dragId = ep.id || `episode-draft-${i}`;
+                              return (
+                                <Draggable key={dragId} draggableId={dragId} index={i}>
+                                  {(draggableProvided, snapshot) => (
+                                    <div
+                                      ref={draggableProvided.innerRef}
+                                      {...draggableProvided.draggableProps}
+                                      className={`p-3 bg-sidebar rounded border border-c space-y-2 text-xs transition-shadow ${
+                                        snapshot.isDragging
+                                          ? 'shadow-lg border-primary z-10'
+                                          : ''
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div
+                                          {...draggableProvided.dragHandleProps}
+                                          aria-label={`Drag handle for episode #${i + 1}`}
+                                          title="Drag to reorder"
+                                          className="p-1 rounded hover-bg border border-c text-muted hover:text-fg transition-colors cursor-grab active:cursor-grabbing shrink-0 flex items-center justify-center"
+                                        >
+                                          <svg
+                                            className="w-3.5 h-3.5"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                          >
+                                            <circle cx="9" cy="6" r="1" fill="currentColor" />
+                                            <circle cx="9" cy="12" r="1" fill="currentColor" />
+                                            <circle cx="9" cy="18" r="1" fill="currentColor" />
+                                            <circle cx="15" cy="6" r="1" fill="currentColor" />
+                                            <circle cx="15" cy="12" r="1" fill="currentColor" />
+                                            <circle cx="15" cy="18" r="1" fill="currentColor" />
+                                          </svg>
+                                        </div>
+                                        <span className="text-[10px] mono text-muted shrink-0 font-semibold">
+                                          #{i + 1}
+                                        </span>
+                                        <div className="flex-1">
+                                          <input
+                                            id={`episode-title-${i}`}
+                                            aria-label={`Episode Title #${i + 1}`}
+                                            type="text"
+                                            value={ep.title}
+                                            onChange={(e) =>
+                                              updateEditablePreviewEpisode(i, {
+                                                title: e.target.value,
+                                              })
+                                            }
+                                            placeholder="Episode Title"
+                                            className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs font-semibold focus:outline-none focus:border-primary"
+                                          />
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => deleteEditablePreviewEpisode(i)}
+                                          aria-label={`Delete episode #${i + 1}`}
+                                          title="Delete episode"
+                                          className="p-1 rounded hover-bg border border-c text-muted hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer shrink-0"
+                                        >
+                                          <svg
+                                            className="w-3.5 h-3.5"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                          >
+                                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div>
+                                          <label
+                                            htmlFor={`episode-date-${i}`}
+                                            className="text-[9px] mono uppercase text-muted block mb-0.5"
+                                          >
+                                            Date
+                                          </label>
+                                          <input
+                                            id={`episode-date-${i}`}
+                                            aria-label={`Episode Date #${i + 1}`}
+                                            type="text"
+                                            value={ep.date || ''}
+                                            onChange={(e) =>
+                                              updateEditablePreviewEpisode(i, {
+                                                date: e.target.value || null,
+                                              })
+                                            }
+                                            placeholder="Publish Date (optional)"
+                                            className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label
+                                            htmlFor={`episode-url-${i}`}
+                                            className="text-[9px] mono uppercase text-muted block mb-0.5"
+                                          >
+                                            Source URL
+                                          </label>
+                                          <input
+                                            id={`episode-url-${i}`}
+                                            aria-label={`Episode URL #${i + 1}`}
+                                            type="text"
+                                            value={ep.url}
+                                            onChange={(e) =>
+                                              updateEditablePreviewEpisode(i, {
+                                                url: e.target.value,
+                                              })
+                                            }
+                                            placeholder="https://..."
+                                            className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label
+                                          htmlFor={`episode-embed-url-${i}`}
+                                          className="text-[9px] mono uppercase text-muted block mb-0.5"
+                                        >
+                                          Embed URL (optional)
+                                        </label>
+                                        <input
+                                          id={`episode-embed-url-${i}`}
+                                          aria-label={`Embed URL #${i + 1}`}
+                                          type="text"
+                                          value={ep.embedUrl || ''}
+                                          onChange={(e) =>
+                                            updateEditablePreviewEpisode(i, {
+                                              embedUrl: e.target.value,
+                                            })
+                                          }
+                                          placeholder="https://embed... (bypasses scrape)"
+                                          className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              );
+                            }
+                          )}
+                          {droppableProvided.placeholder}
                           <button
                             type="button"
-                            onClick={() => deleteEditablePreviewEpisode(i)}
-                            aria-label={`Delete episode #${i + 1}`}
-                            title="Delete episode"
-                            className="p-1 rounded hover-bg border border-c text-muted hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer shrink-0"
+                            onClick={() => addEditablePreviewEpisode()}
+                            className="w-full py-2 rounded border border-dashed border-c text-xs mono font-medium text-muted hover:text-fg hover-bg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                           >
                             <svg
                               className="w-3.5 h-3.5"
@@ -610,95 +748,15 @@ export function AddMediaDialog() {
                               stroke="currentColor"
                               strokeWidth="2"
                             >
-                              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                              <line x1="12" y1="5" x2="12" y2="19" />
+                              <line x1="5" y1="12" x2="19" y2="12" />
                             </svg>
+                            + Add Episode
                           </button>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <label
-                              htmlFor={`episode-date-${i}`}
-                              className="text-[9px] mono uppercase text-muted block mb-0.5"
-                            >
-                              Date
-                            </label>
-                            <input
-                              id={`episode-date-${i}`}
-                              aria-label={`Episode Date #${i + 1}`}
-                              type="text"
-                              value={ep.date || ''}
-                              onChange={(e) =>
-                                updateEditablePreviewEpisode(i, {
-                                  date: e.target.value || null,
-                                })
-                              }
-                              placeholder="Publish Date (optional)"
-                              className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
-                            />
-                          </div>
-                          <div>
-                            <label
-                              htmlFor={`episode-url-${i}`}
-                              className="text-[9px] mono uppercase text-muted block mb-0.5"
-                            >
-                              Source URL
-                            </label>
-                            <input
-                              id={`episode-url-${i}`}
-                              aria-label={`Episode URL #${i + 1}`}
-                              type="text"
-                              value={ep.url}
-                              onChange={(e) =>
-                                updateEditablePreviewEpisode(i, {
-                                  url: e.target.value,
-                                })
-                              }
-                              placeholder="https://..."
-                              className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label
-                            htmlFor={`episode-embed-url-${i}`}
-                            className="text-[9px] mono uppercase text-muted block mb-0.5"
-                          >
-                            Embed URL (optional)
-                          </label>
-                          <input
-                            id={`episode-embed-url-${i}`}
-                            aria-label={`Embed URL #${i + 1}`}
-                            type="text"
-                            value={ep.embedUrl || ''}
-                            onChange={(e) =>
-                              updateEditablePreviewEpisode(i, {
-                                embedUrl: e.target.value,
-                              })
-                            }
-                            placeholder="https://embed... (bypasses scrape)"
-                            className="w-full px-2.5 py-1 rounded border border-c bg-card text-xs mono text-muted focus:outline-none focus:border-primary"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => addEditablePreviewEpisode()}
-                      className="w-full py-2 rounded border border-dashed border-c text-xs mono font-medium text-muted hover:text-fg hover-bg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                      + Add Episode
-                    </button>
-                  </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                 </div>
               )}
 

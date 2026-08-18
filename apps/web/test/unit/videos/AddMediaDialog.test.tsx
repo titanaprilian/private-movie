@@ -956,4 +956,144 @@ describe('AddMediaDialog component', () => {
       );
     });
   });
+
+  it('renders drag handles for episode reordering and wraps grid in droppable container', async () => {
+    const mockSeriesPreviewResult: apiModule.PreviewScrapeSeriesResult = {
+      series: {
+        sourceUrl: 'https://otakudesu.cloud/anime/test-series/',
+        source: 'otakudesu',
+        title: 'Test Series',
+        description: 'Description',
+        posterUrl: 'https://otakudesu.cloud/poster.jpg',
+      },
+      episodes: [
+        {
+          title: 'Episode 1',
+          url: 'https://otakudesu.cloud/episode/ep1',
+          date: '10 Jan 2025',
+        },
+        {
+          title: 'Episode 2',
+          url: 'https://otakudesu.cloud/episode/ep2',
+          date: '17 Jan 2025',
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.previewScrapeSeries).mockResolvedValueOnce(mockSeriesPreviewResult);
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/anime/test-series/');
+    await user.click(screen.getByRole('button', { name: /Preview Scrape/i }));
+
+    expect(await screen.findByDisplayValue('Episode 1')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Drag handle for episode #1/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Drag handle for episode #2/i)).toBeInTheDocument();
+  });
+
+  it('reordering episode draft sequence reflects immediately on UI and saves batch in the new order', async () => {
+    const mockSeriesPreviewResult: apiModule.PreviewScrapeSeriesResult = {
+      series: {
+        sourceUrl: 'https://otakudesu.cloud/anime/test-series/',
+        source: 'otakudesu',
+        title: 'Test Series Batch',
+        description: 'Description',
+        posterUrl: 'https://otakudesu.cloud/poster.jpg',
+      },
+      episodes: [
+        {
+          title: 'Episode 1 Original First',
+          url: 'https://otakudesu.cloud/episode/ep1',
+          date: '10 Jan 2025',
+        },
+        {
+          title: 'Episode 2 Original Second',
+          url: 'https://otakudesu.cloud/episode/ep2',
+          date: '17 Jan 2025',
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.previewScrapeSeries).mockResolvedValueOnce(mockSeriesPreviewResult);
+
+    vi.mocked(apiModule.previewScrape).mockImplementation(async (params) => {
+      const isEp1 = params.sourceUrl.includes('ep1');
+      return {
+        episode: {
+          sourceUrl: params.sourceUrl,
+          source: params.source,
+          title: isEp1 ? 'Episode 1 Original First' : 'Episode 2 Original Second',
+          videoType: null,
+          metadata: isEp1 ? { publishedDate: '10 Jan 2025' } : { publishedDate: '17 Jan 2025' },
+          videoSources: [],
+        },
+        series: null,
+        warnings: [],
+      };
+    });
+
+    vi.mocked(apiModule.saveMedia).mockResolvedValue({
+      episode: {
+        id: 'ep-saved',
+        sourceUrl: '',
+        source: 'otakudesu',
+        title: '',
+        videoSources: [],
+        createdAt: '',
+        updatedAt: '',
+      },
+      series: null,
+    });
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    await user.type(screen.getByLabelText(/Source URL/i), 'https://otakudesu.cloud/anime/test-series/');
+    await user.click(screen.getByRole('button', { name: /Preview Scrape/i }));
+
+    expect(await screen.findByDisplayValue('Episode 1 Original First')).toBeInTheDocument();
+
+    // Perform reorder (move index 1 to index 0)
+    await waitFor(() => {
+      useScrapeWorkerStore.getState().reorderEditablePreviewEpisodes(1, 0);
+    });
+
+    // Verify UI reflects the reorder immediately (#1 title input is now Episode 2)
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Episode Title #1/i)).toHaveValue('Episode 2 Original Second');
+      expect(screen.getByLabelText(/Episode Title #2/i)).toHaveValue('Episode 1 Original First');
+    });
+
+    // Click Save and verify saveMedia is invoked in the new order (Episode 2 first, then Episode 1)
+    const saveBtn = screen.getByRole('button', { name: /^Save$/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(apiModule.saveMedia).toHaveBeenCalledTimes(2);
+      expect(apiModule.saveMedia).toHaveBeenNthCalledWith(1, {
+        episode: {
+          sourceUrl: 'https://otakudesu.cloud/episode/ep2',
+          source: 'otakudesu',
+          title: 'Episode 2 Original Second',
+          videoType: null,
+          metadata: { publishedDate: '17 Jan 2025' },
+          videoSources: [],
+        },
+        series: mockSeriesPreviewResult.series,
+      });
+      expect(apiModule.saveMedia).toHaveBeenNthCalledWith(2, {
+        episode: {
+          sourceUrl: 'https://otakudesu.cloud/episode/ep1',
+          source: 'otakudesu',
+          title: 'Episode 1 Original First',
+          videoType: null,
+          metadata: { publishedDate: '10 Jan 2025' },
+          videoSources: [],
+        },
+        series: mockSeriesPreviewResult.series,
+      });
+    });
+  });
 });

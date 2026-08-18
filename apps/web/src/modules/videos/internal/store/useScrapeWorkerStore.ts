@@ -17,6 +17,7 @@ export interface EditableSeriesDraft {
 }
 
 export interface EditableEpisodeDraft {
+  id?: string;
   title: string;
   url: string;
   date: string | null;
@@ -54,6 +55,10 @@ export interface ScrapeWorkerState {
   ) => void;
   addEditablePreviewEpisode: () => void;
   deleteEditablePreviewEpisode: (index: number) => void;
+  reorderEditablePreviewEpisodes: (
+    sourceIndex: number,
+    destinationIndex: number
+  ) => void;
 }
 
 const initialState = {
@@ -101,7 +106,12 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
     set((state) => ({
       editablePreviewEpisodes: [
         ...(state.editablePreviewEpisodes || []),
-        { title: '', url: '', date: null },
+        {
+          id: `ep-draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          title: '',
+          url: '',
+          date: null,
+        },
       ],
     })),
   deleteEditablePreviewEpisode: (index) =>
@@ -110,6 +120,22 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
       const nextEpisodes = state.editablePreviewEpisodes.filter(
         (_, i) => i !== index
       );
+      return { editablePreviewEpisodes: nextEpisodes };
+    }),
+  reorderEditablePreviewEpisodes: (sourceIndex, destinationIndex) =>
+    set((state) => {
+      if (!state.editablePreviewEpisodes) return {};
+      if (
+        sourceIndex < 0 ||
+        sourceIndex >= state.editablePreviewEpisodes.length ||
+        destinationIndex < 0 ||
+        destinationIndex >= state.editablePreviewEpisodes.length
+      ) {
+        return {};
+      }
+      const nextEpisodes = [...state.editablePreviewEpisodes];
+      const [removed] = nextEpisodes.splice(sourceIndex, 1);
+      nextEpisodes.splice(destinationIndex, 0, removed);
       return { editablePreviewEpisodes: nextEpisodes };
     }),
 
@@ -139,7 +165,10 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
           seriesPreviewData: data,
           editablePreviewSeries: data.series ? { ...data.series } : null,
           editablePreviewEpisodes: data.episodes
-            ? data.episodes.map((ep) => ({ ...ep }))
+            ? data.episodes.map((ep, idx) => ({
+                id: `ep-draft-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+                ...ep,
+              }))
             : null,
           previewData: null,
           step: 2,

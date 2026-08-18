@@ -145,7 +145,9 @@ describe('useScrapeWorkerStore', () => {
     expect(useScrapeWorkerStore.getState().isBatch).toBe(true);
     expect(useScrapeWorkerStore.getState().seriesPreviewData).toEqual(mockSeriesData);
     expect(useScrapeWorkerStore.getState().editablePreviewSeries).toEqual(mockSeriesData.series);
-    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes).toEqual(mockSeriesData.episodes);
+    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes).toEqual([
+      expect.objectContaining(mockSeriesData.episodes[0]),
+    ]);
     expect(useScrapeWorkerStore.getState().previewData).toBeNull();
   });
 
@@ -231,11 +233,13 @@ describe('useScrapeWorkerStore', () => {
 
     const episodes = useScrapeWorkerStore.getState().editablePreviewEpisodes;
     expect(episodes).toHaveLength(2);
-    expect(episodes?.[1]).toEqual({
-      title: '',
-      url: '',
-      date: null,
-    });
+    expect(episodes?.[1]).toEqual(
+      expect.objectContaining({
+        title: '',
+        url: '',
+        date: null,
+      })
+    );
   });
 
   it('allows setting an optional embedUrl on an episode draft row via updateEditablePreviewEpisode', () => {
@@ -306,5 +310,34 @@ describe('useScrapeWorkerStore', () => {
     expect(episodes).toHaveLength(2);
     expect(episodes?.[0].title).toBe('Episode 1');
     expect(episodes?.[1].title).toBe('Episode 3');
+  });
+
+  it('allows reordering episode draft rows via reorderEditablePreviewEpisodes', () => {
+    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
+      {
+        title: 'Episode 1',
+        url: 'https://otakudesu.cloud/episode/ep-1',
+        date: '10 Jan 2025',
+      },
+      {
+        title: 'Episode 2',
+        url: 'https://otakudesu.cloud/episode/ep-2',
+        date: '11 Jan 2025',
+      },
+      {
+        title: 'Episode 3',
+        url: 'https://otakudesu.cloud/episode/ep-3',
+        date: '12 Jan 2025',
+      },
+    ]);
+
+    // Move Episode 3 (index 2) to top (index 0)
+    useScrapeWorkerStore.getState().reorderEditablePreviewEpisodes(2, 0);
+
+    const episodes = useScrapeWorkerStore.getState().editablePreviewEpisodes;
+    expect(episodes).toHaveLength(3);
+    expect(episodes?.[0].title).toBe('Episode 3');
+    expect(episodes?.[1].title).toBe('Episode 1');
+    expect(episodes?.[2].title).toBe('Episode 2');
   });
 });
