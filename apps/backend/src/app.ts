@@ -74,7 +74,7 @@ export const createApp = (deps: CreateAppDeps) => {
             request.headers.get("x-real-ip") ||
             "127.0.0.1";
           const url = new URL(request.url);
-          const isLogin = url.pathname === "/auth/login";
+          const isLogin = url.pathname === "/api/auth/login";
           return `${ip}:${isLogin ? "login" : "global"}`;
         },
         errorResponse: new Response(
@@ -99,9 +99,12 @@ export const createApp = (deps: CreateAppDeps) => {
         },
       })
     )
-    .use(healthRoutes({ db }))
-    .use(authRoutes({ authService: auth }))
-    .use(mediaRoutes({ db, authService: auth, fetchHtml: deps.fetchHtml }));
+    .group("/api", (app) =>
+      app
+        .use(healthRoutes({ db }))
+        .use(authRoutes({ authService: auth }))
+        .use(mediaRoutes({ db, authService: auth, fetchHtml: deps.fetchHtml }))
+    );
 };
 
 export type App = ReturnType<typeof createApp>;

@@ -23,7 +23,7 @@ async function doSilentRefresh(): Promise<string | null> {
 
   refreshPromise = (async () => {
     try {
-      const res = await fetch(`${API_URL}/auth/refresh`, {
+      const res = await fetch(`${API_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,6 +120,8 @@ const customFetcher = async (
   return response;
 };
 
-export const api = edenTreaty<App>(API_URL, {
+const client = edenTreaty<App>(API_URL, {
   fetcher: customFetcher as typeof fetch,
 });
+
+export const api = client.api;

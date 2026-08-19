@@ -62,7 +62,10 @@ export async function request(
   app: App,
   options: RequestOptions
 ): Promise<RequestResult> {
-  const url = new URL(options.path, "http://localhost");
+  const normalizedPath = options.path.startsWith("/api")
+    ? options.path
+    : `/api${options.path.startsWith("/") ? "" : "/"}${options.path}`;
+  const url = new URL(normalizedPath, "http://localhost");
   const headers = new Headers();
 
   if (options.body) {

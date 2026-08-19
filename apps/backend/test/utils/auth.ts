@@ -45,7 +45,7 @@ export async function registerUser(
 
   const response = await request(app, {
     method: "POST",
-    path: "/auth/register",
+    path: "/api/auth/register",
     headers: overrides.clientType
       ? { "x-client-type": overrides.clientType }
       : undefined,
@@ -90,7 +90,7 @@ export async function loginUser(
 ): Promise<AuthResult> {
   const response = await request(app, {
     method: "POST",
-    path: "/auth/login",
+    path: "/api/auth/login",
     headers: clientType ? { "x-client-type": clientType } : undefined,
     body: creds,
   });

@@ -33,7 +33,7 @@ describe("composition root global error handler", () => {
     });
 
     const response = await app.handle(
-      new Request("http://localhost/health")
+      new Request("http://localhost/api/health")
     );
 
     expect(response.status).toBe(500);
