@@ -20,7 +20,7 @@
     },
     "@repo/backend#test:integration": {
       "cache": false,
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "test"],
       "env": ["DATABASE_URL", "JWT_SECRET"]
     },
     "lint": {},
