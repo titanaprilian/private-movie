@@ -26,3 +26,16 @@ services:
       db:
         condition: service_healthy
     command: bunx turbo run db:migrate --filter=@repo/db
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: private-movie-backend
+    env_file:
+      - .env.docker
+    ports:
+      - "${BACKEND_HOST_PORT:-3000}:3000"
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
