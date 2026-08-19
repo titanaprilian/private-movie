@@ -3,7 +3,7 @@ import type { App } from '@repo/backend';
 
 // Create a global eden client
 // During development, assume backend runs on localhost:3000
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;

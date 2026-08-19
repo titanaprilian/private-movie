@@ -1,0 +1,13 @@
+:80 {
+	# Reverse proxy API traffic to the backend container
+	handle /api/* {
+		reverse_proxy backend:3000
+	}
+
+	# Default fallback for SPA static assets
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
