@@ -30,6 +30,7 @@ export function CustomVideoPlayer({
   let navigate: ReturnType<typeof useNavigate> | undefined;
   try {
     if (typeof useNavigate === 'function') {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       navigate = useNavigate();
     }
   } catch {

@@ -414,6 +414,7 @@ export async function addVideoSource(
   source: AddVideoSourceInput | AddVideoSourceInput[]
 ): Promise<Episode> {
   const videoSources = Array.isArray(source) ? source : [source];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res = await (api.episodes as any)[episodeId].sources.post({
     videoSources,
   });
@@ -442,6 +443,7 @@ export async function updateVideoSource(
   sourceId: string,
   updates: UpdateVideoSourceInput
 ): Promise<Episode> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res = await (api.episodes as any)[episodeId].sources[sourceId].patch(
     updates
   );
@@ -460,6 +462,7 @@ export async function deleteVideoSource(
   episodeId: string,
   sourceId: string
 ): Promise<Episode> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res = await (api.episodes as any)[episodeId].sources[sourceId].delete();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
@@ -481,6 +484,7 @@ export async function updateEpisodeOrders(
   seriesId: string,
   orders: ReorderEpisodeItem[]
 ): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res = await (api.series as any)[seriesId].episodes.order.patch(orders);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {

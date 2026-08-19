@@ -17,7 +17,7 @@ vi.mock('@tanstack/react-router', () => ({
     children: React.ReactNode;
     to: string;
     params?: Record<string, string>;
-    search?: any;
+    search?: unknown;
     className?: string;
     onClick?: () => void;
   }) => {

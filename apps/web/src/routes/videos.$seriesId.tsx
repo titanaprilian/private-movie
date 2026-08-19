@@ -22,6 +22,6 @@ export const Route = createFileRoute('/videos/$seriesId')({
 
 function SeriesDetailPage() {
   const { seriesId } = Route.useParams();
-  const search = Route.useSearch ? Route.useSearch() : undefined;
+  const search = Route.useSearch();
   return <SeriesDetailView seriesId={seriesId} initialOrder={search?.order} />;
 }

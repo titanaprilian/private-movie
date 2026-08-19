@@ -10,6 +10,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 interface RouteMock {
   useParams: () => { seriesId: string };
+  useSearch: () => { order?: number };
   component: React.FC;
 }
 
@@ -64,6 +65,7 @@ describe('videos/$seriesId route component', () => {
 
   it('renders SeriesDetailView for the resolved seriesId', async () => {
     Route.useParams = vi.fn().mockReturnValue({ seriesId: 'deep-modules' });
+    Route.useSearch = vi.fn().mockReturnValue({ order: undefined });
 
     const Page = Route.component;
     renderWithProviders(<Page />);
