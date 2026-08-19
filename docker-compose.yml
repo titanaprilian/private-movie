@@ -23,7 +23,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: bunx turbo run db:migrate --filter=@repo/db
+    command: sh -c "bunx turbo run db:migrate --filter=@repo/db && bunx turbo run db:seed --filter=@repo/db"
 
   backend:
     build:
