@@ -26,9 +26,7 @@ services:
     command: sh -c "bunx turbo run db:migrate --filter=@repo/db && bunx turbo run db:seed --filter=@repo/db"
 
   backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
+    image: ghcr.io/titanaprilian/private-movie-backend:latest
     container_name: private-movie-backend
     env_file:
       - .env.docker
@@ -39,11 +37,7 @@ services:
         condition: service_completed_successfully
 
   web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-}
+    image: ghcr.io/titanaprilian/private-movie-web:latest
     container_name: private-movie-web
     env_file:
       - .env.docker
