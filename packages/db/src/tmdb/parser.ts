@@ -5,11 +5,10 @@ export function parseLocalTitle(rawTitle: string): ParsedTitle {
   let seasonNumber = 1;
   let year: number | undefined;
 
-  // Extract year e.g. "(2011)" or trailing/standalone "2011" or "1999"
+  // Extract year e.g. "(2011)" or trailing/standalone "2011"
   const yearMatch = title.match(/(?:\(|\b)(19\d\d|20\d\d)(?:\)|\b)/);
   if (yearMatch) {
     year = Number.parseInt(yearMatch[1], 10);
-    // Clean year out of title
     title = title.replace(yearMatch[0], "").trim();
   }
 
@@ -19,13 +18,13 @@ export function parseLocalTitle(rawTitle: string): ParsedTitle {
     seasonNumber = 0;
     title = title.replace(specialMatch[0], "").trim();
   } else {
-    // Check for "Season X" or "Season 0X"
-    const seasonWordMatch = title.match(/\bseason\s*(\d+)\b/i);
+    // Check for "Season X" or "Part X"
+    const seasonWordMatch = title.match(/\b(?:season|part)\s*(\d+)\b/i);
     if (seasonWordMatch) {
       seasonNumber = Number.parseInt(seasonWordMatch[1], 10);
       title = title.replace(seasonWordMatch[0], "").trim();
     } else {
-      // Check for ordinal season e.g. "2nd Season", "1st Season", "3rd Season"
+      // Check for ordinal season e.g. "2nd Season"
       const ordinalSeasonMatch = title.match(/\b(\d+)(?:st|nd|rd|th)\s*season\b/i);
       if (ordinalSeasonMatch) {
         seasonNumber = Number.parseInt(ordinalSeasonMatch[1], 10);
@@ -40,6 +39,9 @@ export function parseLocalTitle(rawTitle: string): ParsedTitle {
       }
     }
   }
+
+  // Strip arbitrary scraper tags (BD, TV, Uncensored, UNC)
+  title = title.replace(/\b(bd|tv|uncensored|unc)\b/ig, "").trim();
 
   // Clean trailing punctuation or delimiters like dashes or colons
   const baseTitle = title

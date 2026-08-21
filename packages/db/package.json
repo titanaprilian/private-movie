@@ -19,7 +19,8 @@
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate-genres": "bun run src/run-migrate-genres.ts",
-    "db:seed": "bun run src/run-seeder.ts"
+    "db:seed": "bun run src/run-seeder.ts",
+    "db:sync-tmdb": "bun --env-file=../../.env run src/run-tmdb-sync.ts"
   },
   "devDependencies": {
     "@repo/config-vitest": "workspace:*",
