@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, genres, series, seriesRelations, seriesToGenres, videoSources, type EpisodeRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
+import { episodes, genres, series, seriesToGenres, videoSources, type EpisodeRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
 
 export class SeriesNotFoundError extends Error {
@@ -140,18 +140,10 @@ export function createSeriesRepositoryInternal<
         videoSources: sourcesMap.get(ep.id) ?? [],
       }));
 
-      const relationsRows = await db
-        .select({
-          relatedSeriesId: seriesRelations.toSeriesId,
-          relationType: seriesRelations.relationType,
-        })
-        .from(seriesRelations)
-        .where(eq(seriesRelations.fromSeriesId, id));
-
       return {
         ...seriesRow,
         episodes: episodesWithSources,
-        relations: relationsRows,
+        relations: [],
       };
     },
 
@@ -253,35 +245,9 @@ export function createSeriesRepositoryInternal<
         }
       }
 
-      if (input.relations !== undefined) {
-        await db
-          .delete(seriesRelations)
-          .where(eq(seriesRelations.fromSeriesId, id));
-
-        if (input.relations.length > 0) {
-          await db
-            .insert(seriesRelations)
-            .values(
-              input.relations.map((rel) => ({
-                fromSeriesId: id,
-                toSeriesId: rel.relatedSeriesId,
-                relationType: rel.relationType,
-              }))
-            );
-        }
-      }
-
-      const relationsRows = await db
-        .select({
-          relatedSeriesId: seriesRelations.toSeriesId,
-          relationType: seriesRelations.relationType,
-        })
-        .from(seriesRelations)
-        .where(eq(seriesRelations.fromSeriesId, id));
-
       return {
         ...row,
-        relations: relationsRows,
+        relations: [],
       };
     },
 
