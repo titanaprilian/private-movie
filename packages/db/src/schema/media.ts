@@ -1,4 +1,33 @@
-import { integer, jsonb, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core";
+
+export const genres = pgTable("genres", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type GenreRow = typeof genres.$inferSelect;
+export type NewGenreRow = typeof genres.$inferInsert;
+
+export const seriesToGenres = pgTable(
+  "series_to_genres",
+  {
+    seriesId: text("series_id")
+      .notNull()
+      .references(() => series.id, { onDelete: "cascade" }),
+    genreId: text("genre_id")
+      .notNull()
+      .references(() => genres.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.seriesId, table.genreId] }),
+  ]
+);
+
+export type SeriesToGenreRow = typeof seriesToGenres.$inferSelect;
+export type NewSeriesToGenreRow = typeof seriesToGenres.$inferInsert;
 
 export const series = pgTable("series", {
   id: text("id").primaryKey(),

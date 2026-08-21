@@ -18,6 +18,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate-genres": "bun run src/run-migrate-genres.ts",
     "db:seed": "bun run src/run-seeder.ts"
   },
   "devDependencies": {
