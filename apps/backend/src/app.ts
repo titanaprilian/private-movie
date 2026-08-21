@@ -5,6 +5,7 @@ import { cors } from "@elysiajs/cors";
 import { rateLimit } from "@elysiajs/rate-limit";
 import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
+import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes } from "./modules/media/http";
 import type { FetchFn } from "@repo/media-service";
@@ -104,6 +105,7 @@ export const createApp = (deps: CreateAppDeps) => {
         .use(healthRoutes({ db }))
         .use(authRoutes({ authService: auth }))
         .use(mediaRoutes({ db, authService: auth, fetchHtml: deps.fetchHtml }))
+        .use(genreRoutes({ db, authService: auth }))
     );
 };
 

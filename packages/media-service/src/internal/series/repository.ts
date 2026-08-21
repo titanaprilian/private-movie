@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, series, videoSources, type EpisodeRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
+import { episodes, genres, series, seriesToGenres, videoSources, type EpisodeRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
 
 export class SeriesNotFoundError extends Error {
@@ -26,6 +26,7 @@ export interface UpdateSeriesInput {
   title?: string;
   description?: string | null;
   posterUrl?: string | null;
+  genreIds?: string[];
 }
 
 export interface SeriesListParams {
@@ -33,6 +34,7 @@ export interface SeriesListParams {
   limit?: number;
   source?: string;
   q?: string;
+  genre?: string;
 }
 
 export interface SeriesListResult {
@@ -159,6 +161,16 @@ export function createSeriesRepositoryInternal<
         );
       }
 
+      if (params.genre && params.genre.trim() !== "") {
+        const matchingSeriesIds = db
+          .select({ id: seriesToGenres.seriesId })
+          .from(seriesToGenres)
+          .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+          .where(eq(genres.slug, params.genre.trim()));
+
+        conditions.push(inArray(series.id, matchingSeriesIds));
+      }
+
       const where =
         conditions.length > 0
           ? conditions.length === 1
@@ -204,6 +216,23 @@ export function createSeriesRepositoryInternal<
 
       if (!row) {
         throw new SeriesNotFoundError(`Series with id ${id} not found`);
+      }
+
+      if (input.genreIds !== undefined) {
+        await db
+          .delete(seriesToGenres)
+          .where(eq(seriesToGenres.seriesId, id));
+
+        if (input.genreIds.length > 0) {
+          await db
+            .insert(seriesToGenres)
+            .values(
+              input.genreIds.map((genreId) => ({
+                seriesId: id,
+                genreId,
+              }))
+            );
+        }
       }
 
       return row;

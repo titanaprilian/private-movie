@@ -459,12 +459,13 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       async ({ query }) => {
         const page = query.page ?? 1;
         const limit = query.limit ?? 20;
-        const { source, q } = query;
+        const { source, q, genre } = query;
         const result = await seriesRepository.list({
           page,
           limit,
           source,
           q,
+          genre,
         });
         return successResponse({
           series: result.series,
@@ -481,6 +482,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
           source: t.Optional(t.Literal("otakudesu")),
           q: t.Optional(t.String()),
+          genre: t.Optional(t.String()),
         }),
       }
     )
@@ -500,6 +502,46 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       {
         params: t.Object({
           id: t.String(),
+        }),
+      }
+    )
+    .put(
+      "/series/:id",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const updated = await seriesRepository.updateSeries(params.id, body);
+          return successResponse(updated);
+        } catch (error) {
+          if (error instanceof SeriesNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          title: t.Optional(t.String()),
+          description: t.Optional(t.Nullable(t.String())),
+          posterUrl: t.Optional(t.Nullable(t.String())),
+          genreIds: t.Optional(t.Array(t.String())),
         }),
       }
     )
@@ -539,6 +581,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           title: t.Optional(t.String()),
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
+          genreIds: t.Optional(t.Array(t.String())),
         }),
       }
     )
