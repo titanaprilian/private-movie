@@ -363,6 +363,29 @@ describe('SeriesGrid component', () => {
     expect(deleteSeries).toHaveBeenCalledWith('series-1');
   });
 
+  it('renders Details and Relations tabs in Edit Dialog and allows switching between them', async () => {
+    const { user } = renderSeriesGrid();
+
+    const editBtn = screen.getByRole('button', { name: 'Edit Solo Leveling' });
+    await user.click(editBtn);
+
+    const dialog = screen.getByRole('dialog');
+    const dialogWithin = within(dialog);
+
+    const detailsTab = dialogWithin.getByRole('tab', { name: 'Details' });
+    const relationsTab = dialogWithin.getByRole('tab', { name: 'Relations' });
+
+    expect(detailsTab).toBeInTheDocument();
+    expect(relationsTab).toBeInTheDocument();
+
+    // Details tab active by default
+    expect(dialogWithin.getByLabelText('Title')).toBeInTheDocument();
+
+    // Switch to Relations tab
+    await user.click(relationsTab);
+    expect(dialogWithin.getByRole('combobox', { name: 'Related Series' })).toBeInTheDocument();
+  });
+
   it('pre-fills assigned relations in Edit Dialog and allows adding and deleting relation edges before submitting', async () => {
     const seriesWithRelationsResponse = {
       series: [
@@ -388,20 +411,29 @@ describe('SeriesGrid component', () => {
     const dialog = screen.getByRole('dialog');
     const dialogWithin = within(dialog);
 
+    // Switch to Relations tab
+    const relationsTab = dialogWithin.getByRole('tab', { name: 'Relations' });
+    await user.click(relationsTab);
+
     // Verify existing relation is displayed
-    expect(dialogWithin.getAllByText("Frieren: Beyond Journey's End")[0]).toBeInTheDocument();
+    expect(dialogWithin.getByText("Frieren: Beyond Journey's End")).toBeInTheDocument();
     expect(dialogWithin.getByText('sequel')).toBeInTheDocument();
 
     // Delete existing relation edge
     const deleteEdgeBtn = dialogWithin.getByRole('button', { name: /remove relation/i });
     await user.click(deleteEdgeBtn);
 
-    // After deleting, only the select option should have the text "Frieren: Beyond Journey's End"
-    expect(dialogWithin.getAllByText("Frieren: Beyond Journey's End")).toHaveLength(1);
+    // After deleting, relationship title should not be in the assigned list
+    expect(dialogWithin.queryByText('sequel')).not.toBeInTheDocument();
 
-    // Add a new relation edge using select dropdown or raw input
-    const seriesSelect = dialogWithin.getByLabelText(/related series/i);
-    fireEvent.change(seriesSelect, { target: { value: 'series-2' } });
+    // Open Combobox for Related Series
+    const comboboxTrigger = dialogWithin.getByRole('combobox', { name: 'Related Series' });
+    await user.click(comboboxTrigger);
+
+    // Select series option in combobox popover
+    const listbox = screen.getByRole('listbox');
+    const comboboxOption = within(listbox).getByText("Frieren: Beyond Journey's End");
+    fireEvent.click(comboboxOption);
 
     const relationTypeInput = dialogWithin.getByLabelText(/relation type/i);
     fireEvent.change(relationTypeInput, { target: { value: 'prequel' } });
@@ -409,8 +441,8 @@ describe('SeriesGrid component', () => {
     const addRelationBtn = dialogWithin.getByRole('button', { name: /add relation/i });
     await user.click(addRelationBtn);
 
-    // Verify new relation edge appears in temporary list (now present in both list and option)
-    expect(dialogWithin.getAllByText("Frieren: Beyond Journey's End")).toHaveLength(2);
+    // Verify new relation edge appears in temporary list
+    expect(dialogWithin.getByText("Frieren: Beyond Journey's End")).toBeInTheDocument();
     expect(dialogWithin.getByText('prequel')).toBeInTheDocument();
 
     // Submit changes
