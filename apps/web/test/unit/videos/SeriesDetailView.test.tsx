@@ -5,6 +5,31 @@ import type { SeriesDetails } from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';
 import { setAccessToken } from '@/lib/api';
 
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({
+    children,
+    to,
+    params,
+    className,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    to: string;
+    params?: Record<string, string>;
+    className?: string;
+    onClick?: () => void;
+  }) => {
+    const href = params ? to.replace('$seriesId', params.seriesId) : to;
+    return (
+      <a href={href} className={className} onClick={onClick}>
+        {children}
+      </a>
+    );
+  },
+  useSearch: () => ({}),
+  useNavigate: () => vi.fn(),
+}));
+
 const mockSeries: SeriesDetails = {
   id: 'deep-modules',
   sourceUrl: 'https://otakudesu.cloud/anime/deep-modules',
@@ -451,5 +476,63 @@ describe('SeriesDetailView component', () => {
     await user.click(removeSourceBtn);
 
     expect(sourceDeleted).toBe(true);
+  });
+
+  it('renders Related Series section when relations exist', async () => {
+    const mockSeriesWithRelations: SeriesDetails = {
+      ...mockSeries,
+      id: 'series-with-relations',
+      relations: [
+        { relatedSeriesId: 'dm-season-2', relationType: 'sequel', title: 'Deep Modules Season 2' },
+        { relatedSeriesId: 'dm-prequel', relationType: 'prequel' },
+      ],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/series-with-relations')) {
+        return new Response(JSON.stringify({ data: mockSeriesWithRelations }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    renderWithProviders(<SeriesDetailView seriesId="series-with-relations" />);
+
+    expect(await screen.findByText('Related Series')).toBeInTheDocument();
+    expect(screen.getByText('sequel')).toBeInTheDocument();
+    expect(screen.getByText('Deep Modules Season 2')).toBeInTheDocument();
+    expect(screen.getByText('prequel')).toBeInTheDocument();
+    expect(screen.getByText('dm-prequel')).toBeInTheDocument();
+
+    const sequelLink = screen.getByText('Deep Modules Season 2').closest('a');
+    expect(sequelLink).toBeInTheDocument();
+    expect(sequelLink).toHaveAttribute('href', '/videos/dm-season-2');
+  });
+
+  it('safely hides Related Series section when relations array is empty or undefined', async () => {
+    const mockSeriesNoRelations: SeriesDetails = {
+      ...mockSeries,
+      id: 'series-no-relations',
+      relations: [],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/series-no-relations')) {
+        return new Response(JSON.stringify({ data: mockSeriesNoRelations }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    renderWithProviders(<SeriesDetailView seriesId="series-no-relations" />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeriesNoRelations.title });
+    expect(screen.queryByText('Related Series')).not.toBeInTheDocument();
   });
 });

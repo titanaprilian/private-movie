@@ -45,6 +45,13 @@ export interface EpisodesListResponse {
   };
 }
 
+export interface SeriesRelationItem {
+  relatedSeriesId: string;
+  relationType: string;
+  title?: string | null;
+  posterUrl?: string | null;
+}
+
 export interface SeriesItem {
   id: string;
   sourceUrl: string;
@@ -56,6 +63,7 @@ export interface SeriesItem {
   updatedAt: Date | string;
   genreIds?: string[];
   genres?: Array<{ id: string; name: string; slug: string }> | string[];
+  relations?: SeriesRelationItem[];
 }
 
 export interface SeriesListResponse {
@@ -77,6 +85,7 @@ export interface SeriesDetails {
   createdAt: Date | string;
   updatedAt: Date | string;
   episodes: Episode[];
+  relations?: SeriesRelationItem[];
 }
 
 export interface FetchSeriesParams {
