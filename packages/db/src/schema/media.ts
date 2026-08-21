@@ -29,6 +29,25 @@ export const seriesToGenres = pgTable(
 export type SeriesToGenreRow = typeof seriesToGenres.$inferSelect;
 export type NewSeriesToGenreRow = typeof seriesToGenres.$inferInsert;
 
+export const seriesRelations = pgTable(
+  "series_relations",
+  {
+    fromSeriesId: text("from_series_id")
+      .notNull()
+      .references(() => series.id, { onDelete: "cascade" }),
+    toSeriesId: text("to_series_id")
+      .notNull()
+      .references(() => series.id, { onDelete: "cascade" }),
+    relationType: text("relation_type").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.fromSeriesId, table.toSeriesId] }),
+  ]
+);
+
+export type SeriesRelationRow = typeof seriesRelations.$inferSelect;
+export type NewSeriesRelationRow = typeof seriesRelations.$inferInsert;
+
 export const series = pgTable("series", {
   id: text("id").primaryKey(),
   sourceUrl: text("source_url").notNull().unique(),

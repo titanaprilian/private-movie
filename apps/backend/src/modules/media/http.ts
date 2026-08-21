@@ -542,6 +542,14 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
           genreIds: t.Optional(t.Array(t.String())),
+          relations: t.Optional(
+            t.Array(
+              t.Object({
+                relatedSeriesId: t.String(),
+                relationType: t.String(),
+              })
+            )
+          ),
         }),
       }
     )
@@ -582,6 +590,14 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
           genreIds: t.Optional(t.Array(t.String())),
+          relations: t.Optional(
+            t.Array(
+              t.Object({
+                relatedSeriesId: t.String(),
+                relationType: t.String(),
+              })
+            )
+          ),
         }),
       }
     )

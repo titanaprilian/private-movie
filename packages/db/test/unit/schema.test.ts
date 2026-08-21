@@ -7,5 +7,6 @@ describe("db schema exports", () => {
     expect(schema.videoSources).toBeDefined();
     expect(schema.genres).toBeDefined();
     expect(schema.seriesToGenres).toBeDefined();
+    expect(schema.seriesRelations).toBeDefined();
   });
 });

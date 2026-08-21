@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, genres, series, seriesToGenres, videoSources, type EpisodeRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
+import { episodes, genres, series, seriesRelations, seriesToGenres, videoSources, type EpisodeRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
 
 export class SeriesNotFoundError extends Error {
@@ -22,11 +22,17 @@ export interface SeriesUpsertInput {
   posterUrl: string | null;
 }
 
+export interface SeriesRelationItem {
+  relatedSeriesId: string;
+  relationType: string;
+}
+
 export interface UpdateSeriesInput {
   title?: string;
   description?: string | null;
   posterUrl?: string | null;
   genreIds?: string[];
+  relations?: SeriesRelationItem[];
 }
 
 export interface SeriesListParams {
@@ -42,7 +48,10 @@ export interface SeriesListResult {
   total: number;
 }
 
-export type SeriesWithEpisodes = SeriesRow & { episodes: EpisodeWithVideoSources[] };
+export type SeriesWithEpisodes = SeriesRow & {
+  episodes: EpisodeWithVideoSources[];
+  relations: SeriesRelationItem[];
+};
 
 export function createSeriesRepositoryInternal<
   THKT extends PgQueryResultHKT,
@@ -131,9 +140,18 @@ export function createSeriesRepositoryInternal<
         videoSources: sourcesMap.get(ep.id) ?? [],
       }));
 
+      const relationsRows = await db
+        .select({
+          relatedSeriesId: seriesRelations.toSeriesId,
+          relationType: seriesRelations.relationType,
+        })
+        .from(seriesRelations)
+        .where(eq(seriesRelations.fromSeriesId, id));
+
       return {
         ...seriesRow,
         episodes: episodesWithSources,
+        relations: relationsRows,
       };
     },
 
@@ -198,7 +216,7 @@ export function createSeriesRepositoryInternal<
     async updateSeries(
       id: string,
       input: UpdateSeriesInput
-    ): Promise<SeriesRow> {
+    ): Promise<SeriesRow & { relations: SeriesRelationItem[] }> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
         updatedAt: now,
@@ -235,7 +253,36 @@ export function createSeriesRepositoryInternal<
         }
       }
 
-      return row;
+      if (input.relations !== undefined) {
+        await db
+          .delete(seriesRelations)
+          .where(eq(seriesRelations.fromSeriesId, id));
+
+        if (input.relations.length > 0) {
+          await db
+            .insert(seriesRelations)
+            .values(
+              input.relations.map((rel) => ({
+                fromSeriesId: id,
+                toSeriesId: rel.relatedSeriesId,
+                relationType: rel.relationType,
+              }))
+            );
+        }
+      }
+
+      const relationsRows = await db
+        .select({
+          relatedSeriesId: seriesRelations.toSeriesId,
+          relationType: seriesRelations.relationType,
+        })
+        .from(seriesRelations)
+        .where(eq(seriesRelations.fromSeriesId, id));
+
+      return {
+        ...row,
+        relations: relationsRows,
+      };
     },
 
     async deleteSeries(id: string): Promise<SeriesRow> {
