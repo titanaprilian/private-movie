@@ -54,6 +54,8 @@ export interface SeriesItem {
   posterUrl?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  genreIds?: string[];
+  genres?: Array<{ id: string; name: string; slug: string }> | string[];
 }
 
 export interface SeriesListResponse {
@@ -81,6 +83,7 @@ export interface FetchSeriesParams {
   page?: number;
   limit?: number;
   q?: string;
+  genre?: string;
   source?: 'otakudesu';
 }
 
@@ -91,6 +94,7 @@ export async function fetchSeries(
     page: params?.page,
     limit: params?.limit,
     q: params?.q,
+    genre: params?.genre,
     source: params?.source,
   };
 
@@ -99,7 +103,7 @@ export async function fetchSeries(
   );
 
   const res = await api.series.get({
-    $query: query as { page?: number; limit?: number; q?: string; source?: 'otakudesu' },
+    $query: query as { page?: number; limit?: number; q?: string; genre?: string; source?: 'otakudesu' },
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
@@ -493,6 +497,44 @@ export async function updateEpisodeOrders(
         'Failed to reorder episodes'
     );
   }
+}
+
+export interface UpdateSeriesParams {
+  title?: string;
+  description?: string | null;
+  posterUrl?: string | null;
+  genreIds?: string[];
+}
+
+export async function updateSeries(
+  id: string,
+  updates: UpdateSeriesParams
+): Promise<SeriesItem> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[id].put(updates);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to update series'
+    );
+  }
+
+  return res.data.data as SeriesItem;
+}
+
+export async function deleteSeries(id: string): Promise<SeriesItem> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[id].delete();
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to delete series'
+    );
+  }
+
+  return res.data.data as SeriesItem;
 }
 
 

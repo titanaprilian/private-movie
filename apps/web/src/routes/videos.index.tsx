@@ -1,10 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { SeriesGrid, seriesListQueryOptions } from '@/modules/videos';
+import { genresQueryOptions } from '@/modules/genres';
 import { queryClient } from '@/lib/queryClient';
 
 export type SeriesListSearch = {
   page?: number;
   q?: string;
+  genre?: string;
 };
 
 export const Route = createFileRoute('/videos/')({
@@ -18,12 +20,18 @@ export const Route = createFileRoute('/videos/')({
     const page = Number.isInteger(pageNum) && pageNum > 0 ? pageNum : 1;
     const rawQ = typeof search.q === 'string' ? search.q.trim() : undefined;
     const q = rawQ && rawQ.length > 0 ? rawQ : undefined;
+    const rawGenre =
+      typeof search.genre === 'string' ? search.genre.trim() : undefined;
+    const genre = rawGenre && rawGenre.length > 0 ? rawGenre : undefined;
 
-    return { page, q };
+    return { page, q, genre };
   },
-  loaderDeps: ({ search: { page, q } }) => ({ page, q }),
-  loader: ({ deps }: { deps?: { page?: number; q?: string } } = {}) =>
-    queryClient.ensureQueryData(seriesListQueryOptions(deps)),
+  loaderDeps: ({ search: { page, q, genre } }) => ({ page, q, genre }),
+  loader: ({ deps }: { deps?: { page?: number; q?: string; genre?: string } } = {}) =>
+    Promise.all([
+      queryClient.ensureQueryData(genresQueryOptions()),
+      queryClient.ensureQueryData(seriesListQueryOptions(deps)),
+    ]),
   component: VideosIndexPage,
 });
 

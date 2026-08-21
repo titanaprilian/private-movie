@@ -266,6 +266,41 @@ describe('videos api', () => {
     fetchSpy.mockRestore();
   });
 
+  it('fetchSeries passes genre query parameter to backend API request URL', async () => {
+    const mockData = {
+      data: {
+        series: [],
+        meta: {
+          total: 0,
+          page: 1,
+          limit: 20,
+        },
+      },
+    };
+
+    let requestedUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        requestedUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    await fetchSeries({ page: 1, limit: 20, genre: 'sci-fi' });
+
+    expect(requestedUrl).toContain('genre=sci-fi');
+
+    fetchSpy.mockRestore();
+  });
+
   it('fetchSeries passes q search query parameter to backend API request URL', async () => {
     const mockData = {
       data: {

@@ -1,9 +1,37 @@
-import { createTestQueryClient, renderWithProviders, screen, fireEvent } from '../../utils';
+import { createTestQueryClient, renderWithProviders, screen, fireEvent, within } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { SeriesGrid, seriesListQueryOptions } from '@/modules/videos';
+import { SeriesGrid, seriesListQueryOptions, updateSeries, deleteSeries } from '@/modules/videos';
+import { genresQueryOptions, type Genre } from '@/modules/genres';
+
+vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@/modules/videos/internal/api')>();
+  return {
+    ...mod,
+    updateSeries: vi.fn().mockResolvedValue({
+      id: 'series-1',
+      title: 'Solo Leveling Updated',
+      description: 'Updated description',
+      posterUrl: 'https://example.com/updated.jpg',
+      createdAt: '2025-01-12T00:00:00.000Z',
+      updatedAt: '2025-01-12T00:00:00.000Z',
+    }),
+    deleteSeries: vi.fn().mockResolvedValue({
+      id: 'series-1',
+      title: 'Solo Leveling',
+      source: 'otakudesu',
+      sourceUrl: 'https://otakudesu.cloud/anime/solo-leveling',
+      createdAt: '2025-01-12T00:00:00.000Z',
+      updatedAt: '2025-01-12T00:00:00.000Z',
+    }),
+  };
+});
 
 const mockNavigate = vi.fn();
-let mockSearchState: { page?: number; q?: string } = { page: 1, q: undefined };
+let mockSearchState: { page?: number; q?: string; genre?: string } = {
+  page: 1,
+  q: undefined,
+  genre: undefined,
+};
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
@@ -27,6 +55,7 @@ vi.mock('@tanstack/react-router', () => ({
       const searchParams = new URLSearchParams();
       if (searchObj.page) searchParams.set('page', String(searchObj.page));
       if (searchObj.q) searchParams.set('q', searchObj.q);
+      if (searchObj.genre) searchParams.set('genre', searchObj.genre);
       const str = searchParams.toString();
       if (str) href += `?${str}`;
     }
@@ -39,6 +68,11 @@ vi.mock('@tanstack/react-router', () => ({
   useSearch: () => mockSearchState,
   useNavigate: () => mockNavigate,
 }));
+
+const mockGenresList: Genre[] = [
+  { id: 'g-1', name: 'Action', slug: 'action' },
+  { id: 'g-2', name: 'Sci-Fi', slug: 'sci-fi' },
+];
 
 const mockSeriesResponse = {
   series: [
@@ -77,12 +111,24 @@ const mockSeriesResponse = {
 
 function renderSeriesGrid(
   customResponse = mockSeriesResponse,
-  searchState: { page?: number; q?: string } = { page: 1, q: undefined }
+  searchState: { page?: number; q?: string; genre?: string } = {
+    page: 1,
+    q: undefined,
+    genre: undefined,
+  },
+  genresList: Genre[] = mockGenresList
 ) {
   mockSearchState = searchState;
   mockNavigate.mockReset();
   const queryClient = createTestQueryClient();
+  queryClient.setDefaultOptions({
+    queries: {
+      retry: false,
+      staleTime: Infinity,
+    },
+  });
   queryClient.setQueryData(seriesListQueryOptions(searchState).queryKey, customResponse);
+  queryClient.setQueryData(genresQueryOptions().queryKey, genresList);
   return renderWithProviders(<SeriesGrid />, { queryClient });
 }
 
@@ -170,5 +216,148 @@ describe('SeriesGrid component', () => {
     await user.click(addBtn);
 
     expect(screen.getByText('Add Media Wizard')).toBeInTheDocument();
+  });
+
+  it('renders genre pills and highlights active genre matched from URL state', () => {
+    renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined, genre: 'sci-fi' });
+
+    expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Action' })).toBeInTheDocument();
+
+    const sciFiBtn = screen.getByRole('button', { name: 'Sci-Fi' });
+    expect(sciFiBtn).toBeInTheDocument();
+    expect(sciFiBtn.className).toContain('bg-primary');
+  });
+
+  it('navigates with ?genre= when clicking an unselected genre pill', async () => {
+    const { user } = renderSeriesGrid();
+
+    const sciFiBtn = screen.getByRole('button', { name: 'Sci-Fi' });
+    await user.click(sciFiBtn);
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(searchFn({})).toEqual({ genre: 'sci-fi', page: 1 });
+  });
+
+  it('removes ?genre= search param when clicking an already selected genre pill or All pill', async () => {
+    const { user } = renderSeriesGrid(mockSeriesResponse, {
+      page: 1,
+      q: undefined,
+      genre: 'sci-fi',
+    });
+
+    const sciFiBtn = screen.getByRole('button', { name: 'Sci-Fi' });
+    await user.click(sciFiBtn);
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(searchFn({ genre: 'sci-fi' })).toEqual({ genre: undefined, page: 1 });
+  });
+
+  it('renders Edit and Delete buttons on each series card', () => {
+    renderSeriesGrid();
+
+    expect(screen.getByRole('button', { name: 'Edit Solo Leveling' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete Solo Leveling' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: "Edit Frieren: Beyond Journey's End" })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: "Delete Frieren: Beyond Journey's End" })).toBeInTheDocument();
+  });
+
+  it('opens pre-filled Edit Dialog when clicking Edit button and submits update', async () => {
+    const { user } = renderSeriesGrid();
+
+    const editBtn = screen.getByRole('button', { name: 'Edit Solo Leveling' });
+    await user.click(editBtn);
+
+    const dialog = screen.getByRole('dialog');
+    const dialogWithin = within(dialog);
+
+    expect(dialogWithin.getByRole('heading', { name: 'Edit Series' })).toBeInTheDocument();
+    const titleInput = dialogWithin.getByLabelText('Title');
+    expect(titleInput).toHaveValue('Solo Leveling');
+
+    const descInput = dialogWithin.getByLabelText('Description');
+    expect(descInput).toHaveValue('Sung Jinwoo ascends from E-rank hunter to shadow monarch.');
+
+    // Select genre in multi-select
+    const actionGenreBtn = dialogWithin.getByRole('button', { name: 'Action' });
+    fireEvent.click(actionGenreBtn);
+
+    fireEvent.change(titleInput, { target: { value: 'Solo Leveling Season 2' } });
+
+    const saveBtn = dialogWithin.getByRole('button', { name: 'Save Changes' });
+    await user.click(saveBtn);
+
+    expect(updateSeries).toHaveBeenCalledWith('series-1', {
+      title: 'Solo Leveling Season 2',
+      description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
+      posterUrl: 'https://example.com/solo-leveling.jpg',
+      genreIds: ['g-1'],
+    });
+  });
+
+  it('pre-fills assigned genres in Edit Dialog and allows toggling them off', async () => {
+    const seriesWithGenresResponse = {
+      series: [
+        {
+          ...mockSeriesResponse.series[0],
+          genreIds: ['g-1', 'g-2'],
+        },
+      ],
+      meta: { total: 1, page: 1, limit: 20 },
+    };
+    const { user } = renderSeriesGrid(seriesWithGenresResponse);
+
+    const editBtn = screen.getByRole('button', { name: 'Edit Solo Leveling' });
+    await user.click(editBtn);
+
+    const dialog = screen.getByRole('dialog');
+    const dialogWithin = within(dialog);
+
+    const actionGenreBtn = dialogWithin.getByRole('button', { name: 'Action' });
+    const sciFiGenreBtn = dialogWithin.getByRole('button', { name: 'Sci-Fi' });
+
+    expect(actionGenreBtn.className).toContain('bg-primary');
+    expect(sciFiGenreBtn.className).toContain('bg-primary');
+
+    // Toggle off Sci-Fi
+    fireEvent.click(sciFiGenreBtn);
+
+    const saveBtn = dialogWithin.getByRole('button', { name: 'Save Changes' });
+    await user.click(saveBtn);
+
+    expect(updateSeries).toHaveBeenCalledWith('series-1', {
+      title: 'Solo Leveling',
+      description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
+      posterUrl: 'https://example.com/solo-leveling.jpg',
+      genreIds: ['g-1'],
+    });
+  });
+
+  it('opens Delete Confirmation Dialog and triggers deleteSeries on confirm', async () => {
+    const { user } = renderSeriesGrid();
+
+    const deleteBtn = screen.getByRole('button', { name: 'Delete Solo Leveling' });
+    await user.click(deleteBtn);
+
+    const dialog = screen.getByRole('dialog');
+    const dialogWithin = within(dialog);
+
+    expect(dialogWithin.getByRole('heading', { name: 'Delete Series' })).toBeInTheDocument();
+    expect(
+      dialogWithin.getByText(/Are you sure you want to delete "Solo Leveling"\?/i)
+    ).toBeInTheDocument();
+
+    const confirmDeleteBtn = dialogWithin.getByRole('button', { name: 'Delete' });
+    await user.click(confirmDeleteBtn);
+
+    expect(deleteSeries).toHaveBeenCalledWith('series-1');
   });
 });

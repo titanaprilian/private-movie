@@ -105,6 +105,23 @@ export function Shell({ children }: ShellProps) {
             </svg>
             {!sidebarCollapsed && <span>Videos</span>}
           </Link>
+          <Link
+            to="/genres"
+            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="shrink-0"
+            >
+              <path d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            {!sidebarCollapsed && <span>Genres</span>}
+          </Link>
         </nav>
 
         {/* User Profile at bottom */}
@@ -182,6 +199,13 @@ export function Shell({ children }: ShellProps) {
             className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
           >
             Videos
+          </Link>
+          <Link
+            to="/genres"
+            onClick={() => setIsMobileOpen(false)}
+            className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
+          >
+            Genres
           </Link>
         </nav>
         <div className="p-3 border-t border-c">
