@@ -44,6 +44,11 @@ export function SeriesGrid() {
   const [editDescription, setEditDescription] = useState('');
   const [editPosterUrl, setEditPosterUrl] = useState('');
   const [selectedGenreIds, setSelectedGenreIds] = useState<string[]>([]);
+  const [selectedRelations, setSelectedRelations] = useState<
+    Array<{ relatedSeriesId: string; relationType: string; title?: string | null }>
+  >([]);
+  const [newRelationId, setNewRelationId] = useState('');
+  const [newRelationType, setNewRelationType] = useState('sequel');
 
   useEffect(() => {
     setInputValue(search.q ?? '');
@@ -125,6 +130,16 @@ export function SeriesGrid() {
         .filter(Boolean);
     }
     setSelectedGenreIds(initialGenreIds);
+
+    const seriesListForLookup = data?.series ?? [];
+    const initialRelations = (item.relations ?? []).map((r) => ({
+      relatedSeriesId: r.relatedSeriesId,
+      relationType: r.relationType,
+      title: r.title ?? seriesListForLookup.find((s) => s.id === r.relatedSeriesId)?.title ?? r.relatedSeriesId,
+    }));
+    setSelectedRelations(initialRelations);
+    setNewRelationId('');
+    setNewRelationType('sequel');
   };
 
   const handleOpenDelete = (item: SeriesItem, e: React.MouseEvent) => {
@@ -390,6 +405,10 @@ export function SeriesGrid() {
                   description: editDescription || null,
                   posterUrl: editPosterUrl || null,
                   genreIds: selectedGenreIds,
+                  relations: selectedRelations.map((r) => ({
+                    relatedSeriesId: r.relatedSeriesId,
+                    relationType: r.relationType,
+                  })),
                 },
               });
             }}
@@ -460,6 +479,118 @@ export function SeriesGrid() {
                   })}
                 </div>
               )}
+            </div>
+
+            {/* Interactive manager for series relations */}
+            <div className="space-y-2 pt-1 border-t border-c">
+              <Label>Related Series</Label>
+
+              {/* List of currently assigned relations */}
+              {selectedRelations.length === 0 ? (
+                <p className="text-xs text-muted mono">No relations assigned.</p>
+              ) : (
+                <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                  {selectedRelations.map((rel, index) => (
+                    <div
+                      key={`${rel.relatedSeriesId}-${index}`}
+                      className="flex items-center justify-between p-2 rounded border border-c bg-sidebar text-xs"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span className="font-mono px-1.5 py-0.5 rounded border border-c bg-card text-[10px] uppercase text-muted">
+                          {rel.relationType}
+                        </span>
+                        <span className="truncate font-medium">
+                          {rel.title || rel.relatedSeriesId}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Remove relation"
+                        onClick={() => {
+                          setSelectedRelations(
+                            selectedRelations.filter((_, i) => i !== index)
+                          );
+                        }}
+                        className="p-1 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Form controls to add a new relation edge */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="add-relation-series" className="sr-only">
+                    Related Series
+                  </Label>
+                  <select
+                    id="add-relation-series"
+                    aria-label="Related Series"
+                    value={newRelationId}
+                    onChange={(e) => setNewRelationId(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded border border-c bg-transparent text-xs focus:outline-none focus:border-primary"
+                  >
+                    <option value="">Select a series...</option>
+                    {seriesList
+                      .filter((s) => s.id !== editingSeries?.id)
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.title}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="w-full sm:w-36 space-y-1">
+                  <Label htmlFor="add-relation-type" className="sr-only">
+                    Relation Type
+                  </Label>
+                  <Input
+                    id="add-relation-type"
+                    aria-label="Relation Type"
+                    value={newRelationType}
+                    onChange={(e) => setNewRelationType(e.target.value)}
+                    placeholder="Type (e.g. sequel)"
+                    className="h-8 text-xs"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                  onClick={() => {
+                    if (!newRelationId.trim() || !newRelationType.trim()) return;
+                    const matched = seriesList.find((s) => s.id === newRelationId.trim());
+                    setSelectedRelations([
+                      ...selectedRelations,
+                      {
+                        relatedSeriesId: newRelationId.trim(),
+                        relationType: newRelationType.trim(),
+                        title: matched?.title ?? newRelationId.trim(),
+                      },
+                    ]);
+                    setNewRelationId('');
+                    setNewRelationType('sequel');
+                  }}
+                >
+                  Add Relation
+                </Button>
+              </div>
             </div>
 
             <DialogFooter className="pt-2">

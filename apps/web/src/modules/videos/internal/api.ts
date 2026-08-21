@@ -513,6 +513,7 @@ export interface UpdateSeriesParams {
   description?: string | null;
   posterUrl?: string | null;
   genreIds?: string[];
+  relations?: { relatedSeriesId: string; relationType: string }[];
 }
 
 export async function updateSeries(
@@ -520,7 +521,7 @@ export async function updateSeries(
   updates: UpdateSeriesParams
 ): Promise<SeriesItem> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.series as any)[id].put(updates);
+  const res = await (api.series as any)[id].patch(updates);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
     throw new Error(

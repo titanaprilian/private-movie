@@ -300,6 +300,7 @@ describe('SeriesGrid component', () => {
       description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
       posterUrl: 'https://example.com/solo-leveling.jpg',
       genreIds: ['g-1'],
+      relations: [],
     });
   });
 
@@ -338,6 +339,7 @@ describe('SeriesGrid component', () => {
       description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
       posterUrl: 'https://example.com/solo-leveling.jpg',
       genreIds: ['g-1'],
+      relations: [],
     });
   });
 
@@ -359,5 +361,73 @@ describe('SeriesGrid component', () => {
     await user.click(confirmDeleteBtn);
 
     expect(deleteSeries).toHaveBeenCalledWith('series-1');
+  });
+
+  it('pre-fills assigned relations in Edit Dialog and allows adding and deleting relation edges before submitting', async () => {
+    const seriesWithRelationsResponse = {
+      series: [
+        {
+          ...mockSeriesResponse.series[0],
+          relations: [
+            {
+              relatedSeriesId: 'series-2',
+              relationType: 'sequel',
+              title: "Frieren: Beyond Journey's End",
+            },
+          ],
+        },
+        mockSeriesResponse.series[1],
+      ],
+      meta: { total: 2, page: 1, limit: 20 },
+    };
+    const { user } = renderSeriesGrid(seriesWithRelationsResponse);
+
+    const editBtn = screen.getByRole('button', { name: 'Edit Solo Leveling' });
+    await user.click(editBtn);
+
+    const dialog = screen.getByRole('dialog');
+    const dialogWithin = within(dialog);
+
+    // Verify existing relation is displayed
+    expect(dialogWithin.getAllByText("Frieren: Beyond Journey's End")[0]).toBeInTheDocument();
+    expect(dialogWithin.getByText('sequel')).toBeInTheDocument();
+
+    // Delete existing relation edge
+    const deleteEdgeBtn = dialogWithin.getByRole('button', { name: /remove relation/i });
+    await user.click(deleteEdgeBtn);
+
+    // After deleting, only the select option should have the text "Frieren: Beyond Journey's End"
+    expect(dialogWithin.getAllByText("Frieren: Beyond Journey's End")).toHaveLength(1);
+
+    // Add a new relation edge using select dropdown or raw input
+    const seriesSelect = dialogWithin.getByLabelText(/related series/i);
+    fireEvent.change(seriesSelect, { target: { value: 'series-2' } });
+
+    const relationTypeInput = dialogWithin.getByLabelText(/relation type/i);
+    fireEvent.change(relationTypeInput, { target: { value: 'prequel' } });
+
+    const addRelationBtn = dialogWithin.getByRole('button', { name: /add relation/i });
+    await user.click(addRelationBtn);
+
+    // Verify new relation edge appears in temporary list (now present in both list and option)
+    expect(dialogWithin.getAllByText("Frieren: Beyond Journey's End")).toHaveLength(2);
+    expect(dialogWithin.getByText('prequel')).toBeInTheDocument();
+
+    // Submit changes
+    const saveBtn = dialogWithin.getByRole('button', { name: 'Save Changes' });
+    await user.click(saveBtn);
+
+    expect(updateSeries).toHaveBeenCalledWith('series-1', {
+      title: 'Solo Leveling',
+      description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
+      posterUrl: 'https://example.com/solo-leveling.jpg',
+      genreIds: [],
+      relations: [
+        {
+          relatedSeriesId: 'series-2',
+          relationType: 'prequel',
+        },
+      ],
+    });
   });
 });
