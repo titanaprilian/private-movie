@@ -55,12 +55,21 @@ export interface SeriesListParams {
   genre?: string;
 }
 
+export type SeasonWithEpisodes = SeasonRow & {
+  episodes: EpisodeWithVideoSources[];
+};
+
+export type SeriesWithSeasons = SeriesRow & {
+  seasons: SeasonRow[];
+};
+
 export interface SeriesListResult {
-  series: SeriesRow[];
+  series: SeriesWithSeasons[];
   total: number;
 }
 
 export type SeriesWithEpisodes = SeriesRow & {
+  seasons: SeasonWithEpisodes[];
   episodes: EpisodeWithVideoSources[];
   relations: SeriesRelationItem[];
 };
@@ -144,7 +153,8 @@ export function createSeriesRepositoryInternal<
       const childSeasons = await db
         .select()
         .from(seasons)
-        .where(eq(seasons.seriesId, id));
+        .where(eq(seasons.seriesId, id))
+        .orderBy(asc(seasons.createdAt));
 
       const seasonIds = childSeasons.map((s) => s.id);
       let childEpisodes: EpisodeRow[] = [];
@@ -179,8 +189,23 @@ export function createSeriesRepositoryInternal<
         videoSources: sourcesMap.get(ep.id) ?? [],
       }));
 
+      const episodesBySeasonMap = new Map<string, EpisodeWithVideoSources[]>();
+      for (const ep of episodesWithSources) {
+        if (ep.seasonId) {
+          const list = episodesBySeasonMap.get(ep.seasonId) ?? [];
+          list.push(ep);
+          episodesBySeasonMap.set(ep.seasonId, list);
+        }
+      }
+
+      const seasonsWithEpisodes: SeasonWithEpisodes[] = childSeasons.map((s) => ({
+        ...s,
+        episodes: episodesBySeasonMap.get(s.id) ?? [],
+      }));
+
       return {
         ...seriesRow,
+        seasons: seasonsWithEpisodes,
         episodes: episodesWithSources,
         relations: [],
       };
@@ -242,8 +267,30 @@ export function createSeriesRepositoryInternal<
         db.select({ value: count() }).from(series).where(where),
       ]);
 
+      const seriesIds = rows.map((s) => s.id);
+      const seasonsMap = new Map<string, SeasonRow[]>();
+
+      if (seriesIds.length > 0) {
+        const childSeasons = await db
+          .select()
+          .from(seasons)
+          .where(inArray(seasons.seriesId, seriesIds))
+          .orderBy(asc(seasons.createdAt));
+
+        for (const s of childSeasons) {
+          const list = seasonsMap.get(s.seriesId) ?? [];
+          list.push(s);
+          seasonsMap.set(s.seriesId, list);
+        }
+      }
+
+      const seriesWithSeasons: SeriesWithSeasons[] = rows.map((s) => ({
+        ...s,
+        seasons: seasonsMap.get(s.id) ?? [],
+      }));
+
       return {
-        series: rows,
+        series: seriesWithSeasons,
         total: totalRows[0]?.value ?? 0,
       };
     },
@@ -251,7 +298,7 @@ export function createSeriesRepositoryInternal<
     async updateSeries(
       id: string,
       input: UpdateSeriesInput
-    ): Promise<SeriesRow & { relations: SeriesRelationItem[] }> {
+    ): Promise<SeriesWithSeasons & { relations: SeriesRelationItem[] }> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
         updatedAt: now,
@@ -293,8 +340,15 @@ export function createSeriesRepositoryInternal<
         }
       }
 
+      const childSeasons = await db
+        .select()
+        .from(seasons)
+        .where(eq(seasons.seriesId, id))
+        .orderBy(asc(seasons.createdAt));
+
       return {
         ...row,
+        seasons: childSeasons,
         relations: [],
       };
     },

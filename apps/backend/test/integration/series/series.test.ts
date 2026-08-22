@@ -95,6 +95,24 @@ describe("GET /series", () => {
     expect(body.data.meta).toEqual({ total: 0, page: 1, limit: 20 });
   });
 
+  it("returns paginated series with nested seasons hierarchy", async () => {
+    const seriesRow = await insertSeriesRow({ title: "Hierarchy Series" });
+
+    const response = await request(app, { path: "/series" });
+
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        series: { id: string; title: string; seasons: { id: string; seriesId: string }[] }[];
+      };
+    };
+
+    expect(body.data.series).toHaveLength(1);
+    expect(body.data.series[0].id).toBe(seriesRow.id);
+    expect(body.data.series[0].seasons).toHaveLength(1);
+    expect(body.data.series[0].seasons[0].seriesId).toBe(seriesRow.id);
+  });
+
   it("returns paginated series with correct meta fields on happy path", async () => {
     for (let i = 0; i < 3; i++) {
       await insertSeriesRow({
@@ -263,7 +281,7 @@ describe("GET /series/:id", () => {
     app = await buildApp();
   });
 
-  it("returns requested series joined with its child episodes array", async () => {
+  it("returns requested series joined with nested seasons and episodes hierarchy", async () => {
     const seriesRow = await insertSeriesRow({ title: "Parent Series" });
     const ep1 = await insertEpisodeRow({
       seriesId: seriesRow.id,
@@ -285,12 +303,21 @@ describe("GET /series/:id", () => {
       data: {
         id: string;
         title: string;
+        seasons: {
+          id: string;
+          seriesId: string;
+          episodes: { id: string; title: string }[];
+        }[];
         episodes: { id: string; title: string }[];
       };
     };
 
     expect(body.data.id).toBe(seriesRow.id);
     expect(body.data.title).toBe("Parent Series");
+    expect(body.data.seasons).toHaveLength(1);
+    expect(body.data.seasons[0].episodes).toHaveLength(2);
+    expect(body.data.seasons[0].episodes[0].id).toBe(ep1.id);
+    expect(body.data.seasons[0].episodes[1].id).toBe(ep2.id);
     expect(body.data.episodes).toHaveLength(2);
     expect(body.data.episodes[0].id).toBe(ep1.id);
     expect(body.data.episodes[1].id).toBe(ep2.id);

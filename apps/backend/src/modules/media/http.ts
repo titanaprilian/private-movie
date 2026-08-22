@@ -516,7 +516,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           const type = q.type as "movie" | "tv";
           const data = await mediaService.getTmdbPreview(type, q.tmdbId, q.season);
           return successResponse(data);
-        } catch (e: any) {
+        } catch (e: unknown) {
           if (e instanceof TmdbFetchError) {
             return errorResponse(set, e.status === 404 ? 404 : 400, e);
           }
@@ -553,7 +553,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             season: body.season,
           });
           return successResponse(updated);
-        } catch (e: any) {
+        } catch (e: unknown) {
           if (e instanceof SeriesNotFoundError) {
             return errorResponse(set, 404, e);
           }

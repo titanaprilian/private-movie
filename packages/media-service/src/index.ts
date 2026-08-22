@@ -1,5 +1,6 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import type { SeriesRow } from "@repo/db";
+import { asc, eq } from "drizzle-orm";
+import { seasons, type SeriesRow } from "@repo/db";
 import {
   MediaScraper,
   extractDirectVideoSources,
@@ -32,7 +33,7 @@ export type VideoSource = "otakudesu";
 
 export type { EpisodeRow as SavedEpisode, SeasonRow as SavedSeason, SeriesRow as SavedSeries } from "@repo/db";
 export type { EpisodeWithVideoSources };
-export type { SeriesWithEpisodes } from "./internal/series/repository";
+export type { SeriesWithEpisodes, SeriesWithSeasons, SeasonWithEpisodes } from "./internal/series/repository";
 export { EpisodeNotFoundError, createEpisodeRepositoryInternal } from "./internal/episodes/repository";
 export { SeasonNotFoundError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
 export { SeriesNotFoundError, createSeriesRepositoryInternal } from "./internal/series/repository";
@@ -178,9 +179,11 @@ export interface SaveMediaInput {
   series?: SaveMediaSeriesInput | null;
 }
 
+import type { SeriesWithSeasons } from "./internal/series/repository";
+
 export interface SaveMediaResult {
   episode: EpisodeWithVideoSources;
-  series: SeriesRow | null;
+  series: SeriesWithSeasons | null;
 }
 
 export interface SaveEpisodeServiceOptions {
@@ -192,7 +195,7 @@ export interface MediaService {
   previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult>;
-  matchTmdb(input: TmdbMatchInput): Promise<SeriesRow>;
+  matchTmdb(input: TmdbMatchInput): Promise<SeriesWithSeasons>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -495,9 +498,17 @@ export function createMediaService<
 
         const episodeWithSources = await episodeRepositoryTx.findById(episodeRow.id);
 
+        const childSeasons = seriesRow
+          ? await tx
+              .select()
+              .from(seasons)
+              .where(eq(seasons.seriesId, seriesRow.id))
+              .orderBy(asc(seasons.createdAt))
+          : [];
+
         return {
           episode: episodeWithSources!,
-          series: seriesRow,
+          series: seriesRow ? { ...seriesRow, seasons: childSeasons } : null,
         };
       });
     },
@@ -506,7 +517,7 @@ export function createMediaService<
       return getTmdbPreview(type, tmdbId, season);
     },
 
-    async matchTmdb(input: TmdbMatchInput): Promise<SeriesRow> {
+    async matchTmdb(input: TmdbMatchInput): Promise<SeriesWithSeasons> {
       const targetSeries = await seriesRepository.findById(input.seriesId);
       if (!targetSeries) {
         throw new SeriesNotFoundError(`Series not found`);

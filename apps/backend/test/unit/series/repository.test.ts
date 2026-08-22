@@ -122,6 +122,8 @@ describe("series repository list", () => {
     expect(page1.total).toBe(3);
     expect(page1.series).toHaveLength(2);
     expect(page1.series[0].id).toBe(s3.id);
+    expect(page1.series[0].seasons).toHaveLength(1);
+    expect(page1.series[0].seasons[0].seriesId).toBe(s3.id);
     expect(page1.series[1].id).toBe(s2.id);
 
     const page2 = await repository.list({ page: 2, limit: 2 });
@@ -180,6 +182,10 @@ describe("series repository findByIdWithEpisodes", () => {
     expect(result).not.toBeNull();
     expect(result?.id).toBe(s.id);
     expect(result?.title).toBe("Parent Series");
+    expect(result?.seasons).toHaveLength(1);
+    expect(result?.seasons[0].episodes).toHaveLength(2);
+    expect(result?.seasons[0].episodes[0].id).toBe(ep1.id);
+    expect(result?.seasons[0].episodes[1].id).toBe(ep2.id);
     expect(result?.episodes).toHaveLength(2);
     expect(result?.episodes[0].id).toBe(ep1.id);
     expect(result?.episodes[1].id).toBe(ep2.id);
