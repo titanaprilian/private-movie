@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
-import { createDbClient, series } from "@repo/db";
+import { createDbClient, seasons, series } from "@repo/db";
 import crypto from "node:crypto";
 
 const db = createDbClient(process.env.DATABASE_URL);
@@ -295,6 +295,99 @@ describe("TMDB Manual Match", () => {
       expect(updated?.backdropUrl).toBe("/tv_bg.jpg");
       expect(updated?.rating).toBe("9.1");
       expect(updated?.tmdbId).toBe(999);
+    });
+
+    it("reparents season to existing TMDB series and destroys orphan stub via HTTP API", async () => {
+      vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+        const url = input.toString();
+        if (url.includes("/tv/888") && !url.includes("season")) {
+          return new Response(
+            JSON.stringify({
+              id: 888,
+              name: "Jujutsu Kaisen",
+              poster_path: "/jjk_main.jpg",
+              overview: "Sorcerers fighting curses",
+              backdrop_path: "/jjk_bg.jpg",
+              vote_average: 8.8,
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes("/tv/888/season/2")) {
+          return new Response(
+            JSON.stringify({
+              name: "Shibuya Incident",
+              poster_path: "/jjk_s2.jpg",
+              overview: "Shibuya Arc",
+            }),
+            { status: 200 }
+          );
+        }
+        throw new Error(`Unexpected fetch URL: ${url}`);
+      });
+
+      const [existingParentSeries] = await db
+        .insert(series)
+        .values({
+          id: crypto.randomUUID(),
+          title: "Jujutsu Kaisen",
+          type: "tv",
+          tmdbId: 888,
+          tmdbSyncStatus: "SYNCED",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      const [stubSeriesRecord] = await db
+        .insert(series)
+        .values({
+          id: crypto.randomUUID(),
+          title: "Jujutsu Kaisen Season 2 Scraped",
+          type: "tv",
+          tmdbSyncStatus: "PENDING",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      const [seasonRecord] = await db
+        .insert(seasons)
+        .values({
+          id: crypto.randomUUID(),
+          seriesId: stubSeriesRecord.id,
+          sourceUrl: "https://otakudesu.blog/anime/jjk-s2",
+          source: "otakudesu",
+          title: "JJK Season 2",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      const reqOptions = {
+        method: "POST",
+        path: `/series/${stubSeriesRecord.id}/tmdb-match`,
+        headers,
+        body: { type: "tv", tmdbId: 888, season: 2 },
+      };
+
+      const result = await request(app, reqOptions);
+      expect(result.status).toBe(200);
+      expect((result.body as any).data.id).toBe(existingParentSeries.id);
+
+      // Verify season repointed
+      const [repointedSeason] = await db
+        .select()
+        .from(seasons)
+        .where(require("drizzle-orm").eq(seasons.id, seasonRecord.id));
+      expect(repointedSeason.seriesId).toBe(existingParentSeries.id);
+
+      // Verify stub series destroyed
+      const stubCheck = await db
+        .select()
+        .from(series)
+        .where(require("drizzle-orm").eq(series.id, stubSeriesRecord.id));
+      expect(stubCheck).toHaveLength(0);
     });
   });
 });

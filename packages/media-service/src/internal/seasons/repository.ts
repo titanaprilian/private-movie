@@ -84,5 +84,12 @@ export function createSeasonsRepositoryInternal<
         .where(eq(seasons.id, id));
       return row ?? null;
     },
+
+    async reparentSeasons(fromSeriesId: string, toSeriesId: string): Promise<void> {
+      await db
+        .update(seasons)
+        .set({ seriesId: toSeriesId, updatedAt: new Date() })
+        .where(eq(seasons.seriesId, fromSeriesId));
+    },
   };
 }

@@ -123,6 +123,14 @@ export function createSeriesRepositoryInternal<
       return row ?? null;
     },
 
+    async findByTmdbId(tmdbId: number): Promise<SeriesRow | null> {
+      const [row] = await db
+        .select()
+        .from(series)
+        .where(eq(series.tmdbId, tmdbId));
+      return row ?? null;
+    },
+
     async findByIdWithEpisodes(id: string): Promise<SeriesWithEpisodes | null> {
       const [seriesRow] = await db
         .select()

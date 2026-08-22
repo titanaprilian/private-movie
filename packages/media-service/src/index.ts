@@ -507,8 +507,8 @@ export function createMediaService<
     },
 
     async matchTmdb(input: TmdbMatchInput): Promise<SeriesRow> {
-      const existingSeries = await seriesRepository.findById(input.seriesId);
-      if (!existingSeries) {
+      const targetSeries = await seriesRepository.findById(input.seriesId);
+      if (!targetSeries) {
         throw new SeriesNotFoundError(`Series not found`);
       }
 
@@ -518,7 +518,6 @@ export function createMediaService<
       let title = "";
       let overview = "";
       let vote_average = null;
-      let seasonNumber = 1;
 
       if (input.type === "movie") {
         details = await fetchFromTmdb<any>(`/movie/${input.tmdbId}?language=en-US`);
@@ -537,26 +536,53 @@ export function createMediaService<
         poster_path = seasonDetails.poster_path || details.poster_path;
         backdrop_path = details.backdrop_path;
         vote_average = details.vote_average;
-        seasonNumber = seasonNum;
       }
 
-      const updatedDescription = overview || existingSeries.description;
-      const updatedPoster = poster_path || existingSeries.posterUrl;
       const ratingStr = vote_average ? String(vote_average) : undefined;
-      
-      const payload = {
-        title: title || existingSeries.title,
-        description: updatedDescription,
-        posterUrl: updatedPoster,
-        backdropUrl: backdrop_path,
-        rating: ratingStr,
-        tmdbId: details.id,
-        tmdbSeason: seasonNumber,
-        tmdbSyncStatus: "SYNCED" as const,
-      };
 
-      const updated = await seriesRepository.updateSeries(input.seriesId, payload);
-      return updated;
+      return await db.transaction(async (tx) => {
+        const seriesRepositoryTx = createSeriesRepositoryInternal(tx);
+        const seasonsRepositoryTx = createSeasonsRepositoryInternal(tx);
+
+        const existingTmdbSeries = await seriesRepositoryTx.findByTmdbId(details.id);
+
+        if (existingTmdbSeries && existingTmdbSeries.id !== targetSeries.id) {
+          await seasonsRepositoryTx.reparentSeasons(targetSeries.id, existingTmdbSeries.id);
+
+          const updatedDescription = overview || existingTmdbSeries.description;
+          const updatedPoster = poster_path || existingTmdbSeries.posterUrl;
+
+          const payload = {
+            title: title || existingTmdbSeries.title,
+            description: updatedDescription,
+            posterUrl: updatedPoster,
+            backdropUrl: backdrop_path || existingTmdbSeries.backdropUrl,
+            rating: ratingStr || existingTmdbSeries.rating,
+            tmdbId: details.id,
+            tmdbSyncStatus: "SYNCED" as const,
+          };
+
+          const updated = await seriesRepositoryTx.updateSeries(existingTmdbSeries.id, payload);
+          await seriesRepositoryTx.deleteSeries(targetSeries.id);
+          return updated;
+        } else {
+          const updatedDescription = overview || targetSeries.description;
+          const updatedPoster = poster_path || targetSeries.posterUrl;
+
+          const payload = {
+            title: title || targetSeries.title,
+            description: updatedDescription,
+            posterUrl: updatedPoster,
+            backdropUrl: backdrop_path,
+            rating: ratingStr,
+            tmdbId: details.id,
+            tmdbSyncStatus: "SYNCED" as const,
+          };
+
+          const updated = await seriesRepositoryTx.updateSeries(targetSeries.id, payload);
+          return updated;
+        }
+      });
     },
   };
 }
