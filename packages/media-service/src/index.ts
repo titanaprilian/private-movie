@@ -13,6 +13,7 @@ import {
   type FetchFn as ScraperFetchFn,
 } from "@repo/media-scraper";
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
+import { createSeasonsRepositoryInternal, SeasonNotFoundError } from "./internal/seasons/repository";
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
 import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
 import { fetchFromTmdb, getTmdbPreview, TmdbFetchError, type TmdbPreviewResult } from "./internal/tmdb/service";
@@ -29,10 +30,11 @@ export interface TmdbMatchInput {
 
 export type VideoSource = "otakudesu";
 
-export type { EpisodeRow as SavedEpisode, SeriesRow as SavedSeries } from "@repo/db";
+export type { EpisodeRow as SavedEpisode, SeasonRow as SavedSeason, SeriesRow as SavedSeries } from "@repo/db";
 export type { EpisodeWithVideoSources };
 export type { SeriesWithEpisodes } from "./internal/series/repository";
 export { EpisodeNotFoundError, createEpisodeRepositoryInternal } from "./internal/episodes/repository";
+export { SeasonNotFoundError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
 export { SeriesNotFoundError, createSeriesRepositoryInternal } from "./internal/series/repository";
 export { VideoSourceNotFoundError, createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
 export type {
@@ -407,20 +409,47 @@ export function createMediaService<
       return await db.transaction(async (tx) => {
         const episodeRepositoryTx = createEpisodeRepositoryInternal(tx);
         const seriesRepositoryTx = createSeriesRepositoryInternal(tx);
+        const seasonsRepositoryTx = createSeasonsRepositoryInternal(tx);
         const videoSourceRepositoryTx = createVideoSourceRepositoryInternal(tx);
 
-        let seriesId: string | null = null;
+        let seasonId: string | null = null;
         let seriesRow: SeriesRow | null = null;
 
         if (input.series) {
-          seriesRow = await seriesRepositoryTx.upsert({
+          let existingSeason = await seasonsRepositoryTx.findBySourceUrl(input.series.sourceUrl);
+          let parentSeriesId: string;
+
+          if (existingSeason) {
+            parentSeriesId = existingSeason.seriesId;
+            seriesRow = await seriesRepositoryTx.upsert({
+              id: parentSeriesId,
+              title: input.series.title,
+              description: input.series.description ?? null,
+              posterUrl: input.series.posterUrl ?? null,
+            });
+          } else {
+            const isMovie =
+              input.episode.videoType?.toLowerCase() === "movie" ||
+              input.series.title.toLowerCase().includes("movie");
+            seriesRow = await seriesRepositoryTx.upsert({
+              title: input.series.title,
+              description: input.series.description ?? null,
+              posterUrl: input.series.posterUrl ?? null,
+              type: isMovie ? "movie" : "tv",
+              tmdbSyncStatus: "PENDING",
+            });
+            parentSeriesId = seriesRow.id;
+          }
+
+          const seasonRow = await seasonsRepositoryTx.upsert({
+            seriesId: parentSeriesId,
             sourceUrl: input.series.sourceUrl,
             source: input.series.source,
             title: input.series.title,
             description: input.series.description ?? null,
             posterUrl: input.series.posterUrl ?? null,
           });
-          seriesId = seriesRow.id;
+          seasonId = seasonRow.id;
         }
 
         let order = parseEpisodeOrder(input.episode.title);
@@ -431,7 +460,7 @@ export function createMediaService<
           if (existing) {
             order = existing.order;
           } else {
-            const maxOrder = await episodeRepositoryTx.getMaxOrder(seriesId);
+            const maxOrder = await episodeRepositoryTx.getMaxOrder(seasonId);
             order = maxOrder + 1;
           }
         }
@@ -443,7 +472,7 @@ export function createMediaService<
           order,
           videoType: input.episode.videoType ?? null,
           metadata: input.episode.metadata as ParsedMetadata,
-          seriesId,
+          seasonId,
         });
 
         if (input.episode.videoSources && input.episode.videoSources.length > 0) {

@@ -9,9 +9,12 @@ describe("db schema exports", () => {
     expect(schema.seriesToGenres).toBeDefined();
     expect(schema.series).toBeDefined();
     expect(schema.series.tmdbId).toBeDefined();
-    expect(schema.series.tmdbSeason).toBeDefined();
+    expect(schema.series.type).toBeDefined();
     expect(schema.series.backdropUrl).toBeDefined();
     expect(schema.series.rating).toBeDefined();
     expect(schema.series.tmdbSyncStatus).toBeDefined();
+    expect(schema.seasons).toBeDefined();
+    expect(schema.seasons.tmdbSeason).toBeDefined();
+    expect(schema.seasons.seriesId).toBeDefined();
   });
 });

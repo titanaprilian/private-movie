@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { createDbClient } from "./client";
-import { series } from "./schema/media";
+import { series, seasons } from "./schema/media";
 import { parseLocalTitle } from "./tmdb/parser";
 import { findBestMatch, findMatchingSeason } from "./tmdb/matcher";
 import type { 
@@ -42,11 +42,11 @@ async function fetchFromTmdb<T>(endpoint: string): Promise<T> {
 }
 
 async function runTmdbSync() {
-  console.log("Fetching PENDING series from database...");
+  console.log("Fetching PENDING seasons from database...");
   const records = await db
     .select()
-    .from(series)
-    .where(eq(series.tmdbSyncStatus, "PENDING"));
+    .from(seasons)
+    .where(eq(seasons.tmdbSyncStatus, "PENDING"));
 
   console.log(`Found ${records.length} series to sync.`);
 
@@ -91,7 +91,7 @@ async function runTmdbSync() {
 
         if (!season) {
           console.log(`❌ Found TV Show, but missing seasons entirely on TMDB. Moving to FAILED.`);
-          await db.update(series).set({ tmdbSyncStatus: "FAILED" }).where(eq(series.id, record.id));
+          await db.update(seasons).set({ tmdbSyncStatus: "FAILED" }).where(eq(seasons.id, record.id));
           failed++;
         } else {
           // Construct update payload
@@ -101,7 +101,7 @@ async function runTmdbSync() {
           const backdrop = details.backdrop_path;
           const ratingStr = details.vote_average ? String(details.vote_average) : undefined;
 
-          await db.update(series).set({
+          await db.update(seasons).set({
             tmdbId: details.id,
             tmdbSeason: season.season_number,
             title: updatedTitle,
@@ -110,7 +110,7 @@ async function runTmdbSync() {
             backdropUrl: backdrop,
             rating: ratingStr,
             tmdbSyncStatus: "SYNCED"
-          }).where(eq(series.id, record.id));
+          }).where(eq(seasons.id, record.id));
 
           console.log(`🌟 SUCCESSFULLY synced TV data for season ${season.season_number}!`);
           succeeded++;
@@ -148,7 +148,7 @@ async function runTmdbSync() {
           const backdrop = details.backdrop_path;
           const ratingStr = details.vote_average ? String(details.vote_average) : undefined;
 
-          await db.update(series).set({
+          await db.update(seasons).set({
             tmdbId: details.id,
             tmdbSeason: 1,
             title: updatedTitle,
@@ -157,20 +157,20 @@ async function runTmdbSync() {
             backdropUrl: backdrop,
             rating: ratingStr,
             tmdbSyncStatus: "SYNCED"
-          }).where(eq(series.id, record.id));
+          }).where(eq(seasons.id, record.id));
 
           console.log(`🌟 SUCCESSFULLY synced MOVIE data!`);
           succeeded++;
         } else {
           console.log(`❌ No confident match in TV nor MOVIE endpoints. Moving to FAILED.`);
-          await db.update(series).set({ tmdbSyncStatus: "FAILED" }).where(eq(series.id, record.id));
+          await db.update(seasons).set({ tmdbSyncStatus: "FAILED" }).where(eq(seasons.id, record.id));
           failed++;
         }
       }
     } catch (error) {
       console.error(`💥 Error processing record ${record.id}:`, error);
       console.log("Flagging as FAILED.");
-      await db.update(series).set({ tmdbSyncStatus: "FAILED" }).where(eq(series.id, record.id));
+      await db.update(seasons).set({ tmdbSyncStatus: "FAILED" }).where(eq(seasons.id, record.id));
       failed++;
     }
 

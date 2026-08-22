@@ -32,8 +32,6 @@ async function insertTestSeries(overrides?: Partial<{
 
   await db.insert(series).values({
     id,
-    sourceUrl,
-    source,
     title,
     description,
     posterUrl,

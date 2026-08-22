@@ -1,18 +1,17 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, series } from "@repo/db";
+import { episodes, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
 
 async function insertSeriesRow(): Promise<{ id: string }> {
   const now = new Date();
-  const rows = await db
+  const id = crypto.randomUUID();
+  const [row] = await db
     .insert(series)
     .values({
-      id: crypto.randomUUID(),
-      sourceUrl: `https://otakudesu.blog/anime/delete-series-${crypto.randomUUID()}/`,
-      source: "otakudesu",
+      id,
       title: "Series To Delete",
       description: "Sample Description",
       posterUrl: "https://example.com/poster.jpg",
@@ -20,12 +19,24 @@ async function insertSeriesRow(): Promise<{ id: string }> {
       updatedAt: now,
     })
     .returning();
-  return rows[0];
+
+  await db.insert(seasons).values({
+    id: crypto.randomUUID(),
+    seriesId: id,
+    sourceUrl: `https://otakudesu.blog/anime/delete-series-${id}/`,
+    source: "otakudesu",
+    title: "Series To Delete",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  return row;
 }
 
 async function insertEpisodeRow(seriesId: string): Promise<{ id: string }> {
   const now = new Date();
-  const rows = await db
+  const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, seriesId));
+  const [row] = await db
     .insert(episodes)
     .values({
       id: crypto.randomUUID(),
@@ -34,12 +45,12 @@ async function insertEpisodeRow(seriesId: string): Promise<{ id: string }> {
       title: "Episode in Series",
       videoType: null,
       metadata: {},
-      seriesId,
+      seasonId: season.id,
       createdAt: now,
       updatedAt: now,
     })
     .returning();
-  return rows[0];
+  return row;
 }
 
 describe("DELETE /series/:id", () => {
@@ -152,7 +163,7 @@ describe("DELETE /series/:id", () => {
         .from(episodes)
         .where(eq(episodes.id, epRow.id));
       expect(remainingEpisode).toHaveLength(1);
-      expect(remainingEpisode[0].seriesId).toBeNull();
+      expect(remainingEpisode[0].seasonId).toBeNull();
     });
   });
 });

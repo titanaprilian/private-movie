@@ -42,10 +42,8 @@ describe("TMDB Manual Match", () => {
       const [seriesRecord] = await db.insert(series).values({
         id: crypto.randomUUID(),
         title: "Initial Title",
-        sourceUrl: "http://example.com/initial",
-        source: "some_source",
+        type: "tv",
         posterUrl: "",
-        status: "ONGOING",
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
@@ -88,10 +86,8 @@ describe("TMDB Manual Match", () => {
       const [seriesRecord] = await db.insert(series).values({
         id: crypto.randomUUID(),
         title: "Initial Title",
-        sourceUrl: "http://example.com/initial-tv",
-        source: "some_source",
+        type: "tv",
         posterUrl: "",
-        status: "ONGOING",
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
@@ -119,10 +115,8 @@ describe("TMDB Manual Match", () => {
       const [seriesRecord] = await db.insert(series).values({
         id: crypto.randomUUID(),
         title: "Test Series",
-        sourceUrl: "http://example.com/missing-key",
-        source: "some_source",
+        type: "tv",
         posterUrl: "",
-        status: "ONGOING",
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
@@ -151,10 +145,8 @@ describe("TMDB Manual Match", () => {
       const [seriesRecord] = await db.insert(series).values({
         id: crypto.randomUUID(),
         title: "Test Series 2",
-        sourceUrl: "http://example.com/tmdb-404",
-        source: "some_source",
+        type: "tv",
         posterUrl: "",
-        status: "ONGOING",
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
@@ -217,10 +209,8 @@ describe("TMDB Manual Match", () => {
       const [seriesRecord] = await db.insert(series).values({
         id: crypto.randomUUID(),
         title: "Old Title",
-        sourceUrl: "http://example.com/old",
-        source: "some_source",
+        type: "tv",
         posterUrl: "",
-        status: "ONGOING",
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
@@ -248,7 +238,6 @@ describe("TMDB Manual Match", () => {
       expect(updated?.backdropUrl).toBe("/movie_manual_bg.jpg");
       expect(updated?.rating).toBe("8.5");
       expect(updated?.tmdbId).toBe(789);
-      expect(updated?.tmdbSeason).toBe(1);
     });
 
     it("updates series with manual tv match successfully", async () => {
@@ -277,10 +266,8 @@ describe("TMDB Manual Match", () => {
       const [seriesRecord] = await db.insert(series).values({
         id: crypto.randomUUID(),
         title: "Old TV Title",
-        sourceUrl: "http://example.com/old-tv",
-        source: "some_source",
+        type: "tv",
         posterUrl: "",
-        status: "ONGOING",
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
@@ -308,7 +295,6 @@ describe("TMDB Manual Match", () => {
       expect(updated?.backdropUrl).toBe("/tv_bg.jpg");
       expect(updated?.rating).toBe("9.1");
       expect(updated?.tmdbId).toBe(999);
-      expect(updated?.tmdbSeason).toBe(3);
     });
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
-import { episodes, series, videoSources } from "@repo/db";
+import { episodes, seasons, series, videoSources } from "@repo/db";
 import { buildApp, request } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import { db } from "../../utils/db";
@@ -159,7 +159,7 @@ describe("POST /save-media", () => {
             source: string;
             title: string;
             videoType: string | null;
-            seriesId: string | null;
+            seasonId: string | null;
           };
           series: null;
         };
@@ -168,7 +168,7 @@ describe("POST /save-media", () => {
       expect(body.data).toBeDefined();
       expect(body.data.episode.id).toBeTypeOf("string");
       expect(body.data.episode.sourceUrl).toBe(epSourceUrl);
-      expect(body.data.episode.seriesId).toBeNull();
+      expect(body.data.episode.seasonId).toBeNull();
       expect(body.data.series).toBeNull();
 
       // Verify DB record
@@ -178,7 +178,7 @@ describe("POST /save-media", () => {
         .where(eq(episodes.sourceUrl, epSourceUrl));
       expect(epRows).toHaveLength(1);
       expect(epRows[0].id).toBe(body.data.episode.id);
-      expect(epRows[0].seriesId).toBeNull();
+      expect(epRows[0].seasonId).toBeNull();
     });
 
     it("creates episode and series records and links them when series payload is provided", async () => {
@@ -221,11 +221,10 @@ describe("POST /save-media", () => {
           episode: {
             id: string;
             sourceUrl: string;
-            seriesId: string;
+            seasonId: string;
           };
           series: {
             id: string;
-            sourceUrl: string;
             title: string;
             description: string | null;
             posterUrl: string | null;
@@ -235,26 +234,25 @@ describe("POST /save-media", () => {
 
       expect(body.data.series).toBeDefined();
       expect(body.data.series.id).toBeTypeOf("string");
-      expect(body.data.series.sourceUrl).toBe(seriesSourceUrl);
       expect(body.data.series.title).toBe("Integration Test Series 2");
 
       expect(body.data.episode.id).toBeTypeOf("string");
-      expect(body.data.episode.seriesId).toBe(body.data.series.id);
+      expect(body.data.episode.seasonId).not.toBeNull();
 
       // Verify DB persistence & FK linkage
-      const seriesRows = await db
+      const seasonRows = await db
         .select()
-        .from(series)
-        .where(eq(series.sourceUrl, seriesSourceUrl));
-      expect(seriesRows).toHaveLength(1);
-      expect(seriesRows[0].id).toBe(body.data.series.id);
+        .from(seasons)
+        .where(eq(seasons.sourceUrl, seriesSourceUrl));
+      expect(seasonRows).toHaveLength(1);
+      expect(seasonRows[0].seriesId).toBe(body.data.series.id);
 
       const epRows = await db
         .select()
         .from(episodes)
         .where(eq(episodes.sourceUrl, epSourceUrl));
       expect(epRows).toHaveLength(1);
-      expect(epRows[0].seriesId).toBe(body.data.series.id);
+      expect(epRows[0].seasonId).toBe(seasonRows[0].id);
     });
 
     it("parses order from episode title when present and defaults to max + 1 when unnumbered", async () => {

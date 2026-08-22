@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { episodes, series } from "@repo/db";
+import { eq } from "drizzle-orm";
+import { episodes, seasons, series } from "@repo/db";
 import { createSeriesRepositoryInternal } from "@repo/media-service";
 import { db } from "../../utils/db";
 
@@ -22,8 +23,6 @@ async function insertSeries(overrides?: {
     .insert(series)
     .values({
       id,
-      sourceUrl,
-      source,
       title,
       description,
       posterUrl: "https://example.com/poster.jpg",
@@ -31,6 +30,20 @@ async function insertSeries(overrides?: {
       updatedAt: now,
     })
     .returning();
+
+  await db
+    .insert(seasons)
+    .values({
+      id: crypto.randomUUID(),
+      seriesId: id,
+      sourceUrl,
+      source,
+      title,
+      description,
+      posterUrl: "https://example.com/poster.jpg",
+      createdAt: now,
+      updatedAt: now,
+    });
 
   return row;
 }
@@ -42,6 +55,28 @@ async function insertEpisodeForSeries(
   const id = crypto.randomUUID();
   const now = overrides?.createdAt ?? new Date();
 
+  const [season] = await db
+    .select()
+    .from(seasons)
+    .where(eq(seasons.seriesId, seriesId));
+
+  let seasonId = season?.id;
+  if (!seasonId) {
+    const [newSeason] = await db
+      .insert(seasons)
+      .values({
+        id: crypto.randomUUID(),
+        seriesId,
+        sourceUrl: `https://otakudesu.blog/anime/season-${id}/`,
+        source: "otakudesu",
+        title: "Season Title",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    seasonId = newSeason.id;
+  }
+
   const [row] = await db
     .insert(episodes)
     .values({
@@ -51,7 +86,7 @@ async function insertEpisodeForSeries(
       title: overrides?.title ?? "Episode Title",
       videoType: null,
       metadata: {},
-      seriesId,
+      seasonId,
       createdAt: now,
       updatedAt: now,
     })
@@ -65,6 +100,7 @@ describe("series repository list", () => {
 
   beforeEach(async () => {
     await db.delete(episodes);
+    await db.delete(seasons);
     await db.delete(series);
   });
 
@@ -99,7 +135,6 @@ describe("series repository list", () => {
 
     const filtered = await repository.list({ page: 1, limit: 10, source: "otakudesu" });
     expect(filtered.total).toBe(1);
-    expect(filtered.series[0].source).toBe("otakudesu");
   });
 
   it("filters by q parameter matching title or description case-insensitively", async () => {
@@ -126,6 +161,7 @@ describe("series repository findByIdWithEpisodes", () => {
 
   beforeEach(async () => {
     await db.delete(episodes);
+    await db.delete(seasons);
     await db.delete(series);
   });
 
@@ -169,6 +205,7 @@ describe("series repository updateSeries", () => {
 
   beforeEach(async () => {
     await db.delete(episodes);
+    await db.delete(seasons);
     await db.delete(series);
   });
 
@@ -199,6 +236,7 @@ describe("series repository deleteSeries", () => {
 
   beforeEach(async () => {
     await db.delete(episodes);
+    await db.delete(seasons);
     await db.delete(series);
   });
 

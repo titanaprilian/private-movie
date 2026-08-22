@@ -21,6 +21,6 @@ export const db = drizzle(sql);
  */
 export async function truncateAll(): Promise<void> {
   await sql.unsafe(
-    "TRUNCATE TABLE refresh_tokens, users, system, video_sources, episodes, series_to_genres, series, genres CASCADE"
+    "TRUNCATE TABLE refresh_tokens, users, system, video_sources, episodes, series_to_genres, seasons, series, genres CASCADE"
   );
 }

@@ -111,9 +111,10 @@ describe("Genres Migration Unit Tests", () => {
       const mockDb = {
         select: vi.fn().mockReturnValue({
           from: vi.fn().mockImplementation((table) => {
-            // First call fetches episodes, second call fetches existing genres
             if (mockDb.select.mock.calls.length === 1) {
-              return Promise.resolve(mockEpisodesData);
+              return {
+                innerJoin: vi.fn().mockResolvedValue(mockEpisodesData),
+              };
             }
             return Promise.resolve(mockExistingGenres);
           }),

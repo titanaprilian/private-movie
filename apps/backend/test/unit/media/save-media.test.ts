@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, series, videoSources } from "@repo/db";
+import { episodes, seasons, series, videoSources } from "@repo/db";
 import { createMediaService } from "@repo/media-service";
 import { db } from "../../utils/db";
 
@@ -10,6 +10,7 @@ describe("createMediaService saveMedia", () => {
   beforeEach(async () => {
     await db.delete(videoSources);
     await db.delete(episodes);
+    await db.delete(seasons);
     await db.delete(series);
   });
 
@@ -45,7 +46,7 @@ describe("createMediaService saveMedia", () => {
     expect(result.episode.id).toBeTypeOf("string");
     expect(result.episode.sourceUrl).toBe(episodeInput.sourceUrl);
     expect(result.episode.title).toBe(episodeInput.title);
-    expect(result.episode.seriesId).toBeNull();
+    expect(result.episode.seasonId).toBeNull();
     expect(result.series).toBeNull();
 
     // Verify episode row in DB
@@ -80,7 +81,7 @@ describe("createMediaService saveMedia", () => {
     );
   });
 
-  it("saves series and episode linked via seriesId when series is provided", async () => {
+  it("saves series and episode linked via seasonId when series is provided", async () => {
     const seriesInput = {
       sourceUrl: "https://otakudesu.blog/anime/save-media-unit-series-1/",
       source: "otakudesu" as const,
@@ -112,27 +113,26 @@ describe("createMediaService saveMedia", () => {
     expect(result.series).toBeDefined();
     expect(result.series).not.toBeNull();
     expect(result.series!.id).toBeTypeOf("string");
-    expect(result.series!.sourceUrl).toBe(seriesInput.sourceUrl);
     expect(result.series!.title).toBe(seriesInput.title);
 
     expect(result.episode).toBeDefined();
     expect(result.episode.sourceUrl).toBe(episodeInput.sourceUrl);
-    expect(result.episode.seriesId).toBe(result.series!.id);
+    expect(result.episode.seasonId).not.toBeNull();
 
     // Verify DB linkage
-    const seriesRows = await db
+    const seasonRows = await db
       .select()
-      .from(series)
-      .where(eq(series.sourceUrl, seriesInput.sourceUrl));
-    expect(seriesRows).toHaveLength(1);
-    expect(seriesRows[0].id).toBe(result.series!.id);
+      .from(seasons)
+      .where(eq(seasons.sourceUrl, seriesInput.sourceUrl));
+    expect(seasonRows).toHaveLength(1);
+    expect(seasonRows[0].seriesId).toBe(result.series!.id);
 
     const epRows = await db
       .select()
       .from(episodes)
       .where(eq(episodes.sourceUrl, episodeInput.sourceUrl));
     expect(epRows).toHaveLength(1);
-    expect(epRows[0].seriesId).toBe(result.series!.id);
+    expect(epRows[0].seasonId).toBe(seasonRows[0].id);
   });
 
   it("upserts existing series and episode records when re-submitted", async () => {

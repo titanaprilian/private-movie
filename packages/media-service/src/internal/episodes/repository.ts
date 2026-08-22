@@ -37,6 +37,7 @@ export interface EpisodeUpsertInput {
   order?: number;
   videoType: string | null;
   metadata: ParsedMetadata;
+  seasonId?: string | null;
   seriesId?: string | null;
 }
 
@@ -58,6 +59,7 @@ export function createEpisodeRepositoryInternal<
   return {
     async upsert(input: EpisodeUpsertInput): Promise<EpisodeRow> {
       const now = new Date();
+      const seasonId = input.seasonId ?? input.seriesId ?? null;
       const [row] = await db
         .insert(episodes)
         .values({
@@ -68,7 +70,7 @@ export function createEpisodeRepositoryInternal<
           order: input.order ?? 1,
           videoType: input.videoType,
           metadata: input.metadata,
-          seriesId: input.seriesId ?? null,
+          seasonId,
           createdAt: now,
           updatedAt: now,
         })
@@ -80,7 +82,7 @@ export function createEpisodeRepositoryInternal<
             ...(input.order !== undefined ? { order: input.order } : {}),
             videoType: input.videoType,
             metadata: input.metadata,
-            seriesId: input.seriesId ?? undefined,
+            seasonId: seasonId ?? undefined,
             updatedAt: now,
           },
         })
@@ -115,10 +117,10 @@ export function createEpisodeRepositoryInternal<
       };
     },
 
-    async getMaxOrder(seriesId: string | null): Promise<number> {
-      const whereClause = seriesId
-        ? eq(episodes.seriesId, seriesId)
-        : isNull(episodes.seriesId);
+    async getMaxOrder(seasonId: string | null): Promise<number> {
+      const whereClause = seasonId
+        ? eq(episodes.seasonId, seasonId)
+        : isNull(episodes.seasonId);
       const [result] = await db
         .select({ maxOrder: max(episodes.order) })
         .from(episodes)

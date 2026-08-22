@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { episodes, series } from "@repo/db";
+import { eq } from "drizzle-orm";
+import { episodes, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
 
@@ -21,6 +22,16 @@ async function insertSeriesRow(options?: {
 
   await db.insert(series).values({
     id,
+    title,
+    description,
+    posterUrl: "https://example.com/poster.jpg",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await db.insert(seasons).values({
+    id: crypto.randomUUID(),
+    seriesId: id,
     sourceUrl,
     source,
     title,
@@ -41,6 +52,12 @@ async function insertEpisodeRow(options: {
   const id = crypto.randomUUID();
   const now = options.createdAt ?? new Date();
 
+  let seasonId: string | null = null;
+  if (options.seriesId) {
+    const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, options.seriesId));
+    seasonId = season?.id ?? null;
+  }
+
   await db.insert(episodes).values({
     id,
     sourceUrl: `https://otakudesu.blog/episode/test-ep-${id}/`,
@@ -48,7 +65,7 @@ async function insertEpisodeRow(options: {
     title: options.title ?? "Test Episode",
     videoType: null,
     metadata: {},
-    seriesId: options.seriesId ?? null,
+    seasonId,
     createdAt: now,
     updatedAt: now,
   });
@@ -149,7 +166,6 @@ describe("GET /series", () => {
     };
 
     expect(body.data.series).toHaveLength(1);
-    expect(body.data.series[0].source).toBe("otakudesu");
     expect(body.data.meta.total).toBe(1);
   });
 

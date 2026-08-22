@@ -11,8 +11,6 @@ async function insertSeriesRow(title?: string): Promise<{ id: string; title: str
 
   await db.insert(series).values({
     id,
-    sourceUrl: `https://otakudesu.blog/anime/series-${id}/`,
-    source: "otakudesu",
     title: title ?? `Series ${id}`,
     description: "Original Description",
     posterUrl: "https://example.com/poster.jpg",

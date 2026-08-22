@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { episodes, genres, seriesToGenres } from "./schema";
+import { eq } from "drizzle-orm";
+import { episodes, genres, seasons, seriesToGenres } from "./schema";
 
 export function slugifyGenre(name: string): string {
   return name
@@ -92,10 +93,11 @@ export function extractGenresAndMappings(
 export async function migrateGenres(db: any): Promise<{ genresCount: number; mappingsCount: number }> {
   const allEpisodes = await db
     .select({
-      seriesId: episodes.seriesId,
+      seriesId: seasons.seriesId,
       metadata: episodes.metadata,
     })
-    .from(episodes);
+    .from(episodes)
+    .innerJoin(seasons, eq(episodes.seasonId, seasons.id));
 
   const { genresMap, seriesGenreMappings } = extractGenresAndMappings(allEpisodes);
 

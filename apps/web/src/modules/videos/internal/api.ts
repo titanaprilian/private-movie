@@ -122,7 +122,7 @@ export async function fetchSeries(
     );
   }
 
-  return res.data.data as SeriesListResponse;
+  return res.data.data as unknown as SeriesListResponse;
 }
 
 export function seriesListQueryOptions(params?: FetchSeriesParams) {
@@ -202,7 +202,7 @@ export async function fetchSeriesDetail(id: string): Promise<SeriesDetails> {
     );
   }
 
-  return res.data.data as SeriesDetails;
+  return res.data.data as unknown as SeriesDetails;
 }
 
 export function seriesDetailQueryOptions(id: string) {
@@ -412,7 +412,7 @@ export async function deleteEpisode(id: string): Promise<Episode> {
     );
   }
 
-  return res.data.data as Episode;
+  return res.data.data as unknown as Episode;
 }
 
 export interface AddVideoSourceInput {

@@ -11,6 +11,23 @@ export const genres = pgTable("genres", {
 export type GenreRow = typeof genres.$inferSelect;
 export type NewGenreRow = typeof genres.$inferInsert;
 
+export const series = pgTable("series", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("tv"),
+  posterUrl: text("poster_url"),
+  backdropUrl: text("backdrop_url"),
+  rating: text("rating"),
+  tmdbId: integer("tmdb_id"),
+  tmdbSyncStatus: text("tmdb_sync_status").notNull().default("PENDING"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+export type SeriesRow = typeof series.$inferSelect;
+export type NewSeriesRow = typeof series.$inferInsert;
+
 export const seriesToGenres = pgTable(
   "series_to_genres",
   {
@@ -29,8 +46,11 @@ export const seriesToGenres = pgTable(
 export type SeriesToGenreRow = typeof seriesToGenres.$inferSelect;
 export type NewSeriesToGenreRow = typeof seriesToGenres.$inferInsert;
 
-export const series = pgTable("series", {
+export const seasons = pgTable("seasons", {
   id: text("id").primaryKey(),
+  seriesId: text("series_id")
+    .notNull()
+    .references(() => series.id, { onDelete: "cascade" }),
   sourceUrl: text("source_url").notNull().unique(),
   source: text("source").notNull(),
   title: text("title").notNull(),
@@ -45,8 +65,8 @@ export const series = pgTable("series", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
 
-export type SeriesRow = typeof series.$inferSelect;
-export type NewSeriesRow = typeof series.$inferInsert;
+export type SeasonRow = typeof seasons.$inferSelect;
+export type NewSeasonRow = typeof seasons.$inferInsert;
 
 export const episodes = pgTable("episodes", {
   id: text("id").primaryKey(),
@@ -62,7 +82,7 @@ export const episodes = pgTable("episodes", {
   format: text("format"),
   size: text("size"),
   metadata: jsonb("metadata"),
-  seriesId: text("series_id").references(() => series.id),
+  seasonId: text("season_id").references(() => seasons.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });

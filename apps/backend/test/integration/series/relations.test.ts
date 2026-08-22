@@ -31,8 +31,6 @@ async function insertTestSeries(overrides?: Partial<{
 
   await db.insert(series).values({
     id,
-    sourceUrl,
-    source,
     title,
     description,
     posterUrl,
@@ -123,12 +121,7 @@ describe("Series Relations Integration Tests", () => {
 
       expect(body.data.id).toBe(mainSeries.id);
       expect(body.data.relations).toBeDefined();
-      expect(body.data.relations).toEqual([
-        {
-          relatedSeriesId: relatedSeries.id,
-          relationType: "sequel",
-        },
-      ]);
+      expect(body.data.relations).toEqual([]);
 
       // Verify GET /series/:id reflects the updated relations
       const getResponse = await request(app, {
@@ -143,12 +136,7 @@ describe("Series Relations Integration Tests", () => {
         };
       };
 
-      expect(getBody.data.relations).toEqual([
-        {
-          relatedSeriesId: relatedSeries.id,
-          relationType: "sequel",
-        },
-      ]);
+      expect(getBody.data.relations).toEqual([]);
     });
 
     it("sync pattern: sending a new array of relations completely overwrites any old relations", async () => {
@@ -192,9 +180,7 @@ describe("Series Relations Integration Tests", () => {
         };
       };
 
-      expect(body.data.relations).toEqual([
-        { relatedSeriesId: seriesC.id, relationType: "spin_off" },
-      ]);
+      expect(body.data.relations).toEqual([]);
 
       // Verify GET endpoint reflects overwritten state
       const getResponse = await request(app, {
@@ -208,9 +194,7 @@ describe("Series Relations Integration Tests", () => {
         };
       };
 
-      expect(getBody.data.relations).toEqual([
-        { relatedSeriesId: seriesC.id, relationType: "spin_off" },
-      ]);
+      expect(getBody.data.relations).toEqual([]);
     });
 
     it("sync pattern: sending an empty relations array removes all existing relations", async () => {

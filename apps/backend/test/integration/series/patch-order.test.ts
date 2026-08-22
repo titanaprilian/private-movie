@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, series } from "@repo/db";
+import { episodes, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
@@ -11,11 +11,19 @@ async function insertTestSeries(): Promise<{ id: string }> {
 
   await db.insert(series).values({
     id,
-    sourceUrl: `https://otakudesu.blog/anime/series-order-test-${id}/`,
-    source: "otakudesu",
     title: "Order Test Series",
     description: "Description",
     posterUrl: "https://example.com/poster.jpg",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await db.insert(seasons).values({
+    id: crypto.randomUUID(),
+    seriesId: id,
+    sourceUrl: `https://otakudesu.blog/anime/series-order-test-${id}/`,
+    source: "otakudesu",
+    title: "Order Test Series",
     createdAt: now,
     updatedAt: now,
   });
@@ -27,6 +35,8 @@ async function insertTestEpisode(seriesId: string, order: number): Promise<{ id:
   const id = crypto.randomUUID();
   const now = new Date();
 
+  const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, seriesId));
+
   await db.insert(episodes).values({
     id,
     sourceUrl: `https://otakudesu.blog/episode/order-test-${id}/`,
@@ -35,7 +45,7 @@ async function insertTestEpisode(seriesId: string, order: number): Promise<{ id:
     order,
     videoType: null,
     metadata: {},
-    seriesId,
+    seasonId: season.id,
     createdAt: now,
     updatedAt: now,
   });
