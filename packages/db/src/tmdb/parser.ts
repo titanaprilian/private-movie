@@ -1,5 +1,11 @@
 import type { ParsedTitle } from "./types";
 
+const ABBREVIATIONS: Record<string, string> = {
+  "danmachi": "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka",
+  "sbdwk": "Sono Bisque Doll wa Koi wo Suru",
+  "jjk": "Jujutsu Kaisen",
+};
+
 export function parseLocalTitle(rawTitle: string): ParsedTitle {
   let title = rawTitle.trim();
   let seasonNumber = 1;
@@ -11,6 +17,9 @@ export function parseLocalTitle(rawTitle: string): ParsedTitle {
     year = Number.parseInt(yearMatch[1], 10);
     title = title.replace(yearMatch[0], "").trim();
   }
+
+  // Strip brackets like (Episod 1 - 12) or [Subs]
+  title = title.replace(/[\(\[].*?(?:episod|sub).*?[\)\]]/ig, "");
 
   // Check for Specials / OVA / OAV
   const specialMatch = title.match(/\b(ova|oav|specials?)\b/i);
@@ -40,14 +49,31 @@ export function parseLocalTitle(rawTitle: string): ParsedTitle {
     }
   }
 
-  // Strip arbitrary scraper tags (BD, TV, Uncensored, UNC)
-  title = title.replace(/\b(bd|tv|uncensored|unc)\b/ig, "").trim();
+  // Strip arbitrary scraper tags (BD, TV, Uncensored, UNC, Summary) and literal "+"
+  title = title.replace(/\b(bd|tv|uncensored|unc|summary)\b/ig, "");
+  title = title.replace(/\+/g, "").trim();
 
   // Clean trailing punctuation or delimiters like dashes or colons
-  const baseTitle = title
+  let baseTitle = title
     .replace(/[-:]\s*$/, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Expand notorious abbreviations
+  for (const [abbr, fullName] of Object.entries(ABBREVIATIONS)) {
+    const abbrRegex = new RegExp(`^${abbr}$`, "i");
+    if (abbrRegex.test(baseTitle)) {
+      baseTitle = fullName;
+      break; // Only expand once
+    } else {
+      // Also expand if it's the very first word (e.g. Danmachi Gaiden)
+      const prefixRegex = new RegExp(`^${abbr}\\b`, "i");
+      if (prefixRegex.test(baseTitle)) {
+        baseTitle = baseTitle.replace(prefixRegex, fullName);
+        break;
+      }
+    }
+  }
 
   return {
     rawTitle,
@@ -56,3 +82,4 @@ export function parseLocalTitle(rawTitle: string): ParsedTitle {
     ...(year ? { year } : {}),
   };
 }
+

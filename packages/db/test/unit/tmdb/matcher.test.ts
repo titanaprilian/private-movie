@@ -44,6 +44,29 @@ describe("findBestMatch (Confident Match Algorithm)", () => {
     const match = findBestMatch("Completely Unrelated Anime Title XYZ", mockAharenSearchResults);
     expect(match).toBeNull();
   });
+
+  it("prioritizes candidate with Animation genre (id 16)", () => {
+    const list = [
+      {
+        id: 1,
+        name: "Kanojo, Okarishimasu",
+        original_name: "Kanojo, Okarishimasu",
+        genre_ids: [18, 35],
+      },
+      {
+        id: 2,
+        name: "Kanojo, Okarishimasu",
+        original_name: "Kanojo, Okarishimasu",
+        genre_ids: [16, 35],
+      },
+    ];
+
+    const match = findBestMatch("Kanojo, Okarishimasu", list);
+    expect(match?.result.id).toBe(2);
+    // Both have exact name match (1.0).
+    // id 1: 1.0 - 0.2 = 0.8
+    // id 2: 1.0 + 0.3 = 1.3
+  });
 });
 
 describe("findMatchingSeason", () => {

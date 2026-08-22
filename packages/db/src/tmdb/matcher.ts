@@ -1,9 +1,9 @@
 import type {
   MatchOptions,
   MatchResult,
+  TmdbBaseSearchResult,
   TmdbSeasonInfo,
   TmdbTvDetails,
-  TmdbTvSearchResult,
 } from "./types";
 
 function normalizeString(str: string): string {
@@ -83,26 +83,29 @@ export function calculateTitleSimilarity(str1: string, str2: string): number {
   return Math.max(levSim, diceSim, containmentSim);
 }
 
-export function findBestMatch(
+export function findBestMatch<T extends TmdbBaseSearchResult>(
   localBaseTitle: string,
-  candidates: TmdbTvSearchResult[],
+  candidates: T[],
   options: MatchOptions = {},
-): MatchResult | null {
+): MatchResult<T> | null {
   const threshold = options.confidenceThreshold ?? 0.5;
-  let bestResult: TmdbTvSearchResult | null = null;
+  let bestResult: T | null = null;
   let bestScore = -1;
 
   for (const candidate of candidates) {
-    const scoreName = calculateTitleSimilarity(localBaseTitle, candidate.name);
-    const scoreOrig = candidate.original_name
-      ? calculateTitleSimilarity(localBaseTitle, candidate.original_name)
-      : 0;
+    const candidateName = candidate.title || candidate.name;
+    const candidateOriginalName = candidate.original_title || candidate.original_name;
+
+    const scoreName = candidateName ? calculateTitleSimilarity(localBaseTitle, candidateName) : 0;
+    const scoreOrig = candidateOriginalName ? calculateTitleSimilarity(localBaseTitle, candidateOriginalName) : 0;
 
     let score = Math.max(scoreName, scoreOrig);
 
+    const yearString = candidate.release_date || candidate.first_air_date;
+
     // Disambiguate with release year if present in options
-    if (options.year && candidate.first_air_date) {
-      const candidateYear = Number.parseInt(candidate.first_air_date.slice(0, 4), 10);
+    if (options.year && yearString) {
+      const candidateYear = Number.parseInt(yearString.slice(0, 4), 10);
       if (!Number.isNaN(candidateYear)) {
         if (candidateYear === options.year) {
           score = Math.min(1.0, score + 0.25);
@@ -110,6 +113,13 @@ export function findBestMatch(
           score = Math.max(0, score - 0.3);
         }
       }
+    }
+
+    // Animation genre priority
+    if (candidate.genre_ids && candidate.genre_ids.includes(16)) {
+      score += 0.3;
+    } else {
+      score -= 0.2;
     }
 
     if (score > bestScore) {

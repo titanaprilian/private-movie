@@ -3,7 +3,12 @@ import { createDbClient } from "./client";
 import { series } from "./schema/media";
 import { parseLocalTitle } from "./tmdb/parser";
 import { findBestMatch, findMatchingSeason } from "./tmdb/matcher";
-import type { TmdbTvSearchResult, TmdbTvDetails } from "./tmdb/types";
+import type { 
+  TmdbTvSearchResult, 
+  TmdbTvDetails, 
+  TmdbMovieSearchResult,
+  TmdbMovieDetails 
+} from "./tmdb/types";
 
 const DB_URL = process.env.DATABASE_URL;
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
@@ -54,35 +59,43 @@ async function runTmdbSync() {
       console.log(`\nProcessing [${record.id}] "${record.title}"`);
       console.log(`Parsed: Base="${parsed.baseTitle}", Season=${parsed.seasonNumber}`, parsed.year ? `Year=${parsed.year}` : "");
 
-      const searchData = await fetchFromTmdb<{ results: TmdbTvSearchResult[] }>(
+      // 1. Try TV Endpoint
+      const tvSearchData = await fetchFromTmdb<{ results: TmdbTvSearchResult[] }>(
         `/search/tv?query=${encodeURIComponent(parsed.baseTitle)}&language=en-US`
       );
 
-      let match = findBestMatch(parsed.baseTitle, searchData.results, { year: parsed.year });
+      let tvMatch = findBestMatch(parsed.baseTitle, tvSearchData.results, { year: parsed.year });
 
-      // Hybrid Fallback Rule: If confident match fails, but it's the exact ONLY result returned by TMDB
-      if (!match && searchData.results.length === 1) {
-        console.log(`⚠️ Low string confidence, but exactly 1 result found. Using Hybrid Single-Result Fallback!`);
-        match = { result: searchData.results[0], score: 0.5 };
+      if (!tvMatch) {
+        if (tvSearchData.results.length === 1) {
+          tvMatch = { result: tvSearchData.results[0], score: 0.5 };
+        } else if (tvSearchData.results.length > 1) {
+          const animResults = tvSearchData.results.filter(r => r.genre_ids?.includes(16));
+          if (animResults.length === 1) {
+            console.log(`⚠️ Text match failed, but found exactly 1 animated result. Forcing match.`);
+            tvMatch = { result: animResults[0], score: 0.5 };
+          }
+        }
       }
 
-      if (!match) {
-        console.log(`❌ No confident match found in ${searchData.results.length} results. Moving to FAILED.`);
-        await db.update(series).set({ tmdbSyncStatus: "FAILED" }).where(eq(series.id, record.id));
-        failed++;
-      } else {
-        console.log(`✅ Matched with TMDB TV ID: ${match.result.id} ("${match.result.name}")`);
+      if (tvMatch) {
+        console.log(`✅ Matched with TMDB TV ID: ${tvMatch.result.id} ("${tvMatch.result.name}")`);
         
-        const details = await fetchFromTmdb<TmdbTvDetails>(`/tv/${match.result.id}?language=en-US`);
-        const season = findMatchingSeason(details, parsed.seasonNumber);
+        const details = await fetchFromTmdb<TmdbTvDetails>(`/tv/${tvMatch.result.id}?language=en-US`);
+        let season = findMatchingSeason(details, parsed.seasonNumber);
 
         if (!season) {
-          console.log(`❌ Found TV Show, but missing season ${parsed.seasonNumber}. Moving to FAILED.`);
+          console.log(`⚠️ Missing season ${parsed.seasonNumber} on TMDB. Falling back to Season 1 (or first available).`);
+          season = details.seasons.find(s => s.season_number === 1) || details.seasons[0];
+        }
+
+        if (!season) {
+          console.log(`❌ Found TV Show, but missing seasons entirely on TMDB. Moving to FAILED.`);
           await db.update(series).set({ tmdbSyncStatus: "FAILED" }).where(eq(series.id, record.id));
           failed++;
         } else {
           // Construct update payload
-          const updatedTitle = details.name; // Based on spec override
+          const updatedTitle = details.name; 
           const updatedDescription = season.overview || details.overview || record.description;
           const updatedPoster = season.poster_path || details.poster_path || record.posterUrl;
           const backdrop = details.backdrop_path;
@@ -99,8 +112,59 @@ async function runTmdbSync() {
             tmdbSyncStatus: "SYNCED"
           }).where(eq(series.id, record.id));
 
-          console.log(`🌟 SUCCESSFULLY synced data for season ${season.season_number}!`);
+          console.log(`🌟 SUCCESSFULLY synced TV data for season ${season.season_number}!`);
           succeeded++;
+        }
+      } else {
+        // 2. Fallback to Movie Endpoint if TV failed
+        console.log(`⚠️ TV Match failed. Attempting Movie search...`);
+        const movieSearchData = await fetchFromTmdb<{ results: TmdbMovieSearchResult[] }>(
+          `/search/movie?query=${encodeURIComponent(parsed.baseTitle)}&language=en-US`
+        );
+
+        let movieMatch = findBestMatch(parsed.baseTitle, movieSearchData.results, { year: parsed.year });
+
+        if (!movieMatch) {
+          if (movieSearchData.results.length === 1) {
+            movieMatch = { result: movieSearchData.results[0], score: 0.5 };
+          } else if (movieSearchData.results.length > 1) {
+            const animResults = movieSearchData.results.filter(r => r.genre_ids?.includes(16));
+            if (animResults.length === 1) {
+              console.log(`⚠️ Text match failed, but found exactly 1 animated result. Forcing match.`);
+              movieMatch = { result: animResults[0], score: 0.5 };
+            }
+          }
+        }
+
+        if (movieMatch) {
+          console.log(`✅ Matched with TMDB MOVIE ID: ${movieMatch.result.id} ("${movieMatch.result.title}")`);
+          
+          const details = await fetchFromTmdb<TmdbMovieDetails>(`/movie/${movieMatch.result.id}?language=en-US`);
+
+          // Movies don't have seasons, so we just set tmdbSeason to 1 and map the movie
+          const updatedTitle = details.title; 
+          const updatedDescription = details.overview || record.description;
+          const updatedPoster = details.poster_path || record.posterUrl;
+          const backdrop = details.backdrop_path;
+          const ratingStr = details.vote_average ? String(details.vote_average) : undefined;
+
+          await db.update(series).set({
+            tmdbId: details.id,
+            tmdbSeason: 1,
+            title: updatedTitle,
+            description: updatedDescription,
+            posterUrl: updatedPoster,
+            backdropUrl: backdrop,
+            rating: ratingStr,
+            tmdbSyncStatus: "SYNCED"
+          }).where(eq(series.id, record.id));
+
+          console.log(`🌟 SUCCESSFULLY synced MOVIE data!`);
+          succeeded++;
+        } else {
+          console.log(`❌ No confident match in TV nor MOVIE endpoints. Moving to FAILED.`);
+          await db.update(series).set({ tmdbSyncStatus: "FAILED" }).where(eq(series.id, record.id));
+          failed++;
         }
       }
     } catch (error) {
@@ -110,7 +174,7 @@ async function runTmdbSync() {
       failed++;
     }
 
-    // Sleep to respect TMDB API limits (50 resp/sec allowed, 100ms is very safe)
+    // Sleep to respect TMDB API limits
     await new Promise((r) => setTimeout(r, 100));
   }
 
