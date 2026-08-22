@@ -415,42 +415,48 @@ export function createMediaService<
         let seasonId: string | null = null;
         let seriesRow: SeriesRow | null = null;
 
-        if (input.series) {
-          let existingSeason = await seasonsRepositoryTx.findBySourceUrl(input.series.sourceUrl);
-          let parentSeriesId: string;
+        const seriesInput: SaveMediaSeriesInput = input.series ?? {
+          sourceUrl: input.episode.sourceUrl,
+          source: input.episode.source,
+          title: input.episode.title,
+          description: null,
+          posterUrl: null,
+        };
 
-          if (existingSeason) {
-            parentSeriesId = existingSeason.seriesId;
-            seriesRow = await seriesRepositoryTx.upsert({
-              id: parentSeriesId,
-              title: input.series.title,
-              description: input.series.description ?? null,
-              posterUrl: input.series.posterUrl ?? null,
-            });
-          } else {
-            const isMovie =
-              input.episode.videoType?.toLowerCase() === "movie" ||
-              input.series.title.toLowerCase().includes("movie");
-            seriesRow = await seriesRepositoryTx.upsert({
-              title: input.series.title,
-              description: input.series.description ?? null,
-              posterUrl: input.series.posterUrl ?? null,
-              type: isMovie ? "movie" : "tv",
-              tmdbSyncStatus: "PENDING",
-            });
-            parentSeriesId = seriesRow.id;
-          }
+        let existingSeason = await seasonsRepositoryTx.findBySourceUrl(seriesInput.sourceUrl);
+        let parentSeriesId: string;
 
-          const seasonRow = await seasonsRepositoryTx.upsert({
-            seriesId: parentSeriesId,
-            sourceUrl: input.series.sourceUrl,
-            source: input.series.source,
-            title: input.series.title,
-            description: input.series.description ?? null,
-            posterUrl: input.series.posterUrl ?? null,
+        if (existingSeason) {
+          parentSeriesId = existingSeason.seriesId;
+          seriesRow = await seriesRepositoryTx.upsert({
+            id: parentSeriesId,
+            title: seriesInput.title,
+            description: seriesInput.description ?? null,
+            posterUrl: seriesInput.posterUrl ?? null,
           });
-          seasonId = seasonRow.id;
+        } else {
+          const isMovie =
+            input.episode.videoType?.toLowerCase() === "movie" ||
+            seriesInput.title.toLowerCase().includes("movie");
+          seriesRow = await seriesRepositoryTx.upsert({
+            title: seriesInput.title,
+            description: seriesInput.description ?? null,
+            posterUrl: seriesInput.posterUrl ?? null,
+            type: isMovie ? "movie" : "tv",
+            tmdbSyncStatus: "PENDING",
+          });
+          parentSeriesId = seriesRow.id;
         }
+
+        const seasonRow = await seasonsRepositoryTx.upsert({
+          seriesId: parentSeriesId,
+          sourceUrl: seriesInput.sourceUrl,
+          source: seriesInput.source,
+          title: seriesInput.title,
+          description: seriesInput.description ?? null,
+          posterUrl: seriesInput.posterUrl ?? null,
+        });
+        seasonId = seasonRow.id;
 
         let order = parseEpisodeOrder(input.episode.title);
         if (order === null) {

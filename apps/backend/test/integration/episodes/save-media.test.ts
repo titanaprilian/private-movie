@@ -118,7 +118,7 @@ describe("POST /save-media", () => {
   });
 
   describe("happy path", () => {
-    it("creates episode record with series: null when series is null", async () => {
+    it("creates episode record and stub parent series when series is null", async () => {
       const { accessToken } = await registerUser(app);
       const epSourceUrl = "https://otakudesu.blog/episode/save-media-integ-1/";
 
@@ -161,24 +161,36 @@ describe("POST /save-media", () => {
             videoType: string | null;
             seasonId: string | null;
           };
-          series: null;
+          series: {
+            id: string;
+            title: string;
+            tmdbSyncStatus: string;
+          } | null;
         };
       };
 
       expect(body.data).toBeDefined();
       expect(body.data.episode.id).toBeTypeOf("string");
       expect(body.data.episode.sourceUrl).toBe(epSourceUrl);
-      expect(body.data.episode.seasonId).toBeNull();
-      expect(body.data.series).toBeNull();
+      expect(body.data.episode.seasonId).not.toBeNull();
+      expect(body.data.series).not.toBeNull();
+      expect(body.data.series?.tmdbSyncStatus).toBe("PENDING");
 
       // Verify DB record
+      const seasonRows = await db
+        .select()
+        .from(seasons)
+        .where(eq(seasons.sourceUrl, epSourceUrl));
+      expect(seasonRows).toHaveLength(1);
+      expect(seasonRows[0].seriesId).toBe(body.data.series!.id);
+
       const epRows = await db
         .select()
         .from(episodes)
         .where(eq(episodes.sourceUrl, epSourceUrl));
       expect(epRows).toHaveLength(1);
       expect(epRows[0].id).toBe(body.data.episode.id);
-      expect(epRows[0].seasonId).toBeNull();
+      expect(epRows[0].seasonId).toBe(seasonRows[0].id);
     });
 
     it("creates episode and series records and links them when series payload is provided", async () => {

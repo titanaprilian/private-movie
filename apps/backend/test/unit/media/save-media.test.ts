@@ -46,8 +46,18 @@ describe("createMediaService saveMedia", () => {
     expect(result.episode.id).toBeTypeOf("string");
     expect(result.episode.sourceUrl).toBe(episodeInput.sourceUrl);
     expect(result.episode.title).toBe(episodeInput.title);
-    expect(result.episode.seasonId).toBeNull();
-    expect(result.series).toBeNull();
+    expect(result.episode.seasonId).not.toBeNull();
+    expect(result.series).not.toBeNull();
+    expect(result.series?.tmdbSyncStatus).toBe("PENDING");
+    expect(result.series?.title).toBe(episodeInput.title);
+
+    // Verify season and series stub rows in DB
+    const seasonRows = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.sourceUrl, episodeInput.sourceUrl));
+    expect(seasonRows).toHaveLength(1);
+    expect(seasonRows[0].seriesId).toBe(result.series!.id);
 
     // Verify episode row in DB
     const epRows = await db
@@ -56,6 +66,7 @@ describe("createMediaService saveMedia", () => {
       .where(eq(episodes.sourceUrl, episodeInput.sourceUrl));
     expect(epRows).toHaveLength(1);
     expect(epRows[0].id).toBe(result.episode.id);
+    expect(epRows[0].seasonId).toBe(seasonRows[0].id);
 
     // Verify video sources rows in DB created in transaction
     const vsRows = await db
