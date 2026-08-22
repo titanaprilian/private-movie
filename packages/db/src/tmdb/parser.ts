@@ -1,4 +1,7 @@
-import type { ParsedTitle } from "./types";
+import { randomUUID } from "node:crypto";
+import type { NewGenreRow, NewSeriesRow } from "../schema/media";
+import { slugifyGenre } from "../migrate-genres";
+import type { ParsedTitle, TmdbTvDetails } from "./types";
 
 const ABBREVIATIONS: Record<string, string> = {
   "danmachi": "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka",
@@ -80,6 +83,68 @@ export function parseLocalTitle(rawTitle: string): ParsedTitle {
     baseTitle: baseTitle || rawTitle,
     seasonNumber,
     ...(year ? { year } : {}),
+  };
+}
+
+export interface MapSeriesOptions {
+  id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export function mapTmdbTvToSeriesRow(
+  details: TmdbTvDetails,
+  options?: MapSeriesOptions
+): NewSeriesRow {
+  const now = new Date();
+  return {
+    id: options?.id ?? randomUUID(),
+    title: details.name,
+    description: details.overview || null,
+    type: "tv",
+    posterUrl: details.poster_path || null,
+    backdropUrl: details.backdrop_path || null,
+    rating:
+      details.vote_average !== undefined && details.vote_average !== null
+        ? String(details.vote_average)
+        : null,
+    tmdbId: details.id,
+    tmdbSyncStatus: "SYNCED",
+    createdAt: options?.createdAt ?? now,
+    updatedAt: options?.updatedAt ?? now,
+  };
+}
+
+export function extractTmdbGenres(details: TmdbTvDetails): NewGenreRow[] {
+  if (!details.genres || !Array.isArray(details.genres)) {
+    return [];
+  }
+
+  return details.genres
+    .filter((g) => g.name && g.name.trim().length > 0)
+    .map((g) => {
+      const name = g.name.trim();
+      const slug = slugifyGenre(name);
+      return {
+        id: randomUUID(),
+        name,
+        slug,
+      };
+    });
+}
+
+export interface ParsedTmdbTvResult {
+  series: NewSeriesRow;
+  genres: NewGenreRow[];
+}
+
+export function parseTmdbTvDetails(
+  details: TmdbTvDetails,
+  options?: MapSeriesOptions
+): ParsedTmdbTvResult {
+  return {
+    series: mapTmdbTvToSeriesRow(details, options),
+    genres: extractTmdbGenres(details),
   };
 }
 

@@ -139,6 +139,6 @@ export function findMatchingSeason(
   tvDetails: TmdbTvDetails,
   seasonNumber: number,
 ): TmdbSeasonInfo | null {
-  const season = tvDetails.seasons.find((s) => s.season_number === seasonNumber);
+  const season = tvDetails.seasons?.find((s) => s.season_number === seasonNumber);
   return season ?? null;
 }

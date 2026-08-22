@@ -86,7 +86,7 @@ async function runTmdbSync() {
 
         if (!season) {
           console.log(`⚠️ Missing season ${parsed.seasonNumber} on TMDB. Falling back to Season 1 (or first available).`);
-          season = details.seasons.find(s => s.season_number === 1) || details.seasons[0];
+          season = details.seasons?.find(s => s.season_number === 1) || details.seasons?.[0] || null;
         }
 
         if (!season) {

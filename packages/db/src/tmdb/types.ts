@@ -40,15 +40,21 @@ export interface TmdbSeasonInfo {
   air_date?: string | null;
 }
 
+export interface TmdbGenre {
+  id: number;
+  name: string;
+}
+
 export interface TmdbTvDetails {
   id: number;
   name: string;
-  original_name: string;
+  original_name?: string;
   overview: string;
   poster_path: string | null;
   backdrop_path: string | null;
-  vote_average: number;
-  seasons: TmdbSeasonInfo[];
+  vote_average?: number;
+  genres?: TmdbGenre[];
+  seasons?: TmdbSeasonInfo[];
 }
 
 export interface TmdbMovieDetails {
