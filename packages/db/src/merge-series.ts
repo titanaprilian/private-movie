@@ -1,6 +1,14 @@
-import { isNotNull } from "drizzle-orm";
+import { eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { DbClient } from "./client";
-import { seasons, type NewGenreRow, type NewSeriesRow } from "./schema/media";
+import {
+  genres,
+  seasons,
+  series,
+  seriesToGenres,
+  type NewGenreRow,
+  type NewSeriesRow,
+  type NewSeriesToGenreRow,
+} from "./schema/media";
 import { parseTmdbTvDetails } from "./tmdb/parser";
 import type { TmdbTvDetails } from "./tmdb/types";
 
@@ -180,12 +188,101 @@ export async function mergeSeries(options: MergeSeriesOptions): Promise<MergeSer
     }
   }
 
-  logger("\n=== DRY RUN SUMMARY ===");
+  logger(`\n=== ${isDryRun ? "DRY RUN SUMMARY" : "EXECUTION SUMMARY"} ===`);
   logger(`Distinct TMDB IDs processed: ${plans.length}`);
-  logger(`Total seasons planned to relink: ${totalSeasonsRelinked}`);
-  logger(`Total duplicate series planned to delete: ${totalDuplicatesDeleted}`);
+  logger(`Total seasons ${isDryRun ? "planned to relink" : "relinked"}: ${totalSeasonsRelinked}`);
+  logger(`Total duplicate series ${isDryRun ? "planned to delete" : "deleted"}: ${totalDuplicatesDeleted}`);
   logger(`Total genres extracted: ${totalGenresExtracted}`);
-  logger("[DRY RUN GUARANTEE] No DML/DDL queries (TRUNCATE, UPDATE, DELETE) were executed.");
+
+  if (isDryRun) {
+    logger("[DRY RUN GUARANTEE] No DML/DDL queries (TRUNCATE, UPDATE, DELETE) were executed.");
+  } else {
+    logger("\n[DB EXECUTION] Applying merge database mutations...");
+
+    const runMutations = async (tx: any) => {
+      logger("  - Truncating genres table...");
+      await tx.execute(sql`TRUNCATE TABLE genres CASCADE`);
+
+      const uniqueGenresMap = new Map<string, NewGenreRow>();
+      const seriesToGenreRows: NewSeriesToGenreRow[] = [];
+
+      for (const plan of plans) {
+        await tx
+          .update(series)
+          .set({
+            title: plan.seriesPatch.title,
+            description: plan.seriesPatch.description,
+            type: plan.seriesPatch.type,
+            posterUrl: plan.seriesPatch.posterUrl,
+            backdropUrl: plan.seriesPatch.backdropUrl,
+            rating: plan.seriesPatch.rating,
+            tmdbId: plan.seriesPatch.tmdbId,
+            tmdbSyncStatus: plan.seriesPatch.tmdbSyncStatus,
+            updatedAt: plan.seriesPatch.updatedAt,
+          })
+          .where(eq(series.id, plan.canonicalSeriesId));
+
+        if (plan.seasonIdsToUpdate.length > 0) {
+          await tx
+            .update(seasons)
+            .set({
+              seriesId: plan.canonicalSeriesId,
+              updatedAt: new Date(),
+            })
+            .where(inArray(seasons.id, plan.seasonIdsToUpdate));
+        }
+
+        for (const g of plan.extractedGenres) {
+          if (!uniqueGenresMap.has(g.slug)) {
+            uniqueGenresMap.set(g.slug, g);
+          }
+          const genreId = uniqueGenresMap.get(g.slug)!.id;
+          seriesToGenreRows.push({
+            seriesId: plan.canonicalSeriesId,
+            genreId,
+          });
+        }
+      }
+
+      const allUniqueGenres = Array.from(uniqueGenresMap.values());
+      if (allUniqueGenres.length > 0) {
+        logger(`  - Inserting ${allUniqueGenres.length} unique genres...`);
+        await tx
+          .insert(genres)
+          .values(allUniqueGenres)
+          .onConflictDoNothing({ target: genres.slug });
+      }
+
+      if (seriesToGenreRows.length > 0) {
+        const deduplicatedMappings = Array.from(
+          new Map(seriesToGenreRows.map((m) => [`${m.seriesId}:${m.genreId}`, m])).values()
+        );
+        logger(`  - Inserting ${deduplicatedMappings.length} series-to-genre mappings...`);
+        await tx
+          .insert(seriesToGenres)
+          .values(deduplicatedMappings)
+          .onConflictDoNothing();
+      }
+
+      const allDuplicateSeriesIds = Array.from(
+        new Set(plans.flatMap((plan) => plan.duplicateSeriesIds))
+      );
+      if (allDuplicateSeriesIds.length > 0) {
+        logger(`  - Deleting ${allDuplicateSeriesIds.length} duplicate series rows...`);
+        await tx
+          .delete(series)
+          .where(inArray(series.id, allDuplicateSeriesIds));
+      }
+    };
+
+    if (typeof options.db.transaction === "function") {
+      await options.db.transaction(runMutations);
+    } else {
+      await runMutations(options.db);
+    }
+
+    logger("[DB EXECUTION] All database mutations completed successfully.");
+  }
 
   return {
     processedTmdbIds: plans.length,

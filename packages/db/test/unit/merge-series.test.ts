@@ -164,4 +164,62 @@ describe("Merge Series Logic", () => {
       expect(loggedText).toContain("⚠️ Failed to fetch or process TMDB ID 100: 404 Not Found");
     });
   });
+
+  describe("mergeSeries live database execution (dryRun: false)", () => {
+    it("executes database mutations including TRUNCATE, UPDATE, INSERT genres/mappings, and DELETE duplicates", async () => {
+      const mockSeasonsData: SeasonInput[] = [
+        { id: "season-1", seriesId: "series-1", tmdbId: 100, title: "S1" },
+        { id: "season-2", seriesId: "series-2", tmdbId: 100, title: "S2" },
+      ];
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue(mockSeasonsData),
+          }),
+        }),
+        execute: vi.fn().mockResolvedValue([]),
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+        insert: vi.fn().mockReturnValue({
+          values: vi.fn().mockReturnValue({
+            onConflictDoNothing: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      };
+
+      const mockFetchTvDetails = vi.fn().mockResolvedValue(mockTvDetails);
+      const mockLogger = vi.fn();
+
+      const summary = await mergeSeries({
+        db: mockDb,
+        dryRun: false,
+        fetchTvDetails: mockFetchTvDetails,
+        logger: mockLogger,
+        delayMs: 0,
+      });
+
+      expect(summary.dryRun).toBe(false);
+      expect(summary.processedTmdbIds).toBe(1);
+      expect(summary.totalSeasonsRelinked).toBe(2);
+      expect(summary.totalDuplicatesDeleted).toBe(1);
+
+      // Verify DML/DDL queries executed
+      expect(mockDb.execute).toHaveBeenCalledTimes(1); // TRUNCATE TABLE genres CASCADE
+      expect(mockDb.update).toHaveBeenCalledTimes(2); // 1 series update + 1 seasons update
+      expect(mockDb.insert).toHaveBeenCalledTimes(2); // 1 genres insert + 1 series_to_genres insert
+      expect(mockDb.delete).toHaveBeenCalledTimes(1); // 1 series delete for series-2
+
+      const loggedText = mockLogger.mock.calls.map((c) => c.join(" ")).join("\n");
+      expect(loggedText).toContain("[DRY RUN MODE: false]");
+      expect(loggedText).toContain("[DB EXECUTION] Applying merge database mutations...");
+      expect(loggedText).toContain("[DB EXECUTION] All database mutations completed successfully.");
+    });
+  });
 });

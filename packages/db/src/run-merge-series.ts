@@ -3,14 +3,14 @@ import { mergeSeries } from "./merge-series";
 
 export async function runMergeSeries(): Promise<void> {
   const db = createDbClient();
-  const isDryRun = process.argv.includes("--dry-run") || true;
+  const isDryRun = process.argv.includes("--dry-run");
 
   try {
     const summary = await mergeSeries({
       db,
       dryRun: isDryRun,
     });
-    console.log(`\nFinished series merge dry-run for ${summary.processedTmdbIds} TMDB IDs.`);
+    console.log(`\nFinished series merge (${isDryRun ? "dry-run" : "live commit"}) for ${summary.processedTmdbIds} TMDB IDs.`);
     await db.$client.end();
     process.exit(0);
   } catch (error) {
