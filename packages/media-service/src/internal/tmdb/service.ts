@@ -1,0 +1,70 @@
+export class TmdbFetchError extends Error {
+  constructor(message: string, public readonly status?: number) {
+    super(message);
+    this.name = "TmdbFetchError";
+  }
+}
+
+export async function fetchFromTmdb<T>(endpoint: string): Promise<T> {
+  const url = `https://api.themoviedb.org/3${endpoint}`;
+  const apiKey = process.env.TMDB_API_KEY;
+
+  if (!apiKey) {
+    throw new TmdbFetchError("Missing TMDB_API_KEY environment variable", 400);
+  }
+
+  const headers: Record<string, string> = {
+    accept: "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  const response = await fetch(url, { headers });
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      return fetchFromTmdb<T>(endpoint);
+    }
+    throw new TmdbFetchError(`TMDB API Error: ${response.status} ${response.statusText}`, response.status);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export interface TmdbPreviewResult {
+  title: string;
+  overview: string;
+  posterUrl: string | null;
+}
+
+export async function getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult> {
+  let title = "";
+  let overview = "";
+  let poster_path: string | null = null;
+  
+  if (type === "movie") {
+    const data = await fetchFromTmdb<any>(`/movie/${tmdbId}?language=en-US`);
+    title = data.title || "";
+    overview = data.overview || "";
+    poster_path = data.poster_path;
+  } else {
+    if (season !== undefined) {
+      const details = await fetchFromTmdb<any>(`/tv/${tmdbId}?language=en-US`);
+      const data = await fetchFromTmdb<any>(`/tv/${tmdbId}/season/${season}?language=en-US`);
+      title = details.name || "";
+      overview = data.overview || details.overview || "";
+      poster_path = data.poster_path || details.poster_path;
+    } else {
+      const data = await fetchFromTmdb<any>(`/tv/${tmdbId}?language=en-US`);
+      title = data.name || "";
+      overview = data.overview || "";
+      poster_path = data.poster_path;
+    }
+  }
+
+  return {
+    title,
+    overview,
+    posterUrl: poster_path ? `https://image.tmdb.org/t/p/w500${poster_path}` : null,
+  };
+}

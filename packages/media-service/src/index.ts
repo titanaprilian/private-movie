@@ -15,6 +15,17 @@ import {
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
 import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
+import { fetchFromTmdb, getTmdbPreview, TmdbFetchError, type TmdbPreviewResult } from "./internal/tmdb/service";
+
+export { TmdbFetchError };
+export type { TmdbPreviewResult };
+
+export interface TmdbMatchInput {
+  seriesId: string;
+  type: "movie" | "tv";
+  tmdbId: number;
+  season?: number;
+}
 
 export type VideoSource = "otakudesu";
 
@@ -178,6 +189,8 @@ export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
+  getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult>;
+  matchTmdb(input: TmdbMatchInput): Promise<SeriesRow>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -452,6 +465,63 @@ export function createMediaService<
           series: seriesRow,
         };
       });
+    },
+
+    async getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult> {
+      return getTmdbPreview(type, tmdbId, season);
+    },
+
+    async matchTmdb(input: TmdbMatchInput): Promise<SeriesRow> {
+      const existingSeries = await seriesRepository.findById(input.seriesId);
+      if (!existingSeries) {
+        throw new SeriesNotFoundError(`Series not found`);
+      }
+
+      let details: any;
+      let poster_path = null;
+      let backdrop_path = null;
+      let title = "";
+      let overview = "";
+      let vote_average = null;
+      let seasonNumber = 1;
+
+      if (input.type === "movie") {
+        details = await fetchFromTmdb<any>(`/movie/${input.tmdbId}?language=en-US`);
+        title = details.title;
+        overview = details.overview;
+        poster_path = details.poster_path;
+        backdrop_path = details.backdrop_path;
+        vote_average = details.vote_average;
+      } else {
+        const seasonNum = input.season ?? 1;
+        details = await fetchFromTmdb<any>(`/tv/${input.tmdbId}?language=en-US`);
+        const seasonDetails = await fetchFromTmdb<any>(`/tv/${input.tmdbId}/season/${seasonNum}?language=en-US`);
+        
+        title = details.name;
+        overview = seasonDetails.overview || details.overview;
+        poster_path = seasonDetails.poster_path || details.poster_path;
+        backdrop_path = details.backdrop_path;
+        vote_average = details.vote_average;
+        seasonNumber = seasonNum;
+      }
+
+      const updatedDescription = overview || existingSeries.description;
+      const updatedPoster = poster_path || existingSeries.posterUrl;
+      const ratingStr = vote_average ? String(vote_average) : undefined;
+      
+      const payload = {
+        title: title || existingSeries.title,
+        description: updatedDescription,
+        posterUrl: updatedPoster,
+        backdropUrl: backdrop_path,
+        rating: ratingStr,
+        tmdbId: details.id,
+        tmdbSeason: seasonNumber,
+        tmdbSyncStatus: "SYNCED" as const,
+      };
+
+      const updated = await seriesRepository.updateSeries(input.seriesId, payload);
+      return updated;
     },
   };
 }

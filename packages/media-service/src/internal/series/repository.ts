@@ -31,6 +31,11 @@ export interface UpdateSeriesInput {
   title?: string;
   description?: string | null;
   posterUrl?: string | null;
+  backdropUrl?: string | null;
+  rating?: string | null;
+  tmdbId?: number | null;
+  tmdbSeason?: number | null;
+  tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
   genreIds?: string[];
   relations?: SeriesRelationItem[];
 }
@@ -217,6 +222,11 @@ export function createSeriesRepositoryInternal<
       if (input.title !== undefined) updateData.title = input.title;
       if (input.description !== undefined) updateData.description = input.description;
       if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
+      if (input.backdropUrl !== undefined) updateData.backdropUrl = input.backdropUrl;
+      if (input.rating !== undefined) updateData.rating = input.rating;
+      if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
+      if (input.tmdbSeason !== undefined) updateData.tmdbSeason = input.tmdbSeason;
+      if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
 
       const [row] = await db
         .update(series)

@@ -33,12 +33,12 @@
     },
     "dev": {
       "persistent": true,
-      "passThroughEnv": ["PORT", "DATABASE_URL", "JWT_SECRET", "VITE_API_URL"]
+      "passThroughEnv": ["PORT", "DATABASE_URL", "JWT_SECRET", "VITE_API_URL", "TMDB_API_KEY"]
     },
     "start": {
       "persistent": true,
       "dependsOn": ["build"],
-      "passThroughEnv": ["PORT", "DATABASE_URL", "JWT_SECRET", "VITE_API_URL"]
+      "passThroughEnv": ["PORT", "DATABASE_URL", "JWT_SECRET", "VITE_API_URL", "TMDB_API_KEY"]
     }
   }
 }

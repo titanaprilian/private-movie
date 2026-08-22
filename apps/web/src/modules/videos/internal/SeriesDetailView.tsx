@@ -17,6 +17,7 @@ import {
 } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
+import { TmdbMatchModal } from './TmdbMatchModal';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
   Dialog,
@@ -132,6 +133,7 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
+  const [isTmdbMatchOpen, setIsTmdbMatchOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -278,6 +280,14 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
             </span>
           </div>
 
+          <button
+            onClick={() => setIsTmdbMatchOpen(true)}
+            type="button"
+            className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
+          >
+            Match TMDB
+          </button>
+          
           <button
             onClick={handleAddEpisode}
             type="button"
@@ -733,6 +743,11 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
         </div>
       </div>
       <AddMediaDialog />
+      <TmdbMatchModal
+        seriesId={seriesId}
+        open={isTmdbMatchOpen}
+        onOpenChange={setIsTmdbMatchOpen}
+      />
 
       {/* Edit Episode Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

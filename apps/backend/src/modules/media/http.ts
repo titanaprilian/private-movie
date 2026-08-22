@@ -1,3 +1,4 @@
+import { InternalServerError } from "../../lib/errors";
 import { Elysia, t } from "elysia";
 import {
   UnauthorizedError,
@@ -14,6 +15,7 @@ import {
   SeriesFetchError,
   SeriesNotFoundError,
   VideoSourceNotFoundError,
+  TmdbFetchError,
   type FetchFn,
 } from "@repo/media-service";
 import { EpisodeMissingFieldsError, EpisodeParseError, SeriesParseError, MirrorResolveError } from "@repo/media-scraper";
@@ -25,7 +27,7 @@ export interface MediaRoutesOptions {
 }
 
 export const mediaRoutes = (options: MediaRoutesOptions) => {
-  const episodes = createSaveEpisodeService(options.db, {
+  const mediaService = createSaveEpisodeService(options.db, {
     fetchHtml: options.fetchHtml,
   });
   const episodeRepository = createEpisodeRepositoryInternal(options.db);
@@ -261,7 +263,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }
 
         try {
-          const result = await episodes.previewScrape(body);
+          const result = await mediaService.previewScrape(body);
           return successResponse(result);
         } catch (error) {
           if (error instanceof EpisodeFetchError) {
@@ -306,7 +308,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }
 
         try {
-          const result = await episodes.previewScrapeSeries(body);
+          const result = await mediaService.previewScrapeSeries(body);
           return successResponse(result);
         } catch (error) {
           if (error instanceof SeriesFetchError) {
@@ -344,7 +346,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
         }
 
-        const saved = await episodes.saveMedia(body);
+        const saved = await mediaService.saveMedia(body);
         return successResponse(saved);
       },
       {
@@ -505,6 +507,73 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
       }
     )
+
+    // --- TMDB MANUAL MATCH START ---
+    .get(
+      "/series/:id/tmdb-preview",
+      async ({ query: q, set }) => {
+        try {
+          const type = q.type as "movie" | "tv";
+          const data = await mediaService.getTmdbPreview(type, q.tmdbId, q.season);
+          return successResponse(data);
+        } catch (e: any) {
+          if (e instanceof TmdbFetchError) {
+            return errorResponse(set, e.status === 404 ? 404 : 400, e);
+          }
+          return errorResponse(set, 500, new InternalServerError());
+        }
+      },
+      {
+        query: t.Object({
+          type: t.Union([t.Literal("movie"), t.Literal("tv")]),
+          tmdbId: t.Numeric(),
+          season: t.Optional(t.Numeric()),
+        }),
+      }
+    )
+    .post(
+      "/series/:id/tmdb-match",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(set, 401, new UnauthorizedError("missing or invalid authorization header"));
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+        
+        try {
+          const updated = await mediaService.matchTmdb({
+            seriesId: params.id,
+            type: body.type,
+            tmdbId: body.tmdbId,
+            season: body.season,
+          });
+          return successResponse(updated);
+        } catch (e: any) {
+          if (e instanceof SeriesNotFoundError) {
+            return errorResponse(set, 404, e);
+          }
+          if (e instanceof TmdbFetchError) {
+            return errorResponse(set, e.status === 404 ? 404 : 400, e);
+          }
+          return errorResponse(set, 500, new InternalServerError());
+        }
+      },
+      {
+        params: t.Object({ id: t.String() }),
+        body: t.Object({
+          type: t.Union([t.Literal("movie"), t.Literal("tv")]),
+          tmdbId: t.Numeric(),
+          season: t.Optional(t.Numeric()),
+        }),
+      }
+    )
+    // --- TMDB MANUAL MATCH END ---
+    
     .put(
       "/series/:id",
       async ({ params, body, headers, set }) => {
