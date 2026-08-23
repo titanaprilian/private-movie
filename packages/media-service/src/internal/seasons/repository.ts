@@ -85,6 +85,34 @@ export function createSeasonsRepositoryInternal<
       return row ?? null;
     },
 
+    async updateSeason(id: string, input: Partial<SeasonUpsertInput>): Promise<SeasonRow> {
+      const now = new Date();
+      const updateData: Record<string, unknown> = {
+        updatedAt: now,
+      };
+
+      if (input.title !== undefined) updateData.title = input.title;
+      if (input.description !== undefined) updateData.description = input.description;
+      if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
+      if (input.backdropUrl !== undefined) updateData.backdropUrl = input.backdropUrl;
+      if (input.rating !== undefined) updateData.rating = input.rating;
+      if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
+      if (input.tmdbSeason !== undefined) updateData.tmdbSeason = input.tmdbSeason;
+      if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
+
+      const [row] = await db
+        .update(seasons)
+        .set(updateData)
+        .where(eq(seasons.id, id))
+        .returning();
+
+      if (!row) {
+        throw new SeasonNotFoundError(`Season with id ${id} not found`);
+      }
+
+      return row;
+    },
+
     async reparentSeasons(fromSeriesId: string, toSeriesId: string): Promise<void> {
       await db
         .update(seasons)

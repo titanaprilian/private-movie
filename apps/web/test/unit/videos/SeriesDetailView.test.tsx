@@ -678,6 +678,79 @@ describe('SeriesDetailView component', () => {
     expect(screen.queryByText('S1 Episode 2')).not.toBeInTheDocument();
   });
 
+  it('dynamically swaps season poster and description when switching seasons', async () => {
+    const mockSeriesWithSeasonMetadata: SeriesDetails = {
+      id: 'season-meta-series',
+      sourceUrl: 'https://otakudesu.cloud/anime/season-meta',
+      source: 'otakudesu',
+      title: 'Season Meta Anime',
+      description: 'Series default description',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/series-poster.jpg',
+      createdAt: '2026-08-10',
+      updatedAt: '2026-08-10',
+      seasons: [
+        {
+          id: 'season-1-meta',
+          seriesId: 'season-meta-series',
+          sourceUrl: 'https://otakudesu.cloud/season-1',
+          source: 'otakudesu',
+          title: 'Season 1',
+          description: 'Season 1 specific description',
+          posterUrl: 'https://image.tmdb.org/t/p/w500/season1-poster.jpg',
+          tmdbSeason: 1,
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [],
+        },
+        {
+          id: 'season-2-meta',
+          seriesId: 'season-meta-series',
+          sourceUrl: 'https://otakudesu.cloud/season-2',
+          source: 'otakudesu',
+          title: 'Season 2',
+          description: 'Season 2 specific description',
+          posterUrl: 'https://image.tmdb.org/t/p/w500/season2-poster.jpg',
+          tmdbSeason: 2,
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [],
+        },
+      ],
+      episodes: [],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/season-meta-series')) {
+        return new Response(JSON.stringify({ data: mockSeriesWithSeasonMetadata }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<SeriesDetailView seriesId="season-meta-series" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Season Meta Anime' });
+
+    // Initially Season 1 description & poster are shown
+    expect(screen.getByText('Season 1 specific description')).toBeInTheDocument();
+    const posterImg = screen.getByAltText('Season Meta Anime') as HTMLImageElement;
+    expect(posterImg.src).toBe('https://image.tmdb.org/t/p/w500/season1-poster.jpg');
+
+    // Click Season 2 button
+    await user.click(screen.getByRole('button', { name: 'Season 2' }));
+
+    // Season 2 description & poster should now be active
+    expect(screen.getByText('Season 2 specific description')).toBeInTheDocument();
+    expect(screen.queryByText('Season 1 specific description')).not.toBeInTheDocument();
+    expect((screen.getByAltText('Season Meta Anime') as HTMLImageElement).src).toBe(
+      'https://image.tmdb.org/t/p/w500/season2-poster.jpg'
+    );
+  });
+
   it('gracefully hides season selector tabs when series has 1 or no distinct seasons', async () => {
     const mockSingleSeasonSeries: SeriesDetails = {
       id: 'single-season-series',

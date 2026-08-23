@@ -89,7 +89,17 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
     expect(updatedSeriesRow.tmdbId).toBe(500);
     expect(updatedSeriesRow.tmdbSyncStatus).toBe("SYNCED");
     expect(updatedSeriesRow.title).toBe("Frieren: Beyond Journey's End");
-    expect(updatedSeriesRow.description).toBe("Season 1 overview");
+    expect(updatedSeriesRow.description).toBe("An elf magician...");
+
+    const [updatedSeasonRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, season.id));
+    expect(updatedSeasonRow.tmdbId).toBe(500);
+    expect(updatedSeasonRow.tmdbSeason).toBe(1);
+    expect(updatedSeasonRow.description).toBe("Season 1 overview");
+    expect(updatedSeasonRow.posterUrl).toBe("/frieren_s1.jpg");
+    expect(updatedSeasonRow.tmdbSyncStatus).toBe("SYNCED");
   });
 
   it("reparents season and deletes orphan stub when TMDB ID matches existing series", async () => {

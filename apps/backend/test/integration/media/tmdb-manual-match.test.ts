@@ -272,6 +272,16 @@ describe("TMDB Manual Match", () => {
         updatedAt: new Date(),
       }).returning();
 
+      const [seasonRecord] = await db.insert(seasons).values({
+        id: crypto.randomUUID(),
+        seriesId: seriesRecord.id,
+        sourceUrl: "https://otakudesu.blog/anime/old-tv-s3",
+        source: "otakudesu",
+        title: "Old TV Season 3",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+
       const reqOptions = {
         method: "POST",
         path: `/series/${seriesRecord.id}/tmdb-match`,
@@ -290,11 +300,21 @@ describe("TMDB Manual Match", () => {
       
       expect(updated?.tmdbSyncStatus).toBe("SYNCED");
       expect(updated?.title).toBe("TV Show Manual");
-      expect(updated?.description).toBe("Season 3 overview.");
-      expect(updated?.posterUrl).toBe("/tv_season_3_poster.jpg");
+      expect(updated?.description).toBe("Main TV overview.");
+      expect(updated?.posterUrl).toBe("/tv_main_poster.jpg");
       expect(updated?.backdropUrl).toBe("/tv_bg.jpg");
       expect(updated?.rating).toBe("9.1");
       expect(updated?.tmdbId).toBe(999);
+
+      const [updatedSeason] = await db
+        .select()
+        .from(seasons)
+        .where(require("drizzle-orm").eq(seasons.id, seasonRecord.id));
+      expect(updatedSeason?.tmdbId).toBe(999);
+      expect(updatedSeason?.tmdbSeason).toBe(3);
+      expect(updatedSeason?.description).toBe("Season 3 overview.");
+      expect(updatedSeason?.posterUrl).toBe("/tv_season_3_poster.jpg");
+      expect(updatedSeason?.tmdbSyncStatus).toBe("SYNCED");
     });
 
     it("reparents season to existing TMDB series and destroys orphan stub via HTTP API", async () => {

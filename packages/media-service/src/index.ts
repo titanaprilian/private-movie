@@ -524,11 +524,13 @@ export function createMediaService<
       }
 
       let details: any;
+      let seasonDetails: any = null;
       let poster_path = null;
       let backdrop_path = null;
       let title = "";
       let overview = "";
       let vote_average = null;
+      const seasonNum = input.season ?? 1;
 
       if (input.type === "movie") {
         details = await fetchFromTmdb<any>(`/movie/${input.tmdbId}?language=en-US`);
@@ -538,13 +540,16 @@ export function createMediaService<
         backdrop_path = details.backdrop_path;
         vote_average = details.vote_average;
       } else {
-        const seasonNum = input.season ?? 1;
         details = await fetchFromTmdb<any>(`/tv/${input.tmdbId}?language=en-US`);
-        const seasonDetails = await fetchFromTmdb<any>(`/tv/${input.tmdbId}/season/${seasonNum}?language=en-US`);
-        
+        try {
+          seasonDetails = await fetchFromTmdb<any>(`/tv/${input.tmdbId}/season/${seasonNum}?language=en-US`);
+        } catch {
+          seasonDetails = null;
+        }
+
         title = details.name;
-        overview = seasonDetails.overview || details.overview;
-        poster_path = seasonDetails.poster_path || details.poster_path;
+        overview = details.overview;
+        poster_path = details.poster_path;
         backdrop_path = details.backdrop_path;
         vote_average = details.vote_average;
       }
@@ -556,6 +561,8 @@ export function createMediaService<
         const seasonsRepositoryTx = createSeasonsRepositoryInternal(tx);
 
         const existingTmdbSeries = await seriesRepositoryTx.findByTmdbId(details.id);
+
+        let activeSeriesId: string;
 
         if (existingTmdbSeries && existingTmdbSeries.id !== targetSeries.id) {
           await seasonsRepositoryTx.reparentSeasons(targetSeries.id, existingTmdbSeries.id);
@@ -573,9 +580,9 @@ export function createMediaService<
             tmdbSyncStatus: "SYNCED" as const,
           };
 
-          const updated = await seriesRepositoryTx.updateSeries(existingTmdbSeries.id, payload);
+          await seriesRepositoryTx.updateSeries(existingTmdbSeries.id, payload);
           await seriesRepositoryTx.deleteSeries(targetSeries.id);
-          return updated;
+          activeSeriesId = existingTmdbSeries.id;
         } else {
           const updatedDescription = overview || targetSeries.description;
           const updatedPoster = poster_path || targetSeries.posterUrl;
@@ -590,9 +597,49 @@ export function createMediaService<
             tmdbSyncStatus: "SYNCED" as const,
           };
 
-          const updated = await seriesRepositoryTx.updateSeries(targetSeries.id, payload);
-          return updated;
+          await seriesRepositoryTx.updateSeries(targetSeries.id, payload);
+          activeSeriesId = targetSeries.id;
         }
+
+        if (input.type === "tv") {
+          const childSeasons = await tx
+            .select()
+            .from(seasons)
+            .where(eq(seasons.seriesId, activeSeriesId))
+            .orderBy(asc(seasons.createdAt));
+
+          let targetSeasonRow = childSeasons.find((s) => s.tmdbSeason === seasonNum);
+
+          if (!targetSeasonRow) {
+            targetSeasonRow = childSeasons.find((s) => s.tmdbSeason == null) ?? childSeasons[0];
+          }
+
+          if (targetSeasonRow) {
+            const seasonOverview = seasonDetails?.overview || details.overview;
+            const seasonPoster = seasonDetails?.poster_path || details.poster_path;
+
+            await seasonsRepositoryTx.updateSeason(targetSeasonRow.id, {
+              tmdbId: details.id,
+              tmdbSeason: seasonNum,
+              posterUrl: seasonPoster,
+              description: seasonOverview,
+              tmdbSyncStatus: "SYNCED",
+            });
+          }
+        }
+
+        const finalSeries = await seriesRepositoryTx.findById(activeSeriesId);
+        const finalSeasons = await tx
+          .select()
+          .from(seasons)
+          .where(eq(seasons.seriesId, activeSeriesId))
+          .orderBy(asc(seasons.createdAt));
+
+        return {
+          ...finalSeries!,
+          seasons: finalSeasons,
+          relations: [],
+        };
       });
     },
   };

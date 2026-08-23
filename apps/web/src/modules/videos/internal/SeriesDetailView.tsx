@@ -174,12 +174,20 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
     );
   }
 
+  const activeSeasonIndex = series?.seasons
+    ? series.seasons.findIndex((s) => s.id === selectedSeasonId)
+    : -1;
+
   const activeSeason =
-    hasMultipleSeasons && series?.seasons
-      ? series.seasons.find((s) => s.id === selectedSeasonId) ?? series.seasons[0]
+    series?.seasons && series.seasons.length > 0
+      ? (selectedSeasonId ? series.seasons.find((s) => s.id === selectedSeasonId) : series.seasons[0]) ?? series.seasons[0]
       : null;
 
+  const activeSeasonNumber =
+    activeSeason?.tmdbSeason ?? (activeSeasonIndex >= 0 ? activeSeasonIndex + 1 : 1);
+
   const currentDescription = activeSeason?.description || series.description;
+  const currentPosterUrl = activeSeason?.posterUrl || series.posterUrl;
 
   const seasonEpisodes = (() => {
     if (!hasMultipleSeasons || !activeSeason) {
@@ -309,47 +317,58 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   return (
     <div className="space-y-4">
       {/* Header section */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-tight">
-              {series.title}
-            </h1>
-            <span className="text-xs mono px-2 py-0.5 rounded border border-c bg-sidebar text-muted">
-              {localEpisodes.length} episodes
-            </span>
+      <div className="flex gap-4 items-start">
+        {currentPosterUrl && (
+          <img
+            src={currentPosterUrl}
+            alt={series.title}
+            className="w-20 h-28 object-cover rounded border border-c shrink-0"
+          />
+        )}
+        <div className="space-y-2 flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold tracking-tight">
+                {series.title}
+              </h1>
+              <span className="text-xs mono px-2 py-0.5 rounded border border-c bg-sidebar text-muted">
+                {localEpisodes.length} episodes
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setIsTmdbMatchOpen(true)}
+                type="button"
+                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                Match TMDB
+              </button>
+              
+              <button
+                onClick={handleAddEpisode}
+                type="button"
+                className="bg-primary text-primary-fg hover:opacity-90 px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Add Episode
+              </button>
+            </div>
           </div>
 
-          <button
-            onClick={() => setIsTmdbMatchOpen(true)}
-            type="button"
-            className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
-          >
-            Match TMDB
-          </button>
-          
-          <button
-            onClick={handleAddEpisode}
-            type="button"
-            className="bg-primary text-primary-fg hover:opacity-90 px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add Episode
-          </button>
+          {currentDescription && (
+            <p className="text-xs text-muted leading-relaxed break-words">{currentDescription}</p>
+          )}
         </div>
-
-        {currentDescription && (
-          <p className="text-xs text-muted leading-relaxed break-words">{currentDescription}</p>
-        )}
       </div>
 
       {/* Season Selector section */}
@@ -814,6 +833,8 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
       <AddMediaDialog />
       <TmdbMatchModal
         seriesId={seriesId}
+        defaultType={series.type === 'movie' ? 'movie' : 'tv'}
+        defaultSeason={activeSeasonNumber}
         open={isTmdbMatchOpen}
         onOpenChange={setIsTmdbMatchOpen}
       />

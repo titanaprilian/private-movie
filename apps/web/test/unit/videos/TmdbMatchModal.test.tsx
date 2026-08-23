@@ -189,4 +189,22 @@ describe('TmdbMatchModal component', () => {
       expect(toast.error).toHaveBeenCalledWith('Failed to update database');
     });
   });
+
+  it('pre-fills defaultType and defaultSeason when passed as props', () => {
+    renderWithProviders(
+      <TmdbMatchModal
+        seriesId="series-123"
+        defaultType="tv"
+        defaultSeason={3}
+        open={true}
+        onOpenChange={vi.fn()}
+      />
+    );
+
+    const typeSelect = screen.getByLabelText('Type') as HTMLSelectElement;
+    expect(typeSelect.value).toBe('tv');
+
+    const seasonInput = screen.getByLabelText(/Season Number/i) as HTMLInputElement;
+    expect(seasonInput.value).toBe('3');
+  });
 });

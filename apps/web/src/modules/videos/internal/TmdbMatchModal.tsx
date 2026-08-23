@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,11 +61,19 @@ async function matchTmdb(seriesId: string, type: 'movie'|'tv', tmdbId: number, s
 
 export interface TmdbMatchModalProps {
   seriesId: string;
+  defaultType?: 'movie' | 'tv';
+  defaultSeason?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function TmdbMatchModal({ seriesId, open, onOpenChange }: TmdbMatchModalProps) {
+export function TmdbMatchModal({
+  seriesId,
+  defaultType = 'movie',
+  defaultSeason = 1,
+  open,
+  onOpenChange,
+}: TmdbMatchModalProps) {
   const queryClient = useQueryClient();
   const [preview, setPreview] = useState<TmdbPreviewData | null>(null);
 
@@ -73,13 +81,25 @@ export function TmdbMatchModal({ seriesId, open, onOpenChange }: TmdbMatchModalP
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      type: 'movie',
+      type: defaultType,
+      season: defaultSeason,
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      reset({
+        type: defaultType,
+        season: defaultSeason,
+      });
+      setPreview(null);
+    }
+  }, [open, defaultType, defaultSeason, reset]);
 
   const watchType = watch('type');
   const watchTmdbId = watch('tmdbId');
