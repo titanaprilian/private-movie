@@ -65,19 +65,20 @@ describe("TMDB Manual Match", () => {
     });
 
     it("fetches tv preview with season successfully", async () => {
-      vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(async (input) => {
         const url = input.toString();
-        if (url.includes("/tv/456") && !url.includes("season")) {
+        if (url.includes("/tv/456")) {
           return new Response(JSON.stringify({
             name: "Mock TV",
-            overview: "General TV overview."
-          }), { status: 200 });
-        }
-        if (url.includes("/tv/456/season/2")) {
-          return new Response(JSON.stringify({
-            name: "Mock TV Season",
-            poster_path: "/tv_season_poster.jpg",
-            overview: "Season 2 overview."
+            overview: "General TV overview.",
+            seasons: [
+              {
+                season_number: 2,
+                name: "Mock TV Season",
+                poster_path: "/tv_season_poster.jpg",
+                overview: "Season 2 overview.",
+              },
+            ],
           }), { status: 200 });
         }
         throw new Error(`Unexpected fetch URL: ${url}`);
@@ -101,6 +102,7 @@ describe("TMDB Manual Match", () => {
       const result = await request(app, reqOptions);
       if (result.status !== 200) console.log(result.body);
       expect(result.status).toBe(200);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
 
       const body = result.body as any;
       expect(body.data.title).toBe("Mock TV"); // Name from main /tv/ endpoint
@@ -241,9 +243,9 @@ describe("TMDB Manual Match", () => {
     });
 
     it("updates series with manual tv match successfully", async () => {
-      vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(async (input) => {
         const url = input.toString();
-        if (url.includes("/tv/999") && !url.includes("season")) {
+        if (url.includes("/tv/999")) {
           return new Response(JSON.stringify({
             id: 999,
             name: "TV Show Manual",
@@ -251,13 +253,14 @@ describe("TMDB Manual Match", () => {
             overview: "Main TV overview.",
             backdrop_path: "/tv_bg.jpg",
             vote_average: 9.1,
-          }), { status: 200 });
-        }
-        if (url.includes("/tv/999/season/3")) {
-          return new Response(JSON.stringify({
-            name: "Season 3",
-            poster_path: "/tv_season_3_poster.jpg",
-            overview: "Season 3 overview.",
+            seasons: [
+              {
+                season_number: 3,
+                name: "Season 3",
+                poster_path: "/tv_season_3_poster.jpg",
+                overview: "Season 3 overview.",
+              },
+            ],
           }), { status: 200 });
         }
         throw new Error(`Unexpected fetch URL: ${url}`);
@@ -318,9 +321,9 @@ describe("TMDB Manual Match", () => {
     });
 
     it("reparents season to existing TMDB series and destroys orphan stub via HTTP API", async () => {
-      vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(async (input) => {
         const url = input.toString();
-        if (url.includes("/tv/888") && !url.includes("season")) {
+        if (url.includes("/tv/888")) {
           return new Response(
             JSON.stringify({
               id: 888,
@@ -329,16 +332,14 @@ describe("TMDB Manual Match", () => {
               overview: "Sorcerers fighting curses",
               backdrop_path: "/jjk_bg.jpg",
               vote_average: 8.8,
-            }),
-            { status: 200 }
-          );
-        }
-        if (url.includes("/tv/888/season/2")) {
-          return new Response(
-            JSON.stringify({
-              name: "Shibuya Incident",
-              poster_path: "/jjk_s2.jpg",
-              overview: "Shibuya Arc",
+              seasons: [
+                {
+                  season_number: 2,
+                  name: "Shibuya Incident",
+                  poster_path: "/jjk_s2.jpg",
+                  overview: "Shibuya Arc",
+                },
+              ],
             }),
             { status: 200 }
           );

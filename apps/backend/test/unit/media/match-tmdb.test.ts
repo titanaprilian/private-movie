@@ -17,9 +17,9 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
   });
 
   it("updates series table with TMDB attributes for single series match", async () => {
-    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(async (input) => {
       const url = input.toString();
-      if (url.includes("/tv/500") && !url.includes("season")) {
+      if (url.includes("/tv/500")) {
         return new Response(
           JSON.stringify({
             id: 500,
@@ -28,16 +28,14 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
             overview: "An elf magician...",
             backdrop_path: "/frieren_bg.jpg",
             vote_average: 9.3,
-          }),
-          { status: 200 }
-        );
-      }
-      if (url.includes("/tv/500/season/1")) {
-        return new Response(
-          JSON.stringify({
-            name: "Season 1",
-            poster_path: "/frieren_s1.jpg",
-            overview: "Season 1 overview",
+            seasons: [
+              {
+                season_number: 1,
+                name: "Season 1",
+                poster_path: "/frieren_s1.jpg",
+                overview: "Season 1 overview",
+              },
+            ],
           }),
           { status: 200 }
         );
@@ -77,6 +75,12 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       season: 1,
     });
 
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "https://api.themoviedb.org/3/tv/500?language=en-US",
+      expect.anything()
+    );
+
     expect(result.id).toBe(stubSeries.id);
     expect(result.title).toBe("Frieren: Beyond Journey's End");
     expect(result.tmdbId).toBe(500);
@@ -105,7 +109,7 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
   it("reparents season and deletes orphan stub when TMDB ID matches existing series", async () => {
     vi.spyOn(global, "fetch").mockImplementation(async (input) => {
       const url = input.toString();
-      if (url.includes("/tv/600") && !url.includes("season")) {
+      if (url.includes("/tv/600")) {
         return new Response(
           JSON.stringify({
             id: 600,
@@ -114,16 +118,14 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
             overview: "Student council battle",
             backdrop_path: "/kaguya_bg.jpg",
             vote_average: 8.9,
-          }),
-          { status: 200 }
-        );
-      }
-      if (url.includes("/tv/600/season/2")) {
-        return new Response(
-          JSON.stringify({
-            name: "Season 2",
-            poster_path: "/kaguya_s2.jpg",
-            overview: "Season 2 overview",
+            seasons: [
+              {
+                season_number: 2,
+                name: "Season 2",
+                poster_path: "/kaguya_s2.jpg",
+                overview: "Season 2 overview",
+              },
+            ],
           }),
           { status: 200 }
         );
@@ -208,5 +210,97 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       .from(series)
       .where(eq(series.id, stubSeries.id));
     expect(stubRows).toHaveLength(0);
+  });
+
+  it("adheres to strict isolation: only updates the target season row and ignores other seasons", async () => {
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const url = input.toString();
+      if (url.includes("/tv/700")) {
+        return new Response(
+          JSON.stringify({
+            id: 700,
+            name: "Multi Season Show",
+            poster_path: "/show.jpg",
+            overview: "Overview of show",
+            backdrop_path: "/show_bg.jpg",
+            vote_average: 8.0,
+            seasons: [
+              { season_number: 1, name: "TMDB Season 1", poster_path: "/tmdb_s1.jpg", overview: "TMDB S1 overview" },
+              { season_number: 2, name: "TMDB Season 2", poster_path: "/tmdb_s2.jpg", overview: "TMDB S2 overview" },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const [targetSeries] = await db
+      .insert(series)
+      .values({
+        id: "series-multi-season",
+        title: "Multi Season Show",
+        type: "tv",
+        tmdbSyncStatus: "PENDING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const [season1] = await db
+      .insert(seasons)
+      .values({
+        id: "season-local-1",
+        seriesId: targetSeries.id,
+        sourceUrl: "https://otakudesu.blog/anime/multi-s1",
+        source: "otakudesu",
+        title: "Local Season 1",
+        description: "Original S1 desc",
+        posterUrl: "/original_s1.jpg",
+        tmdbId: 700,
+        tmdbSeason: 1,
+        tmdbSyncStatus: "SYNCED",
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+      })
+      .returning();
+
+    const [season2] = await db
+      .insert(seasons)
+      .values({
+        id: "season-local-2",
+        seriesId: targetSeries.id,
+        sourceUrl: "https://otakudesu.blog/anime/multi-s2",
+        source: "otakudesu",
+        title: "Local Season 2",
+        tmdbSyncStatus: "PENDING",
+        createdAt: new Date("2024-01-02"),
+        updatedAt: new Date("2024-01-02"),
+      })
+      .returning();
+
+    // Match specifically season 2
+    await service.matchTmdb({
+      seriesId: targetSeries.id,
+      type: "tv",
+      tmdbId: 700,
+      season: 2,
+    });
+
+    // Check Season 2 was updated
+    const [updatedSeason2] = await db.select().from(seasons).where(eq(seasons.id, season2.id));
+    expect(updatedSeason2.tmdbId).toBe(700);
+    expect(updatedSeason2.tmdbSeason).toBe(2);
+    expect(updatedSeason2.description).toBe("TMDB S2 overview");
+    expect(updatedSeason2.posterUrl).toBe("/tmdb_s2.jpg");
+    expect(updatedSeason2.tmdbSyncStatus).toBe("SYNCED");
+
+    // Check Season 1 remained untouched (Strict Isolation)
+    const [untouchedSeason1] = await db.select().from(seasons).where(eq(seasons.id, season1.id));
+    expect(untouchedSeason1.tmdbId).toBe(700);
+    expect(untouchedSeason1.tmdbSeason).toBe(1);
+    expect(untouchedSeason1.description).toBe("Original S1 desc");
+    expect(untouchedSeason1.posterUrl).toBe("/original_s1.jpg");
+    expect(untouchedSeason1.tmdbSyncStatus).toBe("SYNCED");
   });
 });

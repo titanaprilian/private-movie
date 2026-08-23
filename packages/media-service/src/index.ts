@@ -541,11 +541,10 @@ export function createMediaService<
         vote_average = details.vote_average;
       } else {
         details = await fetchFromTmdb<any>(`/tv/${input.tmdbId}?language=en-US`);
-        try {
-          seasonDetails = await fetchFromTmdb<any>(`/tv/${input.tmdbId}/season/${seasonNum}?language=en-US`);
-        } catch {
-          seasonDetails = null;
-        }
+        const targetSeasonData = Array.isArray(details.seasons)
+          ? details.seasons.find((s: any) => s.season_number === seasonNum)
+          : null;
+        seasonDetails = targetSeasonData ?? null;
 
         title = details.name;
         overview = details.overview;

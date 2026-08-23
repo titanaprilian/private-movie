@@ -99,6 +99,7 @@ export interface SeriesDetails {
   sourceUrl: string;
   source: string;
   title: string;
+  type?: 'movie' | 'tv' | null;
   description?: string | null;
   posterUrl?: string | null;
   createdAt: Date | string;

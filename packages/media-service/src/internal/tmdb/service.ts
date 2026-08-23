@@ -48,18 +48,14 @@ export async function getTmdbPreview(type: "movie" | "tv", tmdbId: number, seaso
     overview = data.overview || "";
     poster_path = data.poster_path;
   } else {
-    if (season !== undefined) {
-      const details = await fetchFromTmdb<any>(`/tv/${tmdbId}?language=en-US`);
-      const data = await fetchFromTmdb<any>(`/tv/${tmdbId}/season/${season}?language=en-US`);
-      title = details.name || "";
-      overview = data.overview || details.overview || "";
-      poster_path = data.poster_path || details.poster_path;
-    } else {
-      const data = await fetchFromTmdb<any>(`/tv/${tmdbId}?language=en-US`);
-      title = data.name || "";
-      overview = data.overview || "";
-      poster_path = data.poster_path;
-    }
+    const details = await fetchFromTmdb<any>(`/tv/${tmdbId}?language=en-US`);
+    const seasonData = season !== undefined && Array.isArray(details.seasons)
+      ? details.seasons.find((s: any) => s.season_number === season)
+      : null;
+
+    title = details.name || "";
+    overview = seasonData?.overview || details.overview || "";
+    poster_path = seasonData?.poster_path || details.poster_path;
   }
 
   return {
