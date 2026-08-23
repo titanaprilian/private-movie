@@ -53,21 +53,35 @@ function getEpisodeTags(episode: Episode): string[] {
 export interface SeriesDetailViewProps {
   seriesId: string;
   initialOrder?: number;
+  initialSeasonId?: string;
 }
 
-export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewProps) {
+export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: SeriesDetailViewProps) {
   const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));
   const openDialog = useScrapeWorkerStore((state) => state.openDialog);
 
   const queryClient = useQueryClient();
 
   const [localEpisodes, setLocalEpisodes] = useState<Episode[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(
+    initialSeasonId ?? null
+  );
 
   useEffect(() => {
     if (series?.episodes) {
       setLocalEpisodes(series.episodes);
     }
   }, [series?.episodes]);
+
+  const hasMultipleSeasons = Boolean(series?.seasons && series.seasons.length > 1);
+
+  useEffect(() => {
+    if (hasMultipleSeasons && series?.seasons && series.seasons.length > 0) {
+      if (!selectedSeasonId || !series.seasons.some((s) => s.id === selectedSeasonId)) {
+        setSelectedSeasonId(series.seasons[0].id);
+      }
+    }
+  }, [series?.seasons, hasMultipleSeasons, selectedSeasonId]);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateEpisode>[1] }) =>
@@ -160,7 +174,26 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
     );
   }
 
-  const episodes = localEpisodes;
+  const activeSeason =
+    hasMultipleSeasons && series?.seasons
+      ? series.seasons.find((s) => s.id === selectedSeasonId) ?? series.seasons[0]
+      : null;
+
+  const currentDescription = activeSeason?.description || series.description;
+
+  const seasonEpisodes = (() => {
+    if (!hasMultipleSeasons || !activeSeason) {
+      return localEpisodes;
+    }
+    const activeSeasonEpIds = new Set(
+      activeSeason.episodes?.map((e) => e.id) ?? []
+    );
+    return localEpisodes.filter(
+      (ep) => ep.seasonId === activeSeason.id || activeSeasonEpIds.has(ep.id)
+    );
+  })();
+
+  const episodes = seasonEpisodes;
 
   const filteredEpisodes = episodes.filter((episode) => {
     const text = filterText.toLowerCase();
@@ -197,19 +230,26 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
     }
 
     const previousEpisodes = [...localEpisodes];
-    const nextEpisodes = Array.from(localEpisodes);
-    const [moved] = nextEpisodes.splice(source.index, 1);
-    nextEpisodes.splice(destination.index, 0, moved);
+    const nextSeasonEpisodes = Array.from(seasonEpisodes);
+    const [moved] = nextSeasonEpisodes.splice(source.index, 1);
+    nextSeasonEpisodes.splice(destination.index, 0, moved);
 
-    setLocalEpisodes(nextEpisodes);
+    const updatedSeasonEpMap = new Map(
+      nextSeasonEpisodes.map((ep, idx) => [ep.id, { ...ep, order: idx + 1 }])
+    );
+    const nextLocalEpisodes = localEpisodes.map(
+      (ep) => updatedSeasonEpMap.get(ep.id) ?? ep
+    );
+
+    setLocalEpisodes(nextLocalEpisodes);
 
     queryClient.setQueryData(
       ['series', seriesId],
       (old: SeriesDetails | undefined) =>
-        old ? { ...old, episodes: nextEpisodes } : old
+        old ? { ...old, episodes: nextLocalEpisodes } : old
     );
 
-    const newOrders = nextEpisodes.map((ep, index) => ({
+    const newOrders = nextSeasonEpisodes.map((ep, index) => ({
       id: ep.id,
       order: index + 1,
     }));
@@ -276,7 +316,7 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
               {series.title}
             </h1>
             <span className="text-xs mono px-2 py-0.5 rounded border border-c bg-sidebar text-muted">
-              {episodes.length} episodes
+              {localEpisodes.length} episodes
             </span>
           </div>
 
@@ -307,10 +347,39 @@ export function SeriesDetailView({ seriesId, initialOrder }: SeriesDetailViewPro
           </button>
         </div>
 
-        {series.description && (
-          <p className="text-xs text-muted leading-relaxed break-words">{series.description}</p>
+        {currentDescription && (
+          <p className="text-xs text-muted leading-relaxed break-words">{currentDescription}</p>
         )}
       </div>
+
+      {/* Season Selector section */}
+      {hasMultipleSeasons && series.seasons && (
+        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded border border-c bg-card">
+          <span className="text-xs font-medium mono uppercase tracking-wider text-muted mr-1">
+            Season:
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {series.seasons.map((season, index) => {
+              const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
+              const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
+              return (
+                <button
+                  key={season.id}
+                  type="button"
+                  onClick={() => setSelectedSeasonId(season.id)}
+                  className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors border ${
+                    isActive
+                      ? 'bg-primary text-primary-fg border-primary'
+                      : 'bg-card text-fg border-c hover-bg'
+                  }`}
+                >
+                  {title}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Related Series section */}
       {series.relations && series.relations.length > 0 && (

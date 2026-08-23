@@ -32,6 +32,7 @@ export interface Episode {
   size?: string | null;
   metadata?: unknown;
   seriesId?: string | null;
+  seasonId?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -75,6 +76,24 @@ export interface SeriesListResponse {
   };
 }
 
+export interface SeasonDetails {
+  id: string;
+  seriesId: string;
+  sourceUrl: string;
+  source: string;
+  title: string;
+  description?: string | null;
+  posterUrl?: string | null;
+  backdropUrl?: string | null;
+  rating?: string | null;
+  tmdbId?: number | null;
+  tmdbSeason?: number | null;
+  tmdbSyncStatus?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  episodes: Episode[];
+}
+
 export interface SeriesDetails {
   id: string;
   sourceUrl: string;
@@ -84,6 +103,7 @@ export interface SeriesDetails {
   posterUrl?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  seasons?: SeasonDetails[];
   episodes: Episode[];
   relations?: SeriesRelationItem[];
 }

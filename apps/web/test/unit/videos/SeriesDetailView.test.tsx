@@ -535,4 +535,217 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: mockSeriesNoRelations.title });
     expect(screen.queryByText('Related Series')).not.toBeInTheDocument();
   });
+
+  it('renders season selector and filters episodes by selected season when multiple seasons exist', async () => {
+    const mockSeriesWithSeasons: SeriesDetails = {
+      id: 'multi-season-series',
+      sourceUrl: 'https://otakudesu.cloud/anime/multi-season',
+      source: 'otakudesu',
+      title: 'Multi Season Anime',
+      description: 'Series overview',
+      posterUrl: null,
+      createdAt: '2026-08-10',
+      updatedAt: '2026-08-10',
+      seasons: [
+        {
+          id: 'season-1-id',
+          seriesId: 'multi-season-series',
+          sourceUrl: 'https://otakudesu.cloud/season-1',
+          source: 'otakudesu',
+          title: 'Season 1',
+          description: 'Overview for Season 1',
+          posterUrl: null,
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [
+            {
+              id: 's1-ep1',
+              seasonId: 'season-1-id',
+              sourceUrl: 'https://otakudesu.cloud/s1-ep1',
+              source: 'otakudesu',
+              title: 'S1 Episode 1',
+              order: 1,
+              videoSources: [],
+              createdAt: '2026-08-10',
+              updatedAt: '2026-08-10',
+            },
+            {
+              id: 's1-ep2',
+              seasonId: 'season-1-id',
+              sourceUrl: 'https://otakudesu.cloud/s1-ep2',
+              source: 'otakudesu',
+              title: 'S1 Episode 2',
+              order: 2,
+              videoSources: [],
+              createdAt: '2026-08-10',
+              updatedAt: '2026-08-10',
+            },
+          ],
+        },
+        {
+          id: 'season-2-id',
+          seriesId: 'multi-season-series',
+          sourceUrl: 'https://otakudesu.cloud/season-2',
+          source: 'otakudesu',
+          title: 'Season 2',
+          description: 'Overview for Season 2',
+          posterUrl: null,
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [
+            {
+              id: 's2-ep1',
+              seasonId: 'season-2-id',
+              sourceUrl: 'https://otakudesu.cloud/s2-ep1',
+              source: 'otakudesu',
+              title: 'S2 Episode 1',
+              order: 1,
+              videoSources: [],
+              createdAt: '2026-08-10',
+              updatedAt: '2026-08-10',
+            },
+          ],
+        },
+      ],
+      episodes: [
+        {
+          id: 's1-ep1',
+          seasonId: 'season-1-id',
+          sourceUrl: 'https://otakudesu.cloud/s1-ep1',
+          source: 'otakudesu',
+          title: 'S1 Episode 1',
+          order: 1,
+          videoSources: [],
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+        },
+        {
+          id: 's1-ep2',
+          seasonId: 'season-1-id',
+          sourceUrl: 'https://otakudesu.cloud/s1-ep2',
+          source: 'otakudesu',
+          title: 'S1 Episode 2',
+          order: 2,
+          videoSources: [],
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+        },
+        {
+          id: 's2-ep1',
+          seasonId: 'season-2-id',
+          sourceUrl: 'https://otakudesu.cloud/s2-ep1',
+          source: 'otakudesu',
+          title: 'S2 Episode 1',
+          order: 1,
+          videoSources: [],
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+        },
+      ],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/multi-season-series')) {
+        return new Response(JSON.stringify({ data: mockSeriesWithSeasons }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<SeriesDetailView seriesId="multi-season-series" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Multi Season Anime' });
+
+    // Verify season tabs/buttons exist
+    expect(screen.getByRole('button', { name: 'Season 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Season 2' })).toBeInTheDocument();
+
+    // Default season (Season 1) episodes should be visible
+    expect(screen.getAllByText('S1 Episode 1').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('S1 Episode 2').length).toBeGreaterThan(0);
+    expect(screen.queryByText('S2 Episode 1')).not.toBeInTheDocument();
+
+    // Click Season 2 button
+    await user.click(screen.getByRole('button', { name: 'Season 2' }));
+
+    // Season 2 episodes should now be visible, Season 1 hidden
+    expect(screen.getAllByText('S2 Episode 1').length).toBeGreaterThan(0);
+    expect(screen.queryByText('S1 Episode 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('S1 Episode 2')).not.toBeInTheDocument();
+  });
+
+  it('gracefully hides season selector tabs when series has 1 or no distinct seasons', async () => {
+    const mockSingleSeasonSeries: SeriesDetails = {
+      id: 'single-season-series',
+      sourceUrl: 'https://otakudesu.cloud/anime/single-season',
+      source: 'otakudesu',
+      title: 'Single Season Movie',
+      description: 'Movie overview',
+      posterUrl: null,
+      createdAt: '2026-08-10',
+      updatedAt: '2026-08-10',
+      seasons: [
+        {
+          id: 'single-season-id',
+          seriesId: 'single-season-series',
+          sourceUrl: 'https://otakudesu.cloud/single-season',
+          source: 'otakudesu',
+          title: 'Season 1',
+          description: 'Single Season',
+          posterUrl: null,
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [
+            {
+              id: 'm1-ep1',
+              seasonId: 'single-season-id',
+              sourceUrl: 'https://otakudesu.cloud/m1-ep1',
+              source: 'otakudesu',
+              title: 'Movie Main Stream',
+              order: 1,
+              videoSources: [],
+              createdAt: '2026-08-10',
+              updatedAt: '2026-08-10',
+            },
+          ],
+        },
+      ],
+      episodes: [
+        {
+          id: 'm1-ep1',
+          seasonId: 'single-season-id',
+          sourceUrl: 'https://otakudesu.cloud/m1-ep1',
+          source: 'otakudesu',
+          title: 'Movie Main Stream',
+          order: 1,
+          videoSources: [],
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+        },
+      ],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/single-season-series')) {
+        return new Response(JSON.stringify({ data: mockSingleSeasonSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    renderWithProviders(<SeriesDetailView seriesId="single-season-series" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Single Season Movie' });
+
+    // Season tab for "Season 1" should NOT be rendered since seasons <= 1
+    expect(screen.queryByRole('button', { name: 'Season 1' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Movie Main Stream').length).toBeGreaterThan(0);
+  });
 });
