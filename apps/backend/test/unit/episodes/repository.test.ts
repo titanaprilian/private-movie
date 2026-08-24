@@ -244,4 +244,50 @@ describe("episode repository updateOrders", () => {
     const checkEp1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
     expect(checkEp1[0].order).toBe(initialOrder);
   });
+
+  it("re-parents an episode into another season via seasonId in the payload", async () => {
+    const seasonA = await createTestSeason("repo-season-a");
+    const seasonB = await createTestSeason("repo-season-b");
+    const epInA = await insertEpisode(1, seasonA);
+    const otherInB = await insertEpisode(1, seasonB);
+
+    // Target (seasonB, 2) is free — simple append-style migration.
+    await repository.updateOrders([
+      { id: epInA.id, order: 2, seasonId: seasonB },
+    ]);
+
+    const [moved] = await db.select().from(episodes).where(eq(episodes.id, epInA.id));
+    expect(moved.seasonId).toBe(seasonB);
+    expect(moved.order).toBe(2);
+
+    const [untouched] = await db.select().from(episodes).where(eq(episodes.id, otherInB.id));
+    expect(untouched.seasonId).toBe(seasonB);
+    expect(untouched.order).toBe(1);
+  });
+
+  it("handles colliding orders across seasons without unique constraint violations", async () => {
+    const seasonA = await createTestSeason("repo-season-c");
+    const seasonB = await createTestSeason("repo-season-d");
+    const epA1 = await insertEpisode(1, seasonA);
+    const epA2 = await insertEpisode(2, seasonA);
+    const epB1 = await insertEpisode(1, seasonB);
+
+    // Swap epB1 into season A slot 1 while epA1 still occupies (A, 1), and
+    // push epA1 to slot 2 where epA2 currently sits. Only a parking phase
+    // that defers re-parenting until all rows hold negative orders survives.
+    await repository.updateOrders([
+      { id: epB1.id, order: 1, seasonId: seasonA },
+      { id: epA1.id, order: 2 },
+      { id: epA2.id, order: 3 },
+    ]);
+
+    const rows = await db.select().from(episodes);
+    const byId = new Map(rows.map((r) => [r.id, r]));
+
+    expect(byId.get(epB1.id)?.seasonId).toBe(seasonA);
+    expect(byId.get(epB1.id)?.order).toBe(1);
+    expect(byId.get(epA1.id)?.seasonId).toBe(seasonA);
+    expect(byId.get(epA1.id)?.order).toBe(2);
+    expect(byId.get(epA2.id)?.order).toBe(3);
+  });
 });

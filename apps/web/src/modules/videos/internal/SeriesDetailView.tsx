@@ -20,6 +20,7 @@ import { AddMediaDialog } from './AddMediaDialog';
 import { AddSeasonDialog } from './AddSeasonDialog';
 import { EditSeasonDialog } from './EditSeasonDialog';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
+import { buildCrossSeasonMove } from './crossSeasonMove';
 import { TmdbMatchModal } from './TmdbMatchModal';
 import { MergeSeasonsModal } from './MergeSeasonsModal';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
@@ -262,10 +263,51 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
     allSources[0] ??
     null;
 
+  const SEASON_TAB_PREFIX = 'season-tab-';
+
+  const handleCrossSeasonDrop = (episodeId: string, targetSeasonId: string) => {
+    const move = buildCrossSeasonMove(localEpisodes, episodeId, targetSeasonId);
+    if (!move) return;
+
+    const previousEpisodes = [...localEpisodes];
+    setLocalEpisodes(move.episodes);
+    queryClient.setQueryData(
+      ['series', seriesId],
+      (old: SeriesDetails | undefined) =>
+        old ? { ...old, episodes: move.episodes } : old
+    );
+
+    reorderMutation.mutate(move.orders, {
+      onError: (error) => {
+        setLocalEpisodes(previousEpisodes);
+        queryClient.setQueryData(
+          ['series', seriesId],
+          (old: SeriesDetails | undefined) =>
+            old ? { ...old, episodes: previousEpisodes } : old
+        );
+        toast.error('video.reorder', {
+          description: `Failed to move episode: ${error.message}`,
+        });
+      },
+    });
+  };
+
   const handleDragEnd = (result: DropResult) => {
     const { destination, source } = result;
 
-    if (!destination || destination.index === source.index) {
+    if (!destination) {
+      return;
+    }
+
+    if (destination.droppableId.startsWith(SEASON_TAB_PREFIX)) {
+      handleCrossSeasonDrop(
+        result.draggableId,
+        destination.droppableId.slice(SEASON_TAB_PREFIX.length)
+      );
+      return;
+    }
+
+    if (destination.index === source.index) {
       return;
     }
 
@@ -348,6 +390,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
 
   return (
     <div className="space-y-4">
+      <DragDropContext onDragEnd={handleDragEnd}>
       {/* Header section */}
       <div className="flex gap-4 items-start">
         {currentPosterUrl && (
@@ -413,7 +456,8 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         </div>
       </div>
 
-      {/* Season Selector section */}
+      {/* Season Selector section (season tabs double as drop targets for
+          cross-season episode moves) */}
       {series.seasons && (
         <div className="flex flex-wrap items-center gap-2 p-2.5 rounded border border-c bg-card">
           {hasMultipleSeasons && (
@@ -426,18 +470,34 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
                   const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
                   const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
                   return (
-                    <button
+                    <Droppable
                       key={season.id}
-                      type="button"
-                      onClick={() => setSelectedSeasonId(season.id)}
-                      className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors border ${
-                        isActive
-                          ? 'bg-primary text-primary-fg border-primary'
-                          : 'bg-card text-fg border-c hover-bg'
-                      }`}
+                      droppableId={`season-tab-${season.id}`}
                     >
-                      {title}
-                    </button>
+                      {(tabProvided, tabSnapshot) => (
+                        <div
+                          ref={tabProvided.innerRef}
+                          {...tabProvided.droppableProps}
+                          className={`rounded ${
+                            tabSnapshot.isDraggingOver
+                              ? 'ring-2 ring-[var(--primary)]'
+                              : ''
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSeasonId(season.id)}
+                            className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors border ${
+                              isActive
+                                ? 'bg-primary text-primary-fg border-primary'
+                                : 'bg-card text-fg border-c hover-bg'
+                            }`}
+                          >
+                            {title}
+                          </button>
+                        </div>
+                      )}
+                    </Droppable>
                   );
                 })}
               </div>
@@ -561,8 +621,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
             </span>
           </div>
 
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="episodes-list" isDropDisabled={filterText.trim().length > 0}>
+          <Droppable droppableId="episodes-list" isDropDisabled={filterText.trim().length > 0}>
               {(droppableProvided) => (
                 <div
                   ref={droppableProvided.innerRef}
@@ -663,11 +722,9 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
                 </div>
               )}
             </Droppable>
-          </DragDropContext>
         </div>
 
-        {/* Right Pane: Episode detail & preview layout */}
-        <div className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6 space-y-5 bg-card">
+        {/* Right Pane: Episode detail & preview layout */}        <div className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6 space-y-5 bg-card">
           {selectedEpisode ? (
             <>
               {/* Header row & action buttons */}
@@ -1087,6 +1144,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </DragDropContext>
     </div>
   );
 }

@@ -516,6 +516,7 @@ export async function deleteVideoSource(
 export interface ReorderEpisodeItem {
   id: string;
   order: number;
+  seasonId?: string;
 }
 
 export async function updateEpisodeOrders(
