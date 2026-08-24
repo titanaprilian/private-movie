@@ -18,14 +18,14 @@ export interface VideoSourceInput {
 
 export interface Episode {
   id: string;
-  sourceUrl: string;
-  source: string;
+  sourceUrl?: string;
+  source?: string;
   title: string;
   order?: number;
   videoType?: string | null;
   videoSources: VideoSource[];
   description?: string | null;
-  duration?: string | null;
+  duration?: number | string | null;
   tags?: string[] | null;
   resolution?: string | null;
   format?: string | null;
@@ -33,6 +33,10 @@ export interface Episode {
   metadata?: unknown;
   seriesId?: string | null;
   seasonId?: string | null;
+  tmdbId?: number | null;
+  thumbnailUrl?: string | null;
+  rating?: string | null;
+  airDate?: Date | string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }

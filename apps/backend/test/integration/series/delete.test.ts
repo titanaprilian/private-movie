@@ -40,8 +40,6 @@ async function insertEpisodeRow(seriesId: string): Promise<{ id: string }> {
     .insert(episodes)
     .values({
       id: crypto.randomUUID(),
-      sourceUrl: `https://otakudesu.blog/episode/delete-series-ep-${crypto.randomUUID()}/`,
-      source: "otakudesu",
       title: "Episode in Series",
       videoType: null,
       metadata: {},

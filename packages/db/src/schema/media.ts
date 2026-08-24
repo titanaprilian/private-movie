@@ -68,24 +68,32 @@ export const seasons = pgTable("seasons", {
 export type SeasonRow = typeof seasons.$inferSelect;
 export type NewSeasonRow = typeof seasons.$inferInsert;
 
-export const episodes = pgTable("episodes", {
-  id: text("id").primaryKey(),
-  sourceUrl: text("source_url").notNull().unique(),
-  source: text("source").notNull(),
-  title: text("title").notNull(),
-  order: integer("order").notNull().default(1),
-  videoType: text("video_type"),
-  description: text("description"),
-  duration: text("duration"),
-  tags: text("tags").array(),
-  resolution: text("resolution"),
-  format: text("format"),
-  size: text("size"),
-  metadata: jsonb("metadata"),
-  seasonId: text("season_id").references(() => seasons.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
-});
+export const episodes = pgTable(
+  "episodes",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    order: integer("order").notNull().default(1),
+    videoType: text("video_type"),
+    description: text("description"),
+    duration: integer("duration"),
+    tags: text("tags").array(),
+    resolution: text("resolution"),
+    format: text("format"),
+    size: text("size"),
+    metadata: jsonb("metadata"),
+    seasonId: text("season_id").references(() => seasons.id),
+    tmdbId: integer("tmdb_id").unique(),
+    thumbnailUrl: text("thumbnail_url"),
+    rating: text("rating"),
+    airDate: timestamp("air_date", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    unique("episodes_season_id_order_unique").on(table.seasonId, table.order),
+  ]
+);
 
 export type EpisodeRow = typeof episodes.$inferSelect;
 export type NewEpisodeRow = typeof episodes.$inferInsert;

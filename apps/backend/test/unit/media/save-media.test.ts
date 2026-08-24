@@ -44,7 +44,6 @@ describe("createMediaService saveMedia", () => {
 
     expect(result.episode).toBeDefined();
     expect(result.episode.id).toBeTypeOf("string");
-    expect(result.episode.sourceUrl).toBe(episodeInput.sourceUrl);
     expect(result.episode.title).toBe(episodeInput.title);
     expect(result.episode.seasonId).not.toBeNull();
     expect(result.series).not.toBeNull();
@@ -63,7 +62,7 @@ describe("createMediaService saveMedia", () => {
     const epRows = await db
       .select()
       .from(episodes)
-      .where(eq(episodes.sourceUrl, episodeInput.sourceUrl));
+      .where(eq(episodes.id, result.episode.id));
     expect(epRows).toHaveLength(1);
     expect(epRows[0].id).toBe(result.episode.id);
     expect(epRows[0].seasonId).toBe(seasonRows[0].id);
@@ -127,7 +126,6 @@ describe("createMediaService saveMedia", () => {
     expect(result.series!.title).toBe(seriesInput.title);
 
     expect(result.episode).toBeDefined();
-    expect(result.episode.sourceUrl).toBe(episodeInput.sourceUrl);
     expect(result.episode.seasonId).not.toBeNull();
 
     // Verify DB linkage
@@ -141,7 +139,7 @@ describe("createMediaService saveMedia", () => {
     const epRows = await db
       .select()
       .from(episodes)
-      .where(eq(episodes.sourceUrl, episodeInput.sourceUrl));
+      .where(eq(episodes.id, result.episode.id));
     expect(epRows).toHaveLength(1);
     expect(epRows[0].seasonId).toBe(seasonRows[0].id);
   });
@@ -207,7 +205,7 @@ describe("createMediaService saveMedia", () => {
     const epRows = await db
       .select()
       .from(episodes)
-      .where(eq(episodes.sourceUrl, episodeInput.sourceUrl));
+      .where(eq(episodes.id, updatedResult.episode.id));
     expect(epRows).toHaveLength(1);
     expect(epRows[0].title).toBe("Updated Episode Title");
   });

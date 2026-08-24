@@ -106,6 +106,13 @@
       "when": 1787308842000,
       "tag": "0014_series_seasons_hierarchy",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787544564959,
+      "tag": "0015_third_khan",
+      "breakpoints": true
     }
   ]
 }

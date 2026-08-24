@@ -171,7 +171,6 @@ describe("POST /save-media", () => {
 
       expect(body.data).toBeDefined();
       expect(body.data.episode.id).toBeTypeOf("string");
-      expect(body.data.episode.sourceUrl).toBe(epSourceUrl);
       expect(body.data.episode.seasonId).not.toBeNull();
       expect(body.data.series).not.toBeNull();
       expect(body.data.series?.tmdbSyncStatus).toBe("PENDING");
@@ -187,7 +186,7 @@ describe("POST /save-media", () => {
       const epRows = await db
         .select()
         .from(episodes)
-        .where(eq(episodes.sourceUrl, epSourceUrl));
+        .where(eq(episodes.id, body.data.episode.id));
       expect(epRows).toHaveLength(1);
       expect(epRows[0].id).toBe(body.data.episode.id);
       expect(epRows[0].seasonId).toBe(seasonRows[0].id);
@@ -262,7 +261,7 @@ describe("POST /save-media", () => {
       const epRows = await db
         .select()
         .from(episodes)
-        .where(eq(episodes.sourceUrl, epSourceUrl));
+        .where(eq(episodes.id, body.data.episode.id));
       expect(epRows).toHaveLength(1);
       expect(epRows[0].seasonId).toBe(seasonRows[0].id);
     });

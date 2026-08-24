@@ -203,8 +203,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seasonId: seasonPart1.id,
-        sourceUrl: "https://otakudesu.blog/episode/aot-p1-ep1",
-        source: "otakudesu",
         title: "AoT P1 Ep 1",
         order: 1,
         createdAt: new Date(Date.now() - 5000),
@@ -217,8 +215,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seasonId: seasonPart1.id,
-        sourceUrl: "https://otakudesu.blog/episode/aot-p1-ep2",
-        source: "otakudesu",
         title: "AoT P1 Ep 2",
         order: 2,
         createdAt: new Date(Date.now() - 4000),
@@ -232,8 +228,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seasonId: seasonPart2.id,
-        sourceUrl: "https://otakudesu.blog/episode/aot-p2-ep1",
-        source: "otakudesu",
         title: "AoT P2 Ep 1",
         order: 1,
         createdAt: new Date(Date.now() - 3000),
@@ -246,8 +240,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seasonId: seasonPart2.id,
-        sourceUrl: "https://otakudesu.blog/episode/aot-p2-ep2",
-        source: "otakudesu",
         title: "AoT P2 Ep 2",
         order: 2,
         createdAt: new Date(Date.now() - 2000),
@@ -261,8 +253,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seasonId: seasonPart3.id,
-        sourceUrl: "https://otakudesu.blog/episode/aot-p3-ep1",
-        source: "otakudesu",
         title: "AoT P3 Ep 1",
         order: 1,
         createdAt: new Date(Date.now() - 1000),

@@ -11,9 +11,6 @@ async function insertEpisode(): Promise<{ id: string }> {
     .insert(episodes)
     .values({
       id: crypto.randomUUID(),
-      sourceUrl:
-        "https://otakudesu.blog/episode/delete-endpoint-episode-1-sub-indo/",
-      source: "otakudesu",
       title: "delete-endpoint",
       videoType: null,
       metadata: {},
@@ -101,9 +98,7 @@ describe("DELETE /episodes/:id", () => {
       };
       expect(body.data).toBeDefined();
       expect(body.data.id).toBe(episode.id);
-      expect(body.data.sourceUrl).toBe(
-        "https://otakudesu.blog/episode/delete-endpoint-episode-1-sub-indo/"
-      );
+      expect(body.data.title).toBe("delete-endpoint");
 
       const remaining = await db
         .select()

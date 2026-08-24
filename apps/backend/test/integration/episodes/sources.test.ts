@@ -7,24 +7,16 @@ import { episodes } from "@repo/db";
 
 async function insertTestEpisode(overrides?: Partial<{
   id: string;
-  sourceUrl: string;
-  source: string;
   title: string;
   videoType: string | null;
-}>): Promise<{ id: string; sourceUrl: string; title: string }> {
+}>): Promise<{ id: string; title: string }> {
   const id = overrides?.id ?? crypto.randomUUID();
-  const sourceUrl =
-    overrides?.sourceUrl ??
-    `https://otakudesu.blog/episode/sources-test-${crypto.randomUUID()}/`;
-  const source = overrides?.source ?? "otakudesu";
   const title = overrides?.title ?? "Sources Test Episode";
   const videoType = overrides?.videoType ?? null;
   const now = new Date();
 
   await db.insert(episodes).values({
     id,
-    sourceUrl,
-    source,
     title,
     videoType,
     metadata: {},
@@ -32,7 +24,7 @@ async function insertTestEpisode(overrides?: Partial<{
     updatedAt: now,
   });
 
-  return { id, sourceUrl, title };
+  return { id, title };
 }
 
 async function insertTestVideoSource(episodeId: string, overrides?: Partial<{

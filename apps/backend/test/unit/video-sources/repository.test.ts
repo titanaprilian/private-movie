@@ -13,8 +13,6 @@ async function insertTestEpisode(): Promise<{ id: string }> {
     .insert(episodes)
     .values({
       id: crypto.randomUUID(),
-      sourceUrl: `https://otakudesu.blog/episode/test-${crypto.randomUUID()}/`,
-      source: "otakudesu",
       title: "Test Episode",
       videoType: "TV",
       metadata: {},

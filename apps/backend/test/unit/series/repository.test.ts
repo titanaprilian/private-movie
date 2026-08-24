@@ -50,7 +50,7 @@ async function insertSeries(overrides?: {
 
 async function insertEpisodeForSeries(
   seriesId: string,
-  overrides?: { title?: string; createdAt?: Date }
+  overrides?: { title?: string; createdAt?: Date; order?: number }
 ): Promise<{ id: string }> {
   const id = crypto.randomUUID();
   const now = overrides?.createdAt ?? new Date();
@@ -77,13 +77,21 @@ async function insertEpisodeForSeries(
     seasonId = newSeason.id;
   }
 
+  let order = overrides?.order;
+  if (order === undefined) {
+    const existingEps = await db
+      .select()
+      .from(episodes)
+      .where(eq(episodes.seasonId, seasonId));
+    order = existingEps.length + 1;
+  }
+
   const [row] = await db
     .insert(episodes)
     .values({
       id,
-      sourceUrl: `https://otakudesu.blog/episode/ep-${id}/`,
-      source: "otakudesu",
       title: overrides?.title ?? "Episode Title",
+      order,
       videoType: null,
       metadata: {},
       seasonId,

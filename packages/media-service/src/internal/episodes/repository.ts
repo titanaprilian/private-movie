@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { asc, count, eq, inArray, isNull, max } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, max } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@repo/db";
 import type { ParsedMetadata } from "@repo/media-scraper";
@@ -31,20 +31,24 @@ export interface EpisodeOrderUpdateInput {
 }
 
 export interface EpisodeUpsertInput {
-  sourceUrl: string;
-  source: string;
-  title: string;
-  order?: number;
-  videoType: string | null;
-  metadata: ParsedMetadata;
   seasonId?: string | null;
   seriesId?: string | null;
+  title: string;
+  order?: number;
+  videoType?: string | null;
+  description?: string | null;
+  duration?: number | null;
+  metadata?: ParsedMetadata | Record<string, unknown> | null;
+  tmdbId?: number | null;
+  thumbnailUrl?: string | null;
+  rating?: string | null;
+  airDate?: Date | null;
 }
 
 export interface EpisodeListParams {
   page: number;
   limit?: number;
-  source?: string;
+  seasonId?: string;
 }
 
 export interface EpisodeListResult {
@@ -60,29 +64,38 @@ export function createEpisodeRepositoryInternal<
     async upsert(input: EpisodeUpsertInput): Promise<EpisodeRow> {
       const now = new Date();
       const seasonId = input.seasonId ?? input.seriesId ?? null;
+      const order = input.order ?? 1;
+
       const [row] = await db
         .insert(episodes)
         .values({
           id: randomUUID(),
-          sourceUrl: input.sourceUrl,
-          source: input.source,
           title: input.title,
-          order: input.order ?? 1,
-          videoType: input.videoType,
-          metadata: input.metadata,
+          order,
+          videoType: input.videoType ?? null,
+          description: input.description ?? null,
+          duration: input.duration ?? null,
+          metadata: input.metadata ?? null,
           seasonId,
+          tmdbId: input.tmdbId ?? null,
+          thumbnailUrl: input.thumbnailUrl ?? null,
+          rating: input.rating ?? null,
+          airDate: input.airDate ?? null,
           createdAt: now,
           updatedAt: now,
         })
         .onConflictDoUpdate({
-          target: episodes.sourceUrl,
+          target: [episodes.seasonId, episodes.order],
           set: {
-            source: input.source,
             title: input.title,
-            ...(input.order !== undefined ? { order: input.order } : {}),
-            videoType: input.videoType,
-            metadata: input.metadata,
-            seasonId: seasonId ?? undefined,
+            ...(input.videoType !== undefined ? { videoType: input.videoType } : {}),
+            ...(input.description !== undefined ? { description: input.description } : {}),
+            ...(input.duration !== undefined ? { duration: input.duration } : {}),
+            ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+            ...(input.tmdbId !== undefined ? { tmdbId: input.tmdbId } : {}),
+            ...(input.thumbnailUrl !== undefined ? { thumbnailUrl: input.thumbnailUrl } : {}),
+            ...(input.rating !== undefined ? { rating: input.rating } : {}),
+            ...(input.airDate !== undefined ? { airDate: input.airDate } : {}),
             updatedAt: now,
           },
         })
@@ -90,11 +103,11 @@ export function createEpisodeRepositoryInternal<
       return row;
     },
 
-    async findBySourceUrl(sourceUrl: string): Promise<EpisodeRow | null> {
+    async findBySeasonIdAndOrder(seasonId: string, order: number): Promise<EpisodeRow | null> {
       const [row] = await db
         .select()
         .from(episodes)
-        .where(eq(episodes.sourceUrl, sourceUrl));
+        .where(and(eq(episodes.seasonId, seasonId), eq(episodes.order, order)));
       return row ?? null;
     },
 
@@ -136,8 +149,8 @@ export function createEpisodeRepositoryInternal<
       const page = Math.max(1, params.page);
       const offset = (page - 1) * limit;
 
-      const where = params.source
-        ? eq(episodes.source, params.source)
+      const where = params.seasonId
+        ? eq(episodes.seasonId, params.seasonId)
         : undefined;
 
       const [rows, totalRows] = await Promise.all([
@@ -218,11 +231,12 @@ export function createEpisodeRepositoryInternal<
     async updateOrders(items: EpisodeOrderUpdateInput[]): Promise<void> {
       await db.transaction(async (tx) => {
         const now = new Date();
-        for (const item of items) {
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
           const [updated] = await tx
             .update(episodes)
             .set({
-              order: item.order,
+              order: -(i + 100000),
               updatedAt: now,
             })
             .where(eq(episodes.id, item.id))
@@ -231,6 +245,16 @@ export function createEpisodeRepositoryInternal<
           if (!updated) {
             throw new EpisodeNotFoundError(`Episode with id ${item.id} not found`);
           }
+        }
+
+        for (const item of items) {
+          await tx
+            .update(episodes)
+            .set({
+              order: item.order,
+              updatedAt: now,
+            })
+            .where(eq(episodes.id, item.id));
         }
       });
     },

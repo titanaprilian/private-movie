@@ -47,6 +47,7 @@ async function insertSeriesRow(options?: {
 async function insertEpisodeRow(options: {
   seriesId?: string | null;
   title?: string;
+  order?: number;
   createdAt?: Date;
 }): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
@@ -58,11 +59,16 @@ async function insertEpisodeRow(options: {
     seasonId = season?.id ?? null;
   }
 
+  let order = options.order;
+  if (order === undefined && seasonId) {
+    const existing = await db.select().from(episodes).where(eq(episodes.seasonId, seasonId));
+    order = existing.length + 1;
+  }
+
   await db.insert(episodes).values({
     id,
-    sourceUrl: `https://otakudesu.blog/episode/test-ep-${id}/`,
-    source: "otakudesu",
     title: options.title ?? "Test Episode",
+    order: order ?? 1,
     videoType: null,
     metadata: {},
     seasonId,

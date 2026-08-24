@@ -7,24 +7,16 @@ import { db } from "../../utils/db";
 
 async function insertTestEpisode(overrides?: Partial<{
   id: string;
-  sourceUrl: string;
-  source: string;
   title: string;
   videoType: string | null;
   metadata: Record<string, unknown>;
 }>): Promise<{
   id: string;
-  sourceUrl: string;
-  source: string;
   title: string;
   videoType: string | null;
   metadata: Record<string, unknown>;
 }> {
   const id = overrides?.id ?? crypto.randomUUID();
-  const sourceUrl =
-    overrides?.sourceUrl ??
-    `https://otakudesu.blog/episode/patch-test-${crypto.randomUUID()}/`;
-  const source = overrides?.source ?? "otakudesu";
   const title = overrides?.title ?? "Original Title";
   const videoType = overrides?.videoType ?? null;
   const metadata = overrides?.metadata ?? { initial: true };
@@ -32,8 +24,6 @@ async function insertTestEpisode(overrides?: Partial<{
 
   await db.insert(episodes).values({
     id,
-    sourceUrl,
-    source,
     title,
     videoType,
     metadata,
@@ -41,7 +31,7 @@ async function insertTestEpisode(overrides?: Partial<{
     updatedAt: now,
   });
 
-  return { id, sourceUrl, source, title, videoType, metadata };
+  return { id, title, videoType, metadata };
 }
 
 describe("PATCH /episodes/:id", () => {

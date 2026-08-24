@@ -39,8 +39,6 @@ async function insertTestEpisode(seriesId: string, order: number): Promise<{ id:
 
   await db.insert(episodes).values({
     id,
-    sourceUrl: `https://otakudesu.blog/episode/order-test-${id}/`,
-    source: "otakudesu",
     title: `Episode ${order}`,
     order,
     videoType: null,

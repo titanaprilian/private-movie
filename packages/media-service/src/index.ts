@@ -470,20 +470,11 @@ export function createMediaService<
 
         let order = parseEpisodeOrder(input.episode.title);
         if (order === null) {
-          const existing = await episodeRepositoryTx.findBySourceUrl(
-            input.episode.sourceUrl
-          );
-          if (existing) {
-            order = existing.order;
-          } else {
-            const maxOrder = await episodeRepositoryTx.getMaxOrder(seasonId);
-            order = maxOrder + 1;
-          }
+          const maxOrder = await episodeRepositoryTx.getMaxOrder(seasonId);
+          order = maxOrder + 1;
         }
 
         const episodeRow = await episodeRepositoryTx.upsert({
-          sourceUrl: input.episode.sourceUrl,
-          source: input.episode.source,
           title: input.episode.title,
           order,
           videoType: input.episode.videoType ?? null,
