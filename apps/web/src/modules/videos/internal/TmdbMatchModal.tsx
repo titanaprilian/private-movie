@@ -46,10 +46,13 @@ async function fetchTmdbPreview(seriesId: string, type: 'movie'|'tv', tmdbId: nu
   return result.data?.data as TmdbPreviewData;
 }
 
-async function matchTmdb(seriesId: string, type: 'movie'|'tv', tmdbId: number, season?: number) {
+async function matchTmdb(seriesId: string, type: 'movie'|'tv', tmdbId: number, season?: number, localSeasonId?: string) {
   const payload: any = { type, tmdbId };
   if (type === 'tv' && season !== undefined && !isNaN(season)) {
     payload.season = season;
+    if (localSeasonId) {
+      payload.localSeasonId = localSeasonId;
+    }
   }
   const result: any = await api.series[seriesId]['tmdb-match'].post(payload);
   
@@ -63,6 +66,7 @@ export interface TmdbMatchModalProps {
   seriesId: string;
   defaultType?: 'movie' | 'tv';
   defaultSeason?: number;
+  localSeasonId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -71,6 +75,7 @@ export function TmdbMatchModal({
   seriesId,
   defaultType = 'movie',
   defaultSeason = 1,
+  localSeasonId,
   open,
   onOpenChange,
 }: TmdbMatchModalProps) {
@@ -112,7 +117,7 @@ export function TmdbMatchModal({
   });
 
   const { mutate: saveMatch, isPending: isSaving } = useMutation({
-    mutationFn: (data: FormData) => matchTmdb(seriesId, data.type, data.tmdbId, data.season),
+    mutationFn: (data: FormData) => matchTmdb(seriesId, data.type, data.tmdbId, data.season, localSeasonId),
     onSuccess: () => {
       toast.success('Successfully matched with TMDB');
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });

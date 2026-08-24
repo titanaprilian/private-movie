@@ -12,6 +12,7 @@ import {
   createVideoSourceRepositoryInternal,
   EpisodeFetchError,
   EpisodeNotFoundError,
+  SeasonNotFoundError,
   SeriesFetchError,
   SeriesNotFoundError,
   VideoSourceNotFoundError,
@@ -551,6 +552,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             type: body.type,
             tmdbId: body.tmdbId,
             season: body.season,
+            localSeasonId: body.localSeasonId,
           });
           return successResponse(updated);
         } catch (e: unknown) {
@@ -569,6 +571,51 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           type: t.Union([t.Literal("movie"), t.Literal("tv")]),
           tmdbId: t.Numeric(),
           season: t.Optional(t.Numeric()),
+          localSeasonId: t.Optional(t.String()),
+        }),
+      }
+    )
+    .post(
+      "/series/:id/seasons/merge",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const result = await mediaService.mergeSeasons({
+            seriesId: params.id,
+            orderedSeasonIds: body.orderedSeasonIds,
+          });
+          return successResponse(result);
+        } catch (error: unknown) {
+          if (error instanceof SeriesNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          if (error instanceof SeasonNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          if (error instanceof Error) {
+            return errorResponse(set, 400, error);
+          }
+          return errorResponse(set, 500, new InternalServerError());
+        }
+      },
+      {
+        params: t.Object({ id: t.String() }),
+        body: t.Object({
+          orderedSeasonIds: t.Array(t.String(), { minItems: 1 }),
         }),
       }
     )

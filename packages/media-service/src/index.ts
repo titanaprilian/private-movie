@@ -1,6 +1,6 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { asc, eq } from "drizzle-orm";
-import { seasons, type SeriesRow } from "@repo/db";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import { episodes, seasons, type SeriesRow } from "@repo/db";
 import {
   MediaScraper,
   extractDirectVideoSources,
@@ -27,6 +27,7 @@ export interface TmdbMatchInput {
   type: "movie" | "tv";
   tmdbId: number;
   season?: number;
+  localSeasonId?: string;
 }
 
 export type VideoSource = "otakudesu";
@@ -190,12 +191,18 @@ export interface SaveEpisodeServiceOptions {
   fetchHtml?: FetchFn;
 }
 
+export interface MergeSeasonsInput {
+  seriesId: string;
+  orderedSeasonIds: string[];
+}
+
 export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult>;
   matchTmdb(input: TmdbMatchInput): Promise<SeriesWithSeasons>;
+  mergeSeasons(input: MergeSeasonsInput): Promise<{ success: true }>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -607,7 +614,13 @@ export function createMediaService<
             .where(eq(seasons.seriesId, activeSeriesId))
             .orderBy(asc(seasons.createdAt));
 
-          let targetSeasonRow = childSeasons.find((s) => s.tmdbSeason === seasonNum);
+          let targetSeasonRow = input.localSeasonId
+            ? childSeasons.find((s) => s.id === input.localSeasonId)
+            : undefined;
+
+          if (!targetSeasonRow) {
+            targetSeasonRow = childSeasons.find((s) => s.tmdbSeason === seasonNum);
+          }
 
           if (!targetSeasonRow) {
             targetSeasonRow = childSeasons.find((s) => s.tmdbSeason == null) ?? childSeasons[0];
@@ -621,6 +634,7 @@ export function createMediaService<
               tmdbId: details.id,
               tmdbSeason: seasonNum,
               posterUrl: seasonPoster,
+              title: seasonDetails?.name,
               description: seasonOverview,
               tmdbSyncStatus: "SYNCED",
             });
@@ -639,6 +653,92 @@ export function createMediaService<
           seasons: finalSeasons,
           relations: [],
         };
+      });
+    },
+
+    async mergeSeasons(input: MergeSeasonsInput): Promise<{ success: true }> {
+      if (!input.orderedSeasonIds || input.orderedSeasonIds.length === 0) {
+        throw new Error("orderedSeasonIds must contain at least one season ID");
+      }
+
+      const uniqueSeasonIds = new Set(input.orderedSeasonIds);
+      if (uniqueSeasonIds.size !== input.orderedSeasonIds.length) {
+        throw new Error("orderedSeasonIds must contain unique season IDs");
+      }
+
+      const primarySeasonId = input.orderedSeasonIds[0];
+      const duplicateSeasonIds = input.orderedSeasonIds.slice(1);
+
+      return await db.transaction(async (tx) => {
+        const seriesRepositoryTx = createSeriesRepositoryInternal(tx);
+
+        const targetSeries = await seriesRepositoryTx.findById(input.seriesId);
+        if (!targetSeries) {
+          throw new SeriesNotFoundError(`Series with id ${input.seriesId} not found`);
+        }
+
+        const foundSeasons = await tx
+          .select()
+          .from(seasons)
+          .where(
+            and(
+              inArray(seasons.id, input.orderedSeasonIds),
+              eq(seasons.seriesId, input.seriesId)
+            )
+          );
+
+        if (foundSeasons.length !== input.orderedSeasonIds.length) {
+          throw new SeasonNotFoundError(
+            `One or more seasons in orderedSeasonIds were not found for series ${input.seriesId}`
+          );
+        }
+
+        const allEpisodes = await tx
+          .select()
+          .from(episodes)
+          .where(inArray(episodes.seasonId, input.orderedSeasonIds));
+
+        const episodesBySeason = new Map<string, typeof allEpisodes>();
+        for (const ep of allEpisodes) {
+          if (ep.seasonId) {
+            const list = episodesBySeason.get(ep.seasonId) ?? [];
+            list.push(ep);
+            episodesBySeason.set(ep.seasonId, list);
+          }
+        }
+
+        const sortedEpisodes: typeof allEpisodes = [];
+        for (const sId of input.orderedSeasonIds) {
+          const sEpisodes = episodesBySeason.get(sId) ?? [];
+          sEpisodes.sort((a, b) => {
+            if (a.order !== b.order) {
+              return a.order - b.order;
+            }
+            return a.createdAt.getTime() - b.createdAt.getTime();
+          });
+          sortedEpisodes.push(...sEpisodes);
+        }
+
+        const now = new Date();
+        for (let i = 0; i < sortedEpisodes.length; i++) {
+          const ep = sortedEpisodes[i];
+          await tx
+            .update(episodes)
+            .set({
+              seasonId: primarySeasonId,
+              order: i + 1,
+              updatedAt: now,
+            })
+            .where(eq(episodes.id, ep.id));
+        }
+
+        if (duplicateSeasonIds.length > 0) {
+          await tx
+            .delete(seasons)
+            .where(inArray(seasons.id, duplicateSeasonIds));
+        }
+
+        return { success: true };
       });
     },
   };

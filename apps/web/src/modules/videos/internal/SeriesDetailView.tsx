@@ -835,6 +835,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         seriesId={seriesId}
         defaultType={series.type === 'movie' ? 'movie' : 'tv'}
         defaultSeason={activeSeasonNumber}
+        localSeasonId={activeSeason?.id}
         open={isTmdbMatchOpen}
         onOpenChange={setIsTmdbMatchOpen}
       />
