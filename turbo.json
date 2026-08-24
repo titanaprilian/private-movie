@@ -4,41 +4,66 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"],
-      "inputs": ["src/**", "tsconfig*.json", "package.json"]
+      "inputs": ["src/**", "tsconfig*.json", "package.json"],
+      "outputs": ["dist/**"]
     },
     "@repo/web#build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".tanstack/**"],
       "env": ["VITE_API_URL"]
     },
-    "typecheck": {
-      "dependsOn": ["^build"]
-    },
     "test": {
       "dependsOn": ["^build"]
     },
     "@repo/backend#test:integration": {
-      "cache": false,
       "dependsOn": ["^build", "test"],
-      "env": ["DATABASE_URL", "JWT_SECRET"]
+      "env": ["DATABASE_URL", "JWT_SECRET"],
+      "cache": false
     },
     "lint": {},
-    "db:generate": {},
-    "db:push": { "cache": false, "env": ["DATABASE_URL"] },
-    "db:migrate": { "cache": false, "env": ["DATABASE_URL"] },
-    "db:seed": { "cache": false, "env": ["DATABASE_URL"] },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
     "clean": {
+      "cache": false
+    },
+    "db:generate": {},
+    "db:push": {
+      "env": ["DATABASE_URL"],
+      "cache": false
+    },
+    "db:migrate": {
+      "env": ["DATABASE_URL"],
+      "cache": false
+    },
+    "db:seed": {
+      "env": ["DATABASE_URL"],
+      "cache": false
+    },
+    "db:sync-episodes": {
+      "env": ["DATABASE_URL", "TMDB_API_KEY"],
       "cache": false
     },
     "dev": {
       "persistent": true,
-      "passThroughEnv": ["PORT", "DATABASE_URL", "JWT_SECRET", "VITE_API_URL", "TMDB_API_KEY"]
+      "passThroughEnv": [
+        "PORT",
+        "DATABASE_URL",
+        "JWT_SECRET",
+        "VITE_API_URL",
+        "TMDB_API_KEY"
+      ]
     },
     "start": {
       "persistent": true,
       "dependsOn": ["build"],
-      "passThroughEnv": ["PORT", "DATABASE_URL", "JWT_SECRET", "VITE_API_URL", "TMDB_API_KEY"]
+      "passThroughEnv": [
+        "PORT",
+        "DATABASE_URL",
+        "JWT_SECRET",
+        "VITE_API_URL",
+        "TMDB_API_KEY"
+      ]
     }
   }
 }
