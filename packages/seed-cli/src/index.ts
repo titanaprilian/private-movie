@@ -15,6 +15,8 @@ import {
   type SaveMediaSeriesInput,
 } from "@repo/media-service";
 
+export * from "./sync-tmdb-episodes";
+
 export interface SeriesListItem {
   title?: string;
   fullTitle?: string;
