@@ -611,5 +611,46 @@ export async function createSeason(
   return res.data.data as unknown as SeasonDetails;
 }
 
+export interface UpdateSeasonParams {
+  title?: string;
+  description?: string | null;
+}
+
+export async function updateSeason(
+  seasonId: string,
+  params: UpdateSeasonParams
+): Promise<SeasonDetails> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.seasons as any)[seasonId].patch(params);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to update season'
+    );
+  }
+
+  return res.data.data as unknown as SeasonDetails;
+}
+
+export async function deleteSeason(seasonId: string): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.seasons as any)[seasonId].delete();
+
+  if (res.error) {
+    const errorValue = res.error.value as
+      | { code?: string; message?: string; error?: { code?: string; message?: string } }
+      | undefined;
+    const code = errorValue?.error?.code || errorValue?.code;
+    const message =
+      errorValue?.error?.message ||
+      errorValue?.message ||
+      'Failed to delete season';
+    const error = new Error(message) as Error & { code?: string };
+    error.code = code;
+    throw error;
+  }
+}
+
 
 

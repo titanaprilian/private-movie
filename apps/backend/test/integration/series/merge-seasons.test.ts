@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
+import { describe, expect, it, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import { createDbClient, episodes, seasons, series } from "@repo/db";
@@ -11,10 +11,10 @@ describe("POST /series/:id/seasons/merge", () => {
   let app: App;
   let headers: Record<string, string>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     app = await buildApp();
     const user = await registerUser(app, {
-      email: "merge-tester@example.com",
+      email: `merge-tester-${crypto.randomUUID()}@example.com`,
       password: "password123",
       name: "Merge Tester",
     });
@@ -304,5 +304,113 @@ describe("POST /series/:id/seasons/merge", () => {
       { id: ep2Part2.id, order: 4 },
       { id: ep1Part3.id, order: 5 },
     ]);
+  });
+
+  it("merges seasons with overlapping sequential orders without failing on unique constraint DRIZZLE_QUERY", async () => {
+    const [targetSeries] = await db
+      .insert(series)
+      .values({
+        id: crypto.randomUUID(),
+        title: "Overlapping Orders Series",
+        type: "tv",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const [season1] = await db
+      .insert(seasons)
+      .values({
+        id: crypto.randomUUID(),
+        seriesId: targetSeries.id,
+        sourceUrl: "https://otakudesu.blog/anime/overlap-s1",
+        source: "otakudesu",
+        title: "Season 1",
+        createdAt: new Date(Date.now() - 2000),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const [season2] = await db
+      .insert(seasons)
+      .values({
+        id: crypto.randomUUID(),
+        seriesId: targetSeries.id,
+        sourceUrl: "https://otakudesu.blog/anime/overlap-s2",
+        source: "otakudesu",
+        title: "Season 2",
+        createdAt: new Date(Date.now() - 1000),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const [s1ep1] = await db
+      .insert(episodes)
+      .values({
+        id: crypto.randomUUID(),
+        seasonId: season1.id,
+        title: "S1 Ep 1",
+        order: 1,
+        createdAt: new Date(Date.now() - 4000),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const [s1ep2] = await db
+      .insert(episodes)
+      .values({
+        id: crypto.randomUUID(),
+        seasonId: season1.id,
+        title: "S1 Ep 2",
+        order: 2,
+        createdAt: new Date(Date.now() - 3000),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const [s2ep1] = await db
+      .insert(episodes)
+      .values({
+        id: crypto.randomUUID(),
+        seasonId: season2.id,
+        title: "S2 Ep 1",
+        order: 1,
+        createdAt: new Date(Date.now() - 2000),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const [s2ep2] = await db
+      .insert(episodes)
+      .values({
+        id: crypto.randomUUID(),
+        seasonId: season2.id,
+        title: "S2 Ep 2",
+        order: 2,
+        createdAt: new Date(Date.now() - 1000),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const result = await request(app, {
+      method: "POST",
+      path: `/series/${targetSeries.id}/seasons/merge`,
+      headers,
+      body: {
+        orderedSeasonIds: [season1.id, season2.id],
+      },
+    });
+
+    expect(result.status).toBe(200);
+    expect((result.body as any).data).toEqual({ success: true });
+
+    const updatedEpisodes = await db
+      .select()
+      .from(episodes)
+      .where(inArray(episodes.id, [s1ep1.id, s1ep2.id, s2ep1.id, s2ep2.id]))
+      .orderBy(episodes.order);
+
+    expect(updatedEpisodes).toHaveLength(4);
+    expect(updatedEpisodes.map((e) => e.order)).toEqual([1, 2, 3, 4]);
   });
 });

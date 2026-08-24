@@ -36,7 +36,7 @@ export type { EpisodeRow as SavedEpisode, SeasonRow as SavedSeason, SeriesRow as
 export type { EpisodeWithVideoSources };
 export type { SeriesWithEpisodes, SeriesWithSeasons, SeasonWithEpisodes } from "./internal/series/repository";
 export { EpisodeNotFoundError, createEpisodeRepositoryInternal } from "./internal/episodes/repository";
-export { SeasonNotFoundError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
+export { SeasonNotFoundError, SeasonNotEmptyError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
 export type { SeasonUpsertInput, CreateSeasonInput } from "./internal/seasons/repository";
 export { SeriesNotFoundError, createSeriesRepositoryInternal } from "./internal/series/repository";
 export { VideoSourceNotFoundError, createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
@@ -718,6 +718,17 @@ export function createMediaService<
             .update(episodes)
             .set({
               seasonId: primarySeasonId,
+              order: -(i + 100000),
+              updatedAt: now,
+            })
+            .where(eq(episodes.id, ep.id));
+        }
+
+        for (let i = 0; i < sortedEpisodes.length; i++) {
+          const ep = sortedEpisodes[i];
+          await tx
+            .update(episodes)
+            .set({
               order: i + 1,
               updatedAt: now,
             })

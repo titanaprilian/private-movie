@@ -14,9 +14,11 @@ import {
   updateEpisode,
   deleteEpisode,
   updateEpisodeOrders,
+  deleteSeason,
 } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { AddSeasonDialog } from './AddSeasonDialog';
+import { EditSeasonDialog } from './EditSeasonDialog';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { TmdbMatchModal } from './TmdbMatchModal';
 import { MergeSeasonsModal } from './MergeSeasonsModal';
@@ -125,6 +127,30 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
     },
   });
 
+  const deleteSeasonMutation = useMutation({
+    mutationFn: deleteSeason,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+      toast.success('Season deleted successfully');
+      setIsDeleteSeasonOpen(false);
+    },
+    onError: (error) => {
+      const err = error as Error & { code?: string };
+      if (err.code === 'SEASON_NOT_EMPTY') {
+        toast.error('Cannot delete season', {
+          description:
+            err.message ||
+            'This season still contains episodes. Move or delete them first.',
+        });
+      } else {
+        toast.error('Failed to delete season', {
+          description: error.message,
+        });
+      }
+      setIsDeleteSeasonOpen(false);
+    },
+  });
+
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(
     null
   );
@@ -152,6 +178,8 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isTmdbMatchOpen, setIsTmdbMatchOpen] = useState(false);
   const [isMergeSeasonsOpen, setIsMergeSeasonsOpen] = useState(false);
   const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
+  const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
+  const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -435,6 +463,46 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
             </svg>
             Add Season
           </button>
+          {activeSeason && (
+            <>
+              <button
+                onClick={() => setIsEditSeasonOpen(true)}
+                type="button"
+                className="border border-c hover-bg px-3 py-1 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1 shrink-0 ml-auto"
+                aria-label="Edit Season"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                </svg>
+                Edit Season
+              </button>
+              <button
+                onClick={() => setIsDeleteSeasonOpen(true)}
+                type="button"
+                className="border border-c hover-bg px-3 py-1 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1 shrink-0 text-red-600 dark:text-red-400"
+                aria-label="Delete Season"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                </svg>
+                Delete Season
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -889,6 +957,47 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         onOpenChange={setIsAddSeasonOpen}
         onCreated={(season) => setSelectedSeasonId(season.id)}
       />
+      {activeSeason && (
+        <EditSeasonDialog
+          season={activeSeason}
+          open={isEditSeasonOpen}
+          onOpenChange={setIsEditSeasonOpen}
+        />
+      )}
+
+      {/* Delete Season Confirmation Dialog */}
+      <Dialog open={isDeleteSeasonOpen} onOpenChange={setIsDeleteSeasonOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Season</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              {activeSeason?.title ? `"${activeSeason.title}"` : 'this season'}?
+              Seasons containing episodes cannot be deleted. This action cannot
+              be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsDeleteSeasonOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteSeasonMutation.isPending}
+              onClick={() =>
+                activeSeason && deleteSeasonMutation.mutate(activeSeason.id)
+              }
+            >
+              {deleteSeasonMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Episode Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

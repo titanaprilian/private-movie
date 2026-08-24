@@ -14,6 +14,7 @@ import {
   EpisodeFetchError,
   EpisodeNotFoundError,
   SeasonNotFoundError,
+  SeasonNotEmptyError,
   SeriesFetchError,
   SeriesNotFoundError,
   VideoSourceNotFoundError,
@@ -691,6 +692,82 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
       }
     )
+    .patch(
+      "/seasons/:id",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const updated = await seasonsRepository.updateSeason(params.id, {
+            ...(body.title !== undefined ? { title: body.title } : {}),
+            ...(body.description !== undefined ? { description: body.description } : {}),
+            ...(body.posterUrl !== undefined ? { posterUrl: body.posterUrl } : {}),
+          });
+          return successResponse(updated);
+        } catch (error: unknown) {
+          if (error instanceof SeasonNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({ id: t.String({ format: "uuid" }) }),
+        body: t.Object({
+          title: t.Optional(t.String({ minLength: 1 })),
+          description: t.Optional(t.Nullable(t.String())),
+          posterUrl: t.Optional(t.Nullable(t.String())),
+        }),
+      }
+    )
+    .delete(
+      "/seasons/:id",
+      async ({ params, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          await seasonsRepository.deleteSeason(params.id);
+          return successResponse({ deleted: true });
+        } catch (error: unknown) {
+          if (error instanceof SeasonNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          if (error instanceof SeasonNotEmptyError) {
+            return errorResponse(set, 409, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({ id: t.String({ format: "uuid" }) }),
+      }
+    )
     // --- TMDB MANUAL MATCH END ---
     
     .put(
@@ -834,6 +911,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           t.Object({
             id: t.String({ format: "uuid" }),
             order: t.Number(),
+            seasonId: t.Optional(t.String({ format: "uuid" })),
           })
         ),
       }

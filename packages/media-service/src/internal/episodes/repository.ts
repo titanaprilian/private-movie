@@ -28,6 +28,7 @@ export interface UpdateEpisodeInput {
 export interface EpisodeOrderUpdateInput {
   id: string;
   order: number;
+  seasonId?: string;
 }
 
 export interface EpisodeUpsertInput {
@@ -231,6 +232,10 @@ export function createEpisodeRepositoryInternal<
     async updateOrders(items: EpisodeOrderUpdateInput[]): Promise<void> {
       await db.transaction(async (tx) => {
         const now = new Date();
+
+        // Phase 1: park every moved row on a unique negative order so any
+        // combination of final positions can be applied without tripping the
+        // (season_id, order) unique constraint mid-transaction.
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
           const [updated] = await tx
@@ -247,6 +252,21 @@ export function createEpisodeRepositoryInternal<
           }
         }
 
+        // Phase 2: re-parent rows across seasons while they still hold their
+        // negative parking orders — occupants of the target season all have
+        // positive orders, so no collision is possible at this point.
+        for (const item of items) {
+          if (item.seasonId === undefined) continue;
+          await tx
+            .update(episodes)
+            .set({
+              seasonId: item.seasonId,
+              updatedAt: now,
+            })
+            .where(eq(episodes.id, item.id));
+        }
+
+        // Phase 3: commit the final absolute positions.
         for (const item of items) {
           await tx
             .update(episodes)

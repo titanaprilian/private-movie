@@ -10,6 +10,7 @@ async function insertSeriesRow(title: string): Promise<{ id: string; title: stri
   await db.insert(series).values({
     id,
     title,
+    type: "tv",
     description: "Sample Description",
     posterUrl: "https://example.com/poster.jpg",
     createdAt: now,

@@ -1,12 +1,21 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { seasons, type SeasonRow } from "@repo/db";
+import { episodes, seasons, type SeasonRow } from "@repo/db";
 
 export class SeasonNotFoundError extends Error {
   constructor(message = "Season not found") {
     super(message);
     this.name = "SeasonNotFoundError";
+  }
+}
+
+export class SeasonNotEmptyError extends Error {
+  readonly episodeCount: number;
+  constructor(episodeCount: number) {
+    super(`Season still contains ${episodeCount} episode(s) and cannot be deleted`);
+    this.name = "SeasonNotEmptyError";
+    this.episodeCount = episodeCount;
   }
 }
 
@@ -125,6 +134,22 @@ export function createSeasonsRepositoryInternal<
         .update(seasons)
         .set({ seriesId: toSeriesId, updatedAt: new Date() })
         .where(eq(seasons.seriesId, fromSeriesId));
+    },
+
+    async deleteSeason(id: string): Promise<void> {
+      const [{ value }] = await db
+        .select({ value: count() })
+        .from(episodes)
+        .where(eq(episodes.seasonId, id));
+
+      if (value > 0) {
+        throw new SeasonNotEmptyError(value);
+      }
+
+      const result = await db.delete(seasons).where(eq(seasons.id, id)).returning();
+      if (result.length === 0) {
+        throw new SeasonNotFoundError(`Season with id ${id} not found`);
+      }
     },
 
     async create(input: CreateSeasonInput): Promise<SeasonRow> {
