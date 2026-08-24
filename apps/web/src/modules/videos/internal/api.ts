@@ -589,5 +589,27 @@ export async function mergeSeasons(
   }
 }
 
+export interface CreateSeasonParams {
+  title: string;
+  description?: string | null;
+}
+
+export async function createSeason(
+  seriesId: string,
+  params: CreateSeasonParams
+): Promise<SeasonDetails> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[seriesId].seasons.post(params);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to create season'
+    );
+  }
+
+  return res.data.data as unknown as SeasonDetails;
+}
+
 
 

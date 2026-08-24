@@ -16,6 +16,7 @@ import {
   updateEpisodeOrders,
 } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
+import { AddSeasonDialog } from './AddSeasonDialog';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { TmdbMatchModal } from './TmdbMatchModal';
 import { MergeSeasonsModal } from './MergeSeasonsModal';
@@ -150,6 +151,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
   const [isTmdbMatchOpen, setIsTmdbMatchOpen] = useState(false);
   const [isMergeSeasonsOpen, setIsMergeSeasonsOpen] = useState(false);
+  const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -384,31 +386,55 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
       </div>
 
       {/* Season Selector section */}
-      {hasMultipleSeasons && series.seasons && (
+      {series.seasons && (
         <div className="flex flex-wrap items-center gap-2 p-2.5 rounded border border-c bg-card">
-          <span className="text-xs font-medium mono uppercase tracking-wider text-muted mr-1">
-            Season:
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {series.seasons.map((season, index) => {
-              const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
-              const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
-              return (
-                <button
-                  key={season.id}
-                  type="button"
-                  onClick={() => setSelectedSeasonId(season.id)}
-                  className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors border ${
-                    isActive
-                      ? 'bg-primary text-primary-fg border-primary'
-                      : 'bg-card text-fg border-c hover-bg'
-                  }`}
-                >
-                  {title}
-                </button>
-              );
-            })}
-          </div>
+          {hasMultipleSeasons && (
+            <>
+              <span className="text-xs font-medium mono uppercase tracking-wider text-muted mr-1">
+                Season:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {series.seasons.map((season, index) => {
+                  const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
+                  const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
+                  return (
+                    <button
+                      key={season.id}
+                      type="button"
+                      onClick={() => setSelectedSeasonId(season.id)}
+                      className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors border ${
+                        isActive
+                          ? 'bg-primary text-primary-fg border-primary'
+                          : 'bg-card text-fg border-c hover-bg'
+                      }`}
+                    >
+                      {title}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          <button
+            onClick={() => setIsAddSeasonOpen(true)}
+            type="button"
+            className={`border border-c hover-bg px-3 py-1 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1 shrink-0 ${
+              hasMultipleSeasons ? '' : 'ml-auto'
+            }`}
+            aria-label="Add Season"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Season
+          </button>
         </div>
       )}
 
@@ -856,6 +882,12 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         seasons={series.seasons ?? []}
         open={isMergeSeasonsOpen}
         onOpenChange={setIsMergeSeasonsOpen}
+      />
+      <AddSeasonDialog
+        seriesId={seriesId}
+        open={isAddSeasonOpen}
+        onOpenChange={setIsAddSeasonOpen}
+        onCreated={(season) => setSelectedSeasonId(season.id)}
       />
 
       {/* Edit Episode Dialog */}

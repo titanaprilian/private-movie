@@ -9,6 +9,7 @@ import {
   createSaveEpisodeService,
   createEpisodeRepositoryInternal,
   createSeriesRepositoryInternal,
+  createSeasonsRepositoryInternal,
   createVideoSourceRepositoryInternal,
   EpisodeFetchError,
   EpisodeNotFoundError,
@@ -33,6 +34,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
   });
   const episodeRepository = createEpisodeRepositoryInternal(options.db);
   const seriesRepository = createSeriesRepositoryInternal(options.db);
+  const seasonsRepository = createSeasonsRepositoryInternal(options.db);
   const videoSourceRepository = createVideoSourceRepositoryInternal(options.db);
 
   return new Elysia({ name: "media-routes" })
@@ -616,6 +618,76 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         params: t.Object({ id: t.String() }),
         body: t.Object({
           orderedSeasonIds: t.Array(t.String(), { minItems: 1 }),
+        }),
+      }
+    )
+    .post(
+      "/series/:id/seasons",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const seriesRow = await seriesRepository.findById(params.id);
+        if (!seriesRow) {
+          return errorResponse(
+            set,
+            404,
+            new SeriesNotFoundError(`Series with id ${params.id} not found`)
+          );
+        }
+
+        try {
+          const created = await seasonsRepository.create({
+            seriesId: params.id,
+            title: body.title,
+            description: body.description ?? null,
+            posterUrl: body.posterUrl ?? null,
+          });
+          return successResponse(created);
+        } catch (error: unknown) {
+          if (error instanceof SeasonNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({ id: t.String({ format: "uuid" }) }),
+        body: t.Object({
+          title: t.String({ minLength: 1 }),
+          description: t.Optional(t.Nullable(t.String())),
+          posterUrl: t.Optional(t.Nullable(t.String())),
+        }),
+      }
+    )
+    .get(
+      "/seasons/:id",
+      async ({ params, set }) => {
+        const season = await seasonsRepository.findById(params.id);
+        if (!season) {
+          return errorResponse(
+            set,
+            404,
+            new SeasonNotFoundError(`Season with id ${params.id} not found`)
+          );
+        }
+        return successResponse(season);
+      },
+      {
+        params: t.Object({
+          id: t.String(),
         }),
       }
     )

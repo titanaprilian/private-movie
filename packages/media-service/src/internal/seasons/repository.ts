@@ -24,6 +24,13 @@ export interface SeasonUpsertInput {
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
 
+export interface CreateSeasonInput {
+  seriesId: string;
+  title: string;
+  description?: string | null;
+  posterUrl?: string | null;
+}
+
 export function createSeasonsRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
@@ -118,6 +125,32 @@ export function createSeasonsRepositoryInternal<
         .update(seasons)
         .set({ seriesId: toSeriesId, updatedAt: new Date() })
         .where(eq(seasons.seriesId, fromSeriesId));
+    },
+
+    async create(input: CreateSeasonInput): Promise<SeasonRow> {
+      const now = new Date();
+      const id = randomUUID();
+      const manualSourceUrl = `manual-${id}`;
+      const [row] = await db
+        .insert(seasons)
+        .values({
+          id,
+          seriesId: input.seriesId,
+          sourceUrl: manualSourceUrl,
+          source: "manual",
+          title: input.title,
+          description: input.description ?? null,
+          posterUrl: input.posterUrl ?? null,
+          backdropUrl: null,
+          rating: null,
+          tmdbId: null,
+          tmdbSeason: null,
+          tmdbSyncStatus: "PENDING",
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+      return row;
     },
   };
 }
