@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  type DropResult,
+} from '@hello-pangea/dnd';
 import { mergeSeasons, type SeasonDetails } from './api';
 import {
   Dialog,
@@ -11,6 +17,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export interface MergeSeasonsModalProps {
   open: boolean;
@@ -27,10 +34,12 @@ export function MergeSeasonsModal({
 }: MergeSeasonsModalProps) {
   const queryClient = useQueryClient();
   const [orderedSeasons, setOrderedSeasons] = useState<SeasonDetails[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (open) {
       setOrderedSeasons([...seasons]);
+      setSelectedIds(new Set(seasons.map((s) => s.id)));
     }
   }, [open, seasons]);
 
@@ -47,18 +56,30 @@ export function MergeSeasonsModal({
     },
   });
 
-  const moveSeason = (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= orderedSeasons.length) return;
+  const toggleSeasonSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
     const next = [...orderedSeasons];
-    const [moved] = next.splice(index, 1);
-    next.splice(targetIndex, 0, moved);
+    const [moved] = next.splice(result.source.index, 1);
+    next.splice(result.destination.index, 0, moved);
     setOrderedSeasons(next);
   };
 
+  const selectedSeasons = orderedSeasons.filter((s) => selectedIds.has(s.id));
+
   const handleMerge = () => {
-    const orderedSeasonIds = orderedSeasons.map((s) => s.id);
+    const orderedSeasonIds = selectedSeasons.map((s) => s.id);
     mergeMutation.mutate(orderedSeasonIds);
   };
 
@@ -72,97 +93,112 @@ export function MergeSeasonsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2 py-3 max-h-[350px] overflow-y-auto">
-          {orderedSeasons.length === 0 ? (
-            <div className="text-xs text-muted mono text-center py-4">
-              No duplicate seasons available to merge.
-            </div>
-          ) : (
-            orderedSeasons.map((season, index) => {
-              const isPrimary = index === 0;
-              const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
-              const epCount = season.episodes?.length ?? 0;
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="seasons-list">
+            {(droppableProvided) => (
+              <div
+                ref={droppableProvided.innerRef}
+                {...droppableProvided.droppableProps}
+                className="space-y-2 py-3 max-h-[350px] overflow-y-auto"
+              >
+                {orderedSeasons.length === 0 ? (
+                  <div className="text-xs text-muted mono text-center py-4">
+                    No duplicate seasons available to merge.
+                  </div>
+                ) : (
+                  orderedSeasons.map((season, index) => {
+                    const isSelected = selectedIds.has(season.id);
+                    const selectedIndex = isSelected
+                      ? selectedSeasons.findIndex((s) => s.id === season.id)
+                      : -1;
+                    const isPrimary = selectedIndex === 0;
+                    const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
+                    const epCount = season.episodes?.length ?? 0;
 
-              return (
-                <div
-                  key={season.id}
-                  data-testid={`season-row-${season.id}`}
-                  className={`flex items-center justify-between p-3 rounded border transition-colors ${
-                    isPrimary
-                      ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                      : 'border-c bg-card hover-bg'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span
-                      className={`text-xs mono font-bold w-5 h-5 rounded flex items-center justify-center shrink-0 ${
-                        isPrimary
-                          ? 'bg-primary text-primary-fg'
-                          : 'bg-sidebar border border-c text-muted'
-                      }`}
-                    >
-                      {index + 1}
-                    </span>
+                    return (
+                      <Draggable key={season.id} draggableId={season.id} index={index}>
+                        {(draggableProvided, snapshot) => (
+                          <div
+                            ref={draggableProvided.innerRef}
+                            {...draggableProvided.draggableProps}
+                            data-testid={`season-row-${season.id}`}
+                            className={`flex items-center justify-between p-3 rounded border transition-colors ${
+                              isPrimary
+                                ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                                : isSelected
+                                ? 'border-c bg-card hover-bg'
+                                : 'border-c bg-card/50 opacity-60'
+                            } ${snapshot.isDragging ? 'shadow-md bg-card border-primary' : ''}`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div
+                                {...draggableProvided.dragHandleProps}
+                                className="p-1 cursor-grab active:cursor-grabbing text-muted hover:text-current shrink-0"
+                                title="Drag to reorder"
+                                aria-label={`Reorder ${title}`}
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <circle cx="9" cy="5" r="1" />
+                                  <circle cx="9" cy="12" r="1" />
+                                  <circle cx="9" cy="19" r="1" />
+                                  <circle cx="15" cy="5" r="1" />
+                                  <circle cx="15" cy="12" r="1" />
+                                  <circle cx="15" cy="19" r="1" />
+                                </svg>
+                              </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium truncate">{title}</span>
-                        {isPrimary && (
-                          <span className="text-[10px] mono font-semibold px-2 py-0.5 rounded bg-primary text-primary-fg">
-                            Primary Season
-                          </span>
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleSeasonSelect(season.id)}
+                                aria-label={`Select ${title}`}
+                                data-testid={`season-checkbox-${season.id}`}
+                              />
+
+                              <span
+                                className={`text-xs mono font-bold w-5 h-5 rounded flex items-center justify-center shrink-0 ${
+                                  isPrimary
+                                    ? 'bg-primary text-primary-fg'
+                                    : isSelected
+                                    ? 'bg-sidebar border border-c text-muted'
+                                    : 'bg-sidebar/50 border border-c/50 text-muted/50'
+                                }`}
+                              >
+                                {isSelected ? selectedIndex + 1 : '-'}
+                              </span>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm font-medium truncate">{title}</span>
+                                  {isPrimary && (
+                                    <span className="text-[10px] mono font-semibold px-2 py-0.5 rounded bg-primary text-primary-fg">
+                                      Primary Season
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs mono text-muted mt-0.5 truncate">
+                                  {epCount} {epCount === 1 ? 'episode' : 'episodes'}
+                                  {season.sourceUrl && ` • ${season.sourceUrl}`}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         )}
-                      </div>
-                      <div className="text-xs mono text-muted mt-0.5 truncate">
-                        {epCount} {epCount === 1 ? 'episode' : 'episodes'}
-                        {season.sourceUrl && ` • ${season.sourceUrl}`}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 shrink-0 ml-2">
-                    <button
-                      type="button"
-                      disabled={index === 0}
-                      onClick={() => moveSeason(index, 'up')}
-                      aria-label={`Move ${title} up`}
-                      className="p-1.5 rounded border border-c hover-bg disabled:opacity-30 disabled:cursor-not-allowed text-muted hover:text-current transition cursor-pointer"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M18 15l-6-6-6 6" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={index === orderedSeasons.length - 1}
-                      onClick={() => moveSeason(index, 'down')}
-                      aria-label={`Move ${title} down`}
-                      className="p-1.5 rounded border border-c hover-bg disabled:opacity-30 disabled:cursor-not-allowed text-muted hover:text-current transition cursor-pointer"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+                      </Draggable>
+                    );
+                  })
+                )}
+                {droppableProvided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button
@@ -174,7 +210,7 @@ export function MergeSeasonsModal({
           </Button>
           <Button
             type="button"
-            disabled={orderedSeasons.length < 2 || mergeMutation.isPending}
+            disabled={selectedSeasons.length < 2 || mergeMutation.isPending}
             onClick={handleMerge}
           >
             {mergeMutation.isPending ? 'Merging...' : 'Confirm Merge'}

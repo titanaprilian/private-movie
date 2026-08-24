@@ -91,7 +91,7 @@ describe('MergeSeasonsModal component', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders modal title, description, and seasons list when open', () => {
+  it('renders modal title, description, seasons list, checkboxes, and drag handles when open', () => {
     renderWithProviders(
       <MergeSeasonsModal
         seriesId="series-123"
@@ -105,9 +105,37 @@ describe('MergeSeasonsModal component', () => {
     expect(screen.getByText('Attack on Titan Part 1')).toBeInTheDocument();
     expect(screen.getByText('Attack on Titan Part 2')).toBeInTheDocument();
     expect(screen.getByText('Primary Season')).toBeInTheDocument();
+    expect(screen.getByTestId('season-checkbox-season-part-1')).toBeChecked();
+    expect(screen.getByTestId('season-checkbox-season-part-2')).toBeChecked();
+    expect(screen.getByLabelText('Reorder Attack on Titan Part 1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Reorder Attack on Titan Part 2')).toBeInTheDocument();
   });
 
-  it('designates index 0 as Primary Season and updates primary season badge when reordering', async () => {
+  it('disables Confirm Merge button unless at least 2 seasons are checked', async () => {
+    const { user } = renderWithProviders(
+      <MergeSeasonsModal
+        seriesId="series-123"
+        seasons={mockSeasons}
+        open={true}
+        onOpenChange={vi.fn()}
+      />
+    );
+
+    const confirmBtn = screen.getByRole('button', { name: /Confirm Merge/i });
+    expect(confirmBtn).not.toBeDisabled();
+
+    // Uncheck Part 1 (only 1 checked season remaining)
+    const checkboxPart1 = screen.getByTestId('season-checkbox-season-part-1');
+    await user.click(checkboxPart1);
+
+    expect(confirmBtn).toBeDisabled();
+
+    // Check Part 1 back (2 checked seasons)
+    await user.click(checkboxPart1);
+    expect(confirmBtn).not.toBeDisabled();
+  });
+
+  it('dynamically designates first selected season as Primary Season when top season is unchecked', async () => {
     const { user } = renderWithProviders(
       <MergeSeasonsModal
         seriesId="series-123"
@@ -123,20 +151,36 @@ describe('MergeSeasonsModal component', () => {
     expect(part1Row).toHaveTextContent('Primary Season');
     expect(part2Row).not.toHaveTextContent('Primary Season');
 
-    // Move Part 2 up to index 0
-    const movePart2UpBtn = screen.getByRole('button', { name: 'Move Attack on Titan Part 2 up' });
-    await user.click(movePart2UpBtn);
+    // Uncheck Part 1
+    const checkboxPart1 = screen.getByTestId('season-checkbox-season-part-1');
+    await user.click(checkboxPart1);
 
-    expect(part2Row).toHaveTextContent('Primary Season');
     expect(part1Row).not.toHaveTextContent('Primary Season');
+    expect(part2Row).toHaveTextContent('Primary Season');
   });
 
-  it('submits orderedSeasonIds with 0-index primary season to backend API and invalidates query cache', async () => {
+  it('submits only checked season IDs to backend API and excludes unchecked items from payload', async () => {
+    const threeSeasons: SeasonDetails[] = [
+      ...mockSeasons,
+      {
+        id: 'season-part-3',
+        seriesId: 'series-123',
+        sourceUrl: 'https://otakudesu.cloud/anime/aot-part-3',
+        source: 'otakudesu',
+        title: 'Attack on Titan Part 3',
+        description: 'Part 3',
+        tmdbSeason: 1,
+        createdAt: '2026-08-10',
+        updatedAt: '2026-08-10',
+        episodes: [],
+      },
+    ];
+
     const mockMergeResponse = {
       data: {
         data: {
-          primarySeasonId: 'season-part-2',
-          episodesReordered: 2,
+          primarySeasonId: 'season-part-1',
+          episodesReordered: 3,
         },
       },
     };
@@ -147,7 +191,7 @@ describe('MergeSeasonsModal component', () => {
     const { user, queryClient } = renderWithProviders(
       <MergeSeasonsModal
         seriesId="series-123"
-        seasons={mockSeasons}
+        seasons={threeSeasons}
         open={true}
         onOpenChange={onOpenChange}
       />
@@ -155,9 +199,9 @@ describe('MergeSeasonsModal component', () => {
 
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    // Move Part 2 up to be index 0 (Primary)
-    const movePart2UpBtn = screen.getByRole('button', { name: 'Move Attack on Titan Part 2 up' });
-    await user.click(movePart2UpBtn);
+    // Uncheck Part 2 (middle season)
+    const checkboxPart2 = screen.getByTestId('season-checkbox-season-part-2');
+    await user.click(checkboxPart2);
 
     // Confirm Merge
     const confirmBtn = screen.getByRole('button', { name: /Confirm Merge/i });
@@ -165,7 +209,7 @@ describe('MergeSeasonsModal component', () => {
 
     await waitFor(() => {
       expect((api.series as any)['series-123'].seasons.merge.post).toHaveBeenCalledWith({
-        orderedSeasonIds: ['season-part-2', 'season-part-1'],
+        orderedSeasonIds: ['season-part-1', 'season-part-3'],
       });
     });
 
