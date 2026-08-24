@@ -821,4 +821,67 @@ describe('SeriesDetailView component', () => {
     expect(screen.queryByRole('button', { name: 'Season 1' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Movie Main Stream').length).toBeGreaterThan(0);
   });
+
+  it('renders "Merge Seasons" button when multiple seasons exist and opens MergeSeasonsModal on click', async () => {
+    const mockMultiSeasonSeries: SeriesDetails = {
+      id: 'merge-seasons-series',
+      sourceUrl: 'https://otakudesu.cloud/anime/merge-seasons',
+      source: 'otakudesu',
+      title: 'Attack on Titan',
+      description: 'Multi part season anime',
+      posterUrl: null,
+      createdAt: '2026-08-10',
+      updatedAt: '2026-08-10',
+      seasons: [
+        {
+          id: 'season-part-1',
+          seriesId: 'merge-seasons-series',
+          sourceUrl: 'https://otakudesu.cloud/aot-part-1',
+          source: 'otakudesu',
+          title: 'Season 4 Part 1',
+          description: 'Part 1',
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [],
+        },
+        {
+          id: 'season-part-2',
+          seriesId: 'merge-seasons-series',
+          sourceUrl: 'https://otakudesu.cloud/aot-part-2',
+          source: 'otakudesu',
+          title: 'Season 4 Part 2',
+          description: 'Part 2',
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [],
+        },
+      ],
+      episodes: [],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/merge-seasons-series')) {
+        return new Response(JSON.stringify({ data: mockMultiSeasonSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<SeriesDetailView seriesId="merge-seasons-series" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Attack on Titan' });
+
+    const mergeBtn = screen.getByRole('button', { name: /Merge Seasons/i });
+    expect(mergeBtn).toBeInTheDocument();
+
+    await user.click(mergeBtn);
+
+    expect(await screen.findByRole('heading', { name: 'Merge Seasons' })).toBeInTheDocument();
+    expect(screen.getAllByText('Season 4 Part 1').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Season 4 Part 2').length).toBeGreaterThan(0);
+  });
 });

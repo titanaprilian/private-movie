@@ -568,4 +568,22 @@ export async function deleteSeries(id: string): Promise<SeriesItem> {
   return res.data.data as SeriesItem;
 }
 
+export async function mergeSeasons(
+  seriesId: string,
+  orderedSeasonIds: string[]
+): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[seriesId].seasons.merge.post({
+    orderedSeasonIds,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to merge seasons'
+    );
+  }
+}
+
+
 

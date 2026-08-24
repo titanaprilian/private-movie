@@ -18,6 +18,7 @@ import {
 import { AddMediaDialog } from './AddMediaDialog';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { TmdbMatchModal } from './TmdbMatchModal';
+import { MergeSeasonsModal } from './MergeSeasonsModal';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
   Dialog,
@@ -148,6 +149,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
   const [isTmdbMatchOpen, setIsTmdbMatchOpen] = useState(false);
+  const [isMergeSeasonsOpen, setIsMergeSeasonsOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -337,6 +339,16 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {hasMultipleSeasons && (
+                <button
+                  onClick={() => setIsMergeSeasonsOpen(true)}
+                  type="button"
+                  className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                >
+                  Merge Seasons
+                </button>
+              )}
+
               <button
                 onClick={() => setIsTmdbMatchOpen(true)}
                 type="button"
@@ -838,6 +850,12 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         localSeasonId={activeSeason?.id}
         open={isTmdbMatchOpen}
         onOpenChange={setIsTmdbMatchOpen}
+      />
+      <MergeSeasonsModal
+        seriesId={seriesId}
+        seasons={series.seasons ?? []}
+        open={isMergeSeasonsOpen}
+        onOpenChange={setIsMergeSeasonsOpen}
       />
 
       {/* Edit Episode Dialog */}

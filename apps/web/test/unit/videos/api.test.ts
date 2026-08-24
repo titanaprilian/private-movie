@@ -14,6 +14,7 @@ import {
   addVideoSource,
   updateVideoSource,
   deleteVideoSource,
+  mergeSeasons,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -832,6 +833,38 @@ describe('videos api', () => {
 
     expect(patchUrl).toContain('/series/series-1/episodes/order');
     expect(patchBody).toContain('ep-2');
+    expect(fetchSpy).toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+  });
+
+  it('mergeSeasons posts payload with orderedSeasonIds to /series/:id/seasons/merge', async () => {
+    const mockResult = {
+      data: {
+        success: true,
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl = typeof input === 'string' ? input : (input as Request).url;
+        postBody = init?.body as string;
+        return new Response(JSON.stringify(mockResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    await mergeSeasons('series-1', ['season-p1', 'season-p2']);
+
+    expect(postUrl).toContain('/series/series-1/seasons/merge');
+    expect(JSON.parse(postBody)).toEqual({
+      orderedSeasonIds: ['season-p1', 'season-p2'],
+    });
     expect(fetchSpy).toHaveBeenCalled();
 
     fetchSpy.mockRestore();

@@ -3,6 +3,8 @@ export { SeriesDetailView } from './internal/SeriesDetailView';
 export { AddMediaDialog } from './internal/AddMediaDialog';
 export { CustomVideoPlayer } from './internal/CustomVideoPlayer';
 export type { CustomVideoPlayerProps } from './internal/CustomVideoPlayer';
+export { MergeSeasonsModal } from './internal/MergeSeasonsModal';
+export type { MergeSeasonsModalProps } from './internal/MergeSeasonsModal';
 export {
   fetchEpisode,
   episodeQueryOptions,
@@ -14,6 +16,7 @@ export {
   seriesDetailQueryOptions,
   updateSeries,
   deleteSeries,
+  mergeSeasons,
   previewScrape,
   saveMedia,
   addVideoSource,
