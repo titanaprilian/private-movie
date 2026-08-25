@@ -653,5 +653,108 @@ export async function deleteSeason(seasonId: string): Promise<void> {
   }
 }
 
+export interface TmdbEpisodePreviewUpdateItem {
+  id: string;
+  order: number;
+  existingTitle: string;
+  newTitle: string;
+  existingDescription: string | null;
+  newDescription: string | null;
+  existingThumbnailUrl: string | null;
+  newThumbnailUrl: string | null;
+  existingRating: string | null;
+  newRating: string | null;
+  existingAirDate: string | null;
+  newAirDate: string | null;
+  existingDuration: number | null;
+  newDuration: number | null;
+  tmdbId: number | null;
+}
+
+export interface TmdbEpisodePreviewInsertItem {
+  order: number;
+  title: string;
+  description: string | null;
+  thumbnailUrl: string | null;
+  rating: string | null;
+  airDate: string | null;
+  duration: number | null;
+  tmdbId: number | null;
+}
+
+export interface TmdbEpisodePreviewUnmappedItem {
+  id: string;
+  order: number;
+  title: string;
+}
+
+export interface SeasonTmdbPreviewResult {
+  seasonId: string;
+  tmdbId: number;
+  tmdbSeason: number;
+  updates: TmdbEpisodePreviewUpdateItem[];
+  inserts: TmdbEpisodePreviewInsertItem[];
+  unmapped: TmdbEpisodePreviewUnmappedItem[];
+}
+
+export interface SeasonTmdbSyncOptions {
+  tmdbId?: number;
+  tmdbSeason?: number;
+}
+
+export interface SeasonTmdbSyncResult {
+  success: true;
+  seasonId: string;
+  updatedCount: number;
+  insertedCount: number;
+  unmappedCount: number;
+}
+
+export async function getSeasonTmdbPreview(
+  seasonId: string,
+  options?: SeasonTmdbSyncOptions
+): Promise<SeasonTmdbPreviewResult> {
+  const query: { tmdbId?: number; tmdbSeason?: number } = {};
+  if (options?.tmdbId !== undefined) query.tmdbId = options.tmdbId;
+  if (options?.tmdbSeason !== undefined) query.tmdbSeason = options.tmdbSeason;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.seasons as any)[seasonId].episodes['tmdb-preview'].get({
+    $query: query,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to fetch season TMDB preview'
+    );
+  }
+
+  return res.data.data as unknown as SeasonTmdbPreviewResult;
+}
+
+export async function syncSeasonTmdb(
+  seasonId: string,
+  options?: SeasonTmdbSyncOptions
+): Promise<SeasonTmdbSyncResult> {
+  const body: { tmdbId?: number; tmdbSeason?: number } = {};
+  if (options?.tmdbId !== undefined) body.tmdbId = options.tmdbId;
+  if (options?.tmdbSeason !== undefined) body.tmdbSeason = options.tmdbSeason;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.seasons as any)[seasonId].episodes['tmdb-sync'].post(
+    body
+  );
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to sync season episodes with TMDB'
+    );
+  }
+
+  return res.data.data as unknown as SeasonTmdbSyncResult;
+}
+
 
 

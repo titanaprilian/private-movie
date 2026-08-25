@@ -23,6 +23,7 @@ import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { buildCrossSeasonMove } from './crossSeasonMove';
 import { TmdbMatchModal } from './TmdbMatchModal';
 import { MergeSeasonsModal } from './MergeSeasonsModal';
+import { SyncEpisodesModal } from './SyncEpisodesModal';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
   Dialog,
@@ -181,6 +182,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
+  const [isSyncEpisodesOpen, setIsSyncEpisodesOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -526,9 +528,27 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
           {activeSeason && (
             <>
               <button
-                onClick={() => setIsEditSeasonOpen(true)}
+                onClick={() => setIsSyncEpisodesOpen(true)}
                 type="button"
                 className="border border-c hover-bg px-3 py-1 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1 shrink-0 ml-auto"
+                aria-label="Sync Episodes"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M21.5 2v6h-6M2.13 15.57a10 10 0 0 0 18.04-2.57M2.5 22v-6h6M21.87 8.43a10 10 0 0 0-18.04 2.57" />
+                </svg>
+                Sync Episodes
+              </button>
+              <button
+                onClick={() => setIsEditSeasonOpen(true)}
+                type="button"
+                className="border border-c hover-bg px-3 py-1 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1 shrink-0"
                 aria-label="Edit Season"
               >
                 <svg
@@ -1015,11 +1035,20 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         onCreated={(season) => setSelectedSeasonId(season.id)}
       />
       {activeSeason && (
-        <EditSeasonDialog
-          season={activeSeason}
-          open={isEditSeasonOpen}
-          onOpenChange={setIsEditSeasonOpen}
-        />
+        <>
+          <EditSeasonDialog
+            season={activeSeason}
+            open={isEditSeasonOpen}
+            onOpenChange={setIsEditSeasonOpen}
+          />
+          <SyncEpisodesModal
+            open={isSyncEpisodesOpen}
+            onOpenChange={setIsSyncEpisodesOpen}
+            seriesId={seriesId}
+            season={activeSeason}
+            defaultTmdbId={activeSeason.tmdbId ?? undefined}
+          />
+        </>
       )}
 
       {/* Delete Season Confirmation Dialog */}

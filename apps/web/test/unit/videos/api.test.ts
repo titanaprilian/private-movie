@@ -14,7 +14,8 @@ import {
   addVideoSource,
   updateVideoSource,
   deleteVideoSource,
-  mergeSeasons,
+  getSeasonTmdbPreview,
+  syncSeasonTmdb,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -838,10 +839,67 @@ describe('videos api', () => {
     fetchSpy.mockRestore();
   });
 
-  it('mergeSeasons posts payload with orderedSeasonIds to /series/:id/seasons/merge', async () => {
-    const mockResult = {
+  it('getSeasonTmdbPreview queries /seasons/:id/episodes/tmdb-preview with tmdb parameters', async () => {
+    const mockPreviewResult = {
+      data: {
+        seasonId: 'season-1',
+        tmdbId: 1234,
+        tmdbSeason: 1,
+        updates: [
+          {
+            id: 'ep-1',
+            order: 1,
+            existingTitle: 'Ep 1 Scraped',
+            newTitle: 'Episode 1 Clean',
+            existingDescription: null,
+            newDescription: 'Overview',
+            existingThumbnailUrl: null,
+            newThumbnailUrl: null,
+            existingRating: null,
+            newRating: null,
+            existingAirDate: null,
+            newAirDate: null,
+            existingDuration: null,
+            newDuration: null,
+            tmdbId: 101,
+          },
+        ],
+        inserts: [],
+        unmapped: [],
+      },
+    };
+
+    let fetchUrl = '';
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        fetchUrl = typeof input === 'string' ? input : (input as Request).url;
+        return new Response(JSON.stringify(mockPreviewResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await getSeasonTmdbPreview('season-1', { tmdbId: 1234, tmdbSeason: 1 });
+
+    expect(fetchUrl).toContain('/seasons/season-1/episodes/tmdb-preview');
+    expect(fetchUrl).toContain('tmdbId=1234');
+    expect(fetchUrl).toContain('tmdbSeason=1');
+    expect(res.updates).toHaveLength(1);
+    expect(res.updates[0].newTitle).toBe('Episode 1 Clean');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('syncSeasonTmdb posts payload to /seasons/:id/episodes/tmdb-sync', async () => {
+    const mockSyncResult = {
       data: {
         success: true,
+        seasonId: 'season-1',
+        updatedCount: 1,
+        insertedCount: 2,
+        unmappedCount: 0,
       },
     };
 
@@ -852,20 +910,19 @@ describe('videos api', () => {
       async (input, init) => {
         postUrl = typeof input === 'string' ? input : (input as Request).url;
         postBody = init?.body as string;
-        return new Response(JSON.stringify(mockResult), {
+        return new Response(JSON.stringify(mockSyncResult), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
     );
 
-    await mergeSeasons('series-1', ['season-p1', 'season-p2']);
+    const res = await syncSeasonTmdb('season-1', { tmdbId: 1234, tmdbSeason: 1 });
 
-    expect(postUrl).toContain('/series/series-1/seasons/merge');
-    expect(JSON.parse(postBody)).toEqual({
-      orderedSeasonIds: ['season-p1', 'season-p2'],
-    });
-    expect(fetchSpy).toHaveBeenCalled();
+    expect(postUrl).toContain('/seasons/season-1/episodes/tmdb-sync');
+    expect(JSON.parse(postBody)).toEqual({ tmdbId: 1234, tmdbSeason: 1 });
+    expect(res.updatedCount).toBe(1);
+    expect(res.insertedCount).toBe(2);
 
     fetchSpy.mockRestore();
   });

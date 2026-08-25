@@ -884,4 +884,54 @@ describe('SeriesDetailView component', () => {
     expect(screen.getAllByText('Season 4 Part 1').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Season 4 Part 2').length).toBeGreaterThan(0);
   });
+
+  it('renders "Sync Episodes" button when active season exists and opens SyncEpisodesModal on click', async () => {
+    const mockSyncSeries: SeriesDetails = {
+      id: 'sync-episodes-series',
+      sourceUrl: 'https://otakudesu.cloud/anime/sync-series',
+      source: 'otakudesu',
+      title: 'Frieren',
+      description: 'Fantasy anime',
+      posterUrl: null,
+      createdAt: '2026-08-10',
+      updatedAt: '2026-08-10',
+      seasons: [
+        {
+          id: 'season-sync-1',
+          seriesId: 'sync-episodes-series',
+          sourceUrl: 'https://otakudesu.cloud/frieren-s1',
+          source: 'otakudesu',
+          title: 'Season 1',
+          description: 'Season 1 desc',
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [],
+        },
+      ],
+      episodes: [],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/sync-episodes-series')) {
+        return new Response(JSON.stringify({ data: mockSyncSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<SeriesDetailView seriesId="sync-episodes-series" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Frieren' });
+
+    const syncBtn = screen.getByRole('button', { name: /Sync Episodes/i });
+    expect(syncBtn).toBeInTheDocument();
+
+    await user.click(syncBtn);
+
+    expect(await screen.findByText('Sync Season Episodes from TMDB')).toBeInTheDocument();
+  });
 });

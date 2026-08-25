@@ -5,6 +5,8 @@ export { CustomVideoPlayer } from './internal/CustomVideoPlayer';
 export type { CustomVideoPlayerProps } from './internal/CustomVideoPlayer';
 export { MergeSeasonsModal } from './internal/MergeSeasonsModal';
 export type { MergeSeasonsModalProps } from './internal/MergeSeasonsModal';
+export { SyncEpisodesModal } from './internal/SyncEpisodesModal';
+export type { SyncEpisodesModalProps } from './internal/SyncEpisodesModal';
 export {
   fetchEpisode,
   episodeQueryOptions,
@@ -17,6 +19,8 @@ export {
   updateSeries,
   deleteSeries,
   mergeSeasons,
+  getSeasonTmdbPreview,
+  syncSeasonTmdb,
   previewScrape,
   saveMedia,
   addVideoSource,
