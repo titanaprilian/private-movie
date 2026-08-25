@@ -10,6 +10,13 @@ export class SeasonNotFoundError extends Error {
   }
 }
 
+export class SeasonNotLinkedToTmdbError extends Error {
+  constructor(message = "Season is not linked to TMDB") {
+    super(message);
+    this.name = "SeasonNotLinkedToTmdbError";
+  }
+}
+
 export class SeasonNotEmptyError extends Error {
   readonly episodeCount: number;
   constructor(episodeCount: number) {

@@ -37,6 +37,33 @@ export interface TmdbPreviewResult {
   posterUrl: string | null;
 }
 
+export interface TmdbSeasonEpisodeItem {
+  id?: number;
+  episode_number: number;
+  name?: string | null;
+  overview?: string | null;
+  runtime?: number | null;
+  still_path?: string | null;
+  vote_average?: number | null;
+  air_date?: string | null;
+  season_number?: number;
+  [key: string]: unknown;
+}
+
+export interface TmdbSeasonResponse {
+  id?: number;
+  name?: string;
+  overview?: string;
+  poster_path?: string | null;
+  season_number?: number;
+  episodes?: TmdbSeasonEpisodeItem[];
+  [key: string]: unknown;
+}
+
+export async function fetchTmdbSeasonDetails(tmdbId: number, seasonNumber: number): Promise<TmdbSeasonResponse> {
+  return fetchFromTmdb<TmdbSeasonResponse>(`/tv/${tmdbId}/season/${seasonNumber}?language=en-US`);
+}
+
 export async function getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult> {
   let title = "";
   let overview = "";
