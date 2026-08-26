@@ -208,6 +208,66 @@ describe("series repository findByIdWithEpisodes", () => {
     expect(result?.episodes).toEqual([]);
   });
 
+  it("sorts seasons by tmdbSeason priority [regular ASC -> 0 -> null] and then createdAt ASC", async () => {
+    const s = await insertSeries({ title: "Multi Season Series" });
+    const now = new Date();
+
+    await db.delete(seasons).where(eq(seasons.seriesId, s.id));
+
+    await db.insert(seasons).values([
+      {
+        id: crypto.randomUUID(),
+        seriesId: s.id,
+        sourceUrl: `https://example.com/season-3-${crypto.randomUUID()}`,
+        source: "otakudesu",
+        title: "Season 3",
+        tmdbSeason: 3,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: now,
+      },
+      {
+        id: crypto.randomUUID(),
+        seriesId: s.id,
+        sourceUrl: `https://example.com/season-null-${crypto.randomUUID()}`,
+        source: "otakudesu",
+        title: "Unmapped Season",
+        tmdbSeason: null,
+        createdAt: new Date("2026-01-04T00:00:00.000Z"),
+        updatedAt: now,
+      },
+      {
+        id: crypto.randomUUID(),
+        seriesId: s.id,
+        sourceUrl: `https://example.com/season-0-${crypto.randomUUID()}`,
+        source: "otakudesu",
+        title: "Specials",
+        tmdbSeason: 0,
+        createdAt: new Date("2026-01-03T00:00:00.000Z"),
+        updatedAt: now,
+      },
+      {
+        id: crypto.randomUUID(),
+        seriesId: s.id,
+        sourceUrl: `https://example.com/season-1-${crypto.randomUUID()}`,
+        source: "otakudesu",
+        title: "Season 1",
+        tmdbSeason: 1,
+        createdAt: new Date("2026-01-02T00:00:00.000Z"),
+        updatedAt: now,
+      },
+    ]);
+
+    const result = await repository.findByIdWithEpisodes(s.id);
+    expect(result).not.toBeNull();
+    expect(result?.seasons.map((season) => season.tmdbSeason)).toEqual([1, 3, 0, null]);
+    expect(result?.seasons.map((season) => season.title)).toEqual([
+      "Season 1",
+      "Season 3",
+      "Specials",
+      "Unmapped Season",
+    ]);
+  });
+
   it("returns null if series ID does not exist", async () => {
     const result = await repository.findByIdWithEpisodes(crypto.randomUUID());
     expect(result).toBeNull();

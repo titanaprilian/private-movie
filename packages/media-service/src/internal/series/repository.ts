@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, genres, seasons, series, seriesToGenres, videoSources, type EpisodeRow, type SeasonRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
@@ -9,6 +9,36 @@ export class SeriesNotFoundError extends Error {
     super(message);
     this.name = "SeriesNotFoundError";
   }
+}
+
+export function compareSeasons<
+  T extends { tmdbSeason?: number | null; createdAt?: Date | string | null }
+>(a: T, b: T): number {
+  const getGroup = (season: T) => {
+    const s = season.tmdbSeason;
+    if (s !== null && s !== undefined && s > 0) return 1;
+    if (s === 0) return 2;
+    return 3;
+  };
+
+  const groupA = getGroup(a);
+  const groupB = getGroup(b);
+
+  if (groupA !== groupB) {
+    return groupA - groupB;
+  }
+
+  if (groupA === 1) {
+    const tmdbA = a.tmdbSeason!;
+    const tmdbB = b.tmdbSeason!;
+    if (tmdbA !== tmdbB) {
+      return tmdbA - tmdbB;
+    }
+  }
+
+  const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+  const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+  return timeA - timeB;
 }
 
 export const DEFAULT_LIST_LIMIT = 20;
@@ -154,7 +184,17 @@ export function createSeriesRepositoryInternal<
         .select()
         .from(seasons)
         .where(eq(seasons.seriesId, id))
-        .orderBy(asc(seasons.createdAt));
+        .orderBy(
+          sql`CASE 
+            WHEN ${seasons.tmdbSeason} IS NOT NULL AND ${seasons.tmdbSeason} > 0 THEN 1 
+            WHEN ${seasons.tmdbSeason} = 0 THEN 2 
+            ELSE 3 
+          END ASC`,
+          asc(seasons.tmdbSeason),
+          asc(seasons.createdAt)
+        );
+
+      childSeasons.sort(compareSeasons);
 
       const seasonIds = childSeasons.map((s) => s.id);
       let childEpisodes: EpisodeRow[] = [];
@@ -275,7 +315,17 @@ export function createSeriesRepositoryInternal<
           .select()
           .from(seasons)
           .where(inArray(seasons.seriesId, seriesIds))
-          .orderBy(asc(seasons.createdAt));
+          .orderBy(
+            sql`CASE 
+              WHEN ${seasons.tmdbSeason} IS NOT NULL AND ${seasons.tmdbSeason} > 0 THEN 1 
+              WHEN ${seasons.tmdbSeason} = 0 THEN 2 
+              ELSE 3 
+            END ASC`,
+            asc(seasons.tmdbSeason),
+            asc(seasons.createdAt)
+          );
+
+        childSeasons.sort(compareSeasons);
 
         for (const s of childSeasons) {
           const list = seasonsMap.get(s.seriesId) ?? [];
@@ -344,7 +394,17 @@ export function createSeriesRepositoryInternal<
         .select()
         .from(seasons)
         .where(eq(seasons.seriesId, id))
-        .orderBy(asc(seasons.createdAt));
+        .orderBy(
+          sql`CASE 
+            WHEN ${seasons.tmdbSeason} IS NOT NULL AND ${seasons.tmdbSeason} > 0 THEN 1 
+            WHEN ${seasons.tmdbSeason} = 0 THEN 2 
+            ELSE 3 
+          END ASC`,
+          asc(seasons.tmdbSeason),
+          asc(seasons.createdAt)
+        );
+
+      childSeasons.sort(compareSeasons);
 
       return {
         ...row,

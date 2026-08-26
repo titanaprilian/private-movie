@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { episodes, seasons, type SeriesRow } from "@repo/db";
 import {
   MediaScraper,
@@ -964,6 +964,20 @@ export function createMediaService<
           }
 
           const existing = localMap.get(order);
+          if (epTmdbId != null) {
+            if (existing) {
+              await tx
+                .update(episodes)
+                .set({ tmdbId: null })
+                .where(and(eq(episodes.tmdbId, epTmdbId), ne(episodes.id, existing.id)));
+            } else {
+              await tx
+                .update(episodes)
+                .set({ tmdbId: null })
+                .where(eq(episodes.tmdbId, epTmdbId));
+            }
+          }
+
           if (existing) {
             matchedOrders.add(order);
             await tx

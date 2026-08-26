@@ -703,15 +703,18 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           });
           return successResponse(data);
         } catch (e: unknown) {
-          if (e instanceof SeasonNotFoundError) {
-            return errorResponse(set, 404, e);
+          const err = e as Error;
+          if (e instanceof SeasonNotFoundError || err?.name === "SeasonNotFoundError") {
+            return errorResponse(set, 404, err);
           }
-          if (e instanceof SeasonNotLinkedToTmdbError) {
-            return errorResponse(set, 400, e);
+          if (e instanceof SeasonNotLinkedToTmdbError || err?.name === "SeasonNotLinkedToTmdbError") {
+            return errorResponse(set, 400, err);
           }
-          if (e instanceof TmdbFetchError) {
-            return errorResponse(set, e.status === 404 ? 404 : 400, e);
+          if (e instanceof TmdbFetchError || err?.name === "TmdbFetchError") {
+            const tmdbErr = e as TmdbFetchError;
+            return errorResponse(set, tmdbErr.status === 404 ? 404 : 400, tmdbErr);
           }
+          console.error("[tmdb-preview error]", e);
           return errorResponse(set, 500, new InternalServerError());
         }
       },
@@ -750,15 +753,18 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           });
           return successResponse(result);
         } catch (e: unknown) {
-          if (e instanceof SeasonNotFoundError) {
-            return errorResponse(set, 404, e);
+          const err = e as Error;
+          if (e instanceof SeasonNotFoundError || err?.name === "SeasonNotFoundError") {
+            return errorResponse(set, 404, err);
           }
-          if (e instanceof SeasonNotLinkedToTmdbError) {
-            return errorResponse(set, 400, e);
+          if (e instanceof SeasonNotLinkedToTmdbError || err?.name === "SeasonNotLinkedToTmdbError") {
+            return errorResponse(set, 400, err);
           }
-          if (e instanceof TmdbFetchError) {
-            return errorResponse(set, e.status === 404 ? 404 : 400, e);
+          if (e instanceof TmdbFetchError || err?.name === "TmdbFetchError") {
+            const tmdbErr = e as TmdbFetchError;
+            return errorResponse(set, tmdbErr.status === 404 ? 404 : 400, tmdbErr);
           }
+          console.error("[tmdb-sync error]", e);
           return errorResponse(set, 500, new InternalServerError());
         }
       },
