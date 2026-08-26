@@ -60,7 +60,6 @@ async function insertEpisode(
     title,
     order,
     seasonId,
-    metadata: {},
     createdAt: now,
     updatedAt: now,
   });

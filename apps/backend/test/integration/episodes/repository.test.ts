@@ -41,18 +41,13 @@ async function insertEpisode(options: {
   title: string;
   createdAt: Date;
 }): Promise<void> {
-  let seasonId: string | null = null;
-  if (options.seasonId) {
-    seasonId = await ensureSeason(options.seasonId);
-  }
+  const seasonId = await ensureSeason(options.seasonId ?? crypto.randomUUID());
 
   await db.insert(episodes).values({
     id: `episode-${crypto.randomUUID()}`,
     seasonId,
     title: options.title,
     order: options.index + 1,
-    videoType: null,
-    metadata: {},
     createdAt: options.createdAt,
     updatedAt: options.createdAt,
   });

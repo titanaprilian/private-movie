@@ -1,21 +1,52 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, videoSources } from "@repo/db";
+import { episodes, videoSources, seasons, series } from "@repo/db";
 import {
   createVideoSourceRepositoryInternal,
   VideoSourceNotFoundError,
 } from "@repo/media-service";
 import { db } from "../../utils/db";
 
+async function ensureSeason(id: string): Promise<string> {
+  const [existing] = await db.select().from(seasons).where(eq(seasons.id, id));
+  if (existing) return existing.id;
+
+  const now = new Date();
+  const [sRow] = await db
+    .insert(series)
+    .values({
+      id: crypto.randomUUID(),
+      title: "Test Series",
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  const [seasonRow] = await db
+    .insert(seasons)
+    .values({
+      id,
+      seriesId: sRow.id,
+      sourceUrl: `https://otakudesu.blog/anime/season-${id}-${crypto.randomUUID()}`,
+      source: "otakudesu",
+      title: "Test Season",
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  return seasonRow.id;
+}
+
 async function insertTestEpisode(): Promise<{ id: string }> {
   const now = new Date();
+  const seasonId = await ensureSeason(crypto.randomUUID());
   const rows = await db
     .insert(episodes)
     .values({
       id: crypto.randomUUID(),
+      seasonId,
       title: "Test Episode",
-      videoType: "TV",
-      metadata: {},
       createdAt: now,
       updatedAt: now,
     })

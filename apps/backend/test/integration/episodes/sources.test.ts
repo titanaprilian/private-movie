@@ -1,25 +1,55 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { videoSources as videoSourcesTable } from "@repo/db";
+import { videoSources as videoSourcesTable, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
 import { episodes } from "@repo/db";
+import { eq } from "drizzle-orm";
+
+async function ensureSeason(id: string): Promise<string> {
+  const [existing] = await db.select().from(seasons).where(eq(seasons.id, id));
+  if (existing) return existing.id;
+
+  const now = new Date();
+  const [sRow] = await db
+    .insert(series)
+    .values({
+      id: crypto.randomUUID(),
+      title: "Test Series",
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  const [seasonRow] = await db
+    .insert(seasons)
+    .values({
+      id,
+      seriesId: sRow.id,
+      sourceUrl: `https://otakudesu.blog/anime/season-${id}-${crypto.randomUUID()}`,
+      source: "otakudesu",
+      title: "Test Season",
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  return seasonRow.id;
+}
 
 async function insertTestEpisode(overrides?: Partial<{
   id: string;
   title: string;
-  videoType: string | null;
 }>): Promise<{ id: string; title: string }> {
   const id = overrides?.id ?? crypto.randomUUID();
   const title = overrides?.title ?? "Sources Test Episode";
-  const videoType = overrides?.videoType ?? null;
+  const seasonId = await ensureSeason(crypto.randomUUID());
   const now = new Date();
 
   await db.insert(episodes).values({
     id,
+    seasonId,
     title,
-    videoType,
-    metadata: {},
     createdAt: now,
     updatedAt: now,
   });

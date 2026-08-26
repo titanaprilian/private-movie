@@ -422,8 +422,7 @@ export function createSeriesRepositoryInternal<
 
       if (seasonIds.length > 0) {
         await db
-          .update(episodes)
-          .set({ seasonId: null })
+          .delete(episodes)
           .where(inArray(episodes.seasonId, seasonIds));
       }
 

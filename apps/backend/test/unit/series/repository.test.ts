@@ -92,8 +92,6 @@ async function insertEpisodeForSeries(
       id,
       title: overrides?.title ?? "Episode Title",
       order,
-      videoType: null,
-      metadata: {},
       seasonId,
       createdAt: now,
       updatedAt: now,

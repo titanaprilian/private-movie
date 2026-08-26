@@ -1,19 +1,50 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes } from "@repo/db";
+import { episodes, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
 
+async function ensureSeason(id: string): Promise<string> {
+  const [existing] = await db.select().from(seasons).where(eq(seasons.id, id));
+  if (existing) return existing.id;
+
+  const now = new Date();
+  const [sRow] = await db
+    .insert(series)
+    .values({
+      id: crypto.randomUUID(),
+      title: "Test Series",
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  const [seasonRow] = await db
+    .insert(seasons)
+    .values({
+      id,
+      seriesId: sRow.id,
+      sourceUrl: `https://otakudesu.blog/anime/season-${id}-${crypto.randomUUID()}`,
+      source: "otakudesu",
+      title: "Test Season",
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  return seasonRow.id;
+}
+
 async function insertEpisode(): Promise<{ id: string }> {
   const now = new Date();
+  const seasonId = await ensureSeason(crypto.randomUUID());
   const rows = await db
     .insert(episodes)
     .values({
       id: crypto.randomUUID(),
+      seasonId,
       title: "delete-endpoint",
-      videoType: null,
-      metadata: {},
       createdAt: now,
       updatedAt: now,
     })

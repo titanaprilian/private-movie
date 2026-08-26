@@ -58,6 +58,11 @@ async function insertEpisodeRow(options: {
     const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, options.seriesId));
     seasonId = season?.id ?? null;
   }
+  if (!seasonId) {
+    const sId = options.seriesId ?? (await insertSeriesRow({ title: "Series For Ep" })).id;
+    const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, sId));
+    seasonId = season.id;
+  }
 
   let order = options.order;
   if (order === undefined && seasonId) {
@@ -69,8 +74,6 @@ async function insertEpisodeRow(options: {
     id,
     title: options.title ?? "Test Episode",
     order: order ?? 1,
-    videoType: null,
-    metadata: {},
     seasonId,
     createdAt: now,
     updatedAt: now,

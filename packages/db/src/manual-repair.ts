@@ -57,7 +57,6 @@ async function run() {
   const railgunMeta = await fetchTmdbDetails(30977, 2);
   await db.update(seasons).set({
     tmdbSeason: 2,
-    tmdbId: 30977,
     title: railgunMeta.title,
     description: railgunMeta.description,
     posterUrl: railgunMeta.posterUrl,
@@ -76,7 +75,6 @@ async function run() {
   const bookwormMeta1 = await fetchTmdbDetails(90344, 1);
   await db.update(seasons).set({
     tmdbSeason: 1,
-    tmdbId: 90344,
     title: bookwormMeta1.title,
     description: bookwormMeta1.description,
     posterUrl: bookwormMeta1.posterUrl,
@@ -86,7 +84,6 @@ async function run() {
   const bookwormMeta2 = await fetchTmdbDetails(90344, 2);
   await db.update(seasons).set({
     tmdbSeason: 2,
-    tmdbId: 90344,
     title: bookwormMeta2.title,
     description: bookwormMeta2.description,
     posterUrl: bookwormMeta2.posterUrl,
@@ -104,7 +101,6 @@ async function run() {
   const mashleMeta = await fetchTmdbDetails(202998, 1);
   await db.update(seasons).set({
     tmdbSeason: 1,
-    tmdbId: 202998,
     title: mashleMeta.title,
     description: mashleMeta.description,
     posterUrl: mashleMeta.posterUrl,

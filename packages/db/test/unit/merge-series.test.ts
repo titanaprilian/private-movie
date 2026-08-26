@@ -86,6 +86,9 @@ describe("Merge Series Logic", () => {
       const mockDb = {
         select: vi.fn().mockReturnValue({
           from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockResolvedValue(mockSeasonsData),
+            }),
             where: vi.fn().mockResolvedValue(mockSeasonsData),
           }),
         }),
@@ -137,6 +140,9 @@ describe("Merge Series Logic", () => {
       const mockDb = {
         select: vi.fn().mockReturnValue({
           from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockResolvedValue(mockSeasonsData),
+            }),
             where: vi.fn().mockResolvedValue(mockSeasonsData),
           }),
         }),
@@ -175,6 +181,9 @@ describe("Merge Series Logic", () => {
       const mockDb = {
         select: vi.fn().mockReturnValue({
           from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockResolvedValue(mockSeasonsData),
+            }),
             where: vi.fn().mockResolvedValue(mockSeasonsData),
           }),
         }),

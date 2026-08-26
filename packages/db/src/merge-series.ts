@@ -141,11 +141,12 @@ export async function mergeSeries(options: MergeSeriesOptions): Promise<MergeSer
     .select({
       id: seasons.id,
       seriesId: seasons.seriesId,
-      tmdbId: seasons.tmdbId,
+      tmdbId: series.tmdbId,
       title: seasons.title,
     })
     .from(seasons)
-    .where(isNotNull(seasons.tmdbId));
+    .innerJoin(series, eq(seasons.seriesId, series.id))
+    .where(isNotNull(series.tmdbId));
 
   const groups = groupSeasonsByTmdbId(fetchedSeasons);
   logger(`Found ${fetchedSeasons.length} seasons mapped to ${groups.size} unique TMDB IDs.`);

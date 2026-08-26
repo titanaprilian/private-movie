@@ -60,7 +60,10 @@ export function createEpisodeRepositoryInternal<
   return {
     async upsert(input: EpisodeUpsertInput): Promise<EpisodeRow> {
       const now = new Date();
-      const seasonId = input.seasonId ?? input.seriesId ?? null;
+      const seasonId = input.seasonId ?? input.seriesId;
+      if (!seasonId) {
+        throw new Error("seasonId is required for episode upsert");
+      }
       const order = input.order ?? 1;
 
       const [row] = await db
@@ -72,7 +75,6 @@ export function createEpisodeRepositoryInternal<
           description: input.description ?? null,
           duration: input.duration ?? null,
           seasonId,
-          tmdbId: input.tmdbId ?? null,
           thumbnailUrl: input.thumbnailUrl ?? null,
           rating: input.rating ?? null,
           airDate: input.airDate ?? null,
@@ -85,7 +87,6 @@ export function createEpisodeRepositoryInternal<
             title: input.title,
             ...(input.description !== undefined ? { description: input.description } : {}),
             ...(input.duration !== undefined ? { duration: input.duration } : {}),
-            ...(input.tmdbId !== undefined ? { tmdbId: input.tmdbId } : {}),
             ...(input.thumbnailUrl !== undefined ? { thumbnailUrl: input.thumbnailUrl } : {}),
             ...(input.rating !== undefined ? { rating: input.rating } : {}),
             ...(input.airDate !== undefined ? { airDate: input.airDate } : {}),

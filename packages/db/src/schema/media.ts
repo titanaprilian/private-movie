@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { integer, pgTable, primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core";
 
 export const genres = pgTable("genres", {
   id: text("id").primaryKey(),
@@ -56,9 +56,6 @@ export const seasons = pgTable("seasons", {
   title: text("title").notNull(),
   description: text("description"),
   posterUrl: text("poster_url"),
-  backdropUrl: text("backdrop_url"),
-  rating: text("rating"),
-  tmdbId: integer("tmdb_id"),
   tmdbSeason: integer("tmdb_season"),
   tmdbSyncStatus: text("tmdb_sync_status").notNull().default("PENDING"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
@@ -74,16 +71,11 @@ export const episodes = pgTable(
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     order: integer("order").notNull().default(1),
-    videoType: text("video_type"),
     description: text("description"),
     duration: integer("duration"),
-    tags: text("tags").array(),
-    resolution: text("resolution"),
-    format: text("format"),
-    size: text("size"),
-    metadata: jsonb("metadata"),
-    seasonId: text("season_id").references(() => seasons.id),
-    tmdbId: integer("tmdb_id").unique(),
+    seasonId: text("season_id")
+      .notNull()
+      .references(() => seasons.id),
     thumbnailUrl: text("thumbnail_url"),
     rating: text("rating"),
     airDate: timestamp("air_date", { withTimezone: true }),

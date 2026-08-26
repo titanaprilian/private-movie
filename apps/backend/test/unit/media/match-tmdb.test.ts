@@ -256,7 +256,6 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
         title: "Local Season 1",
         description: "Original S1 desc",
         posterUrl: "/original_s1.jpg",
-        tmdbId: 700,
         tmdbSeason: 1,
         tmdbSyncStatus: "SYNCED",
         createdAt: new Date("2024-01-01"),

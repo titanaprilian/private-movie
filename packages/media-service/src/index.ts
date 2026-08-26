@@ -964,20 +964,6 @@ export function createMediaService<
           }
 
           const existing = localMap.get(order);
-          if (epTmdbId != null) {
-            if (existing) {
-              await tx
-                .update(episodes)
-                .set({ tmdbId: null })
-                .where(and(eq(episodes.tmdbId, epTmdbId), ne(episodes.id, existing.id)));
-            } else {
-              await tx
-                .update(episodes)
-                .set({ tmdbId: null })
-                .where(eq(episodes.tmdbId, epTmdbId));
-            }
-          }
-
           if (existing) {
             matchedOrders.add(order);
             await tx
@@ -989,7 +975,6 @@ export function createMediaService<
                 rating,
                 duration,
                 airDate,
-                tmdbId: epTmdbId,
                 updatedAt: now,
               })
               .where(eq(episodes.id, existing.id));
@@ -1007,7 +992,6 @@ export function createMediaService<
                 rating,
                 duration,
                 airDate,
-                tmdbId: epTmdbId,
                 createdAt: now,
                 updatedAt: now,
               });

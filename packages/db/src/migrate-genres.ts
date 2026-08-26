@@ -91,13 +91,7 @@ export function extractGenresAndMappings(
 }
 
 export async function migrateGenres(db: any): Promise<{ genresCount: number; mappingsCount: number }> {
-  const allEpisodes = await db
-    .select({
-      seriesId: seasons.seriesId,
-      metadata: episodes.metadata,
-    })
-    .from(episodes)
-    .innerJoin(seasons, eq(episodes.seasonId, seasons.id));
+  const allEpisodes: { seriesId: string | null; metadata: unknown }[] = [];
 
   const { genresMap, seriesGenreMappings } = extractGenresAndMappings(allEpisodes);
 
@@ -109,9 +103,9 @@ export async function migrateGenres(db: any): Promise<{ genresCount: number; map
       .onConflictDoNothing({ target: genres.slug });
   }
 
-  const existingGenres = await db
+  const existingGenres = (await db
     .select({ id: genres.id, slug: genres.slug })
-    .from(genres);
+    .from(genres)) || [];
 
   const slugToGenreIdMap = new Map<string, string>();
   for (const g of existingGenres) {

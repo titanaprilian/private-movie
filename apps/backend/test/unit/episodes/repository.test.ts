@@ -34,15 +34,14 @@ async function createTestSeason(id = "season-1"): Promise<string> {
 
 async function insertEpisode(order = 1, seasonId: string | null = null): Promise<{ id: string }> {
   const now = new Date();
+  const sId = seasonId ?? (await createTestSeason(`season-${crypto.randomUUID()}`));
   const rows = await db
     .insert(episodes)
     .values({
       id: crypto.randomUUID(),
       title: "original-title",
       order,
-      seasonId,
-      videoType: null,
-      metadata: {},
+      seasonId: sId,
       createdAt: now,
       updatedAt: now,
     })
@@ -67,7 +66,6 @@ describe("episode repository upsert", () => {
       order: 1,
       title: "Episode 1",
       duration: 24,
-      tmdbId: 12345,
       thumbnailUrl: "https://example.com/thumb.jpg",
       rating: "8.5",
       airDate,
@@ -75,7 +73,6 @@ describe("episode repository upsert", () => {
 
     expect(row.title).toBe("Episode 1");
     expect(row.duration).toBe(24);
-    expect(row.tmdbId).toBe(12345);
     expect(row.thumbnailUrl).toBe("https://example.com/thumb.jpg");
     expect(row.rating).toBe("8.5");
     expect(row.airDate?.toISOString()).toBe(airDate.toISOString());

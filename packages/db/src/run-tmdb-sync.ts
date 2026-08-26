@@ -102,13 +102,10 @@ async function runTmdbSync() {
           const ratingStr = details.vote_average ? String(details.vote_average) : undefined;
 
           await db.update(seasons).set({
-            tmdbId: details.id,
             tmdbSeason: season.season_number,
             title: updatedTitle,
             description: updatedDescription,
             posterUrl: updatedPoster,
-            backdropUrl: backdrop,
-            rating: ratingStr,
             tmdbSyncStatus: "SYNCED"
           }).where(eq(seasons.id, record.id));
 
@@ -149,13 +146,10 @@ async function runTmdbSync() {
           const ratingStr = details.vote_average ? String(details.vote_average) : undefined;
 
           await db.update(seasons).set({
-            tmdbId: details.id,
             tmdbSeason: 1,
             title: updatedTitle,
             description: updatedDescription,
             posterUrl: updatedPoster,
-            backdropUrl: backdrop,
-            rating: ratingStr,
             tmdbSyncStatus: "SYNCED"
           }).where(eq(seasons.id, record.id));
 

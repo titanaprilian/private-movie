@@ -60,7 +60,6 @@ describe("Season Episode TMDB Sync API", () => {
           sourceUrl: "https://otakudesu.blog/anime/unlinked-s1",
           source: "otakudesu",
           title: "Season 1 Unlinked",
-          tmdbId: null,
           tmdbSeason: null,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -135,7 +134,6 @@ describe("Season Episode TMDB Sync API", () => {
           sourceUrl: "https://otakudesu.blog/anime/series-100-s1",
           source: "otakudesu",
           title: "Season 1",
-          tmdbId: 100,
           tmdbSeason: 1,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -290,7 +288,6 @@ describe("Season Episode TMDB Sync API", () => {
           sourceUrl: "https://otakudesu.blog/anime/series-200-s1",
           source: "otakudesu",
           title: "Season 1",
-          tmdbId: 200,
           tmdbSeason: 1,
           tmdbSyncStatus: "PENDING",
           createdAt: new Date(),
@@ -351,7 +348,6 @@ describe("Season Episode TMDB Sync API", () => {
       expect(updatedEp1.thumbnailUrl).toBe("https://image.tmdb.org/t/p/w500/thumb1.jpg");
       expect(updatedEp1.rating).toBe("8.8");
       expect(updatedEp1.duration).toBe(25);
-      expect(updatedEp1.tmdbId).toBe(2001);
 
       // Verify DB: ep 2 inserted
       const [insertedEp2] = await db
@@ -362,7 +358,6 @@ describe("Season Episode TMDB Sync API", () => {
       expect(insertedEp2.seasonId).toBe(seasonRecord.id);
       expect(insertedEp2.title).toBe("TMDB Episode 2 (Stub)");
       expect(insertedEp2.description).toBe("New description 2");
-      expect(insertedEp2.tmdbId).toBe(2002);
 
       // Verify DB: ep 5 untouched
       const [untouchedEp5] = await db

@@ -41,8 +41,6 @@ async function insertEpisodeRow(seriesId: string): Promise<{ id: string }> {
     .values({
       id: crypto.randomUUID(),
       title: "Episode in Series",
-      videoType: null,
-      metadata: {},
       seasonId: season.id,
       createdAt: now,
       updatedAt: now,
@@ -137,7 +135,7 @@ describe("DELETE /series/:id", () => {
       expect(remaining).toHaveLength(0);
     });
 
-    it("unlinks child episodes when deleting series", async () => {
+    it("deletes child episodes when deleting series", async () => {
       const { accessToken } = await registerUser(app);
       const seriesRow = await insertSeriesRow();
       const epRow = await insertEpisodeRow(seriesRow.id);
@@ -160,8 +158,7 @@ describe("DELETE /series/:id", () => {
         .select()
         .from(episodes)
         .where(eq(episodes.id, epRow.id));
-      expect(remainingEpisode).toHaveLength(1);
-      expect(remainingEpisode[0].seasonId).toBeNull();
+      expect(remainingEpisode).toHaveLength(0);
     });
   });
 });

@@ -41,8 +41,6 @@ async function insertTestEpisode(seriesId: string, order: number): Promise<{ id:
     id,
     title: `Episode ${order}`,
     order,
-    videoType: null,
-    metadata: {},
     seasonId: season.id,
     createdAt: now,
     updatedAt: now,

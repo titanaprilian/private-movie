@@ -26,7 +26,6 @@ export interface EpisodeUpsertItem {
   title: string;
   description: string | null;
   duration: number | null;
-  tmdbId: number | null;
   thumbnailUrl: string | null;
   rating: string | null;
   airDate: Date | null;
@@ -93,7 +92,6 @@ export async function syncTmdbEpisodes(options: SyncTmdbEpisodesOptions = {}): P
           title: sql`excluded.title`,
           description: sql`excluded.description`,
           duration: sql`excluded.duration`,
-          tmdbId: sql`excluded.tmdb_id`,
           thumbnailUrl: sql`excluded.thumbnail_url`,
           rating: sql`excluded.rating`,
           airDate: sql`excluded.air_date`,
@@ -169,7 +167,6 @@ export async function syncTmdbEpisodes(options: SyncTmdbEpisodesOptions = {}): P
           title: ep.name && ep.name.trim() !== "" ? ep.name : `Episode ${ep.episode_number}`,
           description: ep.overview ?? null,
           duration: ep.runtime != null ? Number(ep.runtime) : null,
-          tmdbId: ep.id != null ? Number(ep.id) : null,
           thumbnailUrl: ep.still_path ? `https://image.tmdb.org/t/p/w500${ep.still_path}` : null,
           rating: ep.vote_average != null ? String(ep.vote_average) : null,
           airDate,

@@ -17,4 +17,22 @@ describe("db schema exports", () => {
     expect(schema.seasons.tmdbSeason).toBeDefined();
     expect(schema.seasons.seriesId).toBeDefined();
   });
+
+  it("ensures legacy columns are dropped from seasons table", () => {
+    expect((schema.seasons as any).backdropUrl).toBeUndefined();
+    expect((schema.seasons as any).rating).toBeUndefined();
+    expect((schema.seasons as any).tmdbId).toBeUndefined();
+  });
+
+  it("ensures legacy columns are dropped from episodes table and seasonId is not null", () => {
+    expect((schema.episodes as any).tmdbId).toBeUndefined();
+    expect((schema.episodes as any).tags).toBeUndefined();
+    expect((schema.episodes as any).resolution).toBeUndefined();
+    expect((schema.episodes as any).format).toBeUndefined();
+    expect((schema.episodes as any).size).toBeUndefined();
+    expect((schema.episodes as any).videoType).toBeUndefined();
+    expect((schema.episodes as any).metadata).toBeUndefined();
+
+    expect(schema.episodes.seasonId.notNull).toBe(true);
+  });
 });
