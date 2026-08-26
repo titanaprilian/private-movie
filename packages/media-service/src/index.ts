@@ -538,8 +538,6 @@ export function createMediaService<
         const episodeRow = await episodeRepositoryTx.upsert({
           title: input.episode.title,
           order,
-          videoType: input.episode.videoType ?? null,
-          metadata: input.episode.metadata as ParsedMetadata,
           seasonId,
         });
 
@@ -683,7 +681,6 @@ export function createMediaService<
             const seasonPoster = seasonDetails?.poster_path || details.poster_path;
 
             await seasonsRepositoryTx.updateSeason(targetSeasonRow.id, {
-              tmdbId: details.id,
               tmdbSeason: seasonNum,
               posterUrl: seasonPoster,
               title: seasonDetails?.name,
@@ -810,12 +807,14 @@ export function createMediaService<
       options?: SeasonTmdbSyncOptions
     ): Promise<SeasonTmdbPreviewResult> {
       const seasonsRepositoryTx = createSeasonsRepositoryInternal(db);
+      const seriesRepositoryTx = createSeriesRepositoryInternal(db);
       const seasonRow = await seasonsRepositoryTx.findById(seasonId);
       if (!seasonRow) {
         throw new SeasonNotFoundError(`Season with id ${seasonId} not found`);
       }
 
-      const tmdbId = options?.tmdbId ?? seasonRow.tmdbId;
+      const seriesRow = await seriesRepositoryTx.findById(seasonRow.seriesId);
+      const tmdbId = options?.tmdbId ?? seriesRow?.tmdbId;
       const tmdbSeason = options?.tmdbSeason ?? seasonRow.tmdbSeason;
 
       if (tmdbId == null || tmdbSeason == null) {
@@ -910,12 +909,14 @@ export function createMediaService<
       options?: SeasonTmdbSyncOptions
     ): Promise<SeasonTmdbSyncResult> {
       const seasonsRepositoryTx = createSeasonsRepositoryInternal(db);
+      const seriesRepositoryTx = createSeriesRepositoryInternal(db);
       const seasonRow = await seasonsRepositoryTx.findById(seasonId);
       if (!seasonRow) {
         throw new SeasonNotFoundError(`Season with id ${seasonId} not found`);
       }
 
-      const tmdbId = options?.tmdbId ?? seasonRow.tmdbId;
+      const seriesRow = await seriesRepositoryTx.findById(seasonRow.seriesId);
+      const tmdbId = options?.tmdbId ?? seriesRow?.tmdbId;
       const tmdbSeason = options?.tmdbSeason ?? seasonRow.tmdbSeason;
 
       if (tmdbId == null || tmdbSeason == null) {
@@ -928,7 +929,6 @@ export function createMediaService<
       return await db.transaction(async (tx) => {
         const seasonsTx = createSeasonsRepositoryInternal(tx);
         await seasonsTx.updateSeason(seasonId, {
-          tmdbId,
           tmdbSeason,
           tmdbSyncStatus: "SYNCED",
         });

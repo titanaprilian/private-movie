@@ -144,30 +144,6 @@ describe("PATCH /episodes/:id", () => {
       expect(rows[0].title).toBe("Updated Title Only");
     });
 
-    it("successfully updates videoType only (1 field)", async () => {
-      const { accessToken } = await registerUser(app);
-      const episode = await insertTestEpisode();
-
-      const response = await request(app, {
-        method: "PATCH",
-        path: `/episodes/${episode.id}`,
-        headers: authHeaders(accessToken),
-        body: {
-          videoType: "Movie",
-        },
-      });
-
-      expect(response.status).toBe(200);
-      const body = response.body as {
-        data: { id: string; videoType: string | null };
-      };
-
-      expect(body.data.videoType).toBe("Movie");
-
-      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
-      expect(rows[0].videoType).toBe("Movie");
-    });
-
     it("successfully updates description only (1 field)", async () => {
       const { accessToken } = await registerUser(app);
       const episode = await insertTestEpisode();
@@ -192,40 +168,13 @@ describe("PATCH /episodes/:id", () => {
       expect(rows[0].description).toBe("New Episode Description");
     });
 
-    it("successfully updates metadata only (1 field)", async () => {
-      const { accessToken } = await registerUser(app);
-      const episode = await insertTestEpisode();
-      const newMetadata = { season: 2, episode: 10 };
-
-      const response = await request(app, {
-        method: "PATCH",
-        path: `/episodes/${episode.id}`,
-        headers: authHeaders(accessToken),
-        body: {
-          metadata: newMetadata,
-        },
-      });
-
-      expect(response.status).toBe(200);
-      const body = response.body as {
-        data: { id: string; metadata: Record<string, unknown> };
-      };
-
-      expect(body.data.metadata).toEqual(newMetadata);
-
-      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
-      expect(rows[0].metadata).toEqual(newMetadata);
-    });
-
-    it("successfully updates all allowed fields simultaneously (title, videoType, description, metadata)", async () => {
+    it("successfully updates all allowed fields simultaneously (title, description)", async () => {
       const { accessToken } = await registerUser(app);
       const episode = await insertTestEpisode();
 
       const patchPayload = {
         title: "All Fields Updated",
-        videoType: "OVA",
         description: "Updated description for all fields",
-        metadata: { tags: ["action", "drama"] },
       };
 
       const response = await request(app, {
@@ -240,22 +189,16 @@ describe("PATCH /episodes/:id", () => {
         data: {
           id: string;
           title: string;
-          videoType: string | null;
           description: string | null;
-          metadata: Record<string, unknown>;
         };
       };
 
       expect(body.data.title).toBe(patchPayload.title);
-      expect(body.data.videoType).toBe(patchPayload.videoType);
       expect(body.data.description).toBe(patchPayload.description);
-      expect(body.data.metadata).toEqual(patchPayload.metadata);
 
       const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
       expect(rows[0].title).toBe(patchPayload.title);
-      expect(rows[0].videoType).toBe(patchPayload.videoType);
       expect(rows[0].description).toBe(patchPayload.description);
-      expect(rows[0].metadata).toEqual(patchPayload.metadata);
     });
   });
 });

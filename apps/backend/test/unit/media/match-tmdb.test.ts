@@ -99,7 +99,6 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       .select()
       .from(seasons)
       .where(eq(seasons.id, season.id));
-    expect(updatedSeasonRow.tmdbId).toBe(500);
     expect(updatedSeasonRow.tmdbSeason).toBe(1);
     expect(updatedSeasonRow.description).toBe("Season 1 overview");
     expect(updatedSeasonRow.posterUrl).toBe("/frieren_s1.jpg");
@@ -289,7 +288,6 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
 
     // Check Season 2 was updated
     const [updatedSeason2] = await db.select().from(seasons).where(eq(seasons.id, season2.id));
-    expect(updatedSeason2.tmdbId).toBe(700);
     expect(updatedSeason2.tmdbSeason).toBe(2);
     expect(updatedSeason2.description).toBe("TMDB S2 overview");
     expect(updatedSeason2.posterUrl).toBe("/tmdb_s2.jpg");
@@ -297,7 +295,6 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
 
     // Check Season 1 remained untouched (Strict Isolation)
     const [untouchedSeason1] = await db.select().from(seasons).where(eq(seasons.id, season1.id));
-    expect(untouchedSeason1.tmdbId).toBe(700);
     expect(untouchedSeason1.tmdbSeason).toBe(1);
     expect(untouchedSeason1.description).toBe("Original S1 desc");
     expect(untouchedSeason1.posterUrl).toBe("/original_s1.jpg");

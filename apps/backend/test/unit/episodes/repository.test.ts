@@ -66,17 +66,14 @@ describe("episode repository upsert", () => {
       seasonId,
       order: 1,
       title: "Episode 1",
-      videoType: "TV",
       duration: 24,
       tmdbId: 12345,
       thumbnailUrl: "https://example.com/thumb.jpg",
       rating: "8.5",
       airDate,
-      metadata: { note: "test" },
     });
 
     expect(row.title).toBe("Episode 1");
-    expect(row.videoType).toBe("TV");
     expect(row.duration).toBe(24);
     expect(row.tmdbId).toBe(12345);
     expect(row.thumbnailUrl).toBe("https://example.com/thumb.jpg");
@@ -88,9 +85,7 @@ describe("episode repository upsert", () => {
       seasonId,
       order: 1,
       title: "Episode 1 Updated",
-      videoType: "TV",
       duration: 25,
-      metadata: { note: "updated" },
     });
 
     expect(updated.id).toBe(row.id);
@@ -142,7 +137,7 @@ describe("episode repository updateEpisode", () => {
     await db.delete(episodes);
   });
 
-  it("partially updates episode title, videoType, metadata and returns updated row", async () => {
+  it("partially updates episode title and description and returns updated row", async () => {
     const existing = await insertEpisode(10);
 
     // Update title only
@@ -150,12 +145,6 @@ describe("episode repository updateEpisode", () => {
       title: "Updated Title",
     });
     expect(updatedTitle.title).toBe("Updated Title");
-
-    // Update videoType only
-    const updatedType = await repository.updateEpisode(existing.id, {
-      videoType: "Movie",
-    });
-    expect(updatedType.videoType).toBe("Movie");
 
     // Update description only
     const updatedDesc = await repository.updateEpisode(existing.id, {
@@ -169,23 +158,13 @@ describe("episode repository updateEpisode", () => {
     });
     expect(clearedDesc.description).toBeNull();
 
-    // Update metadata only
-    const updatedMeta = await repository.updateEpisode(existing.id, {
-      metadata: { customField: "customValue" },
-    });
-    expect(updatedMeta.metadata).toEqual({ customField: "customValue" });
-
     // Update all allowed fields
     const updatedAll = await repository.updateEpisode(existing.id, {
       title: "Final Title",
-      videoType: "OVA",
       description: "Final Description",
-      metadata: { episodes: [1, 2, 3] },
     });
     expect(updatedAll.title).toBe("Final Title");
-    expect(updatedAll.videoType).toBe("OVA");
     expect(updatedAll.description).toBe("Final Description");
-    expect(updatedAll.metadata).toEqual({ episodes: [1, 2, 3] });
   });
 
   it("throws EpisodeNotFoundError when updating a non-existent episode id", async () => {

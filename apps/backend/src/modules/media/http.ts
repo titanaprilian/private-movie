@@ -351,7 +351,13 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
         }
 
-        const saved = await mediaService.saveMedia(body);
+        const saved = await mediaService.saveMedia({
+          ...body,
+          episode: {
+            ...body.episode,
+            metadata: body.episode.metadata ?? {},
+          },
+        });
         return successResponse(saved);
       },
       {
@@ -360,7 +366,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             sourceUrl: t.String({ format: "uri" }),
             source: t.Literal("otakudesu"),
             title: t.String(),
-            videoType: t.Nullable(t.String()),
+            videoType: t.Optional(t.Nullable(t.String())),
             videoSources: t.Optional(
               t.Array(
                 t.Object({
@@ -371,7 +377,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                 })
               )
             ),
-            metadata: t.Record(t.String(), t.Unknown()),
+            metadata: t.Optional(t.Record(t.String(), t.Unknown())),
           }),
           series: t.Optional(
             t.Nullable(
@@ -421,9 +427,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
         body: t.Object({
           title: t.Optional(t.String()),
-          videoType: t.Optional(t.Nullable(t.String())),
           description: t.Optional(t.Nullable(t.String())),
-          metadata: t.Optional(t.Record(t.String(), t.Unknown())),
         }),
       }
     )

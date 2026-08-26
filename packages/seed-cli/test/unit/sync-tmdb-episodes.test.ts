@@ -210,4 +210,34 @@ describe("syncTmdbEpisodes", () => {
       airDate: null,
     });
   });
+
+  it("findSeasons default implementation joins seasons with series on seriesId to get series.tmdbId", async () => {
+    const mockDb = {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue([
+        { id: "season-join", tmdbId: 8888, tmdbSeason: 1, title: "Season Join" },
+      ]),
+    } as any;
+
+    const mockUpsertEpisodes = vi.fn().mockResolvedValue(1);
+    const mockFetchFn = vi.fn().mockResolvedValue({ episodes: [] });
+
+    await syncTmdbEpisodes({
+      db: mockDb,
+      apiKey: "test-key",
+      fetchFn: mockFetchFn,
+      logFn: mockLog,
+      sleepFn: mockSleep,
+      deps: {
+        upsertEpisodes: mockUpsertEpisodes,
+      },
+    });
+
+    expect(mockDb.select).toHaveBeenCalled();
+    expect(mockDb.from).toHaveBeenCalled();
+    expect(mockDb.innerJoin).toHaveBeenCalled();
+    expect(mockDb.where).toHaveBeenCalled();
+  });
 });

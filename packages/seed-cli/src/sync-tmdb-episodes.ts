@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { and, isNotNull, sql } from "drizzle-orm";
-import { createDbClient, episodes, seasons, type DbClient } from "@repo/db";
+import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { createDbClient, episodes, seasons, series, type DbClient } from "@repo/db";
 
 export interface TmdbEpisodeApiItem {
   id?: number;
@@ -68,12 +68,13 @@ export async function syncTmdbEpisodes(options: SyncTmdbEpisodesOptions = {}): P
     const rows = await db!
       .select({
         id: seasons.id,
-        tmdbId: seasons.tmdbId,
+        tmdbId: series.tmdbId,
         tmdbSeason: seasons.tmdbSeason,
         title: seasons.title,
       })
       .from(seasons)
-      .where(and(isNotNull(seasons.tmdbId), isNotNull(seasons.tmdbSeason)));
+      .innerJoin(series, eq(seasons.seriesId, series.id))
+      .where(and(isNotNull(series.tmdbId), isNotNull(seasons.tmdbSeason)));
 
     return rows.filter(
       (r): r is typeof r & { tmdbId: number; tmdbSeason: number } =>

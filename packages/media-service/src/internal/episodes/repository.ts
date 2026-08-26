@@ -19,10 +19,8 @@ export type EpisodeWithVideoSources = EpisodeRow & {
 };
 
 export interface UpdateEpisodeInput {
-  title: string;
-  videoType: string | null;
+  title?: string;
   description?: string | null;
-  metadata: Record<string, unknown>;
 }
 
 export interface EpisodeOrderUpdateInput {
@@ -36,10 +34,8 @@ export interface EpisodeUpsertInput {
   seriesId?: string | null;
   title: string;
   order?: number;
-  videoType?: string | null;
   description?: string | null;
   duration?: number | null;
-  metadata?: ParsedMetadata | Record<string, unknown> | null;
   tmdbId?: number | null;
   thumbnailUrl?: string | null;
   rating?: string | null;
@@ -73,10 +69,8 @@ export function createEpisodeRepositoryInternal<
           id: randomUUID(),
           title: input.title,
           order,
-          videoType: input.videoType ?? null,
           description: input.description ?? null,
           duration: input.duration ?? null,
-          metadata: input.metadata ?? null,
           seasonId,
           tmdbId: input.tmdbId ?? null,
           thumbnailUrl: input.thumbnailUrl ?? null,
@@ -89,10 +83,8 @@ export function createEpisodeRepositoryInternal<
           target: [episodes.seasonId, episodes.order],
           set: {
             title: input.title,
-            ...(input.videoType !== undefined ? { videoType: input.videoType } : {}),
             ...(input.description !== undefined ? { description: input.description } : {}),
             ...(input.duration !== undefined ? { duration: input.duration } : {}),
-            ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
             ...(input.tmdbId !== undefined ? { tmdbId: input.tmdbId } : {}),
             ...(input.thumbnailUrl !== undefined ? { thumbnailUrl: input.thumbnailUrl } : {}),
             ...(input.rating !== undefined ? { rating: input.rating } : {}),
@@ -203,9 +195,7 @@ export function createEpisodeRepositoryInternal<
       };
 
       if (input.title !== undefined) updateData.title = input.title;
-      if (input.videoType !== undefined) updateData.videoType = input.videoType;
       if (input.description !== undefined) updateData.description = input.description;
-      if (input.metadata !== undefined) updateData.metadata = input.metadata;
 
       const [row] = await db
         .update(episodes)

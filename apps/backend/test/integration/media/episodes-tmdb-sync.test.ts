@@ -121,6 +121,7 @@ describe("Season Episode TMDB Sync API", () => {
           id: crypto.randomUUID(),
           title: "Series 100",
           type: "tv",
+          tmdbId: 100,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -275,6 +276,7 @@ describe("Season Episode TMDB Sync API", () => {
           id: crypto.randomUUID(),
           title: "Series 200",
           type: "tv",
+          tmdbId: 200,
           createdAt: new Date(),
           updatedAt: new Date(),
         })

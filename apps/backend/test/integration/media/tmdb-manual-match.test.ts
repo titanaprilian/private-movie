@@ -313,7 +313,6 @@ describe("TMDB Manual Match", () => {
         .select()
         .from(seasons)
         .where(require("drizzle-orm").eq(seasons.id, seasonRecord.id));
-      expect(updatedSeason?.tmdbId).toBe(999);
       expect(updatedSeason?.tmdbSeason).toBe(3);
       expect(updatedSeason?.description).toBe("Season 3 overview.");
       expect(updatedSeason?.posterUrl).toBe("/tv_season_3_poster.jpg");

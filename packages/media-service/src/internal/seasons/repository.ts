@@ -33,9 +33,6 @@ export interface SeasonUpsertInput {
   title: string;
   description?: string | null;
   posterUrl?: string | null;
-  backdropUrl?: string | null;
-  rating?: string | null;
-  tmdbId?: number | null;
   tmdbSeason?: number | null;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
@@ -64,9 +61,6 @@ export function createSeasonsRepositoryInternal<
           title: input.title,
           description: input.description ?? null,
           posterUrl: input.posterUrl ?? null,
-          backdropUrl: input.backdropUrl ?? null,
-          rating: input.rating ?? null,
-          tmdbId: input.tmdbId ?? null,
           tmdbSeason: input.tmdbSeason ?? null,
           tmdbSyncStatus: input.tmdbSyncStatus ?? "PENDING",
           createdAt: now,
@@ -80,9 +74,6 @@ export function createSeasonsRepositoryInternal<
             title: input.title,
             description: input.description ?? null,
             posterUrl: input.posterUrl ?? null,
-            ...(input.backdropUrl !== undefined ? { backdropUrl: input.backdropUrl } : {}),
-            ...(input.rating !== undefined ? { rating: input.rating } : {}),
-            ...(input.tmdbId !== undefined ? { tmdbId: input.tmdbId } : {}),
             ...(input.tmdbSeason !== undefined ? { tmdbSeason: input.tmdbSeason } : {}),
             ...(input.tmdbSyncStatus !== undefined ? { tmdbSyncStatus: input.tmdbSyncStatus } : {}),
             updatedAt: now,
@@ -117,9 +108,6 @@ export function createSeasonsRepositoryInternal<
       if (input.title !== undefined) updateData.title = input.title;
       if (input.description !== undefined) updateData.description = input.description;
       if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
-      if (input.backdropUrl !== undefined) updateData.backdropUrl = input.backdropUrl;
-      if (input.rating !== undefined) updateData.rating = input.rating;
-      if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
       if (input.tmdbSeason !== undefined) updateData.tmdbSeason = input.tmdbSeason;
       if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
 
@@ -173,9 +161,6 @@ export function createSeasonsRepositoryInternal<
           title: input.title,
           description: input.description ?? null,
           posterUrl: input.posterUrl ?? null,
-          backdropUrl: null,
-          rating: null,
-          tmdbId: null,
           tmdbSeason: null,
           tmdbSyncStatus: "PENDING",
           createdAt: now,
