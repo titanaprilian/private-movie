@@ -93,7 +93,9 @@ export interface SeedTmdbPipelineResult {
 
 export const DEFAULT_TMDB_IDS_PATH =
   process.env.TMDB_IDS_FILE_PATH ||
-  path.resolve(process.cwd(), "packages/seed-cli/tmdb-ids.txt");
+  (fs.existsSync(path.resolve(process.cwd(), "tmdb-ids.txt"))
+    ? path.resolve(process.cwd(), "tmdb-ids.txt")
+    : path.resolve(process.cwd(), "packages/seed-cli/tmdb-ids.txt"));
 
 export function parseTmdbIdsContent(content: string): number[] {
   const lines = content.split(/\r?\n/);
