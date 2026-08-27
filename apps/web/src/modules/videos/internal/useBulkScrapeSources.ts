@@ -1,11 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   previewBulkSources as apiPreviewBulkSources,
-  saveBulkSources as apiSaveBulkSources,
-  type SaveBulkSourcesMappingItem,
+  scrapeEpisodeSources,
 } from './api';
+
+export interface SeasonGroupOption {
+  id: string;
+  title?: string | null;
+  tmdbSeason?: number | null;
+  episodes?: Array<{ id: string; title: string; order?: number }>;
+}
 
 export interface ScrapedEpisodePreviewItem {
   id: string;
@@ -45,6 +51,71 @@ export interface UseBulkScrapeSourcesOptions {
   initialSourceType?: string;
   onSuccess?: () => void;
   stepDelayMs?: number;
+  seasons?: SeasonGroupOption[];
+  localEpisodes?: LocalEpisodeItem[];
+}
+
+export function getSeasonOptions(
+  seasons?: SeasonGroupOption[],
+  localEpisodes?: LocalEpisodeItem[]
+): Array<{ id: string; label: string }> {
+  if (seasons && seasons.length > 0) {
+    return seasons.map((s) => ({
+      id: s.id,
+      label: s.title || (typeof s.tmdbSeason === 'number' ? `Season ${s.tmdbSeason}` : 'Season'),
+    }));
+  }
+
+  if (localEpisodes && localEpisodes.length > 0) {
+    const seasonMap = new Map<string, string>();
+    for (const ep of localEpisodes) {
+      if (ep.seasonId && !seasonMap.has(ep.seasonId)) {
+        const label =
+          ep.seasonTitle ||
+          (typeof ep.seasonNumber === 'number' ? `Season ${ep.seasonNumber}` : 'Season');
+        seasonMap.set(ep.seasonId, label);
+      }
+    }
+    return Array.from(seasonMap.entries()).map(([id, label]) => ({ id, label }));
+  }
+
+  return [];
+}
+
+export function calculateSeasonOffset(
+  seasonId: string,
+  seasons?: SeasonGroupOption[],
+  localEpisodes?: LocalEpisodeItem[]
+): number {
+  if (!seasonId) return 0;
+
+  if (seasons && seasons.length > 0) {
+    const seasonObj = seasons.find((s) => s.id === seasonId);
+    if (seasonObj?.episodes && seasonObj.episodes.length > 0) {
+      const orders = seasonObj.episodes
+        .map((ep) => ep.order)
+        .filter((ord): ord is number => typeof ord === 'number' && !isNaN(ord));
+      if (orders.length > 0) {
+        const minOrder = Math.min(...orders);
+        return minOrder - 1;
+      }
+    }
+  }
+
+  if (localEpisodes && localEpisodes.length > 0) {
+    const epMatches = localEpisodes.filter((ep) => ep.seasonId === seasonId);
+    if (epMatches.length > 0) {
+      const orders = epMatches
+        .map((ep) => ep.order)
+        .filter((ord): ord is number => typeof ord === 'number' && !isNaN(ord));
+      if (orders.length > 0) {
+        const minOrder = Math.min(...orders);
+        return minOrder - 1;
+      }
+    }
+  }
+
+  return 0;
 }
 
 export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
@@ -52,7 +123,52 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceType, setSourceType] = useState(options?.initialSourceType ?? 'otakudesu');
-  const [episodeOffset, setEpisodeOffset] = useState(0);
+
+  const seasonOptions = useMemo(
+    () => getSeasonOptions(options?.seasons, options?.localEpisodes),
+    [options?.seasons, options?.localEpisodes]
+  );
+
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>(
+    () => seasonOptions[0]?.id ?? ''
+  );
+
+  const [episodeOffset, setEpisodeOffset] = useState<number>(() => {
+    const defaultId = seasonOptions[0]?.id;
+    return defaultId
+      ? calculateSeasonOffset(defaultId, options?.seasons, options?.localEpisodes)
+      : 0;
+  });
+
+  const selectSeason = useCallback(
+    (
+      seasonId: string,
+      seasonsParam?: SeasonGroupOption[],
+      localEpisodesParam?: LocalEpisodeItem[]
+    ) => {
+      setSelectedSeasonId(seasonId);
+      const activeSeasons = seasonsParam ?? options?.seasons;
+      const activeLocalEps = localEpisodesParam ?? options?.localEpisodes;
+      const offset = calculateSeasonOffset(seasonId, activeSeasons, activeLocalEps);
+      setEpisodeOffset(offset);
+    },
+    [options?.seasons, options?.localEpisodes]
+  );
+
+  useEffect(() => {
+    if (seasonOptions.length > 0) {
+      if (!selectedSeasonId || !seasonOptions.some((s) => s.id === selectedSeasonId)) {
+        const defaultId = seasonOptions[0].id;
+        setSelectedSeasonId(defaultId);
+        const offset = calculateSeasonOffset(
+          defaultId,
+          options?.seasons,
+          options?.localEpisodes
+        );
+        setEpisodeOffset(offset);
+      }
+    }
+  }, [seasonOptions, selectedSeasonId, options?.seasons, options?.localEpisodes]);
   const [previewItems, setPreviewItems] = useState<ScrapedEpisodePreviewItem[]>([]);
   const [fetchedLocalEpisodes, setFetchedLocalEpisodes] = useState<LocalEpisodeItem[]>([]);
 
@@ -200,7 +316,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   );
 
   const saveBulkSources = useCallback(
-    async (seriesIdParam?: string, overrideDelayMs?: number) => {
+    async (seriesIdParam?: string) => {
       setStep(3);
       setIsProcessing(true);
 
@@ -212,6 +328,15 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
             rawEpisodeNumber: item.rawEpisodeNumber,
             status: 'skipped',
             message: `${item.scrapedTitle}: Skipped (Ignored)`,
+          };
+        }
+        if (!item.matchedLocalEpisodeId) {
+          return {
+            id: item.id,
+            scrapedTitle: item.scrapedTitle,
+            rawEpisodeNumber: item.rawEpisodeNumber,
+            status: 'skipped',
+            message: `${item.scrapedTitle}: Skipped (Unmapped)`,
           };
         }
         return {
@@ -229,12 +354,14 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
       setCompletedCount(initialCompleted);
       let currentCompleted = initialCompleted;
 
-      const delayMs = overrideDelayMs ?? options?.stepDelayMs ?? 10;
+      let successCount = 0;
+      let errorCount = 0;
+      const skippedCount = initialCompleted;
 
       try {
         for (let i = 0; i < previewItems.length; i++) {
           const item = previewItems[i];
-          if (item.isIgnored) continue;
+          if (item.isIgnored || !item.matchedLocalEpisodeId) continue;
 
           setProcessingLogs((prev) =>
             prev.map((log, idx) =>
@@ -242,27 +369,43 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
                 ? {
                     ...log,
                     status: 'processing',
-                    message: `${item.scrapedTitle}: Processing...`,
+                    message: `${item.scrapedTitle}: Scraping sources...`,
                   }
                 : log
             )
           );
 
-          if (delayMs > 0) {
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
+          const urlToScrape = item.videoSources[0]?.url || item.id;
+
+          try {
+            await scrapeEpisodeSources(item.matchedLocalEpisodeId, urlToScrape);
+
+            setProcessingLogs((prev) =>
+              prev.map((log, idx) =>
+                idx === i
+                  ? {
+                      ...log,
+                      status: 'success',
+                      message: `${item.scrapedTitle}: Scraped successfully`,
+                    }
+                  : log
+              )
+            );
+            successCount += 1;
+          } catch (err: any) {
+            setProcessingLogs((prev) =>
+              prev.map((log, idx) =>
+                idx === i
+                  ? {
+                      ...log,
+                      status: 'error',
+                      message: `${item.scrapedTitle}: ${err?.message || 'Failed to scrape episode sources'}`,
+                    }
+                  : log
+              )
+            );
+            errorCount += 1;
           }
-
-          setProcessingLogs((prev) =>
-            prev.map((log, idx) =>
-              idx === i
-                ? {
-                    ...log,
-                    status: 'success',
-                    message: `${item.scrapedTitle}: Saved successfully`,
-                  }
-                : log
-            )
-          );
 
           currentCompleted += 1;
           setCompletedCount(currentCompleted);
@@ -270,34 +413,23 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
 
         const targetSeriesId = seriesIdParam ?? options?.seriesId;
         if (targetSeriesId) {
-          const mappings: SaveBulkSourcesMappingItem[] = previewItems.map((item) => ({
-            episodeId: item.isIgnored ? null : item.matchedLocalEpisodeId,
-            videoSources: item.videoSources.map((vs) => ({
-              type: (vs.type === 'direct' ? 'direct' : 'embed') as 'embed' | 'direct',
-              url: vs.url,
-              label: vs.label,
-              quality: vs.quality ?? null,
-            })),
-          }));
-
-          await apiSaveBulkSources({
-            seriesId: targetSeriesId,
-            mappings,
-          });
-
           queryClient.invalidateQueries({ queryKey: ['series', targetSeriesId] });
           queryClient.invalidateQueries({ queryKey: ['series'] });
+          queryClient.invalidateQueries({ queryKey: ['episodes'] });
         }
 
-        const savedCount = previewItems.filter((i) => !i.isIgnored).length;
-        const skippedCount = previewItems.filter((i) => i.isIgnored).length;
-
-        toast.success('Bulk sources saved', {
-          description: `Successfully processed ${savedCount} episode sources.`,
-        });
+        if (successCount > 0) {
+          toast.success('Bulk sources processed', {
+            description: `Successfully scraped ${successCount} episode sources${errorCount > 0 ? ` (${errorCount} failed)` : ''}.`,
+          });
+        } else if (errorCount > 0) {
+          toast.error('Bulk scrape failed', {
+            description: `All ${errorCount} episode scrapes failed. Check log details.`,
+          });
+        }
 
         options?.onSuccess?.();
-        return { success: true, savedCount, skippedCount };
+        return { success: true, savedCount: successCount, skippedCount, errorCount };
       } catch (error: any) {
         toast.error('Save Bulk Sources Error', {
           description: error?.message || 'Failed to save bulk sources.',
@@ -341,14 +473,19 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   const reset = useCallback(() => {
     setStep(1);
     setSourceUrl('');
-    setEpisodeOffset(0);
+    const defaultSeasonId = seasonOptions[0]?.id ?? '';
+    setSelectedSeasonId(defaultSeasonId);
+    const initialOffset = defaultSeasonId
+      ? calculateSeasonOffset(defaultSeasonId, options?.seasons, options?.localEpisodes)
+      : 0;
+    setEpisodeOffset(initialOffset);
     setPreviewItems([]);
     setFetchedLocalEpisodes([]);
     setProcessingLogs([]);
     setIsProcessing(false);
     setCompletedCount(0);
     resetPreview();
-  }, [resetPreview]);
+  }, [seasonOptions, options?.seasons, options?.localEpisodes, resetPreview]);
 
   const totalCount = previewItems.length;
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -360,6 +497,10 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     setSourceUrl,
     sourceType,
     setSourceType,
+    selectedSeasonId,
+    setSelectedSeasonId,
+    selectSeason,
+    seasonOptions,
     episodeOffset,
     setEpisodeOffset,
     previewItems,

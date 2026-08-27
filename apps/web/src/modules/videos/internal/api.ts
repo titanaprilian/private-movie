@@ -440,6 +440,39 @@ export async function deleteEpisode(id: string): Promise<Episode> {
   return res.data.data as unknown as Episode;
 }
 
+export interface ScrapeEpisodeSourcesParams {
+  episodeId: string;
+  sourceUrl: string;
+}
+
+export async function scrapeEpisodeSources(
+  episodeIdOrParams: string | ScrapeEpisodeSourcesParams,
+  sourceUrlParam?: string
+): Promise<Episode> {
+  const episodeId =
+    typeof episodeIdOrParams === 'string'
+      ? episodeIdOrParams
+      : episodeIdOrParams.episodeId;
+  const sourceUrl =
+    typeof episodeIdOrParams === 'string'
+      ? sourceUrlParam!
+      : episodeIdOrParams.sourceUrl;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.episodes as any)[episodeId]['scrape-sources'].post({
+    sourceUrl,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to deep scrape video sources'
+    );
+  }
+
+  return res.data.data as unknown as Episode;
+}
+
 export interface AddVideoSourceInput {
   type: 'embed' | 'direct';
   url: string;

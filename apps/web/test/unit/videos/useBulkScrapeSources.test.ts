@@ -136,7 +136,7 @@ describe('useBulkScrapeSources hook', () => {
     previewSpy.mockRestore();
   });
 
-  it('calls live saveBulkSources API when saveBulkSources is triggered', async () => {
+  it('calls live scrapeEpisodeSources API for each matched item when saveBulkSources is triggered', async () => {
     const previewSpy = vi.spyOn(api, 'previewBulkSources').mockResolvedValueOnce({
       scrapedEpisodes: [
         {
@@ -151,10 +151,12 @@ describe('useBulkScrapeSources hook', () => {
       localEpisodes: [],
     });
 
-    const saveSpy = vi.spyOn(api, 'saveBulkSources').mockResolvedValueOnce({
-      success: true,
-      savedCount: 1,
-      skippedCount: 0,
+    const scrapeSpy = vi.spyOn(api, 'scrapeEpisodeSources').mockResolvedValueOnce({
+      id: 'ep-1',
+      title: 'Live Ep 1',
+      videoSources: [],
+      createdAt: '',
+      updatedAt: '',
     });
 
     const { result } = renderHook(() => useBulkScrapeSources({ seriesId: 'series-100' }), { wrapper: createWrapper() });
@@ -167,16 +169,65 @@ describe('useBulkScrapeSources hook', () => {
       await result.current.saveBulkSources();
     });
 
-    expect(saveSpy).toHaveBeenCalledWith({
-      seriesId: 'series-100',
-      mappings: expect.arrayContaining([
-        expect.objectContaining({
-          episodeId: 'ep-1',
-        }),
-      ]),
-    });
+    expect(scrapeSpy).toHaveBeenCalledWith('ep-1', 'https://otakudesu.cloud/ep1');
     previewSpy.mockRestore();
-    saveSpy.mockRestore();
+    scrapeSpy.mockRestore();
+  });
+
+  it('handles per-item scrape network failure gracefully without stopping batch execution', async () => {
+    const previewSpy = vi.spyOn(api, 'previewBulkSources').mockResolvedValueOnce({
+      scrapedEpisodes: [
+        {
+          scrapedTitle: 'Ep 1',
+          scrapedUrl: 'https://otakudesu.cloud/ep1',
+          episodeNumber: 1,
+          calculatedOrder: 1,
+          matchedLocalEpisodeId: 'ep-1',
+          matchStatus: 'matched',
+        },
+        {
+          scrapedTitle: 'Ep 2',
+          scrapedUrl: 'https://otakudesu.cloud/ep2',
+          episodeNumber: 2,
+          calculatedOrder: 2,
+          matchedLocalEpisodeId: 'ep-2',
+          matchStatus: 'matched',
+        },
+      ],
+      localEpisodes: [],
+    });
+
+    const scrapeSpy = vi.spyOn(api, 'scrapeEpisodeSources')
+      .mockRejectedValueOnce(new Error('Scrape Connection Timeout'))
+      .mockResolvedValueOnce({
+        id: 'ep-2',
+        title: 'Ep 2',
+        videoSources: [],
+        createdAt: '',
+        updatedAt: '',
+      });
+
+    const { result } = renderHook(() => useBulkScrapeSources({ seriesId: 'series-100' }), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.fetchPreview();
+    });
+
+    await act(async () => {
+      await result.current.saveBulkSources();
+    });
+
+    expect(scrapeSpy).toHaveBeenCalledTimes(2);
+
+    const ep1Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Ep 1');
+    expect(ep1Log?.status).toBe('error');
+    expect(ep1Log?.message).toContain('Scrape Connection Timeout');
+
+    const ep2Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Ep 2');
+    expect(ep2Log?.status).toBe('success');
+
+    previewSpy.mockRestore();
+    scrapeSpy.mockRestore();
   });
 
   it('allows updating mapping for a scraped item', async () => {
@@ -243,8 +294,16 @@ describe('useBulkScrapeSources hook', () => {
     expect(result.current.progress).toBe(0);
   });
 
-  it('transitions to step 3 and performs mocked sequential batch processing', async () => {
-    const { result } = renderHook(() => useBulkScrapeSources({ stepDelayMs: 0 }), { wrapper: createWrapper() });
+  it('transitions to step 3 and performs sequential batch processing', async () => {
+    const scrapeSpy = vi.spyOn(api, 'scrapeEpisodeSources').mockResolvedValue({
+      id: 'ep-2',
+      title: 'Episode 2',
+      videoSources: [],
+      createdAt: '',
+      updatedAt: '',
+    });
+
+    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
 
     await act(async () => {
       result.current.fetchPreview(mockLocalEpisodes);
@@ -257,7 +316,7 @@ describe('useBulkScrapeSources hook', () => {
     });
 
     await act(async () => {
-      await result.current.saveBulkSources(undefined, 0);
+      await result.current.saveBulkSources();
     });
 
     expect(result.current.step).toBe(3);
@@ -271,6 +330,88 @@ describe('useBulkScrapeSources hook', () => {
 
     const ep2Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Episode 2');
     expect(ep2Log?.status).toBe('success');
+
+    scrapeSpy.mockRestore();
+  });
+
+  describe('Target Season auto-calculation of Episode Offset', () => {
+    const mockSeasonsList = [
+      {
+        id: 's1',
+        title: 'Season 1',
+        tmdbSeason: 1,
+        episodes: [
+          { id: 'ep-1', title: 'Ep 1', order: 1 },
+          { id: 'ep-2', title: 'Ep 2', order: 2 },
+        ],
+      },
+      {
+        id: 's2',
+        title: 'Season 2',
+        tmdbSeason: 2,
+        episodes: [
+          { id: 'ep-13', title: 'Ep 13', order: 13 },
+          { id: 'ep-14', title: 'Ep 14', order: 14 },
+        ],
+      },
+    ];
+
+    it('auto-selects first season by default and sets offset to 0 when Season 1 starts at order 1', () => {
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ seasons: mockSeasonsList }),
+        { wrapper: createWrapper() }
+      );
+
+      expect(result.current.selectedSeasonId).toBe('s1');
+      expect(result.current.episodeOffset).toBe(0);
+    });
+
+    it('automatically calculates offset to 12 when selecting Season 2 with first episode order 13', () => {
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ seasons: mockSeasonsList }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.selectSeason('s2');
+      });
+
+      expect(result.current.selectedSeasonId).toBe('s2');
+      expect(result.current.episodeOffset).toBe(12);
+    });
+
+    it('allows manual override of episodeOffset after season auto-calculation', () => {
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ seasons: mockSeasonsList }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.selectSeason('s2');
+      });
+      expect(result.current.episodeOffset).toBe(12);
+
+      act(() => {
+        result.current.setEpisodeOffset(15);
+      });
+      expect(result.current.episodeOffset).toBe(15);
+      expect(result.current.selectedSeasonId).toBe('s2');
+    });
+
+    it('auto-calculates offset using localEpisodes if seasons list is not provided', () => {
+      const flatLocalEpisodes: LocalEpisodeItem[] = [
+        { id: 'ep-13', title: 'Ep 13', order: 13, seasonId: 's2', seasonTitle: 'Season 2', seasonNumber: 2 },
+        { id: 'ep-14', title: 'Ep 14', order: 14, seasonId: 's2', seasonTitle: 'Season 2', seasonNumber: 2 },
+      ];
+
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ localEpisodes: flatLocalEpisodes }),
+        { wrapper: createWrapper() }
+      );
+
+      expect(result.current.selectedSeasonId).toBe('s2');
+      expect(result.current.episodeOffset).toBe(12);
+    });
   });
 });
 

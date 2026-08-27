@@ -31,6 +31,7 @@ export {
   addVideoSources,
   updateVideoSource,
   deleteVideoSource,
+  scrapeEpisodeSources,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
 export type {
@@ -52,4 +53,5 @@ export type {
   PreviewScrapeResult,
   SaveMediaParams,
   SaveMediaResult,
+  ScrapeEpisodeSourcesParams,
 } from './internal/api';

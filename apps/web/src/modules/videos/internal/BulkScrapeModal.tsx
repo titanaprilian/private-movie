@@ -14,14 +14,10 @@ import { Label } from '@/components/ui/label';
 import {
   useBulkScrapeSources,
   type LocalEpisodeItem,
+  type SeasonGroupOption,
 } from './useBulkScrapeSources';
 
-export interface SeasonGroupOption {
-  id: string;
-  title?: string | null;
-  tmdbSeason?: number | null;
-  episodes?: Array<{ id: string; title: string; order?: number }>;
-}
+export type { SeasonGroupOption };
 
 export interface BulkScrapeModalProps {
   open: boolean;
@@ -47,6 +43,9 @@ export function BulkScrapeModal({
     setSourceUrl,
     sourceType,
     setSourceType,
+    selectedSeasonId,
+    selectSeason,
+    seasonOptions,
     episodeOffset,
     setEpisodeOffset,
     previewItems,
@@ -62,7 +61,7 @@ export function BulkScrapeModal({
     updateMapping,
     toggleIgnore,
     reset,
-  } = useBulkScrapeSources({ seriesId, onSuccess });
+  } = useBulkScrapeSources({ seriesId, seasons, localEpisodes, onSuccess });
 
   useEffect(() => {
     if (!open) {
@@ -149,16 +148,38 @@ export function BulkScrapeModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bulk-scrape-offset">Episode Offset</Label>
-                <Input
-                  id="bulk-scrape-offset"
-                  type="number"
-                  placeholder="0"
-                  value={episodeOffset}
-                  onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
-                  disabled={isFetchingPreview}
-                />
+                <Label htmlFor="bulk-scrape-target-season">Target Season</Label>
+                <select
+                  id="bulk-scrape-target-season"
+                  aria-label="Target Season"
+                  value={selectedSeasonId}
+                  onChange={(e) => selectSeason(e.target.value)}
+                  disabled={isFetchingPreview || seasonOptions.length === 0}
+                  className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+                >
+                  {seasonOptions.length > 0 ? (
+                    seasonOptions.map((season) => (
+                      <option key={season.id} value={season.id}>
+                        {season.label}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">-- No Seasons --</option>
+                  )}
+                </select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bulk-scrape-offset">Episode Offset</Label>
+              <Input
+                id="bulk-scrape-offset"
+                type="number"
+                placeholder="0"
+                value={episodeOffset}
+                onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
+                disabled={isFetchingPreview}
+              />
             </div>
 
             <DialogFooter className="pt-4">

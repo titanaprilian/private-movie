@@ -73,10 +73,12 @@ describe('BulkScrapeModal component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(api, 'previewBulkSources').mockResolvedValue(mockPreviewResult);
-    vi.spyOn(api, 'saveBulkSources').mockResolvedValue({
-      success: true,
-      savedCount: 3,
-      skippedCount: 1,
+    vi.spyOn(api, 'scrapeEpisodeSources').mockResolvedValue({
+      id: 'ep-1',
+      title: 'Scraped Ep',
+      videoSources: [],
+      createdAt: '',
+      updatedAt: '',
     });
   });
 
@@ -105,8 +107,52 @@ describe('BulkScrapeModal component', () => {
     expect(screen.getByText('Bulk Add Sources')).toBeInTheDocument();
     expect(screen.getByLabelText(/Season \/ Scraper URL/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Source Type/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Target Season/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Episode Offset/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Preview/i })).toBeInTheDocument();
+  });
+
+  it('automatically calculates episode offset when Target Season selection changes', async () => {
+    const multiSeasons = [
+      {
+        id: 's1',
+        title: 'Season 1',
+        tmdbSeason: 1,
+        episodes: [{ id: 'ep-1', title: 'Ep 1', order: 1 }],
+      },
+      {
+        id: 's2',
+        title: 'Season 2',
+        tmdbSeason: 2,
+        episodes: [{ id: 'ep-13', title: 'Ep 13', order: 13 }],
+      },
+    ];
+
+    const { user } = renderWithProviders(
+      <BulkScrapeModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        seasons={multiSeasons}
+      />
+    );
+
+    const targetSeasonSelect = screen.getByLabelText(/Target Season/i);
+    const offsetInput = screen.getByLabelText(/Episode Offset/i);
+
+    // Default first season is Season 1, offset is 0
+    expect(targetSeasonSelect).toHaveValue('s1');
+    expect(offsetInput).toHaveValue(0);
+
+    // Select Season 2 (first ep order 13) -> offset should update to 12
+    await user.selectOptions(targetSeasonSelect, 's2');
+    expect(targetSeasonSelect).toHaveValue('s2');
+    expect(offsetInput).toHaveValue(12);
+
+    // User can manually edit Episode Offset after auto-calculation
+    await user.clear(offsetInput);
+    await user.type(offsetInput, '15');
+    expect(offsetInput).toHaveValue(15);
   });
 
   it('transitions to Step 2 upon submitting valid URL', async () => {
@@ -247,17 +293,16 @@ describe('BulkScrapeModal component', () => {
 
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith(
-        'Bulk sources saved',
+        'Bulk sources processed',
         expect.objectContaining({
-          description: expect.stringContaining('Successfully processed'),
+          description: expect.stringContaining('Successfully scraped'),
         })
       );
     });
 
     // Close button should be present once processing is done
-    const closeBtns = await screen.findAllByRole('button', { name: /Close/i });
-    // The main dialog footer Close button
-    const footerCloseBtn = closeBtns.find((btn) => btn.getAttribute('class')?.includes('bg-primary')) || closeBtns[0];
+    const closeBtns = await screen.findAllByRole('button', { name: 'Close' });
+    const footerCloseBtn = closeBtns.find((b) => !b.querySelector('svg')) || closeBtns[0];
     await user.click(footerCloseBtn);
 
     expect(onOpenChange).toHaveBeenCalledWith(false);

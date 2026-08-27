@@ -18,6 +18,7 @@ import {
   syncSeasonTmdb,
   previewBulkSources,
   saveBulkSources,
+  scrapeEpisodeSources,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -1023,6 +1024,49 @@ describe('videos api', () => {
     });
     expect(res.success).toBe(true);
     expect(res.savedCount).toBe(2);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('scrapeEpisodeSources calls POST /episodes/:id/scrape-sources with sourceUrl payload', async () => {
+    const mockData = {
+      data: {
+        id: 'ep-123',
+        title: 'Episode 123',
+        videoSources: [
+          { id: 'vs-1', type: 'embed', url: 'https://embed.com/1', label: 'Mirror 1' },
+        ],
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        postBody = (init?.body as string) || '';
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await scrapeEpisodeSources('ep-123', 'https://otakudesu.cloud/episode/ep-123/');
+
+    expect(postUrl).toContain('/episodes/ep-123/scrape-sources');
+    expect(JSON.parse(postBody)).toEqual({
+      sourceUrl: 'https://otakudesu.cloud/episode/ep-123/',
+    });
+    expect(res.id).toBe('ep-123');
+    expect(res.videoSources).toHaveLength(1);
 
     fetchSpy.mockRestore();
   });
