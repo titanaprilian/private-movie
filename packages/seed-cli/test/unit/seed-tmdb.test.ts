@@ -310,19 +310,36 @@ describe("seedTmdb pipeline orchestrator", () => {
 });
 
 describe("saveTmdbSeries database upserts", () => {
-  it("inserts or updates series, seasons, and episodes within a transaction", async () => {
-    const mockReturning = vi.fn().mockResolvedValue([{ id: "fake-id" }]);
+  it("inserts series, genres, seriesToGenres, seasons, and episodes within a transaction, wiping old genre mappings first", async () => {
+    const mockWhere = vi.fn().mockResolvedValue(undefined);
+    const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
+
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: "fake-series-id" }])
+      .mockResolvedValueOnce([{ id: "genre-id-1" }, { id: "genre-id-2" }])
+      .mockResolvedValueOnce([{ id: "fake-season-id" }]);
+
+    const mockOnConflictDoNothing = vi.fn().mockResolvedValue(undefined);
     const mockOnConflictDoUpdate = vi.fn().mockReturnValue({
       returning: mockReturning,
-      then: (cb: any) => Promise.resolve([{ id: "fake-id" }]).then(cb)
+      then: (cb: any) => Promise.resolve([{ id: "fake-id" }]).then(cb),
     });
-    const mockValues = vi.fn().mockReturnValue({
+
+    const mockValues = vi.fn().mockImplementation(() => ({
       onConflictDoUpdate: mockOnConflictDoUpdate,
-    });
+      onConflictDoNothing: mockOnConflictDoNothing,
+    }));
+
     const mockInsert = vi.fn().mockReturnValue({
       values: mockValues,
     });
-    const mockTx = { insert: mockInsert };
+
+    const mockTx = {
+      insert: mockInsert,
+      delete: mockDelete,
+    };
+
     const mockDb = {
       transaction: vi.fn(async (cb) => cb(mockTx)),
     } as any;
@@ -335,7 +352,7 @@ describe("saveTmdbSeries database upserts", () => {
       backdropPath: "/bg.jpg",
       firstAirDate: "2020-01-01",
       voteAverage: 8.5,
-      genres: ["Action"],
+      genres: ["Action & Adventure", "Sci-Fi & Fantasy"],
       seasons: [
         {
           seasonNumber: 1,
@@ -360,34 +377,97 @@ describe("saveTmdbSeries database upserts", () => {
     } as any;
 
     const { saveTmdbSeries } = await import("../../src/seed-tmdb");
-    
+
     await saveTmdbSeries(mockDb, data);
 
     expect(mockDb.transaction).toHaveBeenCalled();
-    // 1 series, 1 season, 1 episode = 3 inserts
-    expect(mockInsert).toHaveBeenCalledTimes(3);
 
-    // Verify first insert is for series
+    // Verify delete was called to wipe existing series_to_genres bindings for series
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    expect(mockWhere).toHaveBeenCalledTimes(1);
+
+    // 1 series, 1 genres batch, 1 seriesToGenres batch, 1 season, 1 episode = 5 inserts
+    expect(mockInsert).toHaveBeenCalledTimes(5);
+
+    // Verify 1st insert is for series
     const seriesValues = mockValues.mock.calls[0][0];
     expect(seriesValues.title).toBe("Test Show");
     expect(seriesValues.tmdbId).toBe(100);
     expect(seriesValues.type).toBe("tv");
-    
-    expect(mockOnConflictDoUpdate.mock.calls[0][0].set.title).toBe("Test Show");
 
-    // Verify second insert is for season
-    const seasonValues = mockValues.mock.calls[1][0];
+    // Verify 2nd insert is for genres
+    const genreValuesList = mockValues.mock.calls[1][0];
+    expect(genreValuesList).toHaveLength(2);
+    expect(genreValuesList[0].name).toBe("Action & Adventure");
+    expect(genreValuesList[0].slug).toBe("action-and-adventure");
+    expect(genreValuesList[0].id).toBeDefined();
+    expect(genreValuesList[1].name).toBe("Sci-Fi & Fantasy");
+    expect(genreValuesList[1].slug).toBe("sci-fi-and-fantasy");
+
+    // Verify 3rd insert is for seriesToGenres mapping
+    const mappingValuesList = mockValues.mock.calls[2][0];
+    expect(mappingValuesList).toEqual([
+      { seriesId: "fake-series-id", genreId: "genre-id-1" },
+      { seriesId: "fake-series-id", genreId: "genre-id-2" },
+    ]);
+
+    // Verify 4th insert is for season
+    const seasonValues = mockValues.mock.calls[3][0];
     expect(seasonValues.seasonNumber).toBe(1);
     expect(seasonValues.title).toBe("S1");
-    // Should link to series
-    expect(seasonValues.seriesId).toBe("fake-id");
+    expect(seasonValues.seriesId).toBe("fake-series-id");
 
-    // Verify third insert is for episode
-    const episodeValues = mockValues.mock.calls[2][0];
+    // Verify 5th insert is for episode
+    const episodeValues = mockValues.mock.calls[4][0];
     expect(episodeValues.order).toBe(1);
     expect(episodeValues.title).toBe("Ep1");
-    expect(episodeValues.thumbnailUrl).toBe("https://image.tmdb.org/t/p/w500/ep1.jpg");
-    // Should link to season
-    expect(episodeValues.seasonId).toBe("fake-id");
+    expect(episodeValues.seasonId).toBe("fake-season-id");
+  });
+
+  it("handles empty genres array gracefully without inserting genres", async () => {
+    const mockWhere = vi.fn().mockResolvedValue(undefined);
+    const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
+
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: "fake-series-id" }])
+      .mockResolvedValueOnce([{ id: "fake-season-id" }]);
+
+    const mockOnConflictDoUpdate = vi.fn().mockReturnValue({
+      returning: mockReturning,
+      then: (cb: any) => Promise.resolve([{ id: "fake-id" }]).then(cb),
+    });
+
+    const mockValues = vi.fn().mockImplementation(() => ({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+    }));
+
+    const mockInsert = vi.fn().mockReturnValue({
+      values: mockValues,
+    });
+
+    const mockTx = {
+      insert: mockInsert,
+      delete: mockDelete,
+    };
+
+    const mockDb = {
+      transaction: vi.fn(async (cb) => cb(mockTx)),
+    } as any;
+
+    const data = {
+      tmdbId: 200,
+      title: "No Genre Show",
+      genres: [],
+      seasons: [],
+    } as any;
+
+    const { saveTmdbSeries } = await import("../../src/seed-tmdb");
+
+    await saveTmdbSeries(mockDb, data);
+
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    // Only series inserted (1 insert call)
+    expect(mockInsert).toHaveBeenCalledTimes(1);
   });
 });

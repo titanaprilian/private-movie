@@ -1,7 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { type DbClient, series, seasons, episodes, createDbClient } from "@repo/db";
+import { eq } from "drizzle-orm";
+import {
+  type DbClient,
+  series,
+  seasons,
+  episodes,
+  genres,
+  seriesToGenres,
+  slugifyGenre,
+  createDbClient,
+} from "@repo/db";
 
 export interface TmdbSeriesSeasonMeta {
   id: number;
@@ -237,7 +247,51 @@ export async function saveTmdbSeries(
       })
       .returning({ id: series.id });
 
-    // 2. Upsert Seasons and Episodes
+    // 2. Wipe existing series-to-genre mappings for this series
+    await tx
+      .delete(seriesToGenres)
+      .where(eq(seriesToGenres.seriesId, seriesRow.id));
+
+    // 3. Upsert Genres and Create Series-to-Genre Relations
+    const rawGenres = data.genres || [];
+    const genreNames = Array.from(
+      new Set(rawGenres.map((g) => g.trim()).filter(Boolean))
+    );
+
+    if (genreNames.length > 0) {
+      const genreValues = genreNames.map((name) => ({
+        id: crypto.randomUUID(),
+        name,
+        slug: slugifyGenre(name),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      const genreRows = await tx
+        .insert(genres)
+        .values(genreValues)
+        .onConflictDoUpdate({
+          target: genres.name,
+          set: {
+            updatedAt: new Date(),
+          },
+        })
+        .returning({ id: genres.id });
+
+      const seriesToGenreRows = genreRows.map((g) => ({
+        seriesId: seriesRow.id,
+        genreId: g.id,
+      }));
+
+      if (seriesToGenreRows.length > 0) {
+        await tx
+          .insert(seriesToGenres)
+          .values(seriesToGenreRows)
+          .onConflictDoNothing();
+      }
+    }
+
+    // 4. Upsert Seasons and Episodes
     for (const season of data.seasons) {
       const [seasonRow] = await tx
         .insert(seasons)
