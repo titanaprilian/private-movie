@@ -2,4948 +2,6605 @@
 # One TMDB ID per line. Lines starting with # are comments.
 
 # Yowayowa Sensei
+# https://otakudesu.blog/anime/yowayowa-sensei-sub-indo/
 284447
 
 # Ghost Concert: Missing Songs
+# https://otakudesu.blog/anime/ghost-concert-sub-indo/
 303796
 
 # Akane-banashi
+# https://otakudesu.blog/anime/akane-banasi-sub-indo/
 297438
 
 # Haibara-kun no Tsuyokute Seishun New Game
+# https://otakudesu.blog/anime/haibara-tsuyokute-seishun-new-game-sub-indo/
 316424
 
 # Oshi no Ko
+# https://otakudesu.blog/anime/oshi-ko-sub-indo/
 203737
 
 # Toujima Tanzaburou wa Kamen Rider ni Naritai
+# https://otakudesu.blog/anime/toujima-tanzaburou-wa-kamen-rider-ni-naritai-sub-indo/
 285788
 
 # Champignon no Majo
+# https://otakudesu.blog/anime/champignon-majo-sub-indo/
 284444
 
 # Ao no Orchestra
+# https://otakudesu.blog/anime/orchestra-sub-indo/
 197368
 
 # JoJo Bizarre Adventure: Stardust Crusaders
+# https://otakudesu.blog/anime/jojo-bzzare-adventr-stardust-crusader-season-2-sub-indo/
 45790
 
 # Wandance
+# https://otakudesu.blog/anime/wandnce-sub-indo/
 262259
 
 # Yasei no Last Boss ga Arawareta!
+# https://otakudesu.blog/anime/yasei-last-bos-sub-indo/
 280042
 
 # Boku no Hero Academia
+# https://otakudesu.blog/anime/boku-demia-s2-sub-indo/
 65930
 
 # Jigoku Sensei Nube
+# https://otakudesu.blog/anime/jigoku-sensei-2025-sub-indo/
 259544
 
 # Tate no Yuusha no Nariagari
+# https://otakudesu.blog/anime/tate-yuusha-nariagari-subtitle-indonesia/
 1433341
 
 # Jibaku Shounen Hanako-kun
+# https://otakudesu.blog/anime/jibaku-hanako-kun-sub-indo/
 95269
 
 # Utagoe wa Mille-Feuille
+# https://otakudesu.blog/anime/utagoe-wa-mille-feuille-sub-indo/
 260848
 
 # Bad Girl
+# https://otakudesu.blog/anime/bad-girl-sub-indo/
 258000
 
 # Tsuyokute New Saga
+# https://otakudesu.blog/anime/new-saga-sub-indo/
 212766
 
 # Onmyou Kaiten Re:Birth
+# https://otakudesu.blog/anime/onmyou-rebirth-sub-indo/
 285828
 
 # Necronomico no Cosmic Horror Show
+# https://otakudesu.blog/anime/necronomico-cosmic-horror-show-sub-indo/
 279993
 
 # Uma Musume: Cinderella Gray
+# https://otakudesu.blog/anime/uma-musume-cinderella-gray-sub-indo/
 262700
 
 # To Be Hero X
+# https://otakudesu.blog/anime/to-be-hero-x-sub-indo/
 272059
 
 # Sakamoto Days
+# https://otakudesu.blog/anime/sakamoto-day-sub-indo/
 207332
 
 # Arknights
+# https://otakudesu.blog/anime/arkghts-fkomori-sub-indo/
 137065
 
 # Kowloon Generic Romance
+# https://otakudesu.blog/anime/kowloon-generic-romance-sub-indo/
 274069
 
 # Teogonia
+# https://otakudesu.blog/anime/teogonia-sub-indo/
 256109
 
 # Kidou Senshi Gundam: GQuuuuuuX
+# https://otakudesu.blog/anime/kidou-gundam-gquuuuuux-sub-indo/
 278704
 
 # Dandadan
+# https://otakudesu.blog/anime/dandan-sub-indo/
 240411
 
 # Dandadan
+# https://otakudesu.blog/anime/dandan-sub-indo/
 240411
 
 # Blue Lock
+# https://otakudesu.blog/anime/blelock-sub-indo/
 131041
 
 # Aharen-san wa Hakarenai
+# https://otakudesu.blog/anime/aharen-sub-indo/
 130237
 
 # #Compass 2.0: Sentou Setsuri Kaiseki System
+# https://otakudesu.blog/anime/compass-20-sub-indo/
 215615
 
 # Takopii no Genzai
+# https://otakudesu.blog/anime/takopii-genzai-sub-indo/
 284445
 
 # Maebashi Witches
+# https://otakudesu.blog/anime/maebashi-witches-sub-indo/
 270602
 
 # Zatsu Tabi: That's Journey
+# https://otakudesu.blog/anime/zatsu-tabi-journey-sub-indo/
 254853
 
 # Clevatess
+# https://otakudesu.blog/anime/clevatess-sub-indo/
 258348
 
 # Your Forma
+# https://otakudesu.blog/anime/your-forma-sub-indo/
 279731
 
 # The Beginning After the End
+# https://otakudesu.blog/anime/saikyou-ousama-nidome-sub-indo/
 274671
 
 # Wind Breaker
+# https://otakudesu.blog/anime/wind-break-sub-indo/
 223500
 
 # Vigilante: Boku no Hero Academia Illegals
+# https://otakudesu.blog/anime/vigilante-bnh-academia-illegals-sub-indo/
 280110
 
 # Bye Bye, Earth
+# https://otakudesu.blog/anime/bye-earth-sub-indo/
 214587
 
 # Kanchigai no Atelier Meister
+# https://otakudesu.blog/anime/kanchigai-atelier-meister-sub-indo/
 277881
 
 # Trillion Game
+# https://otakudesu.blog/anime/trilion-game-sub-indo/
 240125
 
 # Jibaku Shounen Hanako-kun
+# https://otakudesu.blog/anime/jibaku-hanako-kun-sub-indo/
 95269
 
 # Honey Lemon Soda
+# https://otakudesu.blog/anime/honey-soda-sub-indo/
 247859
 
 # Dr. Stone
+# https://otakudesu.blog/anime/drstne-sub-indo/
 86031
 
 # Unnamed Memory
+# https://otakudesu.blog/anime/unnamed-memo-sub-indo/
 216272
 
 # Zenshuu
+# https://otakudesu.blog/anime/zensu-sub-indo/
 249882
 
 # Tasokare Hotel
+# https://otakudesu.blog/anime/tasokare-hotel-sub-indo/
 258229
 
 # Sorairo Utility
+# https://otakudesu.blog/anime/sorairo-util-sub-indo/
 245876
 
 # Rurouni Kenshin
+# https://otakudesu.blog/anime/rurouni-kenshin-sub-indo/
 210879
 
 # Sakamoto Days
+# https://otakudesu.blog/anime/sakamoto-day-sub-indo/
 207332
 
 # Dungeon Meshi
+# https://otakudesu.blog/anime/dungeon-meshi-sub-indo/
 1675061
 
 # Kimetsu no Yaiba
+# https://otakudesu.blog/anime/kimetsu-yaiba-subtitle-indonesia/
 85937
 
 # Wind Breaker
+# https://otakudesu.blog/anime/wind-break-sub-indo/
 223500
 
 # Mahouka Koukou no Rettousei
+# https://otakudesu.blog/anime/mahouka-koukou-sub-indo/
 1746478
 
 # Mushoku Tensei
+# https://otakudesu.blog/anime/mushoku-tensi-s2-sub-indo/
 94664
 
 # The iDOLM@STER Shiny Colors
+# https://otakudesu.blog/anime/the-imas-shiny-colors-sub-indo/
 248086
 
 # MF Ghost
+# https://otakudesu.blog/anime/mf-ghst-sub-indo/
 154526
 
 # Fairy Tail: 100 Years Quest
+# https://otakudesu.blog/anime/fairy-tail-100-quest-sub-indo/
 248947
 
 # Sword Art Online Alternative: Gun Gale Online
+# https://otakudesu.blog/anime/sword-online-alternative-gun-gale-online-subtitle-indonesia/
 78204
 
 # Ranma ½
+# https://otakudesu.blog/anime/ranma-2024-sub-indo/
 57706
 
 # Love Live! Superstar!!
+# https://otakudesu.blog/anime/love-superstar-sub-indo/
 106055
 
 # Bleach: Sennen Kessen-hen
+# https://otakudesu.blog/anime/blch-kesen-hen-sub-indo/
 30984
 
 # Delico's Nursery
+# https://otakudesu.blog/anime/delic-nursery-sub-indo/
 232252
 
 # Shin Tennis no Oujisama: U-17 World Cup Semifinal
+# https://otakudesu.blog/anime/tennis-world-cup-sub-indo/
 205493
 
 # Sengoku Youko
+# https://otakudesu.blog/anime/sengoku-youko-sub-indo/
 234995
 
 # Seirei Gensouki
+# https://otakudesu.blog/anime/seireig-sub-indo/
 113808
 
 # Raise wa Tanin ga Ii
+# https://otakudesu.blog/anime/raitanin-ga-ii-sub-indo/
 259787
 
 # Ao no Exorcist
+# https://otakudesu.blog/anime/exorcist-kyoto-fujouou-hen-subtitle-indonesia/
 38464
 
 # NegaPosi Angler
+# https://otakudesu.blog/anime/nega-angler-sub-indo/
 260689
 
 # Isekai Suicide Squad
+# https://otakudesu.blog/anime/isekai-squad-sub-indo/
 229926
 
 # Hibike! Euphonium
+# https://otakudesu.blog/anime/hibike-euphonium-subtitle-indonesia/
 62564
 
 # Unnamed Memory
+# https://otakudesu.blog/anime/unnamed-memo-sub-indo/
 216272
 
 # Vampire Dormitory
+# https://otakudesu.blog/anime/vampir-drom-sub-indo/
 238903
 
 # The New Gate
+# https://otakudesu.blog/anime/new-gate-sub-indo/
 239161
 
 # Kaijuu 8-gou
+# https://otakudesu.blog/anime/kaiju-gou-sub-indo/
 207468
 
 # Date A Live
+# https://otakudesu.blog/anime/date-live-subtitle-indonesia/
 46004
 
 # Lv2 kara Cheat datta Motoyuusha Kouho no Mattari Isekai Life
+# https://otakudesu.blog/anime/lv2-kara-cheat-sub-indo/
 237233
 
 # Bartender: Kami no Glass
+# https://otakudesu.blog/anime/brtender-kami-glass-sub-indo/
 225168
 
 # Blue Archive the Animation
+# https://otakudesu.blog/anime/blue-archive-sub-indo/
 218833
 
 # Yuru Camp
+# https://otakudesu.blog/anime/yuru-camp-sub-indo/
 95623
 
 # Touken Ranbu Kai
+# https://otakudesu.blog/anime/touken-ranbu-sub-indo/
 244435
 
 # Re:Monster
+# https://otakudesu.blog/anime/re-mnstr-sub-indo/
 235389
 
 # KonoSuba
+# https://otakudesu.blog/anime/knsb-sub-indo/
 65844
 
 # Girls Band Cry
+# https://otakudesu.blog/anime/band-cry-sub-indo/
 241928
 
 # Bucchigiri?!
+# https://otakudesu.blog/anime/bucchigiri-episode-1-sub-indo/
 226905
 
 # Bye Bye, Earth
+# https://otakudesu.blog/anime/bye-earth-sub-indo/
 214587
 
 # Shy
+# https://otakudesu.blog/anime/shy-sub-indo/
 211709
 
 # Uzumaki
+# https://otakudesu.blog/anime/uzmaki-sprial-horor-sub-indo/
 93241
 
 # Boku no Hero Academia
+# https://otakudesu.blog/anime/boku-demia-s2-sub-indo/
 65930
 
 # Monogatari Series: Off & Monster Season
+# https://otakudesu.blog/anime/monogatari-s-monster-sub-indo/
 46195
 
 # Atri: My Dear Moments
+# https://otakudesu.blog/anime/atri-my-dear-moments-sub-indo/
 210875
 
 # Oshi no Ko
+# https://otakudesu.blog/anime/oshi-ko-sub-indo/
 203737
 
 # The Fable
+# https://otakudesu.blog/anime/fable-sub-indo/
 238843
 
 # NieR:Automata Ver1.1a
+# https://otakudesu.blog/anime/niermata-ver1-p2-sub-indo/
 158373
 
 # Mayonaka Punch
+# https://otakudesu.blog/anime/myonka-punch-sub-indo/
 244617
 
 # Ookami to Koushinryou: Merchant Meets the Wise Wolf
+# https://otakudesu.blog/anime/ookami-koushinryou-2024-sub-indo/
 229676
 
 # VTuber Nandaga Haishin Kiri Wasuretara Densetsu ni Natteta
+# https://otakudesu.blog/anime/vtuber-nankiritara-sub-indo/
 229743
 
 # Giji Harem
+# https://otakudesu.blog/anime/giji-harem-sub-indo/
 224753
 
 # Ninja Kamui
+# https://otakudesu.blog/anime/ninja-kamui-sub-indo/
 202284
 
 # Kingdom
+# https://otakudesu.blog/anime/kingdm-sub-indo/
 46437
 
 # Metallic Rouge
+# https://otakudesu.blog/anime/metal-rouge-sub-indo/
 222787
 
 # Sengoku Youko
+# https://otakudesu.blog/anime/sengoku-youko-sub-indo/
 234995
 
 # Shaman King: Flowers
+# https://otakudesu.blog/anime/shaman-king-flowers-sub-indo/
 232865
 
 # Ragna Crimson
+# https://otakudesu.blog/anime/rag-crimson-sub-indo/
 195459
 
 # Mashle
+# https://otakudesu.blog/anime/masle-sub-indo/
 204832
 
 # Akuyaku Reijou Level 99
+# https://otakudesu.blog/anime/akuyaku-reijou-lv-99-sub-indo/
 222930
 
 # Jujutsu Kaisen
+# https://otakudesu.blog/anime/jjkn-sub-indo/
 95479
 
 # Acro Trip
+# https://otakudesu.blog/anime/acrotrip-sub-indo/
 215429
 
 # 16bit Sensation: Another Layer
+# https://otakudesu.blog/anime/16bit-layer-sub-indo/
 217512
 
 # Kizuna no Allele
+# https://otakudesu.blog/anime/kizuna-lele-sub-indo/
 214264
 
 # Shangri-La Frontier
+# https://otakudesu.blog/anime/shangri-la-sub-indo/
 205050
 
 # Spy x Family
+# https://otakudesu.blog/anime/spy-family-sub-indo/
 120089
 
 # High Card
+# https://otakudesu.blog/anime/high-card-sub-indo/
 194665
 
 # Ao no Exorcist
+# https://otakudesu.blog/anime/exorcist-kyoto-fujouou-hen-subtitle-indonesia/
 38464
 
 # Pon no Michi
+# https://otakudesu.blog/anime/pon-michi-sub-indo/
 234176
 
 # Undead Unluck
+# https://otakudesu.blog/anime/udead-unlck-sub-indo/
 209077
 
 # Ishura
+# https://otakudesu.blog/anime/ishra-sub-indo/
 220286
 
 # Tokyo Revengers
+# https://otakudesu.blog/anime/tokyo-revs-sub-indo/
 105009
 
 # Under Ninja
+# https://otakudesu.blog/anime/under-nnja-sub-indo/
 132917
 
 # Migi to Dali
+# https://otakudesu.blog/anime/migi-dali-sub-indo/
 153450
 
 # Hoshikuzu Telepath
+# https://otakudesu.blog/anime/hoshikuzu-tpath-sub-indo/
 217404
 
 # Dead Mount Death Play
+# https://otakudesu.blog/anime/demount-play-sub-indo/
 214540
 
 # The iDOLM@STER Million Live!
+# https://otakudesu.blog/anime/idol-million-live-sub-indo/
 105902
 
 # Dark Gathering
+# https://otakudesu.blog/anime/dark-gather-sub-indo/
 206799
 
 # Goblin Slayer
+# https://otakudesu.blog/anime/goblin-slay-subtitle-indonesia/
 82591
 
 # Tate no Yuusha no Nariagari
+# https://otakudesu.blog/anime/tate-yuusha-nariagari-subtitle-indonesia/
 1433341
 
 # Dr. Stone
+# https://otakudesu.blog/anime/drstne-sub-indo/
 86031
 
 # Shy
+# https://otakudesu.blog/anime/shy-sub-indo/
 211709
 
 # Helck
+# https://otakudesu.blog/anime/helk-sub-indo/
 157571
 
 # Toaru Ossan no VRMMO Katsudouki
+# https://otakudesu.blog/anime/toaru-vrmmo-sub-indo/
 229610
 
 # Overtake!
+# https://otakudesu.blog/anime/ovrtake-subtitle-indonesia/
 218684
 
 # MF Ghost
+# https://otakudesu.blog/anime/mf-ghst-sub-indo/
 154526
 
 # Rurouni Kenshin
+# https://otakudesu.blog/anime/rurouni-kenshin-sub-indo/
 210879
 
 # Arknights
+# https://otakudesu.blog/anime/arkghts-fkomori-sub-indo/
 137065
 
 # Uma Musume: Pretty Derby
+# https://otakudesu.blog/anime/uma-musume-s2-sub-indo/
 77694
 
 # Vinland Saga
+# https://otakudesu.blog/anime/vld-saga-sub-indo/
 88803
 
 # Birdie Wing: Golf Girls' Story
+# https://otakudesu.blog/anime/brdie-wing-golf-sub-indo/
 137390
 
 # Sugar Apple Fairy Tale
+# https://otakudesu.blog/anime/sugar-tale-sub-indo/
 135335
 
 # Undead Girl Murder Farce
+# https://otakudesu.blog/anime/ungirl-murder-sub-indo/
 222785
 
 # Edens Zero
+# https://otakudesu.blog/anime/ede-zero-sub-indo/
 104711
 
 # Spy Kyoushitsu
+# https://otakudesu.blog/anime/spysitsu-sub-indo/
 194986
 
 # Mushoku Tensei
+# https://otakudesu.blog/anime/mushoku-tensi-s2-sub-indo/
 94664
 
 # Bungou Stray Dogs
+# https://otakudesu.blog/anime/bungstray-dogs-subtitle-indonesia/
 65931
 
 # Ayakashi Triangle
+# https://otakudesu.blog/anime/aya-triangle-sub-indo/
 153697
 
 # Temple
+# https://otakudesu.blog/anime/tenpuru-sub-indo/
 44254
 
 # Horimiya: Piece
+# https://otakudesu.blog/anime/hiroya-piece-sub-indo/
 228663
 
 # Level 1 dakedo Unique Skill de Saikyou desu
+# https://otakudesu.blog/anime/lv1-unique-skill-sub-indo/
 201363
 
 # BanG Dream! It's MyGO!!!!!
+# https://otakudesu.blog/anime/bg-dream-go-sub-indo/
 224207
 
 # Tokyo Revengers
+# https://otakudesu.blog/anime/tokyo-revs-sub-indo/
 105009
 
 # Mononogatari
+# https://otakudesu.blog/anime/mngatari-sub-indo/
 138948
 
 # Lv1 Maou to One Room Yuusha
+# https://otakudesu.blog/anime/lv1-maou-sub-indo/
 196220
 
 # Masamune-kun no Revenge
+# https://otakudesu.blog/anime/masamune-kun-no-revenge-subtitle-indonesia/
 69295
 
 # Genjitsu no Yohane: Sunshine in the Mirror
+# https://otakudesu.blog/anime/genjitsu-sunshine-mirror-sub-indo/
 204849
 
 # Ryza no Atelier
+# https://otakudesu.blog/anime/rza-atelier-sub-indo/
 245826
 
 # Liar Liar
+# https://otakudesu.blog/anime/liarl-sub-indo/
 122204
 
 # Bleach: Sennen Kessen-hen
+# https://otakudesu.blog/anime/blch-kesen-hen-sub-indo/
 30984
 
 # NieR Automata
+# https://otakudesu.blog/anime/niermata-ver1-sub-indo/
 158373
 
 # Mobile Suit Gundam: The Witch from Mercury
+# https://otakudesu.blog/anime/msg-from-mercury-sub-indo/
 196400
 
 # Chainsaw Man
+# https://otakudesu.blog/anime/chaisaw-sub-indo/
 114410
 
 # Blue Lock
+# https://otakudesu.blog/anime/blelock-sub-indo/
 131041
 
 # Kimetsu no Yaiba
+# https://otakudesu.blog/anime/kimetsu-yaiba-subtitle-indonesia/
 85937
 
 # The Marginal Service
+# https://otakudesu.blog/anime/marginal-service-sub-indo/
 214211
 
 # Dead Mount Death Play
+# https://otakudesu.blog/anime/demount-play-sub-indo/
 214540
 
 # Uma Musume: Pretty Derby - Road to the Top
+# https://otakudesu.blog/anime/uma-musume-road-to-top-sub-indo/
 223251
 
 # Golden Kamuy
+# https://otakudesu.blog/anime/kamuy-golden-subtitle-indonesia/
 76757
 
 # Mashle
+# https://otakudesu.blog/anime/masle-sub-indo/
 204832
 
 # World Dai Star
+# https://otakudesu.blog/anime/world-star-sub-indo/
 215198
 
 # Yamada-kun to Lv999 no Koi wo Suru
+# https://otakudesu.blog/anime/yamada-lv999-sub-indo/
 208067
 
 # Ao no Orchestra
+# https://otakudesu.blog/anime/orchestra-sub-indo/
 197368
 
 # Tengoku Daimakyou
+# https://otakudesu.blog/anime/tegoku-daimakyo-sub-indo/
 208891
 
 # Mahou Shoujo Magical Destroyers
+# https://otakudesu.blog/anime/shoujo-destroyer-sub-indo/
 133282
 
 # Oshi no Ko
+# https://otakudesu.blog/anime/oshi-ko-sub-indo/
 203737
 
 # Kawaisugi Crisis
+# https://otakudesu.blog/anime/kawai-crisis-sub-indo/
 211034
 
 # Edomae Elf
+# https://otakudesu.blog/anime/edo-elf-sub-indo/
 204112
 
 # Skip to Loafer
+# https://otakudesu.blog/anime/skip-loafer-sub-indo/
 139130
 
 # Kizuna no Allele
+# https://otakudesu.blog/anime/kizuna-lele-sub-indo/
 214264
 
 # My Home Hero
+# https://otakudesu.blog/anime/home-hero-sub-indo/
 204412
 
 # Kuma Kuma Kuma Bear
+# https://otakudesu.blog/anime/kuma-bear-sub-indo/
 97782
 
 # Dr. Stone
+# https://otakudesu.blog/anime/drstne-sub-indo/
 86031
 
 # Shaman King
+# https://otakudesu.blog/anime/shaman-king-sub-indo/
 104699
 
 # Tsurune
+# https://otakudesu.blog/anime/tsrune-s2-sub-ind/
 83314
 
 # Bofuri
+# https://otakudesu.blog/anime/bofuri-sub-indo/
 96402
 
 # Muv-Luv Alternative
+# https://otakudesu.blog/anime/muv-luv-sub-indo/
 112010
 
 # Yowamushi Pedal
+# https://otakudesu.blog/anime/yamushi-pedal-s5-sub-indo/
 61441
 
 # High Card
+# https://otakudesu.blog/anime/high-card-sub-indo/
 194665
 
 # Mou Ippon!
+# https://otakudesu.blog/anime/mou-ipon-sub-indo/
 128824
 
 # Spy Kyoushitsu
+# https://otakudesu.blog/anime/spysitsu-sub-indo/
 194986
 
 # Buddy Daddies
+# https://otakudesu.blog/anime/budy-dad-sub-indo/
 212963
 
 # Tomo-chan wa Onnanoko!
+# https://otakudesu.blog/anime/tomo-onanoko-sub-indo/
 205308
 
 # Bungou Stray Dogs
+# https://otakudesu.blog/anime/bungstray-dogs-subtitle-indonesia/
 65931
 
 # Mononogatari
+# https://otakudesu.blog/anime/mngatari-sub-indo/
 138948
 
 # KanColle
+# https://otakudesu.blog/anime/kancocle-sub-indo/
 65711
 
 # Sugar Apple Fairy Tale
+# https://otakudesu.blog/anime/sugar-tale-sub-indo/
 135335
 
 # Revenger
+# https://otakudesu.blog/anime/rvenger-sub-indo/
 211297
 
 # The Legend of Heroes: Sen no Kiseki - Northern War
+# https://otakudesu.blog/anime/legend-heroes-war-sub-indo/
 120470
 
 # Boku no Hero Academia
+# https://otakudesu.blog/anime/boku-demia-s2-sub-indo/
 65930
 
 # Fumetsu no Anata e
+# https://otakudesu.blog/anime/fna-sub-indo/
 1677043
 
 # Seven Knights Revolution: Eiyuu no Keishousha
+# https://otakudesu.blog/anime/seven-knights-revolution-sub-indo/
 118151
 
 # Zombieland Saga
+# https://otakudesu.blog/anime/zombieland-the-saga-subtitle-indonesia/
 82822
 
 # Utawarerumono
+# https://otakudesu.blog/anime/utawaremono-3-sub-indo/
 46412
 
 # Mobile Suit Gundam: The Witch from Mercury
+# https://otakudesu.blog/anime/msg-from-mercury-sub-indo/
 196400
 
 # Bleach: Sennen Kessen-hen
+# https://otakudesu.blog/anime/blch-kesen-hen-sub-indo/
 30984
 
 # Seiken Densetsu: Legend of Mana
+# https://otakudesu.blog/anime/seiken-of-mana-sub-indo/
 128237
 
 # Uzaki-chan wa Asobitai!
+# https://otakudesu.blog/anime/uzaki-chan-sub-indo/
 98986
 
 # Bocchi the Rock!
+# https://otakudesu.blog/anime/bochi-rock-sub-indo/
 119100
 
 # Renai Flops
+# https://otakudesu.blog/anime/rflops-sub-indo/
 195990
 
 # Berserk: Ougon Jidai-hen - Memorial Edition
+# https://otakudesu.blog/anime/brserk-memorial-sub-indo/
 211057
 
 # Ajin
+# https://otakudesu.blog/anime/ajn-sub-indo/
 65292
 
 # Ajin
+# https://otakudesu.blog/anime/ajn-sub-indo/
 65292
 
 # Yuusha Party wo Tsuihou sareta Beast Tamer
+# https://otakudesu.blog/anime/yuusha-tamer-sub-indo/
 203780
 
 # Spy x Family
+# https://otakudesu.blog/anime/spy-family-sub-indo/
 120089
 
 # Mob Psycho 100
+# https://otakudesu.blog/anime/mob-psy-sub-indo/
 67075
 
 # Akiba Maid Sensou
+# https://otakudesu.blog/anime/akiba-sensou-sub-indo/
 204716
 
 # Do It Yourself!!
+# https://otakudesu.blog/anime/do-yself-subtitle-indonesia/
 121702
 
 # Shinobi no Ittoki
+# https://otakudesu.blog/anime/shinobi-toki-subtitle-indonesia/
 158293
 
 # Orient
+# https://otakudesu.blog/anime/orient-sub-indo/
 115911
 
 # Arknights: Reimei Zensou
+# https://otakudesu.blog/anime/arkzensou-sub-indo/
 137065
 
 # Love Live! Superstar!!
+# https://otakudesu.blog/anime/love-superstar-sub-indo/
 106055
 
 # Shine Post
+# https://otakudesu.blog/anime/sine-pos-sub-indo/
 137194
 
 # Fuuto Tantei
+# https://otakudesu.blog/anime/futo-ttei-sub-indo/
 122369
 
 # Love All Play
+# https://otakudesu.blog/anime/love-play-all-sub-indo/
 130765
 
 # Teppen!!!!!!!!!!!!!!!
+# https://otakudesu.blog/anime/tepen-sub-indo/
 322097
 
 # Kingdom
+# https://otakudesu.blog/anime/kingdm-sub-indo/
 46437
 
 # Summertime Render
+# https://otakudesu.blog/anime/summer-render-sub-indo/
 117933
 
 # Made in Abyss
+# https://otakudesu.blog/anime/made-abyss-subtitle-indonesia/
 72636
 
 # Prima Doll
+# https://otakudesu.blog/anime/prma-dol-sub-indo/
 156450
 
 # Engage Kiss
+# https://otakudesu.blog/anime/eng-kiss-sub-indo/
 196040
 
 # Lycoris Recoil
+# https://otakudesu.blog/anime/lycoris-subtitle-indonesia/
 154494
 
 # Ao Ashi
+# https://otakudesu.blog/anime/aoashi-sub-indo/
 126437
 
 # Shadows House
+# https://otakudesu.blog/anime/shadows-house-sub-indo/
 111576
 
 # Magia Record: Mahou Shoujo Madoka☆Magica Gaiden
+# https://otakudesu.blog/anime/magia-no-record-final-season-sub-indo/
 94523
 
 # Overlord
+# https://otakudesu.blog/anime/olord-sub-indo/
 64196
 
 # Aharen-san wa Hakarenai
+# https://otakudesu.blog/anime/aharen-sub-indo/
 130237
 
 # 86
+# https://otakudesu.blog/anime/86-sub-indo/
 100565
 
 # Boku no Hero Academia
+# https://otakudesu.blog/anime/boku-demia-s2-sub-indo/
 65930
 
 # Tokyo 24-ku
+# https://otakudesu.blog/anime/tokyo24-sub-indo/
 137045
 
 # Ryman's Club
+# https://otakudesu.blog/anime/rman-club-sub-indo/
 136841
 
 # Dance Dance Danseur
+# https://otakudesu.blog/anime/dance-danseur-sub-indo/
 122826
 
 # Love Live! Nijigasaki Gakuen School Idol Doukoukai
+# https://otakudesu.blog/anime/lop-lep-niji-gakuen-sub-indo/
 103511
 
 # Birdie Wing: Golf Girls' Story
+# https://otakudesu.blog/anime/brdie-wing-golf-sub-indo/
 137390
 
 # Tate no Yuusha no Nariagari
+# https://otakudesu.blog/anime/tate-yuusha-nariagari-subtitle-indonesia/
 1433341
 
 # Spy x Family
+# https://otakudesu.blog/anime/spy-family-sub-indo/
 120089
 
 # Cue!
+# https://otakudesu.blog/anime/cue-sub-indo/
 112463
 
 # Kaguya-sama wa Kokurasetai
+# https://otakudesu.blog/anime/kaguya-sama-kokurasetai-subtitle-indonesia/
 83121
 
 # Deaimon
+# https://otakudesu.blog/anime/deaimon-sub-indo/
 123818
 
 # Shijou Saikyou no Daimaou, Murabito A ni Tensei suru
+# https://otakudesu.blog/anime/shinjou-no-dainamaou-sub-indo/
 120155
 
 # RPG Fudousan
+# https://otakudesu.blog/anime/rpg-fudousan-sub-indo/
 119631
 
 # Tomodachi Game
+# https://otakudesu.blog/anime/tomo-game-sub-indo/
 137718
 
 # Healer Girl
+# https://otakudesu.blog/anime/heal-girl-sub-indo/
 124572
 
 # Black★★Rock Shooter: Dawn Fall
+# https://otakudesu.blog/anime/black-shooter-df-sub-indo/
 133733
 
 # Sabikui Bisco
+# https://otakudesu.blog/anime/sabisco-sub-indo/
 120142
 
 # Slow Loop
+# https://otakudesu.blog/anime/slow-loop-sub-indo/
 115112
 
 # Futsal Boys!!!!!
+# https://otakudesu.blog/anime/futsal-sub-indo/
 94295
 
 # Date A Live
+# https://otakudesu.blog/anime/date-live-subtitle-indonesia/
 46004
 
 # Princess Connect! Re:Dive
+# https://otakudesu.blog/anime/princes-conect-s2-sub-indo/
 99084
 
 # Orient
+# https://otakudesu.blog/anime/orient-sub-indo/
 115911
 
 # Dolls' Frontline
+# https://otakudesu.blog/anime/dfrontline-sub-indo/
 117310
 
 # Platinum End
+# https://otakudesu.blog/anime/platinum-the-end-sub-indo/
 114892
 
 # Tribe Nine
+# https://otakudesu.blog/anime/trinine-sub-indo/
 135292
 
 # World Trigger
+# https://otakudesu.blog/anime/world-trig-season-2-sub-indo/
 61628
 
 # Non Non Biyori
+# https://otakudesu.blog/anime/non-biyori-season-2-sub-indo/
 66875
 
 # Kimetsu no Yaiba
+# https://otakudesu.blog/anime/kimetsu-yaiba-subtitle-indonesia/
 85937
 
 # Kingdom
+# https://otakudesu.blog/anime/kingdm-sub-indo/
 46437
 
 # Megaton-kyuu Musashi
+# https://otakudesu.blog/anime/musashi-sub-indo/
 129553
 
 # Love Live! Superstar!!
+# https://otakudesu.blog/anime/love-superstar-sub-indo/
 106055
 
 # Deep Insanity: The Lost Child
+# https://otakudesu.blog/anime/deep-insanity-sub-indo/
 128118
 
 # Selection Project
+# https://otakudesu.blog/anime/selection-no-project-sub-indo/
 114202
 
 # Muv-Luv Alternative
+# https://otakudesu.blog/anime/muv-luv-sub-indo/
 112010
 
 # Visual Prison
+# https://otakudesu.blog/anime/visual-pri-sub-indo/
 121840
 
 # Taishou Otome Otogibanashi
+# https://otakudesu.blog/anime/taishou-otogibanashi-sub-indo/
 114937
 
 # Sakugan
+# https://otakudesu.blog/anime/sakgan-sub-indo/
 96398
 
 # Scarlet Nexus
+# https://otakudesu.blog/anime/scar-nexus-sub-indo/
 121131
 
 # Puraore! Pride of Orange
+# https://otakudesu.blog/anime/puraore-sub-indo/
 114199
 
 # Takt Op. Destiny
+# https://otakudesu.blog/anime/takt-destiny-sub-indo/
 121787
 
 # Mieruko-chan
+# https://otakudesu.blog/anime/mieruko-sub-indo/
 121078
 
 # Mob Psycho 100
+# https://otakudesu.blog/anime/mob-psy-sub-indo/
 67075
 
 # Blue Period
+# https://otakudesu.blog/anime/blue-no-period-sub-indo/
 116983
 
 # Kimetsu no Yaiba: Mugen Ressha-hen
+# https://otakudesu.blog/anime/kimetsu-yaiba-sub-indo/
 85937
 
 # Edens Zero
+# https://otakudesu.blog/anime/ede-zero-sub-indo/
 104711
 
 # Magia Record
+# https://otakudesu.blog/anime/magia-no-record-sub-indo/
 94523
 
 # Re-Main
+# https://otakudesu.blog/anime/main-re-sub-indo/
 120013
 
 # D_Cide Traumerei the Animation
+# https://otakudesu.blog/anime/dcide-sub-indo/
 120968
 
 # Sonny Boy
+# https://otakudesu.blog/anime/sonny-the-boy-sub-indo/
 124396
 
 # Uramichi Oniisan
+# https://otakudesu.blog/anime/uraonii-sub-indo/
 96442
 
 # Tokyo Revengers
+# https://otakudesu.blog/anime/tokyo-revs-sub-indo/
 105009
 
 # Kageki Shoujo!!
+# https://otakudesu.blog/anime/kgeki-sub-indo/
 112138
 
 # Meikyuu Black Company
+# https://otakudesu.blog/anime/mbc-sub-indo/
 105476
 
 # Seirei Gensouki
+# https://otakudesu.blog/anime/seireig-sub-indo/
 113808
 
 # Peach Boy Riverside
+# https://otakudesu.blog/anime/peach-riverside-sub-indo/
 107003
 
 # Muv-Luv Alternative: Total Eclipse
+# https://otakudesu.blog/anime/muv-luv-eclipse-sub-indo/
 45241
 
 # Girl Friend Beta
+# https://otakudesu.blog/anime/gf-beta-sub-indo/
 61485
 
 # Fumetsu no Anata e
+# https://otakudesu.blog/anime/fna-sub-indo/
 1677043
 
 # Odd Taxi
+# https://otakudesu.blog/anime/od-taxi-sub-indo/
 116727
 
 # Nobunagun
+# https://otakudesu.blog/anime/nobugun-sub-indo/
 65615
 
 # Etotama
+# https://otakudesu.blog/anime/etoma-sub-indo/
 76494
 
 # Jujutsu Kaisen
+# https://otakudesu.blog/anime/jjkn-sub-indo/
 95479
 
 # Adachi to Shimamura
+# https://otakudesu.blog/anime/adachi-shimamura-sub-indo/
 94359
 
 # 86
+# https://otakudesu.blog/anime/86-sub-indo/
 100565
 
 # 2.43: Seiin Koukou Danshi Volley-bu
+# https://otakudesu.blog/anime/seiin-koukou-danshi-volley-sub-indo/
 105004
 
 # Horimiya
+# https://otakudesu.blog/anime/hiroya-sub-indo/
 110070
 
 # Isekai Izakaya
+# https://otakudesu.blog/anime/isekai-zakaya-sub-indo/
 78485
 
 # Black Clover
+# https://otakudesu.blog/anime/blck-clover-sub-indo/
 73223
 
 # Shadows House
+# https://otakudesu.blog/anime/shadows-house-sub-indo/
 111576
 
 # Megalo Box
+# https://otakudesu.blog/anime/mega-box-subtitle-indonesia/
 77939
 
 # Osamake
+# https://otakudesu.blog/anime/osamake-sub-indo/
 110975
 
 # Higehiro
+# https://otakudesu.blog/anime/higehiro-sub-indo/
 106519
 
 # Fruits Basket
+# https://otakudesu.blog/anime/frt-basket-sub-indo/
 85991
 
 # Godzilla: S.P
+# https://otakudesu.blog/anime/godzila-sp-sub-indo/
 111177
 
 # Kyuukyoku Shinka shita Full Dive RPG ga Genjitsu yori mo Kusoge Dattara
+# https://otakudesu.blog/anime/kyuukyoku-sub-indo/
 114198
 
 # Super Cub
+# https://otakudesu.blog/anime/super-cb-subtitle-indonesia/
 95631
 
 # Nanatsu no Taizai
+# https://otakudesu.blog/anime/nanatsu-taizai-season-2-sub-indo/
 1457550
 
 # Back Arrow
+# https://otakudesu.blog/anime/back-arr-sub-indo/
 96942
 
 # Vivy
+# https://otakudesu.blog/anime/vivy-sub-indo/
 116725
 
 # SSSS.Dynazenon
+# https://otakudesu.blog/anime/ssss-dyna-sub-indo/
 96451
 
 # Occultic Nine
+# https://otakudesu.blog/anime/occult-nine-sub-indo/
 68185
 
 # Jouran: The Princess of Snow and Blood
+# https://otakudesu.blog/anime/joura-sub-indo/
 117945
 
 # Koikimo
+# https://otakudesu.blog/anime/koikimo-sub-indo/
 98309
 
 # Koufuku Graffiti
+# https://otakudesu.blog/anime/koufuku-grafiti-sub-indo/
 72921
 
 # Medaka Box
+# https://otakudesu.blog/anime/medaka-ni-box-sub-indo/
 45858
 
 # Medaka Box
+# https://otakudesu.blog/anime/medaka-ni-box-sub-indo/
 45858
 
 # Taimadou Gakuen 35 Shiken Shoutai
+# https://otakudesu.blog/anime/taimadou-gakuen-sub-indo/
 70296
 
 # Kaguya-sama wa Kokurasetai
+# https://otakudesu.blog/anime/kaguya-sama-kokurasetai-subtitle-indonesia/
 83121
 
 # Gyakkyou Burai Kaiji
+# https://otakudesu.blog/anime/gyakyou-ni-kaiji-sub-indo/
 42951
 
 # Gyakkyou Burai Kaiji
+# https://otakudesu.blog/anime/gyakyou-ni-kaiji-sub-indo/
 42951
 
 # Bokura ga Ita
+# https://otakudesu.blog/anime/bokura-ita-sub-indo/
 22577
 
 # Tsurune: Kazemai Koukou Kyuudoubu
+# https://otakudesu.blog/anime/tsrune-sub-indo/
 83314
 
 # Nyanko Days
+# https://otakudesu.blog/anime/nyanko-ni-days-sub-indo/
 69297
 
 # Yuri Kuma Arashi
+# https://otakudesu.blog/anime/yuri-kuma-sub-indo/
 68642
 
 # Durarara!!
+# https://otakudesu.blog/anime/durara-sub-indo/
 42410
 
 # Durarara!!
+# https://otakudesu.blog/anime/durara-sub-indo/
 42410
 
 # Durarara!!
+# https://otakudesu.blog/anime/durara-sub-indo/
 42410
 
 # Durarara!!
+# https://otakudesu.blog/anime/durara-sub-indo/
 42410
 
 # Magi: Sinbad no Bouken
+# https://otakudesu.blog/anime/magi-sinbad-bouken-sub-indo/
 67340
 
 # Great Pretender
+# https://otakudesu.blog/anime/great-the-pretender-sub-indo/
 93816
 
 # Lovely Complex
+# https://otakudesu.blog/anime/love-complex-sub-indo/
 27167
 
 # Joshiraku
+# https://otakudesu.blog/anime/josiraku-sub-indo/
 79040
 
 # NHK ni Youkoso!
+# https://otakudesu.blog/anime/nhk-youkoso-sub-indo/
 42821
 
 # World Trigger
+# https://otakudesu.blog/anime/world-trig-season-2-sub-indo/
 61628
 
 # Dr. Stone
+# https://otakudesu.blog/anime/drstne-sub-indo/
 86031
 
 # Higurashi no Naku Koro ni (2020)
+# https://otakudesu.blog/anime/higurashi-naku-koro-2020-sub-indo/
 100988
 
 # Yuru Camp
+# https://otakudesu.blog/anime/yuru-camp-sub-indo/
 95623
 
 # Wonder Egg Priority
+# https://otakudesu.blog/anime/wndr-egg-priority-sub-indo/
 111255
 
 # Log Horizon
+# https://otakudesu.blog/anime/log-horiz-subtitle-indonesia/
 60846
 
 # Kemono Jihen
+# https://otakudesu.blog/anime/kemo-jihen-sub-indo/
 100022
 
 # Uma Musume: Pretty Derby
+# https://otakudesu.blog/anime/uma-musume-s2-sub-indo/
 77694
 
 # SK8
+# https://otakudesu.blog/anime/sk8-sub-indo/
 110309
 
 # Beastars
+# https://otakudesu.blog/anime/besrests-sub-indo/
 90937
 
 # Hortensia Saga
+# https://otakudesu.blog/anime/horten-saga-sub-indo/
 104852
 
 # Hataraku Saibou Black
+# https://otakudesu.blog/anime/hataraku-no-saibou-black-sub-indo/
 101873
 
 # Yakusoku no Neverland
+# https://otakudesu.blog/anime/yakusoku-neverland-subtitle-indonesia/
 83097
 
 # Urasekai Picnic
+# https://otakudesu.blog/anime/urasekai-no-picnic-sub-indo/
 100077
 
 # True Tears
+# https://otakudesu.blog/anime/true-no-tears-sub-indo/
 34162
 
 # Hanasaku Iroha
+# https://otakudesu.blog/anime/hana-iroha-sub-indo/
 42417
 
 # Keppeki Danshi! Aoyama-kun
+# https://otakudesu.blog/anime/keppeki-aoyama-sub-indo/
 72507
 
 # The Tatami Galaxy
+# https://otakudesu.blog/anime/tatami-galaxy-sub-indo/
 36243
 
 # Gekidol
+# https://otakudesu.blog/anime/gkdol-sub-indo/
 110207
 
 # Ochikobore Fruit Tart
+# https://otakudesu.blog/anime/ochikobore-sub-indo/
 95909
 
 # Denki-gai no Honya-san
+# https://otakudesu.blog/anime/denki-honya-sub-indo/
 61407
 
 # Plastic Neesan
+# https://otakudesu.blog/anime/plastic-nee-sub-indo/
 54310
 
 # Seiren
+# https://otakudesu.blog/anime/seirn-sub-indo/
 69342
 
 # Akudama Drive
+# https://otakudesu.blog/anime/akuda-drive-sub-indo/
 100436
 
 # Noblesse
+# https://otakudesu.blog/anime/nobles-sub-indo/
 99779
 
 # Mahouka Koukou no Rettousei
+# https://otakudesu.blog/anime/mahouka-koukou-sub-indo/
 1746478
 
 # Love Live! Nijigasaki Gakuen School Idol Doukoukai
+# https://otakudesu.blog/anime/lop-lep-niji-gakuen-sub-indo/
 103511
 
 # Senyoku no Sigrdrifa
+# https://otakudesu.blog/anime/senyoku-sigrdrifa-sub-indo/
 99910
 
 # Assault Lily: Bouquet
+# https://otakudesu.blog/anime/assault-lily-sub-indo/
 94541
 
 # Ikebukuro West Gate Park
+# https://otakudesu.blog/anime/ikebukuro-gate-park-sub-indo/
 98867
 
 # Kuma Kuma Kuma Bear
+# https://otakudesu.blog/anime/kuma-bear-sub-indo/
 97782
 
 # Golden Kamuy
+# https://otakudesu.blog/anime/kamuy-golden-subtitle-indonesia/
 76757
 
 # Iwa Kakeru
+# https://otakudesu.blog/anime/iwa-kakeru-sub-indo/
 102518
 
 # Haikyuu
+# https://otakudesu.blog/anime/hky-s4-sub-indo/
 60863
 
 # Canaan
+# https://otakudesu.blog/anime/canan-subtitle-indonesia/
 43418
 
 # Gibiate
+# https://otakudesu.blog/anime/gibite-sub-indo/
 94388
 
 # Ahiru no Sora
+# https://otakudesu.blog/anime/ahn-sora-sub-indo/
 92892
 
 # Fugou Keiji: Balance:Unlimited
+# https://otakudesu.blog/anime/fugou-keji-unlimited-sub-indo/
 98491
 
 # No Guns Life
+# https://otakudesu.blog/anime/guns-life-sub-indo/
 91270
 
 # Appare Ranman
+# https://otakudesu.blog/anime/app-ranman-sub-indo/
 94498
 
 # Uzaki-chan wa Asobitai!
+# https://otakudesu.blog/anime/uzaki-chan-sub-indo/
 98986
 
 # Deca-Dence
+# https://otakudesu.blog/anime/deca-no-dence-sub-indo/
 92588
 
 # Shokugeki no Souma
+# https://otakudesu.blog/anime/shokugeki-no-souma-san-no-sara-subtitle-indonesia/
 62273
 
 # Fruits Basket
+# https://otakudesu.blog/anime/frt-basket-sub-indo/
 85991
 
 # Lapis Re:LiGHTs
+# https://otakudesu.blog/anime/re-lights-sub-indo/
 96556
 
 # Sword Art Online: Alicization
+# https://otakudesu.blog/anime/sword-online-alicization-part-2-sub-indo/
 45782
 
 # Terra Formars
+# https://otakudesu.blog/anime/tera-formar-sub-indo/
 61398
 
 # Full Metal Panic
+# https://otakudesu.blog/anime/full-panic-season-3-sub-indo/
 39379
 
 # Full Metal Panic Fumoffu
+# https://otakudesu.blog/anime/full-panic-fumoffu-sub-indo/
 39379
 
 # Full Metal Panic!
+# https://otakudesu.blog/anime/full-panic-sub-indo/
 39379
 
 # Full Metal Panic!
+# https://otakudesu.blog/anime/full-panic-sub-indo/
 39379
 
 # Arcana Famiglia
+# https://otakudesu.blog/anime/arca-famiglia-sub-indo/
 45275
 
 # Terra Formars
+# https://otakudesu.blog/anime/tera-formar-sub-indo/
 61398
 
 # WWW.Working!!
+# https://otakudesu.blog/anime/w-working-sub-indo/
 68070
 
 # Chihayafuru
+# https://otakudesu.blog/anime/chifuru-subtitle-indonesia/
 45247
 
 # Joker Game
+# https://otakudesu.blog/anime/joker-the-game-sub-indo/
 65949
 
 # Hakata Tonkotsu Ramens
+# https://otakudesu.blog/anime/hakata-ramens-sub-indo/
 76126
 
 # JoJo Bizarre Adventure
+# https://otakudesu.blog/anime/jojo-bzzare-adventr-sub-indo/
 45790
 
 # JoJo Bizarre Adventure
+# https://otakudesu.blog/anime/jojo-bzzare-adventr-sub-indo/
 45790
 
 # 22/7
+# https://otakudesu.blog/anime/27-sub-indo/
 93875
 
 # Gatchaman Crowds
+# https://otakudesu.blog/anime/gatcha-crowds-sub-indo/
 61527
 
 # Gatchaman Crowds
+# https://otakudesu.blog/anime/gatcha-crowds-sub-indo/
 61527
 
 # Inu x Boku SS
+# https://otakudesu.blog/anime/inu-boku-sub-indo/
 45282
 
 # Devilman Crybaby
+# https://otakudesu.blog/anime/devil-crybaby-sub-indo/
 75208
 
 # Shiki
+# https://otakudesu.blog/anime/siki-sub-indo/
 36581
 
 # Sengoku Basara
+# https://otakudesu.blog/anime/sengoku-no-basara-sub-indo/
 25492
 
 # Sengoku Basara
+# https://otakudesu.blog/anime/sengoku-no-basara-sub-indo/
 25492
 
 # Sengoku Basara
+# https://otakudesu.blog/anime/sengoku-no-basara-sub-indo/
 25492
 
 # Bakuman
+# https://otakudesu.blog/anime/bakumn-sub-indo/
 36041
 
 # Bakuman
+# https://otakudesu.blog/anime/bakumn-sub-indo/
 36041
 
 # Bakuman
+# https://otakudesu.blog/anime/bakumn-sub-indo/
 36041
 
 # Rosario to Vampire
+# https://otakudesu.blog/anime/rosario-vampire-sub-indo/
 36983
 
 # Rosario to Vampire
+# https://otakudesu.blog/anime/rosario-vampire-sub-indo/
 36983
 
 # Vivid Strike
+# https://otakudesu.blog/anime/vivid-the-strike-sub-indo/
 68096
 
 # Tsuritama
+# https://otakudesu.blog/anime/tsuritma-sub-indo/
 45283
 
 # Kuutei Dragons
+# https://otakudesu.blog/anime/kuu-dragons-sub-indo/
 92591
 
 # Bang Dream
+# https://otakudesu.blog/anime/bg-dream-season-3-sub-indo/
 69236
 
 # Princess Connect
+# https://otakudesu.blog/anime/princes-conect-sub-indo/
 99084
 
 # Isuca
+# https://otakudesu.blog/anime/isca-sub-indo/
 64831
 
 # Shachibato
+# https://otakudesu.blog/anime/sachibato-sub-indo/
 98584
 
 # Gleipnir
+# https://otakudesu.blog/anime/glepnir-sub-indo/
 96203
 
 # Plunderer
+# https://otakudesu.blog/anime/plunder-sub-indo/
 93149
 
 # Shironeko Project: Zero Chronicle
+# https://otakudesu.blog/anime/shironeko-projec-sub-indo/
 93649
 
 # Arte
+# https://otakudesu.blog/anime/artie-sub-indo/
 95697
 
 # Listeners
+# https://otakudesu.blog/anime/listen-sub-indo/
 98748
 
 # Tamayomi
+# https://otakudesu.blog/anime/tamayo-sub-indo/
 93890
 
 # Shin Sakura Taisen the Animation
+# https://otakudesu.blog/anime/shin-sakura-sub-indo/
 96371
 
 # number24
+# https://otakudesu.blog/anime/num24-sub-indo/
 91848
 
 # Tsugumomo
+# https://otakudesu.blog/anime/tsugumo-season-2-sub-indo/
 71000
 
 # Kakushigoto
+# https://otakudesu.blog/anime/kakshigoto-sub-indo/
 95433
 
 # Infinite Dendrogram
+# https://otakudesu.blog/anime/infinite-drogram-sub-indo/
 94649
 
 # Orange
+# https://otakudesu.blog/anime/orang-sub-indo/
 66958
 
 # BNA
+# https://otakudesu.blog/anime/animal-new-sub-indo/
 92592
 
 # Kingdom
+# https://otakudesu.blog/anime/kingdm-sub-indo/
 46437
 
 # Kingdom
+# https://otakudesu.blog/anime/kingdm-sub-indo/
 46437
 
 # Kimi ni Todoke
+# https://otakudesu.blog/anime/kimi-todoke-sub-indo/
 68854
 
 # Kimi ni Todoke
+# https://otakudesu.blog/anime/kimi-todoke-sub-indo/
 68854
 
 # Zettai Karen Children: The Unlimited - Hyoubu Kyousuke
+# https://otakudesu.blog/anime/hyoubu-kyosuke-sub-indo/
 55065
 
 # Another World
+# https://otakudesu.blog/anime/other-world-sub-indo/
 92710
 
 # Dog Days
+# https://otakudesu.blog/anime/dog-day-sub-indo/
 44314
 
 # Natsunagu
+# https://otakudesu.blog/anime/natsugu-sub-indo/
 95559
 
 # Boku no Hero Academia
+# https://otakudesu.blog/anime/boku-demia-s2-sub-indo/
 65930
 
 # Uchitama
+# https://otakudesu.blog/anime/uchima-sub-indo/
 96660
 
 # Oda Cinnamon Nobunaga
+# https://otakudesu.blog/anime/oda-cinnamon-sub-indo/
 91343
 
 # Pet
+# https://otakudesu.blog/anime/pet-sub-indo/
 93593
 
 # Isekai Quartet
+# https://otakudesu.blog/anime/isekai-quart-sub-indo/
 87478
 
 # Phantasy Star Online 2: Episode Oracle
+# https://otakudesu.blog/anime/phantasy-online-oracle-sub-indo/
 93830
 
 # Magia Record
+# https://otakudesu.blog/anime/magia-no-record-sub-indo/
 94523
 
 # Dorohedoro
+# https://otakudesu.blog/anime/dorohedo-sub-indo/
 94404
 
 # High School DxD
+# https://otakudesu.blog/anime/high-on-school-dxd-subtitle-indonesia/
 45950
 
 # Hatena Illusion
+# https://otakudesu.blog/anime/ilusion-hatena-sub-indo/
 95346
 
 # Shimoneta
+# https://otakudesu.blog/anime/simoneta-sub-indo/
 63323
 
 # Jibaku Shounen Hanako-kun
+# https://otakudesu.blog/anime/jibaku-hanako-kun-sub-indo/
 95269
 
 # Nekopara
+# https://otakudesu.blog/anime/nekopr-sub-indo/
 95317
 
 # Mugen no Juunin: Immortal
+# https://otakudesu.blog/anime/mnj-imo-sub-indo/
 92090
 
 # ID:Invaded
+# https://otakudesu.blog/anime/invade-sub-indo/
 92602
 
 # Yatogame-chan Kansatsu Nikki
+# https://otakudesu.blog/anime/yatogame-chan-season-2-sub-indo/
 87473
 
 # Bofuri
+# https://otakudesu.blog/anime/bofuri-sub-indo/
 96402
 
 # Nanatsu no Taizai
+# https://otakudesu.blog/anime/nanatsu-taizai-season-2-sub-indo/
 1457550
 
 # Heya Camp
+# https://otakudesu.blog/anime/hey-camp-subtitle-indonesia/
 95213
 
 # Fate/Grand Order: Zettai Majuu Sensen Babylonia
+# https://otakudesu.blog/anime/fgo-zettai-babylonia-sub-indo/
 90677
 
 # Azur Lane
+# https://otakudesu.blog/anime/azur-lan-sub-indo/
 91455
 
 # Darwin's Game
+# https://otakudesu.blog/anime/game-darwin-sub-indo/
 85942
 
 # Radiant
+# https://otakudesu.blog/anime/radian-subtitle-indonesia/
 82879
 
 # Babylon
+# https://otakudesu.blog/anime/bylon-sub-indo/
 92599
 
 # Kono Oto Tomare!
+# https://otakudesu.blog/anime/kono-tomare-sub-indo/
 85843
 
 # Rifle Is Beautiful
+# https://otakudesu.blog/anime/rifle-beautiful-sub-indo/
 91600
 
 # Vinland Saga
+# https://otakudesu.blog/anime/vld-saga-sub-indo/
 88803
 
 # Shokugeki no Souma
+# https://otakudesu.blog/anime/shokugeki-no-souma-san-no-sara-subtitle-indonesia/
 62273
 
 # Kandagawa Jet Girls
+# https://otakudesu.blog/anime/kanda-jet-girl-sub-indo/
 93495
 
 # Granblue Fantasy The Animation
+# https://otakudesu.blog/anime/granblue-sub-indo/
 69820
 
 # Beastars
+# https://otakudesu.blog/anime/besrests-sub-indo/
 90937
 
 # No Guns Life
+# https://otakudesu.blog/anime/guns-life-sub-indo/
 91270
 
 # Assassins Pride
+# https://otakudesu.blog/anime/assasin-pride-sub-indo/
 91299
 
 # Oresuki
+# https://otakudesu.blog/anime/oresuki-sub-indo/
 93019
 
 # Z/X Code Reunion
+# https://otakudesu.blog/anime/zx-reunion-sub-indo/
 91765
 
 # Fairy Gone
+# https://otakudesu.blog/anime/fgnry-sub-indo/
 86835
 
 # High Score Girl
+# https://otakudesu.blog/anime/high-girl-sub-indo/
 80665
 
 # Val x Love
+# https://otakudesu.blog/anime/val-love-sub-indo/
 91027
 
 # Psycho-Pass
+# https://otakudesu.blog/anime/psycho-subtitle-indonesia/
 43865
 
 # Dr. Stone
+# https://otakudesu.blog/anime/drstne-sub-indo/
 86031
 
 # Hataage! Kemono Michi
+# https://otakudesu.blog/anime/kemono-michi-sub-indo/
 91584
 
 # Kimetsu no Yaiba
+# https://otakudesu.blog/anime/kimetsu-yaiba-subtitle-indonesia/
 85937
 
 # Kono Oto Tomare!
+# https://otakudesu.blog/anime/kono-tomare-sub-indo/
 85843
 
 # Higurashi no Naku Koro ni
+# https://otakudesu.blog/anime/higurashi-naku-koro-sub-indo/
 100988
 
 # Nodame Cantabile
+# https://otakudesu.blog/anime/nodame-no-cantabile-sub-indo/
 45527
 
 # Nodame Cantabile
+# https://otakudesu.blog/anime/nodame-no-cantabile-sub-indo/
 45527
 
 # Nodame Cantabile
+# https://otakudesu.blog/anime/nodame-no-cantabile-sub-indo/
 45527
 
 # Bem
+# https://otakudesu.blog/anime/beem-sub-indo/
 88063
 
 # Inugami-san to Nekoyama-san
+# https://otakudesu.blog/anime/inugami-nekoyama-sub-indo/
 61530
 
 # Trinity Seven
+# https://otakudesu.blog/anime/trinity-the-seven-sub-indo/
 61460
 
 # Golden Time
+# https://otakudesu.blog/anime/gold-time-subtitle-indonesia/
 67389
 
 # Mahou Shoujo Madoka Magica
+# https://otakudesu.blog/anime/mahou-shoujo-madoka-sub-indo/
 39218
 
 # Masamune-kun no Revenge
+# https://otakudesu.blog/anime/masamune-kun-no-revenge-subtitle-indonesia/
 69295
 
 # Yuru Camp
+# https://otakudesu.blog/anime/yuru-camp-sub-indo/
 95623
 
 # Granblue Fantasy The Animation
+# https://otakudesu.blog/anime/granblue-sub-indo/
 69820
 
 # Arifureta
+# https://otakudesu.blog/anime/arifureta-sub-indo/
 86034
 
 # Knight's & Magic
+# https://otakudesu.blog/anime/knight-magic-sub-indo/
 72635
 
 # Carole & Tuesday
+# https://otakudesu.blog/anime/carol-tusday-sub-indo/
 83962
 
 # Kono Yo no Hate de Koi wo Utau Shoujo YU-NO
+# https://otakudesu.blog/anime/kono-shoujo-yu-no-subtitle-indonesia/
 87142
 
 # Strike Witches
+# https://otakudesu.blog/anime/strike-witch-sub-indo/
 35464
 
 # Cop Craft
+# https://otakudesu.blog/anime/pcraft-sub-indo/
 88050
 
 # Lord El-Melloi II Sei no Jikenbo: Rail Zeppelin Grace Note
+# https://otakudesu.blog/anime/lord-el-meloi-sub-indo/
 85368
 
 # Fairy Tail
+# https://otakudesu.blog/anime/ftail-sub-indo/
 46261
 
 # Granbelm
+# https://otakudesu.blog/anime/granbel-sub-indo/
 88038
 
 # Isekai Cheat Magician
+# https://otakudesu.blog/anime/isekai-cheat-sub-indo/
 90215
 
 # K
+# https://otakudesu.blog/anime/k-season-2-sub-indo/
 45799
 
 # K-Project
+# https://otakudesu.blog/anime/k-sub-indo/
 287902
 
 # HenSuki
+# https://otakudesu.blog/anime/hensuki-sub-indo/
 88061
 
 # Fruits Basket
+# https://otakudesu.blog/anime/frt-basket-sub-indo/
 85991
 
 # Tejina-senpai
+# https://otakudesu.blog/anime/teji-pai-sub-indo/
 88043
 
 # Mob Psycho 100
+# https://otakudesu.blog/anime/mob-psy-sub-indo/
 67075
 
 # Pandora Hearts
+# https://otakudesu.blog/anime/pandora-the-heart-sub-indo/
 35971
 
 # Fate Stay Night: Unlimited Blade Works
+# https://otakudesu.blog/anime/ft-stay-night-ubw-sub-indo/
 61415
 
 # Fate Stay Night: Unlimited Blade Works
+# https://otakudesu.blog/anime/ft-stay-night-ubw-sub-indo/
 61415
 
 # To LOVE-Ru Darkness
+# https://otakudesu.blog/anime/to-love-darknes-season-2-sub-indo/
 34742
 
 # To LOVE Ru Darkness
+# https://otakudesu.blog/anime/to-love-darknes-sub-indo/
 34742
 
 # To LOVE Ru
+# https://otakudesu.blog/anime/to-love-sub-indo/
 34742
 
 # To LOVE Ru
+# https://otakudesu.blog/anime/to-love-sub-indo/
 34742
 
 # Kengan Ashura
+# https://otakudesu.blog/anime/kengan-no-ashura-sub-indo/
 90660
 
 # High Score Girl
+# https://otakudesu.blog/anime/high-girl-sub-indo/
 80665
 
 # JoJo Bizarre Adventure: Stardust Crusaders
+# https://otakudesu.blog/anime/jojo-bzzare-adventr-stardust-crusader-season-2-sub-indo/
 45790
 
 # JoJo Bizarre Adventure
+# https://otakudesu.blog/anime/jojo-bzzare-adventr-sub-indo/
 45790
 
 # One Punch Man
+# https://otakudesu.blog/anime/one-punch-sub-indo/
 63926
 
 # One Punch Man
+# https://otakudesu.blog/anime/one-punch-sub-indo/
 63926
 
 # Overlord
+# https://otakudesu.blog/anime/olord-sub-indo/
 64196
 
 # Overlord
+# https://otakudesu.blog/anime/olord-sub-indo/
 64196
 
 # Overlord
+# https://otakudesu.blog/anime/olord-sub-indo/
 64196
 
 # Accel World
+# https://otakudesu.blog/anime/acl-world-sub-indo/
 43167
 
 # Absolute Duo
+# https://otakudesu.blog/anime/absol-duo-subtitle-indonesia/
 65764
 
 # 3D Kanojo: Real Girl
+# https://otakudesu.blog/anime/3d-girl-kanojo-subtitle-indonesia/
 77721
 
 # 11eyes
+# https://otakudesu.blog/anime/1eye-subtitle-indonesia/
 44310
 
 # Tengen Toppa Gurren Lagann
+# https://otakudesu.blog/anime/tengen-guren-lagan-subtitle-indonesia/
 21729
 
 # Tate no Yuusha no Nariagari
+# https://otakudesu.blog/anime/tate-yuusha-nariagari-subtitle-indonesia/
 1433341
 
 # Dororo
+# https://otakudesu.blog/anime/droro-subtitle-indonesia/
 83100
 
 # Tokyo Ghoul
+# https://otakudesu.blog/anime/ghoul-sub-indo/
 61374
 
 # Bungou Stray Dogs
+# https://otakudesu.blog/anime/bungstray-dogs-subtitle-indonesia/
 65931
 
 # Isekai Quartet
+# https://otakudesu.blog/anime/isekai-quart-sub-indo/
 87478
 
 # Hitoribocchi no Marumaru Seikatsu
+# https://otakudesu.blog/anime/hitoribocchi-sub-indo/
 85990
 
 # Senryuu Shoujo
+# https://otakudesu.blog/anime/senryu-to-shoujo-subtitle-indonesia/
 87445
 
 # Hachigatsu no Cinderella Nine
+# https://otakudesu.blog/anime/hachi-cinderella-sub-indo/
 87465
 
 # Fairy Gone
+# https://otakudesu.blog/anime/fgnry-sub-indo/
 86835
 
 # Joshikausei
+# https://otakudesu.blog/anime/jhkausei-sub-indo/
 87463
 
 # Sarazanmai
+# https://otakudesu.blog/anime/sarazan-subtitle-indonesia/
 86919
 
 # Chou Kadou Girl 1/6
+# https://otakudesu.blog/anime/cokado-girl-sub-indo/
 87692
 
 # Ange Vierge
+# https://otakudesu.blog/anime/ange-on-vierge-subtitle-indonesia/
 67054
 
 # Aoki Hagane no Arpeggio: Ars Nova
+# https://otakudesu.blog/anime/aoki-hagane-no-arpeggio-ars-nova/
 57406
 
 # Deadman Wonderland
+# https://otakudesu.blog/anime/demanworland-subtitle-indonesia/
 42503
 
 # Danganronpa 3: Mirai-hen
+# https://otakudesu.blog/anime/dangronpa-mirai-sub-indo/
 49471
 
 # Danganronpa 3: Zetsubou-hen
+# https://otakudesu.blog/anime/dangronpa-zetsubou-sub-indo/
 49471
 
 # Mushishi
+# https://otakudesu.blog/anime/mushi-subtitle-indonesia/
 26867
 
 # Mushishi
+# https://otakudesu.blog/anime/mushi-subtitle-indonesia/
 26867
 
 # Mushishi
+# https://otakudesu.blog/anime/mushi-subtitle-indonesia/
 26867
 
 # New Game!
+# https://otakudesu.blog/anime/new-on-game-subtitle-indonesia/
 67012
 
 # New Game!
+# https://otakudesu.blog/anime/new-on-game-subtitle-indonesia/
 67012
 
 # Love Live! Sunshine!!
+# https://otakudesu.blog/anime/love-lep-sunshine-sub-indo/
 65383
 
 # Love Live! Sunshine!!
+# https://otakudesu.blog/anime/love-lep-sunshine-sub-indo/
 65383
 
 # Love Live!
+# https://otakudesu.blog/anime/love-live-school-idol-project-subtitle-indonesia-bd/
 53721
 
 # Love Live!
+# https://otakudesu.blog/anime/love-live-school-idol-project-subtitle-indonesia-bd/
 53721
 
 # Guilty Crown
+# https://otakudesu.blog/anime/gcrown-subtitle-indonesia/
 43125
 
 # Free!
+# https://otakudesu.blog/anime/fri-sub-indo/
 61456
 
 # Free!
+# https://otakudesu.blog/anime/fri-sub-indo/
 61456
 
 # Free!
+# https://otakudesu.blog/anime/fri-sub-indo/
 61456
 
 # Boku no Hero Academia
+# https://otakudesu.blog/anime/boku-demia-s2-sub-indo/
 65930
 
 # Re: Zero kara Hajimeru Isekai Seikatsu
+# https://otakudesu.blog/anime/re-hajimeru-isekai-zero-sub-indo/
 65942
 
 # Tsurezure Children
+# https://otakudesu.blog/anime/tsurezure-children-subtitle-indonesia/
 72509
 
 # Nisekoi
+# https://otakudesu.blog/anime/ni-koi-subtitle-indonesia/
 62640
 
 # Nisekoi
+# https://otakudesu.blog/anime/ni-koi-subtitle-indonesia/
 62640
 
 # Arslan Senki
+# https://otakudesu.blog/anime/arslan-snk-season-2-subtitle-indonesia/
 102661
 
 # Chihayafuru
+# https://otakudesu.blog/anime/chifuru-subtitle-indonesia/
 45247
 
 # Chihayafuru
+# https://otakudesu.blog/anime/chifuru-subtitle-indonesia/
 45247
 
 # D-Frag!
+# https://otakudesu.blog/anime/dafrog-sub-indo/
 68634
 
 # Black Bullet
+# https://otakudesu.blog/anime/black-bull-subtitle-indonesia/
 60834
 
 # Amanchu!
+# https://otakudesu.blog/anime/amancu-season-2-sub-indo/
 67346
 
 # Amanchu
+# https://otakudesu.blog/anime/amanchu-subtitle-indonesia/
 67346
 
 # Nanbaka
+# https://otakudesu.blog/anime/nabaka-subtitle-indonesia/
 68115
 
 # Hamatora
+# https://otakudesu.blog/anime/hamtra-season-2-sub-indo/
 61791
 
 # Hamatora The Animation
+# https://otakudesu.blog/anime/hamtra-the-animation/
 61791
 
 # Date A Live
+# https://otakudesu.blog/anime/date-live-subtitle-indonesia/
 46004
 
 # Golden Kamuy
+# https://otakudesu.blog/anime/kamuy-golden-subtitle-indonesia/
 76757
 
 # Outbreak Company
+# https://otakudesu.blog/anime/out-company-sub-indo/
 62691
 
 # Nanatsu no Taizai
+# https://otakudesu.blog/anime/nanatsu-taizai-season-2-sub-indo/
 1457550
 
 # Tonari no Seki-kun
+# https://otakudesu.blog/anime/tonari-seki-sub-indo/
 70036
 
 # Fairy Tail
+# https://otakudesu.blog/anime/ftail-sub-indo/
 46261
 
 # Fullmetal Alchemist
+# https://otakudesu.blog/anime/fulltal-alchemist-sub-indo/
 31911
 
 # Robotics Notes
+# https://otakudesu.blog/anime/robot-notes-subtitle-indonesia/
 46435
 
 # Shingeki no Bahamut: Genesis
+# https://otakudesu.blog/anime/shingeki-bahamut-sub-indo/
 582628
 
 # Heavy Object
+# https://otakudesu.blog/anime/hvy-object-sub-indo/
 64140
 
 # Ping Pong The Animation
+# https://otakudesu.blog/anime/ping-the-pong-subtitle-indonesia/
 60811
 
 # Ergo Proxy
+# https://otakudesu.blog/anime/ergo-prx-sub-indo/
 1097
 
 # KanColle
+# https://otakudesu.blog/anime/kancocle-sub-indo/
 65711
 
 # Mahouka Koukou no Rettousei
+# https://otakudesu.blog/anime/mahouka-koukou-sub-indo/
 1746478
 
 # Dakara Boku wa H ga Dekinai
+# https://otakudesu.blog/anime/dakara-boku-wa-dekinai-subtitle-indonesia/
 45234
 
 # Btooom!
+# https://otakudesu.blog/anime/btom-sub-indo/
 45125
 
 # Musaigen no Phantom World
+# https://otakudesu.blog/anime/musaigen-no-phantom-world-bd-subtitle-indonesia/
 65333
 
 # Himouto! Umaru-chan
+# https://otakudesu.blog/anime/umaru-chan-sub-indo/
 67126
 
 # Himouto! Umaru-chan
+# https://otakudesu.blog/anime/umaru-chan-sub-indo/
 67126
 
 # Dagashi Kashi
+# https://otakudesu.blog/anime/dagashi-subtitle-indonesia/
 65523
 
 # Non Non Biyori
+# https://otakudesu.blog/anime/non-biyori-season-2-sub-indo/
 66875
 
 # Noragami
+# https://otakudesu.blog/anime/norgami-subtitle-indonesia/
 64710
 
 # Mekakucity Actors
+# https://otakudesu.blog/anime/mekaku-actors-subtitle-indonesia/
 60842
 
 # Gugure! Kokkuri-san
+# https://otakudesu.blog/anime/kokkuri-san-subtitle-indonesia/
 61432
 
 # Nijiiro Days
+# https://otakudesu.blog/anime/nijro-day-subtitle-indonesia/
 71511
 
 # Hakumei to Mikochi
+# https://otakudesu.blog/anime/hakutomiko-subtitle-indonesia/
 76127
 
 # Mitsuboshi Colors
+# https://otakudesu.blog/anime/mitsu-colors-sub-indo/
 76134
 
 # Re-Kan!
+# https://otakudesu.blog/anime/r-kan-sub-indo/
 76117
 
 # Fukigen na Mononokean
+# https://otakudesu.blog/anime/fukigen-mononokean-subtitle-indonesia/
 65956
 
 # Kaguya-sama wa Kokurasetai
+# https://otakudesu.blog/anime/kaguya-sama-kokurasetai-subtitle-indonesia/
 83121
 
 # Sword Art Online
+# https://otakudesu.blog/anime/sawo-sub-indo/
 45782
 
 # Endro~!
+# https://otakudesu.blog/anime/edro-sub-indo/
 84667
 
 # Grimms Notes The Animation
+# https://otakudesu.blog/anime/gm-not-sub-indo/
 84665
 
 # Boogiepop wa Warawanai
+# https://otakudesu.blog/anime/boogiepop-waranai-subtitle-indonesia/
 34152
 
 # Meiji Tokyo Renka
+# https://otakudesu.blog/anime/meiji-tky-renka-subtitle-indonesia/
 84141
 
 # Manaria Friends
+# https://otakudesu.blog/anime/mana-friends-subtitle-indonesia/
 84869
 
 # Girly Air Force
+# https://otakudesu.blog/anime/girl-aforce-subtitle-indonesia/
 83102
 
 # Yakusoku no Neverland
+# https://otakudesu.blog/anime/yakusoku-neverland-subtitle-indonesia/
 83097
 
 # BanG Dream!
+# https://otakudesu.blog/anime/bg-dream-subtitle-indonesia/
 69236
 
 # Kakegurui
+# https://otakudesu.blog/anime/kkgurui-sub-indo/
 72305
 
 # Pastel Memories
+# https://otakudesu.blog/anime/pastel-memo-subtitle-indonesia/
 83120
 
 # Radiant
+# https://otakudesu.blog/anime/radian-subtitle-indonesia/
 82879
 
 # Steins;Gate 0
+# https://otakudesu.blog/anime/stein-gate-0-subtitle-indonesia/
 78102
 
 # Steins Gate
+# https://otakudesu.blog/anime/stein-gate-subtitle-indonesia/
 42509
 
 # Plastic Memories
+# https://otakudesu.blog/anime/plastic-memo-subtitle-indonesia/
 62450
 
 # Shokugeki no Souma
+# https://otakudesu.blog/anime/shokugeki-no-souma-san-no-sara-subtitle-indonesia/
 62273
 
 # Shokugeki no Souma
+# https://otakudesu.blog/anime/shokugeki-no-souma-san-no-sara-subtitle-indonesia/
 62273
 
 # Kakegurui
+# https://otakudesu.blog/anime/kkgurui-sub-indo/
 72305
 
 # Gamers!
+# https://otakudesu.blog/anime/gamers-subtitle-indonesia/
 72426
 
 # Cross Ange
+# https://otakudesu.blog/anime/cross-ange-tenshi-to-ryuu-no-rondo-subtitle-indonesia/
 61425
 
 # Death Parade
+# https://otakudesu.blog/anime/parade-death-subtitle-indonesia/
 61901
 
 # Clannad
+# https://otakudesu.blog/anime/clanad-subtitle-indonesia/
 24835
 
 # Clannad
+# https://otakudesu.blog/anime/clanad-subtitle-indonesia/
 24835
 
 # Handa-kun
+# https://otakudesu.blog/anime/handa-sub-indo/
 67052
 
 # Circlet Princess
+# https://otakudesu.blog/anime/circlet-prince-subtitle-indonesia/
 84664
 
 # Death Note
+# https://otakudesu.blog/anime/dea-note-subtitle-indonesia/
 13916
 
 # Gakuen Babysitters
+# https://otakudesu.blog/anime/gaku-babysitters-subtitle-indonesia/
 76124
 
 # Log Horizon
+# https://otakudesu.blog/anime/log-horiz-subtitle-indonesia/
 60846
 
 # Log Horizon
+# https://otakudesu.blog/anime/log-horiz-subtitle-indonesia/
 60846
 
 # Tamako Market
+# https://otakudesu.blog/anime/tamako-to-market-sub-indo/
 48561
 
 # Zoku Owarimonogatari
+# https://otakudesu.blog/anime/zoku-owarigatari-subtitle-indonesia/
 328325
 
 # Gabriel DropOut
+# https://otakudesu.blog/anime/gabril-drout-subtitle-indonesia/
 69285
 
 # Black Rock Shooter
+# https://otakudesu.blog/anime/black-rock-shooter-subtitle-indonesia/
 43079
 
 # Darker than Black
+# https://otakudesu.blog/anime/darker-black-subtitle-indonesia/
 31718
 
 # Darker than Black
+# https://otakudesu.blog/anime/darker-black-subtitle-indonesia/
 31718
 
 # K-On!
+# https://otakudesu.blog/anime/k-n-subtitle-indonesia/
 42253
 
 # K-On!
+# https://otakudesu.blog/anime/k-n-subtitle-indonesia/
 42253
 
 # Little Witch Academia
+# https://otakudesu.blog/anime/witch-academia-subtitle-indonesia/
 69293
 
 # Sword Art Online
+# https://otakudesu.blog/anime/sawo-sub-indo/
 45782
 
 # Sword Art Online
+# https://otakudesu.blog/anime/sawo-sub-indo/
 45782
 
 # Tokyo Ghoul
+# https://otakudesu.blog/anime/ghoul-sub-indo/
 61374
 
 # Tokyo Ghoul
+# https://otakudesu.blog/anime/ghoul-sub-indo/
 61374
 
 # Highschool of the Dead
+# https://otakudesu.blog/anime/high-school-dead-subtitle-indonesia/
 56998
 
 # Koimonogatari
+# https://otakudesu.blog/anime/koimonogatari-subtitle-indonesia/
 46195
 
 # Onimonogatari
+# https://otakudesu.blog/anime/onimonogatari-subtitle-indonesia/
 46195
 
 # Otorimonogatari
+# https://otakudesu.blog/anime/otorigatari-sub-indo/
 46195
 
 # Kabukimonogatari
+# https://otakudesu.blog/anime/kabukimonogatari-mayoi-jianshi-subtitle-indonesia/
 46195
 
 # Nekomonogatari: Shiro
+# https://otakudesu.blog/anime/nekogatari-shiro-sub-indo/
 46195
 
 # Koyomimonogatari
+# https://otakudesu.blog/anime/koyomigatari-sub-indo/
 46195
 
 # Owarimonogatari
+# https://otakudesu.blog/anime/owarigatari-sub-indo/
 46195
 
 # Owarimonogatari
+# https://otakudesu.blog/anime/owarigatari-sub-indo/
 46195
 
 # Tsukimonogatari
+# https://otakudesu.blog/anime/tsukigatari-subtitle-indonesia/
 46195
 
 # Hanamonogatari
+# https://otakudesu.blog/anime/hanagatari-sub-indo/
 46195
 
 # Nekomonogatari: Kuro
+# https://otakudesu.blog/anime/nekogatari-kuro-sub-indo/
 46195
 
 # Nisemonogatari
+# https://otakudesu.blog/anime/nisegatari-subtitle-indonesia/
 46195
 
 # Bakemonogatari
+# https://otakudesu.blog/anime/bakegatari-subtitle-indonesia/
 46195
 
 # Arslan Senki
+# https://otakudesu.blog/anime/arslan-snk-season-2-subtitle-indonesia/
 102661
 
 # Boku no Hero Academia
+# https://otakudesu.blog/anime/boku-demia-s2-sub-indo/
 65930
 
 # Boku no Hero Academia
+# https://otakudesu.blog/anime/boku-demia-s2-sub-indo/
 65930
 
 # Blood Lad
+# https://otakudesu.blog/anime/blo-lad-subtitle-indonesia/
 57577
 
 # Arakawa Under the Bridge
+# https://otakudesu.blog/anime/arakawa-under-the-bridge-sub-indo/
 35423
 
 # Arakawa Under the Bridge
+# https://otakudesu.blog/anime/arakawa-under-the-bridge-sub-indo/
 35423
 
 # Ao no Exorcist
+# https://otakudesu.blog/anime/exorcist-kyoto-fujouou-hen-subtitle-indonesia/
 38464
 
 # W'z
+# https://otakudesu.blog/anime/zw-subtitle-indonesia/
 83099
 
 # Tokyo Ravens
+# https://otakudesu.blog/anime/tokyo-rav-subtitle-indonesia/
 67395
 
 # Ao Haru Ride
+# https://otakudesu.blog/anime/ao-haru-subtitle-indonesia/
 228156
 
 # Nanatsu no Taizai
+# https://otakudesu.blog/anime/nanatsu-taizai-season-2-sub-indo/
 1457550
 
 # Another
+# https://otakudesu.blog/anime/nother-subtitle-indonesia/
 42589
 
 # Akame ga Kill!
+# https://otakudesu.blog/anime/akame-kill-sub-indo/
 61223
 
 # A-Channel
+# https://otakudesu.blog/anime/channel-subtitle-indonesia/
 69189
 
 # Rozen Maiden
+# https://otakudesu.blog/anime/rozmaiden-subtitle-indonesia/
 42828
 
 # Angel Beats
+# https://otakudesu.blog/anime/angel-the-beats-sub-indo/
 42942
 
 # Katanagatari
+# https://otakudesu.blog/anime/katangatari-subtitle-indonesia/
 46374
 
 # KonoSuba
+# https://otakudesu.blog/anime/knsb-sub-indo/
 65844
 
 # KonoSuba
+# https://otakudesu.blog/anime/knsb-sub-indo/
 65844
 
 # Jormungand
+# https://otakudesu.blog/anime/jormgand-subtitle-indonesia/
 46279
 
 # Jormungand
+# https://otakudesu.blog/anime/jormgand-subtitle-indonesia/
 46279
 
 # Toradora!
+# https://otakudesu.blog/anime/toradra-subtitle-indonesia/
 42916
 
 # Nanbaka
+# https://otakudesu.blog/anime/nabaka-subtitle-indonesia/
 68115
 
 # Campione
+# https://otakudesu.blog/anime/cmpione-subtitle-indonesia/
 46184
 
 # Little Busters! EX
+# https://otakudesu.blog/anime/littbuster-ex-subtitle-indonesia/
 53715
 
 # Little Busters!
+# https://otakudesu.blog/anime/littbuster-subtitle-indonesia/
 53715
 
 # Charlotte
+# https://otakudesu.blog/anime/charlot-subtitle-indonesia/
 63145
 
 # Barakamon
+# https://otakudesu.blog/anime/barakmon-subtitle-indonesia/
 67048
 
 # Kannagi
+# https://otakudesu.blog/anime/kanagi-subtitle-indonesia/
 34714
 
 # AnoHana
+# https://otakudesu.blog/anime/ano-hi-hana-subtitle-indonesia/
 39434
 
 # Kuromukuro
+# https://otakudesu.blog/anime/kuromuku-subtitle-indonesia/
 66080
 
 # Baki
+# https://otakudesu.blog/anime/baki-subtitle-indonesia/
 80623
 
 # Banana Fish
+# https://otakudesu.blog/anime/bana-fish-subtitle-indonesia/
 80564
 
 # Goblin Slayer
+# https://otakudesu.blog/anime/goblin-slay-subtitle-indonesia/
 82591
 
 # Aho Girl
+# https://otakudesu.blog/anime/aho-girl-subtitle-indonesia/
 72502
 
 # Fukigen na Mononokean
+# https://otakudesu.blog/anime/fukigen-mononokean-subtitle-indonesia/
 65956
 
 # Ulysses: Jehanne Darc to Renkin no Kishi
+# https://otakudesu.blog/anime/ulysses-jehanne-darc-renkin-kishi-subtitle-indonesia/
 82737
 
 # Tokyo Ghoul:re
+# https://otakudesu.blog/anime/tokyo-in-ghoul-re-season-2-subtitle-indonesia/
 61374
 
 # SSSS.Gridman
+# https://otakudesu.blog/anime/ssss-the-gridman-subtitle-indonesia/
 82895
 
 # Release the Spyce
+# https://otakudesu.blog/anime/release-spyche-subtitle-indonesia/
 82905
 
 # Gakuen Basara
+# https://otakudesu.blog/anime/gakuen-the-basara-subtitle-indonesia/
 82865
 
 # Zombieland Saga
+# https://otakudesu.blog/anime/zombieland-the-saga-subtitle-indonesia/
 82822
 
 # Anima Yell!
+# https://otakudesu.blog/anime/aniyel-subtitle-indonesia/
 82929
 
 # Infinite Stratos
+# https://otakudesu.blog/anime/infinite-stats-subtitle-indonesia/
 46025
 
 # IS: Infinite Stratos
+# https://otakudesu.blog/anime/infinite-stros-2-subtitle-indonesia/
 46025
 
 # Date A Live
+# https://otakudesu.blog/anime/date-live-subtitle-indonesia/
 46004
 
 # Date A Live
+# https://otakudesu.blog/anime/date-live-subtitle-indonesia/
 46004
 
 # Kill la Kill
+# https://otakudesu.blog/anime/kill-la-subtitle-indonesia/
 60728
 
 # Ushio to Tora
+# https://otakudesu.blog/anime/ushio-tora-subtitle-indonesia/
 63085
 
 # Ushio to Tora
+# https://otakudesu.blog/anime/ushio-tora-subtitle-indonesia/
 63085
 
 # Code Geass
+# https://otakudesu.blog/anime/cd-geass-subtitle-indonesia/
 31724
 
 # Code Geass
+# https://otakudesu.blog/anime/cd-geass-subtitle-indonesia/
 31724
 
 # Koi to Uso
+# https://otakudesu.blog/anime/koi-uso-subtitle-indonesia/
 1701187
 
 # Uma Musume Pretty Derby
+# https://otakudesu.blog/anime/uma-musume-pretty-derby-subtitle-indonesia/
 77694
 
 # Working
+# https://otakudesu.blog/anime/working-sub-indo/
 46153
 
 # Working
+# https://otakudesu.blog/anime/working-sub-indo/
 46153
 
 # Working
+# https://otakudesu.blog/anime/working-sub-indo/
 46153
 
 # White Album 2
+# https://otakudesu.blog/anime/white-album-2-bd-subtitle-indonesia/
 70072
 
 # Watamote
+# https://otakudesu.blog/anime/watamotsubtitle-indonesia/
 61755
 
 # Yamada-kun to 7-nin no Majo
+# https://otakudesu.blog/anime/yamada-kun-7-majo-sub-indo/
 1455065
 
 # Yuri on Ice
+# https://otakudesu.blog/anime/yuri-ice-subtitle-indonesia/
 68129
 
 # Zetsuen no Tempest
+# https://otakudesu.blog/anime/zetsuen-pest-sub-indo/
 46283
 
 # Shakugan no Shana
+# https://otakudesu.blog/anime/shakugan-shana-subtitle-indonesia/
 22634
 
 # Ouran Koukou Host Club
+# https://otakudesu.blog/anime/ouran-host-club-subtitle-indonesia/
 1043
 
 # Just Because!
+# https://otakudesu.blog/anime/because-in-just-subtitle-indonesia/
 74096
 
 # Chain Chronicle
+# https://otakudesu.blog/anime/charonicle-sub-indo/
 107560
 
 # Fate Apocrypha
+# https://otakudesu.blog/anime/fat-apocrypa-subtitle-indonesia/
 72304
 
 # Diabolik Lovers
+# https://otakudesu.blog/anime/diabo-lovers-subtitle-indonesia/
 61512
 
 # Diabolik Lovers
+# https://otakudesu.blog/anime/diabo-lovers-subtitle-indonesia/
 61512
 
 # Endride
+# https://otakudesu.blog/anime/edride-subtitle-indonesia/
 65933
 
 # Rewrite
+# https://otakudesu.blog/anime/rwrite-subtitle-indonesia/
 66101
 
 # Mawaru Penguindrum
+# https://otakudesu.blog/anime/mawaru-penguin-subtitle-indonesia/
 39657
 
 # Rewrite
+# https://otakudesu.blog/anime/rwrite-subtitle-indonesia/
 66101
 
 # Sakura Quest
+# https://otakudesu.blog/anime/sakura-the-quest-subtitle-indonesia/
 71013
 
 # Coppelion
+# https://otakudesu.blog/anime/copelion-subtitle-indonesia/
 60659
 
 # Bungo Stray Dogs
+# https://otakudesu.blog/anime/bungstray-dogs-season-2-subtitle-indonesia/
 65931
 
 # Bungou Stray Dogs
+# https://otakudesu.blog/anime/bungstray-dogs-subtitle-indonesia/
 65931
 
 # Last Period
+# https://otakudesu.blog/anime/last-the-period-owarinaki-monogatari-subtitle-indonesia/
 78481
 
 # Samurai Champloo
+# https://otakudesu.blog/anime/samurai-the-champloo-subtitle-indonesia/
 1063
 
 # Akaneiro ni Somaru Saka
+# https://otakudesu.blog/anime/akaneiro-somaru-subtitle-indonesia/
 643402
 
 # Photokano
+# https://otakudesu.blog/anime/potokano-subtitle-indonesia/
 56081
 
 # No.6
+# https://otakudesu.blog/anime/6-no-subtitle-indonesia/
 42504
 
 # Lost Song
+# https://otakudesu.blog/anime/lost-in-song-subtitle-indonesia/
 78375
 
 # Kubikiri Cycle: Aoiro Savant to Zaregototsukai
+# https://otakudesu.blog/anime/kubikiri-the-cycle-subtitle-indonesia/
 68460
 
 # Back Street Girls: Gokudolls
+# https://otakudesu.blog/anime/back-girls-the-gokudoll-subtitle-indonesia/
 80613
 
 # Shakugan no Shana
+# https://otakudesu.blog/anime/shakugan-shana-subtitle-indonesia/
 22634
 
 # Planet With
+# https://otakudesu.blog/anime/planet-the-with-subtitle-indonesia/
 79288
 
 # Happy Sugar Life
+# https://otakudesu.blog/anime/happy-the-sugar-life-subtitle-indonesia/
 80826
 
 # Hanebado!
+# https://otakudesu.blog/anime/hanebd-subtitle-indonesia/
 80537
 
 # Island
+# https://otakudesu.blog/anime/landis-subtitle-indonesia/
 80535
 
 # Harukana Receive
+# https://otakudesu.blog/anime/harukana-the-receive-subtitle-indonesia/
 80546
 
 # Grand Blue
+# https://otakudesu.blog/anime/grand-the-blue-subtitle-indonesia/
 107257
 
 # Inuyashiki
+# https://otakudesu.blog/anime/inuyashik-subtitle-indonesia/
 73946
 
 # Asobi Asobase
+# https://otakudesu.blog/anime/asobi-the-asobase-subtitle-indonesia/
 80539
 
 # Escha & Logy no Atelier
+# https://otakudesu.blog/anime/escha-logy-atelier-subtitle-indonesia/
 60819
 
 # AKB0048
+# https://otakudesu.blog/anime/akb48-season-2-subtitle-indonesia/
 45982
 
 # AKB0048
+# https://otakudesu.blog/anime/akb48-season-2-subtitle-indonesia/
 45982
 
 # Fortune Arterial
+# https://otakudesu.blog/anime/fortune-the-arterial-subtitle-indonesia/
 36873
 
 # Re:Creators
+# https://otakudesu.blog/anime/re-creator-subtitle-indonesia/
 70592
 
 # Animegataris
+# https://otakudesu.blog/anime/animetaris-subtitle-indonesia/
 74080
 
 # Hellsing Ultimate
+# https://otakudesu.blog/anime/hellstimate-subtitle-indonesia/
 61752
 
 # Little Busters!
+# https://otakudesu.blog/anime/littbuster-subtitle-indonesia/
 53715
 
 # Citrus
+# https://otakudesu.blog/anime/chitrus-subtitle-indonesia/
 76063
 
 # Girls und Panzer
+# https://otakudesu.blog/anime/girls-panzer-subtitle-indonesia/
 43967
 
 # Girlish Number
+# https://otakudesu.blog/anime/giarlish-the-number-subtitle-indonesia/
 68403
 
 # Tokyo ESP
+# https://otakudesu.blog/anime/tokyo-sp-subtitle-indonesia/
 61202
 
 # Hinako Note
+# https://otakudesu.blog/anime/hinako-the-note-subtitle-indonesia/
 71006
 
 # No Game No Life
+# https://otakudesu.blog/anime/no-game-life-subtitle-indonesia/
 60808
 
 # Anne Happy
+# https://otakudesu.blog/anime/anne-mo-happy-subtitle-indonesia/
 66113
 
 # Blend S
+# https://otakudesu.blog/anime/blend-es-subtitle-indonesia/
 74081
 
 # AICO Incarnation
+# https://otakudesu.blog/anime/aico-incarnation-subtitle-indonesia/
 77778
 
 # Sword Art Online Movie: Ordinal Scale
+# https://otakudesu.blog/anime/sawo-movie-subtitle-indonesia/
 413594
 
 # No Game No Life: Zero
+# https://otakudesu.blog/anime/ngl-0-subtitle-indonesia/
 445030
 
 # Kizumonogatari 3
+# https://otakudesu.blog/anime/kzgtr-3-subtitle-indonesia/
 362585
 
 # Kizumonogatari 2
+# https://otakudesu.blog/anime/kzgtr-2-subtitle-indonesia/
 362584
 
 # Kizumonogatari
+# https://otakudesu.blog/anime/kzgtr-1-subtitle-indonesia/
 362584
 
 # Kimi no Na wa
+# https://otakudesu.blog/anime/kimi-na-wa-sub-indo/
 207228
 
 # Violet Evergarden
+# https://otakudesu.blog/anime/vioevgrden-sub-indo/
 75214
 
 # 91 Days
+# https://otakudesu.blog/anime/91-days-subtitle-indonesia/
 67043
 
 # 3D Kanojo: Real Girl
+# https://otakudesu.blog/anime/3d-girl-kanojo-subtitle-indonesia/
 77721
 
 # Kuroko no Basket
+# https://otakudesu.blog/anime/kuro-basket-sub-indo/
 45783
 
 # Kuroko no Basket Last Game
+# https://otakudesu.blog/anime/knb-lg-sub-indo/
 428707
 
 # Kuroko no Basket
+# https://otakudesu.blog/anime/kuro-basket-sub-indo/
 45783
 
 # Kuroko no Basket
+# https://otakudesu.blog/anime/kuro-basket-sub-indo/
 45783
 
 # Tsuki ga Kirei
+# https://otakudesu.blog/anime/tsuki-kirei-subtitle-indonesia/
 70880
 
 # Dragon Crisis!
+# https://otakudesu.blog/anime/dragon-no-crisis-subtitle-indonesia/
 38811
 
 # Taboo Tattoo
+# https://otakudesu.blog/anime/tabo-tato-subtitle-indonesia/
 66992
 
 # Fuuka
+# https://otakudesu.blog/anime/fuuk-subtitle-indonesia/
 69284
 
 # Urara Meirochou
+# https://otakudesu.blog/anime/urara-meiro-subtitle-indonesia/
 69345
 
 # Hunter x Hunter
+# https://otakudesu.blog/anime/hunt-hunt-sub-indo/
 45952
 
 # Qualidea Code
+# https://otakudesu.blog/anime/qualid-code-subtitle-indonesia/
 67359
 
 # Amagi Brilliant Park
+# https://otakudesu.blog/anime/amagi-brill-park-sub-indo/
 65332
 
 # Kamisama Hajimemashita
+# https://otakudesu.blog/anime/kami-hajime-subtitle-indonesia/
 62741
 
 # Strike the Blood
+# https://otakudesu.blog/anime/strike-blood-subtitle-indonesia/
 61440
 
 # Strike the Blood
+# https://otakudesu.blog/anime/strike-blood-subtitle-indonesia/
 61440
 
 # Kamisama Hajimemashita
+# https://otakudesu.blog/anime/kami-hajime-subtitle-indonesia/
 62741
 
 # Psycho-Pass
+# https://otakudesu.blog/anime/psycho-subtitle-indonesia/
 43865
 
 # Psycho-Pass
+# https://otakudesu.blog/anime/psycho-subtitle-indonesia/
 43865
 
 # Kokoro Connect
+# https://otakudesu.blog/anime/kokoro-no-connect-sub-indo/
 45807
 
 # Beatless
+# https://otakudesu.blog/anime/beatls-subtitle-indonesia/
 76062
 
 # Eromanga-sensei
+# https://otakudesu.blog/anime/manga-ero-subtitle-indonesia/
 70878
 
 # Darling in the FranXX
+# https://otakudesu.blog/anime/darling-franx-subtitle-indonesia/
 76121
 
 # Dagashi Kashi
+# https://otakudesu.blog/anime/dagashi-subtitle-indonesia/
 65523
 
 # Gosick
+# https://otakudesu.blog/anime/g-sick-subtitle-indonesia/
 38560
 
 # The World God Only Knows
+# https://otakudesu.blog/anime/kami-no-shiru-sekai-sub-indo/
 56351
 
 # The World God Only Knows
+# https://otakudesu.blog/anime/kami-no-shiru-sekai-sub-indo/
 56351
 
 # The World God Only Knows
+# https://otakudesu.blog/anime/kami-no-shiru-sekai-sub-indo/
 56351
 
 # Sword Art Online Alternative: Gun Gale Online
+# https://otakudesu.blog/anime/sword-online-alternative-gun-gale-online-subtitle-indonesia/
 78204
 
 # Megalo Box
+# https://otakudesu.blog/anime/mega-box-subtitle-indonesia/
 77939
 
 # ReLIFE
+# https://otakudesu.blog/anime/life-re-subtitle-indonesia/
 66941
 
 # Clockwork Planet
+# https://otakudesu.blog/anime/clockwork-on-planet-subtitle-indonesia/
 70636
 
 # Golden Kamuy
+# https://otakudesu.blog/anime/kamuy-golden-subtitle-indonesia/
 76757
 
 # Usagi Drop
+# https://otakudesu.blog/anime/usagi-drop-subtitle-indonesia/
 45213
 
 # Busou Shoujo Machiavellianism
+# https://otakudesu.blog/anime/busou-shoujo-subtitle-indonesia/
 70882
 
 # Devils Line
+# https://otakudesu.blog/anime/devils-in-line-subtitle-indonesia/
 78462
 
 # Caligula
+# https://otakudesu.blog/anime/caligula-subtitle-indonesia/
 77722
 
 # Sakura Trick
+# https://otakudesu.blog/anime/trick-sakura-subtitle-indonesia/
 61462
 
 # Comic Girls
+# https://otakudesu.blog/anime/comgirl-subtitle-indonesia/
 77698
 
 # Shokugeki no Souma
+# https://otakudesu.blog/anime/shokugeki-no-souma-san-no-sara-subtitle-indonesia/
 62273
 
 # Hinamatsuri
+# https://otakudesu.blog/anime/hinatsuri-subtitle-indonesia/
 76758
 
 # Aoi Bungaku Series
+# https://otakudesu.blog/anime/aoi-bungaku-sub-indo/
 61289
 
 # Hibike! Euphonium
+# https://otakudesu.blog/anime/hibike-euphonium-subtitle-indonesia/
 62564
 
 # Hibike! Euphonium
+# https://otakudesu.blog/anime/hibike-euphonium-subtitle-indonesia/
 62564
 
 # Haikyuu!!
+# https://otakudesu.blog/anime/hkyu-sub-indo/
 60863
 
 # Haikyuu!!
+# https://otakudesu.blog/anime/hkyu-sub-indo/
 60863
 
 # Haikyuu!!
+# https://otakudesu.blog/anime/hkyu-sub-indo/
 60863
 
 # Konohana Kitan
+# https://otakudesu.blog/anime/konohana-no-kitan-subtitle-indonesia/
 74098
 
 # Gate
+# https://otakudesu.blog/anime/gate-season-2-subtitle-indonesia/
 63663
 
 # GATE
+# https://otakudesu.blog/anime/gate-subtitle-indonesia/
 63663
 
 # BanG Dream!
+# https://otakudesu.blog/anime/bg-dream-subtitle-indonesia/
 69236
 
 # Tokyo Magnitude 8.0
+# https://otakudesu.blog/anime/tokyo-magnitude-subtitle-indonesia/
 37866
 
 # Sekirei
+# https://otakudesu.blog/anime/sekirei-subtitle-indonesia/
 34805
 
 # Sekirei
+# https://otakudesu.blog/anime/sekirei-subtitle-indonesia/
 34805
 
 # Servant x Service
+# https://otakudesu.blog/anime/servant-service-subtitle-indonesia/
 75986
 
 # High School DxD
+# https://otakudesu.blog/anime/high-on-school-dxd-subtitle-indonesia/
 45950
 
 # High School DxD
+# https://otakudesu.blog/anime/high-on-school-dxd-subtitle-indonesia/
 45950
 
 # High School DxD
+# https://otakudesu.blog/anime/high-on-school-dxd-subtitle-indonesia/
 45950
 
 # Beelzebub
+# https://otakudesu.blog/anime/beelzebub-subtitle-indonesia/
 38603
 
 # Non Non Biyori
+# https://otakudesu.blog/anime/non-biyori-season-2-sub-indo/
 66875
 
 # Wizard Barristers
+# https://otakudesu.blog/anime/wizard-barr-subtitle-indonesia/
 61680
 
 # Rail Wars
+# https://otakudesu.blog/anime/rail-the-wars-subtitle-indonesia/
 69607
 
 # Comet Lucifer
+# https://otakudesu.blog/anime/com-on-lucifer-subtitle-indonesia/
 68256
 
 # Minami-ke
+# https://otakudesu.blog/anime/minami-ke-subtitle-indonesia/
 56354
 
 # Minami-ke
+# https://otakudesu.blog/anime/minami-ke-subtitle-indonesia/
 56354
 
 # Minami-ke
+# https://otakudesu.blog/anime/minami-ke-subtitle-indonesia/
 56354
 
 # Minami-ke
+# https://otakudesu.blog/anime/minami-ke-subtitle-indonesia/
 56354
 
 # Ao no Exorcist
+# https://otakudesu.blog/anime/exorcist-kyoto-fujouou-hen-subtitle-indonesia/
 38464
 
 # Nobunaga the Fool
+# https://otakudesu.blog/anime/nobunaga-fool-subtitle-indonesia/
 65616
 
 # Akiba's Trip The Animation
+# https://otakudesu.blog/anime/akiba-trip-sub-indo/
 69230
 
 # Gangsta
+# https://otakudesu.blog/anime/gangs-subtitle-indonesia/
 66390
 
 # Air
+# https://otakudesu.blog/anime/air-sub-indo/
 26201
 
 # Devil May Cry
+# https://otakudesu.blog/anime/devil-cry-subtitle-indonesia/
 235930
 
 # Aldnoah Zero
+# https://otakudesu.blog/anime/aldh-zero-sub-indo/
 61259
 
 # Aldnoah Zero
+# https://otakudesu.blog/anime/aldh-zero-sub-indo/
 61259
 
 # Shomin Sample
+# https://otakudesu.blog/anime/shomsample-subtitle-indonesia/
 64552
 
 # Gundam Build Fighters
+# https://otakudesu.blog/anime/gndam-build-fighters-subtitle-indonesia/
 60667
 
 # Gundam Build Fighters
+# https://otakudesu.blog/anime/gndam-build-fighters-subtitle-indonesia/
 60667
 
 # Made in Abyss
+# https://otakudesu.blog/anime/made-abyss-subtitle-indonesia/
 72636
 
 # Shigofumi
+# https://otakudesu.blog/anime/sgfumi-subtitle-indonesia/
 89664
 
 # Koi to Senkyo to Chocolate
+# https://otakudesu.blog/anime/koi-to-senkyo-to-chocholate-subtitle-indonesia/
 46093
 
 # Gingitsune
+# https://otakudesu.blog/anime/gitsune-subtitle-indonesia/
 72911
 
 # Natsuiro Kiseki
+# https://otakudesu.blog/anime/natsuiro-kiseki-subtitle-indonesia/
 46040
 
 # GJ-bu
+# https://otakudesu.blog/anime/gj-bu-subtitle-indonesia/
 55016
 
 # High School Fleet
+# https://otakudesu.blog/anime/school-fleet-subtitle-indonesia/
 66105
 
 # MM!
+# https://otakudesu.blog/anime/mm-subtitle-indonesia/
 38084
 
 # Vividred Operation
+# https://otakudesu.blog/anime/vivi-operation-subtitle-indonesia/
 52895
 
 # Kamisama Dolls
+# https://otakudesu.blog/anime/kamisam-dolls-subtitle-indonesia/
 42141
 
 # Amagami SS
+# https://otakudesu.blog/anime/agami-s-sub-indo/
 52083
 
 # Amagami SS
+# https://otakudesu.blog/anime/agami-s-sub-indo/
 52083
 
 # Fate/kaleid liner Prisma Illya
+# https://otakudesu.blog/anime/fate-prisma-illya-subtitle-indonesia/
 63576
 
 # Fate/Kaleid Liner Prisma Illya
+# https://otakudesu.blog/anime/ft-prisma-ilya-2wei-sub-indo/
 63576
 
 # Fate/kaleid liner Prisma Illya
+# https://otakudesu.blog/anime/fate-prisma-illya-subtitle-indonesia/
 63576
 
 # Flying Witch
+# https://otakudesu.blog/anime/fly-witch-subtitle-indonesia/
 65934
 
 # Fate/Zero
+# https://otakudesu.blog/anime/fat-zero-subtitle-indonesia/
 45845
 
 # Fate/Zero
+# https://otakudesu.blog/anime/fat-zero-subtitle-indonesia/
 45845
 
 # Hanayamata
+# https://otakudesu.blog/anime/hanayama-subtitle-indonesia/
 61528
 
 # Buddy Complex
+# https://otakudesu.blog/anime/buddy-plex-subtitle-indonesia/
 60663
 
 # Witch Craft Works
+# https://otakudesu.blog/anime/witch-crftwork-subtitle-indonesia/
 65614
 
 # Blade & Soul
+# https://otakudesu.blog/anime/blade-soul-sub-indo/
 60814
 
 # Inari, Konkon, Koi Iroha.
+# https://otakudesu.blog/anime/inari-iroha-subtitle-indonesia/
 67143
 
 # Love Lab
+# https://otakudesu.blog/anime/love-the-lab-subtitle-indonesia/
 65602
 
 # Danganronpa: The Animation
+# https://otakudesu.blog/anime/dangronpa-subtitle-indonesia/
 49471
 
 # Black Lagoon
+# https://otakudesu.blog/anime/black-the-lagoon-subtitle-indonesia/
 12598
 
 # Claymore
+# https://otakudesu.blog/anime/clymor-subtitle-indonesia/
 34791
 
 # Magi: The Kingdom of Magic
+# https://otakudesu.blog/anime/magi-kingdom-of-magic-subtitle-indonesia/
 60654
 
 # Magi: The Labyrinth of Magic
+# https://otakudesu.blog/anime/magi-labyrinth-of-magic-subtitle-indonesia/
 60654
 
 # Mayo Chiki!
+# https://otakudesu.blog/anime/chiki-subtitle-indonesia/
 46169
 
 # Phantom: Requiem for the Phantom
+# https://otakudesu.blog/anime/phantom-the-requiem-subtitle-indonesia/
 22254
 
 # Seitokai Yakuindomo
+# https://otakudesu.blog/anime/seitokai-domo-sub-indo/
 36697
 
 # Seitokai Yakuindomo
+# https://otakudesu.blog/anime/seitokai-domo-sub-indo/
 36697
 
 # Gegege no Kitarou
+# https://otakudesu.blog/anime/gege-kitaro-subtitle-indonesia/
 76759
 
 # The Idolmaster
+# https://otakudesu.blog/anime/the-idol-sub-indo/
 63463
 
 # Oreshura
+# https://otakudesu.blog/anime/ore-kanjo-sub-indo/
 53296
 
 # Nichijou
+# https://otakudesu.blog/anime/nicijo-subtitle-indonesia/
 44684
 
 # Noragami
+# https://otakudesu.blog/anime/norgami-subtitle-indonesia/
 64710
 
 # Oreimo
+# https://otakudesu.blog/anime/ore-no-imouto-subtitle-indonesia/
 56353
 
 # Oreimo
+# https://otakudesu.blog/anime/ore-no-imouto-subtitle-indonesia/
 56353
 
 # Choujigen Game Neptune The Animation
+# https://otakudesu.blog/anime/choujig-neptun-animation-subtitle-indonesia/
 63525
 
 # C3
+# https://otakudesu.blog/anime/c3-subtitle-indonesia/
 54393
 
 # Elfen Lied
+# https://otakudesu.blog/anime/elf-lie-sub-indo/
 42671
 
 # Drifters
+# https://otakudesu.blog/anime/drift-subtitle-indonesia/
 68103
 
 # Devil Survivor 2 The Animation
+# https://otakudesu.blog/anime/devil-survivor-subtitle-indonesia/
 54933
 
 # Kiznaiver
+# https://otakudesu.blog/anime/kiznver-subtitle-indonesia/
 65950
 
 # Dansai Bunri no Crime Edge
+# https://otakudesu.blog/anime/dansai-bunri-edge-subtitle-indonesia/
 52850
 
 # Blood C
+# https://otakudesu.blog/anime/blood-c-subtitle-indonesia/
 43270
 
 # Ben-To
+# https://otakudesu.blog/anime/ben-to-subtitle-indonesia/
 61970
 
 # Baccano!
+# https://otakudesu.blog/anime/bacno-subtitle-indonesia/
 34121
 
 # Dimension W
+# https://otakudesu.blog/anime/dimensi-w-subtitle-indonesia/
 65712
 
 # Shirobako
+# https://otakudesu.blog/anime/shirbako-bd-subtitle-indonesia/
 64492
 
 # Sankarea
+# https://otakudesu.blog/anime/sanka-subtitle-indonesia/
 62742
 
 # 12-sai.: Chicchana Mune no Tokimeki
+# https://otakudesu.blog/anime/12-sai-chicchana-mune-no-tokimeki/
 65928
 
 # Hyouka
+# https://otakudesu.blog/anime/hiyouka-subtitle-indonesia/
 65329
 
 # Aria The Animation
+# https://otakudesu.blog/anime/aria-animation-subtitle-indonesia/
 53787
 
 # Kuroshitsuji Movie: Book of the Atlantic
+# https://otakudesu.blog/anime/krsj-movie-subtitle-indonesia/
 432131
 
 # Shunkashuutou Daikousha: Haru no Mai
+# https://otakudesu.blog/anime/shunkashuutou-daikousha-sub-indo/
 288659
 
 # Kamiina Botan, Yoeru Sugata wa Yuri no Hana
+# https://otakudesu.blog/anime/kamina-botan-yoeru-sugata-yuri-hana-sub-indo/
 283905
 
 # Himekishi wa Barbaroi no Yome
+# https://otakudesu.blog/anime/himekishi-barbaroi-yome-sub-indo/
 273467
 
 # Kanojo, Okarishimasu
+# https://otakudesu.blog/anime/kanojo-no-okarishimasu-s4-sub-indo/
 96316
 
 # Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+# https://otakudesu.blog/anime/youkoso-jitsuryoku-shijou-shugi-no-kyoushitsu-e-subtitle-indonesia/
 72517
 
 # Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+# https://otakudesu.blog/anime/vending-machine-sub-indo/
 207564
 
 # Class de 2-banme ni Kawaii Onnanoko to Tomodachi ni Natta
+# https://otakudesu.blog/anime/class2-banme-kawaii-tomodachi-natta-sub-indo/
 290019
 
 # Aishiteru Game wo Owarasetai
+# https://otakudesu.blog/anime/aishiteru-game-owarasetai-sub-indo/
 293697
 
 # Ponsuka
+# https://otakudesu.blog/anime/ponkotsu-fuuki-skirt-sub-indo/
 288551
 
 # Lastame
+# https://otakudesu.blog/anime/lastame-sub-indo/
 213326
 
 # Tongari Boushi no Atelier
+# https://otakudesu.blog/anime/tongari-boushi-atelier-sub-indo/
 196950
 
 # Otonari no Tenshi-sama ni Itsunomanika Dame Ningen ni Sareteita Ken 2
+# https://otakudesu.blog/anime/otonari-ni-tenshi-s2-sub-indo/
 154743
 
 # Kanan-sama wa Akumade Choroi
+# https://otakudesu.blog/anime/kanan-kumade-choroi-sub-indo/
 285818
 
 # Nigetsuri
+# https://otakudesu.blog/anime/nigashita-sakana-sub-indo/
 304820
 
 # Maid-san wa Taberu dake
+# https://otakudesu.blog/anime/maid-taberu-dake-sub-indo/
 299134
 
 # Isekai Nonbiri Nouka
+# https://otakudesu.blog/anime/isenouka-sub-indo/
 196285
 
 # Jishou Akuyaku Reijou na Konyakusha no Kansatsu Kiroku.
+# https://otakudesu.blog/anime/jishou-akuyaku-konyakusha-kansatsu-kiroku-sub-indo/
 288590
 
 # Saikyou no Shokugyou wa Yuusha demo Kenja demo Naku Kanteishi (Kari) Rashii desu yo?
+# https://otakudesu.blog/anime/kanteish-kari-sub-indo/
 303460
 
 # Mato Seihei no Slave
+# https://otakudesu.blog/anime/mato-seihei-slave-sub-indo/
 139060
 
 # Arne no Jikenbo
+# https://otakudesu.blog/anime/arne-jikenbo-sub-indo/
 276110
 
 # 29-sai Dokushin Chuuken Boukensha no Nichijou
+# https://otakudesu.blog/anime/29sai-nichijou-sub-indo/
 290667
 
 # Mayonaka Heart Tune
+# https://otakudesu.blog/anime/mayonaka-tune-sub-indo/
 285933
 
 # Okiraku Ryoushu no Tanoshii Ryouchi Bouei
+# https://otakudesu.blog/anime/okiraku-ryoushu-tanoshii-sub-indo/
 288589
 
 # Yuusha Party wo Oidasareta Kiyoubinbou
+# https://otakudesu.blog/anime/yuusha-party-kiyoubinbou-sub-indo/
 285166
 
 # Kirei ni Shitemoraemasu ka.
+# https://otakudesu.blog/anime/kirei-shitemoraemasu-sub-indo/
 293144
 
 # Osananajimi to wa Love Comedy ni Naranai
+# https://otakudesu.blog/anime/osananajimi-love-comedy-sub-indo/
 285743
 
 # Goumon Baito-kun no Nichijou
+# https://otakudesu.blog/anime/goumon-baito-sub-indo/
 305163
 
 # Majutsushi Kunon wa Mieteiru
+# https://otakudesu.blog/anime/majutsushi-kunon-mieteiru-sub-indo/
 282946
 
 # Kizoku Tensei
+# https://otakudesu.blog/anime/kizoku-tensei-subtitle-indonesia/
 118821
 
 # Shibou Yuugi de Meshi wo Kuu.
+# https://otakudesu.blog/anime/shibou-yuugi-meshi-kuu-sub-indo/
 1659338
 
 # Maou no Musume wa Yasashisugiru!!
+# https://otakudesu.blog/anime/maou-musume-yasashisugiru-sub-indo/
 294280
 
 # Hanazakari no Kimitachi e
+# https://otakudesu.blog/anime/hanazakari-kimitachi-sub-indo/
 254492
 
 # Isekai de Cheat Skill wo Te ni Shita Ore wa
+# https://otakudesu.blog/anime/iseleve-sub-indo/
 208493
 
 # Shuumatsu Touring
+# https://otakudesu.blog/anime/shuumatsu-touring-sub-indo/
 283935
 
 # Towa no Yuugure
+# https://otakudesu.blog/anime/towa-yuugure-sub-indo/
 294867
 
 # Nageki no Bourei wa Intai shitai
+# https://otakudesu.blog/anime/nageki-bourei-intai-shitai-sub-indo/
 258579
 
 # Chichi wa Eiyuu, Haha wa Seirei, Musume no Watashi wa Tenseisha.
+# https://otakudesu.blog/anime/chichi-haha-seirei-sub-indo/
 280048
 
 # Mugen Gacha
+# https://otakudesu.blog/anime/mugen-gacha-sub-indo/
 278635
 
 # Alma-chan wa Kazoku ni Naritai
+# https://otakudesu.blog/anime/alma-kazoku-naritai-sub-indo/
 289217
 
 # Akujiki Reijou to Kyouketsu Koushaku
+# https://otakudesu.blog/anime/akujiki-reijou-kyouketsu-koushaku-sub-indo/
 274814
 
 # Bukiyou na Senpai
+# https://otakudesu.blog/anime/bukiyou-senpai-sub-indo/
 284433
 
 # Sozai Saishuka no Isekai Ryokouki
+# https://otakudesu.blog/anime/sozai-isekai-ryokouki-sub-indo/
 284442
 
 # Mushoku no Eiyuu
+# https://otakudesu.blog/anime/mushoku-eiyuu-sub-indo/
 236565
 
 # Mizu Zokusei no Mahoutsukai
+# https://otakudesu.blog/anime/mizu-zokusei-mahoutsukai-sub-indo/
 281615
 
 # Kakkou no Iinazuke
+# https://otakudesu.blog/anime/kakkou-iinazuke-sub-indo/
 122587
 
 # Busu ni Hanataba wo
+# https://otakudesu.blog/anime/busu-hanataba-sub-indo/
 217409
 
 # Watanare
+# https://otakudesu.blog/anime/watanare-sub-indo/
 277513
 
 # Busamen Gachi Fighter
+# https://otakudesu.blog/anime/busamen-gachi-fighter-sub-indo/
 286434
 
 # Ame to Kimi to
+# https://otakudesu.blog/anime/ame-kimi-sub-indo/
 262254
 
 # Sono Bisque Doll wa Koi wo Suru
+# https://otakudesu.blog/anime/sbdwk-sub-indo/
 123249
 
 # Koujo Denka no Kateikyoushi
+# https://otakudesu.blog/anime/koujo-denka-kateikyoushi-sub-indo/
 284448
 
 # Yuusha Party wo Tsuihou sareta Shiromadoushi, S-Rank Boukensha ni Hirowareru
+# https://otakudesu.blog/anime/scooped-up-by-an-s-ranked-adventurer-sub-indo/
 284771
 
 # Kizetsu Yuusha to Ansatsu Hime
+# https://otakudesu.blog/anime/kizetsu-yuusha-ansatsu-hime-sub-indo/
 283705
 
 # Zutaboro Reijou wa Ane no Moto Konyakusha ni Dekiai sareru
+# https://otakudesu.blog/anime/zutaboro-reijou-wa-ane-no-moto-sub-indo/
 279989
 
 # Yofukashi no Uta
+# https://otakudesu.blog/anime/yofukashi-uta-sub-indo/
 138357
 
 # Tsuihousha Shokudou e Youkoso!
+# https://otakudesu.blog/anime/tsuihousha-youkoso-sub-indo/
 286723
 
 # Uchuujin MuuMuu
+# https://otakudesu.blog/anime/uchuujin-muumuu-sub-indo/
 278367
 
 # Mikadono Sanshimai wa Angai, Choroi.
+# https://otakudesu.blog/anime/mikadono-sashimai-angai-sub-indo/
 272556
 
 # Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+# https://otakudesu.blog/anime/vending-machine-sub-indo/
 207564
 
 # Kanojo, Okarishimasu
+# https://otakudesu.blog/anime/kanojo-no-okarishimasu-s4-sub-indo/
 96316
 
 # Kusuriya no Hitorigoto
+# https://otakudesu.blog/anime/kusuriya-hitorigoto-sub-indo/
 220542
 
 # A-Rank Party wo Ridatsu shita Ore wa
+# https://otakudesu.blog/anime/a-rank-party-sub-indo/
 270487
 
 # Kuroshitsuji: Midori no Majo-hen
+# https://otakudesu.blog/anime/kuroshitsuji-midori-no-majo-hen-subtitle-indonesia/
 50712
 
 # Ninja to Koroshiya no Futarigurashi
+# https://otakudesu.blog/anime/ninja-koroshiya-futarigurashi-sub-indo/
 278050
 
 # Natsume Yuujinchou
+# https://otakudesu.blog/anime/zoku-natsume-yuujinchou-bd-subtitle-indonesia/
 69500
 
 # 2.5-jigen no Ririsa
+# https://otakudesu.blog/anime/2-5-jigen-sub-indo/
 216074
 
 # Nazotoki wa Dinner no Ato de
+# https://otakudesu.blog/anime/nazotoki-dinner-sub-indo/
 279216
 
 # Ore wa Seikan Kokka no Akutoku Ryoushu!
+# https://otakudesu.blog/anime/ore-seikan-kokka-akutoku-rousu-sub-indo/
 274737
 
 # Shoushimin Series
+# https://otakudesu.blog/anime/shoushimin-sub-indo/
 243501
 
 # Slime Taoshite 300-nen
+# https://otakudesu.blog/anime/slime-taoshite-sub-indo/
 99073
 
 # Enen no Shouboutai
+# https://otakudesu.blog/anime/enen-shouboutai-sub-indo/
 88046
 
 # Rock wa Lady no Tashinami deshite
+# https://otakudesu.blog/anime/rock-lady-tashinami-deshite-sub-indo/
 260523
 
 # Shiunji-ke no Kodomotachi
+# https://otakudesu.blog/anime/shiunji-kodomotachi-sub-indo/
 261091
 
 # Sentai Daishikkaku
+# https://otakudesu.blog/anime/sentai-daishikaku-sub-indo/
 215799
 
 # Katainaka no Ossan, Kensei ni Naru
+# https://otakudesu.blog/anime/katainaka-ossan-kensei-naru-sub-indo/
 260823
 
 # Gorilla no Kami kara Kago sareta Reijou wa Ouritsu Kishidan de Kawaigarareru
+# https://otakudesu.blog/anime/gorilla-kam-kago-sareta-sub-indo/
 278816
 
 # Kanpekiseijo
+# https://otakudesu.blog/anime/kanpekiseijo-sub-indo/
 274741
 
 # Danjo no Yuujou wa Seiritsu suru?
+# https://otakudesu.blog/anime/danjo-yuujou-seiritsu-suru-sub-indo/
 217407
 
 # Yami Healer
+# https://otakudesu.blog/anime/yami-healer-sub-indo/
 276253
 
 # Aru Majo ga Shinu Made
+# https://otakudesu.blog/anime/aru-majo-shinu-made-sub-indo/
 258055
 
 # Hana wa Saku, Shura no Gotoku
+# https://otakudesu.blog/anime/hana-saku-shura-gotoku-sub-indo/
 256744
 
 # Re:Zero kara Hajimeru Isekai Seikatsu
+# https://otakudesu.blog/anime/re-zero-season-2-sub-indo/
 65942
 
 # Girumasu
+# https://otakudesu.blog/anime/girumasu-sub-indo/
 249964
 
 # Amagami-san Chi no Enmusubi
+# https://otakudesu.blog/anime/amagami-chi-sub-indo/
 234910
 
 # Youkai Gakkou no Sensei Hajimemashita!
+# https://otakudesu.blog/anime/yokai-sensei-hajmeshita-sub-indo/
 259788
 
 # Kuroiwa Medaka ni Watashi no Kawaii ga Tsuujinai
+# https://otakudesu.blog/anime/kuroiwa-watashi-kawaii-sub-indo/
 258994
 
 # Kono Kaisha ni Suki na Hito ga Imasu
+# https://otakudesu.blog/anime/kono-kaisha-suki-imasu-sub-indo/
 262141
 
 # S-Rank Monster no "Behemoth" dakedo
+# https://otakudesu.blog/anime/s-rank-monster-sub-indo/
 249545
 
 # Class no Daikirai na Joshi to Kekkon suru Koto ni Natta
+# https://otakudesu.blog/anime/class-daikirai-joshi-to-kekkon-sub-indo/
 257790
 
 # Botsuraku Yotei no Kizoku dakedo
+# https://otakudesu.blog/anime/botsuraku-yotei-kizoku-sub-indo/
 261301
 
 # Salaryman ga Isekai ni Ittara Shitennou ni Natta Hanashi
+# https://otakudesu.blog/anime/salaryman-isekai-sub-indo/
 259559
 
 # Izure Saikyou no Renkinjutsushi?
+# https://otakudesu.blog/anime/izure-saikysushi-sub-indo/
 261298
 
 # Ao no Hako
+# https://otakudesu.blog/anime/ao-hako-sub-indo/
 207347
 
 # Chi.: Chikyuu no Undou ni Tsuite
+# https://otakudesu.blog/anime/chi-chikyuu-tsuite-sub-indo/
 204635
 
 # Megumi no Daigo: Kyuukoku no Orange
+# https://otakudesu.blog/anime/megdaigo-sub-indo/
 223780
 
 # Kami wa Game ni Ueteiru
+# https://otakudesu.blog/anime/kami-game-ueteiru-sub-indo/
 156057
 
 # Kaii to Otome to Kamikakushi
+# https://otakudesu.blog/anime/kai-otome-kamikusi-sub-indo/
 218146
 
 # Hikari no Ou
+# https://otakudesu.blog/anime/hikariou-sub-indo/
 156688
 
 # DanMachi
+# https://otakudesu.blog/anime/dnmachi-sub-indo/
 70590
 
 # Kenka Dokugaku
+# https://otakudesu.blog/anime/kenka-doku-sub-indo/
 246029
 
 # Sentai Daishikkaku
+# https://otakudesu.blog/anime/sentai-daishikaku-sub-indo/
 215799
 
 # Sasayaku You ni Koi wo Utau
+# https://otakudesu.blog/anime/sasayaku-you-koi-utau-sub-indo/
 218291
 
 # Arifureta Shokugyou de Sekai Saikyou
+# https://otakudesu.blog/anime/arifureta-s2-sub-indo/
 86034
 
 # Kabushikigaisha Magi-Lumiere
+# https://otakudesu.blog/anime/kabushikigaisha-lumiere-sub-indo/
 240576
 
 # Shinigami Bocchan to Kuro Maid
+# https://otakudesu.blog/anime/shini-maid-sub-indo/
 117992
 
 # Kamonohashi Ron no Kindan Suiri
+# https://otakudesu.blog/anime/kamonohashi-suiri-sub-indo/
 216523
 
 # Maou 2099
+# https://otakudesu.blog/anime/maou-2099-sub-indo/
 118824
 
 # Yarinaoshi Reijou wa Ryuutei Heika wo Kouryakuchuu
+# https://otakudesu.blog/anime/yarjou-ryuchu-sub-indo/
 244624
 
 # Tasuuketsu
+# https://otakudesu.blog/anime/tasuketsu-sub-indo/
 244652
 
 # Rekishi ni Nokoru Akujo ni Naru zo
+# https://otakudesu.blog/anime/rekishi-nokoru-naru-sub-indo/
 248817
 
 # Tensei Kizoku, Kantei Skill de Nariagaru
+# https://otakudesu.blog/anime/tensei-skill-nariagaru-sub-indo/
 237150
 
 # Hoshifuru Oukoku no Nina
+# https://otakudesu.blog/anime/hoshifuru-nina-sub-indo/
 240641
 
 # Nageki no Bourei wa Intai shitai
+# https://otakudesu.blog/anime/nageki-bourei-intai-shitai-sub-indo/
 258579
 
 # Kimi wa Meido-sama.
+# https://otakudesu.blog/anime/meido-sama-sub-indo/
 242143
 
 # Party kara Tsuihou sareta Sono Chiyushi, Jitsu wa Saikyou ni Tsuki
+# https://otakudesu.blog/anime/party-kara-chyishu-sub-indo/
 244625
 
 # Goukon ni Ittara Onna ga Inakatta Hanashi
+# https://otakudesu.blog/anime/goukon-itara-hanashi-sub-indo/
 236530
 
 # Saikyou no Shienshoku "Wajutsushi" de Aru Ore wa Sekai Saikyou Clan wo Shitagaeru
+# https://otakudesu.blog/anime/saikyou-shieshoku-sub-indo/
 258580
 
 # Tsuma, Shougakusei ni Naru.
+# https://otakudesu.blog/anime/tsumasho-sub-indo/
 257603
 
 # Sayounara Ryuusei, Konnichiwa Jinsei
+# https://otakudesu.blog/anime/sayuseijinsei-sub-indo/
 259786
 
 # Kekkon suru tte, Hontou desu ka
+# https://otakudesu.blog/anime/kekkon-hontou-desu-ka-sub-indo/
 230189
 
 # Hitoribocchi no Isekai Kouryaku
+# https://otakudesu.blog/anime/hitoribocchi-isekai-kyaku-sub-indo/
 259558
 
 # Maou-sama, Retry!
+# https://otakudesu.blog/anime/maou-retry-r-sub-indo/
 88044
 
 # Jiisan Baasan Wakagaeru
+# https://otakudesu.blog/anime/jiisan-baasan-sub-indo/
 239853
 
 # Yoru no Kurage wa Oyogenai
+# https://otakudesu.blog/anime/yoru-kurage-oyogenai-sub-indo/
 222923
 
 # Maou Gakuin no Futekigousha
+# https://otakudesu.blog/anime/maou-gakuin-futekigousha-sub-indo/
 97617
 
 # Kuroshitsuji: Kishuku Gakkou-hen
+# https://otakudesu.blog/anime/kurositsuji-gakkou-sub-indo/
 50712
 
 # Henjin no Salad Bowl
+# https://otakudesu.blog/anime/henjin-salad-bowl-sub-indo/
 236392
 
 # Hananoi-kun to Koi no Yamai
+# https://otakudesu.blog/anime/hananoi-koi-yamai-sub-indo/
 239214
 
 # Tsuki ga Michibiku Isekai Douchuu
+# https://otakudesu.blog/anime/tsuki-michibiku-isekai-sub-indo/
 111819
 
 # Tensei shitara Dainana Ouji Datta node
+# https://otakudesu.blog/anime/tensei-datta-node-sub-indo/
 213830
 
 # Tensei Kizoku, Kantei Skill de Nariagaru
+# https://otakudesu.blog/anime/tensei-skill-nariagaru-sub-indo/
 237150
 
 # Shuumatsu Train Doko e Iku?
+# https://otakudesu.blog/anime/shuumatsu-train-doko-sub-indo/
 212273
 
 # Seiyuu Radio no Uraomote
+# https://otakudesu.blog/anime/seiyu-radio-sub-indo/
 216760
 
 # One Room, Hiatari Futsuu, Tenshi-tsuki.
+# https://otakudesu.blog/anime/one-room-sub-indo/
 236533
 
 # Madome
+# https://otakudesu.blog/anime/maou-elf-yome-shitanda-sub-indo/
 238848
 
 # DekiSoko
+# https://otakudesu.blog/anime/dekisoko-sub-indo/
 229108
 
 # Yubisaki to Renren
+# https://otakudesu.blog/anime/yubisaki-renren-sub-indo/
 230059
 
 # Nige Jouzu no Wakagimi
+# https://otakudesu.blog/anime/nige-wakagimi-sub-indo/
 222623
 
 # Tensui no Sakuna-hime
+# https://otakudesu.blog/anime/tensui-sakuna-sub-indo/
 255492
 
 # Yozakura-san Chi no Daisakusen
+# https://otakudesu.blog/anime/yozakura-daisakusen-sub-indo/
 216467
 
 # Hazurewaku no "Joutai Ijou Skill" de Saikyou ni Natta Ore ga Subete wo Juurin suru made
+# https://otakudesu.blog/anime/joutai-ijou-skill-sub-indo/
 245285
 
 # Make Heroine ga Oosugiru!
+# https://otakudesu.blog/anime/make-heroine-sub-indo/
 241535
 
 # Naze Boku no Sekai wo Daremo Oboeteinai no ka?
+# https://otakudesu.blog/anime/naze-bokusekai-daremo-sub-indo/
 244672
 
 # Kono Sekai wa Fukanzen Sugiru
+# https://otakudesu.blog/anime/kono-sekai-fukanzen-sugiru-sub-indo/
 222925
 
 # Dungeon no Naka no Hito
+# https://otakudesu.blog/anime/dungeon-people-sub-indo/
 250597
 
 # Tsue to Tsurugi no Wistoria
+# https://otakudesu.blog/anime/tsue-tsurugi-wistoria-sub-indo/
 245842
 
 # Shikanoko Nokonoko Koshitantan
+# https://otakudesu.blog/anime/shikanoko-nokotan-sub-indo/
 248866
 
 # Koi wa Futago de Warikirenai
+# https://otakudesu.blog/anime/koi-futago-warikirenai-sub-indo/
 230697
 
 # Isekai Shikkaku
+# https://otakudesu.blog/anime/isekai-sikaku-sub-indo/
 205743
 
 # Katsute Mahou Shoujo to Aku wa Tekitai shiteita
+# https://otakudesu.blog/anime/katsute-mahou-sheteita-sub-indo/
 239764
 
 # Shinmai Ossan Boukensha
+# https://otakudesu.blog/anime/shinmai-ossan-boukensha-sub-indo/
 250598
 
 # Karasu wa Aruji wo Erabanai
+# https://otakudesu.blog/anime/karasu-aruji-erabanai-sub-indo/
 243141
 
 # Madougushi Dahliya wa Utsumukanai
+# https://otakudesu.blog/anime/madougushi-dahliya-utsumukanai-sub-indo/
 233523
 
 # Na Nare Hana Nare
+# https://otakudesu.blog/anime/nare-hana-sub-indo/
 239158
 
 # Megami no Cafe Terrace
+# https://otakudesu.blog/anime/megami-cafece-sub-indo/
 209707
 
 # Shoushimin Series
+# https://otakudesu.blog/anime/shoushimin-sub-indo/
 243501
 
 # Ore wa Subete wo "Parry" suru
+# https://otakudesu.blog/anime/ore-subete-parry-suru-sub-indo/
 238892
 
 # Gimai Seikatsu
+# https://otakudesu.blog/anime/gise-sub-indo/
 206629
 
 # Tokidoki Bosotto Russia-go de Dereru Tonari no Alya-san
+# https://otakudesu.blog/anime/tokidoki-russia-alya-san-sub-indo/
 235758
 
 # Isekai Yururi Kikou
+# https://otakudesu.blog/anime/isekai-yururi-sub-indo/
 240633
 
 # Code Geass: Dakkan no Roze
+# https://otakudesu.blog/anime/cd-geass-dakkan-roze-sub-indo/
 255107
 
 # Boku no Tsuma wa Kanjou ga Nai
+# https://otakudesu.blog/anime/boku-tsuma-kanjou-nai-sub-indo/
 250596
 
 # Mob kara Hajimaru Tansaku Eiyuutan
+# https://otakudesu.blog/anime/mob-hajimaru-eiyutan-sub-indo/
 244620
 
 # Maougun Saikyou no Majutsushi wa Ningen datta
+# https://otakudesu.blog/anime/maougun-saikyou-majutsushi-ningen-sub-indo/
 248951
 
 # Nanatsu no Maken ga Shihai suru
+# https://otakudesu.blog/anime/nanatsu-ni-maken-sub-indo/
 153337
 
 # Nanatsu no Taizai: Mokushiroku no Yonkishi
+# https://otakudesu.blog/anime/nanatsu-taizai-my-sub-indo/
 218843
 
 # Majo to Yajuu
+# https://otakudesu.blog/anime/majo-yajuu-sub-indo/
 208445
 
 # Boku no Kokoro no Yabai Yatsu
+# https://otakudesu.blog/anime/boku-yabai-yatsu-sub-indo/
 207250
 
 # Chiyu Mahou no Machigatta Tsukaikata
+# https://otakudesu.blog/anime/chiyu-tsukaikata-sub-indo/
 131365
 
 # Saijaku Tamer wa Gomi Hiroi no Tabi wo Hajimemashita
+# https://otakudesu.blog/anime/saijaku-tamer-sub-indo/
 214310
 
 # Momochi-san Chi no Ayakashi Ouji
+# https://otakudesu.blog/anime/momochisan-sub-indo/
 230823
 
 # Gekai Elise
+# https://otakudesu.blog/anime/gekai-elise-sub-indo/
 221310
 
 # Jaku-Chara Tomozaki-kun
+# https://otakudesu.blog/anime/jaku-tomozaki-kun-sub-indo/
 99083
 
 # Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+# https://otakudesu.blog/anime/youkoso-jitsuryoku-shijou-shugi-no-kyoushitsu-e-subtitle-indonesia/
 72517
 
 # Loop 7-kaime no Akuyaku Reijou wa
+# https://otakudesu.blog/anime/loop-7-sub-indo/
 232926
 
 # Kage no Jitsuryokusha ni Naritakute!
+# https://otakudesu.blog/anime/kage-jitsuryokusha-sub-indo/
 119495
 
 # Tensei shitara Slime Datta Ken
+# https://otakudesu.blog/anime/tensei-shi-slime-sub-indo/
 118541
 
 # Oroka na Tenshi wa Akuma to Odoru
+# https://otakudesu.blog/anime/oraka-tenshi-odoru-sub-indo/
 231357
 
 # Dosanko Gal wa Namara Menkoi
+# https://otakudesu.blog/anime/dosanko-gal-wa-namara-menkoi-sub-indo/
 213181
 
 # Himesama Goumon no Jikan desu
+# https://otakudesu.blog/anime/goumon-sub-indo/
 229443
 
 # Kyuujitsu no Warumono-san
+# https://otakudesu.blog/anime/kyuujitsu-warumono-san-sub-indo/
 222784
 
 # Mahou Shoujo ni Akogarete
+# https://otakudesu.blog/anime/mahou-shoujo-akogarete-sub-indo/
 236338
 
 # Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node
+# https://otakudesu.blog/anime/snny-sub-indo/
 113256
 
 # Enen no Shouboutai
+# https://otakudesu.blog/anime/enen-shouboutai-sub-indo/
 88046
 
 # Kusuriya no Hitorigoto
+# https://otakudesu.blog/anime/kusuriya-hitorigoto-sub-indo/
 220542
 
 # Saikyou Tank no Meikyuu Kouryaku
+# https://otakudesu.blog/anime/saikyou-tank-meikyuu-kouryaku-sub-indo/
 236532
 
 # Kekkon Yubiwa Monogatari
+# https://otakudesu.blog/anime/kekkon-monogatari-sub-indo/
 218493
 
 # Nozomanu Fushi no Boukensha
+# https://otakudesu.blog/anime/nozomanu-fushi-boukensha-sub-indo/
 197848
 
 # Sasaki to Pii-chan
+# https://otakudesu.blog/anime/sasaki-pii-chan-subt-indo/
 206630
 
 # Sousou no Frieren
+# https://otakudesu.blog/anime/sousou-frieren-sub-indo/
 209867
 
 # Sokushi Cheat ga Saikyou sugite
+# https://otakudesu.blog/anime/sokushi-cheat-sub-indo/
 236144
 
 # Mato Seihei no Slave
+# https://otakudesu.blog/anime/mato-seihei-slave-sub-indo/
 139060
 
 # Isekai de Mofumofu Nadenade suru Tame ni Ganbattemasu
+# https://otakudesu.blog/anime/isekai-ganbattemasu-sub-indo/
 205672
 
 # Zom 100: Zombie ni Naru made ni Shitai 100 no Koto
+# https://otakudesu.blog/anime/zom100-sub-indo/
 217766
 
 # Ikenaikyo
+# https://otakudesu.blog/anime/ikenaikyo-sub-indo/
 217405
 
 # Buta no Liver wa Kanetsu Shiro
+# https://otakudesu.blog/anime/buta-shiro-sub-indo/
 153336
 
 # Hikikomari Kyuuketsuki no Monmon
+# https://otakudesu.blog/anime/hikikomari-monmon-sub-indo/
 217755
 
 # Kamonohashi Ron no Kindan Suiri
+# https://otakudesu.blog/anime/kamonohashi-suiri-sub-indo/
 216523
 
 # Kimizero 
+# https://otakudesu.blog/anime/kimizero-sub-indo/
 209845
 
 # Hyakkano
+# https://otakudesu.blog/anime/hyakano-sub-indo/
 223564
 
 # Potion-danomi de Ikinobimasu!
+# https://otakudesu.blog/anime/potion-ikinobimasu-sub-indo/
 221148
 
 # Seijo no Maryoku wa Bannou desu
+# https://otakudesu.blog/anime/snmwb-s2-sub-indo/
 115236
 
 # Bokura no Ameiro Protocol
+# https://otakudesu.blog/anime/bokura-protocol-sub-indo/
 230288
 
 # Saihate no Paladin
+# https://otakudesu.blog/anime/saihate-pladin-sub-indo/
 123525
 
 # Tearmoon Teikoku Monogatari
+# https://otakudesu.blog/anime/tearmoon-empire-story-sub-indo/
 209604
 
 # Kanojo mo Kanojo
+# https://otakudesu.blog/anime/kanojo-kanojo-sub-indo/
 113137
 
 # Hametsu no Oukoku
+# https://otakudesu.blog/anime/hametsu-koku-sub-indo/
 219673
 
 # Yuzuki-san Chi no Yonkyoudai
+# https://otakudesu.blog/anime/yuzuki-san-sub-indo/
 229612
 
 # Ojou to Banken-kun
+# https://otakudesu.blog/anime/ojou-banken-sub-indo/
 212053
 
 # Mahoutsukai no Yome
+# https://otakudesu.blog/anime/mahoutsukai-yome-subtitle-indonesia/
 73833
 
 # S-Rank Musume
+# https://otakudesu.blog/anime/s-rank-musume-sub-indo/
 229609
 
 # Watashi no Oshi wa Akuyaku Reijou
+# https://otakudesu.blog/anime/watashi-reijou-sub-indo/
 216269
 
 # Boushoku no Berserk
+# https://otakudesu.blog/anime/berserk-gluttony-sub-indo/
 213331
 
 # Seiken Gakuin no Makentsukai
+# https://otakudesu.blog/anime/seiken-no-sukai-sub-indo/
 136840
 
 # Dekoboko Majo no Oyako Jijou
+# https://otakudesu.blog/anime/dekobo-oyako-jijou-sub-indo/
 209829
 
 # Boku no Kokoro no Yabai Yatsu
+# https://otakudesu.blog/anime/boku-yabai-yatsu-sub-indo/
 207250
 
 # Shinigami Bocchan to Kuro Maid
+# https://otakudesu.blog/anime/shini-maid-sub-indo/
 117992
 
 # Kanojo Okarishimasu
+# https://otakudesu.blog/anime/kanojo-no-okarishimasu-sub-indo/
 96316
 
 # Jitsu wa Ore, Saikyou deshita?
+# https://otakudesu.blog/anime/jitsu-deshita-sub-indo/
 209649
 
 # Uchi no Kaisha no Chiisai Senpai no Hanashi
+# https://otakudesu.blog/anime/uchi-chiisai-senpai-sub-indo/
 217390
 
 # Dekiru Neko wa Kyou mo Yuuutsu
+# https://otakudesu.blog/anime/dekineko-sub-indo/
 202821
 
 # Hataraku Maou-sama!
+# https://otakudesu.blog/anime/hataraku-maou-sama-subtitle-indonesia/
 45997
 
 # Shiro Seijo to Kuro Bokushi
+# https://otakudesu.blog/anime/shiro-kuro-bokushi-sub-indo/
 204148
 
 # Suki na Ko ga Megane wo Wasureta
+# https://otakudesu.blog/anime/sukireta-sub-indo/
 218263
 
 # Niehime to Kemono no Ou
+# https://otakudesu.blog/anime/niehime-kemono-ou-sub-indo/
 117024
 
 # Eiyuu Kyoushitsu
+# https://otakudesu.blog/anime/eiyu-kyoushitsu-sub-indo/
 134742
 
 # Maou Gakuin no Futekigousha
+# https://otakudesu.blog/anime/maou-gakuin-futekigousha-sub-indo/
 97617
 
 # Lastame
+# https://otakudesu.blog/anime/lastame-sub-indo/
 213326
 
 # Seija Musou
+# https://otakudesu.blog/anime/seija-msou-sub-indo/
 220779
 
 # Watashi no Shiawase na Kekkon
+# https://otakudesu.blog/anime/watashi-shiawase-sub-indo/
 196944
 
 # Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+# https://otakudesu.blog/anime/vending-machine-sub-indo/
 207564
 
 # Yumemiru Danshi wa Genjitsushugisha
+# https://otakudesu.blog/anime/yumemiru-genjitsu-sub-indo/
 214651
 
 # Okashi na Tensei
+# https://otakudesu.blog/anime/okasansei-sub-indo/
 207521
 
 # Tonikaku Kawaii: Joshikou-hen
+# https://otakudesu.blog/anime/tonikaku-ni-jh-kawaii-sub-indo/
 100049
 
 # Mairimashita! Iruma-kun
+# https://otakudesu.blog/anime/iruma-sub-indo/
 91801
 
 # Kage no Jitsuryokusha ni Naritakute!
+# https://otakudesu.blog/anime/kage-jitsuryokusha-sub-indo/
 119495
 
 # Kimi wa Houkago Insomnia
+# https://otakudesu.blog/anime/kimi-houkago-insomnia-sub-indo/
 155440
 
 # 4-nin wa Sorezore Uso wo Tsuku
+# https://otakudesu.blog/anime/4nin-tsuku-sub-indo/
 196369
 
 # Kaminaki Sekai no Kamisama Katsudou
+# https://otakudesu.blog/anime/kamisama-katsudou-sub-indo/
 199920
 
 # Jigokuraku
+# https://otakudesu.blog/anime/jigokuku-sub-indo/
 117465
 
 # Majutsushi Orphen Hagure Tabi
+# https://otakudesu.blog/anime/majutsushi-orphen-sub-indo/
 91764
 
 # Kanojo ga Koushaku-tei ni Itta Riyuu
+# https://otakudesu.blog/anime/kanojo-koushaku-riyu-sub-indo/
 205366
 
 # Jijou wo Shiranai Tenkousei ga Guigui Kuru
+# https://otakudesu.blog/anime/jijou-ga-kuru-sub-indo/
 214547
 
 # Otonari ni Ginga
+# https://otakudesu.blog/anime/otonari-ginga-sub-indo/
 200732
 
 # Isekai Shoukan wa Nidome desu
+# https://otakudesu.blog/anime/isenido-sub-indo/
 137391
 
 # Fuufu Ijou, Koibito Miman.
+# https://otakudesu.blog/anime/fufu-ijo-sub-indo/
 139287
 
 # Tonikaku Kawaii
+# https://otakudesu.blog/anime/tonikaku-ni-kawaii-sub-indo/
 100049
 
 # Rokudou no Onna-tachi
+# https://otakudesu.blog/anime/rokudou-tachi-sub-indo/
 218563
 
 # Megami no Cafe Terrace
+# https://otakudesu.blog/anime/megami-cafece-sub-indo/
 209707
 
 # Isekai One Turn Kill Neesan
+# https://otakudesu.blog/anime/one-turn-kill-sub-indo/
 194829
 
 # Yuusha ga Shinda!
+# https://otakudesu.blog/anime/yusinda-sub-indo/
 200750
 
 # Watashi no Yuri wa Oshigoto desu!
+# https://otakudesu.blog/anime/yuri-job-sub-indo/
 201949
 
 # Ousama Ranking: Yuuki no Takarabako
+# https://otakudesu.blog/anime/ousama-rank-yuki-tabako-sub-indo/
 207743
 
 # Mahoutsukai no Yome
+# https://otakudesu.blog/anime/mahoutsukai-yome-subtitle-indonesia/
 73833
 
 # Kono Subarashii Sekai ni Bakuen wo!
+# https://otakudesu.blog/anime/kono-suba-bakuen-sub-indo/
 203040
 
 # Kubo-san wa Mob wo Yurusanai
+# https://otakudesu.blog/anime/kubo-yurusanai-su-indo/
 201889
 
 # Isekai wa Smartphone to Tomo ni
+# https://otakudesu.blog/anime/isekai-smartphone-sub-indo/
 72505
 
 # Tensei Kizoku no Isekai Boukenroku
+# https://otakudesu.blog/anime/tensei-kamigami-shito-sub-indo/
 207493
 
 # Nokemono-tachi no Yoru
+# https://otakudesu.blog/anime/nokeyoru-sub-indo/
 205111
 
 # Kyuuketsuki Sugu Shinu
+# https://otakudesu.blog/anime/kyuuketsuki-shinu-sub-indo/
 112624
 
 # Bucchigire!
+# https://otakudesu.blog/anime/bucigire-sub-indo/
 195924
 
 # Majutsushi Orphen Hagure Tabi
+# https://otakudesu.blog/anime/majutsushi-orphen-sub-indo/
 91764
 
 # Inu ni Nattara Suki na Hito ni Hirowareta
+# https://otakudesu.blog/anime/inu-suki-hirowareta-sub-indo/
 195081
 
 # Shinka no Mi
+# https://otakudesu.blog/anime/shinkanomi-s2-sub-indo/
 117706
 
 # Hikari no Ou
+# https://otakudesu.blog/anime/hikariou-sub-indo/
 156688
 
 # Hoshi no Samidare
+# https://otakudesu.blog/anime/hoshi-samidare-sub-indo/
 156218
 
 # Saikyou Onmyouji no Isekai Tenseiki
+# https://otakudesu.blog/anime/onmyouji-isekai-sub-indo/
 156563
 
 # Cool Doji Danshi
+# https://otakudesu.blog/anime/col-danshi-sub-indo/
 198170
 
 # Kami-tachi ni Hirowareta Otoko
+# https://otakudesu.blog/anime/kami-tachi-hirowareta-otoko-sub-indo/
 102086
 
 # Tondemo Skill de Isekai Hourou Meshi
+# https://otakudesu.blog/anime/tondemo-isekai-meshi-sub-indo/
 213402
 
 # Eiyuuou, Bu wo Kiwameru Tame Tenseisu
+# https://otakudesu.blog/anime/eiyu-tenseisu-sub-indo/
 194718
 
 # Benriya Saitou-san, Isekai ni Iku
+# https://otakudesu.blog/anime/benriya-isekai-sub-indo/
 155942
 
 # Kyokou Suiri
+# https://otakudesu.blog/anime/kyo-suiri-sub-indo/
 93653
 
 # Ooyukiumi no Kaina
+# https://otakudesu.blog/anime/oyukiumi-kaina-sub-indo/
 156013
 
 # Roukin
+# https://otakudesu.blog/anime/rougo-isekai-tamemasu-sub-indo/
 206748
 
 # Ars no Kyojuu
+# https://otakudesu.blog/anime/ars-kyojuu-sub-indo/
 211093
 
 # Tsunlise
+# https://otakudesu.blog/anime/tsunlise-sub-indo/
 154098
 
 # Kaiko sareta Ankoku Heishi (30-dai) no Slow na Second Life
+# https://otakudesu.blog/anime/kaiko-heishi30-sub-indo/
 206324
 
 # Otonari no Tenshi-sama ni Itsunomanika Dame Ningen ni Sareteita Ken
+# https://otakudesu.blog/anime/otonari-ni-tenshi-sub-indo/
 154743
 
 # Hyouken no Majutsushi ga Sekai wo Suberu
+# https://otakudesu.blog/anime/hyouken-suberu-sub-indo/
 200777
 
 # Isekai Nonbiri Nouka
+# https://otakudesu.blog/anime/isenouka-sub-indo/
 196285
 
 # Tensei Oujo to Tensai Reijou no Mahou Kakumei
+# https://otakudesu.blog/anime/tensei-kumei-sub-indo/
 207965
 
 # Oniichan wa Oshimai!
+# https://otakudesu.blog/anime/onii-oshii-sub-indo/
 198152
 
 # Koori Zokusei Danshi to Cool na Douryou Joshi
+# https://otakudesu.blog/anime/kori-dansi-cool-sub-indo/
 204519
 
 # DanMachi
+# https://otakudesu.blog/anime/dnmachi-sub-indo/
 70590
 
 # Ijiranaide, Nagatoro-san
+# https://otakudesu.blog/anime/ijrnaide-ngtr-sub-indo/
 105556
 
 # Ningen Fushin no Boukensha-tachi ga Sekai wo Sukuu you desu
+# https://otakudesu.blog/anime/ningen-boukensha-desu-sub-indo/
 131366
 
 # Isekai Ojisan
+# https://otakudesu.blog/anime/isekai-no-ojisan-sub-indo/
 127714
 
 # Shingeki no Kyojin
+# https://otakudesu.blog/anime/shingekyo-season-2-subtitle-indonesia/
 1429
 
 # Shingeki no Kyojin
+# https://otakudesu.blog/anime/shingekyo-season-2-subtitle-indonesia/
 1429
 
 # Koukyuu no Karasu
+# https://otakudesu.blog/anime/koukyuu-karasu-subtitle-indonesia/
 153482
 
 # Yama no Susume: Next Summit
+# https://otakudesu.blog/anime/yama-summit-sub-indo/
 53918
 
 # Mushikaburi-hime
+# https://otakudesu.blog/anime/mshi-hime-sub-indo/
 156510
 
 # Futoku no Guild
+# https://otakudesu.blog/anime/foku-guild-sub-indo/
 194831
 
 # Shinmai Renkinjutsushi no Tenpo Keiei
+# https://otakudesu.blog/anime/shinmai-rno-tenpo-sub-indo/
 133938
 
 # Noumin Kanren no Skill bakka Agetetara Nazeka Tsuyoku Natta
+# https://otakudesu.blog/anime/noumin-agetetara-natta-sub-indo/
 158522
 
 # Akuyaku Reijou nanode Last Boss wo Kattemimashita
+# https://otakudesu.blog/anime/akuyaku-kattemimashita-sub-indo/
 135334
 
 # Tensei shitara Ken Deshita
+# https://otakudesu.blog/anime/tensei-deshita-sub-indo/
 134667
 
 # Renmei Kuugun Koukuu Mahou Ongakutai Luminous Witches
+# https://otakudesu.blog/anime/luminous-no-witches-sub-indo/
 93655
 
 # Saikin Yatotta Maid ga Ayashii
+# https://otakudesu.blog/anime/saikin-yototta-maid-sub-indo/
 202160
 
 # Tonikaku Kawaii
+# https://otakudesu.blog/anime/tonikaku-ni-kawaii-sub-indo/
 100049
 
 # Kakkou no Iinazuke
+# https://otakudesu.blog/anime/kakkou-iinazuke-sub-indo/
 122587
 
 # Yofukashi no Uta
+# https://otakudesu.blog/anime/yofukashi-uta-sub-indo/
 138357
 
 # Hataraku Maou-sama!
+# https://otakudesu.blog/anime/hataraku-maou-sama-subtitle-indonesia/
 45997
 
 # Danmachi
+# https://otakudesu.blog/anime/dnmaci-season-2-sub-indo/
 70590
 
 # Isekai Yakkyoku
+# https://otakudesu.blog/anime/isekai-yakkyoku-sub-indo/
 129195
 
 # Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+# https://otakudesu.blog/anime/youkoso-jitsuryoku-shijou-shugi-no-kyoushitsu-e-subtitle-indonesia/
 72517
 
 # Kuro no Shoukanshi
+# https://otakudesu.blog/anime/kuro-shoukanshi-sub-indo/
 157842
 
 # Warau Arsnotoria Sun!
+# https://otakudesu.blog/anime/warau-sun-sub-indo/
 202770
 
 # Soredemo Ayumu wa Yosetekuru
+# https://otakudesu.blog/anime/soredemo-yosetekuru-sub-indo/
 116168
 
 # Kanojo Okarishimasu
+# https://otakudesu.blog/anime/kanojo-no-okarishimasu-sub-indo/
 96316
 
 # Kumichou Musume to Sewagakari
+# https://otakudesu.blog/anime/kumichou-sewagakari-sub-indo/
 133197
 
 # Mamahaha no Tsurego ga Motokano datta
+# https://otakudesu.blog/anime/mamahaha-datta-sub-indo/
 129516
 
 # Kinsou no Vermeil
+# https://otakudesu.blog/anime/kinso-vermil-sub-indo/
 194774
 
 # Isekai Meikyuu de Harem wo
+# https://otakudesu.blog/anime/isekai-meikyuu-sub-indo/
 114477
 
 # Tensei Kenja no Isekai Life
+# https://otakudesu.blog/anime/tensei-kenja-isekai-life-sub-indo/
 117889
 
 # Kunoichi Tsubaki no Mune no Uchi
+# https://otakudesu.blog/anime/kunoichi-tsubaki-uchi-sub-indo/
 138180
 
 # Yuusha, Yamemasu
+# https://otakudesu.blog/anime/yuuyame-sub-indo/
 136763
 
 # Paripi Koumei
+# https://otakudesu.blog/anime/paripi-kmei-sub-indo/
 138441
 
 # Kawaii dake ja Nai Shikimori-san
+# https://otakudesu.blog/anime/kawaii-shikimiroisan-sub-indo/
 115694
 
 # Kaijin Kaihatsu-bu no Kuroitsu-san
+# https://otakudesu.blog/anime/kajin-kuroitsu-sub-indo/
 128826
 
 # Gensou Sangokushi: Tengen Reishinki
+# https://otakudesu.blog/anime/gensango-sub-indo/
 130206
 
 # Vanitas no Karte
+# https://otakudesu.blog/anime/van-carte-sub-indo/
 121964
 
 # Fantasy Bishoujo Juniku Ojisan to
+# https://otakudesu.blog/anime/fantasy-ojisan-sub-indo/
 125712
 
 # Mahoutsukai Reimeiki
+# https://otakudesu.blog/anime/mahosukai-rimeki-sub-indo/
 124363
 
 # Machikado Mazoku
+# https://otakudesu.blog/anime/machikado-mazo-sub-indo/
 88806
 
 # Kenja no Deshi wo Nanoru Kenja
+# https://otakudesu.blog/anime/kenja-deshi-sub-indo/
 104032
 
 # Kyoukai Senki
+# https://otakudesu.blog/anime/kyosen-sub-indo/
 120966
 
 # Gunjou no Fanfare
+# https://otakudesu.blog/anime/gunjou-fanfare-sub-indo/
 131681
 
 # Kono Healer, Mendokusai
+# https://otakudesu.blog/anime/kono-healer-mendokusai-sub-indo/
 123250
 
 # Komi-san wa, Comyushou desu.
+# https://otakudesu.blog/anime/komisan-sub-indo/
 123876
 
 # Koi wa Sekai Seifuku no Ato de
+# https://otakudesu.blog/anime/koi-sekai-seifuku-de-sub-indo/
 122287
 
 # Shachiku-san wa Youjo Yuurei ni Iyasaretai.
+# https://otakudesu.blog/anime/shachiku-youjo-iyasaretai-sub-indo/
 127327
 
 # Heroine Tarumono! Kiraware Heroine to Naisho no Oshigoto
+# https://otakudesu.blog/anime/heroine-tarumano-sub-indo/
 132213
 
 # Gaikotsu Kishi-sama, Tadaima Isekai e Odekakechuu
+# https://otakudesu.blog/anime/gaikotsu-kishi-sub-indo/
 123528
 
 # Otome Game Sekai wa Mob ni Kibishii Sekai desu
+# https://otakudesu.blog/anime/otome-game-mob-sub-indo/
 139512
 
 # RikeKoi
+# https://otakudesu.blog/anime/rikekoi-sub-indo/
 90999
 
 # Shokei Shoujo no Virgin Road
+# https://otakudesu.blog/anime/shokei-shoujou-road-sub-indo/
 117886
 
 # Shikkakumon no Saikyou Kenja
+# https://otakudesu.blog/anime/shikkakumon-sub-indo/
 117884
 
 # Honzuki no Gekokujou
+# https://otakudesu.blog/anime/honzoku-gekokujou-sub-indo/
 91768
 
 # Genjitsu Shugi Yuusha no Oukoku Saikenki
+# https://otakudesu.blog/anime/genjitsu-shugi-yuusha-sub-indo/
 102088
 
 # Arifureta Shokugyou de Sekai Saikyou
+# https://otakudesu.blog/anime/arifureta-s2-sub-indo/
 86034
 
 # Akebi-chan no Sailor-fuku
+# https://otakudesu.blog/anime/akebi-chan-sub-indo/
 121792
 
 # Hanyou no Yashahime
+# https://otakudesu.blog/anime/hny-s2-sub-indo/
 103254
 
 # Tensai Ouji no Akaji Kokka Saisei Jutsu
+# https://otakudesu.blog/anime/tensai-no-akaji-sub-indo/
 117880
 
 # Karakai Jouzu no Takagi-san
+# https://otakudesu.blog/anime/karakai-jouzo-takagi-san-subtitle-indonesia/
 75865
 
 # Ousama Ranking
+# https://otakudesu.blog/anime/ousama-rank-sub-indo/
 112613
 
 # Sono Bisque Doll wa Koi wo Suru
+# https://otakudesu.blog/anime/sbdwk-sub-indo/
 123249
 
 # Koroshi Ai
+# https://otakudesu.blog/anime/kushi-ai-sub-indo/
 114396
 
 # Leadale no Daichi nite
+# https://otakudesu.blog/anime/leadale-sub-indo/
 119335
 
 # Shiroi Suna no Aquatope
+# https://otakudesu.blog/anime/aquatope-sub-indo/
 116724
 
 # Saihate no Paladin
+# https://otakudesu.blog/anime/saihate-pladin-sub-indo/
 123525
 
 # Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node
+# https://otakudesu.blog/anime/snny-sub-indo/
 113256
 
 # Kobayashi-san Chi no Maid Dragon
+# https://otakudesu.blog/anime/kobayashi-sub-indo/
 69291
 
 # Kyoukai Senki
+# https://otakudesu.blog/anime/kyosen-sub-indo/
 120966
 
 # Gyakuten Sekai no Denchi Shoujo
+# https://otakudesu.blog/anime/gyakuten-sub-indo/
 122286
 
 # Senpai ga Uzai Kouhai no Hanashi
+# https://otakudesu.blog/anime/senpai-uzai-sub-indo/
 105511
 
 # Kyuuketsuki Sugu Shinu
+# https://otakudesu.blog/anime/kyuuketsuki-shinu-sub-indo/
 112624
 
 # Komi-san wa, Comyushou desu.
+# https://otakudesu.blog/anime/komisan-sub-indo/
 123876
 
 # Shinka no Mi: Shiranai Uchi ni Kachigumi Jinsei
+# https://otakudesu.blog/anime/shinkanomi-sub-indo/
 117706
 
 # Tsuki to Laika to Nosferatu
+# https://otakudesu.blog/anime/tsukilaika-sub-indo/
 121017
 
 # Mushoku Tensei: Isekai Ittara Honki Dasu
+# https://otakudesu.blog/anime/mushoku-tensei-sub-indo/
 94664
 
 # Jahy-sama wa Kujikenai!
+# https://otakudesu.blog/anime/jahy-sama-kujikenai-sub-indo/
 123446
 
 # Isekai Shokudou
+# https://otakudesu.blog/anime/isekai-shoku-subtitle-indonesia/
 72425
 
 # Getsuyoubi no Tawawa
+# https://otakudesu.blog/anime/getsuyoubi-no-tawawa-subtitle-indonesia/
 68455
 
 # Deatte 5-byou de Battle
+# https://otakudesu.blog/anime/deatte-5-byou-battle-sub-indo/
 112940
 
 # Hamefura
+# https://otakudesu.blog/anime/hamefra-sub-indo/
 94904
 
 # Heion Sedai no Idaten-tachi
+# https://otakudesu.blog/anime/heion-sedai-idaten-tachi-sub-indo/
 107001
 
 # Higurashi no Naku Koro ni Sotsu
+# https://otakudesu.blog/anime/higurashi-naku-koro-sotsu-sub-indo/
 100988
 
 # Kaizoku Oujo
+# https://otakudesu.blog/anime/kazoku-oujo-sub-indo/
 106480
 
 # Mahouka Koukou no Yuutousei
+# https://otakudesu.blog/anime/mahouno-yuutousei-sub-indo/
 115312
 
 # Genjitsu Shugi Yuusha no Oukoku Saikenki
+# https://otakudesu.blog/anime/genjitsu-shugi-yuusha-sub-indo/
 102088
 
 # Bokutachi no Remake
+# https://otakudesu.blog/anime/bokutachi-remake-sub-indo/
 113687
 
 # Cheat Kusushi no Slow Life
+# https://otakudesu.blog/anime/cheakus-sub-indo/
 103944
 
 # Tsuki ga Michibiku Isekai Douchuu
+# https://otakudesu.blog/anime/tsuki-michibiku-isekai-sub-indo/
 111819
 
 # Tantei wa Mou, Shindeiru.
+# https://otakudesu.blog/anime/tante-mou-shindeiru-sub-indo/
 117061
 
 # Vanitas no Karte
+# https://otakudesu.blog/anime/van-carte-sub-indo/
 121964
 
 # Shinigami Bocchan to Kuro Maid
+# https://otakudesu.blog/anime/shini-maid-sub-indo/
 117992
 
 # Kanojo mo Kanojo
+# https://otakudesu.blog/anime/kanojo-kanojo-sub-indo/
 113137
 
 # Megami-ryou no Ryoubo-kun
+# https://otakudesu.blog/anime/megami-ryoubo-sub-indo/
 103962
 
 # Ginga Eiyuu Densetsu
+# https://otakudesu.blog/anime/ginga-densetsu-sub-indo/
 27660
 
 # Mairimashita! Iruma-kun
+# https://otakudesu.blog/anime/iruma-sub-indo/
 91801
 
 # Tensei shitara Slime Datta Ken
+# https://otakudesu.blog/anime/tensei-shi-slime-sub-indo/
 118541
 
 # 100-man no Inochi no Ue ni Ore wa Tatteiru
+# https://otakudesu.blog/anime/100-man-no-inochi-sub-indo/
 99995
 
 # Kyoukaisenjou no Horizon
+# https://otakudesu.blog/anime/kyoukaisenjou-horizon-sub-indo/
 57528
 
 # Kyoukaisenjou no Horizon
+# https://otakudesu.blog/anime/kyoukaisenjou-horizon-sub-indo/
 57528
 
 # Maoujou de Oyasumi
+# https://otakudesu.blog/anime/maoujou-oyasumi-sub-indo/
 97923
 
 # Kumo Desu ga, Nani ka?
+# https://otakudesu.blog/anime/kumo-desu-nani-sub-indo/
 99618
 
 # Sayonara Watashi no Cramer
+# https://otakudesu.blog/anime/swnc-sub-indo/
 108478
 
 # Slime Taoshite 300-nen
+# https://otakudesu.blog/anime/slime-taoshite-sub-indo/
 99073
 
 # Tensura Nikki: Tensei shitara Slime Datta Ken
+# https://otakudesu.blog/anime/tensura-nikki-sub-indo/
 118541
 
 # Dragon, Ie wo Kau
+# https://otakudesu.blog/anime/drgon-iewo-sub-indo/
 103249
 
 # Ijiranaide, Nagatoro-san
+# https://otakudesu.blog/anime/ijrnaide-ngtr-sub-indo/
 105556
 
 # Seijo no Maryoku wa Bannou Desu
+# https://otakudesu.blog/anime/snmwb-sub-indo/
 115236
 
 # Mashiro no Oto
+# https://otakudesu.blog/anime/mashiro-oto-sub-indo/
 106782
 
 # Sentouin Hakenshimasu!
+# https://otakudesu.blog/anime/sentouin-hakenshimasu-sub-indo/
 100567
 
 # Junketsu no Maria
+# https://otakudesu.blog/anime/junketsu-maria-sub-indo/
 62157
 
 # Isekai Maou to Shoukan Shoujo no Dorei Majutsu
+# https://otakudesu.blog/anime/isekai-the-maou-majutsu-subtitle-indonesia/
 80563
 
 # Yakunara Mug Cup mo
+# https://otakudesu.blog/anime/yakunara-mug-sub-indo/
 106611
 
 # Jitsu wa Watashi wa
+# https://otakudesu.blog/anime/jitsu-wa-watashi-sub-indo/
 73093
 
 # Amaama to Inazuma
+# https://otakudesu.blog/anime/amaama-inazuma-sub-indo/
 66990
 
 # Juuou Mujin no Fafnir
+# https://otakudesu.blog/anime/juuou-mujin-fafnir-sub-indo/
 66863
 
 # Akkun to Kanojo
+# https://otakudesu.blog/anime/akkun-kanojo-sub-indo/
 77723
 
 # Sora no Otoshimono
+# https://otakudesu.blog/anime/sora-otoshimono-season-2-sub-indo/
 37437
 
 # Sora no Otoshimono
+# https://otakudesu.blog/anime/sora-otoshimono-season-2-sub-indo/
 37437
 
 # Kaze no Stigma
+# https://otakudesu.blog/anime/kaze-stigma-sub-indo/
 61333
 
 # Centaur no Nayami
+# https://otakudesu.blog/anime/centaur-nayami-sub-indo/
 72506
 
 # Soukou Musume Senki
+# https://otakudesu.blog/anime/soukou-musume-sub-indo/
 104155
 
 # King's Raid: Ishi wo Tsugumono-tachi
+# https://otakudesu.blog/anime/kings-raid-sub-indo/
 102871
 
 # Jaku-Chara Tomozaki-kun
+# https://otakudesu.blog/anime/jaku-tomozaki-kun-sub-indo/
 99083
 
 # Gotoubun no Hanayome
+# https://otakudesu.blog/anime/gotobun-hanayome-subtitle-indonesia/
 84669
 
 # Re:Zero kara Hajimeru Isekai Seikatsu
+# https://otakudesu.blog/anime/re-zero-season-2-sub-indo/
 65942
 
 # Lasdan
+# https://otakudesu.blog/anime/lasdan-sub-indo/
 100825
 
 # Ore dake Haireru Kakushi Dungeon
+# https://otakudesu.blog/anime/ore-dake-kakushi-dungeon-sub-indo/
 103157
 
 # Hataraku Saibou
+# https://otakudesu.blog/anime/hataraku-no-saibou-subtitle-indonesia/
 80671
 
 # Mushoku Tensei: Isekai Ittara Honki Dasu
+# https://otakudesu.blog/anime/mushoku-tensei-sub-indo/
 94664
 
 # Tenkuu Shinpan
+# https://otakudesu.blog/anime/tenkuu-pan-sub-indo/
 112163
 
 # Mousou Dairinin
+# https://otakudesu.blog/anime/mousou-dairin-sub-indo/
 9343
 
 # Danna ga Nani wo Itteiru ka Wakaranai Ken
+# https://otakudesu.blog/anime/danna-nani-itteiru-wakaranai-sub-indo/
 61433
 
 # Danna ga Nani wo Itteiru ka Wakaranai Ken
+# https://otakudesu.blog/anime/danna-nani-itteiru-wakaranai-sub-indo/
 61433
 
 # Kaifuku Jutsushi no Yarinaoshi
+# https://otakudesu.blog/anime/kafuku-yarinaoshi-sub-indo/
 99071
 
 # Gochuumon wa Usagi Desu ka?
+# https://otakudesu.blog/anime/gochuumon-usagi-desu-season-3-sub-indo/
 60843
 
 # Munou na Nana
+# https://otakudesu.blog/anime/munou-nana-sub-indo/
 101571
 
 # Kamisama ni Natta Hi
+# https://otakudesu.blog/anime/kamisama-ni-natta-sub-indo/
 103319
 
 # Kimisen
+# https://otakudesu.blog/anime/kimi-boku-saigo-senjou-sub-indo/
 101972
 
 # Kami-tachi ni Hirowareta Otoko
+# https://otakudesu.blog/anime/kami-tachi-hirowareta-otoko-sub-indo/
 102086
 
 # Danmachi
+# https://otakudesu.blog/anime/dnmaci-season-2-sub-indo/
 70590
 
 # Majo no Tabitabi
+# https://otakudesu.blog/anime/majo-tabitabi-sub-indo/
 94693
 
 # Hoshiai no Sora
+# https://otakudesu.blog/anime/hoshiai-sora-sub-indo/
 92835
 
 # Bungou to Alchemist: Shinpan no Haguruma
+# https://otakudesu.blog/anime/bungou-ni-alchemist-sub-indo/
 100353
 
 # Koi to Producer: EVOL x LOVE
+# https://otakudesu.blog/anime/koi-producer-evol-love-sub-indo/
 102285
 
 # Maou Gakuin no Futekigousha
+# https://otakudesu.blog/anime/maou-gakuin-futekigousha-sub-indo/
 97617
 
 # Kanojo Okarishimasu
+# https://otakudesu.blog/anime/kanojo-no-okarishimasu-sub-indo/
 96316
 
 # Toaru Kagaku no Railgun
+# https://otakudesu.blog/anime/toru-kagaku-railgun-subtitle-indonesia/
 30977
 
 # Monster Musume no Oishasan
+# https://otakudesu.blog/anime/monster-musume-oishasan-sub-indo/
 98685
 
 # Houkago Teibou Nisshi
+# https://otakudesu.blog/anime/houkago-nisshi-sub-indo/
 94631
 
 # Hitsugi no Chaika
+# https://otakudesu.blog/anime/hitsugi-chaika-sub-indo/
 60825
 
 # Hitsugi no Chaika
+# https://otakudesu.blog/anime/hitsugi-chaika-sub-indo/
 60825
 
 # Mairimashita! Iruma-kun
+# https://otakudesu.blog/anime/iruma-sub-indo/
 91801
 
 # Yuru Yuri
+# https://otakudesu.blog/anime/yuru-ni-yuri-sub-indo/
 52891
 
 # Yuru Yuri
+# https://otakudesu.blog/anime/yuru-ni-yuri-sub-indo/
 52891
 
 # Yuru Yuri
+# https://otakudesu.blog/anime/yuru-ni-yuri-sub-indo/
 52891
 
 # 100-man no Inochi no Ue ni Ore wa Tatteiru
+# https://otakudesu.blog/anime/100-man-no-inochi-sub-indo/
 99995
 
 # Denpa Kyoushi
+# https://otakudesu.blog/anime/denpa-no-kyoushi-sub-indo/
 62283
 
 # Higashi no Eden
+# https://otakudesu.blog/anime/higashi-eden-sub-indo/
 21750
 
 # Soredemo Sekai wa Utsukushii
+# https://otakudesu.blog/anime/soredemo-sekai-utsukushii-sub-indo/
 60818
 
 # Kuusen Madoushi Kouhosei no Kyoukan
+# https://otakudesu.blog/anime/kuusen-madoushi-kouhosei-kyoukan-sub-indo/
 67553
 
 # Ichiban Ushiro no Daimaou
+# https://otakudesu.blog/anime/ichiban-ushiro-daimaou-sub-indo/
 42413
 
 # Yesterday wo Utatte
+# https://otakudesu.blog/anime/yesterday-utatte-sub-indo/
 95550
 
 # Honzuki no Gekokujou
+# https://otakudesu.blog/anime/honzoku-gekokujou-sub-indo/
 91768
 
 # Hamefura
+# https://otakudesu.blog/anime/hamefra-sub-indo/
 94904
 
 # Kitsutsuki Tanteidokoro
+# https://otakudesu.blog/anime/kitsutsuki-dokoro-sub-indo/
 94277
 
 # Hachi-nan tte Sore wa Nai deshou!
+# https://otakudesu.blog/anime/hachi-nan-tte-sub-indo/
 99624
 
 # Kiniro Mosaic
+# https://otakudesu.blog/anime/kiniro-ni-mosaic-sub-indo/
 78589
 
 # Kiniro Mosaic
+# https://otakudesu.blog/anime/kiniro-ni-mosaic-sub-indo/
 78589
 
 # Joukamachi no Dandelion
+# https://otakudesu.blog/anime/joukamachi-dandelion-sub-indo/
 66083
 
 # Mahou Sensou
+# https://otakudesu.blog/anime/mahou-sou-sub-indo/
 72091
 
 # Oregairu
+# https://otakudesu.blog/anime/ogairu-subtitle-indonesia/
 65676
 
 # Majutsushi Orphen Hagure Tabi
+# https://otakudesu.blog/anime/majutsushi-orphen-sub-indo/
 91764
 
 # Kabukichou Sherlock
+# https://otakudesu.blog/anime/kabuki-sherlock-sub-indo/
 87447
 
 # Bokuhaka
+# https://otakudesu.blog/anime/bokuhaka-sub-indo/
 93822
 
 # Kyokou Suiri
+# https://otakudesu.blog/anime/kyo-suiri-sub-indo/
 93653
 
 # Koisuru Asteroid
+# https://otakudesu.blog/anime/koi-asteroid-sub-indo/
 91585
 
 # Runway de Waratte
+# https://otakudesu.blog/anime/runway-waratte-sub-indo/
 93688
 
 # Oshi ga Budoukan Ittekuretara Shinu
+# https://otakudesu.blog/anime/oshi-ga-budoukan-sub-indo/
 91024
 
 # Somali to Mori no Kamisama
+# https://otakudesu.blog/anime/somali-mori-sub-indo/
 92586
 
 # Murenase Seton Gakuen
+# https://otakudesu.blog/anime/murenase-gakuen-sub-indo/
 96150
 
 # RikeKoi
+# https://otakudesu.blog/anime/rikekoi-sub-indo/
 90999
 
 # Enen no Shouboutai
+# https://otakudesu.blog/anime/enen-shouboutai-sub-indo/
 88046
 
 # Tokunana
+# https://otakudesu.blog/anime/tokunana-sub-indo/
 93647
 
 # Shinchou Yuusha
+# https://otakudesu.blog/anime/shinchou-kono-yuusha-sub-indo/
 93256
 
 # Bokutachi wa Benkyou ga Dekinai
+# https://otakudesu.blog/anime/bokutachi-benkyou-sub-indo/
 87432
 
 # Honzuki no Gekokujou
+# https://otakudesu.blog/anime/honzoku-gekokujou-sub-indo/
 91768
 
 # Noukin
+# https://otakudesu.blog/anime/noukin-sub-indo/
 91547
 
 # Houkago Saikoro Club
+# https://otakudesu.blog/anime/houkago-club-sub-indo/
 91026
 
 # Choyoyu
+# https://otakudesu.blog/anime/coyoyu-sub-indo/
 91269
 
 # Chuubyou Gekihatsu Boy
+# https://otakudesu.blog/anime/chuubyou-boy-subtitle-indonesia/
 91452
 
 # Maou-sama Retry!
+# https://otakudesu.blog/anime/maou-retry-sub-indo/
 88044
 
 # Grisaia no Rakuen
+# https://otakudesu.blog/anime/grisaia-rakuen-sub-indo/
 61422
 
 # Grisaia no Kajitsu
+# https://otakudesu.blog/anime/grisaia-kajitsu-sub-indo/
 61422
 
 # Gokukoku no Brynhildr
+# https://otakudesu.blog/anime/gokukoku-brynhildr-sub-indo/
 60805
 
 # Ichigo Mashimaro
+# https://otakudesu.blog/anime/ichigo-mashiro-sub-indo/
 35730
 
 # Oneechan ga Kita
+# https://otakudesu.blog/anime/oneechan-kita-sub-indo/
 72452
 
 # Osake wa Fuufu ni Natte kara
+# https://otakudesu.blog/anime/osake-fuufu-sub-indo/
 74182
 
 # Rokujouma no Shinryakusha
+# https://otakudesu.blog/anime/rokujouma-shinryakusha-sub-indo/
 70805
 
 # Suzumiya Haruhi no Yuuutsu
+# https://otakudesu.blog/anime/suzumiya-haruhi-subtitle-indonesia/
 42511
 
 # NouCome
+# https://otakudesu.blog/anime/ncome-sub-indo/
 72798
 
 # Saijaku Muhai no Bahamut
+# https://otakudesu.blog/anime/saijaku-bahamut-sub-indo/
 65816
 
 # Okaasan online
+# https://otakudesu.blog/anime/ookasan-online-sub-indo/
 88808
 
 # Toaru Kagaku no Accelerator
+# https://otakudesu.blog/anime/toru-accelerator-sub-indo/
 90546
 
 # Danmachi
+# https://otakudesu.blog/anime/dnmaci-season-2-sub-indo/
 70590
 
 # Machikado Mazoku
+# https://otakudesu.blog/anime/machikado-mazo-sub-indo/
 88806
 
 # Nakanohito Genome
+# https://otakudesu.blog/anime/naka-genome-sub-indo/
 88048
 
 # Karakai Jouzu no Takagi-san
+# https://otakudesu.blog/anime/karakai-jouzo-takagi-san-subtitle-indonesia/
 75865
 
 # Joshikousei no Mudazukai
+# https://otakudesu.blog/anime/joshikosei-mdzukai-sub-indo/
 88062
 
 # UchiMusume
+# https://otakudesu.blog/anime/uchi-kono-tame-sub-indo/
 88804
 
 # Kanata no Astra
+# https://otakudesu.blog/anime/kanata-astra-sub-indo/
 88041
 
 # Sounan Desu ka?
+# https://otakudesu.blog/anime/soun-desu-sub-indo/
 88805
 
 # Katsute Kami Datta Kemono-tachi e
+# https://otakudesu.blog/anime/katsute-kemono-tachi-subtitle-indonesia/
 88051
 
 # Dumbbell Nan Kilo Moteru?
+# https://otakudesu.blog/anime/dumbel-kilo-moteru-sub-indo/
 88045
 
 # Kimi no Iru Machi
+# https://otakudesu.blog/anime/kimi-iru-machi-sub-indo/
 70228
 
 # Satsuriku no Tenshi
+# https://otakudesu.blog/anime/satsuriku-tenshi-sub-indo/
 80477
 
 # Natsume Yuujinchou
+# https://otakudesu.blog/anime/zoku-natsume-yuujinchou-bd-subtitle-indonesia/
 69500
 
 # Ansatsu Kyoushitsu
+# https://otakudesu.blog/anime/ansatskyoutsu-subtitle-indonesia/
 62110
 
 # Ansatsu Kyoushitsu
+# https://otakudesu.blog/anime/ansatskyoutsu-subtitle-indonesia/
 62110
 
 # Shigatsu wa Kimi no Uso
+# https://otakudesu.blog/anime/shigatsu-kimi-uso-subtitle-indonesia/
 61663
 
 # Tensei shitara Slime Datta Ken
+# https://otakudesu.blog/anime/tensei-shi-slime-sub-indo/
 118541
 
 # Mahou Shoujo Tokushusen Asuka
+# https://otakudesu.blog/anime/mahou-shojou-toshusen-asuka-subtitle-indonesia/
 83104
 
 # 3-gatsu no Lion
+# https://otakudesu.blog/anime/3-gatsu-lion-sub-indo/
 65336
 
 # Gunjou no Magmel
+# https://otakudesu.blog/anime/gunjou-magmel-sub-indo/
 85841
 
 # Shingeki no Kyojin
+# https://otakudesu.blog/anime/shingekyo-season-2-subtitle-indonesia/
 1429
 
 # Bokutachi wa Benkyou ga Dekinai
+# https://otakudesu.blog/anime/bokutachi-benkyou-sub-indo/
 87432
 
 # Kenja no Mago
+# https://otakudesu.blog/anime/kenja-mago-sub-indo/
 85844
 
 # Sewayaki Kitsune no Senko-san
+# https://otakudesu.blog/anime/sewayaki-senko-san-sub-indo/
 87461
 
 # Mayonaka no Occult Koumuin
+# https://otakudesu.blog/anime/mayonaka-occult-subtitle-indonesia/
 85935
 
 # Shoumetsu Toshi
+# https://otakudesu.blog/anime/shometsu-no-toshi-sub-indo/
 87457
 
 # Nobunaga-sensei no Osanazuma
+# https://otakudesu.blog/anime/nobunaga-sensei-subtitle-indonesia/
 87476
 
 # Midara na Ao-chan wa Benkyou ga Dekinai
+# https://otakudesu.blog/anime/ao-chan-benkyou-subtitle-indonesia/
 87462
 
 # Seiken Tsukai no World Break
+# https://otakudesu.blog/anime/seiken-tsukai-subtitle-indonesia/
 66919
 
 # Ao no Kanata no Four Rhythm
+# https://otakudesu.blog/anime/ao-no-kanata-no-four-rhythm-subtitle-indonesia/
 65713
 
 # Ramen Daisuki Koizumi-san
+# https://otakudesu.blog/anime/ramen-koizumi-sub-indo/
 75793
 
 # Chuunibyou demo Koi ga Shitai!
+# https://otakudesu.blog/anime/chuunibyou-s2-sub-indo/
 45501
 
 # Chuunibyou demo Koi ga Shitai
+# https://otakudesu.blog/anime/chuunibyou-sub-indo/
 45501
 
 # Gakusen Toshi Asterisk
+# https://otakudesu.blog/anime/gakusen-toshi-subtitle-indonesia/
 64671
 
 # Gakusen Toshi Asterisk
+# https://otakudesu.blog/anime/gakusen-toshi-subtitle-indonesia/
 64671
 
 # Ryuugajou Nanana no Maizoukin
+# https://otakudesu.blog/anime/ryuugajou-nanana-maizoukin-sub-indo/
 60832
 
 # Shuumatsu no Izetta
+# https://otakudesu.blog/anime/shuumatsu-no-izetta-sub-indo/
 68080
 
 # Akuma no Riddle
+# https://otakudesu.blog/anime/akuma-riddle-subtitle-indonesia/
 60845
 
 # Rakudai Kishi no Cavalry
+# https://otakudesu.blog/anime/rakudai-kishi-cavalry-subtitle-indonesia/
 67154
 
 # Ano Natsu de Matteru
+# https://otakudesu.blog/anime/ano-natsu-matteru-subtitle-indonesia/
 42499
 
 # Ookami to Koushinryou
+# https://otakudesu.blog/anime/ookami-koushinryou-sub-indo/
 26707
 
 # Ookami to Koushinryou
+# https://otakudesu.blog/anime/ookami-koushinryou-sub-indo/
 26707
 
 # Isekai Shokudou
+# https://otakudesu.blog/anime/isekai-shoku-subtitle-indonesia/
 72425
 
 # Oda Nobuna no Yabou
+# https://otakudesu.blog/anime/oda-nobuna-subtitle-indonesia/
 45853
 
 # Zero no Tsukaima
+# https://otakudesu.blog/anime/zero-tsukaima-sub-indo/
 35753
 
 # Zero no Tsukaima
+# https://otakudesu.blog/anime/zero-tsukaima-sub-indo/
 35753
 
 # Zero no Tsukaima
+# https://otakudesu.blog/anime/zero-tsukaima-sub-indo/
 35753
 
 # Zero no Tsukaima
+# https://otakudesu.blog/anime/zero-tsukaima-sub-indo/
 35753
 
 # Suisei no Gargantia
+# https://otakudesu.blog/anime/suise-gargantia-sub-indo/
 55011
 
 # Shingeki no Bahamut: Virgin Soul
+# https://otakudesu.blog/anime/shingeki-bahamut-season-2-sub-indo/
 61445
 
 # Oniichan dakedo Ai sae Areba Kankeinai yo ne!
+# https://otakudesu.blog/anime/onichan-ai-areba-sub-indo/
 62696
 
 # Seto no Hanayome
+# https://otakudesu.blog/anime/seto-hanayome-sub-indo/
 56834
 
 # Uchouten Kazoku
+# https://otakudesu.blog/anime/uchou-kazoku-sub-indo/
 61338
 
 # Uchouten Kazoku
+# https://otakudesu.blog/anime/uchou-kazoku-sub-indo/
 61338
 
 # Asu no Yoichi!
+# https://otakudesu.blog/anime/asu-yoichi-sub-indo/
 46033
 
 # Yuragi-sou no Yuuna-san
+# https://otakudesu.blog/anime/yuragi-san-sub-indo/
 80504
 
 # Densetsu no Yuusha no Densetsu
+# https://otakudesu.blog/anime/densetsu-yuusha-sub-indo/
 89506
 
 # Hai to Gensou no Grimgar
+# https://otakudesu.blog/anime/hai-gensou-no-grimgar-subtitle-indonesia/
 65369
 
 # Hagure Yuusha no Aesthetica
+# https://otakudesu.blog/anime/hagure-yuusha-sub-indo/
 62171
 
 # Shingeki no Kyojin OVA
+# https://otakudesu.blog/anime/shingekyo-ova-subtitle-indonesia/
 1429
 
 # Shingeki no Kyojin
+# https://otakudesu.blog/anime/shingekyo-season-2-subtitle-indonesia/
 1429
 
 # Fune wo Amu
+# https://otakudesu.blog/anime/fune-amu-sub-indo/
 65952
 
 # Koutetsujou no Kabaneri
+# https://otakudesu.blog/anime/koutetsujou-no-kabaneri-bd-subttle-indonesia/
 65945
 
 # Piano no Mori
+# https://otakudesu.blog/anime/piano-no-mori-subtitle-indonesia/
 78471
 
 # Kobayashi-san Chi no Maid Dragon
+# https://otakudesu.blog/anime/kobayashi-sub-indo/
 69291
 
 # Isshuukan Friends
+# https://otakudesu.blog/anime/isshuukan-friends/
 60827
 
 # Toaru Majutsu no Index
+# https://otakudesu.blog/anime/toaru-jutsu-index-subtitle-indonesia/
 30980
 
 # Kakuriyo no Yadomeshi
+# https://otakudesu.blog/anime/kakuriyo-no-yadomeshi-subtitle-indonesia/
 78483
 
 # Haiyore! Nyaruko-san
+# https://otakudesu.blog/anime/hiyre-nyaruko-sub-indo/
 45254
 
 # Haiyore! Nyaruko-san
+# https://otakudesu.blog/anime/hiyre-nyaruko-sub-indo/
 45254
 
 # Net-juu no Susume
+# https://otakudesu.blog/anime/net-susume-subtitle-indonesia/
 74163
 
 # Aoi Hana
+# https://otakudesu.blog/anime/hana-aoi-subtitle-indonesia/
 34838
 
 # Papa no Iukoto wo Kikinasai!
+# https://otakudesu.blog/anime/papa-iukoto-subtitle-indonesia/
 46183
 
 # Gotoubun no Hanayome
+# https://otakudesu.blog/anime/gotobun-hanayome-subtitle-indonesia/
 84669
 
 # Kaze ga Tsuyoku Fuiteiru
+# https://otakudesu.blog/anime/kaze-yoku-subtitle-indonesia/
 82766
 
 # Doukyonin wa Hiza, Tokidoki, Atama no Ue.
+# https://otakudesu.blog/anime/doukyonin-hiza-tokidoki-atama-subtitle-indonesia/
 84660
 
 # Watashi ni Tenshi ga Maiorita!
+# https://otakudesu.blog/anime/watashi-tenshi-maiorita-subtitle-indonesia/
 84666
 
 # Egao no Daika
+# https://otakudesu.blog/anime/egao-dika-subtitle-indonesia/
 83477
 
 # Hajimete no Gal
+# https://otakudesu.blog/anime/hajimete-gal-subtitle-indonesia/
 72296
 
 # Seirei Tsukai no Blade Dance
+# https://otakudesu.blog/anime/seirei-tsukai-bladance-subtitle-indonesia/
 61287
 
 # Koi wa Ameagari no You ni
+# https://otakudesu.blog/anime/koi-ameagari-you-ni-sub-indo/
 75777
 
 # Mikakunin de Shinkoukei
+# https://otakudesu.blog/anime/mikakunin-shinkoukei-subtitle-indonesia/
 75992
 
 # Boku wa Tomodachi ga Sukunai
+# https://otakudesu.blog/anime/boku-wa-tomodachi-ga-sukunai/
 60730
 
 # Boku wa Tomodachi ga Sukunai
+# https://otakudesu.blog/anime/boku-wa-tomodachi-ga-sukunai/
 60730
 
 # Kuroshitsuji
+# https://otakudesu.blog/anime/kurotsuji-subtitle-indonesia/
 50712
 
 # Kuroshitsuji
+# https://otakudesu.blog/anime/kurotsuji-subtitle-indonesia/
 50712
 
 # Death March kara Hajimaru Isekai Kyousoukyoku
+# https://otakudesu.blog/anime/death-march-isekai-subtitle-indonesia/
 76122
 
 # Isekai wa Smartphone to Tomo ni
+# https://otakudesu.blog/anime/isekai-smartphone-sub-indo/
 72505
 
 # Mirai Nikki
+# https://otakudesu.blog/anime/mir-nikki-subtile-indonesia/
 46671
 
 # Kino no Tabi
+# https://otakudesu.blog/anime/kino-tabi-subtitle-indonesia/
 34166
 
 # Domestic na Kanojo
+# https://otakudesu.blog/anime/domestic-kanojo-subtitle-indonesia/
 83103
 
 # Saenai Heroine no Sodatekata
+# https://otakudesu.blog/anime/saenai-heroine-subtitle-indonesia/
 69367
 
 # Saenai Heroine no Sodatekata
+# https://otakudesu.blog/anime/saenai-heroine-subtitle-indonesia/
 69367
 
 # Akagami no Shirayuki-hime
+# https://otakudesu.blog/anime/akagami-shirayuki-subtitle-indonesia/
 63087
 
 # Akagami no Shirayuki-hime
+# https://otakudesu.blog/anime/akagami-shirayuki-subtitle-indonesia/
 63087
 
 # Sukitte Ii na yo
+# https://otakudesu.blog/anime/sukitte-na-yo-subtitle-indonesia/
 52878
 
 # Ookami Shoujo to Kuro Ouji
+# https://otakudesu.blog/anime/ookami-shoujo-kuro-ouji-subtitle-indonesia/
 68960
 
 # Kyoukai no Kanata
+# https://otakudesu.blog/anime/kyoukai-kanata-sub-indo/
 61695
 
 # Sora no Method
+# https://otakudesu.blog/anime/sora-method-subtitle-indonesia/
 66716
 
 # Sakurako-san
+# https://otakudesu.blog/anime/sakurako-san-subtitle-indonesia/
 64699
 
 # Tanaka-kun wa Itsumo Kedaruge
+# https://otakudesu.blog/anime/tanaka-kun-sub-indo/
 66077
 
 # Saiki Kusuo no Psi Nan
+# https://otakudesu.blog/anime/saiki-no-kusuo-subtitle-indonesia/
 67676
 
 # Saiki Kusuo no Psi Nan
+# https://otakudesu.blog/anime/saiki-no-kusuo-subtitle-indonesia/
 67676
 
 # Irozuku Sekai no Ashita kara
+# https://otakudesu.blog/anime/irozuku-sekai-ashita-kara-subtitle-indonesia/
 82738
 
 # Beelzebub-jou no Okinimesu mama
+# https://otakudesu.blog/anime/beelzebub-okinimesu-mama-subtitle-indonesia/
 83022
 
 # Umineko no Naku Koro ni
+# https://otakudesu.blog/anime/umineko-naku-koro-ni-subtitle-indonesia/
 25499
 
 # Owari no Seraph
+# https://otakudesu.blog/anime/owari-seraph-subtitle-indonesia/
 62255
 
 # Owari no Seraph
+# https://otakudesu.blog/anime/owari-seraph-subtitle-indonesia/
 62255
 
 # Watashi ga Motete Dousunda
+# https://otakudesu.blog/anime/watashi-motete-subtitle-indonesia/
 68188
 
 # Yagate Kimi ni Naru
+# https://otakudesu.blog/anime/yagate-kimi-naru-subtitle-indonesia/
 82861
 
 # Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai
+# https://otakudesu.blog/anime/seishun-bun-girl-sub-indo/
 82739
 
 # Kishuku Gakkou no Juliet
+# https://otakudesu.blog/anime/kishuku-gakkou-juliet-subtitle-indonesia/
 82823
 
 # Uchi no Maid ga Uzasugiru!
+# https://otakudesu.blog/anime/uchi-maid-uzasugiru-subtitle-indonesia/
 82864
 
 # Tonari no Kyuuketsuki-san
+# https://otakudesu.blog/anime/tonari-kyuuketsuki-subtitle-indonesia/
 82736
 
 # Ore ga Suki nano wa Imouto dakedo Imouto ja Nai
+# https://otakudesu.blog/anime/ore-ga-suki-nano-imouto-dakedo-imouto-ja-nai-subtitle-indonesia/
 83019
 
 # Sakurasou no Pet na Kanojo
+# https://otakudesu.blog/anime/sakurasou-no-pet-na-kanojo-subttle-indonesia/
 50325
 
 # Akanesasu Shoujo
+# https://otakudesu.blog/anime/akanesasu-no-shoujo-subtitle-indonesia/
 82682
 
 # Mondaiji-tachi
+# https://otakudesu.blog/anime/mondatachi-sub-indo/
 56090
 
 # Sabagebu!
+# https://otakudesu.blog/anime/sabgebu-subtitle-indonesia/
 61424
 
 # Rokka no Yuusha
+# https://otakudesu.blog/anime/rokka-yuusha-subtitle-indonesia/
 63146
 
 # Sousei no Onmyouji
+# https://otakudesu.blog/anime/sousei-onmyouji-sub-indo/
 66078
 
 # Wotaku ni Koi wa Muzukashii
+# https://otakudesu.blog/anime/wotaku-ni-koi-wa-muzukashii-subtitle-indonesia/
 78457
 
 # Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+# https://otakudesu.blog/anime/youkoso-jitsuryoku-shijou-shugi-no-kyoushitsu-e-subtitle-indonesia/
 72517
 
 # Zero kara Hajimeru Mahou no Sho
+# https://otakudesu.blog/anime/zero-kara-hajimeru-mahou-no-sho-subtitle-indonesia/
 70875
 
 # Zankyou no Terror
+# https://otakudesu.blog/anime/zankyou-no-terror/
 61421
 
 # Shoujo Shuumatsu Ryokou
+# https://otakudesu.blog/anime/shoujo-shuu-ryoukou-subtitle-indonesia/
 74185
 
 # Sengoku Otome: Momoiro Paradox
+# https://otakudesu.blog/anime/sengoku-no-otome-subtitle-indonesia/
 38313
 
 # Seikoku no Dragonar
+# https://otakudesu.blog/anime/seikoku-dragonar-subtitle-indonesia/
 60810
 
 # Sakamoto desu ga?
+# https://otakudesu.blog/anime/sakamoto-desu-subtitle-indonesia/
 65944
 
 # Donten ni Warau
+# https://otakudesu.blog/anime/donten-warau-sub-indo/
 61742
 
 # Madan no Ou to Vanadis
+# https://otakudesu.blog/anime/madan-vanadis-subtitle-indonesia/
 72699
 
 # Hataraku Saibou
+# https://otakudesu.blog/anime/hataraku-no-saibou-subtitle-indonesia/
 80671
 
 # Sunohara-sou no Kanrinin-san
+# https://otakudesu.blog/anime/sunohara-kanrinin-subtitle-indonesia/
 80662
 
 # Shichisei no Subaru
+# https://otakudesu.blog/anime/shichisei-subaru-subtitle-indonesia/
 80562
 
 # Isekai Maou to Shoukan Shoujo no Dorei Majutsu
+# https://otakudesu.blog/anime/isekai-the-maou-majutsu-subtitle-indonesia/
 80563
 
 # Hyakuren no Haou to Seiyaku no Valkyria
+# https://otakudesu.blog/anime/hyakure-seiyaku-valkyria-subtitle-indonesia/
 80670
 
 # Chio-chan no Tsuugakuro
+# https://otakudesu.blog/anime/chio-chan-subtitle-indonesia/
 80462
 
 # Genei wo Kakeru Taiyou
+# https://otakudesu.blog/anime/genei-kakeru-taiyou-sub-indo/
 76899
 
 # Hoshizora e Kakaru Hashi
+# https://otakudesu.blog/anime/hoshizora-kaka-hashi-subtitle-indonesia/
 44300
 
 # Kanojo ga Flag wo Oraretara
+# https://otakudesu.blog/anime/kanojo-flag-oraretara-subtitle-indonesia/
 60835
 
 # Ryuuou no Oshigoto!
+# https://otakudesu.blog/anime/ryuuou-oshigoto-subtitle-indonesia/
 76141
 
 # Mahoutsukai no Yome
+# https://otakudesu.blog/anime/mahoutsukai-yome-subtitle-indonesia/
 73833
 
 # Karakai Jouzu no Takagi-san
+# https://otakudesu.blog/anime/karakai-jouzo-takagi-san-subtitle-indonesia/
 75865
 
 # Imouto sae Ireba Ii
+# https://otakudesu.blog/anime/imouto-sae-ireba-subtitle-indonesia/
 74092
 
 # Grancrest Senki
+# https://otakudesu.blog/anime/grancrest-of-senki-subtitle-indonesia/
 76125
 
 # Kujira no Kora wa Sajou ni Utau
+# https://otakudesu.blog/anime/kujira-no-kora-wa-sajou-utau-subtitle-indonesia/
 73017
 
 # Boku no Kanojo ga Majimesugiru Sho-bitch na Ken
+# https://otakudesu.blog/anime/boku-kanojo-majimesugiru-sho-bitch-na-ken-subtitle-indonesia/
 74083
 
 # Sora yori mo Tooi Basho
+# https://otakudesu.blog/anime/sora-yori-tooi-basho-subtitle-indonesia/
 76059
 
 # Hataraku Maou-sama!
+# https://otakudesu.blog/anime/hataraku-maou-sama-subtitle-indonesia/
 45997
 
 # Shinsekai yori
+# https://otakudesu.blog/anime/shinsekai-no-yori-subtitle-indonesia/
 53052
 
 # Natsume Yuujinchou
+# https://otakudesu.blog/anime/zoku-natsume-yuujinchou-bd-subtitle-indonesia/
 69500
 
 # Natsume Yuujinchou
+# https://otakudesu.blog/anime/zoku-natsume-yuujinchou-bd-subtitle-indonesia/
 69500
 
 # Natsume Yuujinchou
+# https://otakudesu.blog/anime/zoku-natsume-yuujinchou-bd-subtitle-indonesia/
 69500
 
 # Natsume Yuujinchou
+# https://otakudesu.blog/anime/zoku-natsume-yuujinchou-bd-subtitle-indonesia/
 69500
 
 # Natsume Yuujinchou
+# https://otakudesu.blog/anime/zoku-natsume-yuujinchou-bd-subtitle-indonesia/
 69500
 
 # Kekkai Sensen
+# https://otakudesu.blog/anime/kekkai-sens-subtitle-indonesia/
 62327
 
 # Kekkai Sensen
+# https://otakudesu.blog/anime/kekkai-sens-subtitle-indonesia/
 62327
 
 # ACCA: 13-ku Kansatsu-ka
+# https://otakudesu.blog/anime/acca-13-kansatsu-subtitle-indonesia/
 69225
 
 # 3-gatsu no Lion
+# https://otakudesu.blog/anime/3-gatsu-lion-sub-indo/
 65336
 
 # Ballroom e Youkoso
+# https://otakudesu.blog/anime/ballroom-youkoso-subtitle-indonesia/
 72362
 
 # Boku dake ga Inai Machi
+# https://otakudesu.blog/anime/boku-dake-inai-machi-sub-indo/
 65249
 
 # Hidan no Aria
+# https://otakudesu.blog/anime/hidan-aria-subtitle-indonesia/
 71618
 
 # Hidan no Aria
+# https://otakudesu.blog/anime/hidan-aria-subtitle-indonesia/
 71618
 
 # Gochuumon wa Usagi desu ka?
+# https://otakudesu.blog/anime/gochuumon-usagi-desu-subtitle-indonesia/
 60843
 
 # Gochuumon wa Usagi desu ka?
+# https://otakudesu.blog/anime/gochuumon-usagi-desu-subtitle-indonesia/
 60843
 
 # ImoCho
+# https://otakudesu.blog/anime/choimo-subtitle-indonesia/
 60672
 
 # Renai Boukun
+# https://otakudesu.blog/anime/renai-kun-subtitle-indonesia/
 70883
 
 # Kakumeiki Valvrave
+# https://otakudesu.blog/anime/kakume-valvra-subtitle-indonesia/
 52896
 
 # Danmachi Gaiden: Sword Oratoria
+# https://otakudesu.blog/anime/dnmachi-oratoria-subtitle-indonesia/
 70590
 
 # Kakumeiki Valvrave
+# https://otakudesu.blog/anime/kakume-valvra-subtitle-indonesia/
 52896
 
 # Houseki no Kuni
+# https://otakudesu.blog/anime/houseki-kuni-subtitle-indonesia/
 74091
 
 # Kamisama no Memochou
+# https://otakudesu.blog/anime/kami-memo-subtitle-indonesia/
 68379
 
 # Binbougami ga
+# https://otakudesu.blog/anime/binbougami-ga-sub-indo/
 45968
 
 # Piano no Mori
+# https://otakudesu.blog/anime/piano-no-mori-subtitle-indonesia/
 78471
 
 # Demi-chan wa Kataritai
+# https://otakudesu.blog/anime/demi-kataritai-subtitle-indonesia/
 69282
 
 # Tada-kun wa Koi wo Shinai
+# https://otakudesu.blog/anime/tada-kun-wa-koi-shinai-subtitle-indonesia/
 75975
 
 # Mahou Shoujo Site
+# https://otakudesu.blog/anime/mahou-shoujo-site-subtitle-indonesia/
 77702
 
 # Mahou Shoujo Ore
+# https://otakudesu.blog/anime/mahou-shoujo-ore-subtitle-indonesia/
 76142
 
 # Gin no Saji
+# https://otakudesu.blog/anime/gin-saji-subtitle-indonesia/
 58237
 
 # Gin no Saji
+# https://otakudesu.blog/anime/gin-saji-subtitle-indonesia/
 58237
 
 # Tonari no Kaibutsu-kun
+# https://otakudesu.blog/anime/tonari-kaibutsu-sub-indo/
 46041
 
 # Soredemo Machi wa Mawatteiru
+# https://otakudesu.blog/anime/soremachi-subtitle-indonesia/
 37102
 
 # SukaSuka
+# https://otakudesu.blog/anime/sukasu-subtitle-indonesia/
 70639
 
 # Mangaka-san to Assistant-san to The Animation
+# https://otakudesu.blog/anime/mangaka-assistant-subtitle-indonesia/
 69217
 
 # Toaru Majutsu no Index
+# https://otakudesu.blog/anime/toaru-jutsu-index-subtitle-indonesia/
 30980
 
 # Toaru Majutsu no Index
+# https://otakudesu.blog/anime/toaru-jutsu-index-subtitle-indonesia/
 30980
 
 # Jinrui wa Suitai Shimashita
+# https://otakudesu.blog/anime/jinrui-shimashita-subtitle-indonesia/
 53356
 
 # Stella no Mahou
+# https://otakudesu.blog/anime/stella-mahou-subtitle-indonesia/
 68399
 
 # Shinryaku! Ika Musume
+# https://otakudesu.blog/anime/ika-musume-subtitle-indonesia/
 35447
 
 # Shinryaku! Ika Musume
+# https://otakudesu.blog/anime/ika-musume-subtitle-indonesia/
 35447
 
 # Oregairu
+# https://otakudesu.blog/anime/ogairu-subtitle-indonesia/
 65676
 
 # Oregairu
+# https://otakudesu.blog/anime/ogairu-subtitle-indonesia/
 65676
 
 # B-gata H-kei
+# https://otakudesu.blog/anime/b-gata-h-kei-subtitle-indonesia/
 45967
 
 # Rokudenashi Majutsu Koushi to Akashic Records
+# https://otakudesu.blog/anime/rokudenashi-subtitle-indonesia/
 70637
 
 # Getsuyoubi no Tawawa
+# https://otakudesu.blog/anime/getsuyoubi-no-tawawa-subtitle-indonesia/
 68455
 
 # Shingeki no Kyojin
+# https://otakudesu.blog/anime/shingekyo-season-2-subtitle-indonesia/
 1429
 
 # Gekkan Shoujo Nozaki-kun
+# https://otakudesu.blog/anime/gekkan-shoujo-nozaki-kun-subtitle-indonesia/
 61379
 
 # Daitoshokan no Hitsujikai
+# https://otakudesu.blog/anime/daitoshokan-no-hitsujikai-subtitle-indonesia/
 65851
 
 # Sore ga Seiyuu!
+# https://otakudesu.blog/anime/sore-ga-seiyuu-subtitle-indonesia/
 80878
 
 # Inou-Battle wa Nichijou-kei no Naka de
+# https://otakudesu.blog/anime/inou-wa-battle-nichijou-subtitle-indonesia/
 61423
 
 # Hourou Musuko
+# https://otakudesu.blog/anime/hou-musuko-sub-indo/
 43926
 
 # Youjo Senki
+# https://otakudesu.blog/anime/youjo-senki-subtitle-indonesia/
 69346
 
 # Seikimatsu Occult Gakuin
+# https://otakudesu.blog/anime/occult-gakuin-subtitle-indonesia/
 37575
 
 # Gakkou Gurashi!
+# https://otakudesu.blog/anime/gakkougurashi-subtitle-indonesia/
 63495
 
 # Mahou Shoujo Ikusei Keikaku
+# https://otakudesu.blog/anime/mahou-shoujo-ikusei-keikaku-subtitle-indonesia/
 68079
 
 # Baka to Test to Shoukanjuu
+# https://otakudesu.blog/anime/baka-to-test-to-shoukanjuu-subtitle-indonesia/
 56343
 
 # Baka to Test to Shoukanjuu
+# https://otakudesu.blog/anime/baka-to-test-to-shoukanjuu-subtitle-indonesia/
 56343
 
 # Nejimaki Seirei Senki: Tenkyou no Alderamin
+# https://otakudesu.blog/anime/nejimaki-seirei-senki-tenkyou-no-alderamin-subtitle-indonesia/
 65954
 
 # Toaru Kagaku no Railgun
+# https://otakudesu.blog/anime/toru-kagaku-railgun-subtitle-indonesia/
 30977
 
 # Toaru Kagaku no Railgun
+# https://otakudesu.blog/anime/toru-kagaku-railgun-subtitle-indonesia/
 30977
 
 # Kiseijuu: Sei no Kakuritsu
+# https://otakudesu.blog/anime/kiseijuu-sei-no-kakuritsu-subtitle-indonesia/
 61459
 
 # Maoyuu Maou Yuusha
+# https://otakudesu.blog/anime/maou-yuusha-subtitle-indonesia/
 46302
 
 # Machine-Doll wa Kizutsukanai
+# https://otakudesu.blog/anime/machine-doll-wa-kizutsukanai-subtitle-indonesia/
 68640
 
 # Ore Monogatari
+# https://otakudesu.blog/anime/ore-no-monogatari-subtitle-indonesia/
 62565
 
 # Kore wa Zombie Desu ka?
+# https://otakudesu.blog/anime/kore-zombie-subtitle-indonesia/
 38420
 
 # Kore wa Zombie Desu ka?
+# https://otakudesu.blog/anime/kore-zombie-subtitle-indonesia/
 38420
 
 # Kotoura-san
+# https://otakudesu.blog/anime/kotoura-san-subtitle-indonesia/
 53594
 
 # Kaichou wa Maid-sama!
+# https://otakudesu.blog/anime/kaichou-wa-maid-subtitle-indonesia/
 65648
 
 # Nagi no Asukara
+# https://otakudesu.blog/anime/nagi-no-asukara-subtitle-indonesia/
 61408
 
 # Sakamichi no Apollon
+# https://otakudesu.blog/anime/saka-no-apollon-subtitle-indonesia/
 42557
 
 # Tasogare Otome x Amnesia
+# https://otakudesu.blog/anime/tasogare-otome-x-nesia-subtitle-indonesia/
 54930
 
 # Konobi
+# https://otakudesu.blog/anime/kono-jutsubu-sub-indo/
 65955
 
 # Bokura wa Minna Kawaisou
+# https://otakudesu.blog/anime/bokura-minna-kawaisou-subtitle-indonesia/
 60812
 
 # Akatsuki no Yona
+# https://otakudesu.blog/anime/akasuki-yona-subtitle-indonesia/
 61461
 
 # Dantalian no Shoka
+# https://otakudesu.blog/anime/dantalian-shoka-subtitle-indonesia/
 42506
 
 # Denpa Onna to Seishun Otoko
+# https://otakudesu.blog/anime/denpa-onna-to-seishun-otoko-subtitle-indonesia/
 65356
 
 # DanMachi
+# https://otakudesu.blog/anime/dnmachi-sub-indo/
 70590
 
 # Danshi Koukousei no Nichijou
+# https://otakudesu.blog/anime/danshi-ni-kousei-subtitle-indonesia/
 45859
 
 # Netoge no Yome wa Onna no Ko ja Nai to Omotta
+# https://otakudesu.blog/anime/netoge-no-yome-wa-onnanoko-ja-nai-omotta-bd/
 65948
 
 # Nora to Oujo to Noraneko Heart
+# https://otakudesu.blog/anime/nora-to-oujo-to-noraneko-heart-sub-indo/
 72513
 
 # Acchi Kocchi
+# https://otakudesu.blog/anime/acchi-no-kocchi-subtitle-indonesia/
 897349
 
 # Bounen no Xamdou
+# https://otakudesu.blog/anime/bounen-xamdou-subtitle-indonesia/
 34750
 
 # ----------------------------------------
 # UNMATCHED TITLES (Manual Review Needed)
 # ----------------------------------------
 
-# UNMATCHED TITLES (Manual Review Needed) [UNMATCHED]
+# Ansatsu Kizoku
+# https://otakudesu.blog/anime/ansatsu-no-kizoku-sub-indo/
+118821
 
-# Ansatsu Kizoku [UNMATCHED]
+# Heike Monogatari
+# https://otakudesu.blog/anime/heike-sub-indo/
+132664
 
-# Heike Monogatari [UNMATCHED]
+# Nami yo Kiitekure
+# https://otakudesu.blog/anime/nami-kiitekure-sub-indo/
+94405
 
-# Nami yo Kiitekure [UNMATCHED]
+# Jigoku Shoujo
+# https://otakudesu.blog/anime/jigo-shoujo-sub-indo/
+8974
 
-# Jigoku Shoujo [UNMATCHED]
+# Eizouken ni wa Te wo Dasu na!
+# https://otakudesu.blog/anime/eizouken-sub-indo/
+92579
 
-# Eizouken ni wa Te wo Dasu na! [UNMATCHED]
+# Araburu Kisetsu no Otome-domo yo
+# https://otakudesu.blog/anime/araburu-kisetsu-otome-sub-indo/
+88042
 
-# Araburu Kisetsu no Otome-domo yo [UNMATCHED]
+# Ueno-san wa Bukiyou
+# https://otakudesu.blog/anime/ueno-bukiyou-subtitle-indonesia/
+83116
 
-# Nande Koko ni Sensei ga!? [UNMATCHED]
+# Subete ga F ni Naru
+# https://otakudesu.blog/anime/subete-ga-f-sub-indo/
+70292
 
-# Ueno-san wa Bukiyou [UNMATCHED]
+# Aku no Hana
+# https://otakudesu.blog/anime/aku-hana-sub-indo/
+55006
 
-# Subete ga F ni Naru [UNMATCHED]
+# Quan Zhi Gao Shou
+# https://otakudesu.blog/anime/quan-zhi-gao-shou-subtitle-indonesia/
+71194
 
-# Aku no Hana [UNMATCHED]
-
-# Quan Zhi Gao Shou [UNMATCHED]
-
-# Kuzu no Honkai [UNMATCHED]
+# Kuzu no Honkai
+# https://otakudesu.blog/anime/kuzu-honkai-subtitle-indonesia/
+69292
