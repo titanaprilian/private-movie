@@ -1,3305 +1,4949 @@
 # TMDB TV Series IDs to seed
 # One TMDB ID per line. Lines starting with # are comments.
 
-# Shunkashuutou Daikousha: Haru no Mai
-
 # Yowayowa Sensei
-
-# Kamiina Botan, Yoeru Sugata wa Yuri no Hana
-
-# Himekishi wa Barbaroi no Yome
-
-# Kanojo, Okarishimasu
-
-# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
-
-# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
-
-# Class de 2-banme ni Kawaii Onnanoko to Tomodachi ni Natta
-
-# Aishiteru Game wo Owarasetai
-
-# Ponsuka
-
-# Lastame
-
-# Tongari Boushi no Atelier
+284447
 
 # Ghost Concert: Missing Songs
+303796
 
 # Akane-banashi
-
-# Otonari no Tenshi-sama ni Itsunomanika Dame Ningen ni Sareteita Ken 2
-
-# Kanan-sama wa Akumade Choroi
-
-# Nigetsuri
-
-# Maid-san wa Taberu dake
-
-# Isekai Nonbiri Nouka
-
-# Jishou Akuyaku Reijou na Konyakusha no Kansatsu Kiroku.
+297438
 
 # Haibara-kun no Tsuyokute Seishun New Game
-
-# Saikyou no Shokugyou wa Yuusha demo Kenja demo Naku Kanteishi (Kari) Rashii desu yo?
-
-# Mato Seihei no Slave
-
-# Arne no Jikenbo
-
-# 29-sai Dokushin Chuuken Boukensha no Nichijou
+316424
 
 # Oshi no Ko
-
-# Mayonaka Heart Tune
-
-# Okiraku Ryoushu no Tanoshii Ryouchi Bouei
-
-# Yuusha Party wo Oidasareta Kiyoubinbou
-
-# Kirei ni Shitemoraemasu ka.
-
-# Osananajimi to wa Love Comedy ni Naranai
-
-# Goumon Baito-kun no Nichijou
-
-# Majutsushi Kunon wa Mieteiru
-
-# Kizoku Tensei
+203737
 
 # Toujima Tanzaburou wa Kamen Rider ni Naritai
-
-# Shibou Yuugi de Meshi wo Kuu.
-
-# Maou no Musume wa Yasashisugiru!!
-
-# Hanazakari no Kimitachi e
+285788
 
 # Champignon no Majo
+284444
 
 # Ao no Orchestra
-
-# Isekai de Cheat Skill wo Te ni Shita Ore wa
+197368
 
 # JoJo Bizarre Adventure: Stardust Crusaders
-
-# Shuumatsu Touring
-
-# Towa no Yuugure
+45790
 
 # Wandance
-
-# Nageki no Bourei wa Intai shitai
-
-# Chichi wa Eiyuu, Haha wa Seirei, Musume no Watashi wa Tenseisha.
-
-# Mugen Gacha
-
-# Alma-chan wa Kazoku ni Naritai
-
-# Akujiki Reijou to Kyouketsu Koushaku
+262259
 
 # Yasei no Last Boss ga Arawareta!
-
-# Bukiyou na Senpai
-
-# Sozai Saishuka no Isekai Ryokouki
+280042
 
 # Boku no Hero Academia
-
-# Mushoku no Eiyuu
+65930
 
 # Jigoku Sensei Nube
-
-# Mizu Zokusei no Mahoutsukai
-
-# Kakkou no Iinazuke
-
-# Busu ni Hanataba wo
+259544
 
 # Tate no Yuusha no Nariagari
-
-# Watanare
+1433341
 
 # Jibaku Shounen Hanako-kun
+95269
 
 # Utagoe wa Mille-Feuille
-
-# Busamen Gachi Fighter
+260848
 
 # Bad Girl
-
-# Ame to Kimi to
-
-# Sono Bisque Doll wa Koi wo Suru
-
-# Koujo Denka no Kateikyoushi
-
-# Yuusha Party wo Tsuihou sareta Shiromadoushi, S-Rank Boukensha ni Hirowareru
-
-# Kizetsu Yuusha to Ansatsu Hime
-
-# Zutaboro Reijou wa Ane no Moto Konyakusha ni Dekiai sareru
-
-# Yofukashi no Uta
-
-# Tsuihousha Shokudou e Youkoso!
-
-# Uchuujin MuuMuu
-
-# Mikadono Sanshimai wa Angai, Choroi.
+258000
 
 # Tsuyokute New Saga
+212766
 
 # Onmyou Kaiten Re:Birth
-
-# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+285828
 
 # Necronomico no Cosmic Horror Show
+279993
 
 # Uma Musume: Cinderella Gray
-
-# Kanojo, Okarishimasu
+262700
 
 # To Be Hero X
-
-# Kusuriya no Hitorigoto
+272059
 
 # Sakamoto Days
-
-# A-Rank Party wo Ridatsu shita Ore wa
+207332
 
 # Arknights
+137065
 
 # Kowloon Generic Romance
-
-# Kuroshitsuji: Midori no Majo-hen
+274069
 
 # Teogonia
-
-# Ninja to Koroshiya no Futarigurashi
-
-# Natsume Yuujinchou
+256109
 
 # Kidou Senshi Gundam: GQuuuuuuX
+278704
 
 # Dandadan
+240411
 
 # Dandadan
+240411
 
 # Blue Lock
+131041
 
 # Aharen-san wa Hakarenai
+130237
 
 # #Compass 2.0: Sentou Setsuri Kaiseki System
-
-# 2.5-jigen no Ririsa
+215615
 
 # Takopii no Genzai
+284445
 
 # Maebashi Witches
+270602
 
 # Zatsu Tabi: That's Journey
+254853
 
 # Clevatess
+258348
 
 # Your Forma
-
-# Nazotoki wa Dinner no Ato de
-
-# Ore wa Seikan Kokka no Akutoku Ryoushu!
-
-# Shoushimin Series
-
-# Slime Taoshite 300-nen
-
-# Enen no Shouboutai
+279731
 
 # The Beginning After the End
+274671
 
 # Wind Breaker
-
-# Rock wa Lady no Tashinami deshite
+223500
 
 # Vigilante: Boku no Hero Academia Illegals
-
-# Shiunji-ke no Kodomotachi
-
-# Sentai Daishikkaku
-
-# Katainaka no Ossan, Kensei ni Naru
-
-# Gorilla no Kami kara Kago sareta Reijou wa Ouritsu Kishidan de Kawaigarareru
-
-# Kanpekiseijo
-
-# Danjo no Yuujou wa Seiritsu suru?
-
-# Yami Healer
-
-# Aru Majo ga Shinu Made
+280110
 
 # Bye Bye, Earth
+214587
 
 # Kanchigai no Atelier Meister
+277881
 
 # Trillion Game
-
-# Hana wa Saku, Shura no Gotoku
+240125
 
 # Jibaku Shounen Hanako-kun
-
-# Re:Zero kara Hajimeru Isekai Seikatsu
+95269
 
 # Honey Lemon Soda
-
-# Girumasu
+247859
 
 # Dr. Stone
-
-# Amagami-san Chi no Enmusubi
+86031
 
 # Unnamed Memory
-
-# Youkai Gakkou no Sensei Hajimemashita!
-
-# Kuroiwa Medaka ni Watashi no Kawaii ga Tsuujinai
-
-# Kono Kaisha ni Suki na Hito ga Imasu
+216272
 
 # Zenshuu
+249882
 
 # Tasokare Hotel
+258229
 
 # Sorairo Utility
-
-# S-Rank Monster no "Behemoth" dakedo
-
-# Class no Daikirai na Joshi to Kekkon suru Koto ni Natta
+245876
 
 # Rurouni Kenshin
-
-# Botsuraku Yotei no Kizoku dakedo
-
-# Salaryman ga Isekai ni Ittara Shitennou ni Natta Hanashi
-
-# Izure Saikyou no Renkinjutsushi?
-
-# Ao no Hako
-
-# Chi.: Chikyuu no Undou ni Tsuite
+210879
 
 # Sakamoto Days
-
-# Megumi no Daigo: Kyuukoku no Orange
-
-# Kami wa Game ni Ueteiru
-
-# Kaii to Otome to Kamikakushi
-
-# Hikari no Ou
+207332
 
 # Dungeon Meshi
-
-# DanMachi
+1675061
 
 # Kimetsu no Yaiba
-
-# Kenka Dokugaku
+85937
 
 # Wind Breaker
+223500
 
 # Mahouka Koukou no Rettousei
-
-# Sentai Daishikkaku
+1746478
 
 # Mushoku Tensei
+94664
 
 # The iDOLM@STER Shiny Colors
+248086
 
 # MF Ghost
-
-# Sasayaku You ni Koi wo Utau
-
-# Arifureta Shokugyou de Sekai Saikyou
-
-# Kabushikigaisha Magi-Lumiere
-
-# Shinigami Bocchan to Kuro Maid
+154526
 
 # Fairy Tail: 100 Years Quest
+248947
 
 # Sword Art Online Alternative: Gun Gale Online
+78204
 
 # Ranma ½
+57706
 
 # Love Live! Superstar!!
+106055
 
 # Bleach: Sennen Kessen-hen
+30984
 
 # Delico's Nursery
+232252
 
 # Shin Tennis no Oujisama: U-17 World Cup Semifinal
+205493
 
 # Sengoku Youko
-
-# Kamonohashi Ron no Kindan Suiri
-
-# Maou 2099
-
-# Yarinaoshi Reijou wa Ryuutei Heika wo Kouryakuchuu
-
-# Tasuuketsu
+234995
 
 # Seirei Gensouki
-
-# Rekishi ni Nokoru Akujo ni Naru zo
+113808
 
 # Raise wa Tanin ga Ii
+259787
 
 # Ao no Exorcist
-
-# Tensei Kizoku, Kantei Skill de Nariagaru
-
-# Hoshifuru Oukoku no Nina
-
-# Nageki no Bourei wa Intai shitai
-
-# Kimi wa Meido-sama.
-
-# Party kara Tsuihou sareta Sono Chiyushi, Jitsu wa Saikyou ni Tsuki
+38464
 
 # NegaPosi Angler
-
-# Goukon ni Ittara Onna ga Inakatta Hanashi
-
-# Saikyou no Shienshoku "Wajutsushi" de Aru Ore wa Sekai Saikyou Clan wo Shitagaeru
-
-# Tsuma, Shougakusei ni Naru.
-
-# Sayounara Ryuusei, Konnichiwa Jinsei
-
-# Kekkon suru tte, Hontou desu ka
-
-# Hitoribocchi no Isekai Kouryaku
-
-# Maou-sama, Retry!
+260689
 
 # Isekai Suicide Squad
-
-# Jiisan Baasan Wakagaeru
+229926
 
 # Hibike! Euphonium
+62564
 
 # Unnamed Memory
-
-# Yoru no Kurage wa Oyogenai
+216272
 
 # Vampire Dormitory
-
-# Maou Gakuin no Futekigousha
+238903
 
 # The New Gate
-
-# Kuroshitsuji: Kishuku Gakkou-hen
+239161
 
 # Kaijuu 8-gou
-
-# Henjin no Salad Bowl
+207468
 
 # Date A Live
+46004
 
 # Lv2 kara Cheat datta Motoyuusha Kouho no Mattari Isekai Life
-
-# Hananoi-kun to Koi no Yamai
+237233
 
 # Bartender: Kami no Glass
+225168
 
 # Blue Archive the Animation
+218833
 
 # Yuru Camp
+95623
 
 # Touken Ranbu Kai
-
-# Tsuki ga Michibiku Isekai Douchuu
-
-# Tensei shitara Dainana Ouji Datta node
-
-# Tensei Kizoku, Kantei Skill de Nariagaru
-
-# Shuumatsu Train Doko e Iku?
+244435
 
 # Re:Monster
+235389
 
 # KonoSuba
-
-# Seiyuu Radio no Uraomote
+65844
 
 # Girls Band Cry
-
-# One Room, Hiatari Futsuu, Tenshi-tsuki.
-
-# Madome
-
-# DekiSoko
-
-# Yubisaki to Renren
+241928
 
 # Bucchigiri?!
+226905
 
 # Bye Bye, Earth
-
-# Nige Jouzu no Wakagimi
+214587
 
 # Shy
+211709
 
 # Uzumaki
-
-# Tensui no Sakuna-hime
-
-# Yozakura-san Chi no Daisakusen
+93241
 
 # Boku no Hero Academia
+65930
 
 # Monogatari Series: Off & Monster Season
+46195
 
 # Atri: My Dear Moments
+210875
 
 # Oshi no Ko
-
-# Hazurewaku no "Joutai Ijou Skill" de Saikyou ni Natta Ore ga Subete wo Juurin suru made
-
-# Make Heroine ga Oosugiru!
-
-# Naze Boku no Sekai wo Daremo Oboeteinai no ka?
+203737
 
 # The Fable
-
-# Kono Sekai wa Fukanzen Sugiru
-
-# Dungeon no Naka no Hito
-
-# Tsue to Tsurugi no Wistoria
+238843
 
 # NieR:Automata Ver1.1a
-
-# Shikanoko Nokonoko Koshitantan
-
-# Koi wa Futago de Warikirenai
-
-# Isekai Shikkaku
-
-# Katsute Mahou Shoujo to Aku wa Tekitai shiteita
+158373
 
 # Mayonaka Punch
-
-# Shinmai Ossan Boukensha
+244617
 
 # Ookami to Koushinryou: Merchant Meets the Wise Wolf
-
-# Karasu wa Aruji wo Erabanai
-
-# Madougushi Dahliya wa Utsumukanai
-
-# Na Nare Hana Nare
+229676
 
 # VTuber Nandaga Haishin Kiri Wasuretara Densetsu ni Natteta
-
-# Megami no Cafe Terrace
+229743
 
 # Giji Harem
-
-# Shoushimin Series
-
-# Ore wa Subete wo "Parry" suru
-
-# Gimai Seikatsu
-
-# Tokidoki Bosotto Russia-go de Dereru Tonari no Alya-san
-
-# Isekai Yururi Kikou
-
-# Code Geass: Dakkan no Roze
-
-# Boku no Tsuma wa Kanjou ga Nai
-
-# Mob kara Hajimaru Tansaku Eiyuutan
-
-# Maougun Saikyou no Majutsushi wa Ningen datta
+224753
 
 # Ninja Kamui
+202284
 
 # Kingdom
-
-# Nanatsu no Maken ga Shihai suru
-
-# Nanatsu no Taizai: Mokushiroku no Yonkishi
+46437
 
 # Metallic Rouge
-
-# Majo to Yajuu
+222787
 
 # Sengoku Youko
+234995
 
 # Shaman King: Flowers
-
-# Boku no Kokoro no Yabai Yatsu
+232865
 
 # Ragna Crimson
+195459
 
 # Mashle
-
-# Chiyu Mahou no Machigatta Tsukaikata
-
-# Saijaku Tamer wa Gomi Hiroi no Tabi wo Hajimemashita
-
-# Momochi-san Chi no Ayakashi Ouji
-
-# Gekai Elise
-
-# Jaku-Chara Tomozaki-kun
+204832
 
 # Akuyaku Reijou Level 99
-
-# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
-
-# Loop 7-kaime no Akuyaku Reijou wa
-
-# Kage no Jitsuryokusha ni Naritakute!
-
-# Tensei shitara Slime Datta Ken
+222930
 
 # Jujutsu Kaisen
+95479
 
 # Acro Trip
+215429
 
 # 16bit Sensation: Another Layer
+217512
 
 # Kizuna no Allele
+214264
 
 # Shangri-La Frontier
+205050
 
 # Spy x Family
+120089
 
 # High Card
-
-# Oroka na Tenshi wa Akuma to Odoru
-
-# Dosanko Gal wa Namara Menkoi
-
-# Himesama Goumon no Jikan desu
-
-# Kyuujitsu no Warumono-san
-
-# Mahou Shoujo ni Akogarete
+194665
 
 # Ao no Exorcist
-
-# Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node
-
-# Enen no Shouboutai
-
-# Kusuriya no Hitorigoto
-
-# Saikyou Tank no Meikyuu Kouryaku
-
-# Kekkon Yubiwa Monogatari
+38464
 
 # Pon no Michi
+234176
 
 # Undead Unluck
-
-# Nozomanu Fushi no Boukensha
-
-# Sasaki to Pii-chan
-
-# Sousou no Frieren
-
-# Sokushi Cheat ga Saikyou sugite
-
-# Mato Seihei no Slave
+209077
 
 # Ishura
+220286
 
 # Tokyo Revengers
-
-# Isekai de Mofumofu Nadenade suru Tame ni Ganbattemasu
+105009
 
 # Under Ninja
-
-# Zom 100: Zombie ni Naru made ni Shitai 100 no Koto
-
-# Ikenaikyo
-
-# Buta no Liver wa Kanetsu Shiro
-
-# Hikikomari Kyuuketsuki no Monmon
-
-# Kamonohashi Ron no Kindan Suiri
+132917
 
 # Migi to Dali
+153450
 
 # Hoshikuzu Telepath
+217404
 
 # Dead Mount Death Play
+214540
 
 # The iDOLM@STER Million Live!
-
-# Kimizero
+105902
 
 # Dark Gathering
-
-# Hyakkano
-
-# Potion-danomi de Ikinobimasu!
-
-# Seijo no Maryoku wa Bannou desu
-
-# Bokura no Ameiro Protocol
-
-# Saihate no Paladin
-
-# Tearmoon Teikoku Monogatari
-
-# Kanojo mo Kanojo
+206799
 
 # Goblin Slayer
-
-# Hametsu no Oukoku
+82591
 
 # Tate no Yuusha no Nariagari
-
-# Yuzuki-san Chi no Yonkyoudai
-
-# Ojou to Banken-kun
-
-# Mahoutsukai no Yome
-
-# S-Rank Musume
-
-# Watashi no Oshi wa Akuyaku Reijou
+1433341
 
 # Dr. Stone
+86031
 
 # Shy
+211709
 
 # Helck
+157571
 
 # Toaru Ossan no VRMMO Katsudouki
+229610
 
 # Overtake!
+218684
 
 # MF Ghost
-
-# Boushoku no Berserk
+154526
 
 # Rurouni Kenshin
-
-# Seiken Gakuin no Makentsukai
+210879
 
 # Arknights
-
-# Dekoboko Majo no Oyako Jijou
-
-# Boku no Kokoro no Yabai Yatsu
+137065
 
 # Uma Musume: Pretty Derby
+77694
 
 # Vinland Saga
+88803
 
 # Birdie Wing: Golf Girls' Story
-
-# Shinigami Bocchan to Kuro Maid
-
-# Kanojo Okarishimasu
+137390
 
 # Sugar Apple Fairy Tale
-
-# Jitsu wa Ore, Saikyou deshita?
+135335
 
 # Undead Girl Murder Farce
+222785
 
 # Edens Zero
-
-# Uchi no Kaisha no Chiisai Senpai no Hanashi
-
-# Dekiru Neko wa Kyou mo Yuuutsu
-
-# Hataraku Maou-sama!
+104711
 
 # Spy Kyoushitsu
-
-# Shiro Seijo to Kuro Bokushi
-
-# Suki na Ko ga Megane wo Wasureta
-
-# Niehime to Kemono no Ou
+194986
 
 # Mushoku Tensei
+94664
 
 # Bungou Stray Dogs
-
-# Eiyuu Kyoushitsu
+65931
 
 # Ayakashi Triangle
-
-# Maou Gakuin no Futekigousha
+153697
 
 # Temple
+44254
 
 # Horimiya: Piece
+228663
 
 # Level 1 dakedo Unique Skill de Saikyou desu
-
-# Lastame
-
-# Seija Musou
-
-# Watashi no Shiawase na Kekkon
-
-# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+201363
 
 # BanG Dream! It's MyGO!!!!!
+224207
 
 # Tokyo Revengers
-
-# Yumemiru Danshi wa Genjitsushugisha
+105009
 
 # Mononogatari
+138948
 
 # Lv1 Maou to One Room Yuusha
+196220
 
 # Masamune-kun no Revenge
+69295
 
 # Genjitsu no Yohane: Sunshine in the Mirror
+204849
 
 # Ryza no Atelier
+245826
 
 # Liar Liar
-
-# Okashi na Tensei
+122204
 
 # Bleach: Sennen Kessen-hen
-
-# Tonikaku Kawaii: Joshikou-hen
-
-# Mairimashita! Iruma-kun
+30984
 
 # NieR Automata
+158373
 
 # Mobile Suit Gundam: The Witch from Mercury
-
-# Kage no Jitsuryokusha ni Naritakute!
-
-# Kimi wa Houkago Insomnia
+196400
 
 # Chainsaw Man
+114410
 
 # Blue Lock
+131041
 
 # Kimetsu no Yaiba
-
-# 4-nin wa Sorezore Uso wo Tsuku
+85937
 
 # The Marginal Service
+214211
 
 # Dead Mount Death Play
+214540
 
 # Uma Musume: Pretty Derby - Road to the Top
+223251
 
 # Golden Kamuy
-
-# Kaminaki Sekai no Kamisama Katsudou
-
-# Jigokuraku
-
-# Majutsushi Orphen Hagure Tabi
+76757
 
 # Mashle
+204832
 
 # World Dai Star
-
-# Kanojo ga Koushaku-tei ni Itta Riyuu
-
-# Jijou wo Shiranai Tenkousei ga Guigui Kuru
-
-# Otonari ni Ginga
-
-# Isekai Shoukan wa Nidome desu
-
-# Fuufu Ijou, Koibito Miman.
+215198
 
 # Yamada-kun to Lv999 no Koi wo Suru
+208067
 
 # Ao no Orchestra
+197368
 
 # Tengoku Daimakyou
+208891
 
 # Mahou Shoujo Magical Destroyers
-
-# Tonikaku Kawaii
-
-# Rokudou no Onna-tachi
-
-# Megami no Cafe Terrace
+133282
 
 # Oshi no Ko
+203737
 
 # Kawaisugi Crisis
-
-# Isekai One Turn Kill Neesan
-
-# Yuusha ga Shinda!
-
-# Watashi no Yuri wa Oshigoto desu!
-
-# Ousama Ranking: Yuuki no Takarabako
-
-# Mahoutsukai no Yome
+211034
 
 # Edomae Elf
-
-# Kono Subarashii Sekai ni Bakuen wo!
+204112
 
 # Skip to Loafer
-
-# Kubo-san wa Mob wo Yurusanai
-
-# Isekai wa Smartphone to Tomo ni
+139130
 
 # Kizuna no Allele
-
-# Tensei Kizoku no Isekai Boukenroku
+214264
 
 # My Home Hero
+204412
 
 # Kuma Kuma Kuma Bear
+97782
 
 # Dr. Stone
+86031
 
 # Shaman King
-
-# Nokemono-tachi no Yoru
-
-# Kyuuketsuki Sugu Shinu
+104699
 
 # Tsurune
+83314
 
 # Bofuri
+96402
 
 # Muv-Luv Alternative
-
-# Bucchigire!
+112010
 
 # Yowamushi Pedal
+61441
 
 # High Card
-
-# Majutsushi Orphen Hagure Tabi
+194665
 
 # Mou Ippon!
-
-# Inu ni Nattara Suki na Hito ni Hirowareta
-
-# Shinka no Mi
-
-# Hikari no Ou
+128824
 
 # Spy Kyoushitsu
-
-# Hoshi no Samidare
-
-# Saikyou Onmyouji no Isekai Tenseiki
+194986
 
 # Buddy Daddies
-
-# Cool Doji Danshi
-
-# Kami-tachi ni Hirowareta Otoko
+212963
 
 # Tomo-chan wa Onnanoko!
-
-# Tondemo Skill de Isekai Hourou Meshi
+205308
 
 # Bungou Stray Dogs
+65931
 
 # Mononogatari
-
-# Eiyuuou, Bu wo Kiwameru Tame Tenseisu
-
-# Benriya Saitou-san, Isekai ni Iku
+138948
 
 # KanColle
-
-# Kyokou Suiri
-
-# Ooyukiumi no Kaina
-
-# Roukin
+65711
 
 # Sugar Apple Fairy Tale
-
-# Ars no Kyojuu
-
-# Tsunlise
+135335
 
 # Revenger
-
-# Kaiko sareta Ankoku Heishi (30-dai) no Slow na Second Life
-
-# Otonari no Tenshi-sama ni Itsunomanika Dame Ningen ni Sareteita Ken
+211297
 
 # The Legend of Heroes: Sen no Kiseki - Northern War
-
-# Hyouken no Majutsushi ga Sekai wo Suberu
-
-# Isekai Nonbiri Nouka
+120470
 
 # Boku no Hero Academia
-
-# Tensei Oujo to Tensai Reijou no Mahou Kakumei
-
-# Oniichan wa Oshimai!
-
-# Koori Zokusei Danshi to Cool na Douryou Joshi
+65930
 
 # Fumetsu no Anata e
-
-# DanMachi
-
-# Ijiranaide, Nagatoro-san
-
-# Ningen Fushin no Boukensha-tachi ga Sekai wo Sukuu you desu
-
-# Isekai Ojisan
-
-# Shingeki no Kyojin
+1677043
 
 # Seven Knights Revolution: Eiyuu no Keishousha
-
-# Shingeki no Kyojin
+118151
 
 # Zombieland Saga
+82822
 
 # Utawarerumono
+46412
 
 # Mobile Suit Gundam: The Witch from Mercury
+196400
 
 # Bleach: Sennen Kessen-hen
+30984
 
 # Seiken Densetsu: Legend of Mana
+128237
 
 # Uzaki-chan wa Asobitai!
+98986
 
 # Bocchi the Rock!
-
-# Koukyuu no Karasu
+119100
 
 # Renai Flops
-
-# Yama no Susume: Next Summit
+195990
 
 # Berserk: Ougon Jidai-hen - Memorial Edition
+211057
 
 # Ajin
+65292
 
 # Ajin
+65292
 
 # Yuusha Party wo Tsuihou sareta Beast Tamer
+203780
 
 # Spy x Family
+120089
 
 # Mob Psycho 100
-
-# Mushikaburi-hime
+67075
 
 # Akiba Maid Sensou
-
-# Futoku no Guild
+204716
 
 # Do It Yourself!!
+121702
 
 # Shinobi no Ittoki
+158293
 
 # Orient
-
-# Shinmai Renkinjutsushi no Tenpo Keiei
-
-# Noumin Kanren no Skill bakka Agetetara Nazeka Tsuyoku Natta
+115911
 
 # Arknights: Reimei Zensou
-
-# Akuyaku Reijou nanode Last Boss wo Kattemimashita
-
-# Tensei shitara Ken Deshita
+137065
 
 # Love Live! Superstar!!
+106055
 
 # Shine Post
+137194
 
 # Fuuto Tantei
-
-# Renmei Kuugun Koukuu Mahou Ongakutai Luminous Witches
+122369
 
 # Love All Play
+130765
 
 # Teppen!!!!!!!!!!!!!!!
-
-# Saikin Yatotta Maid ga Ayashii
+322097
 
 # Kingdom
-
-# Tonikaku Kawaii
-
-# Kakkou no Iinazuke
+46437
 
 # Summertime Render
-
-# Yofukashi no Uta
-
-# Hataraku Maou-sama!
-
-# Danmachi
+117933
 
 # Made in Abyss
-
-# Isekai Yakkyoku
+72636
 
 # Prima Doll
-
-# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+156450
 
 # Engage Kiss
-
-# Kuro no Shoukanshi
+196040
 
 # Lycoris Recoil
+154494
 
 # Ao Ashi
+126437
 
 # Shadows House
-
-# Warau Arsnotoria Sun!
-
-# Soredemo Ayumu wa Yosetekuru
-
-# Kanojo Okarishimasu
-
-# Kumichou Musume to Sewagakari
-
-# Mamahaha no Tsurego ga Motokano datta
-
-# Kinsou no Vermeil
-
-# Isekai Meikyuu de Harem wo
-
-# Tensei Kenja no Isekai Life
+111576
 
 # Magia Record: Mahou Shoujo Madoka☆Magica Gaiden
-
-# Kunoichi Tsubaki no Mune no Uchi
+94523
 
 # Overlord
+64196
 
 # Aharen-san wa Hakarenai
+130237
 
 # 86
-
-# Yuusha, Yamemasu
+100565
 
 # Boku no Hero Academia
+65930
 
 # Tokyo 24-ku
-
-# Paripi Koumei
-
-# Kawaii dake ja Nai Shikimori-san
+137045
 
 # Ryman's Club
-
-# Kaijin Kaihatsu-bu no Kuroitsu-san
+136841
 
 # Dance Dance Danseur
-
-# Gensou Sangokushi: Tengen Reishinki
-
-# Vanitas no Karte
-
-# Fantasy Bishoujo Juniku Ojisan to
-
-# Mahoutsukai Reimeiki
-
-# Machikado Mazoku
-
-# Kenja no Deshi wo Nanoru Kenja
+122826
 
 # Love Live! Nijigasaki Gakuen School Idol Doukoukai
+103511
 
 # Birdie Wing: Golf Girls' Story
+137390
 
 # Tate no Yuusha no Nariagari
-
-# Kyoukai Senki
-
-# Gunjou no Fanfare
-
-# Kono Healer, Mendokusai
+1433341
 
 # Spy x Family
+120089
 
 # Cue!
-
-# Komi-san wa, Comyushou desu.
+112463
 
 # Kaguya-sama wa Kokurasetai
-
-# Koi wa Sekai Seifuku no Ato de
-
-# Shachiku-san wa Youjo Yuurei ni Iyasaretai.
-
-# Heroine Tarumono! Kiraware Heroine to Naisho no Oshigoto
-
-# Gaikotsu Kishi-sama, Tadaima Isekai e Odekakechuu
+83121
 
 # Deaimon
+123818
 
 # Shijou Saikyou no Daimaou, Murabito A ni Tensei suru
+120155
 
 # RPG Fudousan
+119631
 
 # Tomodachi Game
+137718
 
 # Healer Girl
+124572
 
 # Black★★Rock Shooter: Dawn Fall
-
-# Otome Game Sekai wa Mob ni Kibishii Sekai desu
-
-# RikeKoi
+133733
 
 # Sabikui Bisco
-
-# Shokei Shoujo no Virgin Road
-
-# Shikkakumon no Saikyou Kenja
-
-# Honzuki no Gekokujou
-
-# Genjitsu Shugi Yuusha no Oukoku Saikenki
+120142
 
 # Slow Loop
+115112
 
 # Futsal Boys!!!!!
-
-# Arifureta Shokugyou de Sekai Saikyou
+94295
 
 # Date A Live
-
-# Akebi-chan no Sailor-fuku
+46004
 
 # Princess Connect! Re:Dive
+99084
 
 # Orient
-
-# Hanyou no Yashahime
-
-# Tensai Ouji no Akaji Kokka Saisei Jutsu
-
-# Karakai Jouzu no Takagi-san
-
-# Ousama Ranking
+115911
 
 # Dolls' Frontline
-
-# Sono Bisque Doll wa Koi wo Suru
-
-# Koroshi Ai
+117310
 
 # Platinum End
+114892
 
 # Tribe Nine
+135292
 
 # World Trigger
-
-# Leadale no Daichi nite
+61628
 
 # Non Non Biyori
+66875
 
 # Kimetsu no Yaiba
+85937
 
 # Kingdom
-
-# Shiroi Suna no Aquatope
-
-# Saihate no Paladin
+46437
 
 # Megaton-kyuu Musashi
+129553
 
 # Love Live! Superstar!!
-
-# Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node
-
-# Kobayashi-san Chi no Maid Dragon
-
-# Kyoukai Senki
+106055
 
 # Deep Insanity: The Lost Child
+128118
 
 # Selection Project
-
-# Gyakuten Sekai no Denchi Shoujo
+114202
 
 # Muv-Luv Alternative
-
-# Senpai ga Uzai Kouhai no Hanashi
+112010
 
 # Visual Prison
+121840
 
 # Taishou Otome Otogibanashi
+114937
 
 # Sakugan
-
-# Kyuuketsuki Sugu Shinu
+96398
 
 # Scarlet Nexus
-
-# Komi-san wa, Comyushou desu.
+121131
 
 # Puraore! Pride of Orange
+114199
 
 # Takt Op. Destiny
-
-# Shinka no Mi: Shiranai Uchi ni Kachigumi Jinsei
-
-# Ansatsu Kizoku
-
-# Tsuki to Laika to Nosferatu
+121787
 
 # Mieruko-chan
-
-# Heike Monogatari
+121078
 
 # Mob Psycho 100
-
-# Mushoku Tensei: Isekai Ittara Honki Dasu
-
-# Jahy-sama wa Kujikenai!
+67075
 
 # Blue Period
-
-# Isekai Shokudou
+116983
 
 # Kimetsu no Yaiba: Mugen Ressha-hen
-
-# Getsuyoubi no Tawawa
+85937
 
 # Edens Zero
-
-# Deatte 5-byou de Battle
-
-# Hamefura
-
-# Heion Sedai no Idaten-tachi
+104711
 
 # Magia Record
+94523
 
 # Re-Main
+120013
 
 # D_Cide Traumerei the Animation
-
-# Higurashi no Naku Koro ni Sotsu
+120968
 
 # Sonny Boy
+124396
 
 # Uramichi Oniisan
-
-# Kaizoku Oujo
+96442
 
 # Tokyo Revengers
-
-# Mahouka Koukou no Yuutousei
-
-# Genjitsu Shugi Yuusha no Oukoku Saikenki
-
-# Bokutachi no Remake
+105009
 
 # Kageki Shoujo!!
+112138
 
 # Meikyuu Black Company
-
-# Cheat Kusushi no Slow Life
-
-# Tsuki ga Michibiku Isekai Douchuu
+105476
 
 # Seirei Gensouki
-
-# Tantei wa Mou, Shindeiru.
+113808
 
 # Peach Boy Riverside
-
-# Vanitas no Karte
-
-# Shinigami Bocchan to Kuro Maid
-
-# Kanojo mo Kanojo
-
-# Megami-ryou no Ryoubo-kun
+107003
 
 # Muv-Luv Alternative: Total Eclipse
+45241
 
 # Girl Friend Beta
-
-# Ginga Eiyuu Densetsu
+61485
 
 # Fumetsu no Anata e
+1677043
 
 # Odd Taxi
+116727
 
 # Nobunagun
-
-# Mairimashita! Iruma-kun
+65615
 
 # Etotama
-
-# Tensei shitara Slime Datta Ken
+76494
 
 # Jujutsu Kaisen
+95479
 
 # Adachi to Shimamura
+94359
 
 # 86
-
-# 100-man no Inochi no Ue ni Ore wa Tatteiru
+100565
 
 # 2.43: Seiin Koukou Danshi Volley-bu
-
-# Kyoukaisenjou no Horizon
+105004
 
 # Horimiya
+110070
 
 # Isekai Izakaya
-
-# Kyoukaisenjou no Horizon
-
-# Maoujou de Oyasumi
+78485
 
 # Black Clover
+73223
 
 # Shadows House
+111576
 
 # Megalo Box
-
-# Kumo Desu ga, Nani ka?
+77939
 
 # Osamake
-
-# Sayonara Watashi no Cramer
-
-# Slime Taoshite 300-nen
-
-# Tensura Nikki: Tensei shitara Slime Datta Ken
+110975
 
 # Higehiro
-
-# Dragon, Ie wo Kau
+106519
 
 # Fruits Basket
+85991
 
 # Godzilla: S.P
+111177
 
 # Kyuukyoku Shinka shita Full Dive RPG ga Genjitsu yori mo Kusoge Dattara
+114198
 
 # Super Cub
+95631
 
 # Nanatsu no Taizai
-
-# Ijiranaide, Nagatoro-san
-
-# Seijo no Maryoku wa Bannou Desu
-
-# Mashiro no Oto
+1457550
 
 # Back Arrow
+96942
 
 # Vivy
-
-# Sentouin Hakenshimasu!
+116725
 
 # SSSS.Dynazenon
-
-# Junketsu no Maria
+96451
 
 # Occultic Nine
-
-# Isekai Maou to Shoukan Shoujo no Dorei Majutsu
+68185
 
 # Jouran: The Princess of Snow and Blood
+117945
 
 # Koikimo
+98309
 
 # Koufuku Graffiti
+72921
 
 # Medaka Box
-
-# Yakunara Mug Cup mo
+45858
 
 # Medaka Box
+45858
 
 # Taimadou Gakuen 35 Shiken Shoutai
-
-# Jitsu wa Watashi wa
-
-# Amaama to Inazuma
+70296
 
 # Kaguya-sama wa Kokurasetai
+83121
 
 # Gyakkyou Burai Kaiji
+42951
 
 # Gyakkyou Burai Kaiji
+42951
 
 # Bokura ga Ita
-
-# Juuou Mujin no Fafnir
+22577
 
 # Tsurune: Kazemai Koukou Kyuudoubu
+83314
 
 # Nyanko Days
+69297
 
 # Yuri Kuma Arashi
-
-# Akkun to Kanojo
-
-# Durarara!!
+68642
 
 # Durarara!!
+42410
 
 # Durarara!!
+42410
 
 # Durarara!!
+42410
 
-# Sora no Otoshimono
-
-# Sora no Otoshimono
-
-# Kaze no Stigma
+# Durarara!!
+42410
 
 # Magi: Sinbad no Bouken
+67340
 
 # Great Pretender
+93816
 
 # Lovely Complex
-
-# Centaur no Nayami
+27167
 
 # Joshiraku
+79040
 
 # NHK ni Youkoso!
+42821
 
 # World Trigger
+61628
 
 # Dr. Stone
+86031
 
 # Higurashi no Naku Koro ni (2020)
+100988
 
 # Yuru Camp
+95623
 
 # Wonder Egg Priority
-
-# Soukou Musume Senki
+111255
 
 # Log Horizon
+60846
 
 # Kemono Jihen
+100022
 
 # Uma Musume: Pretty Derby
-
-# King's Raid: Ishi wo Tsugumono-tachi
+77694
 
 # SK8
-
-# Jaku-Chara Tomozaki-kun
+110309
 
 # Beastars
-
-# Gotoubun no Hanayome
-
-# Re:Zero kara Hajimeru Isekai Seikatsu
+90937
 
 # Hortensia Saga
+104852
 
 # Hataraku Saibou Black
-
-# Lasdan
+101873
 
 # Yakusoku no Neverland
-
-# Ore dake Haireru Kakushi Dungeon
-
-# Hataraku Saibou
-
-# Mushoku Tensei: Isekai Ittara Honki Dasu
+83097
 
 # Urasekai Picnic
-
-# Tenkuu Shinpan
+100077
 
 # True Tears
+34162
 
 # Hanasaku Iroha
+42417
 
 # Keppeki Danshi! Aoyama-kun
+72507
 
 # The Tatami Galaxy
-
-# Mousou Dairinin
+36243
 
 # Gekidol
+110207
 
 # Ochikobore Fruit Tart
-
-# Danna ga Nani wo Itteiru ka Wakaranai Ken
-
-# Danna ga Nani wo Itteiru ka Wakaranai Ken
+95909
 
 # Denki-gai no Honya-san
+61407
 
 # Plastic Neesan
+54310
 
 # Seiren
-
-# Kaifuku Jutsushi no Yarinaoshi
-
-# Gochuumon wa Usagi Desu ka?
+69342
 
 # Akudama Drive
+100436
 
 # Noblesse
-
-# Munou na Nana
+99779
 
 # Mahouka Koukou no Rettousei
+1746478
 
 # Love Live! Nijigasaki Gakuen School Idol Doukoukai
+103511
 
 # Senyoku no Sigrdrifa
+99910
 
 # Assault Lily: Bouquet
-
-# Kamisama ni Natta Hi
+94541
 
 # Ikebukuro West Gate Park
-
-# Kimisen
+98867
 
 # Kuma Kuma Kuma Bear
+97782
 
 # Golden Kamuy
-
-# Kami-tachi ni Hirowareta Otoko
+76757
 
 # Iwa Kakeru
-
-# Danmachi
-
-# Majo no Tabitabi
+102518
 
 # Haikyuu
+60863
 
 # Canaan
-
-# Hoshiai no Sora
-
-# Bungou to Alchemist: Shinpan no Haguruma
+43418
 
 # Gibiate
+94388
 
 # Ahiru no Sora
-
-# Koi to Producer: EVOL x LOVE
-
-# Maou Gakuin no Futekigousha
-
-# Kanojo Okarishimasu
-
-# Toaru Kagaku no Railgun
+92892
 
 # Fugou Keiji: Balance:Unlimited
+98491
 
 # No Guns Life
+91270
 
 # Appare Ranman
+94498
 
 # Uzaki-chan wa Asobitai!
-
-# Monster Musume no Oishasan
+98986
 
 # Deca-Dence
+92588
 
 # Shokugeki no Souma
+62273
 
 # Fruits Basket
-
-# Houkago Teibou Nisshi
+85991
 
 # Lapis Re:LiGHTs
+96556
 
 # Sword Art Online: Alicization
+45782
 
 # Terra Formars
-
-# Hitsugi no Chaika
-
-# Hitsugi no Chaika
+61398
 
 # Full Metal Panic
+39379
 
 # Full Metal Panic Fumoffu
+39379
 
 # Full Metal Panic!
+39379
 
 # Full Metal Panic!
+39379
 
 # Arcana Famiglia
+45275
 
 # Terra Formars
+61398
 
 # WWW.Working!!
+68070
 
 # Chihayafuru
+45247
 
 # Joker Game
+65949
 
 # Hakata Tonkotsu Ramens
-
-# Mairimashita! Iruma-kun
-
-# Yuru Yuri
-
-# Yuru Yuri
-
-# Yuru Yuri
+76126
 
 # JoJo Bizarre Adventure
+45790
 
 # JoJo Bizarre Adventure
+45790
 
 # 22/7
+93875
 
 # Gatchaman Crowds
-
-# 100-man no Inochi no Ue ni Ore wa Tatteiru
+61527
 
 # Gatchaman Crowds
-
-# Denpa Kyoushi
-
-# Higashi no Eden
+61527
 
 # Inu x Boku SS
-
-# Soredemo Sekai wa Utsukushii
+45282
 
 # Devilman Crybaby
+75208
 
 # Shiki
+36581
 
 # Sengoku Basara
+25492
 
 # Sengoku Basara
+25492
 
 # Sengoku Basara
-
-# Kuusen Madoushi Kouhosei no Kyoukan
-
-# Bakuman
+25492
 
 # Bakuman
+36041
 
 # Bakuman
+36041
+
+# Bakuman
+36041
 
 # Rosario to Vampire
+36983
 
 # Rosario to Vampire
+36983
 
 # Vivid Strike
+68096
 
 # Tsuritama
+45283
 
 # Kuutei Dragons
+92591
 
 # Bang Dream
+69236
 
 # Princess Connect
+99084
 
 # Isuca
+64831
 
 # Shachibato
+98584
 
 # Gleipnir
+96203
 
 # Plunderer
-
-# Ichiban Ushiro no Daimaou
+93149
 
 # Shironeko Project: Zero Chronicle
+93649
 
 # Arte
-
-# Yesterday wo Utatte
-
-# Honzuki no Gekokujou
-
-# Nami yo Kiitekure
+95697
 
 # Listeners
-
-# Hamefura
+98748
 
 # Tamayomi
+93890
 
 # Shin Sakura Taisen the Animation
-
-# Kitsutsuki Tanteidokoro
+96371
 
 # number24
+91848
 
 # Tsugumomo
+71000
 
 # Kakushigoto
-
-# Hachi-nan tte Sore wa Nai deshou!
+95433
 
 # Infinite Dendrogram
-
-# Kiniro Mosaic
-
-# Kiniro Mosaic
-
-# Joukamachi no Dandelion
-
-# Mahou Sensou
+94649
 
 # Orange
+66958
 
 # BNA
+92592
 
 # Kingdom
+46437
 
 # Kingdom
+46437
 
 # Kimi ni Todoke
+68854
 
 # Kimi ni Todoke
+68854
 
 # Zettai Karen Children: The Unlimited - Hyoubu Kyousuke
+55065
 
 # Another World
+92710
 
 # Dog Days
-
-# Jigoku Shoujo
-
-# Oregairu
+44314
 
 # Natsunagu
+95559
 
 # Boku no Hero Academia
+65930
 
 # Uchitama
+96660
 
 # Oda Cinnamon Nobunaga
-
-# Majutsushi Orphen Hagure Tabi
+91343
 
 # Pet
+93593
 
 # Isekai Quartet
+87478
 
 # Phantasy Star Online 2: Episode Oracle
+93830
 
 # Magia Record
+94523
 
 # Dorohedoro
-
-# Kabukichou Sherlock
+94404
 
 # High School DxD
-
-# Bokuhaka
+45950
 
 # Hatena Illusion
-
-# Kyokou Suiri
-
-# Koisuru Asteroid
-
-# Runway de Waratte
-
-# Oshi ga Budoukan Ittekuretara Shinu
+95346
 
 # Shimoneta
+63323
 
 # Jibaku Shounen Hanako-kun
-
-# Somali to Mori no Kamisama
+95269
 
 # Nekopara
+95317
 
 # Mugen no Juunin: Immortal
+92090
 
 # ID:Invaded
+92602
 
 # Yatogame-chan Kansatsu Nikki
+87473
 
 # Bofuri
+96402
 
 # Nanatsu no Taizai
-
-# Eizouken ni wa Te wo Dasu na!
+1457550
 
 # Heya Camp
-
-# Murenase Seton Gakuen
+95213
 
 # Fate/Grand Order: Zettai Majuu Sensen Babylonia
-
-# RikeKoi
+90677
 
 # Azur Lane
+91455
 
 # Darwin's Game
+85942
 
 # Radiant
+82879
 
 # Babylon
+92599
 
 # Kono Oto Tomare!
+85843
 
 # Rifle Is Beautiful
+91600
 
 # Vinland Saga
-
-# Enen no Shouboutai
+88803
 
 # Shokugeki no Souma
+62273
 
 # Kandagawa Jet Girls
-
-# Tokunana
+93495
 
 # Granblue Fantasy The Animation
-
-# Shinchou Yuusha
+69820
 
 # Beastars
+90937
 
 # No Guns Life
-
-# Bokutachi wa Benkyou ga Dekinai
+91270
 
 # Assassins Pride
-
-# Honzuki no Gekokujou
+91299
 
 # Oresuki
+93019
 
 # Z/X Code Reunion
-
-# Noukin
+91765
 
 # Fairy Gone
+86835
 
 # High Score Girl
+80665
 
 # Val x Love
-
-# Houkago Saikoro Club
-
-# Choyoyu
+91027
 
 # Psycho-Pass
+43865
 
 # Dr. Stone
-
-# Chuubyou Gekihatsu Boy
+86031
 
 # Hataage! Kemono Michi
-
-# Maou-sama Retry!
+91584
 
 # Kimetsu no Yaiba
-
-# Grisaia no Rakuen
-
-# Grisaia no Kajitsu
-
-# Gokukoku no Brynhildr
-
-# Ichigo Mashimaro
-
-# Oneechan ga Kita
+85937
 
 # Kono Oto Tomare!
+85843
 
 # Higurashi no Naku Koro ni
+100988
 
 # Nodame Cantabile
+45527
 
 # Nodame Cantabile
+45527
 
 # Nodame Cantabile
+45527
 
 # Bem
-
-# Osake wa Fuufu ni Natte kara
-
-# Rokujouma no Shinryakusha
+88063
 
 # Inugami-san to Nekoyama-san
+61530
 
 # Trinity Seven
+61460
 
 # Golden Time
+67389
 
 # Mahou Shoujo Madoka Magica
-
-# Suzumiya Haruhi no Yuuutsu
-
-# NouCome
+39218
 
 # Masamune-kun no Revenge
-
-# Saijaku Muhai no Bahamut
+69295
 
 # Yuru Camp
+95623
 
 # Granblue Fantasy The Animation
+69820
 
 # Arifureta
+86034
 
 # Knight's & Magic
+72635
 
 # Carole & Tuesday
+83962
 
 # Kono Yo no Hate de Koi wo Utau Shoujo YU-NO
+87142
 
 # Strike Witches
+35464
 
 # Cop Craft
+88050
 
 # Lord El-Melloi II Sei no Jikenbo: Rail Zeppelin Grace Note
-
-# Okaasan online
+85368
 
 # Fairy Tail
-
-# Toaru Kagaku no Accelerator
-
-# Danmachi
+46261
 
 # Granbelm
-
-# Machikado Mazoku
+88038
 
 # Isekai Cheat Magician
+90215
 
 # K
+45799
 
 # K-Project
+287902
 
 # HenSuki
+88061
 
 # Fruits Basket
-
-# Nakanohito Genome
-
-# Karakai Jouzu no Takagi-san
-
-# Joshikousei no Mudazukai
-
-# Araburu Kisetsu no Otome-domo yo
-
-# UchiMusume
-
-# Kanata no Astra
-
-# Sounan Desu ka?
-
-# Katsute Kami Datta Kemono-tachi e
+85991
 
 # Tejina-senpai
-
-# Dumbbell Nan Kilo Moteru?
-
-# Kimi no Iru Machi
+88043
 
 # Mob Psycho 100
+67075
 
 # Pandora Hearts
-
-# Satsuriku no Tenshi
-
-# Fate Stay Night: Unlimited Blade Works
+35971
 
 # Fate Stay Night: Unlimited Blade Works
+61415
+
+# Fate Stay Night: Unlimited Blade Works
+61415
 
 # To LOVE-Ru Darkness
+34742
 
 # To LOVE Ru Darkness
+34742
 
 # To LOVE Ru
+34742
 
 # To LOVE Ru
+34742
 
 # Kengan Ashura
+90660
 
 # High Score Girl
-
-# Natsume Yuujinchou
+80665
 
 # JoJo Bizarre Adventure: Stardust Crusaders
+45790
 
 # JoJo Bizarre Adventure
-
-# Ansatsu Kyoushitsu
-
-# Ansatsu Kyoushitsu
+45790
 
 # One Punch Man
-
-# Shigatsu wa Kimi no Uso
+63926
 
 # One Punch Man
-
-# Tensei shitara Slime Datta Ken
-
-# Overlord
+63926
 
 # Overlord
+64196
 
 # Overlord
+64196
+
+# Overlord
+64196
 
 # Accel World
+43167
 
 # Absolute Duo
+65764
 
 # 3D Kanojo: Real Girl
-
-# Mahou Shoujo Tokushusen Asuka
-
-# 3-gatsu no Lion
+77721
 
 # 11eyes
+44310
 
 # Tengen Toppa Gurren Lagann
+21729
 
 # Tate no Yuusha no Nariagari
+1433341
 
 # Dororo
-
-# Gunjou no Magmel
+83100
 
 # Tokyo Ghoul
-
-# Shingeki no Kyojin
-
-# Bokutachi wa Benkyou ga Dekinai
+61374
 
 # Bungou Stray Dogs
-
-# Nande Koko ni Sensei ga!?
-
-# Kenja no Mago
-
-# Sewayaki Kitsune no Senko-san
+65931
 
 # Isekai Quartet
-
-# Mayonaka no Occult Koumuin
+87478
 
 # Hitoribocchi no Marumaru Seikatsu
+85990
 
 # Senryuu Shoujo
+87445
 
 # Hachigatsu no Cinderella Nine
-
-# Shoumetsu Toshi
+87465
 
 # Fairy Gone
-
-# Nobunaga-sensei no Osanazuma
+86835
 
 # Joshikausei
-
-# Midara na Ao-chan wa Benkyou ga Dekinai
+87463
 
 # Sarazanmai
+86919
 
 # Chou Kadou Girl 1/6
-
-# Seiken Tsukai no World Break
-
-# Ao no Kanata no Four Rhythm
+87692
 
 # Ange Vierge
+67054
 
 # Aoki Hagane no Arpeggio: Ars Nova
+57406
 
 # Deadman Wonderland
-
-# Ramen Daisuki Koizumi-san
+42503
 
 # Danganronpa 3: Mirai-hen
+49471
 
 # Danganronpa 3: Zetsubou-hen
+49471
 
 # Mushishi
+26867
 
 # Mushishi
+26867
 
 # Mushishi
+26867
 
 # New Game!
+67012
 
 # New Game!
-
-# Chuunibyou demo Koi ga Shitai!
-
-# Chuunibyou demo Koi ga Shitai
-
-# Gakusen Toshi Asterisk
-
-# Gakusen Toshi Asterisk
-
-# Ryuugajou Nanana no Maizoukin
+67012
 
 # Love Live! Sunshine!!
+65383
 
 # Love Live! Sunshine!!
+65383
 
 # Love Live!
+53721
 
 # Love Live!
-
-# Shuumatsu no Izetta
-
-# Akuma no Riddle
+53721
 
 # Guilty Crown
+43125
 
 # Free!
+61456
 
 # Free!
+61456
 
 # Free!
+61456
 
 # Boku no Hero Academia
-
-# Rakudai Kishi no Cavalry
+65930
 
 # Re: Zero kara Hajimeru Isekai Seikatsu
-
-# Ano Natsu de Matteru
-
-# Ookami to Koushinryou
-
-# Ookami to Koushinryou
-
-# Isekai Shokudou
+65942
 
 # Tsurezure Children
+72509
 
 # Nisekoi
+62640
 
 # Nisekoi
+62640
 
 # Arslan Senki
+102661
 
 # Chihayafuru
+45247
 
 # Chihayafuru
+45247
 
 # D-Frag!
+68634
 
 # Black Bullet
+60834
 
 # Amanchu!
+67346
 
 # Amanchu
+67346
 
 # Nanbaka
-
-# Oda Nobuna no Yabou
-
-# Zero no Tsukaima
-
-# Zero no Tsukaima
-
-# Zero no Tsukaima
-
-# Zero no Tsukaima
+68115
 
 # Hamatora
+61791
 
 # Hamatora The Animation
+61791
 
 # Date A Live
+46004
 
 # Golden Kamuy
+76757
 
 # Outbreak Company
+62691
 
 # Nanatsu no Taizai
+1457550
 
 # Tonari no Seki-kun
-
-# Suisei no Gargantia
+70036
 
 # Fairy Tail
+46261
 
 # Fullmetal Alchemist
+31911
 
 # Robotics Notes
-
-# Shingeki no Bahamut: Virgin Soul
+46435
 
 # Shingeki no Bahamut: Genesis
-
-# Oniichan dakedo Ai sae Areba Kankeinai yo ne!
-
-# Seto no Hanayome
-
-# Uchouten Kazoku
-
-# Uchouten Kazoku
-
-# Asu no Yoichi!
+582628
 
 # Heavy Object
+64140
 
 # Ping Pong The Animation
-
-# Yuragi-sou no Yuuna-san
+60811
 
 # Ergo Proxy
+1097
 
 # KanColle
+65711
 
 # Mahouka Koukou no Rettousei
-
-# Densetsu no Yuusha no Densetsu
-
-# Hai to Gensou no Grimgar
-
-# Hagure Yuusha no Aesthetica
-
-# Shingeki no Kyojin OVA
-
-# Shingeki no Kyojin
+1746478
 
 # Dakara Boku wa H ga Dekinai
-
-# Fune wo Amu
+45234
 
 # Btooom!
-
-# Koutetsujou no Kabaneri
-
-# Piano no Mori
+45125
 
 # Musaigen no Phantom World
+65333
 
 # Himouto! Umaru-chan
+67126
 
 # Himouto! Umaru-chan
+67126
 
 # Dagashi Kashi
-
-# Kobayashi-san Chi no Maid Dragon
-
-# Isshuukan Friends
+65523
 
 # Non Non Biyori
+66875
 
 # Noragami
+64710
 
 # Mekakucity Actors
+60842
 
 # Gugure! Kokkuri-san
-
-# Toaru Majutsu no Index
-
-# Kakuriyo no Yadomeshi
-
-# Haiyore! Nyaruko-san
-
-# Haiyore! Nyaruko-san
+61432
 
 # Nijiiro Days
+71511
 
 # Hakumei to Mikochi
-
-# Net-juu no Susume
+76127
 
 # Mitsuboshi Colors
+76134
 
 # Re-Kan!
-
-# Aoi Hana
+76117
 
 # Fukigen na Mononokean
+65956
 
 # Kaguya-sama wa Kokurasetai
+83121
 
 # Sword Art Online
+45782
 
 # Endro~!
-
-# Papa no Iukoto wo Kikinasai!
+84667
 
 # Grimms Notes The Animation
-
-# Gotoubun no Hanayome
+84665
 
 # Boogiepop wa Warawanai
+34152
 
 # Meiji Tokyo Renka
+84141
 
 # Manaria Friends
+84869
 
 # Girly Air Force
+83102
 
 # Yakusoku no Neverland
-
-# Kaze ga Tsuyoku Fuiteiru
+83097
 
 # BanG Dream!
+69236
 
 # Kakegurui
+72305
 
 # Pastel Memories
-
-# Doukyonin wa Hiza, Tokidoki, Atama no Ue.
-
-# Watashi ni Tenshi ga Maiorita!
-
-# Egao no Daika
-
-# Ueno-san wa Bukiyou
+83120
 
 # Radiant
+82879
 
 # Steins;Gate 0
+78102
 
 # Steins Gate
+42509
 
 # Plastic Memories
+62450
 
 # Shokugeki no Souma
+62273
 
 # Shokugeki no Souma
+62273
 
 # Kakegurui
+72305
 
 # Gamers!
+72426
 
 # Cross Ange
+61425
 
 # Death Parade
+61901
 
 # Clannad
+24835
 
 # Clannad
+24835
 
 # Handa-kun
+67052
 
 # Circlet Princess
+84664
 
 # Death Note
+13916
 
 # Gakuen Babysitters
-
-# Hajimete no Gal
-
-# Seirei Tsukai no Blade Dance
+76124
 
 # Log Horizon
+60846
 
 # Log Horizon
-
-# Koi wa Ameagari no You ni
-
-# Mikakunin de Shinkoukei
-
-# Boku wa Tomodachi ga Sukunai
-
-# Boku wa Tomodachi ga Sukunai
-
-# Kuroshitsuji
-
-# Kuroshitsuji
+60846
 
 # Tamako Market
-
-# Subete ga F ni Naru
-
-# Death March kara Hajimaru Isekai Kyousoukyoku
+48561
 
 # Zoku Owarimonogatari
-
-# Isekai wa Smartphone to Tomo ni
+328325
 
 # Gabriel DropOut
+69285
 
 # Black Rock Shooter
+43079
 
 # Darker than Black
+31718
 
 # Darker than Black
-
-# Mirai Nikki
-
-# K-On!
+31718
 
 # K-On!
+42253
+
+# K-On!
+42253
 
 # Little Witch Academia
-
-# Kino no Tabi
-
-# Sword Art Online
+69293
 
 # Sword Art Online
+45782
+
+# Sword Art Online
+45782
 
 # Tokyo Ghoul
+61374
 
 # Tokyo Ghoul
-
-# Domestic na Kanojo
-
-# Saenai Heroine no Sodatekata
-
-# Saenai Heroine no Sodatekata
+61374
 
 # Highschool of the Dead
+56998
 
 # Koimonogatari
+46195
 
 # Onimonogatari
+46195
 
 # Otorimonogatari
+46195
 
 # Kabukimonogatari
+46195
 
 # Nekomonogatari: Shiro
+46195
 
 # Koyomimonogatari
+46195
 
 # Owarimonogatari
+46195
 
 # Owarimonogatari
+46195
 
 # Tsukimonogatari
+46195
 
 # Hanamonogatari
+46195
 
 # Nekomonogatari: Kuro
+46195
 
 # Nisemonogatari
+46195
 
 # Bakemonogatari
+46195
 
 # Arslan Senki
+102661
 
 # Boku no Hero Academia
+65930
 
 # Boku no Hero Academia
+65930
 
 # Blood Lad
+57577
 
 # Arakawa Under the Bridge
+35423
 
 # Arakawa Under the Bridge
+35423
 
 # Ao no Exorcist
+38464
 
 # W'z
+83099
 
 # Tokyo Ravens
+67395
 
 # Ao Haru Ride
+228156
 
 # Nanatsu no Taizai
+1457550
 
 # Another
+42589
 
 # Akame ga Kill!
-
-# Akagami no Shirayuki-hime
-
-# Akagami no Shirayuki-hime
+61223
 
 # A-Channel
+69189
 
 # Rozen Maiden
+42828
 
 # Angel Beats
+42942
 
 # Katanagatari
+46374
 
 # KonoSuba
+65844
 
 # KonoSuba
-
-# Sukitte Ii na yo
-
-# Jormungand
+65844
 
 # Jormungand
+46279
+
+# Jormungand
+46279
 
 # Toradora!
-
-# Ookami Shoujo to Kuro Ouji
-
-# Kyoukai no Kanata
+42916
 
 # Nanbaka
-
-# Sora no Method
-
-# Sakurako-san
+68115
 
 # Campione
-
-# Tanaka-kun wa Itsumo Kedaruge
+46184
 
 # Little Busters! EX
+53715
 
 # Little Busters!
+53715
 
 # Charlotte
+63145
 
 # Barakamon
+67048
 
 # Kannagi
+34714
 
 # AnoHana
+39434
 
 # Kuromukuro
-
-# Aku no Hana
+66080
 
 # Baki
-
-# Saiki Kusuo no Psi Nan
-
-# Saiki Kusuo no Psi Nan
+80623
 
 # Banana Fish
+80564
 
 # Goblin Slayer
+82591
 
 # Aho Girl
+72502
 
 # Fukigen na Mononokean
-
-# Irozuku Sekai no Ashita kara
+65956
 
 # Ulysses: Jehanne Darc to Renkin no Kishi
-
-# Beelzebub-jou no Okinimesu mama
-
-# Umineko no Naku Koro ni
-
-# Owari no Seraph
-
-# Owari no Seraph
-
-# Watashi ga Motete Dousunda
-
-# Yagate Kimi ni Naru
+82737
 
 # Tokyo Ghoul:re
-
-# Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai
-
-# Kishuku Gakkou no Juliet
+61374
 
 # SSSS.Gridman
+82895
 
 # Release the Spyce
+82905
 
 # Gakuen Basara
-
-# Uchi no Maid ga Uzasugiru!
-
-# Tonari no Kyuuketsuki-san
+82865
 
 # Zombieland Saga
-
-# Ore ga Suki nano wa Imouto dakedo Imouto ja Nai
-
-# Sakurasou no Pet na Kanojo
+82822
 
 # Anima Yell!
-
-# Akanesasu Shoujo
-
-# Mondaiji-tachi
+82929
 
 # Infinite Stratos
+46025
 
 # IS: Infinite Stratos
+46025
 
 # Date A Live
+46004
 
 # Date A Live
+46004
 
 # Kill la Kill
-
-# Sabagebu!
-
-# Ushio to Tora
+60728
 
 # Ushio to Tora
+63085
 
-# Quan Zhi Gao Shou
+# Ushio to Tora
+63085
 
 # Code Geass
+31724
 
 # Code Geass
+31724
 
 # Koi to Uso
-
-# Rokka no Yuusha
-
-# Sousei no Onmyouji
+1701187
 
 # Uma Musume Pretty Derby
-
-# Wotaku ni Koi wa Muzukashii
-
-# Working
+77694
 
 # Working
+46153
 
 # Working
+46153
+
+# Working
+46153
 
 # White Album 2
+70072
 
 # Watamote
+61755
 
 # Yamada-kun to 7-nin no Majo
-
-# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+1455065
 
 # Yuri on Ice
-
-# Zero kara Hajimeru Mahou no Sho
-
-# Zankyou no Terror
+68129
 
 # Zetsuen no Tempest
+46283
 
 # Shakugan no Shana
+22634
 
 # Ouran Koukou Host Club
+1043
 
 # Just Because!
+74096
 
 # Chain Chronicle
-
-# Shoujo Shuumatsu Ryokou
+107560
 
 # Fate Apocrypha
-
-# Sengoku Otome: Momoiro Paradox
-
-# Seikoku no Dragonar
+72304
 
 # Diabolik Lovers
+61512
 
 # Diabolik Lovers
+61512
 
 # Endride
+65933
 
 # Rewrite
+66101
 
 # Mawaru Penguindrum
+39657
 
 # Rewrite
-
-# Sakamoto desu ga?
+66101
 
 # Sakura Quest
-
-# Donten ni Warau
+71013
 
 # Coppelion
+60659
 
 # Bungo Stray Dogs
-
-# Madan no Ou to Vanadis
+65931
 
 # Bungou Stray Dogs
+65931
 
 # Last Period
+78481
 
 # Samurai Champloo
+1063
 
 # Akaneiro ni Somaru Saka
+643402
 
 # Photokano
+56081
 
 # No.6
+42504
 
 # Lost Song
+78375
 
 # Kubikiri Cycle: Aoiro Savant to Zaregototsukai
+68460
 
 # Back Street Girls: Gokudolls
+80613
 
 # Shakugan no Shana
+22634
 
 # Planet With
-
-# Hataraku Saibou
+79288
 
 # Happy Sugar Life
+80826
 
 # Hanebado!
-
-# Sunohara-sou no Kanrinin-san
-
-# Shichisei no Subaru
+80537
 
 # Island
-
-# Isekai Maou to Shoukan Shoujo no Dorei Majutsu
-
-# Hyakuren no Haou to Seiyaku no Valkyria
+80535
 
 # Harukana Receive
+80546
 
 # Grand Blue
-
-# Chio-chan no Tsuugakuro
+107257
 
 # Inuyashiki
+73946
 
 # Asobi Asobase
-
-# Genei wo Kakeru Taiyou
-
-# Hoshizora e Kakaru Hashi
+80539
 
 # Escha & Logy no Atelier
-
-# Kanojo ga Flag wo Oraretara
-
-# AKB0048
+60819
 
 # AKB0048
+45982
+
+# AKB0048
+45982
 
 # Fortune Arterial
+36873
 
 # Re:Creators
+70592
 
 # Animegataris
+74080
 
 # Hellsing Ultimate
+61752
 
 # Little Busters!
+53715
 
 # Citrus
-
-# Ryuuou no Oshigoto!
-
-# Mahoutsukai no Yome
+76063
 
 # Girls und Panzer
-
-# Karakai Jouzu no Takagi-san
+43967
 
 # Girlish Number
+68403
 
 # Tokyo ESP
+61202
 
 # Hinako Note
-
-# Imouto sae Ireba Ii
+71006
 
 # No Game No Life
-
-# Grancrest Senki
-
-# Kujira no Kora wa Sajou ni Utau
+60808
 
 # Anne Happy
-
-# Boku no Kanojo ga Majimesugiru Sho-bitch na Ken
+66113
 
 # Blend S
-
-# Sora yori mo Tooi Basho
-
-# Hataraku Maou-sama!
+74081
 
 # AICO Incarnation
-
-# Shinsekai yori
+77778
 
 # Sword Art Online Movie: Ordinal Scale
+413594
 
 # No Game No Life: Zero
+445030
 
 # Kizumonogatari 3
+362585
 
 # Kizumonogatari 2
+362584
 
 # Kizumonogatari
+362584
 
 # Kimi no Na wa
-
-# Natsume Yuujinchou
-
-# Natsume Yuujinchou
-
-# Natsume Yuujinchou
-
-# Natsume Yuujinchou
-
-# Natsume Yuujinchou
-
-# Kekkai Sensen
-
-# Kekkai Sensen
+207228
 
 # Violet Evergarden
-
-# ACCA: 13-ku Kansatsu-ka
+75214
 
 # 91 Days
+67043
 
 # 3D Kanojo: Real Girl
-
-# 3-gatsu no Lion
+77721
 
 # Kuroko no Basket
+45783
 
 # Kuroko no Basket Last Game
+428707
 
 # Kuroko no Basket
+45783
 
 # Kuroko no Basket
-
-# Ballroom e Youkoso
-
-# Boku dake ga Inai Machi
-
-# Hidan no Aria
-
-# Hidan no Aria
-
-# Gochuumon wa Usagi desu ka?
-
-# Gochuumon wa Usagi desu ka?
+45783
 
 # Tsuki ga Kirei
-
-# ImoCho
-
-# Renai Boukun
-
-# Kakumeiki Valvrave
-
-# Danmachi Gaiden: Sword Oratoria
-
-# Kakumeiki Valvrave
+70880
 
 # Dragon Crisis!
-
-# Houseki no Kuni
+38811
 
 # Taboo Tattoo
+66992
 
 # Fuuka
+69284
 
 # Urara Meirochou
+69345
 
 # Hunter x Hunter
-
-# Kamisama no Memochou
+45952
 
 # Qualidea Code
+67359
 
 # Amagi Brilliant Park
+65332
 
 # Kamisama Hajimemashita
+62741
 
 # Strike the Blood
+61440
 
 # Strike the Blood
+61440
 
 # Kamisama Hajimemashita
+62741
 
 # Psycho-Pass
+43865
 
 # Psycho-Pass
+43865
 
 # Kokoro Connect
+45807
 
 # Beatless
+76062
 
 # Eromanga-sensei
+70878
 
 # Darling in the FranXX
+76121
 
 # Dagashi Kashi
+65523
 
 # Gosick
-
-# Binbougami ga
-
-# The World God Only Knows
+38560
 
 # The World God Only Knows
+56351
 
 # The World God Only Knows
+56351
 
-# Piano no Mori
-
-# Demi-chan wa Kataritai
+# The World God Only Knows
+56351
 
 # Sword Art Online Alternative: Gun Gale Online
-
-# Tada-kun wa Koi wo Shinai
+78204
 
 # Megalo Box
+77939
 
 # ReLIFE
+66941
 
 # Clockwork Planet
+70636
 
 # Golden Kamuy
+76757
 
 # Usagi Drop
+45213
 
 # Busou Shoujo Machiavellianism
+70882
 
 # Devils Line
+78462
 
 # Caligula
+77722
 
 # Sakura Trick
+61462
 
 # Comic Girls
+77698
 
 # Shokugeki no Souma
+62273
 
 # Hinamatsuri
-
-# Mahou Shoujo Site
-
-# Mahou Shoujo Ore
+76758
 
 # Aoi Bungaku Series
+61289
 
 # Hibike! Euphonium
+62564
 
 # Hibike! Euphonium
-
-# Gin no Saji
-
-# Gin no Saji
-
-# Tonari no Kaibutsu-kun
-
-# Soredemo Machi wa Mawatteiru
-
-# SukaSuka
+62564
 
 # Haikyuu!!
+60863
 
 # Haikyuu!!
+60863
 
 # Haikyuu!!
+60863
 
 # Konohana Kitan
+74098
 
 # Gate
+63663
 
 # GATE
+63663
 
 # BanG Dream!
-
-# Mangaka-san to Assistant-san to The Animation
-
-# Toaru Majutsu no Index
-
-# Toaru Majutsu no Index
-
-# Jinrui wa Suitai Shimashita
+69236
 
 # Tokyo Magnitude 8.0
+37866
 
 # Sekirei
+34805
 
 # Sekirei
+34805
 
 # Servant x Service
+75986
 
 # High School DxD
+45950
 
 # High School DxD
+45950
 
 # High School DxD
-
-# Stella no Mahou
+45950
 
 # Beelzebub
+38603
 
 # Non Non Biyori
-
-# Shinryaku! Ika Musume
-
-# Shinryaku! Ika Musume
-
-# Oregairu
-
-# Oregairu
+66875
 
 # Wizard Barristers
+61680
 
 # Rail Wars
+69607
 
 # Comet Lucifer
+68256
 
 # Minami-ke
+56354
 
 # Minami-ke
+56354
 
 # Minami-ke
+56354
 
 # Minami-ke
+56354
 
 # Ao no Exorcist
+38464
 
 # Nobunaga the Fool
+65616
 
 # Akiba's Trip The Animation
+69230
 
 # Gangsta
+66390
 
 # Air
+26201
 
 # Devil May Cry
-
-# B-gata H-kei
-
-# Kuzu no Honkai
-
-# Rokudenashi Majutsu Koushi to Akashic Records
-
-# Getsuyoubi no Tawawa
-
-# Shingeki no Kyojin
+235930
 
 # Aldnoah Zero
+61259
 
 # Aldnoah Zero
-
-# Gekkan Shoujo Nozaki-kun
+61259
 
 # Shomin Sample
+64552
 
 # Gundam Build Fighters
+60667
 
 # Gundam Build Fighters
-
-# Daitoshokan no Hitsujikai
+60667
 
 # Made in Abyss
+72636
 
 # Shigofumi
-
-# Sore ga Seiyuu!
-
-# Inou-Battle wa Nichijou-kei no Naka de
+89664
 
 # Koi to Senkyo to Chocolate
+46093
 
 # Gingitsune
+72911
 
 # Natsuiro Kiseki
+46040
 
 # GJ-bu
-
-# Hourou Musuko
+55016
 
 # High School Fleet
+66105
 
 # MM!
+38084
 
 # Vividred Operation
-
-# Youjo Senki
+52895
 
 # Kamisama Dolls
-
-# Seikimatsu Occult Gakuin
-
-# Amagami SS
+42141
 
 # Amagami SS
+52083
+
+# Amagami SS
+52083
 
 # Fate/kaleid liner Prisma Illya
+63576
 
 # Fate/Kaleid Liner Prisma Illya
+63576
 
 # Fate/kaleid liner Prisma Illya
+63576
 
 # Flying Witch
+65934
 
 # Fate/Zero
+45845
 
 # Fate/Zero
+45845
 
 # Hanayamata
+61528
 
 # Buddy Complex
-
-# Gakkou Gurashi!
+60663
 
 # Witch Craft Works
+65614
 
 # Blade & Soul
+60814
 
 # Inari, Konkon, Koi Iroha.
+67143
 
 # Love Lab
-
-# Mahou Shoujo Ikusei Keikaku
+65602
 
 # Danganronpa: The Animation
-
-# Baka to Test to Shoukanjuu
-
-# Baka to Test to Shoukanjuu
+49471
 
 # Black Lagoon
+12598
 
 # Claymore
+34791
 
 # Magi: The Kingdom of Magic
+60654
 
 # Magi: The Labyrinth of Magic
+60654
 
 # Mayo Chiki!
-
-# Nejimaki Seirei Senki: Tenkyou no Alderamin
+46169
 
 # Phantom: Requiem for the Phantom
+22254
 
 # Seitokai Yakuindomo
+36697
 
 # Seitokai Yakuindomo
-
-# Toaru Kagaku no Railgun
+36697
 
 # Gegege no Kitarou
-
-# Toaru Kagaku no Railgun
+76759
 
 # The Idolmaster
-
-# Kiseijuu: Sei no Kakuritsu
-
-# Maoyuu Maou Yuusha
-
-# Machine-Doll wa Kizutsukanai
-
-# Ore Monogatari
-
-# Kore wa Zombie Desu ka?
-
-# Kore wa Zombie Desu ka?
+63463
 
 # Oreshura
-
-# Kotoura-san
+53296
 
 # Nichijou
-
-# Kaichou wa Maid-sama!
-
-# Nagi no Asukara
+44684
 
 # Noragami
+64710
 
 # Oreimo
+56353
 
 # Oreimo
+56353
 
 # Choujigen Game Neptune The Animation
+63525
 
 # C3
-
-# Sakamichi no Apollon
-
-# Tasogare Otome x Amnesia
+54393
 
 # Elfen Lied
+42671
 
 # Drifters
+68103
 
 # Devil Survivor 2 The Animation
-
-# Konobi
+54933
 
 # Kiznaiver
-
-# Bokura wa Minna Kawaisou
-
-# Akatsuki no Yona
-
-# Dantalian no Shoka
-
-# Denpa Onna to Seishun Otoko
+65950
 
 # Dansai Bunri no Crime Edge
+52850
 
 # Blood C
-
-# DanMachi
+43270
 
 # Ben-To
+61970
 
 # Baccano!
+34121
 
 # Dimension W
-
-# Danshi Koukousei no Nichijou
+65712
 
 # Shirobako
+64492
 
 # Sankarea
-
-# Netoge no Yome wa Onna no Ko ja Nai to Omotta
-
-# Nora to Oujo to Noraneko Heart
-
-# Acchi Kocchi
+62742
 
 # 12-sai.: Chicchana Mune no Tokimeki
+65928
 
 # Hyouka
-
-# Bounen no Xamdou
+65329
 
 # Aria The Animation
+53787
 
 # Kuroshitsuji Movie: Book of the Atlantic
+432131
 
+# Shunkashuutou Daikousha: Haru no Mai
+288659
+
+# Kamiina Botan, Yoeru Sugata wa Yuri no Hana
+283905
+
+# Himekishi wa Barbaroi no Yome
+273467
+
+# Kanojo, Okarishimasu
+96316
+
+# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+72517
+
+# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+207564
+
+# Class de 2-banme ni Kawaii Onnanoko to Tomodachi ni Natta
+290019
+
+# Aishiteru Game wo Owarasetai
+293697
+
+# Ponsuka
+288551
+
+# Lastame
+213326
+
+# Tongari Boushi no Atelier
+196950
+
+# Otonari no Tenshi-sama ni Itsunomanika Dame Ningen ni Sareteita Ken 2
+154743
+
+# Kanan-sama wa Akumade Choroi
+285818
+
+# Nigetsuri
+304820
+
+# Maid-san wa Taberu dake
+299134
+
+# Isekai Nonbiri Nouka
+196285
+
+# Jishou Akuyaku Reijou na Konyakusha no Kansatsu Kiroku.
+288590
+
+# Saikyou no Shokugyou wa Yuusha demo Kenja demo Naku Kanteishi (Kari) Rashii desu yo?
+303460
+
+# Mato Seihei no Slave
+139060
+
+# Arne no Jikenbo
+276110
+
+# 29-sai Dokushin Chuuken Boukensha no Nichijou
+290667
+
+# Mayonaka Heart Tune
+285933
+
+# Okiraku Ryoushu no Tanoshii Ryouchi Bouei
+288589
+
+# Yuusha Party wo Oidasareta Kiyoubinbou
+285166
+
+# Kirei ni Shitemoraemasu ka.
+293144
+
+# Osananajimi to wa Love Comedy ni Naranai
+285743
+
+# Goumon Baito-kun no Nichijou
+305163
+
+# Majutsushi Kunon wa Mieteiru
+282946
+
+# Kizoku Tensei
+118821
+
+# Shibou Yuugi de Meshi wo Kuu.
+1659338
+
+# Maou no Musume wa Yasashisugiru!!
+294280
+
+# Hanazakari no Kimitachi e
+254492
+
+# Isekai de Cheat Skill wo Te ni Shita Ore wa
+208493
+
+# Shuumatsu Touring
+283935
+
+# Towa no Yuugure
+294867
+
+# Nageki no Bourei wa Intai shitai
+258579
+
+# Chichi wa Eiyuu, Haha wa Seirei, Musume no Watashi wa Tenseisha.
+280048
+
+# Mugen Gacha
+278635
+
+# Alma-chan wa Kazoku ni Naritai
+289217
+
+# Akujiki Reijou to Kyouketsu Koushaku
+274814
+
+# Bukiyou na Senpai
+284433
+
+# Sozai Saishuka no Isekai Ryokouki
+284442
+
+# Mushoku no Eiyuu
+236565
+
+# Mizu Zokusei no Mahoutsukai
+281615
+
+# Kakkou no Iinazuke
+122587
+
+# Busu ni Hanataba wo
+217409
+
+# Watanare
+277513
+
+# Busamen Gachi Fighter
+286434
+
+# Ame to Kimi to
+262254
+
+# Sono Bisque Doll wa Koi wo Suru
+123249
+
+# Koujo Denka no Kateikyoushi
+284448
+
+# Yuusha Party wo Tsuihou sareta Shiromadoushi, S-Rank Boukensha ni Hirowareru
+284771
+
+# Kizetsu Yuusha to Ansatsu Hime
+283705
+
+# Zutaboro Reijou wa Ane no Moto Konyakusha ni Dekiai sareru
+279989
+
+# Yofukashi no Uta
+138357
+
+# Tsuihousha Shokudou e Youkoso!
+286723
+
+# Uchuujin MuuMuu
+278367
+
+# Mikadono Sanshimai wa Angai, Choroi.
+272556
+
+# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+207564
+
+# Kanojo, Okarishimasu
+96316
+
+# Kusuriya no Hitorigoto
+220542
+
+# A-Rank Party wo Ridatsu shita Ore wa
+270487
+
+# Kuroshitsuji: Midori no Majo-hen
+50712
+
+# Ninja to Koroshiya no Futarigurashi
+278050
+
+# Natsume Yuujinchou
+69500
+
+# 2.5-jigen no Ririsa
+216074
+
+# Nazotoki wa Dinner no Ato de
+279216
+
+# Ore wa Seikan Kokka no Akutoku Ryoushu!
+274737
+
+# Shoushimin Series
+243501
+
+# Slime Taoshite 300-nen
+99073
+
+# Enen no Shouboutai
+88046
+
+# Rock wa Lady no Tashinami deshite
+260523
+
+# Shiunji-ke no Kodomotachi
+261091
+
+# Sentai Daishikkaku
+215799
+
+# Katainaka no Ossan, Kensei ni Naru
+260823
+
+# Gorilla no Kami kara Kago sareta Reijou wa Ouritsu Kishidan de Kawaigarareru
+278816
+
+# Kanpekiseijo
+274741
+
+# Danjo no Yuujou wa Seiritsu suru?
+217407
+
+# Yami Healer
+276253
+
+# Aru Majo ga Shinu Made
+258055
+
+# Hana wa Saku, Shura no Gotoku
+256744
+
+# Re:Zero kara Hajimeru Isekai Seikatsu
+65942
+
+# Girumasu
+249964
+
+# Amagami-san Chi no Enmusubi
+234910
+
+# Youkai Gakkou no Sensei Hajimemashita!
+259788
+
+# Kuroiwa Medaka ni Watashi no Kawaii ga Tsuujinai
+258994
+
+# Kono Kaisha ni Suki na Hito ga Imasu
+262141
+
+# S-Rank Monster no "Behemoth" dakedo
+249545
+
+# Class no Daikirai na Joshi to Kekkon suru Koto ni Natta
+257790
+
+# Botsuraku Yotei no Kizoku dakedo
+261301
+
+# Salaryman ga Isekai ni Ittara Shitennou ni Natta Hanashi
+259559
+
+# Izure Saikyou no Renkinjutsushi?
+261298
+
+# Ao no Hako
+207347
+
+# Chi.: Chikyuu no Undou ni Tsuite
+204635
+
+# Megumi no Daigo: Kyuukoku no Orange
+223780
+
+# Kami wa Game ni Ueteiru
+156057
+
+# Kaii to Otome to Kamikakushi
+218146
+
+# Hikari no Ou
+156688
+
+# DanMachi
+70590
+
+# Kenka Dokugaku
+246029
+
+# Sentai Daishikkaku
+215799
+
+# Sasayaku You ni Koi wo Utau
+218291
+
+# Arifureta Shokugyou de Sekai Saikyou
+86034
+
+# Kabushikigaisha Magi-Lumiere
+240576
+
+# Shinigami Bocchan to Kuro Maid
+117992
+
+# Kamonohashi Ron no Kindan Suiri
+216523
+
+# Maou 2099
+118824
+
+# Yarinaoshi Reijou wa Ryuutei Heika wo Kouryakuchuu
+244624
+
+# Tasuuketsu
+244652
+
+# Rekishi ni Nokoru Akujo ni Naru zo
+248817
+
+# Tensei Kizoku, Kantei Skill de Nariagaru
+237150
+
+# Hoshifuru Oukoku no Nina
+240641
+
+# Nageki no Bourei wa Intai shitai
+258579
+
+# Kimi wa Meido-sama.
+242143
+
+# Party kara Tsuihou sareta Sono Chiyushi, Jitsu wa Saikyou ni Tsuki
+244625
+
+# Goukon ni Ittara Onna ga Inakatta Hanashi
+236530
+
+# Saikyou no Shienshoku "Wajutsushi" de Aru Ore wa Sekai Saikyou Clan wo Shitagaeru
+258580
+
+# Tsuma, Shougakusei ni Naru.
+257603
+
+# Sayounara Ryuusei, Konnichiwa Jinsei
+259786
+
+# Kekkon suru tte, Hontou desu ka
+230189
+
+# Hitoribocchi no Isekai Kouryaku
+259558
+
+# Maou-sama, Retry!
+88044
+
+# Jiisan Baasan Wakagaeru
+239853
+
+# Yoru no Kurage wa Oyogenai
+222923
+
+# Maou Gakuin no Futekigousha
+97617
+
+# Kuroshitsuji: Kishuku Gakkou-hen
+50712
+
+# Henjin no Salad Bowl
+236392
+
+# Hananoi-kun to Koi no Yamai
+239214
+
+# Tsuki ga Michibiku Isekai Douchuu
+111819
+
+# Tensei shitara Dainana Ouji Datta node
+213830
+
+# Tensei Kizoku, Kantei Skill de Nariagaru
+237150
+
+# Shuumatsu Train Doko e Iku?
+212273
+
+# Seiyuu Radio no Uraomote
+216760
+
+# One Room, Hiatari Futsuu, Tenshi-tsuki.
+236533
+
+# Madome
+238848
+
+# DekiSoko
+229108
+
+# Yubisaki to Renren
+230059
+
+# Nige Jouzu no Wakagimi
+222623
+
+# Tensui no Sakuna-hime
+255492
+
+# Yozakura-san Chi no Daisakusen
+216467
+
+# Hazurewaku no "Joutai Ijou Skill" de Saikyou ni Natta Ore ga Subete wo Juurin suru made
+245285
+
+# Make Heroine ga Oosugiru!
+241535
+
+# Naze Boku no Sekai wo Daremo Oboeteinai no ka?
+244672
+
+# Kono Sekai wa Fukanzen Sugiru
+222925
+
+# Dungeon no Naka no Hito
+250597
+
+# Tsue to Tsurugi no Wistoria
+245842
+
+# Shikanoko Nokonoko Koshitantan
+248866
+
+# Koi wa Futago de Warikirenai
+230697
+
+# Isekai Shikkaku
+205743
+
+# Katsute Mahou Shoujo to Aku wa Tekitai shiteita
+239764
+
+# Shinmai Ossan Boukensha
+250598
+
+# Karasu wa Aruji wo Erabanai
+243141
+
+# Madougushi Dahliya wa Utsumukanai
+233523
+
+# Na Nare Hana Nare
+239158
+
+# Megami no Cafe Terrace
+209707
+
+# Shoushimin Series
+243501
+
+# Ore wa Subete wo "Parry" suru
+238892
+
+# Gimai Seikatsu
+206629
+
+# Tokidoki Bosotto Russia-go de Dereru Tonari no Alya-san
+235758
+
+# Isekai Yururi Kikou
+240633
+
+# Code Geass: Dakkan no Roze
+255107
+
+# Boku no Tsuma wa Kanjou ga Nai
+250596
+
+# Mob kara Hajimaru Tansaku Eiyuutan
+244620
+
+# Maougun Saikyou no Majutsushi wa Ningen datta
+248951
+
+# Nanatsu no Maken ga Shihai suru
+153337
+
+# Nanatsu no Taizai: Mokushiroku no Yonkishi
+218843
+
+# Majo to Yajuu
+208445
+
+# Boku no Kokoro no Yabai Yatsu
+207250
+
+# Chiyu Mahou no Machigatta Tsukaikata
+131365
+
+# Saijaku Tamer wa Gomi Hiroi no Tabi wo Hajimemashita
+214310
+
+# Momochi-san Chi no Ayakashi Ouji
+230823
+
+# Gekai Elise
+221310
+
+# Jaku-Chara Tomozaki-kun
+99083
+
+# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+72517
+
+# Loop 7-kaime no Akuyaku Reijou wa
+232926
+
+# Kage no Jitsuryokusha ni Naritakute!
+119495
+
+# Tensei shitara Slime Datta Ken
+118541
+
+# Oroka na Tenshi wa Akuma to Odoru
+231357
+
+# Dosanko Gal wa Namara Menkoi
+213181
+
+# Himesama Goumon no Jikan desu
+229443
+
+# Kyuujitsu no Warumono-san
+222784
+
+# Mahou Shoujo ni Akogarete
+236338
+
+# Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node
+113256
+
+# Enen no Shouboutai
+88046
+
+# Kusuriya no Hitorigoto
+220542
+
+# Saikyou Tank no Meikyuu Kouryaku
+236532
+
+# Kekkon Yubiwa Monogatari
+218493
+
+# Nozomanu Fushi no Boukensha
+197848
+
+# Sasaki to Pii-chan
+206630
+
+# Sousou no Frieren
+209867
+
+# Sokushi Cheat ga Saikyou sugite
+236144
+
+# Mato Seihei no Slave
+139060
+
+# Isekai de Mofumofu Nadenade suru Tame ni Ganbattemasu
+205672
+
+# Zom 100: Zombie ni Naru made ni Shitai 100 no Koto
+217766
+
+# Ikenaikyo
+217405
+
+# Buta no Liver wa Kanetsu Shiro
+153336
+
+# Hikikomari Kyuuketsuki no Monmon
+217755
+
+# Kamonohashi Ron no Kindan Suiri
+216523
+
+# Kimizero 
+209845
+
+# Hyakkano
+223564
+
+# Potion-danomi de Ikinobimasu!
+221148
+
+# Seijo no Maryoku wa Bannou desu
+115236
+
+# Bokura no Ameiro Protocol
+230288
+
+# Saihate no Paladin
+123525
+
+# Tearmoon Teikoku Monogatari
+209604
+
+# Kanojo mo Kanojo
+113137
+
+# Hametsu no Oukoku
+219673
+
+# Yuzuki-san Chi no Yonkyoudai
+229612
+
+# Ojou to Banken-kun
+212053
+
+# Mahoutsukai no Yome
+73833
+
+# S-Rank Musume
+229609
+
+# Watashi no Oshi wa Akuyaku Reijou
+216269
+
+# Boushoku no Berserk
+213331
+
+# Seiken Gakuin no Makentsukai
+136840
+
+# Dekoboko Majo no Oyako Jijou
+209829
+
+# Boku no Kokoro no Yabai Yatsu
+207250
+
+# Shinigami Bocchan to Kuro Maid
+117992
+
+# Kanojo Okarishimasu
+96316
+
+# Jitsu wa Ore, Saikyou deshita?
+209649
+
+# Uchi no Kaisha no Chiisai Senpai no Hanashi
+217390
+
+# Dekiru Neko wa Kyou mo Yuuutsu
+202821
+
+# Hataraku Maou-sama!
+45997
+
+# Shiro Seijo to Kuro Bokushi
+204148
+
+# Suki na Ko ga Megane wo Wasureta
+218263
+
+# Niehime to Kemono no Ou
+117024
+
+# Eiyuu Kyoushitsu
+134742
+
+# Maou Gakuin no Futekigousha
+97617
+
+# Lastame
+213326
+
+# Seija Musou
+220779
+
+# Watashi no Shiawase na Kekkon
+196944
+
+# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+207564
+
+# Yumemiru Danshi wa Genjitsushugisha
+214651
+
+# Okashi na Tensei
+207521
+
+# Tonikaku Kawaii: Joshikou-hen
+100049
+
+# Mairimashita! Iruma-kun
+91801
+
+# Kage no Jitsuryokusha ni Naritakute!
+119495
+
+# Kimi wa Houkago Insomnia
+155440
+
+# 4-nin wa Sorezore Uso wo Tsuku
+196369
+
+# Kaminaki Sekai no Kamisama Katsudou
+199920
+
+# Jigokuraku
+117465
+
+# Majutsushi Orphen Hagure Tabi
+91764
+
+# Kanojo ga Koushaku-tei ni Itta Riyuu
+205366
+
+# Jijou wo Shiranai Tenkousei ga Guigui Kuru
+214547
+
+# Otonari ni Ginga
+200732
+
+# Isekai Shoukan wa Nidome desu
+137391
+
+# Fuufu Ijou, Koibito Miman.
+139287
+
+# Tonikaku Kawaii
+100049
+
+# Rokudou no Onna-tachi
+218563
+
+# Megami no Cafe Terrace
+209707
+
+# Isekai One Turn Kill Neesan
+194829
+
+# Yuusha ga Shinda!
+200750
+
+# Watashi no Yuri wa Oshigoto desu!
+201949
+
+# Ousama Ranking: Yuuki no Takarabako
+207743
+
+# Mahoutsukai no Yome
+73833
+
+# Kono Subarashii Sekai ni Bakuen wo!
+203040
+
+# Kubo-san wa Mob wo Yurusanai
+201889
+
+# Isekai wa Smartphone to Tomo ni
+72505
+
+# Tensei Kizoku no Isekai Boukenroku
+207493
+
+# Nokemono-tachi no Yoru
+205111
+
+# Kyuuketsuki Sugu Shinu
+112624
+
+# Bucchigire!
+195924
+
+# Majutsushi Orphen Hagure Tabi
+91764
+
+# Inu ni Nattara Suki na Hito ni Hirowareta
+195081
+
+# Shinka no Mi
+117706
+
+# Hikari no Ou
+156688
+
+# Hoshi no Samidare
+156218
+
+# Saikyou Onmyouji no Isekai Tenseiki
+156563
+
+# Cool Doji Danshi
+198170
+
+# Kami-tachi ni Hirowareta Otoko
+102086
+
+# Tondemo Skill de Isekai Hourou Meshi
+213402
+
+# Eiyuuou, Bu wo Kiwameru Tame Tenseisu
+194718
+
+# Benriya Saitou-san, Isekai ni Iku
+155942
+
+# Kyokou Suiri
+93653
+
+# Ooyukiumi no Kaina
+156013
+
+# Roukin
+206748
+
+# Ars no Kyojuu
+211093
+
+# Tsunlise
+154098
+
+# Kaiko sareta Ankoku Heishi (30-dai) no Slow na Second Life
+206324
+
+# Otonari no Tenshi-sama ni Itsunomanika Dame Ningen ni Sareteita Ken
+154743
+
+# Hyouken no Majutsushi ga Sekai wo Suberu
+200777
+
+# Isekai Nonbiri Nouka
+196285
+
+# Tensei Oujo to Tensai Reijou no Mahou Kakumei
+207965
+
+# Oniichan wa Oshimai!
+198152
+
+# Koori Zokusei Danshi to Cool na Douryou Joshi
+204519
+
+# DanMachi
+70590
+
+# Ijiranaide, Nagatoro-san
+105556
+
+# Ningen Fushin no Boukensha-tachi ga Sekai wo Sukuu you desu
+131366
+
+# Isekai Ojisan
+127714
+
+# Shingeki no Kyojin
+1429
+
+# Shingeki no Kyojin
+1429
+
+# Koukyuu no Karasu
+153482
+
+# Yama no Susume: Next Summit
+53918
+
+# Mushikaburi-hime
+156510
+
+# Futoku no Guild
+194831
+
+# Shinmai Renkinjutsushi no Tenpo Keiei
+133938
+
+# Noumin Kanren no Skill bakka Agetetara Nazeka Tsuyoku Natta
+158522
+
+# Akuyaku Reijou nanode Last Boss wo Kattemimashita
+135334
+
+# Tensei shitara Ken Deshita
+134667
+
+# Renmei Kuugun Koukuu Mahou Ongakutai Luminous Witches
+93655
+
+# Saikin Yatotta Maid ga Ayashii
+202160
+
+# Tonikaku Kawaii
+100049
+
+# Kakkou no Iinazuke
+122587
+
+# Yofukashi no Uta
+138357
+
+# Hataraku Maou-sama!
+45997
+
+# Danmachi
+70590
+
+# Isekai Yakkyoku
+129195
+
+# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+72517
+
+# Kuro no Shoukanshi
+157842
+
+# Warau Arsnotoria Sun!
+202770
+
+# Soredemo Ayumu wa Yosetekuru
+116168
+
+# Kanojo Okarishimasu
+96316
+
+# Kumichou Musume to Sewagakari
+133197
+
+# Mamahaha no Tsurego ga Motokano datta
+129516
+
+# Kinsou no Vermeil
+194774
+
+# Isekai Meikyuu de Harem wo
+114477
+
+# Tensei Kenja no Isekai Life
+117889
+
+# Kunoichi Tsubaki no Mune no Uchi
+138180
+
+# Yuusha, Yamemasu
+136763
+
+# Paripi Koumei
+138441
+
+# Kawaii dake ja Nai Shikimori-san
+115694
+
+# Kaijin Kaihatsu-bu no Kuroitsu-san
+128826
+
+# Gensou Sangokushi: Tengen Reishinki
+130206
+
+# Vanitas no Karte
+121964
+
+# Fantasy Bishoujo Juniku Ojisan to
+125712
+
+# Mahoutsukai Reimeiki
+124363
+
+# Machikado Mazoku
+88806
+
+# Kenja no Deshi wo Nanoru Kenja
+104032
+
+# Kyoukai Senki
+120966
+
+# Gunjou no Fanfare
+131681
+
+# Kono Healer, Mendokusai
+123250
+
+# Komi-san wa, Comyushou desu.
+123876
+
+# Koi wa Sekai Seifuku no Ato de
+122287
+
+# Shachiku-san wa Youjo Yuurei ni Iyasaretai.
+127327
+
+# Heroine Tarumono! Kiraware Heroine to Naisho no Oshigoto
+132213
+
+# Gaikotsu Kishi-sama, Tadaima Isekai e Odekakechuu
+123528
+
+# Otome Game Sekai wa Mob ni Kibishii Sekai desu
+139512
+
+# RikeKoi
+90999
+
+# Shokei Shoujo no Virgin Road
+117886
+
+# Shikkakumon no Saikyou Kenja
+117884
+
+# Honzuki no Gekokujou
+91768
+
+# Genjitsu Shugi Yuusha no Oukoku Saikenki
+102088
+
+# Arifureta Shokugyou de Sekai Saikyou
+86034
+
+# Akebi-chan no Sailor-fuku
+121792
+
+# Hanyou no Yashahime
+103254
+
+# Tensai Ouji no Akaji Kokka Saisei Jutsu
+117880
+
+# Karakai Jouzu no Takagi-san
+75865
+
+# Ousama Ranking
+112613
+
+# Sono Bisque Doll wa Koi wo Suru
+123249
+
+# Koroshi Ai
+114396
+
+# Leadale no Daichi nite
+119335
+
+# Shiroi Suna no Aquatope
+116724
+
+# Saihate no Paladin
+123525
+
+# Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node
+113256
+
+# Kobayashi-san Chi no Maid Dragon
+69291
+
+# Kyoukai Senki
+120966
+
+# Gyakuten Sekai no Denchi Shoujo
+122286
+
+# Senpai ga Uzai Kouhai no Hanashi
+105511
+
+# Kyuuketsuki Sugu Shinu
+112624
+
+# Komi-san wa, Comyushou desu.
+123876
+
+# Shinka no Mi: Shiranai Uchi ni Kachigumi Jinsei
+117706
+
+# Tsuki to Laika to Nosferatu
+121017
+
+# Mushoku Tensei: Isekai Ittara Honki Dasu
+94664
+
+# Jahy-sama wa Kujikenai!
+123446
+
+# Isekai Shokudou
+72425
+
+# Getsuyoubi no Tawawa
+68455
+
+# Deatte 5-byou de Battle
+112940
+
+# Hamefura
+94904
+
+# Heion Sedai no Idaten-tachi
+107001
+
+# Higurashi no Naku Koro ni Sotsu
+100988
+
+# Kaizoku Oujo
+106480
+
+# Mahouka Koukou no Yuutousei
+115312
+
+# Genjitsu Shugi Yuusha no Oukoku Saikenki
+102088
+
+# Bokutachi no Remake
+113687
+
+# Cheat Kusushi no Slow Life
+103944
+
+# Tsuki ga Michibiku Isekai Douchuu
+111819
+
+# Tantei wa Mou, Shindeiru.
+117061
+
+# Vanitas no Karte
+121964
+
+# Shinigami Bocchan to Kuro Maid
+117992
+
+# Kanojo mo Kanojo
+113137
+
+# Megami-ryou no Ryoubo-kun
+103962
+
+# Ginga Eiyuu Densetsu
+27660
+
+# Mairimashita! Iruma-kun
+91801
+
+# Tensei shitara Slime Datta Ken
+118541
+
+# 100-man no Inochi no Ue ni Ore wa Tatteiru
+99995
+
+# Kyoukaisenjou no Horizon
+57528
+
+# Kyoukaisenjou no Horizon
+57528
+
+# Maoujou de Oyasumi
+97923
+
+# Kumo Desu ga, Nani ka?
+99618
+
+# Sayonara Watashi no Cramer
+108478
+
+# Slime Taoshite 300-nen
+99073
+
+# Tensura Nikki: Tensei shitara Slime Datta Ken
+118541
+
+# Dragon, Ie wo Kau
+103249
+
+# Ijiranaide, Nagatoro-san
+105556
+
+# Seijo no Maryoku wa Bannou Desu
+115236
+
+# Mashiro no Oto
+106782
+
+# Sentouin Hakenshimasu!
+100567
+
+# Junketsu no Maria
+62157
+
+# Isekai Maou to Shoukan Shoujo no Dorei Majutsu
+80563
+
+# Yakunara Mug Cup mo
+106611
+
+# Jitsu wa Watashi wa
+73093
+
+# Amaama to Inazuma
+66990
+
+# Juuou Mujin no Fafnir
+66863
+
+# Akkun to Kanojo
+77723
+
+# Sora no Otoshimono
+37437
+
+# Sora no Otoshimono
+37437
+
+# Kaze no Stigma
+61333
+
+# Centaur no Nayami
+72506
+
+# Soukou Musume Senki
+104155
+
+# King's Raid: Ishi wo Tsugumono-tachi
+102871
+
+# Jaku-Chara Tomozaki-kun
+99083
+
+# Gotoubun no Hanayome
+84669
+
+# Re:Zero kara Hajimeru Isekai Seikatsu
+65942
+
+# Lasdan
+100825
+
+# Ore dake Haireru Kakushi Dungeon
+103157
+
+# Hataraku Saibou
+80671
+
+# Mushoku Tensei: Isekai Ittara Honki Dasu
+94664
+
+# Tenkuu Shinpan
+112163
+
+# Mousou Dairinin
+9343
+
+# Danna ga Nani wo Itteiru ka Wakaranai Ken
+61433
+
+# Danna ga Nani wo Itteiru ka Wakaranai Ken
+61433
+
+# Kaifuku Jutsushi no Yarinaoshi
+99071
+
+# Gochuumon wa Usagi Desu ka?
+60843
+
+# Munou na Nana
+101571
+
+# Kamisama ni Natta Hi
+103319
+
+# Kimisen
+101972
+
+# Kami-tachi ni Hirowareta Otoko
+102086
+
+# Danmachi
+70590
+
+# Majo no Tabitabi
+94693
+
+# Hoshiai no Sora
+92835
+
+# Bungou to Alchemist: Shinpan no Haguruma
+100353
+
+# Koi to Producer: EVOL x LOVE
+102285
+
+# Maou Gakuin no Futekigousha
+97617
+
+# Kanojo Okarishimasu
+96316
+
+# Toaru Kagaku no Railgun
+30977
+
+# Monster Musume no Oishasan
+98685
+
+# Houkago Teibou Nisshi
+94631
+
+# Hitsugi no Chaika
+60825
+
+# Hitsugi no Chaika
+60825
+
+# Mairimashita! Iruma-kun
+91801
+
+# Yuru Yuri
+52891
+
+# Yuru Yuri
+52891
+
+# Yuru Yuri
+52891
+
+# 100-man no Inochi no Ue ni Ore wa Tatteiru
+99995
+
+# Denpa Kyoushi
+62283
+
+# Higashi no Eden
+21750
+
+# Soredemo Sekai wa Utsukushii
+60818
+
+# Kuusen Madoushi Kouhosei no Kyoukan
+67553
+
+# Ichiban Ushiro no Daimaou
+42413
+
+# Yesterday wo Utatte
+95550
+
+# Honzuki no Gekokujou
+91768
+
+# Hamefura
+94904
+
+# Kitsutsuki Tanteidokoro
+94277
+
+# Hachi-nan tte Sore wa Nai deshou!
+99624
+
+# Kiniro Mosaic
+78589
+
+# Kiniro Mosaic
+78589
+
+# Joukamachi no Dandelion
+66083
+
+# Mahou Sensou
+72091
+
+# Oregairu
+65676
+
+# Majutsushi Orphen Hagure Tabi
+91764
+
+# Kabukichou Sherlock
+87447
+
+# Bokuhaka
+93822
+
+# Kyokou Suiri
+93653
+
+# Koisuru Asteroid
+91585
+
+# Runway de Waratte
+93688
+
+# Oshi ga Budoukan Ittekuretara Shinu
+91024
+
+# Somali to Mori no Kamisama
+92586
+
+# Murenase Seton Gakuen
+96150
+
+# RikeKoi
+90999
+
+# Enen no Shouboutai
+88046
+
+# Tokunana
+93647
+
+# Shinchou Yuusha
+93256
+
+# Bokutachi wa Benkyou ga Dekinai
+87432
+
+# Honzuki no Gekokujou
+91768
+
+# Noukin
+91547
+
+# Houkago Saikoro Club
+91026
+
+# Choyoyu
+91269
+
+# Chuubyou Gekihatsu Boy
+91452
+
+# Maou-sama Retry!
+88044
+
+# Grisaia no Rakuen
+61422
+
+# Grisaia no Kajitsu
+61422
+
+# Gokukoku no Brynhildr
+60805
+
+# Ichigo Mashimaro
+35730
+
+# Oneechan ga Kita
+72452
+
+# Osake wa Fuufu ni Natte kara
+74182
+
+# Rokujouma no Shinryakusha
+70805
+
+# Suzumiya Haruhi no Yuuutsu
+42511
+
+# NouCome
+72798
+
+# Saijaku Muhai no Bahamut
+65816
+
+# Okaasan online
+88808
+
+# Toaru Kagaku no Accelerator
+90546
+
+# Danmachi
+70590
+
+# Machikado Mazoku
+88806
+
+# Nakanohito Genome
+88048
+
+# Karakai Jouzu no Takagi-san
+75865
+
+# Joshikousei no Mudazukai
+88062
+
+# UchiMusume
+88804
+
+# Kanata no Astra
+88041
+
+# Sounan Desu ka?
+88805
+
+# Katsute Kami Datta Kemono-tachi e
+88051
+
+# Dumbbell Nan Kilo Moteru?
+88045
+
+# Kimi no Iru Machi
+70228
+
+# Satsuriku no Tenshi
+80477
+
+# Natsume Yuujinchou
+69500
+
+# Ansatsu Kyoushitsu
+62110
+
+# Ansatsu Kyoushitsu
+62110
+
+# Shigatsu wa Kimi no Uso
+61663
+
+# Tensei shitara Slime Datta Ken
+118541
+
+# Mahou Shoujo Tokushusen Asuka
+83104
+
+# 3-gatsu no Lion
+65336
+
+# Gunjou no Magmel
+85841
+
+# Shingeki no Kyojin
+1429
+
+# Bokutachi wa Benkyou ga Dekinai
+87432
+
+# Kenja no Mago
+85844
+
+# Sewayaki Kitsune no Senko-san
+87461
+
+# Mayonaka no Occult Koumuin
+85935
+
+# Shoumetsu Toshi
+87457
+
+# Nobunaga-sensei no Osanazuma
+87476
+
+# Midara na Ao-chan wa Benkyou ga Dekinai
+87462
+
+# Seiken Tsukai no World Break
+66919
+
+# Ao no Kanata no Four Rhythm
+65713
+
+# Ramen Daisuki Koizumi-san
+75793
+
+# Chuunibyou demo Koi ga Shitai!
+45501
+
+# Chuunibyou demo Koi ga Shitai
+45501
+
+# Gakusen Toshi Asterisk
+64671
+
+# Gakusen Toshi Asterisk
+64671
+
+# Ryuugajou Nanana no Maizoukin
+60832
+
+# Shuumatsu no Izetta
+68080
+
+# Akuma no Riddle
+60845
+
+# Rakudai Kishi no Cavalry
+67154
+
+# Ano Natsu de Matteru
+42499
+
+# Ookami to Koushinryou
+26707
+
+# Ookami to Koushinryou
+26707
+
+# Isekai Shokudou
+72425
+
+# Oda Nobuna no Yabou
+45853
+
+# Zero no Tsukaima
+35753
+
+# Zero no Tsukaima
+35753
+
+# Zero no Tsukaima
+35753
+
+# Zero no Tsukaima
+35753
+
+# Suisei no Gargantia
+55011
+
+# Shingeki no Bahamut: Virgin Soul
+61445
+
+# Oniichan dakedo Ai sae Areba Kankeinai yo ne!
+62696
+
+# Seto no Hanayome
+56834
+
+# Uchouten Kazoku
+61338
+
+# Uchouten Kazoku
+61338
+
+# Asu no Yoichi!
+46033
+
+# Yuragi-sou no Yuuna-san
+80504
+
+# Densetsu no Yuusha no Densetsu
+89506
+
+# Hai to Gensou no Grimgar
+65369
+
+# Hagure Yuusha no Aesthetica
+62171
+
+# Shingeki no Kyojin OVA
+1429
+
+# Shingeki no Kyojin
+1429
+
+# Fune wo Amu
+65952
+
+# Koutetsujou no Kabaneri
+65945
+
+# Piano no Mori
+78471
+
+# Kobayashi-san Chi no Maid Dragon
+69291
+
+# Isshuukan Friends
+60827
+
+# Toaru Majutsu no Index
+30980
+
+# Kakuriyo no Yadomeshi
+78483
+
+# Haiyore! Nyaruko-san
+45254
+
+# Haiyore! Nyaruko-san
+45254
+
+# Net-juu no Susume
+74163
+
+# Aoi Hana
+34838
+
+# Papa no Iukoto wo Kikinasai!
+46183
+
+# Gotoubun no Hanayome
+84669
+
+# Kaze ga Tsuyoku Fuiteiru
+82766
+
+# Doukyonin wa Hiza, Tokidoki, Atama no Ue.
+84660
+
+# Watashi ni Tenshi ga Maiorita!
+84666
+
+# Egao no Daika
+83477
+
+# Hajimete no Gal
+72296
+
+# Seirei Tsukai no Blade Dance
+61287
+
+# Koi wa Ameagari no You ni
+75777
+
+# Mikakunin de Shinkoukei
+75992
+
+# Boku wa Tomodachi ga Sukunai
+60730
+
+# Boku wa Tomodachi ga Sukunai
+60730
+
+# Kuroshitsuji
+50712
+
+# Kuroshitsuji
+50712
+
+# Death March kara Hajimaru Isekai Kyousoukyoku
+76122
+
+# Isekai wa Smartphone to Tomo ni
+72505
+
+# Mirai Nikki
+46671
+
+# Kino no Tabi
+34166
+
+# Domestic na Kanojo
+83103
+
+# Saenai Heroine no Sodatekata
+69367
+
+# Saenai Heroine no Sodatekata
+69367
+
+# Akagami no Shirayuki-hime
+63087
+
+# Akagami no Shirayuki-hime
+63087
+
+# Sukitte Ii na yo
+52878
+
+# Ookami Shoujo to Kuro Ouji
+68960
+
+# Kyoukai no Kanata
+61695
+
+# Sora no Method
+66716
+
+# Sakurako-san
+64699
+
+# Tanaka-kun wa Itsumo Kedaruge
+66077
+
+# Saiki Kusuo no Psi Nan
+67676
+
+# Saiki Kusuo no Psi Nan
+67676
+
+# Irozuku Sekai no Ashita kara
+82738
+
+# Beelzebub-jou no Okinimesu mama
+83022
+
+# Umineko no Naku Koro ni
+25499
+
+# Owari no Seraph
+62255
+
+# Owari no Seraph
+62255
+
+# Watashi ga Motete Dousunda
+68188
+
+# Yagate Kimi ni Naru
+82861
+
+# Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai
+82739
+
+# Kishuku Gakkou no Juliet
+82823
+
+# Uchi no Maid ga Uzasugiru!
+82864
+
+# Tonari no Kyuuketsuki-san
+82736
+
+# Ore ga Suki nano wa Imouto dakedo Imouto ja Nai
+83019
+
+# Sakurasou no Pet na Kanojo
+50325
+
+# Akanesasu Shoujo
+82682
+
+# Mondaiji-tachi
+56090
+
+# Sabagebu!
+61424
+
+# Rokka no Yuusha
+63146
+
+# Sousei no Onmyouji
+66078
+
+# Wotaku ni Koi wa Muzukashii
+78457
+
+# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+72517
+
+# Zero kara Hajimeru Mahou no Sho
+70875
+
+# Zankyou no Terror
+61421
+
+# Shoujo Shuumatsu Ryokou
+74185
+
+# Sengoku Otome: Momoiro Paradox
+38313
+
+# Seikoku no Dragonar
+60810
+
+# Sakamoto desu ga?
+65944
+
+# Donten ni Warau
+61742
+
+# Madan no Ou to Vanadis
+72699
+
+# Hataraku Saibou
+80671
+
+# Sunohara-sou no Kanrinin-san
+80662
+
+# Shichisei no Subaru
+80562
+
+# Isekai Maou to Shoukan Shoujo no Dorei Majutsu
+80563
+
+# Hyakuren no Haou to Seiyaku no Valkyria
+80670
+
+# Chio-chan no Tsuugakuro
+80462
+
+# Genei wo Kakeru Taiyou
+76899
+
+# Hoshizora e Kakaru Hashi
+44300
+
+# Kanojo ga Flag wo Oraretara
+60835
+
+# Ryuuou no Oshigoto!
+76141
+
+# Mahoutsukai no Yome
+73833
+
+# Karakai Jouzu no Takagi-san
+75865
+
+# Imouto sae Ireba Ii
+74092
+
+# Grancrest Senki
+76125
+
+# Kujira no Kora wa Sajou ni Utau
+73017
+
+# Boku no Kanojo ga Majimesugiru Sho-bitch na Ken
+74083
+
+# Sora yori mo Tooi Basho
+76059
+
+# Hataraku Maou-sama!
+45997
+
+# Shinsekai yori
+53052
+
+# Natsume Yuujinchou
+69500
+
+# Natsume Yuujinchou
+69500
+
+# Natsume Yuujinchou
+69500
+
+# Natsume Yuujinchou
+69500
+
+# Natsume Yuujinchou
+69500
+
+# Kekkai Sensen
+62327
+
+# Kekkai Sensen
+62327
+
+# ACCA: 13-ku Kansatsu-ka
+69225
+
+# 3-gatsu no Lion
+65336
+
+# Ballroom e Youkoso
+72362
+
+# Boku dake ga Inai Machi
+65249
+
+# Hidan no Aria
+71618
+
+# Hidan no Aria
+71618
+
+# Gochuumon wa Usagi desu ka?
+60843
+
+# Gochuumon wa Usagi desu ka?
+60843
+
+# ImoCho
+60672
+
+# Renai Boukun
+70883
+
+# Kakumeiki Valvrave
+52896
+
+# Danmachi Gaiden: Sword Oratoria
+70590
+
+# Kakumeiki Valvrave
+52896
+
+# Houseki no Kuni
+74091
+
+# Kamisama no Memochou
+68379
+
+# Binbougami ga
+45968
+
+# Piano no Mori
+78471
+
+# Demi-chan wa Kataritai
+69282
+
+# Tada-kun wa Koi wo Shinai
+75975
+
+# Mahou Shoujo Site
+77702
+
+# Mahou Shoujo Ore
+76142
+
+# Gin no Saji
+58237
+
+# Gin no Saji
+58237
+
+# Tonari no Kaibutsu-kun
+46041
+
+# Soredemo Machi wa Mawatteiru
+37102
+
+# SukaSuka
+70639
+
+# Mangaka-san to Assistant-san to The Animation
+69217
+
+# Toaru Majutsu no Index
+30980
+
+# Toaru Majutsu no Index
+30980
+
+# Jinrui wa Suitai Shimashita
+53356
+
+# Stella no Mahou
+68399
+
+# Shinryaku! Ika Musume
+35447
+
+# Shinryaku! Ika Musume
+35447
+
+# Oregairu
+65676
+
+# Oregairu
+65676
+
+# B-gata H-kei
+45967
+
+# Rokudenashi Majutsu Koushi to Akashic Records
+70637
+
+# Getsuyoubi no Tawawa
+68455
+
+# Shingeki no Kyojin
+1429
+
+# Gekkan Shoujo Nozaki-kun
+61379
+
+# Daitoshokan no Hitsujikai
+65851
+
+# Sore ga Seiyuu!
+80878
+
+# Inou-Battle wa Nichijou-kei no Naka de
+61423
+
+# Hourou Musuko
+43926
+
+# Youjo Senki
+69346
+
+# Seikimatsu Occult Gakuin
+37575
+
+# Gakkou Gurashi!
+63495
+
+# Mahou Shoujo Ikusei Keikaku
+68079
+
+# Baka to Test to Shoukanjuu
+56343
+
+# Baka to Test to Shoukanjuu
+56343
+
+# Nejimaki Seirei Senki: Tenkyou no Alderamin
+65954
+
+# Toaru Kagaku no Railgun
+30977
+
+# Toaru Kagaku no Railgun
+30977
+
+# Kiseijuu: Sei no Kakuritsu
+61459
+
+# Maoyuu Maou Yuusha
+46302
+
+# Machine-Doll wa Kizutsukanai
+68640
+
+# Ore Monogatari
+62565
+
+# Kore wa Zombie Desu ka?
+38420
+
+# Kore wa Zombie Desu ka?
+38420
+
+# Kotoura-san
+53594
+
+# Kaichou wa Maid-sama!
+65648
+
+# Nagi no Asukara
+61408
+
+# Sakamichi no Apollon
+42557
+
+# Tasogare Otome x Amnesia
+54930
+
+# Konobi
+65955
+
+# Bokura wa Minna Kawaisou
+60812
+
+# Akatsuki no Yona
+61461
+
+# Dantalian no Shoka
+42506
+
+# Denpa Onna to Seishun Otoko
+65356
+
+# DanMachi
+70590
+
+# Danshi Koukousei no Nichijou
+45859
+
+# Netoge no Yome wa Onna no Ko ja Nai to Omotta
+65948
+
+# Nora to Oujo to Noraneko Heart
+72513
+
+# Acchi Kocchi
+897349
+
+# Bounen no Xamdou
+34750
+
+# ----------------------------------------
+# UNMATCHED TITLES (Manual Review Needed)
+# ----------------------------------------
+
+# UNMATCHED TITLES (Manual Review Needed) [UNMATCHED]
+
+# Ansatsu Kizoku [UNMATCHED]
+
+# Heike Monogatari [UNMATCHED]
+
+# Nami yo Kiitekure [UNMATCHED]
+
+# Jigoku Shoujo [UNMATCHED]
+
+# Eizouken ni wa Te wo Dasu na! [UNMATCHED]
+
+# Araburu Kisetsu no Otome-domo yo [UNMATCHED]
+
+# Nande Koko ni Sensei ga!? [UNMATCHED]
+
+# Ueno-san wa Bukiyou [UNMATCHED]
+
+# Subete ga F ni Naru [UNMATCHED]
+
+# Aku no Hana [UNMATCHED]
+
+# Quan Zhi Gao Shou [UNMATCHED]
+
+# Kuzu no Honkai [UNMATCHED]

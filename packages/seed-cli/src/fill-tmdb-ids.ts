@@ -33,6 +33,7 @@ export interface FillTmdbIdsOptions {
   token?: string;
   batchSize?: number;
   confidenceThreshold?: number;
+  retryUnmatched?: boolean;
   fetchFn?: (url: string, init?: RequestInit) => Promise<any>;
   logFn?: (message: string) => void;
   sleepFn?: (ms: number) => Promise<void>;
@@ -48,7 +49,7 @@ export interface FillTmdbIdsSummary {
   unmatchedCount: number;
 }
 
-export function parseTmdbFileContent(content: string): ParseFileResult {
+export function parseTmdbFileContent(content: string, options: { retryUnmatched?: boolean } = {}): ParseFileResult {
   const lines = content.split(/\r?\n/);
   const entries: TmdbFileEntry[] = [];
 
@@ -95,7 +96,9 @@ export function parseTmdbFileContent(content: string): ParseFileResult {
     }
   }
 
-  const pendingEntries = entries.filter((e) => !e.hasId && !e.isUnmatched);
+  const pendingEntries = options.retryUnmatched 
+    ? entries.filter((e) => !e.hasId)
+    : entries.filter((e) => !e.hasId && !e.isUnmatched);
 
   return { lines, entries, pendingEntries };
 }
@@ -152,11 +155,12 @@ export async function findTmdbMatchForTitle(
 
   const parsed = parseLocalTitle(rawTitle);
 
+  let tvResults: TmdbTvSearchResult[] = [];
   // 1. Search TV Endpoint
   const tvUrl = `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(parsed.baseTitle)}&language=en-US`;
   try {
     const tvData = await fetchFnWithRetry(tvUrl, { headers });
-    const tvResults: TmdbTvSearchResult[] = Array.isArray(tvData?.results) ? tvData.results : [];
+    tvResults = Array.isArray(tvData?.results) ? tvData.results : [];
     const tvMatch = findBestMatch(parsed.baseTitle, tvResults, {
       confidenceThreshold: threshold,
       year: parsed.year,
@@ -169,11 +173,12 @@ export async function findTmdbMatchForTitle(
     log(`TV search error for "${parsed.baseTitle}": ${err instanceof Error ? err.message : String(err)}`);
   }
 
+  let movieResults: TmdbMovieSearchResult[] = [];
   // 2. Fallback to Movie Endpoint
   const movieUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(parsed.baseTitle)}&language=en-US`;
   try {
     const movieData = await fetchFnWithRetry(movieUrl, { headers });
-    const movieResults: TmdbMovieSearchResult[] = Array.isArray(movieData?.results) ? movieData.results : [];
+    movieResults = Array.isArray(movieData?.results) ? movieData.results : [];
     const movieMatch = findBestMatch(parsed.baseTitle, movieResults, {
       confidenceThreshold: threshold,
       year: parsed.year,
@@ -184,6 +189,15 @@ export async function findTmdbMatchForTitle(
     }
   } catch (err) {
     log(`Movie search error for "${parsed.baseTitle}": ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // 3. Anime Fallback
+  // If no strict match but the #1 search result is an Animation (genre 16), TMDB likely routed correctly via Alternate Titles.
+  if (tvResults.length > 0 && tvResults[0].genre_ids?.includes(16)) {
+    return { id: tvResults[0].id, score: 0.5, type: "tv" };
+  }
+  if (movieResults.length > 0 && movieResults[0].genre_ids?.includes(16)) {
+    return { id: movieResults[0].id, score: 0.5, type: "movie" };
   }
 
   return null;
@@ -233,8 +247,9 @@ export async function fillTmdbIds(options: FillTmdbIdsOptions = {}): Promise<Fil
     throw new Error(`TMDB IDs file not found at ${idsFilePath}`);
   }
 
+  const retryUnmatched = options.retryUnmatched ?? process.env.RETRY_UNMATCHED === "true";
   const initialContent = fs.readFileSync(idsFilePath, "utf-8");
-  const { lines, entries, pendingEntries } = parseTmdbFileContent(initialContent);
+  const { lines, entries, pendingEntries } = parseTmdbFileContent(initialContent, { retryUnmatched });
 
   log(`Loaded file: ${idsFilePath}`);
   log(`Total title entries: ${entries.length}`);
