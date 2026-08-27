@@ -16,6 +16,7 @@ import {
 } from "@repo/media-service";
 
 export * from "./sync-tmdb-episodes";
+export * from "./seed-tmdb";
 
 export interface SeriesListItem {
   title?: string;

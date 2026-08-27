@@ -6,6 +6,8 @@
   "scripts": {
     "seed": "bun src/index.ts",
     "db:seed": "bun src/index.ts",
+    "seed:tmdb": "bun --env-file=../../.env src/seed-tmdb.ts",
+    "db:seed-tmdb": "bun --env-file=../../.env src/seed-tmdb.ts",
     "sync:episodes": "bun --env-file=../../.env src/sync-tmdb-episodes.ts",
     "db:sync-episodes": "bun --env-file=../../.env src/sync-tmdb-episodes.ts",
     "build": "tsc",
