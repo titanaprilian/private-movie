@@ -179,6 +179,43 @@ describe("POST /episodes/:id/scrape-sources", () => {
     expect(savedSources.length).toBe(body.data.videoSources.length);
   });
 
+  it("replaces existing video sources instead of appending when scraped multiple times", async () => {
+    const { episodeId } = await createEpisodeFixture();
+
+    // Insert pre-existing dummy video source
+    const dummyVsId = crypto.randomUUID();
+    await db.insert(videoSources).values({
+      id: dummyVsId,
+      episodeId,
+      type: "embed",
+      url: "https://stale-provider.com/embed/123",
+      label: "Stale Server",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const res = await request(app, {
+      method: "POST",
+      path: `/episodes/${episodeId}/scrape-sources`,
+      headers,
+      body: {
+        sourceUrl: "https://otakudesu.blog/episode/test-scrape-sources-ep-1/",
+      },
+    });
+
+    expect(res.status).toBe(200);
+    const body = res.body as { data: { id: string; videoSources: Array<{ id: string; url: string }> } };
+    
+    const savedSources = await db
+      .select()
+      .from(videoSources)
+      .where(eq(videoSources.episodeId, episodeId));
+
+    const containsDummy = savedSources.some((s) => s.id === dummyVsId);
+    expect(containsDummy).toBe(false);
+    expect(savedSources.length).toBe(body.data.videoSources.length);
+  });
+
   it("confirms deprecated POST /series/:id/bulk-sources route is removed", async () => {
     const res = await request(app, {
       method: "POST",

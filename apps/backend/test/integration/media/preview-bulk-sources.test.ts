@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import crypto from "node:crypto";
 import { describe, expect, it, beforeAll } from "vitest";
-import { episodes, seasons, series } from "@repo/db";
+import { episodes, seasons, series, videoSources } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import { db } from "../../utils/db";
@@ -141,6 +141,7 @@ describe("POST /series/:id/preview-bulk-sources", () => {
           seasonId: string;
           seasonNumber: number | null;
           seasonTitle: string;
+          hasSources: boolean;
         }>;
       };
     };
@@ -148,6 +149,7 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     expect(body.data).toBeDefined();
     expect(body.data.scrapedEpisodes.length).toBe(7);
     expect(body.data.localEpisodes.length).toBe(7);
+    expect(body.data.localEpisodes[0]?.hasSources).toBe(false);
 
     // Verify Ep 1 matching
     const scrapedEp1 = body.data.scrapedEpisodes.find((e) => e.episodeNumber === 1);
@@ -259,5 +261,50 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     expect(unmatchedEp?.calculatedOrder).toBe(99);
     expect(unmatchedEp?.matchedLocalEpisodeId).toBeNull();
     expect(unmatchedEp?.matchStatus).toBe("unmatched");
+  });
+
+  it("indicates hasSources: true for local episodes that have existing video sources", async () => {
+    const { seriesId, episodes: createdEps } = await createSeriesWithEpisodes(
+      "Series With Sources",
+      [1, 2]
+    );
+
+    // Insert a video source for Ep 1 only
+    const ep1Id = createdEps.find((e) => e.order === 1)!.id;
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: ep1Id,
+      type: "embed",
+      url: "https://example.com/embed/ep1",
+      label: "Server 1",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const res = await request(app, {
+      method: "POST",
+      path: `/series/${seriesId}/preview-bulk-sources`,
+      headers,
+      body: {
+        sourceUrl: "https://otakudesu.blog/anime/grand-blue-s3-sub-indo/",
+        source: "otakudesu",
+      },
+    });
+
+    expect(res.status).toBe(200);
+    const body = res.body as {
+      data: {
+        localEpisodes: Array<{
+          id: string;
+          hasSources: boolean;
+        }>;
+      };
+    };
+
+    const localEp1 = body.data.localEpisodes.find((e) => e.id === ep1Id);
+    const localEp2 = body.data.localEpisodes.find((e) => e.id !== ep1Id);
+
+    expect(localEp1?.hasSources).toBe(true);
+    expect(localEp2?.hasSources).toBe(false);
   });
 });

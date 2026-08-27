@@ -110,6 +110,7 @@ describe('useBulkScrapeSources hook', () => {
           seasonId: 'season-1',
           seasonNumber: 1,
           seasonTitle: 'Season 1',
+          hasSources: false,
         },
       ],
     });

@@ -280,6 +280,7 @@ export interface BulkPreviewLocalEpisodeItem {
   seasonId: string;
   seasonNumber: number | null;
   seasonTitle: string;
+  hasSources: boolean;
 }
 
 export interface PreviewBulkSourcesResult {
@@ -591,6 +592,7 @@ export function createMediaService<
               seasonId: s.id,
               seasonNumber: s.seasonNumber ?? null,
               seasonTitle: s.title,
+              hasSources: Array.isArray(ep.videoSources) && ep.videoSources.length > 0,
             });
             if (!localEpisodesMapByOrder.has(ep.order)) {
               localEpisodesMapByOrder.set(ep.order, ep.id);
@@ -647,6 +649,8 @@ export function createMediaService<
       }
 
       const sources = await provider.resolveVideoSources(sourceUrl, fetchHtml);
+
+      await videoSourceRepository.deleteByEpisodeId(episodeId);
 
       for (const vs of sources) {
         await videoSourceRepository.upsert({

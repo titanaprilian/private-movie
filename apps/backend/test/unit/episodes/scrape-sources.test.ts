@@ -133,4 +133,35 @@ describe("createMediaService scrapeAndSaveSources", () => {
       .where(eq(videoSources.episodeId, episodeId));
     expect(savedVs.length).toBe(result.videoSources.length);
   });
+
+  it("wipes old video sources for the episode before saving new ones", async () => {
+    const episodeId = await createEpisodeFixture();
+
+    // Insert an old video source manually
+    const oldVsId = crypto.randomUUID();
+    await db.insert(videoSources).values({
+      id: oldVsId,
+      episodeId,
+      type: "embed",
+      url: "https://old-source.example.com/embed",
+      label: "Old Source",
+      quality: "480p",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const result = await service.scrapeAndSaveSources(
+      episodeId,
+      "https://otakudesu.blog/episode/test-ep-1/"
+    );
+
+    const savedVs = await db
+      .select()
+      .from(videoSources)
+      .where(eq(videoSources.episodeId, episodeId));
+
+    const containsOld = savedVs.some((vs) => vs.id === oldVsId);
+    expect(containsOld).toBe(false);
+    expect(savedVs.length).toBe(result.videoSources.length);
+  });
 });

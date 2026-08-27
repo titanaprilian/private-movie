@@ -63,9 +63,9 @@ const mockPreviewResult = {
     },
   ],
   localEpisodes: [
-    { id: 'ep-1', title: 'Intro to Deep Modules', order: 1, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1' },
-    { id: 'ep-2', title: 'TanStack Router Setup', order: 2, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1' },
-    { id: 'ep-3', title: 'State Management', order: 3, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1' },
+    { id: 'ep-1', title: 'Intro to Deep Modules', order: 1, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
+    { id: 'ep-2', title: 'TanStack Router Setup', order: 2, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
+    { id: 'ep-3', title: 'State Management', order: 3, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
   ],
 };
 

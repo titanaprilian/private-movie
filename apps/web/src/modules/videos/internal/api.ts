@@ -812,6 +812,7 @@ export interface BulkPreviewLocalEpisodeItem {
   seasonId: string;
   seasonNumber: number | null;
   seasonTitle: string;
+  hasSources: boolean;
 }
 
 export interface PreviewBulkSourcesResult {
