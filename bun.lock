@@ -159,6 +159,7 @@
         "@repo/db": "workspace:*",
         "@repo/media-scraper": "workspace:*",
         "@repo/media-service": "workspace:*",
+        "cheerio": "^1.0.0",
         "drizzle-orm": "^0.45.2",
       },
       "devDependencies": {
