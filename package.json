@@ -23,6 +23,8 @@
     "db:migrate": "cd packages/db && bun run db:migrate",
     "db:seed": "cd packages/db && bun run db:seed",
     "db:sync-episodes": "cd packages/db && bun run db:sync-episodes",
+    "db:fill-tmdb-ids": "cd packages/seed-cli && bun run db:fill-tmdb-ids",
+    "fill-tmdb-ids": "cd packages/seed-cli && bun run fill-tmdb-ids",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",

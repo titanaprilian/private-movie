@@ -18,6 +18,7 @@ import {
 export * from "./sync-tmdb-episodes";
 export * from "./seed-tmdb";
 export * from "./scrape-otakudesu";
+export * from "./fill-tmdb-ids";
 
 export interface SeriesListItem {
   title?: string;

@@ -12,6 +12,9 @@
     "db:sync-episodes": "bun --env-file=../../.env src/sync-tmdb-episodes.ts",
     "scrape:otakudesu": "bun src/scrape-otakudesu.ts",
     "db:scrape-otakudesu": "bun src/scrape-otakudesu.ts",
+    "fill-tmdb-ids": "bun --env-file=../../.env src/fill-tmdb-ids.ts",
+    "db:fill-tmdb-ids": "bun --env-file=../../.env src/fill-tmdb-ids.ts",
+    "fill:tmdb-ids": "bun --env-file=../../.env src/fill-tmdb-ids.ts",
     "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
