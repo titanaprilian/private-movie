@@ -4,9 +4,19 @@ import {
   parseAnimeTitlesFromHtml,
   scrapeOtakudesu,
   formatTitlesForSeedFile,
+  sanitizeTitle,
 } from "../../src/scrape-otakudesu";
 
 vi.mock("node:fs");
+
+describe("sanitizeTitle", () => {
+  it("strips out Season and Part markers", () => {
+    expect(sanitizeTitle("Anime Season 2 Part 3")).toBe("Anime");
+    expect(sanitizeTitle("Anime Season 3")).toBe("Anime");
+    expect(sanitizeTitle("Anime (TV)")).toBe("Anime");
+    expect(sanitizeTitle("Anime  Season 5")).toBe("Anime");
+  });
+});
 
 describe("parseAnimeTitlesFromHtml", () => {
   it("parses anime titles correctly from .detpost blocks", () => {

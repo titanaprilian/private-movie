@@ -12,15 +12,23 @@ export interface ScrapeOtakudesuOptions {
   logFn?: (message: string) => void;
 }
 
+export function sanitizeTitle(title: string): string {
+  return title
+    .replace(/(?:Season\s\d+|Part\s\d+|\(TV\))/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export function parseAnimeTitlesFromHtml(html: string): string[] {
   const $ = cheerio.load(html);
   const titles: string[] = [];
   $(".detpost").each((_, element) => {
-    const title =
+    let title =
       $(element).find(".jdlflm").text().trim() ||
       $(element).find("h2").text().trim() ||
       $(element).find("a").attr("title")?.trim();
     if (title) {
+      title = sanitizeTitle(title);
       titles.push(title);
     }
   });

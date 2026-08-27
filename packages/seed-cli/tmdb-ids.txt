@@ -1,3 +1,3305 @@
 # TMDB TV Series IDs to seed
 # One TMDB ID per line. Lines starting with # are comments.
 
+# Shunkashuutou Daikousha: Haru no Mai
+
+# Yowayowa Sensei
+
+# Kamiina Botan, Yoeru Sugata wa Yuri no Hana
+
+# Himekishi wa Barbaroi no Yome
+
+# Kanojo, Okarishimasu
+
+# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+
+# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+
+# Class de 2-banme ni Kawaii Onnanoko to Tomodachi ni Natta
+
+# Aishiteru Game wo Owarasetai
+
+# Ponsuka
+
+# Lastame
+
+# Tongari Boushi no Atelier
+
+# Ghost Concert: Missing Songs
+
+# Akane-banashi
+
+# Otonari no Tenshi-sama ni Itsunomanika Dame Ningen ni Sareteita Ken 2
+
+# Kanan-sama wa Akumade Choroi
+
+# Nigetsuri
+
+# Maid-san wa Taberu dake
+
+# Isekai Nonbiri Nouka
+
+# Jishou Akuyaku Reijou na Konyakusha no Kansatsu Kiroku.
+
+# Haibara-kun no Tsuyokute Seishun New Game
+
+# Saikyou no Shokugyou wa Yuusha demo Kenja demo Naku Kanteishi (Kari) Rashii desu yo?
+
+# Mato Seihei no Slave
+
+# Arne no Jikenbo
+
+# 29-sai Dokushin Chuuken Boukensha no Nichijou
+
+# Oshi no Ko
+
+# Mayonaka Heart Tune
+
+# Okiraku Ryoushu no Tanoshii Ryouchi Bouei
+
+# Yuusha Party wo Oidasareta Kiyoubinbou
+
+# Kirei ni Shitemoraemasu ka.
+
+# Osananajimi to wa Love Comedy ni Naranai
+
+# Goumon Baito-kun no Nichijou
+
+# Majutsushi Kunon wa Mieteiru
+
+# Kizoku Tensei
+
+# Toujima Tanzaburou wa Kamen Rider ni Naritai
+
+# Shibou Yuugi de Meshi wo Kuu.
+
+# Maou no Musume wa Yasashisugiru!!
+
+# Hanazakari no Kimitachi e
+
+# Champignon no Majo
+
+# Ao no Orchestra
+
+# Isekai de Cheat Skill wo Te ni Shita Ore wa
+
+# JoJo Bizarre Adventure: Stardust Crusaders
+
+# Shuumatsu Touring
+
+# Towa no Yuugure
+
+# Wandance
+
+# Nageki no Bourei wa Intai shitai
+
+# Chichi wa Eiyuu, Haha wa Seirei, Musume no Watashi wa Tenseisha.
+
+# Mugen Gacha
+
+# Alma-chan wa Kazoku ni Naritai
+
+# Akujiki Reijou to Kyouketsu Koushaku
+
+# Yasei no Last Boss ga Arawareta!
+
+# Bukiyou na Senpai
+
+# Sozai Saishuka no Isekai Ryokouki
+
+# Boku no Hero Academia
+
+# Mushoku no Eiyuu
+
+# Jigoku Sensei Nube
+
+# Mizu Zokusei no Mahoutsukai
+
+# Kakkou no Iinazuke
+
+# Busu ni Hanataba wo
+
+# Tate no Yuusha no Nariagari
+
+# Watanare
+
+# Jibaku Shounen Hanako-kun
+
+# Utagoe wa Mille-Feuille
+
+# Busamen Gachi Fighter
+
+# Bad Girl
+
+# Ame to Kimi to
+
+# Sono Bisque Doll wa Koi wo Suru
+
+# Koujo Denka no Kateikyoushi
+
+# Yuusha Party wo Tsuihou sareta Shiromadoushi, S-Rank Boukensha ni Hirowareru
+
+# Kizetsu Yuusha to Ansatsu Hime
+
+# Zutaboro Reijou wa Ane no Moto Konyakusha ni Dekiai sareru
+
+# Yofukashi no Uta
+
+# Tsuihousha Shokudou e Youkoso!
+
+# Uchuujin MuuMuu
+
+# Mikadono Sanshimai wa Angai, Choroi.
+
+# Tsuyokute New Saga
+
+# Onmyou Kaiten Re:Birth
+
+# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+
+# Necronomico no Cosmic Horror Show
+
+# Uma Musume: Cinderella Gray
+
+# Kanojo, Okarishimasu
+
+# To Be Hero X
+
+# Kusuriya no Hitorigoto
+
+# Sakamoto Days
+
+# A-Rank Party wo Ridatsu shita Ore wa
+
+# Arknights
+
+# Kowloon Generic Romance
+
+# Kuroshitsuji: Midori no Majo-hen
+
+# Teogonia
+
+# Ninja to Koroshiya no Futarigurashi
+
+# Natsume Yuujinchou
+
+# Kidou Senshi Gundam: GQuuuuuuX
+
+# Dandadan
+
+# Dandadan
+
+# Blue Lock
+
+# Aharen-san wa Hakarenai
+
+# #Compass 2.0: Sentou Setsuri Kaiseki System
+
+# 2.5-jigen no Ririsa
+
+# Takopii no Genzai
+
+# Maebashi Witches
+
+# Zatsu Tabi: That's Journey
+
+# Clevatess
+
+# Your Forma
+
+# Nazotoki wa Dinner no Ato de
+
+# Ore wa Seikan Kokka no Akutoku Ryoushu!
+
+# Shoushimin Series
+
+# Slime Taoshite 300-nen
+
+# Enen no Shouboutai
+
+# The Beginning After the End
+
+# Wind Breaker
+
+# Rock wa Lady no Tashinami deshite
+
+# Vigilante: Boku no Hero Academia Illegals
+
+# Shiunji-ke no Kodomotachi
+
+# Sentai Daishikkaku
+
+# Katainaka no Ossan, Kensei ni Naru
+
+# Gorilla no Kami kara Kago sareta Reijou wa Ouritsu Kishidan de Kawaigarareru
+
+# Kanpekiseijo
+
+# Danjo no Yuujou wa Seiritsu suru?
+
+# Yami Healer
+
+# Aru Majo ga Shinu Made
+
+# Bye Bye, Earth
+
+# Kanchigai no Atelier Meister
+
+# Trillion Game
+
+# Hana wa Saku, Shura no Gotoku
+
+# Jibaku Shounen Hanako-kun
+
+# Re:Zero kara Hajimeru Isekai Seikatsu
+
+# Honey Lemon Soda
+
+# Girumasu
+
+# Dr. Stone
+
+# Amagami-san Chi no Enmusubi
+
+# Unnamed Memory
+
+# Youkai Gakkou no Sensei Hajimemashita!
+
+# Kuroiwa Medaka ni Watashi no Kawaii ga Tsuujinai
+
+# Kono Kaisha ni Suki na Hito ga Imasu
+
+# Zenshuu
+
+# Tasokare Hotel
+
+# Sorairo Utility
+
+# S-Rank Monster no "Behemoth" dakedo
+
+# Class no Daikirai na Joshi to Kekkon suru Koto ni Natta
+
+# Rurouni Kenshin
+
+# Botsuraku Yotei no Kizoku dakedo
+
+# Salaryman ga Isekai ni Ittara Shitennou ni Natta Hanashi
+
+# Izure Saikyou no Renkinjutsushi?
+
+# Ao no Hako
+
+# Chi.: Chikyuu no Undou ni Tsuite
+
+# Sakamoto Days
+
+# Megumi no Daigo: Kyuukoku no Orange
+
+# Kami wa Game ni Ueteiru
+
+# Kaii to Otome to Kamikakushi
+
+# Hikari no Ou
+
+# Dungeon Meshi
+
+# DanMachi
+
+# Kimetsu no Yaiba
+
+# Kenka Dokugaku
+
+# Wind Breaker
+
+# Mahouka Koukou no Rettousei
+
+# Sentai Daishikkaku
+
+# Mushoku Tensei
+
+# The iDOLM@STER Shiny Colors
+
+# MF Ghost
+
+# Sasayaku You ni Koi wo Utau
+
+# Arifureta Shokugyou de Sekai Saikyou
+
+# Kabushikigaisha Magi-Lumiere
+
+# Shinigami Bocchan to Kuro Maid
+
+# Fairy Tail: 100 Years Quest
+
+# Sword Art Online Alternative: Gun Gale Online
+
+# Ranma ½
+
+# Love Live! Superstar!!
+
+# Bleach: Sennen Kessen-hen
+
+# Delico's Nursery
+
+# Shin Tennis no Oujisama: U-17 World Cup Semifinal
+
+# Sengoku Youko
+
+# Kamonohashi Ron no Kindan Suiri
+
+# Maou 2099
+
+# Yarinaoshi Reijou wa Ryuutei Heika wo Kouryakuchuu
+
+# Tasuuketsu
+
+# Seirei Gensouki
+
+# Rekishi ni Nokoru Akujo ni Naru zo
+
+# Raise wa Tanin ga Ii
+
+# Ao no Exorcist
+
+# Tensei Kizoku, Kantei Skill de Nariagaru
+
+# Hoshifuru Oukoku no Nina
+
+# Nageki no Bourei wa Intai shitai
+
+# Kimi wa Meido-sama.
+
+# Party kara Tsuihou sareta Sono Chiyushi, Jitsu wa Saikyou ni Tsuki
+
+# NegaPosi Angler
+
+# Goukon ni Ittara Onna ga Inakatta Hanashi
+
+# Saikyou no Shienshoku "Wajutsushi" de Aru Ore wa Sekai Saikyou Clan wo Shitagaeru
+
+# Tsuma, Shougakusei ni Naru.
+
+# Sayounara Ryuusei, Konnichiwa Jinsei
+
+# Kekkon suru tte, Hontou desu ka
+
+# Hitoribocchi no Isekai Kouryaku
+
+# Maou-sama, Retry!
+
+# Isekai Suicide Squad
+
+# Jiisan Baasan Wakagaeru
+
+# Hibike! Euphonium
+
+# Unnamed Memory
+
+# Yoru no Kurage wa Oyogenai
+
+# Vampire Dormitory
+
+# Maou Gakuin no Futekigousha
+
+# The New Gate
+
+# Kuroshitsuji: Kishuku Gakkou-hen
+
+# Kaijuu 8-gou
+
+# Henjin no Salad Bowl
+
+# Date A Live
+
+# Lv2 kara Cheat datta Motoyuusha Kouho no Mattari Isekai Life
+
+# Hananoi-kun to Koi no Yamai
+
+# Bartender: Kami no Glass
+
+# Blue Archive the Animation
+
+# Yuru Camp
+
+# Touken Ranbu Kai
+
+# Tsuki ga Michibiku Isekai Douchuu
+
+# Tensei shitara Dainana Ouji Datta node
+
+# Tensei Kizoku, Kantei Skill de Nariagaru
+
+# Shuumatsu Train Doko e Iku?
+
+# Re:Monster
+
+# KonoSuba
+
+# Seiyuu Radio no Uraomote
+
+# Girls Band Cry
+
+# One Room, Hiatari Futsuu, Tenshi-tsuki.
+
+# Madome
+
+# DekiSoko
+
+# Yubisaki to Renren
+
+# Bucchigiri?!
+
+# Bye Bye, Earth
+
+# Nige Jouzu no Wakagimi
+
+# Shy
+
+# Uzumaki
+
+# Tensui no Sakuna-hime
+
+# Yozakura-san Chi no Daisakusen
+
+# Boku no Hero Academia
+
+# Monogatari Series: Off & Monster Season
+
+# Atri: My Dear Moments
+
+# Oshi no Ko
+
+# Hazurewaku no "Joutai Ijou Skill" de Saikyou ni Natta Ore ga Subete wo Juurin suru made
+
+# Make Heroine ga Oosugiru!
+
+# Naze Boku no Sekai wo Daremo Oboeteinai no ka?
+
+# The Fable
+
+# Kono Sekai wa Fukanzen Sugiru
+
+# Dungeon no Naka no Hito
+
+# Tsue to Tsurugi no Wistoria
+
+# NieR:Automata Ver1.1a
+
+# Shikanoko Nokonoko Koshitantan
+
+# Koi wa Futago de Warikirenai
+
+# Isekai Shikkaku
+
+# Katsute Mahou Shoujo to Aku wa Tekitai shiteita
+
+# Mayonaka Punch
+
+# Shinmai Ossan Boukensha
+
+# Ookami to Koushinryou: Merchant Meets the Wise Wolf
+
+# Karasu wa Aruji wo Erabanai
+
+# Madougushi Dahliya wa Utsumukanai
+
+# Na Nare Hana Nare
+
+# VTuber Nandaga Haishin Kiri Wasuretara Densetsu ni Natteta
+
+# Megami no Cafe Terrace
+
+# Giji Harem
+
+# Shoushimin Series
+
+# Ore wa Subete wo "Parry" suru
+
+# Gimai Seikatsu
+
+# Tokidoki Bosotto Russia-go de Dereru Tonari no Alya-san
+
+# Isekai Yururi Kikou
+
+# Code Geass: Dakkan no Roze
+
+# Boku no Tsuma wa Kanjou ga Nai
+
+# Mob kara Hajimaru Tansaku Eiyuutan
+
+# Maougun Saikyou no Majutsushi wa Ningen datta
+
+# Ninja Kamui
+
+# Kingdom
+
+# Nanatsu no Maken ga Shihai suru
+
+# Nanatsu no Taizai: Mokushiroku no Yonkishi
+
+# Metallic Rouge
+
+# Majo to Yajuu
+
+# Sengoku Youko
+
+# Shaman King: Flowers
+
+# Boku no Kokoro no Yabai Yatsu
+
+# Ragna Crimson
+
+# Mashle
+
+# Chiyu Mahou no Machigatta Tsukaikata
+
+# Saijaku Tamer wa Gomi Hiroi no Tabi wo Hajimemashita
+
+# Momochi-san Chi no Ayakashi Ouji
+
+# Gekai Elise
+
+# Jaku-Chara Tomozaki-kun
+
+# Akuyaku Reijou Level 99
+
+# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+
+# Loop 7-kaime no Akuyaku Reijou wa
+
+# Kage no Jitsuryokusha ni Naritakute!
+
+# Tensei shitara Slime Datta Ken
+
+# Jujutsu Kaisen
+
+# Acro Trip
+
+# 16bit Sensation: Another Layer
+
+# Kizuna no Allele
+
+# Shangri-La Frontier
+
+# Spy x Family
+
+# High Card
+
+# Oroka na Tenshi wa Akuma to Odoru
+
+# Dosanko Gal wa Namara Menkoi
+
+# Himesama Goumon no Jikan desu
+
+# Kyuujitsu no Warumono-san
+
+# Mahou Shoujo ni Akogarete
+
+# Ao no Exorcist
+
+# Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node
+
+# Enen no Shouboutai
+
+# Kusuriya no Hitorigoto
+
+# Saikyou Tank no Meikyuu Kouryaku
+
+# Kekkon Yubiwa Monogatari
+
+# Pon no Michi
+
+# Undead Unluck
+
+# Nozomanu Fushi no Boukensha
+
+# Sasaki to Pii-chan
+
+# Sousou no Frieren
+
+# Sokushi Cheat ga Saikyou sugite
+
+# Mato Seihei no Slave
+
+# Ishura
+
+# Tokyo Revengers
+
+# Isekai de Mofumofu Nadenade suru Tame ni Ganbattemasu
+
+# Under Ninja
+
+# Zom 100: Zombie ni Naru made ni Shitai 100 no Koto
+
+# Ikenaikyo
+
+# Buta no Liver wa Kanetsu Shiro
+
+# Hikikomari Kyuuketsuki no Monmon
+
+# Kamonohashi Ron no Kindan Suiri
+
+# Migi to Dali
+
+# Hoshikuzu Telepath
+
+# Dead Mount Death Play
+
+# The iDOLM@STER Million Live!
+
+# Kimizero
+
+# Dark Gathering
+
+# Hyakkano
+
+# Potion-danomi de Ikinobimasu!
+
+# Seijo no Maryoku wa Bannou desu
+
+# Bokura no Ameiro Protocol
+
+# Saihate no Paladin
+
+# Tearmoon Teikoku Monogatari
+
+# Kanojo mo Kanojo
+
+# Goblin Slayer
+
+# Hametsu no Oukoku
+
+# Tate no Yuusha no Nariagari
+
+# Yuzuki-san Chi no Yonkyoudai
+
+# Ojou to Banken-kun
+
+# Mahoutsukai no Yome
+
+# S-Rank Musume
+
+# Watashi no Oshi wa Akuyaku Reijou
+
+# Dr. Stone
+
+# Shy
+
+# Helck
+
+# Toaru Ossan no VRMMO Katsudouki
+
+# Overtake!
+
+# MF Ghost
+
+# Boushoku no Berserk
+
+# Rurouni Kenshin
+
+# Seiken Gakuin no Makentsukai
+
+# Arknights
+
+# Dekoboko Majo no Oyako Jijou
+
+# Boku no Kokoro no Yabai Yatsu
+
+# Uma Musume: Pretty Derby
+
+# Vinland Saga
+
+# Birdie Wing: Golf Girls' Story
+
+# Shinigami Bocchan to Kuro Maid
+
+# Kanojo Okarishimasu
+
+# Sugar Apple Fairy Tale
+
+# Jitsu wa Ore, Saikyou deshita?
+
+# Undead Girl Murder Farce
+
+# Edens Zero
+
+# Uchi no Kaisha no Chiisai Senpai no Hanashi
+
+# Dekiru Neko wa Kyou mo Yuuutsu
+
+# Hataraku Maou-sama!
+
+# Spy Kyoushitsu
+
+# Shiro Seijo to Kuro Bokushi
+
+# Suki na Ko ga Megane wo Wasureta
+
+# Niehime to Kemono no Ou
+
+# Mushoku Tensei
+
+# Bungou Stray Dogs
+
+# Eiyuu Kyoushitsu
+
+# Ayakashi Triangle
+
+# Maou Gakuin no Futekigousha
+
+# Temple
+
+# Horimiya: Piece
+
+# Level 1 dakedo Unique Skill de Saikyou desu
+
+# Lastame
+
+# Seija Musou
+
+# Watashi no Shiawase na Kekkon
+
+# Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou
+
+# BanG Dream! It's MyGO!!!!!
+
+# Tokyo Revengers
+
+# Yumemiru Danshi wa Genjitsushugisha
+
+# Mononogatari
+
+# Lv1 Maou to One Room Yuusha
+
+# Masamune-kun no Revenge
+
+# Genjitsu no Yohane: Sunshine in the Mirror
+
+# Ryza no Atelier
+
+# Liar Liar
+
+# Okashi na Tensei
+
+# Bleach: Sennen Kessen-hen
+
+# Tonikaku Kawaii: Joshikou-hen
+
+# Mairimashita! Iruma-kun
+
+# NieR Automata
+
+# Mobile Suit Gundam: The Witch from Mercury
+
+# Kage no Jitsuryokusha ni Naritakute!
+
+# Kimi wa Houkago Insomnia
+
+# Chainsaw Man
+
+# Blue Lock
+
+# Kimetsu no Yaiba
+
+# 4-nin wa Sorezore Uso wo Tsuku
+
+# The Marginal Service
+
+# Dead Mount Death Play
+
+# Uma Musume: Pretty Derby - Road to the Top
+
+# Golden Kamuy
+
+# Kaminaki Sekai no Kamisama Katsudou
+
+# Jigokuraku
+
+# Majutsushi Orphen Hagure Tabi
+
+# Mashle
+
+# World Dai Star
+
+# Kanojo ga Koushaku-tei ni Itta Riyuu
+
+# Jijou wo Shiranai Tenkousei ga Guigui Kuru
+
+# Otonari ni Ginga
+
+# Isekai Shoukan wa Nidome desu
+
+# Fuufu Ijou, Koibito Miman.
+
+# Yamada-kun to Lv999 no Koi wo Suru
+
+# Ao no Orchestra
+
+# Tengoku Daimakyou
+
+# Mahou Shoujo Magical Destroyers
+
+# Tonikaku Kawaii
+
+# Rokudou no Onna-tachi
+
+# Megami no Cafe Terrace
+
+# Oshi no Ko
+
+# Kawaisugi Crisis
+
+# Isekai One Turn Kill Neesan
+
+# Yuusha ga Shinda!
+
+# Watashi no Yuri wa Oshigoto desu!
+
+# Ousama Ranking: Yuuki no Takarabako
+
+# Mahoutsukai no Yome
+
+# Edomae Elf
+
+# Kono Subarashii Sekai ni Bakuen wo!
+
+# Skip to Loafer
+
+# Kubo-san wa Mob wo Yurusanai
+
+# Isekai wa Smartphone to Tomo ni
+
+# Kizuna no Allele
+
+# Tensei Kizoku no Isekai Boukenroku
+
+# My Home Hero
+
+# Kuma Kuma Kuma Bear
+
+# Dr. Stone
+
+# Shaman King
+
+# Nokemono-tachi no Yoru
+
+# Kyuuketsuki Sugu Shinu
+
+# Tsurune
+
+# Bofuri
+
+# Muv-Luv Alternative
+
+# Bucchigire!
+
+# Yowamushi Pedal
+
+# High Card
+
+# Majutsushi Orphen Hagure Tabi
+
+# Mou Ippon!
+
+# Inu ni Nattara Suki na Hito ni Hirowareta
+
+# Shinka no Mi
+
+# Hikari no Ou
+
+# Spy Kyoushitsu
+
+# Hoshi no Samidare
+
+# Saikyou Onmyouji no Isekai Tenseiki
+
+# Buddy Daddies
+
+# Cool Doji Danshi
+
+# Kami-tachi ni Hirowareta Otoko
+
+# Tomo-chan wa Onnanoko!
+
+# Tondemo Skill de Isekai Hourou Meshi
+
+# Bungou Stray Dogs
+
+# Mononogatari
+
+# Eiyuuou, Bu wo Kiwameru Tame Tenseisu
+
+# Benriya Saitou-san, Isekai ni Iku
+
+# KanColle
+
+# Kyokou Suiri
+
+# Ooyukiumi no Kaina
+
+# Roukin
+
+# Sugar Apple Fairy Tale
+
+# Ars no Kyojuu
+
+# Tsunlise
+
+# Revenger
+
+# Kaiko sareta Ankoku Heishi (30-dai) no Slow na Second Life
+
+# Otonari no Tenshi-sama ni Itsunomanika Dame Ningen ni Sareteita Ken
+
+# The Legend of Heroes: Sen no Kiseki - Northern War
+
+# Hyouken no Majutsushi ga Sekai wo Suberu
+
+# Isekai Nonbiri Nouka
+
+# Boku no Hero Academia
+
+# Tensei Oujo to Tensai Reijou no Mahou Kakumei
+
+# Oniichan wa Oshimai!
+
+# Koori Zokusei Danshi to Cool na Douryou Joshi
+
+# Fumetsu no Anata e
+
+# DanMachi
+
+# Ijiranaide, Nagatoro-san
+
+# Ningen Fushin no Boukensha-tachi ga Sekai wo Sukuu you desu
+
+# Isekai Ojisan
+
+# Shingeki no Kyojin
+
+# Seven Knights Revolution: Eiyuu no Keishousha
+
+# Shingeki no Kyojin
+
+# Zombieland Saga
+
+# Utawarerumono
+
+# Mobile Suit Gundam: The Witch from Mercury
+
+# Bleach: Sennen Kessen-hen
+
+# Seiken Densetsu: Legend of Mana
+
+# Uzaki-chan wa Asobitai!
+
+# Bocchi the Rock!
+
+# Koukyuu no Karasu
+
+# Renai Flops
+
+# Yama no Susume: Next Summit
+
+# Berserk: Ougon Jidai-hen - Memorial Edition
+
+# Ajin
+
+# Ajin
+
+# Yuusha Party wo Tsuihou sareta Beast Tamer
+
+# Spy x Family
+
+# Mob Psycho 100
+
+# Mushikaburi-hime
+
+# Akiba Maid Sensou
+
+# Futoku no Guild
+
+# Do It Yourself!!
+
+# Shinobi no Ittoki
+
+# Orient
+
+# Shinmai Renkinjutsushi no Tenpo Keiei
+
+# Noumin Kanren no Skill bakka Agetetara Nazeka Tsuyoku Natta
+
+# Arknights: Reimei Zensou
+
+# Akuyaku Reijou nanode Last Boss wo Kattemimashita
+
+# Tensei shitara Ken Deshita
+
+# Love Live! Superstar!!
+
+# Shine Post
+
+# Fuuto Tantei
+
+# Renmei Kuugun Koukuu Mahou Ongakutai Luminous Witches
+
+# Love All Play
+
+# Teppen!!!!!!!!!!!!!!!
+
+# Saikin Yatotta Maid ga Ayashii
+
+# Kingdom
+
+# Tonikaku Kawaii
+
+# Kakkou no Iinazuke
+
+# Summertime Render
+
+# Yofukashi no Uta
+
+# Hataraku Maou-sama!
+
+# Danmachi
+
+# Made in Abyss
+
+# Isekai Yakkyoku
+
+# Prima Doll
+
+# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+
+# Engage Kiss
+
+# Kuro no Shoukanshi
+
+# Lycoris Recoil
+
+# Ao Ashi
+
+# Shadows House
+
+# Warau Arsnotoria Sun!
+
+# Soredemo Ayumu wa Yosetekuru
+
+# Kanojo Okarishimasu
+
+# Kumichou Musume to Sewagakari
+
+# Mamahaha no Tsurego ga Motokano datta
+
+# Kinsou no Vermeil
+
+# Isekai Meikyuu de Harem wo
+
+# Tensei Kenja no Isekai Life
+
+# Magia Record: Mahou Shoujo Madoka☆Magica Gaiden
+
+# Kunoichi Tsubaki no Mune no Uchi
+
+# Overlord
+
+# Aharen-san wa Hakarenai
+
+# 86
+
+# Yuusha, Yamemasu
+
+# Boku no Hero Academia
+
+# Tokyo 24-ku
+
+# Paripi Koumei
+
+# Kawaii dake ja Nai Shikimori-san
+
+# Ryman's Club
+
+# Kaijin Kaihatsu-bu no Kuroitsu-san
+
+# Dance Dance Danseur
+
+# Gensou Sangokushi: Tengen Reishinki
+
+# Vanitas no Karte
+
+# Fantasy Bishoujo Juniku Ojisan to
+
+# Mahoutsukai Reimeiki
+
+# Machikado Mazoku
+
+# Kenja no Deshi wo Nanoru Kenja
+
+# Love Live! Nijigasaki Gakuen School Idol Doukoukai
+
+# Birdie Wing: Golf Girls' Story
+
+# Tate no Yuusha no Nariagari
+
+# Kyoukai Senki
+
+# Gunjou no Fanfare
+
+# Kono Healer, Mendokusai
+
+# Spy x Family
+
+# Cue!
+
+# Komi-san wa, Comyushou desu.
+
+# Kaguya-sama wa Kokurasetai
+
+# Koi wa Sekai Seifuku no Ato de
+
+# Shachiku-san wa Youjo Yuurei ni Iyasaretai.
+
+# Heroine Tarumono! Kiraware Heroine to Naisho no Oshigoto
+
+# Gaikotsu Kishi-sama, Tadaima Isekai e Odekakechuu
+
+# Deaimon
+
+# Shijou Saikyou no Daimaou, Murabito A ni Tensei suru
+
+# RPG Fudousan
+
+# Tomodachi Game
+
+# Healer Girl
+
+# Black★★Rock Shooter: Dawn Fall
+
+# Otome Game Sekai wa Mob ni Kibishii Sekai desu
+
+# RikeKoi
+
+# Sabikui Bisco
+
+# Shokei Shoujo no Virgin Road
+
+# Shikkakumon no Saikyou Kenja
+
+# Honzuki no Gekokujou
+
+# Genjitsu Shugi Yuusha no Oukoku Saikenki
+
+# Slow Loop
+
+# Futsal Boys!!!!!
+
+# Arifureta Shokugyou de Sekai Saikyou
+
+# Date A Live
+
+# Akebi-chan no Sailor-fuku
+
+# Princess Connect! Re:Dive
+
+# Orient
+
+# Hanyou no Yashahime
+
+# Tensai Ouji no Akaji Kokka Saisei Jutsu
+
+# Karakai Jouzu no Takagi-san
+
+# Ousama Ranking
+
+# Dolls' Frontline
+
+# Sono Bisque Doll wa Koi wo Suru
+
+# Koroshi Ai
+
+# Platinum End
+
+# Tribe Nine
+
+# World Trigger
+
+# Leadale no Daichi nite
+
+# Non Non Biyori
+
+# Kimetsu no Yaiba
+
+# Kingdom
+
+# Shiroi Suna no Aquatope
+
+# Saihate no Paladin
+
+# Megaton-kyuu Musashi
+
+# Love Live! Superstar!!
+
+# Shin no Nakama ja Nai to Yuusha no Party wo Oidasareta node
+
+# Kobayashi-san Chi no Maid Dragon
+
+# Kyoukai Senki
+
+# Deep Insanity: The Lost Child
+
+# Selection Project
+
+# Gyakuten Sekai no Denchi Shoujo
+
+# Muv-Luv Alternative
+
+# Senpai ga Uzai Kouhai no Hanashi
+
+# Visual Prison
+
+# Taishou Otome Otogibanashi
+
+# Sakugan
+
+# Kyuuketsuki Sugu Shinu
+
+# Scarlet Nexus
+
+# Komi-san wa, Comyushou desu.
+
+# Puraore! Pride of Orange
+
+# Takt Op. Destiny
+
+# Shinka no Mi: Shiranai Uchi ni Kachigumi Jinsei
+
+# Ansatsu Kizoku
+
+# Tsuki to Laika to Nosferatu
+
+# Mieruko-chan
+
+# Heike Monogatari
+
+# Mob Psycho 100
+
+# Mushoku Tensei: Isekai Ittara Honki Dasu
+
+# Jahy-sama wa Kujikenai!
+
+# Blue Period
+
+# Isekai Shokudou
+
+# Kimetsu no Yaiba: Mugen Ressha-hen
+
+# Getsuyoubi no Tawawa
+
+# Edens Zero
+
+# Deatte 5-byou de Battle
+
+# Hamefura
+
+# Heion Sedai no Idaten-tachi
+
+# Magia Record
+
+# Re-Main
+
+# D_Cide Traumerei the Animation
+
+# Higurashi no Naku Koro ni Sotsu
+
+# Sonny Boy
+
+# Uramichi Oniisan
+
+# Kaizoku Oujo
+
+# Tokyo Revengers
+
+# Mahouka Koukou no Yuutousei
+
+# Genjitsu Shugi Yuusha no Oukoku Saikenki
+
+# Bokutachi no Remake
+
+# Kageki Shoujo!!
+
+# Meikyuu Black Company
+
+# Cheat Kusushi no Slow Life
+
+# Tsuki ga Michibiku Isekai Douchuu
+
+# Seirei Gensouki
+
+# Tantei wa Mou, Shindeiru.
+
+# Peach Boy Riverside
+
+# Vanitas no Karte
+
+# Shinigami Bocchan to Kuro Maid
+
+# Kanojo mo Kanojo
+
+# Megami-ryou no Ryoubo-kun
+
+# Muv-Luv Alternative: Total Eclipse
+
+# Girl Friend Beta
+
+# Ginga Eiyuu Densetsu
+
+# Fumetsu no Anata e
+
+# Odd Taxi
+
+# Nobunagun
+
+# Mairimashita! Iruma-kun
+
+# Etotama
+
+# Tensei shitara Slime Datta Ken
+
+# Jujutsu Kaisen
+
+# Adachi to Shimamura
+
+# 86
+
+# 100-man no Inochi no Ue ni Ore wa Tatteiru
+
+# 2.43: Seiin Koukou Danshi Volley-bu
+
+# Kyoukaisenjou no Horizon
+
+# Horimiya
+
+# Isekai Izakaya
+
+# Kyoukaisenjou no Horizon
+
+# Maoujou de Oyasumi
+
+# Black Clover
+
+# Shadows House
+
+# Megalo Box
+
+# Kumo Desu ga, Nani ka?
+
+# Osamake
+
+# Sayonara Watashi no Cramer
+
+# Slime Taoshite 300-nen
+
+# Tensura Nikki: Tensei shitara Slime Datta Ken
+
+# Higehiro
+
+# Dragon, Ie wo Kau
+
+# Fruits Basket
+
+# Godzilla: S.P
+
+# Kyuukyoku Shinka shita Full Dive RPG ga Genjitsu yori mo Kusoge Dattara
+
+# Super Cub
+
+# Nanatsu no Taizai
+
+# Ijiranaide, Nagatoro-san
+
+# Seijo no Maryoku wa Bannou Desu
+
+# Mashiro no Oto
+
+# Back Arrow
+
+# Vivy
+
+# Sentouin Hakenshimasu!
+
+# SSSS.Dynazenon
+
+# Junketsu no Maria
+
+# Occultic Nine
+
+# Isekai Maou to Shoukan Shoujo no Dorei Majutsu
+
+# Jouran: The Princess of Snow and Blood
+
+# Koikimo
+
+# Koufuku Graffiti
+
+# Medaka Box
+
+# Yakunara Mug Cup mo
+
+# Medaka Box
+
+# Taimadou Gakuen 35 Shiken Shoutai
+
+# Jitsu wa Watashi wa
+
+# Amaama to Inazuma
+
+# Kaguya-sama wa Kokurasetai
+
+# Gyakkyou Burai Kaiji
+
+# Gyakkyou Burai Kaiji
+
+# Bokura ga Ita
+
+# Juuou Mujin no Fafnir
+
+# Tsurune: Kazemai Koukou Kyuudoubu
+
+# Nyanko Days
+
+# Yuri Kuma Arashi
+
+# Akkun to Kanojo
+
+# Durarara!!
+
+# Durarara!!
+
+# Durarara!!
+
+# Durarara!!
+
+# Sora no Otoshimono
+
+# Sora no Otoshimono
+
+# Kaze no Stigma
+
+# Magi: Sinbad no Bouken
+
+# Great Pretender
+
+# Lovely Complex
+
+# Centaur no Nayami
+
+# Joshiraku
+
+# NHK ni Youkoso!
+
+# World Trigger
+
+# Dr. Stone
+
+# Higurashi no Naku Koro ni (2020)
+
+# Yuru Camp
+
+# Wonder Egg Priority
+
+# Soukou Musume Senki
+
+# Log Horizon
+
+# Kemono Jihen
+
+# Uma Musume: Pretty Derby
+
+# King's Raid: Ishi wo Tsugumono-tachi
+
+# SK8
+
+# Jaku-Chara Tomozaki-kun
+
+# Beastars
+
+# Gotoubun no Hanayome
+
+# Re:Zero kara Hajimeru Isekai Seikatsu
+
+# Hortensia Saga
+
+# Hataraku Saibou Black
+
+# Lasdan
+
+# Yakusoku no Neverland
+
+# Ore dake Haireru Kakushi Dungeon
+
+# Hataraku Saibou
+
+# Mushoku Tensei: Isekai Ittara Honki Dasu
+
+# Urasekai Picnic
+
+# Tenkuu Shinpan
+
+# True Tears
+
+# Hanasaku Iroha
+
+# Keppeki Danshi! Aoyama-kun
+
+# The Tatami Galaxy
+
+# Mousou Dairinin
+
+# Gekidol
+
+# Ochikobore Fruit Tart
+
+# Danna ga Nani wo Itteiru ka Wakaranai Ken
+
+# Danna ga Nani wo Itteiru ka Wakaranai Ken
+
+# Denki-gai no Honya-san
+
+# Plastic Neesan
+
+# Seiren
+
+# Kaifuku Jutsushi no Yarinaoshi
+
+# Gochuumon wa Usagi Desu ka?
+
+# Akudama Drive
+
+# Noblesse
+
+# Munou na Nana
+
+# Mahouka Koukou no Rettousei
+
+# Love Live! Nijigasaki Gakuen School Idol Doukoukai
+
+# Senyoku no Sigrdrifa
+
+# Assault Lily: Bouquet
+
+# Kamisama ni Natta Hi
+
+# Ikebukuro West Gate Park
+
+# Kimisen
+
+# Kuma Kuma Kuma Bear
+
+# Golden Kamuy
+
+# Kami-tachi ni Hirowareta Otoko
+
+# Iwa Kakeru
+
+# Danmachi
+
+# Majo no Tabitabi
+
+# Haikyuu
+
+# Canaan
+
+# Hoshiai no Sora
+
+# Bungou to Alchemist: Shinpan no Haguruma
+
+# Gibiate
+
+# Ahiru no Sora
+
+# Koi to Producer: EVOL x LOVE
+
+# Maou Gakuin no Futekigousha
+
+# Kanojo Okarishimasu
+
+# Toaru Kagaku no Railgun
+
+# Fugou Keiji: Balance:Unlimited
+
+# No Guns Life
+
+# Appare Ranman
+
+# Uzaki-chan wa Asobitai!
+
+# Monster Musume no Oishasan
+
+# Deca-Dence
+
+# Shokugeki no Souma
+
+# Fruits Basket
+
+# Houkago Teibou Nisshi
+
+# Lapis Re:LiGHTs
+
+# Sword Art Online: Alicization
+
+# Terra Formars
+
+# Hitsugi no Chaika
+
+# Hitsugi no Chaika
+
+# Full Metal Panic
+
+# Full Metal Panic Fumoffu
+
+# Full Metal Panic!
+
+# Full Metal Panic!
+
+# Arcana Famiglia
+
+# Terra Formars
+
+# WWW.Working!!
+
+# Chihayafuru
+
+# Joker Game
+
+# Hakata Tonkotsu Ramens
+
+# Mairimashita! Iruma-kun
+
+# Yuru Yuri
+
+# Yuru Yuri
+
+# Yuru Yuri
+
+# JoJo Bizarre Adventure
+
+# JoJo Bizarre Adventure
+
+# 22/7
+
+# Gatchaman Crowds
+
+# 100-man no Inochi no Ue ni Ore wa Tatteiru
+
+# Gatchaman Crowds
+
+# Denpa Kyoushi
+
+# Higashi no Eden
+
+# Inu x Boku SS
+
+# Soredemo Sekai wa Utsukushii
+
+# Devilman Crybaby
+
+# Shiki
+
+# Sengoku Basara
+
+# Sengoku Basara
+
+# Sengoku Basara
+
+# Kuusen Madoushi Kouhosei no Kyoukan
+
+# Bakuman
+
+# Bakuman
+
+# Bakuman
+
+# Rosario to Vampire
+
+# Rosario to Vampire
+
+# Vivid Strike
+
+# Tsuritama
+
+# Kuutei Dragons
+
+# Bang Dream
+
+# Princess Connect
+
+# Isuca
+
+# Shachibato
+
+# Gleipnir
+
+# Plunderer
+
+# Ichiban Ushiro no Daimaou
+
+# Shironeko Project: Zero Chronicle
+
+# Arte
+
+# Yesterday wo Utatte
+
+# Honzuki no Gekokujou
+
+# Nami yo Kiitekure
+
+# Listeners
+
+# Hamefura
+
+# Tamayomi
+
+# Shin Sakura Taisen the Animation
+
+# Kitsutsuki Tanteidokoro
+
+# number24
+
+# Tsugumomo
+
+# Kakushigoto
+
+# Hachi-nan tte Sore wa Nai deshou!
+
+# Infinite Dendrogram
+
+# Kiniro Mosaic
+
+# Kiniro Mosaic
+
+# Joukamachi no Dandelion
+
+# Mahou Sensou
+
+# Orange
+
+# BNA
+
+# Kingdom
+
+# Kingdom
+
+# Kimi ni Todoke
+
+# Kimi ni Todoke
+
+# Zettai Karen Children: The Unlimited - Hyoubu Kyousuke
+
+# Another World
+
+# Dog Days
+
+# Jigoku Shoujo
+
+# Oregairu
+
+# Natsunagu
+
+# Boku no Hero Academia
+
+# Uchitama
+
+# Oda Cinnamon Nobunaga
+
+# Majutsushi Orphen Hagure Tabi
+
+# Pet
+
+# Isekai Quartet
+
+# Phantasy Star Online 2: Episode Oracle
+
+# Magia Record
+
+# Dorohedoro
+
+# Kabukichou Sherlock
+
+# High School DxD
+
+# Bokuhaka
+
+# Hatena Illusion
+
+# Kyokou Suiri
+
+# Koisuru Asteroid
+
+# Runway de Waratte
+
+# Oshi ga Budoukan Ittekuretara Shinu
+
+# Shimoneta
+
+# Jibaku Shounen Hanako-kun
+
+# Somali to Mori no Kamisama
+
+# Nekopara
+
+# Mugen no Juunin: Immortal
+
+# ID:Invaded
+
+# Yatogame-chan Kansatsu Nikki
+
+# Bofuri
+
+# Nanatsu no Taizai
+
+# Eizouken ni wa Te wo Dasu na!
+
+# Heya Camp
+
+# Murenase Seton Gakuen
+
+# Fate/Grand Order: Zettai Majuu Sensen Babylonia
+
+# RikeKoi
+
+# Azur Lane
+
+# Darwin's Game
+
+# Radiant
+
+# Babylon
+
+# Kono Oto Tomare!
+
+# Rifle Is Beautiful
+
+# Vinland Saga
+
+# Enen no Shouboutai
+
+# Shokugeki no Souma
+
+# Kandagawa Jet Girls
+
+# Tokunana
+
+# Granblue Fantasy The Animation
+
+# Shinchou Yuusha
+
+# Beastars
+
+# No Guns Life
+
+# Bokutachi wa Benkyou ga Dekinai
+
+# Assassins Pride
+
+# Honzuki no Gekokujou
+
+# Oresuki
+
+# Z/X Code Reunion
+
+# Noukin
+
+# Fairy Gone
+
+# High Score Girl
+
+# Val x Love
+
+# Houkago Saikoro Club
+
+# Choyoyu
+
+# Psycho-Pass
+
+# Dr. Stone
+
+# Chuubyou Gekihatsu Boy
+
+# Hataage! Kemono Michi
+
+# Maou-sama Retry!
+
+# Kimetsu no Yaiba
+
+# Grisaia no Rakuen
+
+# Grisaia no Kajitsu
+
+# Gokukoku no Brynhildr
+
+# Ichigo Mashimaro
+
+# Oneechan ga Kita
+
+# Kono Oto Tomare!
+
+# Higurashi no Naku Koro ni
+
+# Nodame Cantabile
+
+# Nodame Cantabile
+
+# Nodame Cantabile
+
+# Bem
+
+# Osake wa Fuufu ni Natte kara
+
+# Rokujouma no Shinryakusha
+
+# Inugami-san to Nekoyama-san
+
+# Trinity Seven
+
+# Golden Time
+
+# Mahou Shoujo Madoka Magica
+
+# Suzumiya Haruhi no Yuuutsu
+
+# NouCome
+
+# Masamune-kun no Revenge
+
+# Saijaku Muhai no Bahamut
+
+# Yuru Camp
+
+# Granblue Fantasy The Animation
+
+# Arifureta
+
+# Knight's & Magic
+
+# Carole & Tuesday
+
+# Kono Yo no Hate de Koi wo Utau Shoujo YU-NO
+
+# Strike Witches
+
+# Cop Craft
+
+# Lord El-Melloi II Sei no Jikenbo: Rail Zeppelin Grace Note
+
+# Okaasan online
+
+# Fairy Tail
+
+# Toaru Kagaku no Accelerator
+
+# Danmachi
+
+# Granbelm
+
+# Machikado Mazoku
+
+# Isekai Cheat Magician
+
+# K
+
+# K-Project
+
+# HenSuki
+
+# Fruits Basket
+
+# Nakanohito Genome
+
+# Karakai Jouzu no Takagi-san
+
+# Joshikousei no Mudazukai
+
+# Araburu Kisetsu no Otome-domo yo
+
+# UchiMusume
+
+# Kanata no Astra
+
+# Sounan Desu ka?
+
+# Katsute Kami Datta Kemono-tachi e
+
+# Tejina-senpai
+
+# Dumbbell Nan Kilo Moteru?
+
+# Kimi no Iru Machi
+
+# Mob Psycho 100
+
+# Pandora Hearts
+
+# Satsuriku no Tenshi
+
+# Fate Stay Night: Unlimited Blade Works
+
+# Fate Stay Night: Unlimited Blade Works
+
+# To LOVE-Ru Darkness
+
+# To LOVE Ru Darkness
+
+# To LOVE Ru
+
+# To LOVE Ru
+
+# Kengan Ashura
+
+# High Score Girl
+
+# Natsume Yuujinchou
+
+# JoJo Bizarre Adventure: Stardust Crusaders
+
+# JoJo Bizarre Adventure
+
+# Ansatsu Kyoushitsu
+
+# Ansatsu Kyoushitsu
+
+# One Punch Man
+
+# Shigatsu wa Kimi no Uso
+
+# One Punch Man
+
+# Tensei shitara Slime Datta Ken
+
+# Overlord
+
+# Overlord
+
+# Overlord
+
+# Accel World
+
+# Absolute Duo
+
+# 3D Kanojo: Real Girl
+
+# Mahou Shoujo Tokushusen Asuka
+
+# 3-gatsu no Lion
+
+# 11eyes
+
+# Tengen Toppa Gurren Lagann
+
+# Tate no Yuusha no Nariagari
+
+# Dororo
+
+# Gunjou no Magmel
+
+# Tokyo Ghoul
+
+# Shingeki no Kyojin
+
+# Bokutachi wa Benkyou ga Dekinai
+
+# Bungou Stray Dogs
+
+# Nande Koko ni Sensei ga!?
+
+# Kenja no Mago
+
+# Sewayaki Kitsune no Senko-san
+
+# Isekai Quartet
+
+# Mayonaka no Occult Koumuin
+
+# Hitoribocchi no Marumaru Seikatsu
+
+# Senryuu Shoujo
+
+# Hachigatsu no Cinderella Nine
+
+# Shoumetsu Toshi
+
+# Fairy Gone
+
+# Nobunaga-sensei no Osanazuma
+
+# Joshikausei
+
+# Midara na Ao-chan wa Benkyou ga Dekinai
+
+# Sarazanmai
+
+# Chou Kadou Girl 1/6
+
+# Seiken Tsukai no World Break
+
+# Ao no Kanata no Four Rhythm
+
+# Ange Vierge
+
+# Aoki Hagane no Arpeggio: Ars Nova
+
+# Deadman Wonderland
+
+# Ramen Daisuki Koizumi-san
+
+# Danganronpa 3: Mirai-hen
+
+# Danganronpa 3: Zetsubou-hen
+
+# Mushishi
+
+# Mushishi
+
+# Mushishi
+
+# New Game!
+
+# New Game!
+
+# Chuunibyou demo Koi ga Shitai!
+
+# Chuunibyou demo Koi ga Shitai
+
+# Gakusen Toshi Asterisk
+
+# Gakusen Toshi Asterisk
+
+# Ryuugajou Nanana no Maizoukin
+
+# Love Live! Sunshine!!
+
+# Love Live! Sunshine!!
+
+# Love Live!
+
+# Love Live!
+
+# Shuumatsu no Izetta
+
+# Akuma no Riddle
+
+# Guilty Crown
+
+# Free!
+
+# Free!
+
+# Free!
+
+# Boku no Hero Academia
+
+# Rakudai Kishi no Cavalry
+
+# Re: Zero kara Hajimeru Isekai Seikatsu
+
+# Ano Natsu de Matteru
+
+# Ookami to Koushinryou
+
+# Ookami to Koushinryou
+
+# Isekai Shokudou
+
+# Tsurezure Children
+
+# Nisekoi
+
+# Nisekoi
+
+# Arslan Senki
+
+# Chihayafuru
+
+# Chihayafuru
+
+# D-Frag!
+
+# Black Bullet
+
+# Amanchu!
+
+# Amanchu
+
+# Nanbaka
+
+# Oda Nobuna no Yabou
+
+# Zero no Tsukaima
+
+# Zero no Tsukaima
+
+# Zero no Tsukaima
+
+# Zero no Tsukaima
+
+# Hamatora
+
+# Hamatora The Animation
+
+# Date A Live
+
+# Golden Kamuy
+
+# Outbreak Company
+
+# Nanatsu no Taizai
+
+# Tonari no Seki-kun
+
+# Suisei no Gargantia
+
+# Fairy Tail
+
+# Fullmetal Alchemist
+
+# Robotics Notes
+
+# Shingeki no Bahamut: Virgin Soul
+
+# Shingeki no Bahamut: Genesis
+
+# Oniichan dakedo Ai sae Areba Kankeinai yo ne!
+
+# Seto no Hanayome
+
+# Uchouten Kazoku
+
+# Uchouten Kazoku
+
+# Asu no Yoichi!
+
+# Heavy Object
+
+# Ping Pong The Animation
+
+# Yuragi-sou no Yuuna-san
+
+# Ergo Proxy
+
+# KanColle
+
+# Mahouka Koukou no Rettousei
+
+# Densetsu no Yuusha no Densetsu
+
+# Hai to Gensou no Grimgar
+
+# Hagure Yuusha no Aesthetica
+
+# Shingeki no Kyojin OVA
+
+# Shingeki no Kyojin
+
+# Dakara Boku wa H ga Dekinai
+
+# Fune wo Amu
+
+# Btooom!
+
+# Koutetsujou no Kabaneri
+
+# Piano no Mori
+
+# Musaigen no Phantom World
+
+# Himouto! Umaru-chan
+
+# Himouto! Umaru-chan
+
+# Dagashi Kashi
+
+# Kobayashi-san Chi no Maid Dragon
+
+# Isshuukan Friends
+
+# Non Non Biyori
+
+# Noragami
+
+# Mekakucity Actors
+
+# Gugure! Kokkuri-san
+
+# Toaru Majutsu no Index
+
+# Kakuriyo no Yadomeshi
+
+# Haiyore! Nyaruko-san
+
+# Haiyore! Nyaruko-san
+
+# Nijiiro Days
+
+# Hakumei to Mikochi
+
+# Net-juu no Susume
+
+# Mitsuboshi Colors
+
+# Re-Kan!
+
+# Aoi Hana
+
+# Fukigen na Mononokean
+
+# Kaguya-sama wa Kokurasetai
+
+# Sword Art Online
+
+# Endro~!
+
+# Papa no Iukoto wo Kikinasai!
+
+# Grimms Notes The Animation
+
+# Gotoubun no Hanayome
+
+# Boogiepop wa Warawanai
+
+# Meiji Tokyo Renka
+
+# Manaria Friends
+
+# Girly Air Force
+
+# Yakusoku no Neverland
+
+# Kaze ga Tsuyoku Fuiteiru
+
+# BanG Dream!
+
+# Kakegurui
+
+# Pastel Memories
+
+# Doukyonin wa Hiza, Tokidoki, Atama no Ue.
+
+# Watashi ni Tenshi ga Maiorita!
+
+# Egao no Daika
+
+# Ueno-san wa Bukiyou
+
+# Radiant
+
+# Steins;Gate 0
+
+# Steins Gate
+
+# Plastic Memories
+
+# Shokugeki no Souma
+
+# Shokugeki no Souma
+
+# Kakegurui
+
+# Gamers!
+
+# Cross Ange
+
+# Death Parade
+
+# Clannad
+
+# Clannad
+
+# Handa-kun
+
+# Circlet Princess
+
+# Death Note
+
+# Gakuen Babysitters
+
+# Hajimete no Gal
+
+# Seirei Tsukai no Blade Dance
+
+# Log Horizon
+
+# Log Horizon
+
+# Koi wa Ameagari no You ni
+
+# Mikakunin de Shinkoukei
+
+# Boku wa Tomodachi ga Sukunai
+
+# Boku wa Tomodachi ga Sukunai
+
+# Kuroshitsuji
+
+# Kuroshitsuji
+
+# Tamako Market
+
+# Subete ga F ni Naru
+
+# Death March kara Hajimaru Isekai Kyousoukyoku
+
+# Zoku Owarimonogatari
+
+# Isekai wa Smartphone to Tomo ni
+
+# Gabriel DropOut
+
+# Black Rock Shooter
+
+# Darker than Black
+
+# Darker than Black
+
+# Mirai Nikki
+
+# K-On!
+
+# K-On!
+
+# Little Witch Academia
+
+# Kino no Tabi
+
+# Sword Art Online
+
+# Sword Art Online
+
+# Tokyo Ghoul
+
+# Tokyo Ghoul
+
+# Domestic na Kanojo
+
+# Saenai Heroine no Sodatekata
+
+# Saenai Heroine no Sodatekata
+
+# Highschool of the Dead
+
+# Koimonogatari
+
+# Onimonogatari
+
+# Otorimonogatari
+
+# Kabukimonogatari
+
+# Nekomonogatari: Shiro
+
+# Koyomimonogatari
+
+# Owarimonogatari
+
+# Owarimonogatari
+
+# Tsukimonogatari
+
+# Hanamonogatari
+
+# Nekomonogatari: Kuro
+
+# Nisemonogatari
+
+# Bakemonogatari
+
+# Arslan Senki
+
+# Boku no Hero Academia
+
+# Boku no Hero Academia
+
+# Blood Lad
+
+# Arakawa Under the Bridge
+
+# Arakawa Under the Bridge
+
+# Ao no Exorcist
+
+# W'z
+
+# Tokyo Ravens
+
+# Ao Haru Ride
+
+# Nanatsu no Taizai
+
+# Another
+
+# Akame ga Kill!
+
+# Akagami no Shirayuki-hime
+
+# Akagami no Shirayuki-hime
+
+# A-Channel
+
+# Rozen Maiden
+
+# Angel Beats
+
+# Katanagatari
+
+# KonoSuba
+
+# KonoSuba
+
+# Sukitte Ii na yo
+
+# Jormungand
+
+# Jormungand
+
+# Toradora!
+
+# Ookami Shoujo to Kuro Ouji
+
+# Kyoukai no Kanata
+
+# Nanbaka
+
+# Sora no Method
+
+# Sakurako-san
+
+# Campione
+
+# Tanaka-kun wa Itsumo Kedaruge
+
+# Little Busters! EX
+
+# Little Busters!
+
+# Charlotte
+
+# Barakamon
+
+# Kannagi
+
+# AnoHana
+
+# Kuromukuro
+
+# Aku no Hana
+
+# Baki
+
+# Saiki Kusuo no Psi Nan
+
+# Saiki Kusuo no Psi Nan
+
+# Banana Fish
+
+# Goblin Slayer
+
+# Aho Girl
+
+# Fukigen na Mononokean
+
+# Irozuku Sekai no Ashita kara
+
+# Ulysses: Jehanne Darc to Renkin no Kishi
+
+# Beelzebub-jou no Okinimesu mama
+
+# Umineko no Naku Koro ni
+
+# Owari no Seraph
+
+# Owari no Seraph
+
+# Watashi ga Motete Dousunda
+
+# Yagate Kimi ni Naru
+
+# Tokyo Ghoul:re
+
+# Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai
+
+# Kishuku Gakkou no Juliet
+
+# SSSS.Gridman
+
+# Release the Spyce
+
+# Gakuen Basara
+
+# Uchi no Maid ga Uzasugiru!
+
+# Tonari no Kyuuketsuki-san
+
+# Zombieland Saga
+
+# Ore ga Suki nano wa Imouto dakedo Imouto ja Nai
+
+# Sakurasou no Pet na Kanojo
+
+# Anima Yell!
+
+# Akanesasu Shoujo
+
+# Mondaiji-tachi
+
+# Infinite Stratos
+
+# IS: Infinite Stratos
+
+# Date A Live
+
+# Date A Live
+
+# Kill la Kill
+
+# Sabagebu!
+
+# Ushio to Tora
+
+# Ushio to Tora
+
+# Quan Zhi Gao Shou
+
+# Code Geass
+
+# Code Geass
+
+# Koi to Uso
+
+# Rokka no Yuusha
+
+# Sousei no Onmyouji
+
+# Uma Musume Pretty Derby
+
+# Wotaku ni Koi wa Muzukashii
+
+# Working
+
+# Working
+
+# Working
+
+# White Album 2
+
+# Watamote
+
+# Yamada-kun to 7-nin no Majo
+
+# Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e
+
+# Yuri on Ice
+
+# Zero kara Hajimeru Mahou no Sho
+
+# Zankyou no Terror
+
+# Zetsuen no Tempest
+
+# Shakugan no Shana
+
+# Ouran Koukou Host Club
+
+# Just Because!
+
+# Chain Chronicle
+
+# Shoujo Shuumatsu Ryokou
+
+# Fate Apocrypha
+
+# Sengoku Otome: Momoiro Paradox
+
+# Seikoku no Dragonar
+
+# Diabolik Lovers
+
+# Diabolik Lovers
+
+# Endride
+
+# Rewrite
+
+# Mawaru Penguindrum
+
+# Rewrite
+
+# Sakamoto desu ga?
+
+# Sakura Quest
+
+# Donten ni Warau
+
+# Coppelion
+
+# Bungo Stray Dogs
+
+# Madan no Ou to Vanadis
+
+# Bungou Stray Dogs
+
+# Last Period
+
+# Samurai Champloo
+
+# Akaneiro ni Somaru Saka
+
+# Photokano
+
+# No.6
+
+# Lost Song
+
+# Kubikiri Cycle: Aoiro Savant to Zaregototsukai
+
+# Back Street Girls: Gokudolls
+
+# Shakugan no Shana
+
+# Planet With
+
+# Hataraku Saibou
+
+# Happy Sugar Life
+
+# Hanebado!
+
+# Sunohara-sou no Kanrinin-san
+
+# Shichisei no Subaru
+
+# Island
+
+# Isekai Maou to Shoukan Shoujo no Dorei Majutsu
+
+# Hyakuren no Haou to Seiyaku no Valkyria
+
+# Harukana Receive
+
+# Grand Blue
+
+# Chio-chan no Tsuugakuro
+
+# Inuyashiki
+
+# Asobi Asobase
+
+# Genei wo Kakeru Taiyou
+
+# Hoshizora e Kakaru Hashi
+
+# Escha & Logy no Atelier
+
+# Kanojo ga Flag wo Oraretara
+
+# AKB0048
+
+# AKB0048
+
+# Fortune Arterial
+
+# Re:Creators
+
+# Animegataris
+
+# Hellsing Ultimate
+
+# Little Busters!
+
+# Citrus
+
+# Ryuuou no Oshigoto!
+
+# Mahoutsukai no Yome
+
+# Girls und Panzer
+
+# Karakai Jouzu no Takagi-san
+
+# Girlish Number
+
+# Tokyo ESP
+
+# Hinako Note
+
+# Imouto sae Ireba Ii
+
+# No Game No Life
+
+# Grancrest Senki
+
+# Kujira no Kora wa Sajou ni Utau
+
+# Anne Happy
+
+# Boku no Kanojo ga Majimesugiru Sho-bitch na Ken
+
+# Blend S
+
+# Sora yori mo Tooi Basho
+
+# Hataraku Maou-sama!
+
+# AICO Incarnation
+
+# Shinsekai yori
+
+# Sword Art Online Movie: Ordinal Scale
+
+# No Game No Life: Zero
+
+# Kizumonogatari 3
+
+# Kizumonogatari 2
+
+# Kizumonogatari
+
+# Kimi no Na wa
+
+# Natsume Yuujinchou
+
+# Natsume Yuujinchou
+
+# Natsume Yuujinchou
+
+# Natsume Yuujinchou
+
+# Natsume Yuujinchou
+
+# Kekkai Sensen
+
+# Kekkai Sensen
+
+# Violet Evergarden
+
+# ACCA: 13-ku Kansatsu-ka
+
+# 91 Days
+
+# 3D Kanojo: Real Girl
+
+# 3-gatsu no Lion
+
+# Kuroko no Basket
+
+# Kuroko no Basket Last Game
+
+# Kuroko no Basket
+
+# Kuroko no Basket
+
+# Ballroom e Youkoso
+
+# Boku dake ga Inai Machi
+
+# Hidan no Aria
+
+# Hidan no Aria
+
+# Gochuumon wa Usagi desu ka?
+
+# Gochuumon wa Usagi desu ka?
+
+# Tsuki ga Kirei
+
+# ImoCho
+
+# Renai Boukun
+
+# Kakumeiki Valvrave
+
+# Danmachi Gaiden: Sword Oratoria
+
+# Kakumeiki Valvrave
+
+# Dragon Crisis!
+
+# Houseki no Kuni
+
+# Taboo Tattoo
+
+# Fuuka
+
+# Urara Meirochou
+
+# Hunter x Hunter
+
+# Kamisama no Memochou
+
+# Qualidea Code
+
+# Amagi Brilliant Park
+
+# Kamisama Hajimemashita
+
+# Strike the Blood
+
+# Strike the Blood
+
+# Kamisama Hajimemashita
+
+# Psycho-Pass
+
+# Psycho-Pass
+
+# Kokoro Connect
+
+# Beatless
+
+# Eromanga-sensei
+
+# Darling in the FranXX
+
+# Dagashi Kashi
+
+# Gosick
+
+# Binbougami ga
+
+# The World God Only Knows
+
+# The World God Only Knows
+
+# The World God Only Knows
+
+# Piano no Mori
+
+# Demi-chan wa Kataritai
+
+# Sword Art Online Alternative: Gun Gale Online
+
+# Tada-kun wa Koi wo Shinai
+
+# Megalo Box
+
+# ReLIFE
+
+# Clockwork Planet
+
+# Golden Kamuy
+
+# Usagi Drop
+
+# Busou Shoujo Machiavellianism
+
+# Devils Line
+
+# Caligula
+
+# Sakura Trick
+
+# Comic Girls
+
+# Shokugeki no Souma
+
+# Hinamatsuri
+
+# Mahou Shoujo Site
+
+# Mahou Shoujo Ore
+
+# Aoi Bungaku Series
+
+# Hibike! Euphonium
+
+# Hibike! Euphonium
+
+# Gin no Saji
+
+# Gin no Saji
+
+# Tonari no Kaibutsu-kun
+
+# Soredemo Machi wa Mawatteiru
+
+# SukaSuka
+
+# Haikyuu!!
+
+# Haikyuu!!
+
+# Haikyuu!!
+
+# Konohana Kitan
+
+# Gate
+
+# GATE
+
+# BanG Dream!
+
+# Mangaka-san to Assistant-san to The Animation
+
+# Toaru Majutsu no Index
+
+# Toaru Majutsu no Index
+
+# Jinrui wa Suitai Shimashita
+
+# Tokyo Magnitude 8.0
+
+# Sekirei
+
+# Sekirei
+
+# Servant x Service
+
+# High School DxD
+
+# High School DxD
+
+# High School DxD
+
+# Stella no Mahou
+
+# Beelzebub
+
+# Non Non Biyori
+
+# Shinryaku! Ika Musume
+
+# Shinryaku! Ika Musume
+
+# Oregairu
+
+# Oregairu
+
+# Wizard Barristers
+
+# Rail Wars
+
+# Comet Lucifer
+
+# Minami-ke
+
+# Minami-ke
+
+# Minami-ke
+
+# Minami-ke
+
+# Ao no Exorcist
+
+# Nobunaga the Fool
+
+# Akiba's Trip The Animation
+
+# Gangsta
+
+# Air
+
+# Devil May Cry
+
+# B-gata H-kei
+
+# Kuzu no Honkai
+
+# Rokudenashi Majutsu Koushi to Akashic Records
+
+# Getsuyoubi no Tawawa
+
+# Shingeki no Kyojin
+
+# Aldnoah Zero
+
+# Aldnoah Zero
+
+# Gekkan Shoujo Nozaki-kun
+
+# Shomin Sample
+
+# Gundam Build Fighters
+
+# Gundam Build Fighters
+
+# Daitoshokan no Hitsujikai
+
+# Made in Abyss
+
+# Shigofumi
+
+# Sore ga Seiyuu!
+
+# Inou-Battle wa Nichijou-kei no Naka de
+
+# Koi to Senkyo to Chocolate
+
+# Gingitsune
+
+# Natsuiro Kiseki
+
+# GJ-bu
+
+# Hourou Musuko
+
+# High School Fleet
+
+# MM!
+
+# Vividred Operation
+
+# Youjo Senki
+
+# Kamisama Dolls
+
+# Seikimatsu Occult Gakuin
+
+# Amagami SS
+
+# Amagami SS
+
+# Fate/kaleid liner Prisma Illya
+
+# Fate/Kaleid Liner Prisma Illya
+
+# Fate/kaleid liner Prisma Illya
+
+# Flying Witch
+
+# Fate/Zero
+
+# Fate/Zero
+
+# Hanayamata
+
+# Buddy Complex
+
+# Gakkou Gurashi!
+
+# Witch Craft Works
+
+# Blade & Soul
+
+# Inari, Konkon, Koi Iroha.
+
+# Love Lab
+
+# Mahou Shoujo Ikusei Keikaku
+
+# Danganronpa: The Animation
+
+# Baka to Test to Shoukanjuu
+
+# Baka to Test to Shoukanjuu
+
+# Black Lagoon
+
+# Claymore
+
+# Magi: The Kingdom of Magic
+
+# Magi: The Labyrinth of Magic
+
+# Mayo Chiki!
+
+# Nejimaki Seirei Senki: Tenkyou no Alderamin
+
+# Phantom: Requiem for the Phantom
+
+# Seitokai Yakuindomo
+
+# Seitokai Yakuindomo
+
+# Toaru Kagaku no Railgun
+
+# Gegege no Kitarou
+
+# Toaru Kagaku no Railgun
+
+# The Idolmaster
+
+# Kiseijuu: Sei no Kakuritsu
+
+# Maoyuu Maou Yuusha
+
+# Machine-Doll wa Kizutsukanai
+
+# Ore Monogatari
+
+# Kore wa Zombie Desu ka?
+
+# Kore wa Zombie Desu ka?
+
+# Oreshura
+
+# Kotoura-san
+
+# Nichijou
+
+# Kaichou wa Maid-sama!
+
+# Nagi no Asukara
+
+# Noragami
+
+# Oreimo
+
+# Oreimo
+
+# Choujigen Game Neptune The Animation
+
+# C3
+
+# Sakamichi no Apollon
+
+# Tasogare Otome x Amnesia
+
+# Elfen Lied
+
+# Drifters
+
+# Devil Survivor 2 The Animation
+
+# Konobi
+
+# Kiznaiver
+
+# Bokura wa Minna Kawaisou
+
+# Akatsuki no Yona
+
+# Dantalian no Shoka
+
+# Denpa Onna to Seishun Otoko
+
+# Dansai Bunri no Crime Edge
+
+# Blood C
+
+# DanMachi
+
+# Ben-To
+
+# Baccano!
+
+# Dimension W
+
+# Danshi Koukousei no Nichijou
+
+# Shirobako
+
+# Sankarea
+
+# Netoge no Yome wa Onna no Ko ja Nai to Omotta
+
+# Nora to Oujo to Noraneko Heart
+
+# Acchi Kocchi
+
+# 12-sai.: Chicchana Mune no Tokimeki
+
+# Hyouka
+
+# Bounen no Xamdou
+
+# Aria The Animation
+
+# Kuroshitsuji Movie: Book of the Atlantic
+
