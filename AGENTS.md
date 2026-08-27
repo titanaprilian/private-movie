@@ -64,3 +64,10 @@ The Deep Modules architecture maps onto each framework in the monorepo as follow
 | --- | --- | --- | --- | --- |
 | **Elysia (Backend)** | `src/modules/<feature>/index.ts` | `src/modules/<feature>/internal/` | `src/modules/<feature>/http.ts` (Elysia plugin) | `src/app.ts` (`createApp` factory) |
 | **Next.js (Frontend)** | `src/modules/<feature>/index.ts` exporting components/hooks | `src/modules/<feature>/internal/` (UI components, local state, mappers) | Page / Layout components | Page / Layout components (thin composition roots) |
+
+## Database & Migrations (Strict Safety Rule)
+
+- You (the AI agent) are **STRICTLY FORBIDDEN** from running `turbo run db:push`, `bun run db:push`, or any equivalent direct-push migration commands.
+- **Workflow:** When a ticket requires database schema changes, you may modify the schema files and run `turbo run db:generate` (or `bun run db:generate`) to create the `.sql` migration files.
+- **Do not apply:** You must **never** run `db:migrate` or attempt to apply the generated `.sql` files yourself. 
+- **Warn the user:** If the user asks you to modify schema, generate the SQL, leave the files uncommitted, and instruct the user to manually review the SQL for structural data loss (e.g., `DROP TABLE`) before they apply it themselves. If the user explicitly mentions or requests `db:push`, WARN them that it can result in immediate data loss without SQL file generation.

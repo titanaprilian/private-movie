@@ -1,11 +1,22 @@
-import { integer, pgTable, primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core";
+import {
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
 
 export const genres = pgTable("genres", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),
   slug: text("slug").notNull().unique(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export type GenreRow = typeof genres.$inferSelect;
@@ -38,9 +49,7 @@ export const seriesToGenres = pgTable(
       .notNull()
       .references(() => genres.id, { onDelete: "cascade" }),
   },
-  (table) => [
-    primaryKey({ columns: [table.seriesId, table.genreId] }),
-  ]
+  (table) => [primaryKey({ columns: [table.seriesId, table.genreId] })],
 );
 
 export type SeriesToGenreRow = typeof seriesToGenres.$inferSelect;
@@ -84,7 +93,7 @@ export const episodes = pgTable(
   },
   (table) => [
     unique("episodes_season_id_order_unique").on(table.seasonId, table.order),
-  ]
+  ],
 );
 
 export type EpisodeRow = typeof episodes.$inferSelect;
@@ -105,8 +114,11 @@ export const videoSources = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
   (table) => [
-    unique("video_sources_episode_id_url_unique").on(table.episodeId, table.url),
-  ]
+    unique("video_sources_episode_id_url_unique").on(
+      table.episodeId,
+      table.url,
+    ),
+  ],
 );
 
 export type VideoSourceRow = typeof videoSources.$inferSelect;

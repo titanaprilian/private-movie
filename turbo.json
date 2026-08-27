@@ -27,10 +27,12 @@
     "clean": {
       "cache": false
     },
-    "db:generate": {},
-    "db:push": {
-      "env": ["DATABASE_URL"],
+    "db:generate": {
       "cache": false
+    },
+    "db:push": {
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "db:migrate": {
       "env": ["DATABASE_URL"],

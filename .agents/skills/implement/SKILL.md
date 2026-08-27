@@ -30,6 +30,15 @@ Run typechecking regularly, single test files regularly, and the full test suite
 
 If the ticket touches backend HTTP endpoints (e.g., routes, middleware, CORS, auth guards), also write and run integration tests under `test/integration/` — not just unit tests. Run `bun run test:integration` from the monorepo root to verify before handing back.
 
-## 2. Hand back
+## 2. Safe Schema Changes
+
+If the ticket involves database schema changes (e.g., modifying `src/schema/index.ts` in the DB package):
+1. Make the necessary typescript changes.
+2. Run the command to generate the migration file locally (e.g., `bun run db:generate`).
+3. **STOP.** Do not run `db:push` or `db:migrate`. 
+4. Include a note in your hand-back message reminding the orchestrator/user to review the generated `.sql` file for data-loss (like dropped tables/columns) and to run `db:migrate` manually on their end.
+5. If the user explicitly asks you to run `db:push`, **DO NOT RUN IT**. Warn them that it bypasses SQL generation and can lead to immediate dataset loss, and ask them if they want to run it themselves (which they can do safely because it will be interactive).
+
+## 3. Hand back
 
 Don't commit any changes that you made. The orchestrator agent is the one who does it. Don't close or edit the GitHub issue yourself — report back what was done and let the orchestrator handle ticket state.
