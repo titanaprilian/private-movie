@@ -756,5 +756,95 @@ export async function syncSeasonTmdb(
   return res.data.data as unknown as SeasonTmdbSyncResult;
 }
 
+export interface PreviewBulkSourcesParams {
+  seriesId: string;
+  sourceUrl: string;
+  source?: 'otakudesu';
+  episodeOffset?: number;
+}
+
+export interface ScrapedBulkEpisodeItem {
+  scrapedTitle: string;
+  scrapedUrl: string;
+  episodeNumber: number | null;
+  calculatedOrder: number | null;
+  matchedLocalEpisodeId: string | null;
+  matchStatus: 'matched' | 'unmatched';
+}
+
+export interface BulkPreviewLocalEpisodeItem {
+  id: string;
+  title: string;
+  order: number;
+  seasonId: string;
+  seasonNumber: number | null;
+  seasonTitle: string;
+}
+
+export interface PreviewBulkSourcesResult {
+  scrapedEpisodes: ScrapedBulkEpisodeItem[];
+  localEpisodes: BulkPreviewLocalEpisodeItem[];
+}
+
+export async function previewBulkSources(
+  params: PreviewBulkSourcesParams
+): Promise<PreviewBulkSourcesResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[params.seriesId]['preview-bulk-sources'].post({
+    sourceUrl: params.sourceUrl,
+    source: params.source ?? 'otakudesu',
+    episodeOffset: params.episodeOffset,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to fetch bulk scrape preview'
+    );
+  }
+
+  return res.data.data as unknown as PreviewBulkSourcesResult;
+}
+
+export interface SaveBulkSourcesMappingItem {
+  episodeId: string | null;
+  videoSources: {
+    type: 'embed' | 'direct';
+    url: string;
+    label: string;
+    quality?: string | null;
+  }[];
+}
+
+export interface SaveBulkSourcesParams {
+  seriesId: string;
+  mappings: SaveBulkSourcesMappingItem[];
+}
+
+export interface SaveBulkSourcesResult {
+  success: boolean;
+  savedCount: number;
+  skippedCount: number;
+}
+
+export async function saveBulkSources(
+  params: SaveBulkSourcesParams
+): Promise<SaveBulkSourcesResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[params.seriesId]['bulk-sources'].post({
+    mappings: params.mappings,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to save bulk sources'
+    );
+  }
+
+  return res.data.data as unknown as SaveBulkSourcesResult;
+}
+
+
 
 

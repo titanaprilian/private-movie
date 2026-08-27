@@ -29,6 +29,7 @@ export interface BulkScrapeModalProps {
   seriesId: string;
   localEpisodes?: LocalEpisodeItem[];
   seasons?: SeasonGroupOption[];
+  onSuccess?: () => void;
 }
 
 export function BulkScrapeModal({
@@ -37,6 +38,7 @@ export function BulkScrapeModal({
   seriesId,
   localEpisodes = [],
   seasons = [],
+  onSuccess,
 }: BulkScrapeModalProps) {
   const {
     step,
@@ -49,10 +51,13 @@ export function BulkScrapeModal({
     setEpisodeOffset,
     previewItems,
     fetchPreview,
+    saveBulkSources,
+    isFetchingPreview,
+    isSaving,
     updateMapping,
     toggleIgnore,
     reset,
-  } = useBulkScrapeSources();
+  } = useBulkScrapeSources({ seriesId, onSuccess });
 
   useEffect(() => {
     if (!open) {
@@ -71,28 +76,14 @@ export function BulkScrapeModal({
     fetchPreview(localEpisodes);
   };
 
-  const handleSave = () => {
-    const validMappings = previewItems
-      .filter((item) => !item.isIgnored)
-      .map((item) => ({
-        episodeId: item.matchedLocalEpisodeId,
-        scrapedTitle: item.scrapedTitle,
-        videoSources: item.videoSources,
-      }));
-
-    console.log('[BulkScrapeModal] Saving bulk sources for series:', seriesId, {
-      sourceUrl,
-      sourceType,
-      episodeOffset,
-      mappings: validMappings,
-    });
-
-    toast.success('Bulk sources saved', {
-      description: `Successfully processed ${validMappings.length} episode sources.`,
-    });
-
-    onOpenChange(false);
-    reset();
+  const handleSave = async () => {
+    try {
+      await saveBulkSources(seriesId);
+      onOpenChange(false);
+      reset();
+    } catch {
+      // Error handled by mutation onError toast
+    }
   };
 
   return (
@@ -117,6 +108,7 @@ export function BulkScrapeModal({
                 placeholder="https://otakudesu.cloud/anime/example-season"
                 value={sourceUrl}
                 onChange={(e) => setSourceUrl(e.target.value)}
+                disabled={isFetchingPreview}
                 required
               />
             </div>
@@ -129,7 +121,8 @@ export function BulkScrapeModal({
                   aria-label="Source Type"
                   value={sourceType}
                   onChange={(e) => setSourceType(e.target.value)}
-                  className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary"
+                  disabled={isFetchingPreview}
+                  className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
                 >
                   <option value="otakudesu">Otakudesu</option>
                   <option value="direct">Direct Link</option>
@@ -145,6 +138,7 @@ export function BulkScrapeModal({
                   placeholder="0"
                   value={episodeOffset}
                   onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
+                  disabled={isFetchingPreview}
                 />
               </div>
             </div>
@@ -154,10 +148,13 @@ export function BulkScrapeModal({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={isFetchingPreview}
               >
                 Cancel
               </Button>
-              <Button type="submit">Preview</Button>
+              <Button type="submit" disabled={isFetchingPreview}>
+                {isFetchingPreview ? 'Fetching Preview...' : 'Preview'}
+              </Button>
             </DialogFooter>
           </form>
         )}
@@ -216,7 +213,7 @@ export function BulkScrapeModal({
                         <select
                           aria-label={`Target episode for ${item.scrapedTitle}`}
                           value={item.matchedLocalEpisodeId ?? ''}
-                          disabled={item.isIgnored}
+                          disabled={item.isIgnored || isSaving}
                           onChange={(e) =>
                             updateMapping(
                               index,
@@ -254,6 +251,7 @@ export function BulkScrapeModal({
                         size="sm"
                         aria-label={`Ignore ${item.scrapedTitle}`}
                         onClick={() => toggleIgnore(index)}
+                        disabled={isSaving}
                         className="shrink-0 text-xs h-8"
                       >
                         {item.isIgnored ? 'Include' : 'Ignore'}
@@ -269,11 +267,12 @@ export function BulkScrapeModal({
                 type="button"
                 variant="outline"
                 onClick={() => setStep(1)}
+                disabled={isSaving}
               >
                 Back
               </Button>
-              <Button type="button" onClick={handleSave}>
-                Save
+              <Button type="button" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save'}
               </Button>
             </DialogFooter>
           </div>

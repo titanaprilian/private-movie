@@ -1,6 +1,7 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { BulkScrapeModal } from '@/modules/videos/internal/BulkScrapeModal';
+import * as api from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
 
 vi.mock('sonner', () => ({
@@ -26,9 +27,57 @@ const mockSeasons = [
   },
 ];
 
+const mockPreviewResult = {
+  scrapedEpisodes: [
+    {
+      scrapedTitle: 'Episode 1',
+      scrapedUrl: 'https://otakudesu.cloud/anime/ep1',
+      episodeNumber: 1,
+      calculatedOrder: 1,
+      matchedLocalEpisodeId: 'ep-1',
+      matchStatus: 'matched' as const,
+    },
+    {
+      scrapedTitle: 'Episode 2',
+      scrapedUrl: 'https://otakudesu.cloud/anime/ep2',
+      episodeNumber: 2,
+      calculatedOrder: 2,
+      matchedLocalEpisodeId: 'ep-2',
+      matchStatus: 'matched' as const,
+    },
+    {
+      scrapedTitle: 'Episode 7.5 (Recap OVA)',
+      scrapedUrl: 'https://otakudesu.cloud/anime/ep7.5',
+      episodeNumber: 7.5,
+      calculatedOrder: null,
+      matchedLocalEpisodeId: null,
+      matchStatus: 'unmatched' as const,
+    },
+    {
+      scrapedTitle: 'Episode 3',
+      scrapedUrl: 'https://otakudesu.cloud/anime/ep3',
+      episodeNumber: 3,
+      calculatedOrder: 3,
+      matchedLocalEpisodeId: 'ep-3',
+      matchStatus: 'matched' as const,
+    },
+  ],
+  localEpisodes: [
+    { id: 'ep-1', title: 'Intro to Deep Modules', order: 1, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1' },
+    { id: 'ep-2', title: 'TanStack Router Setup', order: 2, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1' },
+    { id: 'ep-3', title: 'State Management', order: 3, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1' },
+  ],
+};
+
 describe('BulkScrapeModal component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(api, 'previewBulkSources').mockResolvedValue(mockPreviewResult);
+    vi.spyOn(api, 'saveBulkSources').mockResolvedValue({
+      success: true,
+      savedCount: 3,
+      skippedCount: 1,
+    });
   });
 
   it('renders nothing when open is false', () => {
@@ -83,6 +132,32 @@ describe('BulkScrapeModal component', () => {
 
     expect(screen.getByText('Needs Review')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Save/i })).toBeInTheDocument();
+  });
+
+  it('shows error toast if preview fetch fails', async () => {
+    vi.spyOn(api, 'previewBulkSources').mockRejectedValueOnce(new Error('Network connection failed'));
+
+    const { user } = renderWithProviders(
+      <BulkScrapeModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockLocalEpisodes}
+      />
+    );
+
+    const urlInput = screen.getByLabelText(/Season \/ Scraper URL/i);
+    await user.type(urlInput, 'https://otakudesu.cloud/anime/otaku-anime');
+    await user.click(screen.getByRole('button', { name: /Preview/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'Bulk Scrape Preview Error',
+        expect.objectContaining({
+          description: 'Network connection failed',
+        })
+      );
+    });
   });
 
   it('allows changing target episode mapping and toggling ignore status in Step 2', async () => {
@@ -164,12 +239,14 @@ describe('BulkScrapeModal component', () => {
 
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
-    expect(toast.success).toHaveBeenCalledWith(
-      'Bulk sources saved',
-      expect.objectContaining({
-        description: expect.stringContaining('Successfully processed'),
-      })
-    );
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(
+        'Bulk sources saved',
+        expect.objectContaining({
+          description: expect.stringContaining('Successfully processed'),
+        })
+      );
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
   });
 });

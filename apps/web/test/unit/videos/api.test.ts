@@ -16,6 +16,8 @@ import {
   deleteVideoSource,
   getSeasonTmdbPreview,
   syncSeasonTmdb,
+  previewBulkSources,
+  saveBulkSources,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -923,6 +925,104 @@ describe('videos api', () => {
     expect(JSON.parse(postBody)).toEqual({ tmdbId: 1234, tmdbSeason: 1 });
     expect(res.updatedCount).toBe(1);
     expect(res.insertedCount).toBe(2);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('previewBulkSources posts payload to /series/:id/preview-bulk-sources', async () => {
+    const mockPreviewResult = {
+      data: {
+        scrapedEpisodes: [
+          {
+            scrapedTitle: 'Episode 1',
+            scrapedUrl: 'https://otakudesu.cloud/ep1',
+            episodeNumber: 1,
+            calculatedOrder: 1,
+            matchedLocalEpisodeId: 'ep-1',
+            matchStatus: 'matched',
+          },
+        ],
+        localEpisodes: [],
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl = typeof input === 'string' ? input : (input as Request).url;
+        postBody = init?.body as string;
+        return new Response(JSON.stringify(mockPreviewResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await previewBulkSources({
+      seriesId: 'series-1',
+      sourceUrl: 'https://otakudesu.cloud/anime/season-1',
+      source: 'otakudesu',
+      episodeOffset: 0,
+    });
+
+    expect(postUrl).toContain('/series/series-1/preview-bulk-sources');
+    expect(JSON.parse(postBody)).toEqual({
+      sourceUrl: 'https://otakudesu.cloud/anime/season-1',
+      source: 'otakudesu',
+      episodeOffset: 0,
+    });
+    expect(res.scrapedEpisodes).toHaveLength(1);
+    expect(res.scrapedEpisodes[0].scrapedTitle).toBe('Episode 1');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('saveBulkSources posts mappings payload to /series/:id/bulk-sources', async () => {
+    const mockSaveResult = {
+      data: {
+        success: true,
+        savedCount: 2,
+        skippedCount: 1,
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl = typeof input === 'string' ? input : (input as Request).url;
+        postBody = init?.body as string;
+        return new Response(JSON.stringify(mockSaveResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await saveBulkSources({
+      seriesId: 'series-1',
+      mappings: [
+        {
+          episodeId: 'ep-1',
+          videoSources: [{ type: 'embed', url: 'https://otakudesu.cloud/ep1', label: 'Otakudesu' }],
+        },
+      ],
+    });
+
+    expect(postUrl).toContain('/series/series-1/bulk-sources');
+    expect(JSON.parse(postBody)).toEqual({
+      mappings: [
+        {
+          episodeId: 'ep-1',
+          videoSources: [{ type: 'embed', url: 'https://otakudesu.cloud/ep1', label: 'Otakudesu' }],
+        },
+      ],
+    });
+    expect(res.success).toBe(true);
+    expect(res.savedCount).toBe(2);
 
     fetchSpy.mockRestore();
   });
