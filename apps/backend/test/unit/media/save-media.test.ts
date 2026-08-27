@@ -54,7 +54,7 @@ describe("createMediaService saveMedia", () => {
     const seasonRows = await db
       .select()
       .from(seasons)
-      .where(eq(seasons.sourceUrl, episodeInput.sourceUrl));
+      .where(eq(seasons.seriesId, result.series!.id));
     expect(seasonRows).toHaveLength(1);
     expect(seasonRows[0].seriesId).toBe(result.series!.id);
 
@@ -132,7 +132,7 @@ describe("createMediaService saveMedia", () => {
     const seasonRows = await db
       .select()
       .from(seasons)
-      .where(eq(seasons.sourceUrl, seriesInput.sourceUrl));
+      .where(eq(seasons.seriesId, result.series!.id));
     expect(seasonRows).toHaveLength(1);
     expect(seasonRows[0].seriesId).toBe(result.series!.id);
 

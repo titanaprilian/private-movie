@@ -21,8 +21,6 @@ async function createTestSeason(id = "season-1"): Promise<string> {
     .values({
       id,
       seriesId: sRow.id,
-      sourceUrl: `https://otakudesu.blog/anime/season-${id}-${crypto.randomUUID()}`,
-      source: "otakudesu",
       title: "Season 1",
       createdAt: now,
       updatedAt: now,

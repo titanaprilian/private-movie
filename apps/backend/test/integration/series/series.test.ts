@@ -6,16 +6,11 @@ import { db } from "../../utils/db";
 
 async function insertSeriesRow(options?: {
   title?: string;
-  source?: string;
-  sourceUrl?: string;
   description?: string | null;
   createdAt?: Date;
 }): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
-  const sourceUrl =
-    options?.sourceUrl ?? `https://otakudesu.blog/anime/series-${id}/`;
   const title = options?.title ?? `Series ${id}`;
-  const source = options?.source ?? "otakudesu";
   const description =
     options?.description !== undefined ? options.description : "Sample Description";
   const now = options?.createdAt ?? new Date();
@@ -32,8 +27,6 @@ async function insertSeriesRow(options?: {
   await db.insert(seasons).values({
     id: crypto.randomUUID(),
     seriesId: id,
-    sourceUrl,
-    source,
     title,
     description,
     posterUrl: "https://example.com/poster.jpg",
@@ -172,28 +165,6 @@ describe("GET /series", () => {
 
     expect(body.data.meta).toEqual({ total: 25, page: 1, limit: 20 });
     expect(body.data.series).toHaveLength(20);
-  });
-
-  it("source filter returns only matching series", async () => {
-    await insertSeriesRow({
-      source: "otakudesu",
-      title: "otakudesu-series",
-    });
-
-    const response = await request(app, {
-      path: "/series?source=otakudesu",
-    });
-
-    expect(response.status).toBe(200);
-    const body = response.body as {
-      data: {
-        series: { source: string }[];
-        meta: { total: number };
-      };
-    };
-
-    expect(body.data.series).toHaveLength(1);
-    expect(body.data.meta.total).toBe(1);
   });
 
   it("invalid limit > 100 returns 400", async () => {

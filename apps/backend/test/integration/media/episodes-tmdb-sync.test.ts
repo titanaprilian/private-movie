@@ -57,10 +57,8 @@ describe("Season Episode TMDB Sync API", () => {
         .values({
           id: crypto.randomUUID(),
           seriesId: seriesRecord.id,
-          sourceUrl: "https://otakudesu.blog/anime/unlinked-s1",
-          source: "otakudesu",
           title: "Season 1 Unlinked",
-          tmdbSeason: null,
+          seasonNumber: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -131,10 +129,8 @@ describe("Season Episode TMDB Sync API", () => {
         .values({
           id: crypto.randomUUID(),
           seriesId: seriesRecord.id,
-          sourceUrl: "https://otakudesu.blog/anime/series-100-s1",
-          source: "otakudesu",
           title: "Season 1",
-          tmdbSeason: 1,
+          seasonNumber: 1,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -285,10 +281,8 @@ describe("Season Episode TMDB Sync API", () => {
         .values({
           id: crypto.randomUUID(),
           seriesId: seriesRecord.id,
-          sourceUrl: "https://otakudesu.blog/anime/series-200-s1",
-          source: "otakudesu",
           title: "Season 1",
-          tmdbSeason: 1,
+          seasonNumber: 1,
           tmdbSyncStatus: "PENDING",
           createdAt: new Date(),
           updatedAt: new Date(),

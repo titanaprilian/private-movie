@@ -179,7 +179,7 @@ describe("POST /save-media", () => {
       const seasonRows = await db
         .select()
         .from(seasons)
-        .where(eq(seasons.sourceUrl, epSourceUrl));
+        .where(eq(seasons.seriesId, body.data.series!.id));
       expect(seasonRows).toHaveLength(1);
       expect(seasonRows[0].seriesId).toBe(body.data.series!.id);
 
@@ -254,7 +254,7 @@ describe("POST /save-media", () => {
       const seasonRows = await db
         .select()
         .from(seasons)
-        .where(eq(seasons.sourceUrl, seriesSourceUrl));
+        .where(eq(seasons.seriesId, body.data.series.id));
       expect(seasonRows).toHaveLength(1);
       expect(seasonRows[0].seriesId).toBe(body.data.series.id);
 

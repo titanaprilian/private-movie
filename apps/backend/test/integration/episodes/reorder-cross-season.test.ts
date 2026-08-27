@@ -29,8 +29,6 @@ async function createSeriesWithSeasons(): Promise<{
     {
       id: season1Id,
       seriesId,
-      sourceUrl: `https://otakudesu.blog/cross-s1-${seriesId}`,
-      source: "otakudesu",
       title: "Season 1",
       createdAt: now,
       updatedAt: now,
@@ -38,8 +36,6 @@ async function createSeriesWithSeasons(): Promise<{
     {
       id: season2Id,
       seriesId,
-      sourceUrl: `https://otakudesu.blog/cross-s2-${seriesId}`,
-      source: "otakudesu",
       title: "Season 2",
       createdAt: now,
       updatedAt: now,

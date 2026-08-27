@@ -14,7 +14,7 @@ describe("db schema exports", () => {
     expect(schema.series.rating).toBeDefined();
     expect(schema.series.tmdbSyncStatus).toBeDefined();
     expect(schema.seasons).toBeDefined();
-    expect(schema.seasons.tmdbSeason).toBeDefined();
+    expect(schema.seasons.seasonNumber).toBeDefined();
     expect(schema.seasons.seriesId).toBeDefined();
   });
 
@@ -22,6 +22,9 @@ describe("db schema exports", () => {
     expect((schema.seasons as any).backdropUrl).toBeUndefined();
     expect((schema.seasons as any).rating).toBeUndefined();
     expect((schema.seasons as any).tmdbId).toBeUndefined();
+    expect((schema.seasons as any).sourceUrl).toBeUndefined();
+    expect((schema.seasons as any).source).toBeUndefined();
+    expect((schema.seasons as any).tmdbSeason).toBeUndefined();
   });
 
   it("ensures legacy columns are dropped from episodes table and seasonId is not null", () => {

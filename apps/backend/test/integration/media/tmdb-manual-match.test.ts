@@ -278,8 +278,6 @@ describe("TMDB Manual Match", () => {
       const [seasonRecord] = await db.insert(seasons).values({
         id: crypto.randomUUID(),
         seriesId: seriesRecord.id,
-        sourceUrl: "https://otakudesu.blog/anime/old-tv-s3",
-        source: "otakudesu",
         title: "Old TV Season 3",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -313,7 +311,7 @@ describe("TMDB Manual Match", () => {
         .select()
         .from(seasons)
         .where(require("drizzle-orm").eq(seasons.id, seasonRecord.id));
-      expect(updatedSeason?.tmdbSeason).toBe(3);
+      expect(updatedSeason?.seasonNumber).toBe(3);
       expect(updatedSeason?.description).toBe("Season 3 overview.");
       expect(updatedSeason?.posterUrl).toBe("/tv_season_3_poster.jpg");
       expect(updatedSeason?.tmdbSyncStatus).toBe("SYNCED");
@@ -376,8 +374,6 @@ describe("TMDB Manual Match", () => {
         .values({
           id: crypto.randomUUID(),
           seriesId: stubSeriesRecord.id,
-          sourceUrl: "https://otakudesu.blog/anime/jjk-s2",
-          source: "otakudesu",
           title: "JJK Season 2",
           createdAt: new Date(),
           updatedAt: new Date(),

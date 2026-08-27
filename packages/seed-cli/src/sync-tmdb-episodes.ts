@@ -34,7 +34,7 @@ export interface EpisodeUpsertItem {
 }
 
 export interface SyncTmdbEpisodesDeps {
-  findSeasons?: () => Promise<Array<{ id: string; tmdbId: number; tmdbSeason: number; title?: string | null }>>;
+  findSeasons?: () => Promise<Array<{ id: string; tmdbId: number; seasonNumber: number; title?: string | null }>>;
   upsertEpisodes?: (seasonId: string, items: EpisodeUpsertItem[]) => Promise<number>;
 }
 
@@ -68,16 +68,16 @@ export async function syncTmdbEpisodes(options: SyncTmdbEpisodesOptions = {}): P
       .select({
         id: seasons.id,
         tmdbId: series.tmdbId,
-        tmdbSeason: seasons.tmdbSeason,
+        seasonNumber: seasons.seasonNumber,
         title: seasons.title,
       })
       .from(seasons)
       .innerJoin(series, eq(seasons.seriesId, series.id))
-      .where(and(isNotNull(series.tmdbId), isNotNull(seasons.tmdbSeason)));
+      .where(and(isNotNull(series.tmdbId), isNotNull(seasons.seasonNumber)));
 
     return rows.filter(
-      (r): r is typeof r & { tmdbId: number; tmdbSeason: number } =>
-        r.tmdbId !== null && r.tmdbSeason !== null
+      (r): r is typeof r & { tmdbId: number; seasonNumber: number } =>
+        r.tmdbId !== null && r.seasonNumber !== null
     );
   });
 
@@ -120,7 +120,7 @@ export async function syncTmdbEpisodes(options: SyncTmdbEpisodesOptions = {}): P
   const seasonsToSync = await findSeasons();
 
   const eligibleSeasons = seasonsToSync.filter(
-    (s) => s.tmdbId != null && s.tmdbSeason != null
+    (s) => s.tmdbId != null && s.seasonNumber != null
   );
 
   if (eligibleSeasons.length === 0) {
@@ -137,10 +137,10 @@ export async function syncTmdbEpisodes(options: SyncTmdbEpisodesOptions = {}): P
 
   for (let i = 0; i < eligibleSeasons.length; i++) {
     const season = eligibleSeasons[i];
-    log(`[${i + 1}/${eligibleSeasons.length}] Processing season ${season.id} ("${season.title ?? "Untitled"}") - TMDB ID: ${season.tmdbId}, Season: ${season.tmdbSeason}`);
+    log(`[${i + 1}/${eligibleSeasons.length}] Processing season ${season.id} ("${season.title ?? "Untitled"}") - TMDB ID: ${season.id}, Season: ${season.seasonNumber}`);
 
     try {
-      const tmdbUrl = `https://api.themoviedb.org/3/tv/${season.tmdbId}/season/${season.tmdbSeason}`;
+      const tmdbUrl = `https://api.themoviedb.org/3/tv/${season.tmdbId}/season/${season.seasonNumber}`;
       const seasonData: TmdbSeasonApiResponse = await fetchFn(tmdbUrl, {
         headers: {
           Authorization: `Bearer ${apiKey}`,

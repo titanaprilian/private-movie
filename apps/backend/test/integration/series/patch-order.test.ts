@@ -21,8 +21,6 @@ async function insertTestSeries(): Promise<{ id: string }> {
   await db.insert(seasons).values({
     id: crypto.randomUUID(),
     seriesId: id,
-    sourceUrl: `https://otakudesu.blog/anime/series-order-test-${id}/`,
-    source: "otakudesu",
     title: "Order Test Series",
     createdAt: now,
     updatedAt: now,

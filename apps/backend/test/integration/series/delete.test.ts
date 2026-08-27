@@ -23,8 +23,6 @@ async function insertSeriesRow(): Promise<{ id: string }> {
   await db.insert(seasons).values({
     id: crypto.randomUUID(),
     seriesId: id,
-    sourceUrl: `https://otakudesu.blog/anime/delete-series-${id}/`,
-    source: "otakudesu",
     title: "Series To Delete",
     createdAt: now,
     updatedAt: now,

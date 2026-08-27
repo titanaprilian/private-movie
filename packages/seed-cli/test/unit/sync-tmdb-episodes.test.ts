@@ -30,11 +30,11 @@ describe("syncTmdbEpisodes", () => {
     }
   });
 
-  it("bypasses seasons without tmdbId or tmdbSeason", async () => {
+  it("bypasses seasons without tmdbId or seasonNumber", async () => {
     const mockFindSeasons = vi.fn().mockResolvedValue([
-      { id: "s-1", title: "Season 1", tmdbId: null, tmdbSeason: 1 },
-      { id: "s-2", title: "Season 2", tmdbId: 100, tmdbSeason: null },
-      { id: "s-3", title: "Season 3", tmdbId: null, tmdbSeason: null },
+      { id: "s-1", title: "Season 1", tmdbId: null, seasonNumber: 1 },
+      { id: "s-2", title: "Season 2", tmdbId: 100, seasonNumber: null },
+      { id: "s-3", title: "Season 3", tmdbId: null, seasonNumber: null },
     ]);
     const mockUpsertEpisodes = vi.fn();
 
@@ -55,7 +55,7 @@ describe("syncTmdbEpisodes", () => {
 
   it("queries /3/tv/{id}/season/{season_number}, transforms TMDB episodes and performs batch upsert", async () => {
     const mockFindSeasons = vi.fn().mockResolvedValue([
-      { id: "season-101", title: "Jujutsu Kaisen Season 1", tmdbId: 95479, tmdbSeason: 1 },
+      { id: "season-101", title: "Jujutsu Kaisen Season 1", tmdbId: 95479, seasonNumber: 1 },
     ]);
 
     const mockFetchFn = vi.fn().mockImplementation((url: string) => {
@@ -140,7 +140,7 @@ describe("syncTmdbEpisodes", () => {
 
   it("handles TMDB fetch errors gracefully and logs failed seasons", async () => {
     const mockFindSeasons = vi.fn().mockResolvedValue([
-      { id: "s-fail", title: "Failing Season", tmdbId: 99999, tmdbSeason: 1 },
+      { id: "s-fail", title: "Failing Season", tmdbId: 99999, seasonNumber: 1 },
     ]);
 
     const mockFetchFn = vi.fn().mockRejectedValue(new Error("TMDB API 404 Not Found"));
@@ -164,7 +164,7 @@ describe("syncTmdbEpisodes", () => {
 
   it("handles episodes with null/missing optional fields correctly", async () => {
     const mockFindSeasons = vi.fn().mockResolvedValue([
-      { id: "s-nulls", title: "Null Fields Season", tmdbId: 123, tmdbSeason: 2 },
+      { id: "s-nulls", title: "Null Fields Season", tmdbId: 123, seasonNumber: 2 },
     ]);
 
     const mockFetchFn = vi.fn().mockResolvedValue({
@@ -214,7 +214,7 @@ describe("syncTmdbEpisodes", () => {
       from: vi.fn().mockReturnThis(),
       innerJoin: vi.fn().mockReturnThis(),
       where: vi.fn().mockResolvedValue([
-        { id: "season-join", tmdbId: 8888, tmdbSeason: 1, title: "Season Join" },
+        { id: "season-join", tmdbId: 8888, seasonNumber: 1, title: "Season Join" },
       ]),
     } as any;
 

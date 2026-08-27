@@ -12,10 +12,10 @@ export class SeriesNotFoundError extends Error {
 }
 
 export function compareSeasons<
-  T extends { tmdbSeason?: number | null; createdAt?: Date | string | null }
+  T extends { seasonNumber?: number | null; createdAt?: Date | string | null }
 >(a: T, b: T): number {
   const getGroup = (season: T) => {
-    const s = season.tmdbSeason;
+    const s = season.seasonNumber;
     if (s !== null && s !== undefined && s > 0) return 1;
     if (s === 0) return 2;
     return 3;
@@ -29,8 +29,8 @@ export function compareSeasons<
   }
 
   if (groupA === 1) {
-    const tmdbA = a.tmdbSeason!;
-    const tmdbB = b.tmdbSeason!;
+    const tmdbA = a.seasonNumber!;
+    const tmdbB = b.seasonNumber!;
     if (tmdbA !== tmdbB) {
       return tmdbA - tmdbB;
     }
@@ -71,7 +71,7 @@ export interface UpdateSeriesInput {
   backdropUrl?: string | null;
   rating?: string | null;
   tmdbId?: number | null;
-  tmdbSeason?: number | null;
+  seasonNumber?: number | null;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
   genreIds?: string[];
   relations?: SeriesRelationItem[];
@@ -145,15 +145,6 @@ export function createSeriesRepositoryInternal<
       return row;
     },
 
-    async findBySourceUrl(sourceUrl: string): Promise<SeriesRow | null> {
-      const [seasonRow] = await db
-        .select()
-        .from(seasons)
-        .where(eq(seasons.sourceUrl, sourceUrl));
-      if (!seasonRow) return null;
-      return this.findById(seasonRow.seriesId);
-    },
-
     async findById(id: string): Promise<SeriesRow | null> {
       const [row] = await db
         .select()
@@ -186,11 +177,11 @@ export function createSeriesRepositoryInternal<
         .where(eq(seasons.seriesId, id))
         .orderBy(
           sql`CASE 
-            WHEN ${seasons.tmdbSeason} IS NOT NULL AND ${seasons.tmdbSeason} > 0 THEN 1 
-            WHEN ${seasons.tmdbSeason} = 0 THEN 2 
+            WHEN ${seasons.seasonNumber} IS NOT NULL AND ${seasons.seasonNumber} > 0 THEN 1 
+            WHEN ${seasons.seasonNumber} = 0 THEN 2 
             ELSE 3 
           END ASC`,
-          asc(seasons.tmdbSeason),
+          asc(seasons.seasonNumber),
           asc(seasons.createdAt)
         );
 
@@ -261,14 +252,6 @@ export function createSeriesRepositoryInternal<
 
       const conditions = [];
 
-      if (params.source) {
-        const matchingSeriesIds = db
-          .select({ id: seasons.seriesId })
-          .from(seasons)
-          .where(eq(seasons.source, params.source));
-        conditions.push(inArray(series.id, matchingSeriesIds));
-      }
-
       if (params.q && params.q.trim() !== "") {
         const pattern = `%${params.q.trim()}%`;
         conditions.push(
@@ -317,11 +300,11 @@ export function createSeriesRepositoryInternal<
           .where(inArray(seasons.seriesId, seriesIds))
           .orderBy(
             sql`CASE 
-              WHEN ${seasons.tmdbSeason} IS NOT NULL AND ${seasons.tmdbSeason} > 0 THEN 1 
-              WHEN ${seasons.tmdbSeason} = 0 THEN 2 
+              WHEN ${seasons.seasonNumber} IS NOT NULL AND ${seasons.seasonNumber} > 0 THEN 1 
+              WHEN ${seasons.seasonNumber} = 0 THEN 2 
               ELSE 3 
             END ASC`,
-            asc(seasons.tmdbSeason),
+            asc(seasons.seasonNumber),
             asc(seasons.createdAt)
           );
 
@@ -396,11 +379,11 @@ export function createSeriesRepositoryInternal<
         .where(eq(seasons.seriesId, id))
         .orderBy(
           sql`CASE 
-            WHEN ${seasons.tmdbSeason} IS NOT NULL AND ${seasons.tmdbSeason} > 0 THEN 1 
-            WHEN ${seasons.tmdbSeason} = 0 THEN 2 
+            WHEN ${seasons.seasonNumber} IS NOT NULL AND ${seasons.seasonNumber} > 0 THEN 1 
+            WHEN ${seasons.seasonNumber} = 0 THEN 2 
             ELSE 3 
           END ASC`,
-          asc(seasons.tmdbSeason),
+          asc(seasons.seasonNumber),
           asc(seasons.createdAt)
         );
 

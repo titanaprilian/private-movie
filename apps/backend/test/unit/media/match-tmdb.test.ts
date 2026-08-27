@@ -60,8 +60,6 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       .values({
         id: "season-1",
         seriesId: stubSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/frieren-s1",
-        source: "otakudesu",
         title: "Frieren Season 1",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -99,7 +97,7 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       .select()
       .from(seasons)
       .where(eq(seasons.id, season.id));
-    expect(updatedSeasonRow.tmdbSeason).toBe(1);
+    expect(updatedSeasonRow.seasonNumber).toBe(1);
     expect(updatedSeasonRow.description).toBe("Season 1 overview");
     expect(updatedSeasonRow.posterUrl).toBe("/frieren_s1.jpg");
     expect(updatedSeasonRow.tmdbSyncStatus).toBe("SYNCED");
@@ -151,8 +149,6 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       .values({
         id: "season-existing-1",
         seriesId: existingSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/kaguya-s1",
-        source: "otakudesu",
         title: "Kaguya S1",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -177,8 +173,6 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       .values({
         id: "season-stub-2",
         seriesId: stubSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/kaguya-s2",
-        source: "otakudesu",
         title: "Kaguya S2",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -251,12 +245,10 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       .values({
         id: "season-local-1",
         seriesId: targetSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/multi-s1",
-        source: "otakudesu",
         title: "Local Season 1",
         description: "Original S1 desc",
         posterUrl: "/original_s1.jpg",
-        tmdbSeason: 1,
+        seasonNumber: 1,
         tmdbSyncStatus: "SYNCED",
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-01"),
@@ -268,8 +260,6 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
       .values({
         id: "season-local-2",
         seriesId: targetSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/multi-s2",
-        source: "otakudesu",
         title: "Local Season 2",
         tmdbSyncStatus: "PENDING",
         createdAt: new Date("2024-01-02"),
@@ -287,14 +277,14 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
 
     // Check Season 2 was updated
     const [updatedSeason2] = await db.select().from(seasons).where(eq(seasons.id, season2.id));
-    expect(updatedSeason2.tmdbSeason).toBe(2);
+    expect(updatedSeason2.seasonNumber).toBe(2);
     expect(updatedSeason2.description).toBe("TMDB S2 overview");
     expect(updatedSeason2.posterUrl).toBe("/tmdb_s2.jpg");
     expect(updatedSeason2.tmdbSyncStatus).toBe("SYNCED");
 
     // Check Season 1 remained untouched (Strict Isolation)
     const [untouchedSeason1] = await db.select().from(seasons).where(eq(seasons.id, season1.id));
-    expect(untouchedSeason1.tmdbSeason).toBe(1);
+    expect(untouchedSeason1.seasonNumber).toBe(1);
     expect(untouchedSeason1.description).toBe("Original S1 desc");
     expect(untouchedSeason1.posterUrl).toBe("/original_s1.jpg");
     expect(untouchedSeason1.tmdbSyncStatus).toBe("SYNCED");

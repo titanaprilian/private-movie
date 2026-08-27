@@ -65,8 +65,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seriesId: seriesRecord.id,
-        sourceUrl: "https://otakudesu.blog/anime/series-missing-s1",
-        source: "otakudesu",
         title: "Season 1",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -113,8 +111,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seriesId: series1.id,
-        sourceUrl: "https://otakudesu.blog/anime/s1-diff",
-        source: "otakudesu",
         title: "Season 1",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -126,8 +122,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seriesId: series2.id,
-        sourceUrl: "https://otakudesu.blog/anime/s2-diff",
-        source: "otakudesu",
         title: "Season 2 Other Series",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -163,8 +157,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seriesId: targetSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/aot-final-part-1",
-        source: "otakudesu",
         title: "AoT Final Part 1",
         createdAt: new Date(Date.now() - 3000),
         updatedAt: new Date(),
@@ -176,8 +168,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seriesId: targetSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/aot-final-part-2",
-        source: "otakudesu",
         title: "AoT Final Part 2",
         createdAt: new Date(Date.now() - 2000),
         updatedAt: new Date(),
@@ -189,8 +179,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seriesId: targetSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/aot-final-part-3",
-        source: "otakudesu",
         title: "AoT Final Part 3",
         createdAt: new Date(Date.now() - 1000),
         updatedAt: new Date(),
@@ -323,8 +311,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seriesId: targetSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/overlap-s1",
-        source: "otakudesu",
         title: "Season 1",
         createdAt: new Date(Date.now() - 2000),
         updatedAt: new Date(),
@@ -336,8 +322,6 @@ describe("POST /series/:id/seasons/merge", () => {
       .values({
         id: crypto.randomUUID(),
         seriesId: targetSeries.id,
-        sourceUrl: "https://otakudesu.blog/anime/overlap-s2",
-        source: "otakudesu",
         title: "Season 2",
         createdAt: new Date(Date.now() - 1000),
         updatedAt: new Date(),

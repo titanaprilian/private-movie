@@ -102,7 +102,7 @@ async function runTmdbSync() {
           const ratingStr = details.vote_average ? String(details.vote_average) : undefined;
 
           await db.update(seasons).set({
-            tmdbSeason: season.season_number,
+            seasonNumber: season.season_number,
             title: updatedTitle,
             description: updatedDescription,
             posterUrl: updatedPoster,
@@ -146,7 +146,7 @@ async function runTmdbSync() {
           const ratingStr = details.vote_average ? String(details.vote_average) : undefined;
 
           await db.update(seasons).set({
-            tmdbSeason: 1,
+            seasonNumber: 1,
             title: updatedTitle,
             description: updatedDescription,
             posterUrl: updatedPoster,

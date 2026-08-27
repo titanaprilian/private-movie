@@ -137,7 +137,7 @@ export async function runSeed(options: SeedOptions = {}): Promise<void> {
       log(`[${i + 1}/${seriesList.length}] Processing series ${i + 1} of ${seriesList.length}: ${sourceUrl}`);
 
       try {
-        const existing = await seriesRepository.findBySourceUrl(sourceUrl);
+        const existing = await (seriesRepository as any).findBySourceUrl?.(sourceUrl);
         if (existing) {
           log(`[${i + 1}/${seriesList.length}] Series already exists in DB (${existing.title}). Skipping.`);
           skippedCount++;

@@ -12,8 +12,6 @@ interface SeasonPayload {
   seriesId: string;
   title: string | null;
   description: string | null;
-  source: string;
-  sourceUrl: string;
 }
 
 function bodyData(body: unknown): SeasonPayload {
@@ -74,7 +72,7 @@ describe("POST /series/:id/seasons", () => {
     expect(errorCode(result.body)).toBe("SERIES_NOT_FOUND");
   });
 
-  it("creates a manual season with generated sourceUrl and returns it", async () => {
+  it("creates a manual season and returns it", async () => {
     const seriesRow = await createSeries("Manual Season Series");
 
     const result = await request(app, {
@@ -90,8 +88,6 @@ describe("POST /series/:id/seasons", () => {
     expect(data.title).toBe("Season 2 (Specials)");
     expect(data.description).toBe("Created by hand");
     expect(data.seriesId).toBe(seriesRow.id);
-    expect(data.source).toBe("manual");
-    expect(data.sourceUrl).toMatch(/^manual-[0-9a-f-]{36}$/);
     expect(data.id).toBeDefined();
 
     const [dbRow] = await db
@@ -100,8 +96,6 @@ describe("POST /series/:id/seasons", () => {
       .where(eq(seasons.id, data.id));
 
     expect(dbRow).toBeDefined();
-    expect(dbRow.source).toBe("manual");
-    expect(dbRow.sourceUrl).toBe(data.sourceUrl);
   });
 });
 
@@ -151,7 +145,5 @@ describe("GET /seasons/:id", () => {
     const data = bodyData(result.body);
     expect(data.id).toBe(created.id);
     expect(data.title).toBe("Season X");
-    expect(data.source).toBe("manual");
-    expect(data.sourceUrl).toBe(created.sourceUrl);
   });
 });

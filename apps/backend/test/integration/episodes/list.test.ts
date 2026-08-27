@@ -28,8 +28,6 @@ async function ensureSeason(id: string): Promise<string> {
     .values({
       id,
       seriesId: sRow.id,
-      sourceUrl: `https://otakudesu.blog/anime/season-${id}-${crypto.randomUUID()}`,
-      source: "otakudesu",
       title: "Test Season",
       createdAt: now,
       updatedAt: now,

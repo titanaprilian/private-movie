@@ -42,8 +42,6 @@ async function createSeason(seriesId: string, title: string) {
     .values({
       id: crypto.randomUUID(),
       seriesId,
-      sourceUrl: `manual-${crypto.randomUUID()}`,
-      source: "manual",
       title,
       createdAt: new Date(),
       updatedAt: new Date(),

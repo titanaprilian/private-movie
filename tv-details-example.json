@@ -1,94 +1,254 @@
 {
   "adult": false,
-  "backdrop_path": "/cGgqLzBGUY0dxsE5i3W7SXBGRbe.jpg",
+  "backdrop_path": "/ullfy98STkno11rDGi44SK6llwx.jpg",
   "created_by": [],
-  "episode_run_time": [24],
-  "first_air_date": "2009-10-02",
+  "episode_run_time": [25],
+  "first_air_date": "2020-07-11",
   "genres": [
     {
       "id": 16,
       "name": "Animation"
     },
     {
-      "id": 10759,
-      "name": "Action & Adventure"
-    },
-    {
       "id": 35,
       "name": "Comedy"
-    },
-    {
-      "id": 10765,
-      "name": "Sci-Fi & Fantasy"
     }
   ],
-  "homepage": "https://toaru-project.com",
-  "id": 30977,
+  "homepage": "https://kanokari-official.com",
+  "id": 96316,
   "in_production": true,
   "languages": ["ja"],
-  "last_air_date": "2020-09-25",
+  "last_air_date": "2026-06-27",
   "last_episode_to_air": {
-    "id": 2431759,
-    "name": "My Dear Friends",
-    "overview": "As the fight atop the airship draws to a close, the Doppelganger's true intentions become clear. Following the battle, the members of Scavenger seek to regain their former glory, while the circle of Mikoto's friends becomes more interconnected.",
+    "id": 7134983,
+    "name": "Loneliness and Girlfriend",
+    "overview": "Loneliness torments poor Kazuya, but there is a solution to everything.",
     "vote_average": 8,
-    "vote_count": 2,
-    "air_date": "2020-09-25",
-    "episode_number": 25,
+    "vote_count": 1,
+    "air_date": "2026-06-27",
+    "episode_number": 60,
     "episode_type": "finale",
     "production_code": "",
-    "runtime": 23,
-    "season_number": 3,
-    "show_id": 30977,
-    "still_path": "/d4LG0LHEzGGga0S8aQfTRNVe65c.jpg"
+    "runtime": 24,
+    "season_number": 1,
+    "show_id": 96316,
+    "still_path": "/5g7QTW8YoXXOw4Ve9cHftk9F5nw.jpg"
   },
-  "name": "A Certain Scientific Railgun",
+  "name": "Rent-a-Girlfriend",
   "next_episode_to_air": null,
   "networks": [
     {
-      "id": 614,
-      "logo_path": "/hSdroyVthq3CynxTIIY7lnS8w1.png",
-      "name": "Tokyo MX",
+      "id": 94,
+      "logo_path": "/7RNXnyiMbjgqtPAjja13wchcrGI.png",
+      "name": "MBS",
+      "origin_country": "JP"
+    },
+    {
+      "id": 160,
+      "logo_path": "/lUACMATs6jcscXIrzNCQzbvNVN5.png",
+      "name": "TBS",
+      "origin_country": "JP"
+    },
+    {
+      "id": 201,
+      "logo_path": "/qNooLje0YQh1y3y9LUM2Y5QCtiF.png",
+      "name": "CBC",
+      "origin_country": "JP"
+    },
+    {
+      "id": 896,
+      "logo_path": "/qfUzYnpnN5bnd2bqGUH0OlAMell.png",
+      "name": "Tulip Television",
+      "origin_country": "JP"
+    },
+    {
+      "id": 1559,
+      "logo_path": "/artkCykJgOAh6lAjfrNNgANasgk.png",
+      "name": "SBC",
+      "origin_country": "JP"
+    },
+    {
+      "id": 2460,
+      "logo_path": "/34sNEcsgcTAuDidRMrgxdfNyVjL.png",
+      "name": "BSN",
+      "origin_country": "JP"
+    },
+    {
+      "id": 2461,
+      "logo_path": "/b4Ivxqz6UY0EogjYc09Y22ctC6F.png",
+      "name": "tys",
+      "origin_country": "JP"
+    },
+    {
+      "id": 2462,
+      "logo_path": "/7zXfwh5ZhFqvdOWgWX80weU6Sqb.png",
+      "name": "NBC",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3658,
+      "logo_path": "/sJwRsE1lfMwAwYZi1OtRfn7V03t.png",
+      "name": "HBC",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3705,
+      "logo_path": "/zOgixhlAa61yUb32bsXvRtD63wI.png",
+      "name": "RKK",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3969,
+      "logo_path": "/nhCsLIGjzIIp6jIFCdHN0cQEzjP.png",
+      "name": "i-Television",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3970,
+      "logo_path": "/9coKtCf4jSNCdSqGveVFyzvjrZt.png",
+      "name": "SBS",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3971,
+      "logo_path": "/6bhZ2SWdYTbSTQf8Bhmf1q0aBef.png",
+      "name": "IBC",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3972,
+      "logo_path": "/rL2IlndcEiQnIbym5EoSEM7rGlx.png",
+      "name": "BSS",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3973,
+      "logo_path": "/dh4E8hGvqD9Xqu51kbqUU06UKbt.png",
+      "name": "MRO",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3974,
+      "logo_path": "/yMQxsmGs88q54bslmcSeXlmpObC.png",
+      "name": "OBS",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3975,
+      "logo_path": "/6ACZlk44MWsIIwYHxjRGXGKlpRb.png",
+      "name": "TUF",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3977,
+      "logo_path": "/sGMMrdCmptaLLwJX7CsXTDaduLO.png",
+      "name": "RSK",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3978,
+      "logo_path": "/zOz9LK6WWLUWGuG0fthzDzCIXlA.png",
+      "name": "TUY",
+      "origin_country": "JP"
+    },
+    {
+      "id": 3979,
+      "logo_path": "/yWlWHPUn6FHjNUulL1vp8croYFw.png",
+      "name": "tbc",
+      "origin_country": "JP"
+    },
+    {
+      "id": 4748,
+      "logo_path": "/o5Hlt7ZXJPEm4Qrx2Pl2rtc9A5y.png",
+      "name": "RKB",
+      "origin_country": "JP"
+    },
+    {
+      "id": 4792,
+      "logo_path": "/8kzeHaKeW3gZubs3cqlGWFvfJI7.png",
+      "name": "KUTV",
+      "origin_country": "JP"
+    },
+    {
+      "id": 4859,
+      "logo_path": "/6jr76BpIItwLV5oKbZmRJsVh3c6.png",
+      "name": "RBC",
+      "origin_country": "JP"
+    },
+    {
+      "id": 6171,
+      "logo_path": "/ekXN1cfYutjLfudy1MKyGzNynEa.png",
+      "name": "UTY",
+      "origin_country": "JP"
+    },
+    {
+      "id": 6172,
+      "logo_path": "/mKslL0MTHHt9ukugWOv3Vh8Tn0E.png",
+      "name": "RCC",
+      "origin_country": "JP"
+    },
+    {
+      "id": 6173,
+      "logo_path": "/YfewT1YYtAqkgvdu8oCX4mnJCs.png",
+      "name": "MRT",
+      "origin_country": "JP"
+    },
+    {
+      "id": 6174,
+      "logo_path": "/aawphEBuBGT9RVP6xG3BZV8NOCw.png",
+      "name": "ATV",
+      "origin_country": "JP"
+    },
+    {
+      "id": 6175,
+      "logo_path": "/iaaU6q82URj2mBbjQIbfAMUz14J.png",
+      "name": "MBC",
       "origin_country": "JP"
     }
   ],
-  "number_of_episodes": 73,
-  "number_of_seasons": 4,
+  "number_of_episodes": 60,
+  "number_of_seasons": 1,
   "origin_country": ["JP"],
   "original_language": "ja",
-  "original_name": "とある科学の超電磁砲",
-  "overview": "Misaka's electro-manipulation skills - and her delightfully destructive railgun projectile movement - make her a rock star in Academy City. The techno-metropolis is filled with supernaturally powerful students known as Espers, including Misaka's flirtatious friend and roommate, Shirai Kuroko. She uses her teleportation skills as a member of the Judgment law enforcement team, fighting crime alongside fellow agent Uiharu. Joined by their friend Saten, a spunky Level 0 Esper, Misaka, Kuroko, and Uiharu have a blast taking on danger whenever and wherever it arises.",
-  "popularity": 27.5544,
-  "poster_path": "/dZt1dqw0K4JGhwcqTh8yExHYK9w.jpg",
+  "original_name": "彼女、お借りします",
+  "overview": "Kinoshita Kazuya is a 20-year-old failure of a college student. He managed to kiss his girlfriend once, but was dumped after a month. Completely spiteful, Kazuya uses a certain method to date a girl. He goes to their meeting place and a beautiful girl brushing her long, black hair behind her ear was there, smiling at him. Her name was Mizuhara Chizuru. Something real is born after just a single rental! A reckless rom-com filled with love and excitement is about to begin!",
+  "popularity": 32.3336,
+  "poster_path": "/6ZpDPUNtVw6UdJoStvVlRZ62yAi.jpg",
   "production_companies": [
     {
-      "id": 11884,
-      "logo_path": "/tHzHPSKdmLT5zCdqFbcmHzZvRIc.png",
-      "name": "J.C.STAFF",
+      "id": 7164,
+      "logo_path": "/vHsaqTkQ2ZTbdqrCA272YahoVlg.png",
+      "name": "TMS Entertainment",
       "origin_country": "JP"
     },
     {
-      "id": 3466,
-      "logo_path": "/lmCg0zarmM52wrmsZRUY0QlPKLh.png",
-      "name": "movic",
+      "id": 3363,
+      "logo_path": "/sj3vD7n63bTCih7bcf6GnWvRf1Q.png",
+      "name": "MBS",
       "origin_country": "JP"
     },
     {
-      "id": 17981,
-      "logo_path": "/8UABNMysukRi4udTHYxcNUMbPR1.png",
-      "name": "AT-X",
+      "id": 59118,
+      "logo_path": "/9nTCEBgGaaI5swkv8gy2vny0Mb5.png",
+      "name": "Kodansha",
       "origin_country": "JP"
     },
     {
-      "id": 32957,
-      "logo_path": "/fsKExPZ443yF5oMRmbK96AjcZBT.png",
-      "name": "ASCII Media Works",
+      "id": 156999,
+      "logo_path": "/yOPNMsW68we3cA9XNPsZsmZtVOj.png",
+      "name": "DMM pictures",
       "origin_country": "JP"
     },
     {
-      "id": 7111,
-      "logo_path": "/vHUCDHu63vjfQjDNHvKqlUWOdwE.png",
-      "name": "Geneon Universal Entertainment",
+      "id": 87211,
+      "logo_path": "/lzBP1lTYoqqfvGriMMdlvFWDRH7.png",
+      "name": "DMM.com",
+      "origin_country": "JP"
+    },
+    {
+      "id": 237375,
+      "logo_path": null,
+      "name": "TMS Entertainment / Studio 6",
       "origin_country": "JP"
     }
   ],
@@ -100,54 +260,24 @@
   ],
   "seasons": [
     {
-      "air_date": "2010-01-29",
-      "episode_count": 9,
-      "id": 42530,
+      "air_date": "2020-06-13",
+      "episode_count": 138,
+      "id": 165447,
       "name": "Specials",
       "overview": "",
-      "poster_path": "/iHYbNWBlixMa30rKU0rhHJFbqyA.jpg",
+      "poster_path": "/zCSvzIcVlciDCqgIRvnpNVb9LhU.jpg",
       "season_number": 0,
       "vote_average": 0
     },
     {
-      "air_date": "2009-10-02",
-      "episode_count": 24,
-      "id": 42529,
-      "name": "A Certain Scientific Railgun",
-      "overview": "Academy City is a highly developed place in terms of technology. It is said to be 20 to 30 years ahead of the rest of the world, and 80% of its 2.3 million residents are students. The focus of studies here is directed towards esper powers. Misaka Mikoto, one of the top level espers in town, shares a room with Kuroko Shirai, another high level esper who is a member of Judgement, a law enforcing agency composed of students. Both attend Tokiwadai, a private school reserved for the high-leveled and the rich. Kuroko's partner at Judgement, Kazari Uiharu, is a low level esper who studies at Sakugawa middle school. Her best friend and classmate there is Ruiko Saten, a level zero, one who has no esper powers. Together, the four encounter several adventures in the exciting scientific town.",
-      "poster_path": "/oCkEJ0cSE6YuxUgecajBMQAc2h4.jpg",
+      "air_date": "2020-07-11",
+      "episode_count": 60,
+      "id": 137788,
+      "name": "Season 1",
+      "overview": "Jilted and heartbroken after just a month of dating, 20-year-old college student Kazuya Kinoshita turns to a rental girlfriend app out of sheer desperation. This leads him to a fateful encounter with Chizuru Mizuhara, a stunningly beautiful and seemingly perfect girl. However, after a chaotic first date and a sudden family emergency, they discover that they not only attend the same university but also live as next-door neighbors. Forced by circumstances to keep up the charade, their complicated, rental-based relationship officially begins.",
+      "poster_path": "/1K2b4XDtcJ6mJd5Ra9vKj7OiUmX.jpg",
       "season_number": 1,
-      "vote_average": 6.5
-    },
-    {
-      "air_date": "2013-04-12",
-      "episode_count": 24,
-      "id": 42531,
-      "name": "A Certain Scientific Railgun S",
-      "overview": "Something sinister is going on in Academy City. The shadows are filled with whispers of an organization cloning super-powered students known as espers. High-ranking master of electricity, Mikoto Misaka, laughs off these stories until she comes face to face with a copy of herself. After learning that these clones - her sisters - are being systematically murdered in a series of experiments designed to turn a sadistic killer into the strongest esper in history, Misaka vows to save her copies and destroy the organization responsible for the project.\n\nAs Misaka prepares to face off against the organization’s power-hungry esper, she discovers that she wasn’t the only victim of the scientific forces conspiring within the city - and that’s something Misaka and the girls of Judgement simply won’t stand for.",
-      "poster_path": "/ynkT3BfoYgwalKEFfDrgApqcFhl.jpg",
-      "season_number": 2,
-      "vote_average": 6.5
-    },
-    {
-      "air_date": "2020-01-10",
-      "episode_count": 25,
-      "id": 123586,
-      "name": "A Certain Scientific Railgun T",
-      "overview": "The Daihasei Festival is under way and the prestigious Tokiwadai Middle School, where the Ace of Tokiwadai, Mikoto Misaka reside, is one of the schools participating in this annual sports fest. However, not all are fun and games as people behind the shadows start to plot a new threat that will endanger Mikoto and the whole Academy City. After the Daihasei Festival, Mikoto and her friends find themselves being involved in multiple incidents surrounding special cards that supposedly record people's dreams.",
-      "poster_path": "/n7uqQXmFPqKDCmZ1TB7mcjYqsWV.jpg",
-      "season_number": 3,
-      "vote_average": 7
-    },
-    {
-      "air_date": null,
-      "episode_count": 0,
-      "id": 442954,
-      "name": "Season 4",
-      "overview": "",
-      "poster_path": null,
-      "season_number": 4,
-      "vote_average": 0
+      "vote_average": 6.8
     }
   ],
   "softcore": false,
@@ -161,6 +291,6 @@
   "status": "Returning Series",
   "tagline": "",
   "type": "Scripted",
-  "vote_average": 7.357,
-  "vote_count": 133
+  "vote_average": 8.3,
+  "vote_count": 988
 }

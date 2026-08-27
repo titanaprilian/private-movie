@@ -7,24 +7,16 @@ import { db } from "../../utils/db";
 
 async function insertTestSeries(overrides?: Partial<{
   id: string;
-  sourceUrl: string;
-  source: string;
   title: string;
   description: string | null;
   posterUrl: string | null;
 }>): Promise<{
   id: string;
-  sourceUrl: string;
-  source: string;
   title: string;
   description: string | null;
   posterUrl: string | null;
 }> {
   const id = overrides?.id ?? crypto.randomUUID();
-  const sourceUrl =
-    overrides?.sourceUrl ??
-    `https://otakudesu.blog/anime/series-patch-test-${crypto.randomUUID()}/`;
-  const source = overrides?.source ?? "otakudesu";
   const title = overrides?.title ?? "Original Series Title";
   const description = overrides?.description ?? "Original Description";
   const posterUrl = overrides?.posterUrl ?? "https://example.com/original-poster.jpg";
@@ -39,7 +31,7 @@ async function insertTestSeries(overrides?: Partial<{
     updatedAt: now,
   });
 
-  return { id, sourceUrl, source, title, description, posterUrl };
+  return { id, title, description, posterUrl };
 }
 
 describe("PATCH /series/:id", () => {

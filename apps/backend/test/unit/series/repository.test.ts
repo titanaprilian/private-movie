@@ -6,16 +6,11 @@ import { db } from "../../utils/db";
 
 async function insertSeries(overrides?: {
   title?: string;
-  source?: string;
-  sourceUrl?: string;
   description?: string | null;
   createdAt?: Date;
 }): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
-  const sourceUrl =
-    overrides?.sourceUrl ?? `https://otakudesu.blog/anime/series-${id}/`;
   const title = overrides?.title ?? `Series ${id}`;
-  const source = overrides?.source ?? "otakudesu";
   const description = overrides?.description !== undefined ? overrides.description : "Test Description";
   const now = overrides?.createdAt ?? new Date();
 
@@ -36,8 +31,6 @@ async function insertSeries(overrides?: {
     .values({
       id: crypto.randomUUID(),
       seriesId: id,
-      sourceUrl,
-      source,
       title,
       description,
       posterUrl: "https://example.com/poster.jpg",
@@ -67,8 +60,6 @@ async function insertEpisodeForSeries(
       .values({
         id: crypto.randomUUID(),
         seriesId,
-        sourceUrl: `https://otakudesu.blog/anime/season-${id}/`,
-        source: "otakudesu",
         title: "Season Title",
         createdAt: now,
         updatedAt: now,
@@ -138,13 +129,6 @@ describe("series repository list", () => {
     expect(page2.series[0].id).toBe(s1.id);
   });
 
-  it("filters by source when source param is provided", async () => {
-    await insertSeries({ source: "otakudesu" });
-
-    const filtered = await repository.list({ page: 1, limit: 10, source: "otakudesu" });
-    expect(filtered.total).toBe(1);
-  });
-
   it("filters by q parameter matching title or description case-insensitively", async () => {
     await insertSeries({ title: "Naruto Shippuden", description: "Ninja adventures" });
     await insertSeries({ title: "One Piece", description: "Pirate king search for treasure" });
@@ -206,7 +190,7 @@ describe("series repository findByIdWithEpisodes", () => {
     expect(result?.episodes).toEqual([]);
   });
 
-  it("sorts seasons by tmdbSeason priority [regular ASC -> 0 -> null] and then createdAt ASC", async () => {
+  it("sorts seasons by seasonNumber priority [regular ASC -> 0 -> null] and then createdAt ASC", async () => {
     const s = await insertSeries({ title: "Multi Season Series" });
     const now = new Date();
 
@@ -216,40 +200,32 @@ describe("series repository findByIdWithEpisodes", () => {
       {
         id: crypto.randomUUID(),
         seriesId: s.id,
-        sourceUrl: `https://example.com/season-3-${crypto.randomUUID()}`,
-        source: "otakudesu",
         title: "Season 3",
-        tmdbSeason: 3,
+        seasonNumber: 3,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
         updatedAt: now,
       },
       {
         id: crypto.randomUUID(),
         seriesId: s.id,
-        sourceUrl: `https://example.com/season-null-${crypto.randomUUID()}`,
-        source: "otakudesu",
         title: "Unmapped Season",
-        tmdbSeason: null,
+        seasonNumber: null,
         createdAt: new Date("2026-01-04T00:00:00.000Z"),
         updatedAt: now,
       },
       {
         id: crypto.randomUUID(),
         seriesId: s.id,
-        sourceUrl: `https://example.com/season-0-${crypto.randomUUID()}`,
-        source: "otakudesu",
         title: "Specials",
-        tmdbSeason: 0,
+        seasonNumber: 0,
         createdAt: new Date("2026-01-03T00:00:00.000Z"),
         updatedAt: now,
       },
       {
         id: crypto.randomUUID(),
         seriesId: s.id,
-        sourceUrl: `https://example.com/season-1-${crypto.randomUUID()}`,
-        source: "otakudesu",
         title: "Season 1",
-        tmdbSeason: 1,
+        seasonNumber: 1,
         createdAt: new Date("2026-01-02T00:00:00.000Z"),
         updatedAt: now,
       },
@@ -257,7 +233,7 @@ describe("series repository findByIdWithEpisodes", () => {
 
     const result = await repository.findByIdWithEpisodes(s.id);
     expect(result).not.toBeNull();
-    expect(result?.seasons.map((season) => season.tmdbSeason)).toEqual([1, 3, 0, null]);
+    expect(result?.seasons.map((season) => season.seasonNumber)).toEqual([1, 3, 0, null]);
     expect(result?.seasons.map((season) => season.title)).toEqual([
       "Season 1",
       "Season 3",

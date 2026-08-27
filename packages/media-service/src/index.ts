@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
-import { episodes, seasons, type SeriesRow } from "@repo/db";
+import { episodes, seasons, series, type SeriesRow } from "@repo/db";
 import {
   MediaScraper,
   extractDirectVideoSources,
@@ -175,6 +175,7 @@ export interface SaveMediaSeriesInput {
   title: string;
   description?: string | null;
   posterUrl?: string | null;
+  tmdbId?: number | null;
 }
 
 export interface SaveMediaInput {
@@ -494,11 +495,22 @@ export function createMediaService<
           posterUrl: null,
         };
 
-        let existingSeason = await seasonsRepositoryTx.findBySourceUrl(seriesInput.sourceUrl);
         let parentSeriesId: string;
+        let existingSeries: SeriesRow | null = null;
 
-        if (existingSeason) {
-          parentSeriesId = existingSeason.seriesId;
+        if (seriesInput.tmdbId) {
+          existingSeries = await seriesRepositoryTx.findByTmdbId(seriesInput.tmdbId);
+        }
+        if (!existingSeries && seriesInput.title) {
+          const [byTitle] = await tx
+            .select()
+            .from(series)
+            .where(eq(series.title, seriesInput.title));
+          existingSeries = byTitle ?? null;
+        }
+
+        if (existingSeries) {
+          parentSeriesId = existingSeries.id;
           seriesRow = await seriesRepositoryTx.upsert({
             id: parentSeriesId,
             title: seriesInput.title,
@@ -521,11 +533,10 @@ export function createMediaService<
 
         const seasonRow = await seasonsRepositoryTx.upsert({
           seriesId: parentSeriesId,
-          sourceUrl: seriesInput.sourceUrl,
-          source: seriesInput.source,
           title: seriesInput.title,
           description: seriesInput.description ?? null,
           posterUrl: seriesInput.posterUrl ?? null,
+          seasonNumber: 1,
         });
         seasonId = seasonRow.id;
 
@@ -669,11 +680,11 @@ export function createMediaService<
             : undefined;
 
           if (!targetSeasonRow) {
-            targetSeasonRow = childSeasons.find((s) => s.tmdbSeason === seasonNum);
+            targetSeasonRow = childSeasons.find((s) => s.seasonNumber === seasonNum);
           }
 
           if (!targetSeasonRow) {
-            targetSeasonRow = childSeasons.find((s) => s.tmdbSeason == null) ?? childSeasons[0];
+            targetSeasonRow = childSeasons.find((s) => s.seasonNumber == null) ?? childSeasons[0];
           }
 
           if (targetSeasonRow) {
@@ -681,7 +692,7 @@ export function createMediaService<
             const seasonPoster = seasonDetails?.poster_path || details.poster_path;
 
             await seasonsRepositoryTx.updateSeason(targetSeasonRow.id, {
-              tmdbSeason: seasonNum,
+              seasonNumber: seasonNum,
               posterUrl: seasonPoster,
               title: seasonDetails?.name,
               description: seasonOverview,
@@ -815,7 +826,7 @@ export function createMediaService<
 
       const seriesRow = await seriesRepositoryTx.findById(seasonRow.seriesId);
       const tmdbId = options?.tmdbId ?? seriesRow?.tmdbId;
-      const tmdbSeason = options?.tmdbSeason ?? seasonRow.tmdbSeason;
+      const tmdbSeason = options?.tmdbSeason ?? seasonRow.seasonNumber;
 
       if (tmdbId == null || tmdbSeason == null) {
         throw new SeasonNotLinkedToTmdbError("Season is not linked to TMDB");
@@ -917,7 +928,7 @@ export function createMediaService<
 
       const seriesRow = await seriesRepositoryTx.findById(seasonRow.seriesId);
       const tmdbId = options?.tmdbId ?? seriesRow?.tmdbId;
-      const tmdbSeason = options?.tmdbSeason ?? seasonRow.tmdbSeason;
+      const tmdbSeason = options?.tmdbSeason ?? seasonRow.seasonNumber;
 
       if (tmdbId == null || tmdbSeason == null) {
         throw new SeasonNotLinkedToTmdbError("Season is not linked to TMDB");
@@ -929,7 +940,7 @@ export function createMediaService<
       return await db.transaction(async (tx) => {
         const seasonsTx = createSeasonsRepositoryInternal(tx);
         await seasonsTx.updateSeason(seasonId, {
-          tmdbSeason,
+          seasonNumber: tmdbSeason,
           tmdbSyncStatus: "SYNCED",
         });
 

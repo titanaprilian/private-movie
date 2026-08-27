@@ -30,7 +30,7 @@ export const series = pgTable("series", {
   posterUrl: text("poster_url"),
   backdropUrl: text("backdrop_url"),
   rating: text("rating"),
-  tmdbId: integer("tmdb_id"),
+  tmdbId: integer("tmdb_id").unique(),
   tmdbSyncStatus: text("tmdb_sync_status").notNull().default("PENDING"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
@@ -55,21 +55,28 @@ export const seriesToGenres = pgTable(
 export type SeriesToGenreRow = typeof seriesToGenres.$inferSelect;
 export type NewSeriesToGenreRow = typeof seriesToGenres.$inferInsert;
 
-export const seasons = pgTable("seasons", {
-  id: text("id").primaryKey(),
-  seriesId: text("series_id")
-    .notNull()
-    .references(() => series.id, { onDelete: "cascade" }),
-  sourceUrl: text("source_url").notNull().unique(),
-  source: text("source").notNull(),
-  title: text("title").notNull(),
-  description: text("description"),
-  posterUrl: text("poster_url"),
-  tmdbSeason: integer("tmdb_season"),
-  tmdbSyncStatus: text("tmdb_sync_status").notNull().default("PENDING"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
-});
+export const seasons = pgTable(
+  "seasons",
+  {
+    id: text("id").primaryKey(),
+    seriesId: text("series_id")
+      .notNull()
+      .references(() => series.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    posterUrl: text("poster_url"),
+    seasonNumber: integer("season_number"),
+    tmdbSyncStatus: text("tmdb_sync_status").notNull().default("PENDING"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    unique("seasons_series_id_season_number_unique").on(
+      table.seriesId,
+      table.seasonNumber,
+    ),
+  ],
+);
 
 export type SeasonRow = typeof seasons.$inferSelect;
 export type NewSeasonRow = typeof seasons.$inferInsert;

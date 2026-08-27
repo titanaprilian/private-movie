@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { count, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, seasons, type SeasonRow } from "@repo/db";
 
@@ -28,12 +28,10 @@ export class SeasonNotEmptyError extends Error {
 
 export interface SeasonUpsertInput {
   seriesId: string;
-  sourceUrl: string;
-  source: string;
   title: string;
   description?: string | null;
   posterUrl?: string | null;
-  tmdbSeason?: number | null;
+  seasonNumber?: number | null;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
 
@@ -42,6 +40,7 @@ export interface CreateSeasonInput {
   title: string;
   description?: string | null;
   posterUrl?: string | null;
+  seasonNumber?: number | null;
 }
 
 export function createSeasonsRepositoryInternal<
@@ -56,25 +55,22 @@ export function createSeasonsRepositoryInternal<
         .values({
           id: randomUUID(),
           seriesId: input.seriesId,
-          sourceUrl: input.sourceUrl,
-          source: input.source,
           title: input.title,
           description: input.description ?? null,
           posterUrl: input.posterUrl ?? null,
-          tmdbSeason: input.tmdbSeason ?? null,
+          seasonNumber: input.seasonNumber ?? null,
           tmdbSyncStatus: input.tmdbSyncStatus ?? "PENDING",
           createdAt: now,
           updatedAt: now,
         })
         .onConflictDoUpdate({
-          target: seasons.sourceUrl,
+          target: [seasons.seriesId, seasons.seasonNumber],
           set: {
             seriesId: input.seriesId,
-            source: input.source,
             title: input.title,
             description: input.description ?? null,
             posterUrl: input.posterUrl ?? null,
-            ...(input.tmdbSeason !== undefined ? { tmdbSeason: input.tmdbSeason } : {}),
+            ...(input.seasonNumber !== undefined ? { seasonNumber: input.seasonNumber } : {}),
             ...(input.tmdbSyncStatus !== undefined ? { tmdbSyncStatus: input.tmdbSyncStatus } : {}),
             updatedAt: now,
           },
@@ -83,11 +79,16 @@ export function createSeasonsRepositoryInternal<
       return row;
     },
 
-    async findBySourceUrl(sourceUrl: string): Promise<SeasonRow | null> {
+    async findBySeriesIdAndSeasonNumber(seriesId: string, seasonNumber: number): Promise<SeasonRow | null> {
       const [row] = await db
         .select()
         .from(seasons)
-        .where(eq(seasons.sourceUrl, sourceUrl));
+        .where(
+          and(
+            eq(seasons.seriesId, seriesId),
+            eq(seasons.seasonNumber, seasonNumber)
+          )
+        );
       return row ?? null;
     },
 
@@ -108,7 +109,7 @@ export function createSeasonsRepositoryInternal<
       if (input.title !== undefined) updateData.title = input.title;
       if (input.description !== undefined) updateData.description = input.description;
       if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
-      if (input.tmdbSeason !== undefined) updateData.tmdbSeason = input.tmdbSeason;
+      if (input.seasonNumber !== undefined) updateData.seasonNumber = input.seasonNumber;
       if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
 
       const [row] = await db
@@ -150,18 +151,15 @@ export function createSeasonsRepositoryInternal<
     async create(input: CreateSeasonInput): Promise<SeasonRow> {
       const now = new Date();
       const id = randomUUID();
-      const manualSourceUrl = `manual-${id}`;
       const [row] = await db
         .insert(seasons)
         .values({
           id,
           seriesId: input.seriesId,
-          sourceUrl: manualSourceUrl,
-          source: "manual",
           title: input.title,
           description: input.description ?? null,
           posterUrl: input.posterUrl ?? null,
-          tmdbSeason: null,
+          seasonNumber: input.seasonNumber ?? null,
           tmdbSyncStatus: "PENDING",
           createdAt: now,
           updatedAt: now,
