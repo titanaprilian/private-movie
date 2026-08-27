@@ -10,7 +10,7 @@ export type { SyncEpisodesModalProps } from './internal/SyncEpisodesModal';
 export { BulkScrapeModal } from './internal/BulkScrapeModal';
 export type { BulkScrapeModalProps } from './internal/BulkScrapeModal';
 export { useBulkScrapeSources } from './internal/useBulkScrapeSources';
-export type { ScrapedEpisodePreviewItem, LocalEpisodeItem } from './internal/useBulkScrapeSources';
+export type { ScrapedEpisodePreviewItem, LocalEpisodeItem, ProcessingLogItem } from './internal/useBulkScrapeSources';
 export {
   fetchEpisode,
   episodeQueryOptions,

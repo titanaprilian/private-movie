@@ -238,6 +238,39 @@ describe('useBulkScrapeSources hook', () => {
     expect(result.current.sourceUrl).toBe('');
     expect(result.current.episodeOffset).toBe(0);
     expect(result.current.previewItems).toEqual([]);
+    expect(result.current.processingLogs).toEqual([]);
+    expect(result.current.completedCount).toBe(0);
+    expect(result.current.progress).toBe(0);
+  });
+
+  it('transitions to step 3 and performs mocked sequential batch processing', async () => {
+    const { result } = renderHook(() => useBulkScrapeSources({ stepDelayMs: 0 }), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.fetchPreview(mockLocalEpisodes);
+    });
+
+    expect(result.current.step).toBe(2);
+
+    act(() => {
+      result.current.toggleIgnore(0);
+    });
+
+    await act(async () => {
+      await result.current.saveBulkSources(undefined, 0);
+    });
+
+    expect(result.current.step).toBe(3);
+    expect(result.current.isProcessing).toBe(false);
+    expect(result.current.progress).toBe(100);
+    expect(result.current.totalCount).toBe(4);
+    expect(result.current.completedCount).toBe(4);
+
+    const ep1Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Episode 1');
+    expect(ep1Log?.status).toBe('skipped');
+
+    const ep2Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Episode 2');
+    expect(ep2Log?.status).toBe('success');
   });
 });
 

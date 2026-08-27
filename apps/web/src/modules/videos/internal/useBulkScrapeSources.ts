@@ -32,20 +32,34 @@ export interface LocalEpisodeItem {
   seasonNumber?: number;
 }
 
+export interface ProcessingLogItem {
+  id: string;
+  scrapedTitle: string;
+  rawEpisodeNumber: number | string;
+  status: 'pending' | 'processing' | 'success' | 'error' | 'skipped';
+  message: string;
+}
+
 export interface UseBulkScrapeSourcesOptions {
   seriesId?: string;
   initialSourceType?: string;
   onSuccess?: () => void;
+  stepDelayMs?: number;
 }
 
 export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   const queryClient = useQueryClient();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceType, setSourceType] = useState(options?.initialSourceType ?? 'otakudesu');
   const [episodeOffset, setEpisodeOffset] = useState(0);
   const [previewItems, setPreviewItems] = useState<ScrapedEpisodePreviewItem[]>([]);
   const [fetchedLocalEpisodes, setFetchedLocalEpisodes] = useState<LocalEpisodeItem[]>([]);
+
+  // Step 3 Processing States
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingLogs, setProcessingLogs] = useState<ProcessingLogItem[]>([]);
+  const [completedCount, setCompletedCount] = useState(0);
 
   const previewMutation = useMutation({
     mutationFn: async (params?: {
@@ -175,50 +189,6 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     },
   });
 
-  const saveMutation = useMutation({
-    mutationFn: async (targetSeriesId?: string) => {
-      const seriesIdToUse = targetSeriesId ?? options?.seriesId;
-      if (!seriesIdToUse) {
-        return {
-          success: true,
-          savedCount: previewItems.filter((i) => !i.isIgnored).length,
-          skippedCount: previewItems.filter((i) => i.isIgnored).length,
-        };
-      }
-
-      const mappings: SaveBulkSourcesMappingItem[] = previewItems.map((item) => ({
-        episodeId: item.isIgnored ? null : item.matchedLocalEpisodeId,
-        videoSources: item.videoSources.map((vs) => ({
-          type: (vs.type === 'direct' ? 'direct' : 'embed') as 'embed' | 'direct',
-          url: vs.url,
-          label: vs.label,
-          quality: vs.quality ?? null,
-        })),
-      }));
-
-      return apiSaveBulkSources({
-        seriesId: seriesIdToUse,
-        mappings,
-      });
-    },
-    onSuccess: (result) => {
-      const targetSeriesId = options?.seriesId;
-      if (targetSeriesId) {
-        queryClient.invalidateQueries({ queryKey: ['series', targetSeriesId] });
-        queryClient.invalidateQueries({ queryKey: ['series'] });
-      }
-      toast.success('Bulk sources saved', {
-        description: `Successfully processed ${result.savedCount ?? previewItems.filter((i) => !i.isIgnored).length} episode sources.`,
-      });
-      options?.onSuccess?.();
-    },
-    onError: (error: Error) => {
-      toast.error('Save Bulk Sources Error', {
-        description: error.message || 'Failed to save bulk sources to server.',
-      });
-    },
-  });
-
   const fetchPreview = useCallback(
     (
       localEpisodes: LocalEpisodeItem[] = [],
@@ -230,10 +200,114 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   );
 
   const saveBulkSources = useCallback(
-    (seriesIdParam?: string) => {
-      return saveMutation.mutateAsync(seriesIdParam);
+    async (seriesIdParam?: string, overrideDelayMs?: number) => {
+      setStep(3);
+      setIsProcessing(true);
+
+      const initialLogs: ProcessingLogItem[] = previewItems.map((item) => {
+        if (item.isIgnored) {
+          return {
+            id: item.id,
+            scrapedTitle: item.scrapedTitle,
+            rawEpisodeNumber: item.rawEpisodeNumber,
+            status: 'skipped',
+            message: `${item.scrapedTitle}: Skipped (Ignored)`,
+          };
+        }
+        return {
+          id: item.id,
+          scrapedTitle: item.scrapedTitle,
+          rawEpisodeNumber: item.rawEpisodeNumber,
+          status: 'pending',
+          message: `${item.scrapedTitle}: Pending`,
+        };
+      });
+
+      setProcessingLogs(initialLogs);
+
+      const initialCompleted = initialLogs.filter((l) => l.status === 'skipped').length;
+      setCompletedCount(initialCompleted);
+      let currentCompleted = initialCompleted;
+
+      const delayMs = overrideDelayMs ?? options?.stepDelayMs ?? 10;
+
+      try {
+        for (let i = 0; i < previewItems.length; i++) {
+          const item = previewItems[i];
+          if (item.isIgnored) continue;
+
+          setProcessingLogs((prev) =>
+            prev.map((log, idx) =>
+              idx === i
+                ? {
+                    ...log,
+                    status: 'processing',
+                    message: `${item.scrapedTitle}: Processing...`,
+                  }
+                : log
+            )
+          );
+
+          if (delayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+          }
+
+          setProcessingLogs((prev) =>
+            prev.map((log, idx) =>
+              idx === i
+                ? {
+                    ...log,
+                    status: 'success',
+                    message: `${item.scrapedTitle}: Saved successfully`,
+                  }
+                : log
+            )
+          );
+
+          currentCompleted += 1;
+          setCompletedCount(currentCompleted);
+        }
+
+        const targetSeriesId = seriesIdParam ?? options?.seriesId;
+        if (targetSeriesId) {
+          const mappings: SaveBulkSourcesMappingItem[] = previewItems.map((item) => ({
+            episodeId: item.isIgnored ? null : item.matchedLocalEpisodeId,
+            videoSources: item.videoSources.map((vs) => ({
+              type: (vs.type === 'direct' ? 'direct' : 'embed') as 'embed' | 'direct',
+              url: vs.url,
+              label: vs.label,
+              quality: vs.quality ?? null,
+            })),
+          }));
+
+          await apiSaveBulkSources({
+            seriesId: targetSeriesId,
+            mappings,
+          });
+
+          queryClient.invalidateQueries({ queryKey: ['series', targetSeriesId] });
+          queryClient.invalidateQueries({ queryKey: ['series'] });
+        }
+
+        const savedCount = previewItems.filter((i) => !i.isIgnored).length;
+        const skippedCount = previewItems.filter((i) => i.isIgnored).length;
+
+        toast.success('Bulk sources saved', {
+          description: `Successfully processed ${savedCount} episode sources.`,
+        });
+
+        options?.onSuccess?.();
+        return { success: true, savedCount, skippedCount };
+      } catch (error: any) {
+        toast.error('Save Bulk Sources Error', {
+          description: error?.message || 'Failed to save bulk sources.',
+        });
+        throw error;
+      } finally {
+        setIsProcessing(false);
+      }
     },
-    [saveMutation]
+    [previewItems, options, queryClient]
   );
 
   const updateMapping = useCallback((index: number, localEpisodeId: string | null) => {
@@ -263,7 +337,6 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   }, []);
 
   const { reset: resetPreview } = previewMutation;
-  const { reset: resetSave } = saveMutation;
 
   const reset = useCallback(() => {
     setStep(1);
@@ -271,9 +344,14 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     setEpisodeOffset(0);
     setPreviewItems([]);
     setFetchedLocalEpisodes([]);
+    setProcessingLogs([]);
+    setIsProcessing(false);
+    setCompletedCount(0);
     resetPreview();
-    resetSave();
-  }, [resetPreview, resetSave]);
+  }, [resetPreview]);
+
+  const totalCount = previewItems.length;
+  const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return {
     step,
@@ -289,9 +367,14 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     fetchPreview,
     saveBulkSources,
     isFetchingPreview: previewMutation.isPending,
-    isSaving: saveMutation.isPending,
+    isSaving: isProcessing,
+    isProcessing,
+    processingLogs,
+    progress,
+    completedCount,
+    totalCount,
     previewError: previewMutation.error,
-    saveError: saveMutation.error,
+    saveError: null,
     updateMapping,
     toggleIgnore,
     reset,

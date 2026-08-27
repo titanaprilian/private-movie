@@ -54,6 +54,11 @@ export function BulkScrapeModal({
     saveBulkSources,
     isFetchingPreview,
     isSaving,
+    isProcessing,
+    processingLogs,
+    progress,
+    completedCount,
+    totalCount,
     updateMapping,
     toggleIgnore,
     reset,
@@ -64,6 +69,11 @@ export function BulkScrapeModal({
       reset();
     }
   }, [open, reset]);
+
+  const handleOpenChange = (openState: boolean) => {
+    if (isProcessing) return;
+    onOpenChange(openState);
+  };
 
   const handlePreviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,22 +89,30 @@ export function BulkScrapeModal({
   const handleSave = async () => {
     try {
       await saveBulkSources(seriesId);
-      onOpenChange(false);
-      reset();
     } catch {
-      // Error handled by mutation onError toast
+      // Error handled by toast in hook
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="max-w-3xl max-h-[85vh] flex flex-col"
+        onPointerDownOutside={(e) => {
+          if (isProcessing) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isProcessing) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Bulk Add Sources</DialogTitle>
           <DialogDescription>
             {step === 1
               ? 'Enter season source URL and optional offset to match scraped episodes with local TMDB episodes.'
-              : 'Review matched scraped episodes, assign target local episodes, or ignore items before saving.'}
+              : step === 2
+              ? 'Review matched scraped episodes, assign target local episodes, or ignore items before saving.'
+              : 'Sequential batch processing progress and status log.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -274,6 +292,85 @@ export function BulkScrapeModal({
               <Button type="button" onClick={handleSave} disabled={isSaving}>
                 {isSaving ? 'Saving...' : 'Save'}
               </Button>
+            </DialogFooter>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-4 py-2 overflow-y-auto flex-1 pr-1">
+            {/* Progress Bar & Counter */}
+            <div className="space-y-2 p-3 rounded border border-c bg-sidebar">
+              <div className="flex items-center justify-between text-xs mono">
+                <span>
+                  Processing: <strong>{completedCount}</strong> / {totalCount} items
+                </span>
+                <span className="font-semibold text-primary">{progress}%</span>
+              </div>
+              <div
+                className="w-full bg-card border border-c rounded-full h-3 overflow-hidden p-0.5"
+                role="progressbar"
+                aria-valuenow={progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className="bg-primary h-full rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Item-by-item status log list */}
+            <div className="space-y-2">
+              <Label className="text-xs mono uppercase tracking-wide text-muted">
+                Processing Log
+              </Label>
+              <div
+                className="border border-c rounded p-3 bg-card max-h-[300px] overflow-y-auto space-y-1.5 mono text-xs"
+                data-testid="bulk-scrape-logs"
+              >
+                {processingLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-center justify-between gap-2 py-1 border-b border-c last:border-0"
+                  >
+                    <span className="truncate">{log.message}</span>
+                    <span
+                      className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                        log.status === 'success'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          : log.status === 'processing'
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 animate-pulse'
+                          : log.status === 'skipped'
+                          ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                          : log.status === 'error'
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                      }`}
+                    >
+                      {log.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter className="pt-4">
+              {isProcessing ? (
+                <Button type="button" disabled variant="outline">
+                  Processing...
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    onOpenChange(false);
+                    reset();
+                  }}
+                >
+                  Close
+                </Button>
+              )}
             </DialogFooter>
           </div>
         )}

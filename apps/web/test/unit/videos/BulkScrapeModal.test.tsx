@@ -217,7 +217,7 @@ describe('BulkScrapeModal component', () => {
     expect(screen.getByRole('button', { name: /Preview/i })).toBeInTheDocument();
   });
 
-  it('saves bulk sources and closes modal when Save is clicked', async () => {
+  it('transitions to Step 3 processing view when Save is clicked, displays progress and log, and closes via Close button', async () => {
     const onOpenChange = vi.fn();
 
     const { user } = renderWithProviders(
@@ -239,6 +239,12 @@ describe('BulkScrapeModal component', () => {
 
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
+    // Should be in Step 3
+    await waitFor(() => {
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      expect(screen.getByText('Processing Log')).toBeInTheDocument();
+    });
+
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith(
         'Bulk sources saved',
@@ -246,7 +252,14 @@ describe('BulkScrapeModal component', () => {
           description: expect.stringContaining('Successfully processed'),
         })
       );
-      expect(onOpenChange).toHaveBeenCalledWith(false);
     });
+
+    // Close button should be present once processing is done
+    const closeBtns = await screen.findAllByRole('button', { name: /Close/i });
+    // The main dialog footer Close button
+    const footerCloseBtn = closeBtns.find((btn) => btn.getAttribute('class')?.includes('bg-primary')) || closeBtns[0];
+    await user.click(footerCloseBtn);
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

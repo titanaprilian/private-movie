@@ -344,7 +344,7 @@ export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
   previewBulkSources(input: PreviewBulkSourcesInput): Promise<PreviewBulkSourcesResult>;
-  saveBulkSources(input: SaveBulkSourcesInput): Promise<SaveBulkSourcesResult>;
+  scrapeAndSaveSources(episodeId: string, sourceUrl: string): Promise<EpisodeWithVideoSources>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult>;
   getSeasonTmdbPreview(seasonId: string, options?: SeasonTmdbSyncOptions): Promise<SeasonTmdbPreviewResult>;
@@ -632,40 +632,34 @@ export function createMediaService<
       };
     },
 
-    async saveBulkSources(
-      input: SaveBulkSourcesInput
-    ): Promise<SaveBulkSourcesResult> {
-      const targetSeries = await seriesRepository.findById(input.seriesId);
-      if (!targetSeries) {
-        throw new SeriesNotFoundError(`Series with id ${input.seriesId} not found`);
+    async scrapeAndSaveSources(
+      episodeId: string,
+      sourceUrl: string
+    ): Promise<EpisodeWithVideoSources> {
+      const episode = await episodeRepository.findById(episodeId);
+      if (!episode) {
+        throw new EpisodeNotFoundError(`Episode with id ${episodeId} not found`);
       }
 
-      let savedCount = 0;
-      let skippedCount = 0;
-
-      for (const mapping of input.mappings) {
-        if (!mapping.episodeId) {
-          skippedCount++;
-          continue;
-        }
-
-        for (const vs of mapping.videoSources) {
-          await videoSourceRepository.upsert({
-            episodeId: mapping.episodeId,
-            type: vs.type,
-            url: vs.url,
-            label: vs.label,
-            quality: vs.quality ?? null,
-          });
-        }
-        savedCount++;
+      const provider = MediaScraper.getProviderForUrl(sourceUrl);
+      if (!provider) {
+        throw new EpisodeFetchError(`No provider found for ${sourceUrl}`);
       }
 
-      return {
-        success: true,
-        savedCount,
-        skippedCount,
-      };
+      const sources = await provider.resolveVideoSources(sourceUrl, fetchHtml);
+
+      for (const vs of sources) {
+        await videoSourceRepository.upsert({
+          episodeId,
+          type: vs.type,
+          url: vs.url,
+          label: vs.label,
+          quality: vs.quality ?? null,
+        });
+      }
+
+      const updated = await episodeRepository.findById(episodeId);
+      return updated!;
     },
 
     async saveMedia(input: SaveMediaInput): Promise<SaveMediaResult> {

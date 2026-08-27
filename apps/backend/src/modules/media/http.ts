@@ -143,6 +143,53 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
       }
     )
+    .post(
+      "/episodes/:id/scrape-sources",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const result = await mediaService.scrapeAndSaveSources(
+            params.id,
+            body.sourceUrl
+          );
+          return successResponse(result);
+        } catch (error) {
+          if (error instanceof EpisodeNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          if (
+            error instanceof EpisodeFetchError ||
+            error instanceof EpisodeParseError ||
+            error instanceof MirrorResolveError
+          ) {
+            return errorResponse(set, 400, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String(),
+        }),
+        body: t.Object({
+          sourceUrl: t.String({ format: "uri" }),
+        }),
+      }
+    )
     .patch(
       "/episodes/:id/sources/:sourceId",
       async ({ params, body, headers, set }) => {
@@ -562,58 +609,6 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           source: t.Literal("otakudesu"),
           episodeOffset: t.Optional(t.Number()),
           html: t.Optional(t.String()),
-        }),
-      }
-    )
-    .post(
-      "/series/:id/bulk-sources",
-      async ({ params, body, headers, set }) => {
-        const authHeader = headers["authorization"];
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-          return errorResponse(
-            set,
-            401,
-            new UnauthorizedError("missing or invalid authorization header")
-          );
-        }
-        const token = authHeader.substring(7);
-        try {
-          await options.authService.verifyAccessToken(token);
-        } catch {
-          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
-        }
-
-        try {
-          const result = await mediaService.saveBulkSources({
-            seriesId: params.id,
-            mappings: body.mappings,
-          });
-          return successResponse(result);
-        } catch (error) {
-          if (error instanceof SeriesNotFoundError) {
-            return errorResponse(set, 404, error);
-          }
-          throw error;
-        }
-      },
-      {
-        params: t.Object({
-          id: t.String(),
-        }),
-        body: t.Object({
-          mappings: t.Array(
-            t.Object({
-              episodeId: t.Nullable(t.String()),
-              videoSources: t.Array(
-                t.Object({
-                  type: t.Union([t.Literal("embed"), t.Literal("direct")]),
-                  url: t.String(),
-                  label: t.String(),
-                  quality: t.Optional(t.Nullable(t.String())),
-                })
-              ),
-            })
-          ),
         }),
       }
     )
