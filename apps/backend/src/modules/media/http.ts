@@ -516,6 +516,55 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
       }
     )
+    .post(
+      "/series/:id/preview-bulk-sources",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const result = await mediaService.previewBulkSources({
+            seriesId: params.id,
+            sourceUrl: body.sourceUrl,
+            source: body.source,
+            episodeOffset: body.episodeOffset,
+            html: body.html,
+          });
+          return successResponse(result);
+        } catch (error) {
+          if (error instanceof SeriesNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          if (error instanceof SeriesFetchError || error instanceof SeriesParseError) {
+            return errorResponse(set, 400, error);
+          }
+          throw error;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String(),
+        }),
+        body: t.Object({
+          sourceUrl: t.String({ format: "uri" }),
+          source: t.Literal("otakudesu"),
+          episodeOffset: t.Optional(t.Number()),
+          html: t.Optional(t.String()),
+        }),
+      }
+    )
 
     // --- TMDB MANUAL MATCH START ---
     .get(

@@ -934,4 +934,41 @@ describe('SeriesDetailView component', () => {
 
     expect(await screen.findByText('Sync Season Episodes from TMDB')).toBeInTheDocument();
   });
+
+  it('renders "Bulk Add Sources" button and opens BulkScrapeModal on click', async () => {
+    const mockBulkSeries: SeriesDetails = {
+      id: 'bulk-scrape-series',
+      sourceUrl: 'https://otakudesu.cloud/anime/bulk-series',
+      source: 'otakudesu',
+      title: 'Solo Leveling',
+      description: 'Action anime',
+      posterUrl: null,
+      createdAt: '2026-08-10',
+      updatedAt: '2026-08-10',
+      episodes: [],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/bulk-scrape-series')) {
+        return new Response(JSON.stringify({ data: mockBulkSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<SeriesDetailView seriesId="bulk-scrape-series" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Solo Leveling' });
+
+    const bulkBtn = screen.getByRole('button', { name: /Bulk Add Sources/i });
+    expect(bulkBtn).toBeInTheDocument();
+
+    await user.click(bulkBtn);
+
+    expect(await screen.findByRole('heading', { name: 'Bulk Add Sources' })).toBeInTheDocument();
+  });
 });

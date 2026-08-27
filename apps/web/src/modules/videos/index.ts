@@ -7,6 +7,10 @@ export { MergeSeasonsModal } from './internal/MergeSeasonsModal';
 export type { MergeSeasonsModalProps } from './internal/MergeSeasonsModal';
 export { SyncEpisodesModal } from './internal/SyncEpisodesModal';
 export type { SyncEpisodesModalProps } from './internal/SyncEpisodesModal';
+export { BulkScrapeModal } from './internal/BulkScrapeModal';
+export type { BulkScrapeModalProps } from './internal/BulkScrapeModal';
+export { useBulkScrapeSources } from './internal/useBulkScrapeSources';
+export type { ScrapedEpisodePreviewItem, LocalEpisodeItem } from './internal/useBulkScrapeSources';
 export {
   fetchEpisode,
   episodeQueryOptions,

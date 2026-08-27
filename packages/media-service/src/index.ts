@@ -256,9 +256,71 @@ export interface SeasonTmdbSyncResult {
   unmappedCount: number;
 }
 
+export interface PreviewBulkSourcesInput {
+  seriesId: string;
+  sourceUrl: string;
+  source: VideoSource;
+  episodeOffset?: number;
+  html?: string;
+}
+
+export interface ScrapedBulkEpisodeItem {
+  scrapedTitle: string;
+  scrapedUrl: string;
+  episodeNumber: number | null;
+  calculatedOrder: number | null;
+  matchedLocalEpisodeId: string | null;
+  matchStatus: "matched" | "unmatched";
+}
+
+export interface BulkPreviewLocalEpisodeItem {
+  id: string;
+  title: string;
+  order: number;
+  seasonId: string;
+  seasonNumber: number | null;
+  seasonTitle: string;
+}
+
+export interface PreviewBulkSourcesResult {
+  scrapedEpisodes: ScrapedBulkEpisodeItem[];
+  localEpisodes: BulkPreviewLocalEpisodeItem[];
+}
+
+export function parseBulkScrapedEpisodeNumber(title: string): number | null {
+  const decimalEpMatch = title.match(/(?:episode|eps|ep|#)\.?\s*(\d+\.\d+)/i);
+  if (decimalEpMatch) {
+    const num = parseFloat(decimalEpMatch[1]);
+    if (!Number.isNaN(num)) return num;
+  }
+
+  const epMatch = title.match(/(?:episode|eps|ep|#)\.?\s*(\d+)/i);
+  if (epMatch) {
+    const num = parseInt(epMatch[1], 10);
+    if (!Number.isNaN(num)) return num;
+  }
+
+  const titleWithoutSeason = title.replace(/\bseason\s*\d+/gi, "").replace(/\bs\d+\b/gi, "");
+
+  const decimalMatch = titleWithoutSeason.match(/\b(\d+\.\d+)\b/);
+  if (decimalMatch) {
+    const num = parseFloat(decimalMatch[1]);
+    if (!Number.isNaN(num)) return num;
+  }
+
+  const numMatch = titleWithoutSeason.match(/\b(\d+)\b/);
+  if (numMatch) {
+    const num = parseInt(numMatch[1], 10);
+    if (!Number.isNaN(num) && (num < 1900 || num > 2100)) return num;
+  }
+
+  return null;
+}
+
 export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
+  previewBulkSources(input: PreviewBulkSourcesInput): Promise<PreviewBulkSourcesResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult>;
   getSeasonTmdbPreview(seasonId: string, options?: SeasonTmdbSyncOptions): Promise<SeasonTmdbPreviewResult>;
@@ -474,6 +536,75 @@ export function createMediaService<
           url: ep.url,
           date: ep.date ?? null,
         })),
+      };
+    },
+
+    async previewBulkSources(
+      input: PreviewBulkSourcesInput
+    ): Promise<PreviewBulkSourcesResult> {
+      const targetSeries = await seriesRepository.findById(input.seriesId);
+      if (!targetSeries) {
+        throw new SeriesNotFoundError(`Series with id ${input.seriesId} not found`);
+      }
+
+      const parsedSeries = await this.previewScrapeSeries({
+        sourceUrl: input.sourceUrl,
+        source: input.source,
+        html: input.html,
+      });
+
+      const fullSeries = await seriesRepository.findByIdWithEpisodes(input.seriesId);
+      const localEpisodes: BulkPreviewLocalEpisodeItem[] = [];
+      const localEpisodesMapByOrder = new Map<number, string>();
+
+      if (fullSeries && fullSeries.seasons) {
+        for (const s of fullSeries.seasons) {
+          for (const ep of s.episodes) {
+            localEpisodes.push({
+              id: ep.id,
+              title: ep.title,
+              order: ep.order,
+              seasonId: s.id,
+              seasonNumber: s.seasonNumber ?? null,
+              seasonTitle: s.title,
+            });
+            if (!localEpisodesMapByOrder.has(ep.order)) {
+              localEpisodesMapByOrder.set(ep.order, ep.id);
+            }
+          }
+        }
+      }
+
+      const offset = input.episodeOffset ?? 0;
+      const scrapedEpisodes: ScrapedBulkEpisodeItem[] = parsedSeries.episodes.map((scrapedEp) => {
+        const epNum = parseBulkScrapedEpisodeNumber(scrapedEp.title);
+        let calculatedOrder: number | null = null;
+        let matchedLocalEpisodeId: string | null = null;
+        let matchStatus: "matched" | "unmatched" = "unmatched";
+
+        if (epNum !== null && Number.isInteger(epNum)) {
+          const targetOrder = epNum + offset;
+          calculatedOrder = targetOrder;
+          const matchedId = localEpisodesMapByOrder.get(targetOrder);
+          if (matchedId) {
+            matchedLocalEpisodeId = matchedId;
+            matchStatus = "matched";
+          }
+        }
+
+        return {
+          scrapedTitle: scrapedEp.title,
+          scrapedUrl: scrapedEp.url,
+          episodeNumber: epNum,
+          calculatedOrder,
+          matchedLocalEpisodeId,
+          matchStatus,
+        };
+      });
+
+      return {
+        scrapedEpisodes,
+        localEpisodes,
       };
     },
 

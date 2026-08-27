@@ -24,6 +24,7 @@ import { buildCrossSeasonMove } from './crossSeasonMove';
 import { TmdbMatchModal } from './TmdbMatchModal';
 import { MergeSeasonsModal } from './MergeSeasonsModal';
 import { SyncEpisodesModal } from './SyncEpisodesModal';
+import { BulkScrapeModal } from './BulkScrapeModal';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
   Dialog,
@@ -183,6 +184,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
   const [isSyncEpisodesOpen, setIsSyncEpisodesOpen] = useState(false);
+  const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -430,6 +432,14 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
                 className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
               >
                 Match TMDB
+              </button>
+
+              <button
+                onClick={() => setIsBulkScrapeOpen(true)}
+                type="button"
+                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                Bulk Add Sources
               </button>
               
               <button
@@ -1027,6 +1037,13 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         seasons={series.seasons ?? []}
         open={isMergeSeasonsOpen}
         onOpenChange={setIsMergeSeasonsOpen}
+      />
+      <BulkScrapeModal
+        open={isBulkScrapeOpen}
+        onOpenChange={setIsBulkScrapeOpen}
+        seriesId={seriesId}
+        localEpisodes={localEpisodes}
+        seasons={series.seasons ?? []}
       />
       <AddSeasonDialog
         seriesId={seriesId}
