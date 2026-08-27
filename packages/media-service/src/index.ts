@@ -287,6 +287,29 @@ export interface PreviewBulkSourcesResult {
   localEpisodes: BulkPreviewLocalEpisodeItem[];
 }
 
+export interface BulkSourceItemVideoSource {
+  type: "embed" | "direct";
+  url: string;
+  label: string;
+  quality?: string | null;
+}
+
+export interface BulkSourceItem {
+  episodeId: string | null;
+  videoSources: BulkSourceItemVideoSource[];
+}
+
+export interface SaveBulkSourcesInput {
+  seriesId: string;
+  mappings: BulkSourceItem[];
+}
+
+export interface SaveBulkSourcesResult {
+  success: true;
+  savedCount: number;
+  skippedCount: number;
+}
+
 export function parseBulkScrapedEpisodeNumber(title: string): number | null {
   const decimalEpMatch = title.match(/(?:episode|eps|ep|#)\.?\s*(\d+\.\d+)/i);
   if (decimalEpMatch) {
@@ -321,6 +344,7 @@ export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
   previewBulkSources(input: PreviewBulkSourcesInput): Promise<PreviewBulkSourcesResult>;
+  saveBulkSources(input: SaveBulkSourcesInput): Promise<SaveBulkSourcesResult>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult>;
   getSeasonTmdbPreview(seasonId: string, options?: SeasonTmdbSyncOptions): Promise<SeasonTmdbPreviewResult>;
@@ -605,6 +629,42 @@ export function createMediaService<
       return {
         scrapedEpisodes,
         localEpisodes,
+      };
+    },
+
+    async saveBulkSources(
+      input: SaveBulkSourcesInput
+    ): Promise<SaveBulkSourcesResult> {
+      const targetSeries = await seriesRepository.findById(input.seriesId);
+      if (!targetSeries) {
+        throw new SeriesNotFoundError(`Series with id ${input.seriesId} not found`);
+      }
+
+      let savedCount = 0;
+      let skippedCount = 0;
+
+      for (const mapping of input.mappings) {
+        if (!mapping.episodeId) {
+          skippedCount++;
+          continue;
+        }
+
+        for (const vs of mapping.videoSources) {
+          await videoSourceRepository.upsert({
+            episodeId: mapping.episodeId,
+            type: vs.type,
+            url: vs.url,
+            label: vs.label,
+            quality: vs.quality ?? null,
+          });
+        }
+        savedCount++;
+      }
+
+      return {
+        success: true,
+        savedCount,
+        skippedCount,
       };
     },
 
