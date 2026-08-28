@@ -1,5 +1,6 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { BulkScrapeModal } from '@/modules/videos/internal/BulkScrapeModal';
 import * as api from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
@@ -11,6 +12,15 @@ vi.mock('sonner', () => ({
     info: vi.fn(),
   },
 }));
+
+vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/modules/videos/internal/api')>();
+  return {
+    ...actual,
+    previewBulkSources: vi.fn(),
+    scrapeEpisodeSources: vi.fn(),
+  };
+});
 
 const mockLocalEpisodes = [
   { id: 'ep-1', title: 'Intro to Deep Modules', order: 1 },
@@ -70,10 +80,14 @@ const mockPreviewResult = {
 };
 
 describe('BulkScrapeModal component', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(api, 'previewBulkSources').mockResolvedValue(mockPreviewResult);
-    vi.spyOn(api, 'scrapeEpisodeSources').mockResolvedValue({
+    vi.mocked(api.previewBulkSources).mockResolvedValue(mockPreviewResult);
+    vi.mocked(api.scrapeEpisodeSources).mockResolvedValue({
       id: 'ep-1',
       title: 'Scraped Ep',
       videoSources: [],
@@ -181,7 +195,7 @@ describe('BulkScrapeModal component', () => {
   });
 
   it('shows error toast if preview fetch fails', async () => {
-    vi.spyOn(api, 'previewBulkSources').mockRejectedValueOnce(new Error('Network connection failed'));
+    vi.mocked(api.previewBulkSources).mockRejectedValueOnce(new Error('Network connection failed'));
 
     const { user } = renderWithProviders(
       <BulkScrapeModal
@@ -301,10 +315,83 @@ describe('BulkScrapeModal component', () => {
     });
 
     // Close button should be present once processing is done
-    const closeBtns = await screen.findAllByRole('button', { name: 'Close' });
-    const footerCloseBtn = closeBtns.find((b) => !b.querySelector('svg')) || closeBtns[0];
+    const footerCloseBtn = await screen.findByTestId('bulk-scrape-close-btn');
     await user.click(footerCloseBtn);
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('renders overwrite warning badge and intercepts Save with confirmation dialog when overwrite conflicts exist', async () => {
+    const mockPreviewResultWithConflict = {
+      ...mockPreviewResult,
+      localEpisodes: [
+        { id: 'ep-1', title: 'Intro to Deep Modules', order: 1, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: true },
+        { id: 'ep-2', title: 'TanStack Router Setup', order: 2, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
+        { id: 'ep-3', title: 'State Management', order: 3, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
+      ],
+    };
+    vi.mocked(api.previewBulkSources).mockResolvedValueOnce(mockPreviewResultWithConflict);
+
+    const { user } = renderWithProviders(
+      <BulkScrapeModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockPreviewResultWithConflict.localEpisodes}
+        seasons={[
+          {
+            id: 's1',
+            title: 'Season 1',
+            tmdbSeason: 1,
+            episodes: mockPreviewResultWithConflict.localEpisodes,
+          },
+        ]}
+      />
+    );
+
+    const urlInput = screen.getByLabelText(/Season \/ Scraper URL/i);
+    await user.type(urlInput, 'https://otakudesu.cloud/anime/otaku-anime');
+    await user.click(screen.getByRole('button', { name: /Preview/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('⚠️ Overwrites existing sources')).toBeInTheDocument();
+    });
+
+    // Click Save -> Intercept modal should open
+    await user.click(screen.getByRole('button', { name: /Save/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Overwrite Existing Sources?')).toBeInTheDocument();
+    });
+
+    // Click Cancel -> stays on Step 2
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Overwrite Existing Sources?')).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: /Save/i })).toBeInTheDocument();
+
+    // Click Save again -> Intercept modal opens, click Confirm & Save -> proceeds to Step 3
+    await user.click(screen.getByRole('button', { name: /Save/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Overwrite Existing Sources?')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(
+        'Bulk sources processed',
+        expect.objectContaining({
+          description: expect.stringContaining('Successfully scraped'),
+        })
+      );
+    });
   });
 });

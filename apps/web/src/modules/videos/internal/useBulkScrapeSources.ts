@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -10,7 +10,7 @@ export interface SeasonGroupOption {
   id: string;
   title?: string | null;
   tmdbSeason?: number | null;
-  episodes?: Array<{ id: string; title: string; order?: number }>;
+  episodes?: Array<{ id: string; title: string; order?: number; hasSources?: boolean }>;
 }
 
 export interface ScrapedEpisodePreviewItem {
@@ -36,6 +36,7 @@ export interface LocalEpisodeItem {
   seasonId?: string | null;
   seasonTitle?: string;
   seasonNumber?: number;
+  hasSources?: boolean;
 }
 
 export interface ProcessingLogItem {
@@ -288,6 +289,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
           seasonId: le.seasonId,
           seasonNumber: le.seasonNumber ?? undefined,
           seasonTitle: le.seasonTitle,
+          hasSources: le.hasSources,
         })),
       };
     },
@@ -468,7 +470,10 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     );
   }, []);
 
-  const { reset: resetPreview } = previewMutation;
+  const resetPreviewRef = useRef(previewMutation.reset);
+  useEffect(() => {
+    resetPreviewRef.current = previewMutation.reset;
+  });
 
   const reset = useCallback(() => {
     setStep(1);
@@ -484,11 +489,52 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     setProcessingLogs([]);
     setIsProcessing(false);
     setCompletedCount(0);
-    resetPreview();
-  }, [seasonOptions, options?.seasons, options?.localEpisodes, resetPreview]);
+    resetPreviewRef.current();
+  }, [seasonOptions, options?.seasons, options?.localEpisodes]);
 
   const totalCount = previewItems.length;
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  const localEpisodesMap = useMemo(() => {
+    const map = new Map<string, { id: string; title: string; order?: number; hasSources?: boolean }>();
+
+    if (options?.localEpisodes) {
+      for (const ep of options.localEpisodes) {
+        map.set(ep.id, ep);
+      }
+    }
+
+    if (options?.seasons) {
+      for (const s of options.seasons) {
+        if (s.episodes) {
+          for (const ep of s.episodes) {
+            map.set(ep.id, ep);
+          }
+        }
+      }
+    }
+
+    for (const ep of fetchedLocalEpisodes) {
+      map.set(ep.id, ep);
+    }
+
+    return map;
+  }, [options?.localEpisodes, options?.seasons, fetchedLocalEpisodes]);
+
+  const isEpisodeHasSources = useCallback(
+    (episodeId: string | null): boolean => {
+      if (!episodeId) return false;
+      return Boolean(localEpisodesMap.get(episodeId)?.hasSources);
+    },
+    [localEpisodesMap]
+  );
+
+  const hasOverwriteConflicts = useMemo(() => {
+    return previewItems.some((item) => {
+      if (item.isIgnored || !item.matchedLocalEpisodeId) return false;
+      return isEpisodeHasSources(item.matchedLocalEpisodeId);
+    });
+  }, [previewItems, isEpisodeHasSources]);
 
   return {
     step,
@@ -519,5 +565,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     updateMapping,
     toggleIgnore,
     reset,
+    isEpisodeHasSources,
+    hasOverwriteConflicts,
   };
 }

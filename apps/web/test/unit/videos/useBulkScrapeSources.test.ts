@@ -414,5 +414,44 @@ describe('useBulkScrapeSources hook', () => {
       expect(result.current.episodeOffset).toBe(12);
     });
   });
+
+  describe('Overwrite conflict tracking', () => {
+    const mockEpisodesWithSources: LocalEpisodeItem[] = [
+      { id: 'ep-1', title: 'Episode 1 Title', order: 1, seasonNumber: 1, hasSources: true },
+      { id: 'ep-2', title: 'Episode 2 Title', order: 2, seasonNumber: 1, hasSources: false },
+    ];
+
+    it('identifies if a local episode has existing sources', () => {
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ localEpisodes: mockEpisodesWithSources }),
+        { wrapper: createWrapper() }
+      );
+
+      expect(result.current.isEpisodeHasSources('ep-1')).toBe(true);
+      expect(result.current.isEpisodeHasSources('ep-2')).toBe(false);
+      expect(result.current.isEpisodeHasSources('ep-999')).toBe(false);
+    });
+
+    it('correctly sets hasOverwriteConflicts when mapped items point to local episodes with existing sources', async () => {
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ localEpisodes: mockEpisodesWithSources }),
+        { wrapper: createWrapper() }
+      );
+
+      await act(async () => {
+        result.current.fetchPreview(mockEpisodesWithSources);
+      });
+
+      // Ep 1 maps to ep-1 which hasSources: true
+      expect(result.current.hasOverwriteConflicts).toBe(true);
+
+      // If we ignore Ep 1, conflict should clear
+      act(() => {
+        result.current.toggleIgnore(0);
+      });
+
+      expect(result.current.hasOverwriteConflicts).toBe(false);
+    });
+  });
 });
 
