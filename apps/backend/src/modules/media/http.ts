@@ -545,6 +545,13 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       }
     )
     .get(
+      "/series/home-feed",
+      async () => {
+        const feed = await seriesRepository.getHomeFeed();
+        return successResponse(feed);
+      }
+    )
+    .get(
       "/series/:id",
       async ({ params, set }) => {
         const s = await seriesRepository.findByIdWithEpisodes(params.id);

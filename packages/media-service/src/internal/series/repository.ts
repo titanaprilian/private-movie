@@ -104,6 +104,26 @@ export type SeriesWithEpisodes = SeriesRow & {
   relations: SeriesRelationItem[];
 };
 
+export interface SeriesWithMetadata extends SeriesRow {
+  genres: Array<{ id: string; name: string; slug: string }>;
+  seasonsCount: number;
+  episodesCount: number;
+}
+
+export interface HomeFeedHero extends SeriesWithMetadata {
+  tags: string[];
+}
+
+export interface HomeFeedRow {
+  title: string;
+  items: SeriesWithMetadata[];
+}
+
+export interface HomeFeedPayload {
+  hero: HomeFeedHero | null;
+  rows: HomeFeedRow[];
+}
+
 export function createSeriesRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
@@ -419,6 +439,146 @@ export function createSeriesRepositoryInternal<
       }
 
       return row;
+    },
+
+    async getHomeFeed(): Promise<HomeFeedPayload> {
+      const [latestSeries] = await db
+        .select()
+        .from(series)
+        .orderBy(desc(series.updatedAt), desc(series.createdAt))
+        .limit(1);
+
+      const [trendingRows, recentlyAddedRows, simulcastRows, movieRows] = await Promise.all([
+        db
+          .select()
+          .from(series)
+          .orderBy(desc(series.updatedAt))
+          .limit(10),
+        db
+          .select()
+          .from(series)
+          .orderBy(desc(series.createdAt))
+          .limit(10),
+        db
+          .select()
+          .from(series)
+          .where(eq(series.type, "tv"))
+          .orderBy(desc(series.updatedAt))
+          .limit(10),
+        db
+          .select()
+          .from(series)
+          .where(eq(series.type, "movie"))
+          .orderBy(desc(series.updatedAt))
+          .limit(10),
+      ]);
+
+      const allSeriesMap = new Map<string, SeriesRow>();
+      if (latestSeries) {
+        allSeriesMap.set(latestSeries.id, latestSeries);
+      }
+      for (const s of [...trendingRows, ...recentlyAddedRows, ...simulcastRows, ...movieRows]) {
+        allSeriesMap.set(s.id, s);
+      }
+
+      const allSeriesList = Array.from(allSeriesMap.values());
+      const allSeriesIds = allSeriesList.map((s) => s.id);
+
+      const genresMap = new Map<string, Array<{ id: string; name: string; slug: string }>>();
+      const seasonsCountMap = new Map<string, number>();
+      const episodesCountMap = new Map<string, number>();
+
+      if (allSeriesIds.length > 0) {
+        const genreMappings = await db
+          .select({
+            seriesId: seriesToGenres.seriesId,
+            id: genres.id,
+            name: genres.name,
+            slug: genres.slug,
+          })
+          .from(seriesToGenres)
+          .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+          .where(inArray(seriesToGenres.seriesId, allSeriesIds));
+
+        for (const g of genreMappings) {
+          const list = genresMap.get(g.seriesId) ?? [];
+          list.push({ id: g.id, name: g.name, slug: g.slug });
+          genresMap.set(g.seriesId, list);
+        }
+
+        const seasonCounts = await db
+          .select({
+            seriesId: seasons.seriesId,
+            value: count(seasons.id),
+          })
+          .from(seasons)
+          .where(inArray(seasons.seriesId, allSeriesIds))
+          .groupBy(seasons.seriesId);
+
+        for (const sc of seasonCounts) {
+          seasonsCountMap.set(sc.seriesId, Number(sc.value));
+        }
+
+        const episodeCounts = await db
+          .select({
+            seriesId: seasons.seriesId,
+            value: count(episodes.id),
+          })
+          .from(episodes)
+          .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+          .where(inArray(seasons.seriesId, allSeriesIds))
+          .groupBy(seasons.seriesId);
+
+        for (const ec of episodeCounts) {
+          episodesCountMap.set(ec.seriesId, Number(ec.value));
+        }
+      }
+
+      const enrichedMap = new Map<string, SeriesWithMetadata>();
+      for (const s of allSeriesList) {
+        enrichedMap.set(s.id, {
+          ...s,
+          genres: genresMap.get(s.id) ?? [],
+          seasonsCount: seasonsCountMap.get(s.id) ?? 0,
+          episodesCount: episodesCountMap.get(s.id) ?? 0,
+        });
+      }
+
+      let hero: HomeFeedHero | null = null;
+      if (latestSeries) {
+        const enrichedHero = enrichedMap.get(latestSeries.id)!;
+        const genreNames = enrichedHero.genres.map((g) => g.name);
+        const typeTag = enrichedHero.type === "movie" ? "Movie" : "TV Series";
+        const tags = [typeTag, ...genreNames];
+        hero = {
+          ...enrichedHero,
+          tags,
+        };
+      }
+
+      const rows: HomeFeedRow[] = [
+        {
+          title: "Trending Now",
+          items: trendingRows.map((s) => enrichedMap.get(s.id)!),
+        },
+        {
+          title: "Recently Added",
+          items: recentlyAddedRows.map((s) => enrichedMap.get(s.id)!),
+        },
+        {
+          title: "Simulcasts",
+          items: simulcastRows.map((s) => enrichedMap.get(s.id)!),
+        },
+        {
+          title: "Movies",
+          items: movieRows.map((s) => enrichedMap.get(s.id)!),
+        },
+      ];
+
+      return {
+        hero,
+        rows,
+      };
     },
   };
 }

@@ -35,7 +35,15 @@ export type VideoSource = "otakudesu";
 
 export type { EpisodeRow as SavedEpisode, SeasonRow as SavedSeason, SeriesRow as SavedSeries } from "@repo/db";
 export type { EpisodeWithVideoSources };
-export type { SeriesWithEpisodes, SeriesWithSeasons, SeasonWithEpisodes } from "./internal/series/repository";
+export type {
+  SeriesWithEpisodes,
+  SeriesWithSeasons,
+  SeasonWithEpisodes,
+  SeriesWithMetadata,
+  HomeFeedHero,
+  HomeFeedRow,
+  HomeFeedPayload,
+} from "./internal/series/repository";
 export { EpisodeNotFoundError, createEpisodeRepositoryInternal } from "./internal/episodes/repository";
 export { SeasonNotFoundError, SeasonNotEmptyError, SeasonNotLinkedToTmdbError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
 export type { SeasonUpsertInput, CreateSeasonInput } from "./internal/seasons/repository";
