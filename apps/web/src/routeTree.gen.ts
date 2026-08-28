@@ -14,9 +14,11 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as FormRouteImport } from './routes/form'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as WatchDemoRouteImport } from './routes/watch-demo'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminGenresRouteImport } from './routes/admin/genres'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
+import { Route as WatchSeriesIdRouteImport } from './routes/watch.$seriesId'
 import { Route as AdminVideosIndexRouteImport } from './routes/admin/videos.index'
 import { Route as AdminVideosSeriesIdRouteImport } from './routes/admin/videos.$seriesId'
 
@@ -45,6 +47,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WatchDemoRoute = WatchDemoRouteImport.update({
+  id: '/watch-demo',
+  path: '/watch-demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -59,6 +66,11 @@ const AdminProfileRoute = AdminProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
   getParentRoute: () => AdminRoute,
+} as any)
+const WatchSeriesIdRoute = WatchSeriesIdRouteImport.update({
+  id: '/watch/$seriesId',
+  path: '/watch/$seriesId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVideosIndexRoute = AdminVideosIndexRouteImport.update({
   id: '/videos/',
@@ -77,8 +89,10 @@ export interface FileRoutesByFullPath {
   '/form': typeof FormRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
   '/admin/videos/': typeof AdminVideosIndexRoute
@@ -88,8 +102,10 @@ export interface FileRoutesByTo {
   '/form': typeof FormRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
   '/admin/videos': typeof AdminVideosIndexRoute
@@ -101,8 +117,10 @@ export interface FileRoutesById {
   '/form': typeof FormRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
   '/admin/videos/': typeof AdminVideosIndexRoute
@@ -115,8 +133,10 @@ export interface FileRouteTypes {
     | '/form'
     | '/login'
     | '/register'
+    | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
+    | '/watch/$seriesId'
     | '/admin/'
     | '/admin/videos/$seriesId'
     | '/admin/videos/'
@@ -126,8 +146,10 @@ export interface FileRouteTypes {
     | '/form'
     | '/login'
     | '/register'
+    | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
+    | '/watch/$seriesId'
     | '/admin'
     | '/admin/videos/$seriesId'
     | '/admin/videos'
@@ -138,8 +160,10 @@ export interface FileRouteTypes {
     | '/form'
     | '/login'
     | '/register'
+    | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
+    | '/watch/$seriesId'
     | '/admin/'
     | '/admin/videos/$seriesId'
     | '/admin/videos/'
@@ -151,6 +175,8 @@ export interface RootRouteChildren {
   FormRoute: typeof FormRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  WatchDemoRoute: typeof WatchDemoRoute
+  WatchSeriesIdRoute: typeof WatchSeriesIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -190,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/watch-demo': {
+      id: '/watch-demo'
+      path: '/watch-demo'
+      fullPath: '/watch-demo'
+      preLoaderRoute: typeof WatchDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -210,6 +243,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/profile'
       preLoaderRoute: typeof AdminProfileRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/watch/$seriesId': {
+      id: '/watch/$seriesId'
+      path: '/watch/$seriesId'
+      fullPath: '/watch/$seriesId'
+      preLoaderRoute: typeof WatchSeriesIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/videos/': {
       id: '/admin/videos/'
@@ -252,6 +292,8 @@ const rootRouteChildren: RootRouteChildren = {
   FormRoute: FormRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  WatchDemoRoute: WatchDemoRoute,
+  WatchSeriesIdRoute: WatchSeriesIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
