@@ -467,6 +467,33 @@ describe('useBulkScrapeSources hook', () => {
         '2/2 episodes already have sources. Auto-offsetting to start from Episode 1.'
       );
     });
+
+    it('evaluates source presence using videoSources array when hasSources is undefined', () => {
+      const seasonsWithVideoSourcesArray = [
+        {
+          id: 's1',
+          title: 'Season 1',
+          tmdbSeason: 1,
+          episodes: [
+            { id: 'ep-1', title: 'Ep 1', order: 1, videoSources: [{ type: 'otakudesu', url: 'http://ep1' }] },
+            { id: 'ep-2', title: 'Ep 2', order: 2, videoSources: [{ type: 'otakudesu', url: 'http://ep2' }] },
+            { id: 'ep-3', title: 'Ep 3', order: 3, videoSources: [] },
+          ],
+        },
+      ];
+
+      expect(calculateSeasonOffset('s1', seasonsWithVideoSourcesArray)).toBe(2);
+
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ seasons: seasonsWithVideoSourcesArray }),
+        { wrapper: createWrapper() }
+      );
+
+      expect(result.current.episodeOffset).toBe(2);
+      expect(result.current.seasonOffsetHelperText).toBe(
+        '2/3 episodes already have sources. Auto-offsetting to start from Episode 3.'
+      );
+    });
   });
 
   describe('Overwrite conflict tracking', () => {
@@ -484,6 +511,21 @@ describe('useBulkScrapeSources hook', () => {
       expect(result.current.isEpisodeHasSources('ep-1')).toBe(true);
       expect(result.current.isEpisodeHasSources('ep-2')).toBe(false);
       expect(result.current.isEpisodeHasSources('ep-999')).toBe(false);
+    });
+
+    it('identifies episode sources using videoSources array when hasSources is undefined', () => {
+      const mockEpisodesWithVideoSources = [
+        { id: 'ep-10', title: 'Ep 10', order: 1, videoSources: [{ type: 'otakudesu', url: 'http://ep10' }] },
+        { id: 'ep-20', title: 'Ep 20', order: 2, videoSources: [] },
+      ] as any;
+
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ localEpisodes: mockEpisodesWithVideoSources }),
+        { wrapper: createWrapper() }
+      );
+
+      expect(result.current.isEpisodeHasSources('ep-10')).toBe(true);
+      expect(result.current.isEpisodeHasSources('ep-20')).toBe(false);
     });
 
     it('correctly sets hasOverwriteConflicts when mapped items point to local episodes with existing sources', async () => {

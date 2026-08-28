@@ -10,7 +10,7 @@ export interface SeasonGroupOption {
   id: string;
   title?: string | null;
   tmdbSeason?: number | null;
-  episodes?: Array<{ id: string; title: string; order?: number; hasSources?: boolean }>;
+  episodes?: Array<{ id: string; title: string; order?: number; hasSources?: boolean; videoSources?: any[] }>;
 }
 
 export interface ScrapedEpisodePreviewItem {
@@ -37,6 +37,12 @@ export interface LocalEpisodeItem {
   seasonTitle?: string;
   seasonNumber?: number;
   hasSources?: boolean;
+  videoSources?: any[];
+}
+
+export function checkEpisodeHasSources(ep?: { hasSources?: boolean; videoSources?: any[] } | null): boolean {
+  if (!ep) return false;
+  return ep.hasSources ?? (Array.isArray((ep as any).videoSources) && (ep as any).videoSources.length > 0);
 }
 
 export interface ProcessingLogItem {
@@ -106,7 +112,7 @@ export function getSeasonOffsetInfo(
 
   if (!seasonId) return emptyInfo;
 
-  let epList: Array<{ id: string; order?: number; hasSources?: boolean }> = [];
+  let epList: Array<{ id: string; order?: number; hasSources?: boolean; videoSources?: any[] }> = [];
 
   if (seasons && seasons.length > 0) {
     const seasonObj = seasons.find((s) => s.id === seasonId);
@@ -129,9 +135,9 @@ export function getSeasonOffsetInfo(
   validEpisodes.sort((a, b) => a.order - b.order);
 
   const totalEpisodes = epList.length;
-  const filledEpisodes = epList.filter((ep) => Boolean(ep.hasSources)).length;
+  const filledEpisodes = epList.filter((ep) => checkEpisodeHasSources(ep)).length;
 
-  const emptyEpisode = validEpisodes.find((ep) => !ep.hasSources);
+  const emptyEpisode = validEpisodes.find((ep) => !checkEpisodeHasSources(ep));
   const firstEpisode = validEpisodes[0];
   const targetEpisode = emptyEpisode ?? firstEpisode;
 
@@ -534,7 +540,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const localEpisodesMap = useMemo(() => {
-    const map = new Map<string, { id: string; title: string; order?: number; hasSources?: boolean }>();
+    const map = new Map<string, { id: string; title: string; order?: number; hasSources?: boolean; videoSources?: any[] }>();
 
     if (options?.localEpisodes) {
       for (const ep of options.localEpisodes) {
@@ -562,7 +568,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   const isEpisodeHasSources = useCallback(
     (episodeId: string | null): boolean => {
       if (!episodeId) return false;
-      return Boolean(localEpisodesMap.get(episodeId)?.hasSources);
+      return checkEpisodeHasSources(localEpisodesMap.get(episodeId));
     },
     [localEpisodesMap]
   );
