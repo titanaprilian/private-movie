@@ -9,6 +9,7 @@ export const Route = createFileRoute('/watch/$seriesId')({
 });
 
 export function WatchSeriesPage() {
+  const params = Route.useParams();
   const series = Route.useLoaderData();
-  return <SeriesWatchView series={series} />;
+  return <SeriesWatchView seriesId={params.seriesId} series={series} />;
 }

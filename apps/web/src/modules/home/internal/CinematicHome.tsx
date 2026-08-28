@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import {
   Play,
   Plus,
@@ -153,6 +154,7 @@ function HomeFeedErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 function CarouselRowComponent({ row }: { row: CarouselRowData }) {
+  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const [myListIds, setMyListIds] = useState<Record<string, boolean>>({});
 
@@ -201,6 +203,7 @@ function CarouselRowComponent({ row }: { row: CarouselRowData }) {
               <div
                 key={`${row.id}-${item.id}-${idx}`}
                 data-testid="series-card"
+                onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: item.id } })}
                 className="w-[240px] sm:w-[280px] flex-shrink-0 snap-start group relative rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-300 transform hover:scale-105 sm:hover:scale-110 z-10 hover:z-30 shadow-md hover:shadow-2xl cursor-pointer"
               >
                 {/* Poster / Aspect Ratio Box */}
@@ -247,6 +250,7 @@ function CarouselRowComponent({ row }: { row: CarouselRowData }) {
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-800/80">
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: item.id } })}
                         className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:bg-zinc-200 transition-colors shadow"
                         aria-label={`Play ${item.title}`}
                       >
@@ -291,6 +295,7 @@ function CarouselRowComponent({ row }: { row: CarouselRowData }) {
 }
 
 export function CinematicHome() {
+  const navigate = useNavigate();
   const [heroMuted, setHeroMuted] = useState(true);
   const [heroInList, setHeroInList] = useState(false);
 
@@ -366,7 +371,10 @@ export function CinematicHome() {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-4 pt-4">
-                <button className="bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer">
+                <button
+                  onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: heroAnime.id } })}
+                  className="bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer"
+                >
                   <Play className="w-5 h-5 fill-black text-black" />
                   <span>Play</span>
                 </button>

@@ -1,14 +1,138 @@
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ListVideo, Play, SkipBack, SkipForward } from 'lucide-react';
+import { AlertCircle, ChevronDown, ListVideo, Play, RefreshCw, SkipBack, SkipForward } from 'lucide-react';
 import { useWatchState } from './useWatchState';
-import type { WatchSeriesDetails } from './api';
+import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from './api';
 
 export interface SeriesWatchViewProps {
-  series: WatchSeriesDetails;
+  seriesId?: string;
+  series?: WatchSeriesDetails;
+  initialSeasonId?: string;
+  initialEpisodeId?: string;
+  initialSourceIndex?: number;
 }
 
-export function SeriesWatchView({ series }: SeriesWatchViewProps) {
-  const state = useWatchState(series);
+export function WatchViewSkeleton() {
+  return (
+    <div className="min-h-screen bg-bg text-fg font-sans animate-pulse" data-testid="watch-skeleton">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-8 lg:flex-row">
+          {/* Left column: player + metadata skeleton */}
+          <div className="flex min-w-0 flex-1 flex-col lg:w-[70%]">
+            <div className="aspect-video w-full rounded-md border border-c bg-card/60" />
+            <div className="mt-4 flex flex-wrap items-center gap-2 border border-c bg-card p-3">
+              <div className="h-9 w-20 rounded border border-c bg-bg/50" />
+              <div className="h-9 w-20 rounded border border-c bg-bg/50" />
+              <div className="ml-auto flex gap-2">
+                <div className="h-9 w-24 rounded border border-c bg-bg/50" />
+                <div className="h-9 w-24 rounded border border-c bg-bg/50" />
+              </div>
+            </div>
+            <div className="mt-6 space-y-3">
+              <div className="h-8 w-1/3 rounded bg-card/60" />
+              <div className="h-5 w-1/4 rounded bg-card/40" />
+              <div className="h-16 w-full rounded bg-card/30" />
+            </div>
+          </div>
+
+          {/* Right column: sticky sidebar skeleton */}
+          <aside className="w-full lg:w-[30%]">
+            <div className="flex h-[500px] flex-col rounded-md border border-c bg-card p-4 space-y-4">
+              <div className="h-6 w-1/2 rounded bg-bg/60" />
+              <div className="h-10 w-full rounded bg-bg/40" />
+              <div className="flex-1 space-y-2 pt-2">
+                <div className="h-14 w-full rounded bg-bg/40" />
+                <div className="h-14 w-full rounded bg-bg/40" />
+                <div className="h-14 w-full rounded bg-bg/40" />
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function WatchViewErrorState({
+  message,
+  onRetry,
+}: {
+  message?: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div
+      className="min-h-screen bg-bg text-fg font-sans flex items-center justify-center p-4"
+      data-testid="watch-error"
+    >
+      <div className="max-w-md w-full rounded-md border border-red-500/30 bg-card p-6 text-center space-y-4">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+          <AlertCircle className="h-6 w-6" />
+        </div>
+        <h2 className="text-lg font-semibold">Failed to load series</h2>
+        <p className="text-sm text-muted">
+          {message ||
+            'Unable to fetch watch details. Please check your connection and try again.'}
+        </p>
+        {onRetry && (
+          <Button variant="secondary" onClick={onRetry} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function SeriesWatchView({
+  seriesId,
+  series: propSeries,
+  initialSeasonId,
+  initialEpisodeId,
+  initialSourceIndex,
+}: SeriesWatchViewProps) {
+  const {
+    data: querySeries,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    ...getSeriesWithEpisodesQueryOptions(seriesId || ''),
+    enabled: Boolean(seriesId) && !propSeries,
+  });
+
+  const series = propSeries ?? querySeries;
+
+  const state = useWatchState(series, {
+    initialSeasonId,
+    initialEpisodeId,
+    initialSourceIndex,
+  });
+
+  if (isLoading && !series) {
+    return <WatchViewSkeleton />;
+  }
+
+  if (isError && !series) {
+    return (
+      <WatchViewErrorState
+        message={error instanceof Error ? error.message : undefined}
+        onRetry={() => refetch()}
+      />
+    );
+  }
+
+  if (!series) {
+    return (
+      <WatchViewErrorState
+        message="Series details not found"
+        onRetry={seriesId ? () => refetch() : undefined}
+      />
+    );
+  }
+
   const {
     activeSeason,
     activeSeasonId,
