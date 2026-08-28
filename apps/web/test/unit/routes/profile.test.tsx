@@ -1,6 +1,6 @@
 import { renderWithProviders, screen } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ProfilePage } from '@/routes/profile';
+import { ProfilePage } from '@/routes/admin/profile';
 import { useAuthStore } from '@/modules/auth';
 
 vi.mock('@tanstack/react-router', () => ({

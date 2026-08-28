@@ -68,7 +68,7 @@ export function Shell({ children }: ShellProps) {
         {/* Navigation links */}
         <nav className="flex-1 px-2 py-3 space-y-0.5">
           <Link
-            to="/"
+            to="/admin"
             className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 active-bg font-medium text-sm rounded-sm"
           >
             <svg
@@ -88,7 +88,7 @@ export function Shell({ children }: ShellProps) {
             {!sidebarCollapsed && <span>Dashboard</span>}
           </Link>
           <Link
-            to="/videos"
+            to="/admin/videos"
             className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
           >
             <svg
@@ -106,7 +106,7 @@ export function Shell({ children }: ShellProps) {
             {!sidebarCollapsed && <span>Videos</span>}
           </Link>
           <Link
-            to="/genres"
+            to="/admin/genres"
             className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
           >
             <svg
@@ -127,7 +127,7 @@ export function Shell({ children }: ShellProps) {
         {/* User Profile at bottom */}
         <div className="p-3 border-t border-c">
           <Link
-            to="/profile"
+            to="/admin/profile"
             className="flex items-center gap-3 px-2 py-2 rounded-sm hover-bg transition-colors"
           >
             <img
@@ -187,21 +187,21 @@ export function Shell({ children }: ShellProps) {
         </div>
         <nav className="flex-1 px-2 py-3 space-y-0.5 text-sm">
           <Link
-            to="/"
+            to="/admin"
             onClick={() => setIsMobileOpen(false)}
             className="block pl-3 pr-2 py-1.5 active-bg font-medium rounded-sm"
           >
             Dashboard
           </Link>
           <Link
-            to="/videos"
+            to="/admin/videos"
             onClick={() => setIsMobileOpen(false)}
             className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
           >
             Videos
           </Link>
           <Link
-            to="/genres"
+            to="/admin/genres"
             onClick={() => setIsMobileOpen(false)}
             className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
           >
@@ -210,7 +210,7 @@ export function Shell({ children }: ShellProps) {
         </nav>
         <div className="p-3 border-t border-c">
           <Link
-            to="/profile"
+            to="/admin/profile"
             onClick={() => setIsMobileOpen(false)}
             className="flex items-center gap-3 px-2 py-2 rounded-sm hover-bg transition-colors"
           >

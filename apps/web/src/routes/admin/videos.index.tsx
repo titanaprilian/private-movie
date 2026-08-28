@@ -9,7 +9,7 @@ export type SeriesListSearch = {
   genre?: string;
 };
 
-export const Route = createFileRoute('/videos/')({
+export const Route = createFileRoute('/admin/videos/')({
   validateSearch: (search: Record<string, unknown>): SeriesListSearch => {
     const pageNum =
       typeof search.page === 'number'
@@ -35,6 +35,6 @@ export const Route = createFileRoute('/videos/')({
   component: VideosIndexPage,
 });
 
-function VideosIndexPage() {
+export function VideosIndexPage() {
   return <SeriesGrid />;
 }

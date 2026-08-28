@@ -6,7 +6,7 @@ type SeriesDetailSearch = {
   order?: number;
 };
 
-export const Route = createFileRoute('/videos/$seriesId')({
+export const Route = createFileRoute('/admin/videos/$seriesId')({
   validateSearch: (search: Record<string, unknown>): SeriesDetailSearch => ({
     order:
       typeof search.order === 'number'
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/videos/$seriesId')({
   component: SeriesDetailPage,
 });
 
-function SeriesDetailPage() {
+export function SeriesDetailPage() {
   const { seriesId } = Route.useParams();
   const search = Route.useSearch();
   return <SeriesDetailView seriesId={seriesId} initialOrder={search?.order} />;

@@ -606,7 +606,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
             {series.relations.map((rel) => (
               <Link
                 key={rel.relatedSeriesId}
-                to="/videos/$seriesId"
+                to="/admin/videos/$seriesId"
                 params={{ seriesId: rel.relatedSeriesId }}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-c bg-sidebar hover:border-primary transition-colors text-xs cursor-pointer"
               >

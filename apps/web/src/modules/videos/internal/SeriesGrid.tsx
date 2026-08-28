@@ -26,12 +26,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SeriesCombobox } from './SeriesCombobox';
 
 export function SeriesGrid() {
-  const search = useSearch({ from: '/videos/' }) as {
+  const search = useSearch({ from: '/admin/videos/' }) as {
     page?: number;
     q?: string;
     genre?: string;
   };
-  const navigate = useNavigate({ from: '/videos/' });
+  const navigate = useNavigate({ from: '/admin/videos/' });
   const openDialog = useScrapeWorkerStore((state) => state.openDialog);
   const queryClient = useQueryClient();
 
@@ -263,7 +263,7 @@ export function SeriesGrid() {
                 className="group bg-card border border-c rounded overflow-hidden flex flex-col hover:border-primary transition-colors"
               >
                 <Link
-                  to="/videos/$seriesId"
+                  to="/admin/videos/$seriesId"
                   params={{ seriesId: item.id }}
                   className="flex flex-col flex-1 cursor-pointer"
                 >
@@ -359,7 +359,7 @@ export function SeriesGrid() {
           <div className="flex items-center gap-2">
             {meta.page > 1 ? (
               <Link
-                to="/videos"
+                to="/admin/videos"
                 search={(old: Record<string, unknown>) => ({ ...old, page: meta.page - 1 })}
                 className="px-2.5 py-1 rounded border border-c hover-bg cursor-pointer text-foreground"
               >
@@ -372,7 +372,7 @@ export function SeriesGrid() {
             )}
             {meta.total > meta.limit * meta.page ? (
               <Link
-                to="/videos"
+                to="/admin/videos"
                 search={(old: Record<string, unknown>) => ({ ...old, page: meta.page + 1 })}
                 className="px-2.5 py-1 rounded border border-c hover-bg cursor-pointer text-foreground"
               >

@@ -199,14 +199,14 @@ describe('SeriesGrid component', () => {
     expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
     expect(screen.getByText('Previous')).toHaveClass('opacity-50');
     const nextLink = screen.getByText('Next').closest('a');
-    expect(nextLink).toHaveAttribute('href', '/videos?page=2');
+    expect(nextLink).toHaveAttribute('href', '/admin/videos?page=2');
   });
 
-  it('navigates to /videos/$seriesId when clicking a series card', () => {
+  it('navigates to /admin/videos/$seriesId when clicking a series card', () => {
     renderSeriesGrid();
 
     const link = screen.getByText('Solo Leveling').closest('a');
-    expect(link).toHaveAttribute('href', '/videos/series-1');
+    expect(link).toHaveAttribute('href', '/admin/videos/series-1');
   });
 
   it('opens AddMediaDialog when Add Video button is clicked', async () => {

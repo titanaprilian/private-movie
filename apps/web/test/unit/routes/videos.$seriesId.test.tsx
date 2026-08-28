@@ -1,6 +1,6 @@
 import { renderWithProviders, screen } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Route as ImportedRoute } from '@/routes/videos.$seriesId';
+import { Route as ImportedRoute } from '@/routes/admin/videos.$seriesId';
 import { setAccessToken } from '@/lib/api';
 
 vi.mock('@tanstack/react-router', () => ({

@@ -36,7 +36,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       if (onSuccess) {
         onSuccess();
       } else {
-        navigate({ to: '/' });
+        navigate({ to: '/admin' });
       }
     }
   };

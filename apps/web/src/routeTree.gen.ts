@@ -10,17 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as FormRouteImport } from './routes/form'
-import { Route as GenresRouteImport } from './routes/genres'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RegisterRouteImport } from './routes/register'
-import { Route as VideosIndexRouteImport } from './routes/videos.index'
-import { Route as VideosSeriesIdRouteImport } from './routes/videos.$seriesId'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminGenresRouteImport } from './routes/admin/genres'
+import { Route as AdminProfileRouteImport } from './routes/admin/profile'
+import { Route as AdminVideosIndexRouteImport } from './routes/admin/videos.index'
+import { Route as AdminVideosSeriesIdRouteImport } from './routes/admin/videos.$seriesId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FormRoute = FormRouteImport.update({
@@ -28,19 +35,9 @@ const FormRoute = FormRouteImport.update({
   path: '/form',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GenresRoute = GenresRouteImport.update({
-  id: '/genres',
-  path: '/genres',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -48,90 +45,112 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VideosIndexRoute = VideosIndexRouteImport.update({
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGenresRoute = AdminGenresRouteImport.update({
+  id: '/genres',
+  path: '/genres',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProfileRoute = AdminProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVideosIndexRoute = AdminVideosIndexRouteImport.update({
   id: '/videos/',
   path: '/videos/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AdminRoute,
 } as any)
-const VideosSeriesIdRoute = VideosSeriesIdRouteImport.update({
+const AdminVideosSeriesIdRoute = AdminVideosSeriesIdRouteImport.update({
   id: '/videos/$seriesId',
   path: '/videos/$seriesId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AdminRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/form': typeof FormRoute
-  '/genres': typeof GenresRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
-  '/videos/$seriesId': typeof VideosSeriesIdRoute
-  '/videos/': typeof VideosIndexRoute
+  '/admin/genres': typeof AdminGenresRoute
+  '/admin/profile': typeof AdminProfileRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
+  '/admin/videos/': typeof AdminVideosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/form': typeof FormRoute
-  '/genres': typeof GenresRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
-  '/videos/$seriesId': typeof VideosSeriesIdRoute
-  '/videos': typeof VideosIndexRoute
+  '/admin/genres': typeof AdminGenresRoute
+  '/admin/profile': typeof AdminProfileRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
+  '/admin/videos': typeof AdminVideosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/form': typeof FormRoute
-  '/genres': typeof GenresRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
-  '/videos/$seriesId': typeof VideosSeriesIdRoute
-  '/videos/': typeof VideosIndexRoute
+  '/admin/genres': typeof AdminGenresRoute
+  '/admin/profile': typeof AdminProfileRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
+  '/admin/videos/': typeof AdminVideosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/form'
-    | '/genres'
     | '/login'
-    | '/profile'
     | '/register'
-    | '/videos/$seriesId'
-    | '/videos/'
+    | '/admin/genres'
+    | '/admin/profile'
+    | '/admin/'
+    | '/admin/videos/$seriesId'
+    | '/admin/videos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/form'
-    | '/genres'
     | '/login'
-    | '/profile'
     | '/register'
-    | '/videos/$seriesId'
-    | '/videos'
+    | '/admin/genres'
+    | '/admin/profile'
+    | '/admin'
+    | '/admin/videos/$seriesId'
+    | '/admin/videos'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/form'
-    | '/genres'
     | '/login'
-    | '/profile'
     | '/register'
-    | '/videos/$seriesId'
-    | '/videos/'
+    | '/admin/genres'
+    | '/admin/profile'
+    | '/admin/'
+    | '/admin/videos/$seriesId'
+    | '/admin/videos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   FormRoute: typeof FormRoute
-  GenresRoute: typeof GenresRoute
   LoginRoute: typeof LoginRoute
-  ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
-  VideosSeriesIdRoute: typeof VideosSeriesIdRoute
-  VideosIndexRoute: typeof VideosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -143,18 +162,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/form': {
       id: '/form'
       path: '/form'
       fullPath: '/form'
       preLoaderRoute: typeof FormRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/genres': {
-      id: '/genres'
-      path: '/genres'
-      fullPath: '/genres'
-      preLoaderRoute: typeof GenresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -164,13 +183,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -178,32 +190,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/videos/': {
-      id: '/videos/'
-      path: '/videos'
-      fullPath: '/videos/'
-      preLoaderRoute: typeof VideosIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/videos/$seriesId': {
-      id: '/videos/$seriesId'
+    '/admin/genres': {
+      id: '/admin/genres'
+      path: '/genres'
+      fullPath: '/admin/genres'
+      preLoaderRoute: typeof AdminGenresRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/profile': {
+      id: '/admin/profile'
+      path: '/profile'
+      fullPath: '/admin/profile'
+      preLoaderRoute: typeof AdminProfileRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/videos/': {
+      id: '/admin/videos/'
+      path: '/videos'
+      fullPath: '/admin/videos/'
+      preLoaderRoute: typeof AdminVideosIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/videos/$seriesId': {
+      id: '/admin/videos/$seriesId'
       path: '/videos/$seriesId'
-      fullPath: '/videos/$seriesId'
-      preLoaderRoute: typeof VideosSeriesIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/admin/videos/$seriesId'
+      preLoaderRoute: typeof AdminVideosSeriesIdRouteImport
+      parentRoute: typeof AdminRoute
     }
   }
 }
 
+interface AdminRouteChildren {
+  AdminGenresRoute: typeof AdminGenresRoute
+  AdminProfileRoute: typeof AdminProfileRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminVideosSeriesIdRoute: typeof AdminVideosSeriesIdRoute
+  AdminVideosIndexRoute: typeof AdminVideosIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminGenresRoute: AdminGenresRoute,
+  AdminProfileRoute: AdminProfileRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminVideosSeriesIdRoute: AdminVideosSeriesIdRoute,
+  AdminVideosIndexRoute: AdminVideosIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   FormRoute: FormRoute,
-  GenresRoute: GenresRoute,
   LoginRoute: LoginRoute,
-  ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
-  VideosSeriesIdRoute: VideosSeriesIdRoute,
-  VideosIndexRoute: VideosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

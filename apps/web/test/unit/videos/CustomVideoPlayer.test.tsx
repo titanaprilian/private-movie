@@ -92,7 +92,7 @@ describe('CustomVideoPlayer component', () => {
     }
 
     expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/videos/$seriesId',
+      to: '/admin/videos/$seriesId',
       params: { seriesId: 'series-123' },
       search: { order: 2 },
     });
@@ -116,7 +116,7 @@ describe('CustomVideoPlayer component', () => {
     fireEvent.click(playNowBtn);
 
     expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/videos/$seriesId',
+      to: '/admin/videos/$seriesId',
       params: { seriesId: 'series-123' },
       search: { order: 3 },
     });

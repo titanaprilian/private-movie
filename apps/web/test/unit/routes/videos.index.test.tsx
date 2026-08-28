@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Route } from '@/routes/videos.index';
+import { Route } from '@/routes/admin/videos.index';
 import { queryClient } from '@/lib/queryClient';
 
 vi.mock('@tanstack/react-router', () => ({

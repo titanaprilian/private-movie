@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { GenreManager } from '@/modules/genres';
 
-export const Route = createFileRoute('/genres')({
+export const Route = createFileRoute('/admin/genres')({
   component: GenresPage,
 });
 

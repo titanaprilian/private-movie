@@ -509,7 +509,7 @@ describe('SeriesDetailView component', () => {
 
     const sequelLink = screen.getByText('Deep Modules Season 2').closest('a');
     expect(sequelLink).toBeInTheDocument();
-    expect(sequelLink).toHaveAttribute('href', '/videos/dm-season-2');
+    expect(sequelLink).toHaveAttribute('href', '/admin/videos/dm-season-2');
   });
 
   it('safely hides Related Series section when relations array is empty or undefined', async () => {

@@ -58,7 +58,7 @@ export function CustomVideoPlayer({
     const targetOrder = (currentOrder ?? 1) + 1;
     if (seriesId && navigate) {
       navigate({
-        to: '/videos/$seriesId',
+        to: '/admin/videos/$seriesId',
         params: { seriesId },
         search: { order: targetOrder },
       });

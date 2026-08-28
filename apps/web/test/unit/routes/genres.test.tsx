@@ -1,6 +1,6 @@
 import { renderWithProviders, screen } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Route, GenresPage } from '@/routes/genres';
+import { Route, GenresPage } from '@/routes/admin/genres';
 import { setAccessToken } from '@/lib/api';
 
 vi.mock('@tanstack/react-router', () => ({
