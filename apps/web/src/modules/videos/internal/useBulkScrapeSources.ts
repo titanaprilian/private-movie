@@ -301,6 +301,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
         sourceUrl,
         source: (sourceType as 'otakudesu') || 'otakudesu',
         episodeOffset,
+        seasonId: selectedSeasonId || undefined,
       });
 
       const processed: ScrapedEpisodePreviewItem[] = res.scrapedEpisodes.map((ep, idx) => {

@@ -268,13 +268,16 @@ describe('BulkScrapeModal component', () => {
       expect(screen.getByText('Episode 7.5 (Recap OVA)')).toBeInTheDocument();
     });
 
-    // Ep 7.5 dropdown
-    const ep75Select = screen.getByLabelText('Target episode for Episode 7.5 (Recap OVA)');
-    expect(ep75Select).toHaveValue('');
+    // Ep 7.5 combobox
+    const ep75Trigger = screen.getByLabelText('Target episode for Episode 7.5 (Recap OVA)');
+    expect(ep75Trigger).toHaveTextContent('-- Skip / Unmapped --');
 
     // Select ep-3 for Ep 7.5
-    await user.selectOptions(ep75Select, 'ep-3');
-    expect(ep75Select).toHaveValue('ep-3');
+    await user.click(ep75Trigger);
+    const ep3Options = await screen.findAllByText(/Ep 3: State Management/i);
+    await user.click(ep3Options[ep3Options.length - 1]);
+
+    expect(ep75Trigger).toHaveTextContent('Ep 3: State Management');
 
     // Toggle ignore for Ep 1
     const ignoreEp1Btn = screen.getByLabelText('Ignore Episode 1');

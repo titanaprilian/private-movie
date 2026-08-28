@@ -587,6 +587,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             sourceUrl: body.sourceUrl,
             source: body.source,
             episodeOffset: body.episodeOffset,
+            seasonId: body.seasonId,
             html: body.html,
           });
           return successResponse(result);
@@ -608,6 +609,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           sourceUrl: t.String({ format: "uri" }),
           source: t.Literal("otakudesu"),
           episodeOffset: t.Optional(t.Number()),
+          seasonId: t.Optional(t.String()),
           html: t.Optional(t.String()),
         }),
       }

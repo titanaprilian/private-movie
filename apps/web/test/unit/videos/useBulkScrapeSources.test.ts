@@ -130,10 +130,66 @@ describe('useBulkScrapeSources hook', () => {
       sourceUrl: 'https://otakudesu.cloud/anime/test',
       source: 'otakudesu',
       episodeOffset: 0,
+      seasonId: undefined,
     });
 
     expect(result.current.step).toBe(2);
     expect(result.current.previewItems[0].scrapedTitle).toBe('Live Ep 1');
+    previewSpy.mockRestore();
+  });
+
+  it('passes selectedSeasonId into live previewBulkSources API call when seasons are provided', async () => {
+    const previewSpy = vi.spyOn(api, 'previewBulkSources').mockResolvedValueOnce({
+      scrapedEpisodes: [
+        {
+          scrapedTitle: 'Live Ep 1',
+          scrapedUrl: 'https://otakudesu.cloud/ep1',
+          episodeNumber: 1,
+          calculatedOrder: 1,
+          matchedLocalEpisodeId: 'ep-s2-1',
+          matchStatus: 'matched',
+        },
+      ],
+      localEpisodes: [
+        {
+          id: 'ep-s2-1',
+          title: 'Season 2 Ep 1',
+          order: 1,
+          seasonId: 'season-2',
+          seasonNumber: 2,
+          seasonTitle: 'Season 2',
+          hasSources: false,
+        },
+      ],
+    });
+
+    const mockSeasons = [
+      { id: 'season-1', title: 'Season 1', episodes: [{ id: 'ep-s1-1', title: 'S1 E1', order: 1 }] },
+      { id: 'season-2', title: 'Season 2', episodes: [{ id: 'ep-s2-1', title: 'S2 E1', order: 1 }] },
+    ];
+
+    const { result } = renderHook(
+      () => useBulkScrapeSources({ seriesId: 'series-100', seasons: mockSeasons }),
+      { wrapper: createWrapper() }
+    );
+
+    act(() => {
+      result.current.selectSeason('season-2');
+      result.current.setSourceUrl('https://otakudesu.cloud/anime/season-2');
+    });
+
+    await act(async () => {
+      result.current.fetchPreview();
+    });
+
+    expect(previewSpy).toHaveBeenCalledWith({
+      seriesId: 'series-100',
+      sourceUrl: 'https://otakudesu.cloud/anime/season-2',
+      source: 'otakudesu',
+      episodeOffset: 0,
+      seasonId: 'season-2',
+    });
+
     previewSpy.mockRestore();
   });
 

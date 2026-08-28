@@ -16,6 +16,7 @@ import {
   type LocalEpisodeItem,
   type SeasonGroupOption,
 } from './useBulkScrapeSources';
+import { TargetEpisodeCombobox } from './TargetEpisodeCombobox';
 
 export type { SeasonGroupOption };
 
@@ -283,38 +284,14 @@ export function BulkScrapeModal({
 
                         {/* Middle: Target Local Episode Dropdown Combobox */}
                         <div className="w-full sm:w-64">
-                          <select
-                            aria-label={`Target episode for ${item.scrapedTitle}`}
-                            value={item.matchedLocalEpisodeId ?? ''}
+                          <TargetEpisodeCombobox
+                            scrapedTitle={item.scrapedTitle}
+                            value={item.matchedLocalEpisodeId}
                             disabled={item.isIgnored || isSaving}
-                            onChange={(e) =>
-                              updateMapping(
-                                index,
-                                e.target.value ? e.target.value : null
-                              )
-                            }
-                            className="w-full px-2.5 py-1.5 rounded border border-c bg-card text-fg text-xs focus:outline-none focus:border-primary disabled:opacity-50"
-                          >
-                            <option value="">-- Skip / Unmapped --</option>
-                            {seasons.length > 0
-                              ? seasons.map((season) => (
-                                  <optgroup
-                                    key={season.id}
-                                    label={season.title || `Season ${season.tmdbSeason ?? ''}`}
-                                  >
-                                    {(season.episodes ?? []).map((ep) => (
-                                      <option key={ep.id} value={ep.id}>
-                                        Ep {ep.order ?? '?'}: {ep.title}
-                                      </option>
-                                    ))}
-                                  </optgroup>
-                                ))
-                              : localEpisodes.map((ep) => (
-                                  <option key={ep.id} value={ep.id}>
-                                    Ep {ep.order ?? '?'}: {ep.title}
-                                  </option>
-                                ))}
-                          </select>
+                            onValueChange={(newId) => updateMapping(index, newId)}
+                            seasons={seasons}
+                            localEpisodes={localEpisodes}
+                          />
                         </div>
 
                         {/* Right: Ignore Toggle */}

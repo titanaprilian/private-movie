@@ -307,4 +307,104 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     expect(localEp1?.hasSources).toBe(true);
     expect(localEp2?.hasSources).toBe(false);
   });
+
+  it("scopes matching logic strictly to seasonId when provided, preventing overwrites across seasons", async () => {
+    const seriesId = crypto.randomUUID();
+    const now = new Date();
+    await db.insert(series).values({
+      id: seriesId,
+      title: "Multi Season Series",
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const s1Id = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: s1Id,
+      seriesId,
+      title: "Season 1",
+      seasonNumber: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const s1Ep1Id = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: s1Ep1Id,
+      title: "S1 Ep 1",
+      order: 1,
+      seasonId: s1Id,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Mark S1 Ep 1 as having video sources
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: s1Ep1Id,
+      type: "embed",
+      url: "https://example.com/s1e1",
+      label: "Server 1",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const s2Id = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: s2Id,
+      seriesId,
+      title: "Season 2",
+      seasonNumber: 2,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const s2Ep1Id = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: s2Ep1Id,
+      title: "S2 Ep 1",
+      order: 1,
+      seasonId: s2Id,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Request preview scoped to Season 2
+    const res = await request(app, {
+      method: "POST",
+      path: `/series/${seriesId}/preview-bulk-sources`,
+      headers,
+      body: {
+        sourceUrl: "https://otakudesu.blog/anime/grand-blue-s3-sub-indo/",
+        source: "otakudesu",
+        seasonId: s2Id,
+        episodeOffset: 0,
+      },
+    });
+
+    expect(res.status).toBe(200);
+    const body = res.body as {
+      data: {
+        scrapedEpisodes: Array<{
+          episodeNumber: number | null;
+          matchedLocalEpisodeId: string | null;
+        }>;
+        localEpisodes: Array<{
+          id: string;
+          seasonId: string;
+          hasSources: boolean;
+        }>;
+      };
+    };
+
+    // Scraped episode 1 should match S2 Ep 1, NOT S1 Ep 1
+    const scrapedEp1 = body.data.scrapedEpisodes.find((e) => e.episodeNumber === 1);
+    expect(scrapedEp1?.matchedLocalEpisodeId).toBe(s2Ep1Id);
+
+    // Only S2 episodes should be in localEpisodes
+    expect(body.data.localEpisodes.every((e) => e.seasonId === s2Id)).toBe(true);
+    const localS2Ep1 = body.data.localEpisodes.find((e) => e.id === s2Ep1Id);
+    expect(localS2Ep1?.hasSources).toBe(false);
+  });
 });

@@ -794,6 +794,7 @@ export interface PreviewBulkSourcesParams {
   sourceUrl: string;
   source?: 'otakudesu';
   episodeOffset?: number;
+  seasonId?: string;
 }
 
 export interface ScrapedBulkEpisodeItem {
@@ -828,6 +829,7 @@ export async function previewBulkSources(
     sourceUrl: params.sourceUrl,
     source: params.source ?? 'otakudesu',
     episodeOffset: params.episodeOffset,
+    seasonId: params.seasonId,
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {

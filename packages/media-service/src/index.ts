@@ -261,6 +261,7 @@ export interface PreviewBulkSourcesInput {
   sourceUrl: string;
   source: VideoSource;
   episodeOffset?: number;
+  seasonId?: string;
   html?: string;
 }
 
@@ -584,6 +585,9 @@ export function createMediaService<
 
       if (fullSeries && fullSeries.seasons) {
         for (const s of fullSeries.seasons) {
+          if (input.seasonId && s.id !== input.seasonId) {
+            continue;
+          }
           for (const ep of s.episodes) {
             localEpisodes.push({
               id: ep.id,
