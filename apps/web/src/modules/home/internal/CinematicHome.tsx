@@ -1,5 +1,22 @@
 import React, { useRef, useState } from 'react';
-import { Play, Plus, Check, ChevronLeft, ChevronRight, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Play,
+  Plus,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  AlertTriangle,
+  RefreshCw,
+} from 'lucide-react';
+import {
+  homeFeedQueryOptions,
+  type BackendSeriesWithMetadata,
+  type HomeFeedHero,
+} from './api';
 
 export interface SeriesItem {
   id: string;
@@ -22,158 +39,118 @@ export interface CarouselRowData {
   items: SeriesItem[];
 }
 
-const HERO_ANIME: SeriesItem = {
-  id: 'hero-aot',
-  title: 'Attack on Titan: The Final Season',
-  synopsis: 'The truth outside the walls and the identity of the Titans have been revealed. As the Marleyan military continues their advance, Eren Yeager sets out to destroy them all.',
-  posterUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=800&auto=format&fit=crop',
-  bannerUrl: 'https://images.unsplash.com/photo-1596727147705-61a532a659bd?q=80&w=2560&auto=format&fit=crop',
-  matchScore: '98% Match',
-  year: 2026,
-  rating: 'TV-MA',
-  seasons: 4,
-  episodes: 88,
-  subDub: 'SUB | DUB',
-  genres: ['Dark Fantasy', 'Action', 'Drama'],
-};
+function mapSeriesToSeriesItem(s: BackendSeriesWithMetadata): SeriesItem {
+  const genres = s.genres && s.genres.length > 0 ? s.genres.map((g) => g.name) : [];
+  const year = s.createdAt ? new Date(s.createdAt).getFullYear() : 2026;
+  const rating = s.rating || (s.type === 'movie' ? 'PG-13' : 'TV-14');
+  const posterUrl =
+    s.posterUrl ||
+    s.backdropUrl ||
+    'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop';
+  const bannerUrl =
+    s.backdropUrl ||
+    s.posterUrl ||
+    'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop';
 
-const MOCK_SERIES_CATALOG: SeriesItem[] = [
-  {
-    id: 's-1',
-    title: 'Demon Slayer: Hashira Training Arc',
-    synopsis: 'Tanjiro undergoes rigorous training with the Hashira to prepare for the coming battle against Muzan Kibutsuji.',
-    posterUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop',
-    bannerUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop',
-    matchScore: '99% Match',
-    year: 2026,
-    rating: 'TV-14',
-    seasons: 4,
-    episodes: 55,
-    subDub: 'SUB | DUB',
-    genres: ['Action', 'Supernatural'],
-  },
-  {
-    id: 's-2',
-    title: 'Jujutsu Kaisen: Culling Game',
-    synopsis: 'Sorcerers across Japan are forced into a deadly battle royale designed by Noritoshi Kamo.',
-    posterUrl: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=800&auto=format&fit=crop',
-    bannerUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop',
-    matchScore: '97% Match',
-    year: 2026,
-    rating: 'TV-MA',
-    seasons: 3,
-    episodes: 47,
-    subDub: 'SUB | DUB',
-    genres: ['Action', 'Fantasy'],
-  },
-  {
-    id: 's-3',
-    title: 'Solo Leveling Season 2',
-    synopsis: 'Sung Jinwoo ascends further as the Shadow Monarch, facing global gate calamities and monarch wars.',
-    posterUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop',
-    bannerUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
-    matchScore: '96% Match',
-    year: 2026,
-    rating: 'TV-MA',
-    seasons: 2,
-    episodes: 24,
-    subDub: 'SUB | DUB',
-    genres: ['Action', 'Fantasy'],
-  },
-  {
-    id: 's-4',
-    title: 'Chainsaw Man: Reze Arc',
-    synopsis: 'Denji meets Reze, a mysterious girl working at a coffee shop who hides a explosive secret.',
-    posterUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop',
-    bannerUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=1200&auto=format&fit=crop',
-    matchScore: '95% Match',
-    year: 2025,
-    rating: 'TV-MA',
-    seasons: 1,
-    episodes: 12,
-    subDub: 'SUB | DUB',
-    genres: ['Action', 'Horror'],
-  },
-  {
-    id: 's-5',
-    title: 'Frieren: Beyond Journey\'s End',
-    synopsis: 'An elf mage discovers the meaning of human relationships after her hero party disbands.',
-    posterUrl: 'https://images.unsplash.com/photo-1514539079130-25950c84af65?q=80&w=800&auto=format&fit=crop',
-    bannerUrl: 'https://images.unsplash.com/photo-1514539079130-25950c84af65?q=80&w=1200&auto=format&fit=crop',
-    matchScore: '99% Match',
-    year: 2025,
-    rating: 'TV-14',
-    seasons: 2,
-    episodes: 28,
-    subDub: 'SUB | DUB',
-    genres: ['Fantasy', 'Adventure'],
-  },
-  {
-    id: 's-6',
-    title: 'Cyberpunk: Edgerunners II',
-    synopsis: 'A street kid trying to survive in a technology and body modification-obsessed city of the future.',
-    posterUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop',
-    bannerUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop',
-    matchScore: '94% Match',
-    year: 2026,
-    rating: 'TV-MA',
-    seasons: 1,
-    episodes: 10,
-    subDub: 'SUB | DUB',
-    genres: ['Sci-Fi', 'Action'],
-  },
-  {
-    id: 's-7',
-    title: 'Vinland Saga Season 3',
-    synopsis: 'Thorfinn voyages east to Miklagard to raise funds for establishing a peaceful settlement in Vinland.',
-    posterUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=800&auto=format&fit=crop',
-    bannerUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
+  return {
+    id: s.id,
+    title: s.title,
+    synopsis: s.description || 'No description available for this series.',
+    posterUrl,
+    bannerUrl,
     matchScore: '98% Match',
-    year: 2026,
-    rating: 'TV-MA',
-    seasons: 3,
-    episodes: 72,
-    subDub: 'SUB',
-    genres: ['Historical', 'Drama'],
-  },
-  {
-    id: 's-8',
-    title: 'Bleach: Thousand-Year Blood War',
-    synopsis: 'Soul Reapers engage in an all-out war against the Quincy empire led by Yhwach.',
-    posterUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop',
-    bannerUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
-    matchScore: '97% Match',
-    year: 2026,
-    rating: 'TV-14',
-    seasons: 3,
-    episodes: 39,
+    year,
+    rating,
+    seasons: s.seasonsCount ?? 0,
+    episodes: s.episodesCount ?? 0,
     subDub: 'SUB | DUB',
-    genres: ['Action', 'Supernatural'],
-  },
-];
+    genres,
+  };
+}
 
-const CAROUSEL_ROWS: CarouselRowData[] = [
-  {
-    id: 'row-trending',
-    title: 'Trending Now',
-    items: MOCK_SERIES_CATALOG,
-  },
-  {
-    id: 'row-simulcast',
-    title: 'Simulcasts - Spring 2026',
-    items: [MOCK_SERIES_CATALOG[1], MOCK_SERIES_CATALOG[2], MOCK_SERIES_CATALOG[0], MOCK_SERIES_CATALOG[4], MOCK_SERIES_CATALOG[3], MOCK_SERIES_CATALOG[5], MOCK_SERIES_CATALOG[7], MOCK_SERIES_CATALOG[6]],
-  },
-  {
-    id: 'row-shounen',
-    title: 'Top Shounen',
-    items: [MOCK_SERIES_CATALOG[0], MOCK_SERIES_CATALOG[1], MOCK_SERIES_CATALOG[7], MOCK_SERIES_CATALOG[2], MOCK_SERIES_CATALOG[3], MOCK_SERIES_CATALOG[4], MOCK_SERIES_CATALOG[6], MOCK_SERIES_CATALOG[5]],
-  },
-  {
-    id: 'row-fantasy',
-    title: 'Action & Dark Fantasy',
-    items: [MOCK_SERIES_CATALOG[2], MOCK_SERIES_CATALOG[3], MOCK_SERIES_CATALOG[4], MOCK_SERIES_CATALOG[0], MOCK_SERIES_CATALOG[1], MOCK_SERIES_CATALOG[6], MOCK_SERIES_CATALOG[5], MOCK_SERIES_CATALOG[7]],
-  },
-];
+function mapHeroToSeriesItem(hero: HomeFeedHero): SeriesItem {
+  const base = mapSeriesToSeriesItem(hero);
+  if (hero.tags && hero.tags.length > 0) {
+    return {
+      ...base,
+      genres: hero.tags,
+    };
+  }
+  return base;
+}
+
+function HomeFeedHeroSkeleton() {
+  return (
+    <div
+      data-testid="hero-skeleton"
+      aria-busy="true"
+      aria-label="Loading featured series"
+      className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 border-b border-zinc-800 animate-pulse flex items-end p-8 md:p-16"
+    >
+      <div className="max-w-3xl space-y-4 w-full">
+        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="h-12 w-3/4 bg-zinc-800 rounded" />
+        <div className="flex gap-3">
+          <div className="h-4 w-20 bg-zinc-800 rounded" />
+          <div className="h-4 w-16 bg-zinc-800 rounded" />
+          <div className="h-4 w-24 bg-zinc-800 rounded" />
+        </div>
+        <div className="h-16 w-full max-w-xl bg-zinc-800 rounded" />
+        <div className="flex gap-4 pt-2">
+          <div className="h-12 w-28 bg-zinc-800 rounded-md" />
+          <div className="h-12 w-32 bg-zinc-800 rounded-md" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomeFeedRowSkeleton() {
+  return (
+    <div
+      data-testid="carousel-row-skeleton"
+      aria-busy="true"
+      aria-label="Loading catalog rows"
+      className="my-6 px-8 md:px-16 space-y-3"
+    >
+      <div className="h-7 w-48 bg-zinc-800 rounded animate-pulse" />
+      <div className="flex gap-4 overflow-hidden py-2">
+        {Array.from({ length: 5 }).map((_, idx) => (
+          <div
+            key={idx}
+            className="w-[240px] sm:w-[280px] aspect-[16/9] flex-shrink-0 bg-zinc-900 border border-zinc-800 rounded-md animate-pulse"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HomeFeedErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      data-testid="home-feed-error"
+      className="min-h-screen bg-black text-white flex items-center justify-center p-6"
+    >
+      <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-lg p-8 text-center space-y-4 shadow-2xl">
+        <div className="w-12 h-12 rounded-full bg-red-950/80 border border-red-800 text-red-500 flex items-center justify-center mx-auto">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-bold text-zinc-100">Unable to Load Home Feed</h2>
+        <p className="text-sm text-zinc-400 leading-relaxed">
+          We encountered an issue connecting to the backend server. Please check your network connection or try again.
+        </p>
+        <button
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2.5 rounded-md transition-colors shadow-md text-sm cursor-pointer"
+        >
+          <RefreshCw className="w-4 h-4" />
+          <span>Retry Connection</span>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function CarouselRowComponent({ row }: { row: CarouselRowData }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -317,89 +294,126 @@ export function CinematicHome() {
   const [heroMuted, setHeroMuted] = useState(true);
   const [heroInList, setHeroInList] = useState(false);
 
+  const { data, isLoading, isError, refetch } = useQuery(homeFeedQueryOptions());
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans">
+        <HomeFeedHeroSkeleton />
+        <div className="relative z-30 pb-20 -mt-10 space-y-4">
+          <HomeFeedRowSkeleton />
+          <HomeFeedRowSkeleton />
+          <HomeFeedRowSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <HomeFeedErrorState onRetry={() => refetch()} />;
+  }
+
+  const heroAnime = data?.hero ? mapHeroToSeriesItem(data.hero) : null;
+  const carouselRows: CarouselRowData[] =
+    data?.rows.map((r, idx) => ({
+      id: `row-${idx}-${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      title: r.title,
+      items: r.items.map(mapSeriesToSeriesItem),
+    })) ?? [];
+
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans selection:bg-red-600 selection:text-white">
       {/* Hero Banner Section */}
-      <div className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 border-b border-zinc-800">
-        {/* Background Banner Image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-          style={{ backgroundImage: `url(${HERO_ANIME.bannerUrl})` }}
-        />
+      {heroAnime ? (
+        <div className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 border-b border-zinc-800">
+          {/* Background Banner Image */}
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+            style={{ backgroundImage: `url(${heroAnime.bannerUrl})` }}
+          />
 
-        {/* Gradient overlays for cinematic effect */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10" />
+          {/* Gradient overlays for cinematic effect */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10" />
 
-        {/* Hero Content */}
-        <div className="absolute bottom-12 left-0 z-20 w-full px-8 md:px-16 text-left">
-          <div className="max-w-3xl space-y-4">
-            {/* Tagline / Badge */}
-            <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-red-500 uppercase">
-              <Sparkles className="w-4 h-4 text-red-500" />
-              <span>Featured Simulcast</span>
-            </div>
+          {/* Hero Content */}
+          <div className="absolute bottom-12 left-0 z-20 w-full px-8 md:px-16 text-left">
+            <div className="max-w-3xl space-y-4">
+              {/* Tagline / Badge */}
+              <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-red-500 uppercase">
+                <Sparkles className="w-4 h-4 text-red-500" />
+                <span>Featured Simulcast</span>
+              </div>
 
-            {/* Title */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
-              {HERO_ANIME.title}
-            </h1>
+              {/* Title */}
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+                {heroAnime.title}
+              </h1>
 
-            {/* Meta Row */}
-            <div className="flex items-center gap-3 text-sm text-zinc-300 flex-wrap">
-              <span className="text-emerald-400 font-semibold">{HERO_ANIME.matchScore}</span>
-              <span>{HERO_ANIME.year}</span>
-              <span className="border border-zinc-600 px-1.5 py-0.5 rounded text-xs font-mono bg-black/40">{HERO_ANIME.rating}</span>
-              <span className="bg-red-600/80 text-white px-1.5 py-0.5 rounded text-xs font-mono font-bold">{HERO_ANIME.subDub}</span>
-              <span>{HERO_ANIME.seasons} Seasons</span>
-            </div>
+              {/* Meta Row */}
+              <div className="flex items-center gap-3 text-sm text-zinc-300 flex-wrap">
+                <span className="text-emerald-400 font-semibold">{heroAnime.matchScore}</span>
+                <span>{heroAnime.year}</span>
+                <span className="border border-zinc-600 px-1.5 py-0.5 rounded text-xs font-mono bg-black/40">{heroAnime.rating}</span>
+                <span className="bg-red-600/80 text-white px-1.5 py-0.5 rounded text-xs font-mono font-bold">{heroAnime.subDub}</span>
+                <span>{heroAnime.seasons} {heroAnime.seasons === 1 ? 'Season' : 'Seasons'}</span>
+              </div>
 
-            {/* Synopsis */}
-            <p className="text-zinc-300 text-base md:text-lg line-clamp-3 leading-relaxed max-w-2xl text-shadow">
-              {HERO_ANIME.synopsis}
-            </p>
+              {/* Synopsis */}
+              <p className="text-zinc-300 text-base md:text-lg line-clamp-3 leading-relaxed max-w-2xl text-shadow">
+                {heroAnime.synopsis}
+              </p>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-4 pt-4">
-              <button className="bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer">
-                <Play className="w-5 h-5 fill-black text-black" />
-                <span>Play</span>
-              </button>
+              {/* Action Buttons */}
+              <div className="flex items-center gap-4 pt-4">
+                <button className="bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer">
+                  <Play className="w-5 h-5 fill-black text-black" />
+                  <span>Play</span>
+                </button>
 
-              <button
-                onClick={() => setHeroInList(!heroInList)}
-                className={`px-6 py-3 rounded-md text-base font-medium transition-colors flex items-center gap-2 border shadow-lg cursor-pointer ${
-                  heroInList ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-zinc-900/80 hover:bg-zinc-800 text-white border-zinc-700'
-                }`}
-              >
-                {heroInList ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                <span>{heroInList ? 'In My List' : 'My List'}</span>
-              </button>
+                <button
+                  onClick={() => setHeroInList(!heroInList)}
+                  className={`px-6 py-3 rounded-md text-base font-medium transition-colors flex items-center gap-2 border shadow-lg cursor-pointer ${
+                    heroInList ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-zinc-900/80 hover:bg-zinc-800 text-white border-zinc-700'
+                  }`}
+                >
+                  {heroInList ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                  <span>{heroInList ? 'In My List' : 'My List'}</span>
+                </button>
 
-              <button
-                onClick={() => setHeroMuted(!heroMuted)}
-                className="w-12 h-12 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white border border-zinc-700 flex items-center justify-center transition-colors ml-auto md:ml-0"
-                aria-label={heroMuted ? 'Unmute' : 'Mute'}
-              >
-                {heroMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-              </button>
-            </div>
+                <button
+                  onClick={() => setHeroMuted(!heroMuted)}
+                  className="w-12 h-12 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white border border-zinc-700 flex items-center justify-center transition-colors ml-auto md:ml-0"
+                  aria-label={heroMuted ? 'Unmute' : 'Mute'}
+                >
+                  {heroMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+              </div>
 
-            {/* Genre tags */}
-            <div className="flex items-center gap-2 pt-2">
-              {HERO_ANIME.genres.map((genre) => (
-                <span key={genre} className="text-xs text-zinc-400 font-mono flex items-center gap-2 bg-zinc-900/60 px-2 py-1 rounded border border-zinc-800">
-                  {genre}
-                </span>
-              ))}
+              {/* Genre tags */}
+              <div className="flex items-center gap-2 pt-2">
+                {heroAnime.genres.map((genre) => (
+                  <span key={genre} className="text-xs text-zinc-400 font-mono flex items-center gap-2 bg-zinc-900/60 px-2 py-1 rounded border border-zinc-800">
+                    {genre}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="relative h-[40vh] min-h-[300px] w-full bg-zinc-950 border-b border-zinc-800 flex items-center justify-center text-center p-8">
+          <div className="space-y-3">
+            <Sparkles className="w-8 h-8 text-zinc-600 mx-auto" />
+            <h2 className="text-xl font-semibold text-zinc-400">No Featured Series Available</h2>
+            <p className="text-sm text-zinc-500 max-w-md">Check back soon for new anime releases and home feed updates.</p>
+          </div>
+        </div>
+      )}
 
       {/* Content Carousel Rows */}
       <div className="relative z-30 pb-20 -mt-10 space-y-4">
-        {CAROUSEL_ROWS.map((row) => (
+        {carouselRows.map((row) => (
           <CarouselRowComponent key={row.id} row={row} />
         ))}
       </div>
