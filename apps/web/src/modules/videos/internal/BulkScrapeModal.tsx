@@ -48,6 +48,7 @@ export function BulkScrapeModal({
     seasonOptions,
     episodeOffset,
     setEpisodeOffset,
+    seasonOffsetHelperText,
     previewItems,
     fetchPreview,
     saveBulkSources,
@@ -182,6 +183,14 @@ export function BulkScrapeModal({
                       <option value="">-- No Seasons --</option>
                     )}
                   </select>
+                  {seasonOffsetHelperText && (
+                    <p
+                      className="text-xs text-muted"
+                      data-testid="bulk-scrape-offset-helper"
+                    >
+                      {seasonOffsetHelperText}
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -169,6 +169,35 @@ describe('BulkScrapeModal component', () => {
     expect(offsetInput).toHaveValue(15);
   });
 
+  it('renders dynamic helper text below Target Season dropdown explaining math', async () => {
+    const partialSeasons = [
+      {
+        id: 's1',
+        title: 'Season 1',
+        tmdbSeason: 1,
+        episodes: [
+          { id: 'ep-1', title: 'Ep 1', order: 1, hasSources: true },
+          { id: 'ep-2', title: 'Ep 2', order: 2, hasSources: true },
+          { id: 'ep-3', title: 'Ep 3', order: 3, hasSources: false },
+          { id: 'ep-4', title: 'Ep 4', order: 4, hasSources: false },
+        ],
+      },
+    ];
+
+    renderWithProviders(
+      <BulkScrapeModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        seasons={partialSeasons}
+      />
+    );
+
+    expect(
+      screen.getByText('2/4 episodes already have sources. Auto-offsetting to start from Episode 3.')
+    ).toBeInTheDocument();
+  });
+
   it('transitions to Step 2 upon submitting valid URL', async () => {
     const { user } = renderWithProviders(
       <BulkScrapeModal

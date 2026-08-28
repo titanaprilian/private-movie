@@ -3,7 +3,7 @@ import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { useBulkScrapeSources, type LocalEpisodeItem } from '@/modules/videos/internal/useBulkScrapeSources';
+import { useBulkScrapeSources, calculateSeasonOffset, type LocalEpisodeItem } from '@/modules/videos/internal/useBulkScrapeSources';
 import * as api from '@/modules/videos/internal/api';
 
 const createWrapper = () => {
@@ -412,6 +412,60 @@ describe('useBulkScrapeSources hook', () => {
 
       expect(result.current.selectedSeasonId).toBe('s2');
       expect(result.current.episodeOffset).toBe(12);
+    });
+
+    it('calculates offset to first empty (hasSources: false) episode in partially filled season', () => {
+      const partialSeasons = [
+        {
+          id: 's1',
+          title: 'Season 1',
+          tmdbSeason: 1,
+          episodes: [
+            { id: 'ep-1', title: 'Ep 1', order: 1, hasSources: true },
+            { id: 'ep-2', title: 'Ep 2', order: 2, hasSources: true },
+            { id: 'ep-3', title: 'Ep 3', order: 3, hasSources: false },
+            { id: 'ep-4', title: 'Ep 4', order: 4, hasSources: false },
+          ],
+        },
+      ];
+
+      expect(calculateSeasonOffset('s1', partialSeasons)).toBe(2);
+
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ seasons: partialSeasons }),
+        { wrapper: createWrapper() }
+      );
+
+      expect(result.current.episodeOffset).toBe(2);
+      expect(result.current.seasonOffsetHelperText).toBe(
+        '2/4 episodes already have sources. Auto-offsetting to start from Episode 3.'
+      );
+    });
+
+    it('falls back offset to beginning (firstEpisode.order - 1) if season is 100% full', () => {
+      const fullSeasons = [
+        {
+          id: 's1',
+          title: 'Season 1',
+          tmdbSeason: 1,
+          episodes: [
+            { id: 'ep-1', title: 'Ep 1', order: 1, hasSources: true },
+            { id: 'ep-2', title: 'Ep 2', order: 2, hasSources: true },
+          ],
+        },
+      ];
+
+      expect(calculateSeasonOffset('s1', fullSeasons)).toBe(0);
+
+      const { result } = renderHook(
+        () => useBulkScrapeSources({ seasons: fullSeasons }),
+        { wrapper: createWrapper() }
+      );
+
+      expect(result.current.episodeOffset).toBe(0);
+      expect(result.current.seasonOffsetHelperText).toBe(
+        '2/2 episodes already have sources. Auto-offsetting to start from Episode 1.'
+      );
     });
   });
 

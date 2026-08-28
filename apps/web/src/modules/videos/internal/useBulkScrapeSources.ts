@@ -83,40 +83,78 @@ export function getSeasonOptions(
   return [];
 }
 
+export interface SeasonOffsetInfo {
+  offset: number;
+  totalEpisodes: number;
+  filledEpisodes: number;
+  targetEpisodeOrder: number | null;
+  helperText: string | null;
+}
+
+export function getSeasonOffsetInfo(
+  seasonId: string,
+  seasons?: SeasonGroupOption[],
+  localEpisodes?: LocalEpisodeItem[]
+): SeasonOffsetInfo {
+  const emptyInfo: SeasonOffsetInfo = {
+    offset: 0,
+    totalEpisodes: 0,
+    filledEpisodes: 0,
+    targetEpisodeOrder: null,
+    helperText: null,
+  };
+
+  if (!seasonId) return emptyInfo;
+
+  let epList: Array<{ id: string; order?: number; hasSources?: boolean }> = [];
+
+  if (seasons && seasons.length > 0) {
+    const seasonObj = seasons.find((s) => s.id === seasonId);
+    if (seasonObj?.episodes && seasonObj.episodes.length > 0) {
+      epList = seasonObj.episodes;
+    }
+  }
+
+  if (epList.length === 0 && localEpisodes && localEpisodes.length > 0) {
+    epList = localEpisodes.filter((ep) => ep.seasonId === seasonId);
+  }
+
+  const validEpisodes = epList.filter(
+    (ep): ep is typeof ep & { order: number } =>
+      typeof ep.order === 'number' && !isNaN(ep.order)
+  );
+
+  if (validEpisodes.length === 0) return emptyInfo;
+
+  validEpisodes.sort((a, b) => a.order - b.order);
+
+  const totalEpisodes = epList.length;
+  const filledEpisodes = epList.filter((ep) => Boolean(ep.hasSources)).length;
+
+  const emptyEpisode = validEpisodes.find((ep) => !ep.hasSources);
+  const firstEpisode = validEpisodes[0];
+  const targetEpisode = emptyEpisode ?? firstEpisode;
+
+  const offset = targetEpisode.order - 1;
+  const targetEpisodeOrder = targetEpisode.order;
+
+  const helperText = `${filledEpisodes}/${totalEpisodes} episodes already have sources. Auto-offsetting to start from Episode ${targetEpisodeOrder}.`;
+
+  return {
+    offset,
+    totalEpisodes,
+    filledEpisodes,
+    targetEpisodeOrder,
+    helperText,
+  };
+}
+
 export function calculateSeasonOffset(
   seasonId: string,
   seasons?: SeasonGroupOption[],
   localEpisodes?: LocalEpisodeItem[]
 ): number {
-  if (!seasonId) return 0;
-
-  if (seasons && seasons.length > 0) {
-    const seasonObj = seasons.find((s) => s.id === seasonId);
-    if (seasonObj?.episodes && seasonObj.episodes.length > 0) {
-      const orders = seasonObj.episodes
-        .map((ep) => ep.order)
-        .filter((ord): ord is number => typeof ord === 'number' && !isNaN(ord));
-      if (orders.length > 0) {
-        const minOrder = Math.min(...orders);
-        return minOrder - 1;
-      }
-    }
-  }
-
-  if (localEpisodes && localEpisodes.length > 0) {
-    const epMatches = localEpisodes.filter((ep) => ep.seasonId === seasonId);
-    if (epMatches.length > 0) {
-      const orders = epMatches
-        .map((ep) => ep.order)
-        .filter((ord): ord is number => typeof ord === 'number' && !isNaN(ord));
-      if (orders.length > 0) {
-        const minOrder = Math.min(...orders);
-        return minOrder - 1;
-      }
-    }
-  }
-
-  return 0;
+  return getSeasonOffsetInfo(seasonId, seasons, localEpisodes).offset;
 }
 
 export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
@@ -536,6 +574,13 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     });
   }, [previewItems, isEpisodeHasSources]);
 
+  const seasonOffsetInfo = useMemo(
+    () => getSeasonOffsetInfo(selectedSeasonId, options?.seasons, options?.localEpisodes),
+    [selectedSeasonId, options?.seasons, options?.localEpisodes]
+  );
+
+  const seasonOffsetHelperText = seasonOffsetInfo.helperText;
+
   return {
     step,
     setStep,
@@ -549,6 +594,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     seasonOptions,
     episodeOffset,
     setEpisodeOffset,
+    seasonOffsetHelperText,
     previewItems,
     fetchedLocalEpisodes,
     fetchPreview,
