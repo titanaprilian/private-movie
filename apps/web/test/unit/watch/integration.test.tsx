@@ -1,5 +1,24 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({
+    children,
+    to,
+    className,
+    'aria-label': ariaLabel,
+  }: {
+    children: React.ReactNode;
+    to: string;
+    className?: string;
+    'aria-label'?: string;
+  }) => (
+    <a href={to} className={className} aria-label={ariaLabel}>
+      {children}
+    </a>
+  ),
+}));
+
 import { SeriesWatchView, type WatchSeriesDetails } from '@/modules/watch';
 import { renderWithProviders } from '../../utils';
 

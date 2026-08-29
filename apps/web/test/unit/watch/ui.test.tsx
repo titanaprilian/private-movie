@@ -1,7 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import { SeriesWatchView, type WatchSeriesDetails } from '@/modules/watch';
 import { renderWithProviders } from '../../utils';
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({
+    children,
+    to,
+    className,
+    'aria-label': ariaLabel,
+  }: {
+    children: React.ReactNode;
+    to: string;
+    className?: string;
+    'aria-label'?: string;
+  }) => (
+    <a href={to} className={className} aria-label={ariaLabel}>
+      {children}
+    </a>
+  ),
+}));
+
+import { SeriesWatchView, type WatchSeriesDetails } from '@/modules/watch';
 
 const mockSeries: WatchSeriesDetails = {
   id: 'series-1',
@@ -110,5 +129,13 @@ describe('SeriesWatchView', () => {
 
     expect(screen.getByRole('button', { name: /prev/i })).toBeEnabled();
     expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
+  });
+
+  it('renders a top-left back button that links to the home page catalogue', () => {
+    renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+    const backBtn = screen.getByRole('link', { name: /back/i });
+    expect(backBtn).toBeInTheDocument();
+    expect(backBtn).toHaveAttribute('href', '/');
   });
 });

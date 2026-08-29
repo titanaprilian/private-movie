@@ -13,6 +13,8 @@ describe("db schema exports", () => {
     expect(schema.series.backdropUrl).toBeDefined();
     expect(schema.series.rating).toBeDefined();
     expect(schema.series.tmdbSyncStatus).toBeDefined();
+    expect(schema.series.status).toBeDefined();
+    expect(schema.series.isFeatured).toBeDefined();
     expect(schema.seasons).toBeDefined();
     expect(schema.seasons.seasonNumber).toBeDefined();
     expect(schema.seasons.seriesId).toBeDefined();

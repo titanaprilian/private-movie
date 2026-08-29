@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, ChevronDown, ListVideo, Play, RefreshCw, SkipBack, SkipForward } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ChevronDown, ListVideo, Play, RefreshCw, SkipBack, SkipForward } from 'lucide-react';
 import { useWatchState } from './useWatchState';
 import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from './api';
 
@@ -19,6 +20,7 @@ export function WatchViewSkeleton() {
         <div className="flex flex-col gap-8 lg:flex-row">
           {/* Left column: player + metadata skeleton */}
           <div className="flex min-w-0 flex-1 flex-col lg:w-[70%]">
+            <div className="mb-4 h-8 w-20 rounded bg-card/60" />
             <div className="aspect-video w-full rounded-md border border-c bg-card/60" />
             <div className="mt-4 flex flex-wrap items-center gap-2 border border-c bg-card p-3">
               <div className="h-9 w-20 rounded border border-c bg-bg/50" />
@@ -157,6 +159,20 @@ export function SeriesWatchView({
         <div className="flex flex-col gap-8 lg:flex-row">
           {/* Left column: player + metadata */}
           <div className="flex min-w-0 flex-1 flex-col lg:w-[70%]">
+            <div className="mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="gap-2 text-muted hover:text-fg"
+              >
+                <Link to="/" aria-label="Back to home catalogue">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </Link>
+              </Button>
+            </div>
+
             {activeSource ? (
               <div className="aspect-video w-full overflow-hidden rounded-md border border-c bg-black">
                 <iframe
