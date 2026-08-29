@@ -18,6 +18,7 @@ describe("db schema exports", () => {
     expect(schema.seasons).toBeDefined();
     expect(schema.seasons.seasonNumber).toBeDefined();
     expect(schema.seasons.seriesId).toBeDefined();
+    expect(schema.seasons.status).toBeDefined();
   });
 
   it("ensures legacy columns are dropped from seasons table", () => {

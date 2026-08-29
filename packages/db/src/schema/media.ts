@@ -69,6 +69,7 @@ export const seasons = pgTable(
     description: text("description"),
     posterUrl: text("poster_url"),
     seasonNumber: integer("season_number"),
+    status: text("status").notNull().default("completed"),
     tmdbSyncStatus: text("tmdb_sync_status").notNull().default("PENDING"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),

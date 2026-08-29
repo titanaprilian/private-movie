@@ -1,0 +1,1 @@
+ALTER TABLE "seasons" ADD COLUMN "status" text DEFAULT 'completed' NOT NULL;
