@@ -416,11 +416,11 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
                 {localEpisodes.length} episodes
               </span>
               <span className={`text-xs mono px-2 py-0.5 rounded border ${
-                series.status === 'ongoing'
+                activeSeason?.status === 'ongoing'
                   ? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
                   : 'border-c bg-sidebar text-muted'
               } capitalize`}>
-                {series.status || 'completed'}
+                {activeSeason?.status || 'completed'}
               </span>
               {series.isFeatured && (
                 <span className="text-xs mono px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">

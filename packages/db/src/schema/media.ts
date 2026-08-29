@@ -33,7 +33,6 @@ export const series = pgTable("series", {
   rating: text("rating"),
   tmdbId: integer("tmdb_id").unique(),
   tmdbSyncStatus: text("tmdb_sync_status").notNull().default("PENDING"),
-  status: text("status").notNull().default("completed"),
   isFeatured: boolean("is_featured").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),

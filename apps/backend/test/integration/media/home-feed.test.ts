@@ -104,7 +104,6 @@ describe("GET /series/home-feed", () => {
       title: "Demon Slayer",
       description: "Demon hunting anime",
       type: "tv",
-      status: "ongoing",
       isFeatured: true,
       posterUrl: "https://example.com/demon.jpg",
       createdAt: olderDate,

@@ -13,12 +13,15 @@ describe("db schema exports", () => {
     expect(schema.series.backdropUrl).toBeDefined();
     expect(schema.series.rating).toBeDefined();
     expect(schema.series.tmdbSyncStatus).toBeDefined();
-    expect(schema.series.status).toBeDefined();
     expect(schema.series.isFeatured).toBeDefined();
     expect(schema.seasons).toBeDefined();
     expect(schema.seasons.seasonNumber).toBeDefined();
     expect(schema.seasons.seriesId).toBeDefined();
     expect(schema.seasons.status).toBeDefined();
+  });
+
+  it("ensures legacy columns are dropped from series table", () => {
+    expect((schema.series as any).status).toBeUndefined();
   });
 
   it("ensures legacy columns are dropped from seasons table", () => {

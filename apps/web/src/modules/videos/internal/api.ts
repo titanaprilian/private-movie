@@ -64,7 +64,6 @@ export interface SeriesItem {
   title: string;
   description?: string | null;
   posterUrl?: string | null;
-  status?: 'ongoing' | 'completed' | string | null;
   isFeatured?: boolean | null;
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -109,7 +108,6 @@ export interface SeriesDetails {
   type?: 'movie' | 'tv' | null;
   description?: string | null;
   posterUrl?: string | null;
-  status?: 'ongoing' | 'completed' | string | null;
   isFeatured?: boolean | null;
   createdAt: Date | string;
   updatedAt: Date | string;
