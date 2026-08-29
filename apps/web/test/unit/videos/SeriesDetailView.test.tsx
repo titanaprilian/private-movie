@@ -192,7 +192,7 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     expect(firstEpisodeHeading()).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
   });
 
@@ -253,7 +253,7 @@ describe('SeriesDetailView component', () => {
     expect(await screen.findByText('Add Media Wizard')).toBeInTheDocument();
 
     // Test Edit Dialog
-    const editButton = screen.getByRole('button', { name: /edit/i });
+    const editButton = screen.getByRole('button', { name: /^edit$/i });
     await user.click(editButton);
 
     expect(await screen.findByRole('heading', { name: 'Edit Episode' })).toBeInTheDocument();
@@ -970,5 +970,75 @@ describe('SeriesDetailView component', () => {
     await user.click(bulkBtn);
 
     expect(await screen.findByRole('heading', { name: 'Bulk Add Sources' })).toBeInTheDocument();
+  });
+
+  it('renders Edit Series button and updates status and featured fields via PATCH', async () => {
+    let patchedBody: Record<string, unknown> | null = null;
+    const mockOngoingSeries: SeriesDetails = {
+      ...mockSeries,
+      id: 'edit-series-test',
+      status: 'completed',
+      isFeatured: false,
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const method = init?.method?.toUpperCase() ?? 'GET';
+
+      if (url.includes('/series/edit-series-test') && method === 'PATCH') {
+        patchedBody = JSON.parse(init?.body as string);
+        return new Response(
+          JSON.stringify({
+            data: {
+              ...mockOngoingSeries,
+              ...patchedBody,
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (url.includes('/series/edit-series-test')) {
+        return new Response(JSON.stringify({ data: mockOngoingSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<SeriesDetailView seriesId="edit-series-test" />);
+
+    await screen.findByRole('heading', { level: 1, name: mockOngoingSeries.title });
+
+    const editSeriesBtn = screen.getByRole('button', { name: /Edit Series/i });
+    await user.click(editSeriesBtn);
+
+    expect(await screen.findByRole('heading', { name: 'Edit Series' })).toBeInTheDocument();
+
+    const statusSelect = screen.getByLabelText('Status') as HTMLSelectElement;
+    expect(statusSelect).toBeInTheDocument();
+    expect(statusSelect.value).toBe('completed');
+
+    await user.selectOptions(statusSelect, 'ongoing');
+
+    const featuredCheckbox = screen.getByLabelText('Featured Series') as HTMLInputElement;
+    expect(featuredCheckbox).toBeInTheDocument();
+    expect(featuredCheckbox.checked).toBe(false);
+
+    await user.click(featuredCheckbox);
+    expect(featuredCheckbox.checked).toBe(true);
+
+    const saveBtn = screen.getByRole('button', { name: 'Save Changes' });
+    await user.click(saveBtn);
+
+    expect(patchedBody).toEqual(
+      expect.objectContaining({
+        status: 'ongoing',
+        isFeatured: true,
+      })
+    );
   });
 });

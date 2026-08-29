@@ -19,6 +19,7 @@ import {
 import { AddMediaDialog } from './AddMediaDialog';
 import { AddSeasonDialog } from './AddSeasonDialog';
 import { EditSeasonDialog } from './EditSeasonDialog';
+import { EditSeriesDialog } from './EditSeriesDialog';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { buildCrossSeasonMove } from './crossSeasonMove';
 import { TmdbMatchModal } from './TmdbMatchModal';
@@ -185,6 +186,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
   const [isSyncEpisodesOpen, setIsSyncEpisodesOpen] = useState(false);
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
+  const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -406,16 +408,47 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         )}
         <div className="space-y-2 flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-semibold tracking-tight">
                 {series.title}
               </h1>
               <span className="text-xs mono px-2 py-0.5 rounded border border-c bg-sidebar text-muted">
                 {localEpisodes.length} episodes
               </span>
+              <span className={`text-xs mono px-2 py-0.5 rounded border ${
+                series.status === 'ongoing'
+                  ? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  : 'border-c bg-sidebar text-muted'
+              } capitalize`}>
+                {series.status || 'completed'}
+              </span>
+              {series.isFeatured && (
+                <span className="text-xs mono px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  Featured
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setIsEditSeriesOpen(true)}
+                type="button"
+                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                Edit Series
+              </button>
+
               {hasMultipleSeasons && (
                 <button
                   onClick={() => setIsMergeSeasonsOpen(true)}
@@ -1024,6 +1057,11 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         </div>
       </div>
       <AddMediaDialog />
+      <EditSeriesDialog
+        open={isEditSeriesOpen}
+        onOpenChange={setIsEditSeriesOpen}
+        series={series}
+      />
       <TmdbMatchModal
         seriesId={seriesId}
         defaultType={series.type === 'movie' ? 'movie' : 'tv'}

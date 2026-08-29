@@ -299,6 +299,8 @@ describe('SeriesGrid component', () => {
       title: 'Solo Leveling Season 2',
       description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
       posterUrl: 'https://example.com/solo-leveling.jpg',
+      status: 'completed',
+      isFeatured: false,
       genreIds: ['g-1'],
       relations: [],
     });
@@ -338,6 +340,8 @@ describe('SeriesGrid component', () => {
       title: 'Solo Leveling',
       description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
       posterUrl: 'https://example.com/solo-leveling.jpg',
+      status: 'completed',
+      isFeatured: false,
       genreIds: ['g-1'],
       relations: [],
     });
@@ -453,6 +457,8 @@ describe('SeriesGrid component', () => {
       title: 'Solo Leveling',
       description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
       posterUrl: 'https://example.com/solo-leveling.jpg',
+      status: 'completed',
+      isFeatured: false,
       genreIds: [],
       relations: [
         {

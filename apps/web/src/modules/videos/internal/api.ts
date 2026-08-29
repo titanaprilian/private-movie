@@ -64,6 +64,8 @@ export interface SeriesItem {
   title: string;
   description?: string | null;
   posterUrl?: string | null;
+  status?: 'ongoing' | 'completed' | string | null;
+  isFeatured?: boolean | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   genreIds?: string[];
@@ -106,6 +108,8 @@ export interface SeriesDetails {
   type?: 'movie' | 'tv' | null;
   description?: string | null;
   posterUrl?: string | null;
+  status?: 'ongoing' | 'completed' | string | null;
+  isFeatured?: boolean | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   seasons?: SeasonDetails[];
@@ -573,6 +577,8 @@ export interface UpdateSeriesParams {
   posterUrl?: string | null;
   genreIds?: string[];
   relations?: { relatedSeriesId: string; relationType: string }[];
+  status?: 'ongoing' | 'completed';
+  isFeatured?: boolean;
 }
 
 export async function updateSeries(
