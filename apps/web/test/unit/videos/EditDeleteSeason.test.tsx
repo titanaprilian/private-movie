@@ -127,7 +127,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     setAccessToken('test-token');
   });
 
-  it('edits the active season title/description via PATCH /seasons/:id', async () => {
+  it('edits the active season title/description/status via PATCH /seasons/:id', async () => {
     const fetchSpy = setupFetch();
 
     const { user } = renderWithProviders(
@@ -146,6 +146,11 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Title')).toHaveValue('Season 1');
 
+    const statusSelect = screen.getByLabelText('Status') as HTMLSelectElement;
+    expect(statusSelect).toBeInTheDocument();
+    expect(statusSelect.value).toBe('completed');
+    await user.selectOptions(statusSelect, 'ongoing');
+
     const titleInput = screen.getByLabelText('Title');
     await user.clear(titleInput);
     await user.type(titleInput, 'Renamed Season');
@@ -156,6 +161,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     expect(fetchSpy.getPatchPayload()).toEqual({
       title: 'Renamed Season',
       description: 'Custom context',
+      status: 'ongoing',
     });
 
     expect(await screen.findByText('Season updated successfully')).toBeInTheDocument();

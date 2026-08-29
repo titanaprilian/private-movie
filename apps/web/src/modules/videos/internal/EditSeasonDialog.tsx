@@ -28,16 +28,22 @@ export function EditSeasonDialog({
   const queryClient = useQueryClient();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<'completed' | 'ongoing' | 'pending'>('completed');
 
   useEffect(() => {
     if (open) {
       setTitle(season.title);
       setDescription(season.description ?? '');
+      setStatus(
+        season.status === 'ongoing' || season.status === 'pending'
+          ? season.status
+          : 'completed'
+      );
     }
   }, [open, season]);
 
   const updateMutation = useMutation({
-    mutationFn: (params: { title: string; description: string | null }) =>
+    mutationFn: (params: { title: string; description: string | null; status: 'completed' | 'ongoing' | 'pending' }) =>
       updateSeason(season.id, params),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['series', season.seriesId] });
@@ -57,6 +63,7 @@ export function EditSeasonDialog({
     updateMutation.mutate({
       title: title.trim(),
       description: description.trim() || null,
+      status,
     });
   };
 
@@ -91,6 +98,19 @@ export function EditSeasonDialog({
               placeholder="Optional description"
               className="flex w-full rounded border border-c bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-season-status">Status</Label>
+            <select
+              id="edit-season-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as 'completed' | 'ongoing' | 'pending')}
+              className="flex h-9 w-full rounded border border-c bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="completed" className="bg-card text-foreground">Completed</option>
+              <option value="ongoing" className="bg-card text-foreground">Ongoing</option>
+              <option value="pending" className="bg-card text-foreground">Pending</option>
+            </select>
           </div>
           <DialogFooter className="pt-2">
             <Button

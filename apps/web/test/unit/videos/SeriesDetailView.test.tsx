@@ -972,18 +972,24 @@ describe('SeriesDetailView component', () => {
     expect(await screen.findByRole('heading', { name: 'Bulk Add Sources' })).toBeInTheDocument();
   });
 
-  it('renders Edit Series button and updates status and featured fields via PATCH', async () => {
+  it('renders Edit Series button and updates featured field via PATCH', async () => {
     let patchedBody: Record<string, unknown> | null = null;
     const mockOngoingSeries: SeriesDetails = {
       ...mockSeries,
       id: 'edit-series-test',
-      status: 'completed',
       isFeatured: false,
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
       const method = init?.method?.toUpperCase() ?? 'GET';
+
+      if (url.includes('/genres')) {
+        return new Response(JSON.stringify({ data: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
 
       if (url.includes('/series/edit-series-test') && method === 'PATCH') {
         patchedBody = JSON.parse(init?.body as string);
@@ -1005,11 +1011,19 @@ describe('SeriesDetailView component', () => {
         });
       }
 
+      if (url.includes('/series')) {
+        return new Response(
+          JSON.stringify({
+            data: { series: [mockOngoingSeries], meta: { total: 1, page: 1, limit: 20 } },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
     });
 
-    const user = userEvent.setup();
-    renderWithProviders(<SeriesDetailView seriesId="edit-series-test" />);
+    const { user } = renderWithProviders(<SeriesDetailView seriesId="edit-series-test" />);
 
     await screen.findByRole('heading', { level: 1, name: mockOngoingSeries.title });
 
@@ -1018,11 +1032,7 @@ describe('SeriesDetailView component', () => {
 
     expect(await screen.findByRole('heading', { name: 'Edit Series' })).toBeInTheDocument();
 
-    const statusSelect = screen.getByLabelText('Status') as HTMLSelectElement;
-    expect(statusSelect).toBeInTheDocument();
-    expect(statusSelect.value).toBe('completed');
-
-    await user.selectOptions(statusSelect, 'ongoing');
+    expect(screen.queryByLabelText('Status')).not.toBeInTheDocument();
 
     const featuredCheckbox = screen.getByLabelText('Featured Series') as HTMLInputElement;
     expect(featuredCheckbox).toBeInTheDocument();
@@ -1036,7 +1046,6 @@ describe('SeriesDetailView component', () => {
 
     expect(patchedBody).toEqual(
       expect.objectContaining({
-        status: 'ongoing',
         isFeatured: true,
       })
     );

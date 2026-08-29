@@ -91,6 +91,7 @@ export interface SeasonDetails {
   description?: string | null;
   posterUrl?: string | null;
   backdropUrl?: string | null;
+  status?: 'completed' | 'ongoing' | 'pending' | string | null;
   rating?: string | null;
   tmdbId?: number | null;
   tmdbSeason?: number | null;
@@ -577,7 +578,6 @@ export interface UpdateSeriesParams {
   posterUrl?: string | null;
   genreIds?: string[];
   relations?: { relatedSeriesId: string; relationType: string }[];
-  status?: 'ongoing' | 'completed';
   isFeatured?: boolean;
 }
 
@@ -654,6 +654,7 @@ export async function createSeason(
 export interface UpdateSeasonParams {
   title?: string;
   description?: string | null;
+  status?: 'completed' | 'ongoing' | 'pending';
 }
 
 export async function updateSeason(

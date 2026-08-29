@@ -37,7 +37,6 @@ export function EditSeriesDialog({
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editPosterUrl, setEditPosterUrl] = useState('');
-  const [editStatus, setEditStatus] = useState<'completed' | 'ongoing'>('completed');
   const [editIsFeatured, setEditIsFeatured] = useState<boolean>(false);
   const [selectedGenreIds, setSelectedGenreIds] = useState<string[]>([]);
   const [selectedRelations, setSelectedRelations] = useState<
@@ -51,7 +50,6 @@ export function EditSeriesDialog({
       setEditTitle(series.title ?? '');
       setEditDescription(series.description ?? '');
       setEditPosterUrl(series.posterUrl ?? '');
-      setEditStatus(series.status === 'ongoing' ? 'ongoing' : 'completed');
       setEditIsFeatured(Boolean(series.isFeatured));
 
       let initialGenreIds: string[] = [];
@@ -105,7 +103,6 @@ export function EditSeriesDialog({
       title: editTitle,
       description: editDescription || null,
       posterUrl: editPosterUrl || null,
-      status: editStatus,
       isFeatured: editIsFeatured,
       genreIds: selectedGenreIds,
       relations: selectedRelations.map((r) => ({
@@ -121,7 +118,7 @@ export function EditSeriesDialog({
         <DialogHeader>
           <DialogTitle>Edit Series</DialogTitle>
           <DialogDescription>
-            Update series details, status, featured flag, and assigned genres or relations.
+            Update series details, featured flag, and assigned genres or relations.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2 min-w-0 max-w-full overflow-hidden">
@@ -156,30 +153,15 @@ export function EditSeriesDialog({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="edit-series-status">Status</Label>
-                  <select
-                    id="edit-series-status"
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value as 'completed' | 'ongoing')}
-                    className="flex h-9 w-full rounded border border-c bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="completed" className="bg-card text-foreground">Completed</option>
-                    <option value="ongoing" className="bg-card text-foreground">Ongoing</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center space-x-2 pt-6">
-                  <Checkbox
-                    id="edit-series-featured"
-                    checked={editIsFeatured}
-                    onCheckedChange={(checked) => setEditIsFeatured(Boolean(checked))}
-                  />
-                  <Label htmlFor="edit-series-featured" className="cursor-pointer font-medium text-sm">
-                    Featured Series
-                  </Label>
-                </div>
+              <div className="flex items-center space-x-2 py-1">
+                <Checkbox
+                  id="edit-series-featured"
+                  checked={editIsFeatured}
+                  onCheckedChange={(checked) => setEditIsFeatured(Boolean(checked))}
+                />
+                <Label htmlFor="edit-series-featured" className="cursor-pointer font-medium text-sm">
+                  Featured Series
+                </Label>
               </div>
 
               <div className="space-y-1.5">
