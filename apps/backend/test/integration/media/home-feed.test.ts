@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { genres, series, seasons, episodes, seriesToGenres } from "@repo/db";
+import { genres, series, seasons, episodes, videoSources, seriesToGenres } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
 
@@ -22,18 +22,68 @@ describe("GET /series/home-feed", () => {
     };
 
     expect(body.data.hero).toBeNull();
-    expect(body.data.rows).toHaveLength(4);
-    expect(body.data.rows[0].title).toBe("Trending Now");
+    expect(body.data.rows).toHaveLength(2);
+    expect(body.data.rows[0].title).toBe("Ongoing");
     expect(body.data.rows[0].items).toEqual([]);
     expect(body.data.rows[1].title).toBe("Recently Added");
     expect(body.data.rows[1].items).toEqual([]);
-    expect(body.data.rows[2].title).toBe("Simulcasts");
-    expect(body.data.rows[2].items).toEqual([]);
-    expect(body.data.rows[3].title).toBe("Movies");
-    expect(body.data.rows[3].items).toEqual([]);
   });
 
-  it("returns populated hero and rows with genre tags and counts", async () => {
+  it("excludes series without video sources from hero, ongoing, and recently added rows", async () => {
+    const now = new Date();
+
+    // Series A: Featured and Ongoing, but NO video sources attached
+    const seriesNoSourcesId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: seriesNoSourcesId,
+      title: "Empty Series",
+      description: "No video sources",
+      type: "tv",
+      status: "ongoing",
+      isFeatured: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const seasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: seasonId,
+      seriesId: seriesNoSourcesId,
+      title: "Season 1",
+      seasonNumber: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(episodes).values({
+      id: crypto.randomUUID(),
+      title: "Episode 1",
+      order: 1,
+      seasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    // Intentionally no video_sources inserted!
+
+    const response = await request(app, { path: "/series/home-feed" });
+
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        hero: unknown;
+        rows: Array<{ title: string; items: unknown[] }>;
+      };
+    };
+
+    expect(body.data.hero).toBeNull();
+    expect(body.data.rows).toHaveLength(2);
+    expect(body.data.rows[0].title).toBe("Ongoing");
+    expect(body.data.rows[0].items).toHaveLength(0);
+    expect(body.data.rows[1].title).toBe("Recently Added");
+    expect(body.data.rows[1].items).toHaveLength(0);
+  });
+
+  it("returns populated hero, ongoing, and recently added rows when series have video sources", async () => {
     const now = new Date();
     const olderDate = new Date(now.getTime() - 100000);
     const newerDate = new Date(now.getTime() - 10000);
@@ -47,26 +97,18 @@ describe("GET /series/home-feed", () => {
       updatedAt: now,
     });
 
+    // Series 1: Featured & Ongoing with video sources
     const tvSeriesId = crypto.randomUUID();
     await db.insert(series).values({
       id: tvSeriesId,
       title: "Demon Slayer",
       description: "Demon hunting anime",
       type: "tv",
+      status: "ongoing",
+      isFeatured: true,
       posterUrl: "https://example.com/demon.jpg",
       createdAt: olderDate,
       updatedAt: newerDate,
-    });
-
-    const movieSeriesId = crypto.randomUUID();
-    await db.insert(series).values({
-      id: movieSeriesId,
-      title: "Your Name",
-      description: "Anime film",
-      type: "movie",
-      posterUrl: "https://example.com/yourname.jpg",
-      createdAt: now,
-      updatedAt: olderDate,
     });
 
     await db.insert(seriesToGenres).values({
@@ -84,11 +126,78 @@ describe("GET /series/home-feed", () => {
       updatedAt: now,
     });
 
+    const ep1Id = crypto.randomUUID();
     await db.insert(episodes).values({
-      id: crypto.randomUUID(),
+      id: ep1Id,
       title: "Episode 1",
       order: 1,
       seasonId: season1Id,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: ep1Id,
+      type: "hls",
+      url: "https://example.com/stream.m3u8",
+      label: "720p",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Series 2: Completed with video sources
+    const movieSeriesId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: movieSeriesId,
+      title: "Your Name",
+      description: "Anime film",
+      type: "movie",
+      status: "completed",
+      isFeatured: false,
+      posterUrl: "https://example.com/yourname.jpg",
+      createdAt: now,
+      updatedAt: olderDate,
+    });
+
+    const season2Id = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: season2Id,
+      seriesId: movieSeriesId,
+      title: "Movie Season",
+      seasonNumber: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const ep2Id = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: ep2Id,
+      title: "Movie Episode",
+      order: 1,
+      seasonId: season2Id,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: ep2Id,
+      type: "hls",
+      url: "https://example.com/movie.m3u8",
+      label: "1080p",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Series 3: Featured & Ongoing WITHOUT video sources (should be excluded)
+    const emptyOngoingId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: emptyOngoingId,
+      title: "Empty Ongoing Series",
+      type: "tv",
+      status: "ongoing",
+      isFeatured: true,
       createdAt: now,
       updatedAt: now,
     });
@@ -131,14 +240,16 @@ describe("GET /series/home-feed", () => {
     expect(body.data.hero.seasonsCount).toBe(1);
     expect(body.data.hero.episodesCount).toBe(1);
 
-    const simulcastRow = body.data.rows.find((r) => r.title === "Simulcasts");
-    expect(simulcastRow).toBeDefined();
-    expect(simulcastRow?.items).toHaveLength(1);
-    expect(simulcastRow?.items[0].id).toBe(tvSeriesId);
+    expect(body.data.rows).toHaveLength(2);
 
-    const movieRow = body.data.rows.find((r) => r.title === "Movies");
-    expect(movieRow).toBeDefined();
-    expect(movieRow?.items).toHaveLength(1);
-    expect(movieRow?.items[0].id).toBe(movieSeriesId);
+    const ongoingRow = body.data.rows[0];
+    expect(ongoingRow.title).toBe("Ongoing");
+    expect(ongoingRow.items).toHaveLength(1);
+    expect(ongoingRow.items[0].id).toBe(tvSeriesId);
+
+    const recentlyAddedRow = body.data.rows[1];
+    expect(recentlyAddedRow.title).toBe("Recently Added");
+    expect(recentlyAddedRow.items).toHaveLength(2);
+    expect(recentlyAddedRow.items.map((i) => i.id)).toEqual([movieSeriesId, tvSeriesId]);
   });
 });

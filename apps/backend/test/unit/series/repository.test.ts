@@ -264,12 +264,16 @@ describe("series repository updateSeries", () => {
       title: "Updated Title",
       description: "New Description",
       posterUrl: "https://example.com/new-poster.jpg",
+      status: "ongoing",
+      isFeatured: true,
     });
 
     expect(updated.id).toBe(s.id);
     expect(updated.title).toBe("Updated Title");
     expect(updated.description).toBe("New Description");
     expect(updated.posterUrl).toBe("https://example.com/new-poster.jpg");
+    expect(updated.status).toBe("ongoing");
+    expect(updated.isFeatured).toBe(true);
   });
 
   it("throws SeriesNotFoundError when updating non-existent series", async () => {

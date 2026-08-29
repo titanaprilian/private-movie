@@ -1003,6 +1003,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           title: t.Optional(t.String()),
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
+          status: t.Optional(t.Union([t.Literal("ongoing"), t.Literal("completed")])),
+          isFeatured: t.Optional(t.Boolean()),
           genreIds: t.Optional(t.Array(t.String())),
           relations: t.Optional(
             t.Array(
@@ -1051,6 +1053,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           title: t.Optional(t.String()),
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
+          status: t.Optional(t.Union([t.Literal("ongoing"), t.Literal("completed")])),
+          isFeatured: t.Optional(t.Boolean()),
           genreIds: t.Optional(t.Array(t.String())),
           relations: t.Optional(
             t.Array(

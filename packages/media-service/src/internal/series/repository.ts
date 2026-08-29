@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, genres, seasons, series, seriesToGenres, videoSources, type EpisodeRow, type SeasonRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
@@ -73,6 +73,8 @@ export interface UpdateSeriesInput {
   tmdbId?: number | null;
   seasonNumber?: number | null;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
+  status?: "ongoing" | "completed" | string;
+  isFeatured?: boolean;
   genreIds?: string[];
   relations?: SeriesRelationItem[];
 }
@@ -365,6 +367,8 @@ export function createSeriesRepositoryInternal<
       if (input.rating !== undefined) updateData.rating = input.rating;
       if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
       if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
+      if (input.status !== undefined) updateData.status = input.status;
+      if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
 
       const [row] = await db
         .update(series)
@@ -442,42 +446,41 @@ export function createSeriesRepositoryInternal<
     },
 
     async getHomeFeed(): Promise<HomeFeedPayload> {
-      const [latestSeries] = await db
+      const hasVideoSources = sql`EXISTS (
+        SELECT 1
+        FROM ${videoSources}
+        INNER JOIN ${episodes} ON ${videoSources.episodeId} = ${episodes.id}
+        INNER JOIN ${seasons} ON ${episodes.seasonId} = ${seasons.id}
+        WHERE ${seasons.seriesId} = ${series.id}
+      )`;
+
+      const [heroSeries] = await db
         .select()
         .from(series)
+        .where(and(eq(series.isFeatured, true), hasVideoSources))
         .orderBy(desc(series.updatedAt), desc(series.createdAt))
         .limit(1);
 
-      const [trendingRows, recentlyAddedRows, simulcastRows, movieRows] = await Promise.all([
+      const [ongoingRows, recentlyAddedRows] = await Promise.all([
         db
           .select()
           .from(series)
+          .where(and(eq(series.status, "ongoing"), hasVideoSources))
           .orderBy(desc(series.updatedAt))
           .limit(10),
         db
           .select()
           .from(series)
+          .where(hasVideoSources)
           .orderBy(desc(series.createdAt))
-          .limit(10),
-        db
-          .select()
-          .from(series)
-          .where(eq(series.type, "tv"))
-          .orderBy(desc(series.updatedAt))
-          .limit(10),
-        db
-          .select()
-          .from(series)
-          .where(eq(series.type, "movie"))
-          .orderBy(desc(series.updatedAt))
           .limit(10),
       ]);
 
       const allSeriesMap = new Map<string, SeriesRow>();
-      if (latestSeries) {
-        allSeriesMap.set(latestSeries.id, latestSeries);
+      if (heroSeries) {
+        allSeriesMap.set(heroSeries.id, heroSeries);
       }
-      for (const s of [...trendingRows, ...recentlyAddedRows, ...simulcastRows, ...movieRows]) {
+      for (const s of [...ongoingRows, ...recentlyAddedRows]) {
         allSeriesMap.set(s.id, s);
       }
 
@@ -545,8 +548,8 @@ export function createSeriesRepositoryInternal<
       }
 
       let hero: HomeFeedHero | null = null;
-      if (latestSeries) {
-        const enrichedHero = enrichedMap.get(latestSeries.id)!;
+      if (heroSeries) {
+        const enrichedHero = enrichedMap.get(heroSeries.id)!;
         const genreNames = enrichedHero.genres.map((g) => g.name);
         const typeTag = enrichedHero.type === "movie" ? "Movie" : "TV Series";
         const tags = [typeTag, ...genreNames];
@@ -558,20 +561,12 @@ export function createSeriesRepositoryInternal<
 
       const rows: HomeFeedRow[] = [
         {
-          title: "Trending Now",
-          items: trendingRows.map((s) => enrichedMap.get(s.id)!),
+          title: "Ongoing",
+          items: ongoingRows.map((s) => enrichedMap.get(s.id)!),
         },
         {
           title: "Recently Added",
           items: recentlyAddedRows.map((s) => enrichedMap.get(s.id)!),
-        },
-        {
-          title: "Simulcasts",
-          items: simulcastRows.map((s) => enrichedMap.get(s.id)!),
-        },
-        {
-          title: "Movies",
-          items: movieRows.map((s) => enrichedMap.get(s.id)!),
         },
       ];
 
