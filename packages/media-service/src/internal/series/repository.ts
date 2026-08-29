@@ -73,7 +73,6 @@ export interface UpdateSeriesInput {
   tmdbId?: number | null;
   seasonNumber?: number | null;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
-  status?: "ongoing" | "completed" | string;
   isFeatured?: boolean;
   genreIds?: string[];
   relations?: SeriesRelationItem[];
@@ -367,7 +366,6 @@ export function createSeriesRepositoryInternal<
       if (input.rating !== undefined) updateData.rating = input.rating;
       if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
       if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
-      if (input.status !== undefined) updateData.status = input.status;
       if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
 
       const [row] = await db
@@ -454,6 +452,12 @@ export function createSeriesRepositoryInternal<
         WHERE ${seasons.seriesId} = ${series.id}
       )`;
 
+      const hasOngoingSeason = sql`EXISTS (
+        SELECT 1
+        FROM ${seasons}
+        WHERE ${seasons.seriesId} = ${series.id} AND ${seasons.status} = 'ongoing'
+      )`;
+
       const [heroSeries] = await db
         .select()
         .from(series)
@@ -465,7 +469,7 @@ export function createSeriesRepositoryInternal<
         db
           .select()
           .from(series)
-          .where(and(eq(series.status, "ongoing"), hasVideoSources))
+          .where(and(hasOngoingSeason, hasVideoSources))
           .orderBy(desc(series.updatedAt))
           .limit(10),
         db

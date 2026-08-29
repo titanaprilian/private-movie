@@ -198,30 +198,6 @@ describe("PATCH /series/:id", () => {
       expect(rows[0].posterUrl).toBe(newPosterUrl);
     });
 
-    it("successfully updates status only", async () => {
-      const { accessToken } = await registerUser(app);
-      const seriesRow = await insertTestSeries();
-
-      const response = await request(app, {
-        method: "PATCH",
-        path: `/series/${seriesRow.id}`,
-        headers: authHeaders(accessToken),
-        body: {
-          status: "ongoing",
-        },
-      });
-
-      expect(response.status).toBe(200);
-      const body = response.body as {
-        data: { id: string; status: string };
-      };
-
-      expect(body.data.status).toBe("ongoing");
-
-      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
-      expect(rows[0].status).toBe("ongoing");
-    });
-
     it("successfully updates isFeatured only", async () => {
       const { accessToken } = await registerUser(app);
       const seriesRow = await insertTestSeries();
@@ -246,7 +222,7 @@ describe("PATCH /series/:id", () => {
       expect(rows[0].isFeatured).toBe(true);
     });
 
-    it("successfully updates all allowed fields simultaneously (title, description, posterUrl, status, isFeatured)", async () => {
+    it("successfully updates all allowed fields simultaneously (title, description, posterUrl, isFeatured)", async () => {
       const { accessToken } = await registerUser(app);
       const seriesRow = await insertTestSeries();
 
@@ -254,7 +230,6 @@ describe("PATCH /series/:id", () => {
         title: "Fully Updated Series Title",
         description: "Fully updated series description",
         posterUrl: "https://example.com/fully-updated-poster.jpg",
-        status: "ongoing",
         isFeatured: true,
       };
 
@@ -272,7 +247,6 @@ describe("PATCH /series/:id", () => {
           title: string;
           description: string | null;
           posterUrl: string | null;
-          status: string;
           isFeatured: boolean;
         };
       };
@@ -280,14 +254,12 @@ describe("PATCH /series/:id", () => {
       expect(body.data.title).toBe(patchPayload.title);
       expect(body.data.description).toBe(patchPayload.description);
       expect(body.data.posterUrl).toBe(patchPayload.posterUrl);
-      expect(body.data.status).toBe("ongoing");
       expect(body.data.isFeatured).toBe(true);
 
       const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
       expect(rows[0].title).toBe(patchPayload.title);
       expect(rows[0].description).toBe(patchPayload.description);
       expect(rows[0].posterUrl).toBe(patchPayload.posterUrl);
-      expect(rows[0].status).toBe("ongoing");
       expect(rows[0].isFeatured).toBe(true);
     });
   });

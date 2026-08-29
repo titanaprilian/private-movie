@@ -912,6 +912,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             ...(body.title !== undefined ? { title: body.title } : {}),
             ...(body.description !== undefined ? { description: body.description } : {}),
             ...(body.posterUrl !== undefined ? { posterUrl: body.posterUrl } : {}),
+            ...(body.status !== undefined ? { status: body.status } : {}),
           });
           return successResponse(updated);
         } catch (error: unknown) {
@@ -927,6 +928,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           title: t.Optional(t.String({ minLength: 1 })),
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
+          status: t.Optional(t.String()),
         }),
       }
     )
@@ -1003,7 +1005,6 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           title: t.Optional(t.String()),
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
-          status: t.Optional(t.Union([t.Literal("ongoing"), t.Literal("completed")])),
           isFeatured: t.Optional(t.Boolean()),
           genreIds: t.Optional(t.Array(t.String())),
           relations: t.Optional(
@@ -1053,7 +1054,6 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           title: t.Optional(t.String()),
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
-          status: t.Optional(t.Union([t.Literal("ongoing"), t.Literal("completed")])),
           isFeatured: t.Optional(t.Boolean()),
           genreIds: t.Optional(t.Array(t.String())),
           relations: t.Optional(

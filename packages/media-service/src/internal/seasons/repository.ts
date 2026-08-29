@@ -32,6 +32,7 @@ export interface SeasonUpsertInput {
   description?: string | null;
   posterUrl?: string | null;
   seasonNumber?: number | null;
+  status?: "ongoing" | "completed" | "pending" | string;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
 
@@ -41,6 +42,16 @@ export interface CreateSeasonInput {
   description?: string | null;
   posterUrl?: string | null;
   seasonNumber?: number | null;
+  status?: "ongoing" | "completed" | "pending" | string;
+}
+
+export interface UpdateSeasonInput {
+  title?: string;
+  description?: string | null;
+  posterUrl?: string | null;
+  seasonNumber?: number | null;
+  status?: "ongoing" | "completed" | "pending" | string;
+  tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
 
 export function createSeasonsRepositoryInternal<
@@ -59,6 +70,7 @@ export function createSeasonsRepositoryInternal<
           description: input.description ?? null,
           posterUrl: input.posterUrl ?? null,
           seasonNumber: input.seasonNumber ?? null,
+          ...(input.status !== undefined ? { status: input.status } : {}),
           tmdbSyncStatus: input.tmdbSyncStatus ?? "PENDING",
           createdAt: now,
           updatedAt: now,
@@ -71,6 +83,7 @@ export function createSeasonsRepositoryInternal<
             description: input.description ?? null,
             posterUrl: input.posterUrl ?? null,
             ...(input.seasonNumber !== undefined ? { seasonNumber: input.seasonNumber } : {}),
+            ...(input.status !== undefined ? { status: input.status } : {}),
             ...(input.tmdbSyncStatus !== undefined ? { tmdbSyncStatus: input.tmdbSyncStatus } : {}),
             updatedAt: now,
           },
@@ -100,7 +113,7 @@ export function createSeasonsRepositoryInternal<
       return row ?? null;
     },
 
-    async updateSeason(id: string, input: Partial<SeasonUpsertInput>): Promise<SeasonRow> {
+    async updateSeason(id: string, input: UpdateSeasonInput): Promise<SeasonRow> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
         updatedAt: now,
@@ -110,6 +123,7 @@ export function createSeasonsRepositoryInternal<
       if (input.description !== undefined) updateData.description = input.description;
       if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
       if (input.seasonNumber !== undefined) updateData.seasonNumber = input.seasonNumber;
+      if (input.status !== undefined) updateData.status = input.status;
       if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
 
       const [row] = await db
@@ -160,6 +174,7 @@ export function createSeasonsRepositoryInternal<
           description: input.description ?? null,
           posterUrl: input.posterUrl ?? null,
           seasonNumber: input.seasonNumber ?? null,
+          ...(input.status !== undefined ? { status: input.status } : {}),
           tmdbSyncStatus: "PENDING",
           createdAt: now,
           updatedAt: now,

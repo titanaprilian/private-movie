@@ -264,7 +264,6 @@ describe("series repository updateSeries", () => {
       title: "Updated Title",
       description: "New Description",
       posterUrl: "https://example.com/new-poster.jpg",
-      status: "ongoing",
       isFeatured: true,
     });
 
@@ -272,7 +271,6 @@ describe("series repository updateSeries", () => {
     expect(updated.title).toBe("Updated Title");
     expect(updated.description).toBe("New Description");
     expect(updated.posterUrl).toBe("https://example.com/new-poster.jpg");
-    expect(updated.status).toBe("ongoing");
     expect(updated.isFeatured).toBe(true);
   });
 

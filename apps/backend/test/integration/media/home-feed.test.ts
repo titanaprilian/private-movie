@@ -32,14 +32,13 @@ describe("GET /series/home-feed", () => {
   it("excludes series without video sources from hero, ongoing, and recently added rows", async () => {
     const now = new Date();
 
-    // Series A: Featured and Ongoing, but NO video sources attached
+    // Series A: Featured and has an Ongoing season, but NO video sources attached
     const seriesNoSourcesId = crypto.randomUUID();
     await db.insert(series).values({
       id: seriesNoSourcesId,
       title: "Empty Series",
       description: "No video sources",
       type: "tv",
-      status: "ongoing",
       isFeatured: true,
       createdAt: now,
       updatedAt: now,
@@ -51,6 +50,7 @@ describe("GET /series/home-feed", () => {
       seriesId: seriesNoSourcesId,
       title: "Season 1",
       seasonNumber: 1,
+      status: "ongoing",
       createdAt: now,
       updatedAt: now,
     });
@@ -97,7 +97,7 @@ describe("GET /series/home-feed", () => {
       updatedAt: now,
     });
 
-    // Series 1: Featured & Ongoing with video sources
+    // Series 1: Featured & Has an Ongoing season with video sources
     const tvSeriesId = crypto.randomUUID();
     await db.insert(series).values({
       id: tvSeriesId,
@@ -122,6 +122,18 @@ describe("GET /series/home-feed", () => {
       seriesId: tvSeriesId,
       title: "Season 1",
       seasonNumber: 1,
+      status: "completed",
+      createdAt: olderDate,
+      updatedAt: olderDate,
+    });
+
+    const season2Id = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: season2Id,
+      seriesId: tvSeriesId,
+      title: "Season 2",
+      seasonNumber: 2,
+      status: "ongoing",
       createdAt: now,
       updatedAt: now,
     });
@@ -146,26 +158,26 @@ describe("GET /series/home-feed", () => {
       updatedAt: now,
     });
 
-    // Series 2: Completed with video sources
+    // Series 2: Completed seasons only, with video sources
     const movieSeriesId = crypto.randomUUID();
     await db.insert(series).values({
       id: movieSeriesId,
       title: "Your Name",
       description: "Anime film",
       type: "movie",
-      status: "completed",
       isFeatured: false,
       posterUrl: "https://example.com/yourname.jpg",
       createdAt: now,
       updatedAt: olderDate,
     });
 
-    const season2Id = crypto.randomUUID();
+    const movieSeasonId = crypto.randomUUID();
     await db.insert(seasons).values({
-      id: season2Id,
+      id: movieSeasonId,
       seriesId: movieSeriesId,
       title: "Movie Season",
       seasonNumber: 1,
+      status: "completed",
       createdAt: now,
       updatedAt: now,
     });
@@ -175,7 +187,7 @@ describe("GET /series/home-feed", () => {
       id: ep2Id,
       title: "Movie Episode",
       order: 1,
-      seasonId: season2Id,
+      seasonId: movieSeasonId,
       createdAt: now,
       updatedAt: now,
     });
@@ -190,14 +202,24 @@ describe("GET /series/home-feed", () => {
       updatedAt: now,
     });
 
-    // Series 3: Featured & Ongoing WITHOUT video sources (should be excluded)
+    // Series 3: Featured & Ongoing season WITHOUT video sources (should be excluded)
     const emptyOngoingId = crypto.randomUUID();
     await db.insert(series).values({
       id: emptyOngoingId,
       title: "Empty Ongoing Series",
       type: "tv",
-      status: "ongoing",
       isFeatured: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const emptySeasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: emptySeasonId,
+      seriesId: emptyOngoingId,
+      title: "Season 1",
+      seasonNumber: 1,
+      status: "ongoing",
       createdAt: now,
       updatedAt: now,
     });
@@ -237,7 +259,7 @@ describe("GET /series/home-feed", () => {
     expect(body.data.hero.tags).toContain("Action");
     expect(body.data.hero.genres).toHaveLength(1);
     expect(body.data.hero.genres[0].name).toBe("Action");
-    expect(body.data.hero.seasonsCount).toBe(1);
+    expect(body.data.hero.seasonsCount).toBe(2);
     expect(body.data.hero.episodesCount).toBe(1);
 
     expect(body.data.rows).toHaveLength(2);

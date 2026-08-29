@@ -101,7 +101,7 @@ describe("PATCH /seasons/:id", () => {
     expect(errorCode(result.body)).toBe("SEASON_NOT_FOUND");
   });
 
-  it("updates title and description and persists them", async () => {
+  it("updates title, description, and status and persists them", async () => {
     const seriesRow = await createSeries("Patch Season Series");
     const seasonRow = await createSeason(seriesRow.id, "Old Title");
 
@@ -109,18 +109,20 @@ describe("PATCH /seasons/:id", () => {
       method: "PATCH",
       path: `/seasons/${seasonRow.id}`,
       headers,
-      body: { title: "New Title", description: "Updated description" },
+      body: { title: "New Title", description: "Updated description", status: "ongoing" },
     });
 
     expect(result.status).toBe(200);
-    const data = bodyData(result.body);
+    const data = (result.body as { data: SeasonPayload & { status: string } }).data;
     expect(data.id).toBe(seasonRow.id);
     expect(data.title).toBe("New Title");
     expect(data.description).toBe("Updated description");
+    expect(data.status).toBe("ongoing");
 
     const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
     expect(dbRow.title).toBe("New Title");
     expect(dbRow.description).toBe("Updated description");
+    expect(dbRow.status).toBe("ongoing");
     expect(dbRow.updatedAt.getTime()).toBeGreaterThanOrEqual(dbRow.createdAt.getTime());
   });
 
