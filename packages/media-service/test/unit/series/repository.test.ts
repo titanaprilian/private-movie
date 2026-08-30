@@ -49,6 +49,7 @@ describe("series repository findByIdWithEpisodes season sorting", () => {
       select: vi.fn().mockReturnValue({
         from: vi.fn().mockImplementation((table) => {
           return {
+            innerJoin: vi.fn().mockReturnThis(),
             where: vi.fn().mockImplementation(() => {
               if (table === series) {
                 return Promise.resolve([mockSeriesRow]);
@@ -63,7 +64,10 @@ describe("series repository findByIdWithEpisodes season sorting", () => {
                   orderBy: vi.fn().mockResolvedValue([]),
                 };
               }
-              return Promise.resolve([]);
+              return {
+                orderBy: vi.fn().mockResolvedValue([]),
+                then: vi.fn().mockImplementation((cb) => cb([])),
+              };
             }),
           };
         }),
