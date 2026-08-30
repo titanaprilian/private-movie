@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import {
   DramulaProvider,
   MediaScraper,
-  NotImplementedError,
   type FetchFn,
 } from "../../../src";
 
@@ -60,14 +59,27 @@ describe("DramulaProvider", () => {
   });
 
   describe("parseSeries", () => {
-    it("throws NotImplementedError directly", async () => {
+    it("fetches HTML and extracts episodes array mirroring episode tiles", async () => {
       const fetchFn = buildMockFetchFn();
-      await expect(
-        provider.parseSeries(
-          "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1",
-          fetchFn
-        )
-      ).rejects.toThrow(NotImplementedError);
+      const series = await provider.parseSeries(
+        "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1",
+        fetchFn
+      );
+
+      expect(series.title).toBeTruthy();
+      expect(series.episodes).toHaveLength(10);
+      expect(series.episodes).toEqual([
+        { title: "1", url: "/watch/teach-you-a-lesson-2026/s1e1" },
+        { title: "2", url: "/watch/teach-you-a-lesson-2026/s1e2" },
+        { title: "3", url: "/watch/teach-you-a-lesson-2026/s1e3" },
+        { title: "4", url: "/watch/teach-you-a-lesson-2026/s1e4" },
+        { title: "5", url: "/watch/teach-you-a-lesson-2026/s1e5" },
+        { title: "6", url: "/watch/teach-you-a-lesson-2026/s1e6" },
+        { title: "7", url: "/watch/teach-you-a-lesson-2026/s1e7" },
+        { title: "8", url: "/watch/teach-you-a-lesson-2026/s1e8" },
+        { title: "9", url: "/watch/teach-you-a-lesson-2026/s1e9" },
+        { title: "10", url: "/watch/teach-you-a-lesson-2026/s1e10" },
+      ]);
     });
   });
 

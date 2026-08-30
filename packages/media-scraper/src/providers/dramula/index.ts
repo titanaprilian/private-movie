@@ -1,4 +1,3 @@
-import { NotImplementedError } from "../../errors";
 import type {
   FetchFn,
   MediaProvider,
@@ -18,12 +17,15 @@ export class DramulaProvider implements MediaProvider {
   }
 
   public async parseSeries(
-    _url: string,
-    _fetchFn: FetchFn
+    url: string,
+    fetchFn: FetchFn
   ): Promise<ScrapedSeries> {
-    throw new NotImplementedError(
-      "parseSeries is not supported by DramulaProvider"
-    );
+    const html = await fetchFn.get(url);
+    const episode = this.parseEpisodeHtml(html);
+    return {
+      title: episode.title,
+      episodes: episode.episodes ?? [],
+    };
   }
 
   public parseEpisodeHtml(html: string): ScrapedEpisode {
