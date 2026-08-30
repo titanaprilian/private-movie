@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, seasons, series, videoSources } from "@repo/db";
+import { episodes, genres, seasons, series, seriesToGenres, videoSources } from "@repo/db";
 import { createMediaService } from "@repo/media-service";
 import { db } from "../../utils/db";
 
@@ -13,7 +13,9 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
     await db.delete(videoSources);
     await db.delete(episodes);
     await db.delete(seasons);
+    await db.delete(seriesToGenres);
     await db.delete(series);
+    await db.delete(genres);
   });
 
   it("updates series table with TMDB attributes for single series match", async () => {
@@ -288,5 +290,82 @@ describe("createMediaService matchTmdb reparenting and stub destruction", () => 
     expect(untouchedSeason1.description).toBe("Original S1 desc");
     expect(untouchedSeason1.posterUrl).toBe("/original_s1.jpg");
     expect(untouchedSeason1.tmdbSyncStatus).toBe("SYNCED");
+  });
+
+  it("extracts and upserts genres and flushes stale seriesToGenres relations", async () => {
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const url = input.toString();
+      if (url.includes("/tv/800")) {
+        return new Response(
+          JSON.stringify({
+            id: 800,
+            name: "Steins;Gate",
+            overview: "Time travel",
+            genres: [
+              { id: 1, name: "Sci-Fi" },
+              { id: 2, name: "Thriller" },
+            ],
+            seasons: [
+              {
+                season_number: 1,
+                name: "Season 1",
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const [stubSeries] = await db
+      .insert(series)
+      .values({
+        id: "series-stub-genres",
+        title: "Steins Gate Stub",
+        type: "tv",
+        tmdbSyncStatus: "PENDING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    // Create an old genre and stale relation
+    const [oldGenre] = await db
+      .insert(genres)
+      .values({
+        id: "genre-old",
+        name: "Old Genre",
+        slug: "old-genre",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    await db.insert(seriesToGenres).values({
+      seriesId: stubSeries.id,
+      genreId: oldGenre.id,
+    });
+
+    await service.matchTmdb({
+      seriesId: stubSeries.id,
+      type: "tv",
+      tmdbId: 800,
+      season: 1,
+    });
+
+    // Check seriesToGenres for stubSeries
+    const relations = await db
+      .select({
+        seriesId: seriesToGenres.seriesId,
+        genreName: genres.name,
+      })
+      .from(seriesToGenres)
+      .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+      .where(eq(seriesToGenres.seriesId, stubSeries.id));
+
+    expect(relations).toHaveLength(2);
+    const genreNames = relations.map((r) => r.genreName).sort();
+    expect(genreNames).toEqual(["Sci-Fi", "Thriller"]);
   });
 });

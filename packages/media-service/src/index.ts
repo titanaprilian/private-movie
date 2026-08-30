@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
-import { episodes, seasons, series, type SeriesRow } from "@repo/db";
+import { episodes, genres, seasons, series, seriesToGenres, slugifyGenre, type SeriesRow } from "@repo/db";
 import {
   MediaScraper,
   extractDirectVideoSources,
@@ -898,6 +898,50 @@ export function createMediaService<
 
           await seriesRepositoryTx.updateSeries(targetSeries.id, payload);
           activeSeriesId = targetSeries.id;
+        }
+
+        await tx
+          .delete(seriesToGenres)
+          .where(eq(seriesToGenres.seriesId, activeSeriesId));
+
+        const rawGenres: string[] = Array.isArray(details.genres)
+          ? details.genres.map((g: any) => (typeof g === "string" ? g : g?.name)).filter(Boolean)
+          : [];
+        const genreNames = Array.from(
+          new Set(rawGenres.map((g) => g.trim()).filter(Boolean))
+        );
+
+        if (genreNames.length > 0) {
+          const genreValues = genreNames.map((name) => ({
+            id: randomUUID(),
+            name,
+            slug: slugifyGenre(name),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }));
+
+          const genreRows = await tx
+            .insert(genres)
+            .values(genreValues)
+            .onConflictDoUpdate({
+              target: genres.name,
+              set: {
+                updatedAt: new Date(),
+              },
+            })
+            .returning({ id: genres.id });
+
+          const seriesToGenreRows = (genreRows || []).map((g: any) => ({
+            seriesId: activeSeriesId,
+            genreId: g.id,
+          }));
+
+          if (seriesToGenreRows.length > 0) {
+            await tx
+              .insert(seriesToGenres)
+              .values(seriesToGenreRows)
+              .onConflictDoNothing();
+          }
         }
 
         if (input.type === "tv") {
