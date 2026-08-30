@@ -19,6 +19,8 @@ import {
   previewBulkSources,
   saveBulkSources,
   scrapeEpisodeSources,
+  importTmdb,
+  fetchSeriesTmdbPreview,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -1067,6 +1069,81 @@ describe('videos api', () => {
     });
     expect(res.id).toBe('ep-123');
     expect(res.videoSources).toHaveLength(1);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('importTmdb posts payload to /series/tmdb-import', async () => {
+    const mockData = {
+      data: {
+        id: 'series-tmdb-1',
+        title: 'TMDB Series Title',
+        source: 'tmdb',
+        sourceUrl: 'https://themoviedb.org/tv/1399',
+        episodes: [],
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        postBody = (init?.body as string) || '';
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await importTmdb({ type: 'tv', tmdbId: 1399 });
+
+    expect(postUrl).toContain('/series/tmdb-import');
+    expect(JSON.parse(postBody)).toEqual({ type: 'tv', tmdbId: 1399 });
+    expect(res.id).toBe('series-tmdb-1');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('fetchSeriesTmdbPreview gets preview data from /series/tmdb/tmdb-preview', async () => {
+    const mockData = {
+      data: {
+        title: 'TMDB Show',
+        overview: 'Show overview',
+        posterUrl: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+      },
+    };
+
+    let getUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        getUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await fetchSeriesTmdbPreview('tv', 1399);
+
+    expect(getUrl).toContain('/series/tmdb/tmdb-preview');
+    expect(getUrl).toContain('type=tv');
+    expect(getUrl).toContain('tmdbId=1399');
+    expect(res.title).toBe('TMDB Show');
 
     fetchSpy.mockRestore();
   });

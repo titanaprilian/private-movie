@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import {
   previewScrape,
   previewScrapeSeries,
+  fetchSeriesTmdbPreview,
   type PreviewScrapeResult,
   type PreviewScrapeSeriesResult,
+  type TmdbPreviewResult,
 } from '../api';
 
 export const isSeriesUrl = (url: string) => /\/anime\//i.test(url);
@@ -28,7 +30,10 @@ export interface ScrapeWorkerState {
   isOpen: boolean;
   step: 1 | 2;
   sourceUrl: string;
-  source: 'otakudesu';
+  source: 'otakudesu' | 'tmdb';
+  tmdbType: 'tv' | 'movie';
+  tmdbId: string;
+  tmdbPreviewData: TmdbPreviewResult | null;
   isLoading: boolean;
   error: string | null;
   previewData: PreviewScrapeResult | null;
@@ -42,7 +47,9 @@ export interface ScrapeWorkerState {
   closeDialog: () => void;
   reset: () => void;
   setSourceUrl: (sourceUrl: string) => void;
-  setSource: (source: 'otakudesu') => void;
+  setSource: (source: 'otakudesu' | 'tmdb') => void;
+  setTmdbType: (tmdbType: 'tv' | 'movie') => void;
+  setTmdbId: (tmdbId: string) => void;
   setStep: (step: 1 | 2) => void;
   backToStep1: () => void;
   submitPreview: () => Promise<boolean>;
@@ -66,6 +73,9 @@ const initialState = {
   step: 1 as const,
   sourceUrl: '',
   source: 'otakudesu' as const,
+  tmdbType: 'tv' as const,
+  tmdbId: '',
+  tmdbPreviewData: null,
   isLoading: false,
   error: null,
   previewData: null,
@@ -82,7 +92,9 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
   closeDialog: () => set({ isOpen: false }),
   reset: () => set({ ...initialState }),
   setSourceUrl: (sourceUrl: string) => set({ sourceUrl, error: null }),
-  setSource: (source: 'otakudesu') => set({ source, error: null }),
+  setSource: (source: 'otakudesu' | 'tmdb') => set({ source, error: null }),
+  setTmdbType: (tmdbType: 'tv' | 'movie') => set({ tmdbType, error: null }),
+  setTmdbId: (tmdbId: string) => set({ tmdbId, error: null }),
   setStep: (step: 1 | 2) => set({ step }),
   backToStep1: () => set({ step: 1 }),
   setEditablePreviewSeries: (series) => set({ editablePreviewSeries: series }),
@@ -140,7 +152,43 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
     }),
 
   submitPreview: async () => {
-    const { sourceUrl, source } = get();
+    const { sourceUrl, source, tmdbType, tmdbId } = get();
+
+    if (source === 'tmdb') {
+      if (!tmdbId.trim()) {
+        set({ error: 'TMDB ID is required.' });
+        return false;
+      }
+
+      const parsedId = parseInt(tmdbId.trim(), 10);
+      if (Number.isNaN(parsedId) || parsedId <= 0) {
+        set({ error: 'TMDB ID must be a valid positive number.' });
+        return false;
+      }
+
+      set({ isLoading: true, error: null });
+
+      try {
+        const data = await fetchSeriesTmdbPreview(tmdbType, parsedId);
+        set({
+          isLoading: false,
+          tmdbPreviewData: data,
+          step: 2,
+          error: null,
+        });
+        return true;
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to fetch TMDB preview';
+        set({
+          isLoading: false,
+          error: message,
+          tmdbPreviewData: null,
+          step: 1,
+        });
+        return false;
+      }
+    }
 
     if (!sourceUrl.trim()) {
       set({ error: 'Source URL is required.' });

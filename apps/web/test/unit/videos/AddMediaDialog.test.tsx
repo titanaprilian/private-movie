@@ -22,6 +22,8 @@ vi.mock('@/modules/videos/internal/api', async () => {
     previewScrape: vi.fn(),
     previewScrapeSeries: vi.fn(),
     saveMedia: vi.fn(),
+    importTmdb: vi.fn(),
+    fetchSeriesTmdbPreview: vi.fn(),
   };
 });
 
@@ -47,6 +49,80 @@ describe('AddMediaDialog component', () => {
     expect(
       screen.getByRole('button', { name: /Preview Scrape/i })
     ).toBeInTheDocument();
+  });
+
+  it('dynamically switches input fields when Source Provider is changed to tmdb', async () => {
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    expect(screen.getByLabelText(/Source URL/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/TMDB ID/i)).not.toBeInTheDocument();
+
+    const providerSelect = screen.getByLabelText(/Source Provider/i);
+    await user.selectOptions(providerSelect, 'tmdb');
+
+    expect(screen.queryByLabelText(/Source URL/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Type/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/TMDB ID/i)).toBeInTheDocument();
+  });
+
+  it('previews TMDB metadata in Step 2 and invokes importTmdb mutation on Save', async () => {
+    const mockTmdbPreview: apiModule.TmdbPreviewResult = {
+      title: 'Game of Thrones',
+      overview: 'Seven noble families fight for control of the mythical land of Westeros.',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/got.jpg',
+    };
+
+    const mockImportedSeries: apiModule.SeriesDetails = {
+      id: 'series-got-1',
+      sourceUrl: 'https://themoviedb.org/tv/1399',
+      source: 'tmdb',
+      title: 'Game of Thrones',
+      description: 'Seven noble families fight...',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/got.jpg',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      episodes: [],
+    };
+
+    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(mockTmdbPreview);
+    vi.mocked(apiModule.importTmdb).mockResolvedValueOnce(mockImportedSeries);
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user, queryClient } = renderWithProviders(<AddMediaDialog />);
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    await user.selectOptions(screen.getByLabelText(/Source Provider/i), 'tmdb');
+    await user.selectOptions(screen.getByLabelText(/Type/i), 'tv');
+    await user.type(screen.getByLabelText(/TMDB ID/i), '1399');
+
+    const previewBtn = screen.getByRole('button', { name: /Preview Scrape/i });
+    await user.click(previewBtn);
+
+    expect(await screen.findByText('TMDB Snapshot Overview')).toBeInTheDocument();
+    expect(screen.getByText('Game of Thrones')).toBeInTheDocument();
+    expect(screen.getByText(/Seven noble families fight for control/i)).toBeInTheDocument();
+    expect(screen.getByText(/tv • ID #1399/i)).toBeInTheDocument();
+
+    const saveBtn = screen.getByRole('button', { name: /^Save$/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      expect(apiModule.importTmdb).toHaveBeenCalledWith(
+        {
+          type: 'tv',
+          tmdbId: 1399,
+        },
+        expect.anything()
+      );
+    });
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['episodes'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });
+      expect(toast.success).toHaveBeenCalledWith('Media saved successfully');
+      expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
+    });
   });
 
   it('simulates Step 1 to Step 2 transition with preview card and warning banner', async () => {

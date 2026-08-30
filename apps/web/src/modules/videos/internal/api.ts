@@ -886,6 +886,53 @@ export async function saveBulkSources(
   return res.data.data as unknown as SaveBulkSourcesResult;
 }
 
+export interface ImportTmdbParams {
+  type: 'tv' | 'movie';
+  tmdbId: number;
+  includeSpecials?: boolean;
+}
+
+export async function importTmdb(
+  params: ImportTmdbParams
+): Promise<SeriesDetails> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)['tmdb-import'].post(params);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to import TMDB series'
+    );
+  }
+
+  return res.data.data as unknown as SeriesDetails;
+}
+
+export interface TmdbPreviewResult {
+  title: string;
+  overview: string;
+  posterUrl: string | null;
+}
+
+export async function fetchSeriesTmdbPreview(
+  type: 'tv' | 'movie',
+  tmdbId: number
+): Promise<TmdbPreviewResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)['tmdb']['tmdb-preview'].get({
+    $query: { type, tmdbId },
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to fetch TMDB preview'
+    );
+  }
+
+  return res.data.data as unknown as TmdbPreviewResult;
+}
+
 
 
 

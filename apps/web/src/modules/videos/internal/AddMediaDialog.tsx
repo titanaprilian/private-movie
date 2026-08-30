@@ -11,7 +11,7 @@ import {
   useScrapeWorkerStore,
   type EditableEpisodeDraft,
 } from './store/useScrapeWorkerStore';
-import { saveMedia, previewScrape, type VideoSourceInput } from './api';
+import { saveMedia, previewScrape, importTmdb, type VideoSourceInput } from './api';
 
 export function AddMediaDialog() {
   const queryClient = useQueryClient();
@@ -20,6 +20,9 @@ export function AddMediaDialog() {
   const step = useScrapeWorkerStore((state) => state.step);
   const sourceUrl = useScrapeWorkerStore((state) => state.sourceUrl);
   const source = useScrapeWorkerStore((state) => state.source);
+  const tmdbType = useScrapeWorkerStore((state) => state.tmdbType);
+  const tmdbId = useScrapeWorkerStore((state) => state.tmdbId);
+  const tmdbPreviewData = useScrapeWorkerStore((state) => state.tmdbPreviewData);
   const isLoading = useScrapeWorkerStore((state) => state.isLoading);
   const error = useScrapeWorkerStore((state) => state.error);
   const previewData = useScrapeWorkerStore((state) => state.previewData);
@@ -32,6 +35,8 @@ export function AddMediaDialog() {
   const resetStore = useScrapeWorkerStore((state) => state.reset);
   const setSourceUrl = useScrapeWorkerStore((state) => state.setSourceUrl);
   const setSource = useScrapeWorkerStore((state) => state.setSource);
+  const setTmdbType = useScrapeWorkerStore((state) => state.setTmdbType);
+  const setTmdbId = useScrapeWorkerStore((state) => state.setTmdbId);
   const submitPreview = useScrapeWorkerStore((state) => state.submitPreview);
   const backToStep1 = useScrapeWorkerStore((state) => state.backToStep1);
   const updateEditablePreviewSeries = useScrapeWorkerStore((state) => state.updateEditablePreviewSeries);
@@ -79,6 +84,16 @@ export function AddMediaDialog() {
 
   const saveMutation = useMutation({
     mutationFn: saveMedia,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['episodes'] });
+      queryClient.invalidateQueries({ queryKey: ['series'] });
+      toast.success('Media saved successfully');
+      reset();
+    },
+  });
+
+  const importTmdbMutation = useMutation({
+    mutationFn: importTmdb,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['episodes'] });
       queryClient.invalidateQueries({ queryKey: ['series'] });
@@ -327,23 +342,6 @@ export function AddMediaDialog() {
             <div className="space-y-4">
               <div>
                 <label
-                  htmlFor="media-source-url"
-                  className="text-xs mono uppercase tracking-wide text-muted font-medium mb-1.5 block"
-                >
-                  Source URL
-                </label>
-                <input
-                  id="media-source-url"
-                  type="url"
-                  value={sourceUrl}
-                  onChange={(e) => setSourceUrl(e.target.value)}
-                  placeholder="https://otakudesu.cloud/episode/..."
-                  className="w-full px-3 py-2 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <label
                   htmlFor="media-source-provider"
                   className="text-xs mono uppercase tracking-wide text-muted font-medium mb-1.5 block"
                 >
@@ -353,13 +351,70 @@ export function AddMediaDialog() {
                   id="media-source-provider"
                   value={source}
                   onChange={(e) =>
-                    setSource(e.target.value as 'otakudesu')
+                    setSource(e.target.value as 'otakudesu' | 'tmdb')
                   }
                   className="w-full px-3 py-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
                 >
                   <option value="otakudesu">Otakudesu</option>
+                  <option value="tmdb">TMDB</option>
                 </select>
               </div>
+
+              {source === 'tmdb' ? (
+                <>
+                  <div>
+                    <label
+                      htmlFor="media-tmdb-type"
+                      className="text-xs mono uppercase tracking-wide text-muted font-medium mb-1.5 block"
+                    >
+                      Type
+                    </label>
+                    <select
+                      id="media-tmdb-type"
+                      value={tmdbType}
+                      onChange={(e) => setTmdbType(e.target.value as 'tv' | 'movie')}
+                      className="w-full px-3 py-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
+                    >
+                      <option value="tv">TV</option>
+                      <option value="movie">Movie</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="media-tmdb-id"
+                      className="text-xs mono uppercase tracking-wide text-muted font-medium mb-1.5 block"
+                    >
+                      TMDB ID
+                    </label>
+                    <input
+                      id="media-tmdb-id"
+                      type="text"
+                      value={tmdbId}
+                      onChange={(e) => setTmdbId(e.target.value)}
+                      placeholder="e.g. 1399"
+                      className="w-full px-3 py-2 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label
+                    htmlFor="media-source-url"
+                    className="text-xs mono uppercase tracking-wide text-muted font-medium mb-1.5 block"
+                  >
+                    Source URL
+                  </label>
+                  <input
+                    id="media-source-url"
+                    type="url"
+                    value={sourceUrl}
+                    onChange={(e) => setSourceUrl(e.target.value)}
+                    placeholder="https://otakudesu.cloud/episode/..."
+                    className="w-full px-3 py-2 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
+                  />
+                </div>
+              )}
 
               {error && (
                 <div className="p-3 rounded border border-red-200 dark:border-red-900/50 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs mono flex items-center gap-2">
@@ -375,6 +430,60 @@ export function AddMediaDialog() {
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                   <span>{error}</span>
+                </div>
+              )}
+            </div>
+          ) : source === 'tmdb' ? (
+            <div className="space-y-5">
+              {tmdbPreviewData && (
+                <div className="bg-card border border-c rounded p-4 space-y-3">
+                  <div className="flex items-center justify-between border-b border-c pb-2">
+                    <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+                      TMDB Snapshot Overview
+                    </span>
+                    <span className="text-[10px] mono px-2 py-0.5 rounded bg-muted/20 border border-c text-muted uppercase">
+                      {tmdbType} • ID #{tmdbId}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-4">
+                    {tmdbPreviewData.posterUrl && (
+                      <img
+                        src={tmdbPreviewData.posterUrl}
+                        alt={tmdbPreviewData.title}
+                        className="w-20 h-28 object-cover rounded border border-c shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <h3 className="text-sm font-semibold text-current">
+                        {tmdbPreviewData.title}
+                      </h3>
+                      <p className="text-xs text-muted leading-relaxed line-clamp-4">
+                        {tmdbPreviewData.overview || 'No overview available.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {importTmdbMutation.error && (
+                <div className="p-3 rounded border border-red-200 dark:border-red-900/50 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs mono flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>
+                    {importTmdbMutation.error instanceof Error
+                      ? importTmdbMutation.error.message
+                      : 'Failed to import TMDB media'}
+                  </span>
                 </div>
               )}
             </div>
@@ -1014,7 +1123,10 @@ export function AddMediaDialog() {
               <button
                 type="button"
                 onClick={() => void submitPreview()}
-                disabled={isLoading || !sourceUrl.trim()}
+                disabled={
+                  isLoading ||
+                  (source === 'tmdb' ? !tmdbId.trim() : !sourceUrl.trim())
+                }
                 className="px-4 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
                 {isLoading && (
@@ -1039,7 +1151,11 @@ export function AddMediaDialog() {
                     />
                   </svg>
                 )}
-                {isLoading ? 'Resolving mirrors...' : 'Preview Scrape'}
+                {isLoading
+                  ? source === 'tmdb'
+                    ? 'Fetching preview...'
+                    : 'Resolving mirrors...'
+                  : 'Preview Scrape'}
               </button>
             </>
           ) : (
@@ -1047,7 +1163,11 @@ export function AddMediaDialog() {
               <button
                 type="button"
                 onClick={backToStep1}
-                disabled={saveMutation.isPending || isBatchSaving}
+                disabled={
+                  saveMutation.isPending ||
+                  isBatchSaving ||
+                  importTmdbMutation.isPending
+                }
                 className="px-3.5 py-1.5 rounded border border-c text-xs font-medium hover-bg transition-colors cursor-pointer disabled:opacity-50"
               >
                 ← Back to Edit
@@ -1055,7 +1175,12 @@ export function AddMediaDialog() {
               <button
                 type="button"
                 onClick={() => {
-                  if (isBatch) {
+                  if (source === 'tmdb') {
+                    importTmdbMutation.mutate({
+                      type: tmdbType,
+                      tmdbId: parseInt(tmdbId.trim(), 10),
+                    });
+                  } else if (isBatch) {
                     void handleBatchSave();
                   } else if (previewData?.episode) {
                     saveMutation.mutate({
@@ -1073,13 +1198,17 @@ export function AddMediaDialog() {
                   }
                 }}
                 disabled={
-                  isBatch
-                    ? isBatchSaving || !seriesPreviewData?.episodes.length
-                    : saveMutation.isPending || !previewData?.episode
+                  source === 'tmdb'
+                    ? importTmdbMutation.isPending || !tmdbPreviewData
+                    : isBatch
+                      ? isBatchSaving || !seriesPreviewData?.episodes.length
+                      : saveMutation.isPending || !previewData?.episode
                 }
                 className="px-4 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
-                {(saveMutation.isPending || isBatchSaving) && (
+                {(saveMutation.isPending ||
+                  isBatchSaving ||
+                  importTmdbMutation.isPending) && (
                   <svg
                     className="animate-spin w-3.5 h-3.5"
                     viewBox="0 0 24 24"
@@ -1103,7 +1232,7 @@ export function AddMediaDialog() {
                 )}
                 {batchProgress
                   ? `Saving (${batchProgress.current}/${batchProgress.total})...`
-                  : saveMutation.isPending
+                  : saveMutation.isPending || importTmdbMutation.isPending
                     ? 'Saving...'
                     : 'Save'}
               </button>

@@ -10,6 +10,7 @@ vi.mock('@/modules/videos/internal/api', async () => {
     ...actual,
     previewScrape: vi.fn(),
     previewScrapeSeries: vi.fn(),
+    fetchSeriesTmdbPreview: vi.fn(),
   };
 });
 
@@ -41,12 +42,48 @@ describe('useScrapeWorkerStore', () => {
     expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
   });
 
-  it('updates form state fields', () => {
-    useScrapeWorkerStore.getState().setSourceUrl('https://otakudesu.cloud/ep1');
+  it('updates TMDB form state fields', () => {
+    useScrapeWorkerStore.getState().setSource('tmdb');
+    useScrapeWorkerStore.getState().setTmdbType('movie');
+    useScrapeWorkerStore.getState().setTmdbId('550');
 
-    expect(useScrapeWorkerStore.getState().sourceUrl).toBe(
-      'https://otakudesu.cloud/ep1'
-    );
+    expect(useScrapeWorkerStore.getState().source).toBe('tmdb');
+    expect(useScrapeWorkerStore.getState().tmdbType).toBe('movie');
+    expect(useScrapeWorkerStore.getState().tmdbId).toBe('550');
+  });
+
+  it('submits TMDB preview successfully and transitions to step 2', async () => {
+    const mockTmdbPreview: apiModule.TmdbPreviewResult = {
+      title: 'Fight Club',
+      overview: 'An insomniac office worker...',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/fc.jpg',
+    };
+
+    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(mockTmdbPreview);
+
+    useScrapeWorkerStore.getState().setSource('tmdb');
+    useScrapeWorkerStore.getState().setTmdbType('movie');
+    useScrapeWorkerStore.getState().setTmdbId('550');
+
+    const success = await useScrapeWorkerStore.getState().submitPreview();
+
+    expect(success).toBe(true);
+    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('movie', 550);
+    expect(useScrapeWorkerStore.getState().isLoading).toBe(false);
+    expect(useScrapeWorkerStore.getState().step).toBe(2);
+    expect(useScrapeWorkerStore.getState().tmdbPreviewData).toEqual(mockTmdbPreview);
+    expect(useScrapeWorkerStore.getState().error).toBeNull();
+  });
+
+  it('returns false and sets error if tmdbId is missing or invalid on TMDB submitPreview', async () => {
+    useScrapeWorkerStore.getState().setSource('tmdb');
+    useScrapeWorkerStore.getState().setTmdbId('');
+
+    const success = await useScrapeWorkerStore.getState().submitPreview();
+
+    expect(success).toBe(false);
+    expect(useScrapeWorkerStore.getState().error).toBe('TMDB ID is required.');
+    expect(useScrapeWorkerStore.getState().step).toBe(1);
   });
 
   it('successfully submits preview and transitions to step 2', async () => {
