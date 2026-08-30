@@ -18,10 +18,40 @@ import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWith
 import { createSeasonsRepositoryInternal, SeasonNotFoundError, SeasonNotLinkedToTmdbError } from "./internal/seasons/repository";
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
 import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
-import { fetchFromTmdb, fetchTmdbSeasonDetails, getTmdbPreview, TmdbFetchError, type TmdbPreviewResult, type TmdbSeasonResponse, type TmdbSeasonEpisodeItem } from "./internal/tmdb/service";
+import {
+  fetchFromTmdb,
+  fetchTmdbSeasonDetails,
+  fetchTmdbSeriesData,
+  getTmdbPreview,
+  saveTmdbSeries,
+  TmdbFetchError,
+  type FetchTmdbSeriesOptions,
+  type TmdbEpisodeDetails,
+  type TmdbImportInput,
+  type TmdbPreviewResult,
+  type TmdbSeasonDetailsResponse,
+  type TmdbSeasonEpisodeItem,
+  type TmdbSeasonFullData,
+  type TmdbSeasonResponse,
+  type TmdbSeriesDetailsResponse,
+  type TmdbSeriesFullData,
+  type TmdbSeriesSeasonMeta,
+} from "./internal/tmdb/service";
 
-export { TmdbFetchError };
-export type { TmdbPreviewResult, TmdbSeasonResponse, TmdbSeasonEpisodeItem };
+export { TmdbFetchError, fetchTmdbSeriesData, saveTmdbSeries };
+export type {
+  FetchTmdbSeriesOptions,
+  TmdbEpisodeDetails,
+  TmdbImportInput,
+  TmdbPreviewResult,
+  TmdbSeasonDetailsResponse,
+  TmdbSeasonEpisodeItem,
+  TmdbSeasonFullData,
+  TmdbSeasonResponse,
+  TmdbSeriesDetailsResponse,
+  TmdbSeriesFullData,
+  TmdbSeriesSeasonMeta,
+};
 
 export interface TmdbMatchInput {
   seriesId: string;
@@ -361,6 +391,7 @@ export interface MediaService {
   syncSeasonTmdb(seasonId: string, options?: SeasonTmdbSyncOptions): Promise<SeasonTmdbSyncResult>;
   matchTmdb(input: TmdbMatchInput): Promise<SeriesWithSeasons>;
   mergeSeasons(input: MergeSeasonsInput): Promise<{ success: true }>;
+  importTmdb(input: TmdbImportInput): Promise<SeriesWithSeasons>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -1221,6 +1252,14 @@ export function createMediaService<
           unmappedCount,
         };
       });
+    },
+
+    async importTmdb(input: TmdbImportInput): Promise<SeriesWithSeasons> {
+      const data = await fetchTmdbSeriesData(input.tmdbId, {
+        type: input.type,
+        includeSpecials: input.includeSpecials,
+      });
+      return await saveTmdbSeries(db, data);
     },
   };
 }
