@@ -118,7 +118,10 @@ function extractEpisodesFromPayload(
   return result;
 }
 
-export function parseDramulaEpisodeHtml(html: string): ScrapedEpisode {
+export function parseDramulaEpisodeHtml(
+  html: string,
+  url?: string
+): ScrapedEpisode {
   const $ = cheerio.load(html);
 
   const title =
@@ -189,7 +192,15 @@ export function parseDramulaEpisodeHtml(html: string): ScrapedEpisode {
     }
   });
 
-  if (episodes.length === 0) {
+  if (episodes.length === 0 || videoSources.length === 0) {
+    const targetUrl =
+      url ||
+      $("link[rel='canonical']").attr("href") ||
+      $("meta[property='og:url']").attr("content") ||
+      "";
+    const cleanPath = targetUrl.split("?")[0].split("#")[0].replace(/\/+$/, "");
+    const targetEpisodeSlug = cleanPath ? cleanPath.split("/").pop() || "" : "";
+
     $("script[data-sveltekit-fetched]").each((_, el) => {
       const content = $(el).html();
       if (!content) return;
@@ -224,13 +235,35 @@ export function parseDramulaEpisodeHtml(html: string): ScrapedEpisode {
 
         if (!bodyObj) return;
 
-        const extractedList = extractEpisodesFromPayload(
-          bodyObj,
-          showSlugFromDataUrl
-        );
-        for (const item of extractedList) {
-          if (!episodes.some((e) => e.url === item.url)) {
-            episodes.push(item);
+        if (episodes.length === 0) {
+          const extractedList = extractEpisodesFromPayload(
+            bodyObj,
+            showSlugFromDataUrl
+          );
+          for (const item of extractedList) {
+            if (!episodes.some((e) => e.url === item.url)) {
+              episodes.push(item);
+            }
+          }
+        }
+
+        if (videoSources.length === 0 && targetEpisodeSlug) {
+          const matchingEp = findMatchingEpisodeInPayload(
+            bodyObj,
+            targetEpisodeSlug
+          );
+          if (matchingEp) {
+            const epId = matchingEp.id ?? matchingEp.episode_id;
+            if (epId != null) {
+              const b64 = Buffer.from(`episode:${epId}`)
+                .toString("base64")
+                .replace(/=+$/, "");
+              videoSources.push({
+                type: "embed",
+                url: `https://videobello.net/embed/${b64}.00000000?source=0`,
+                label: "BelloCloud",
+              });
+            }
           }
         }
       } catch {
@@ -244,4 +277,86 @@ export function parseDramulaEpisodeHtml(html: string): ScrapedEpisode {
     videoSources,
     episodes,
   };
+}
+
+function findMatchingEpisodeInPayload(
+  payload: any,
+  targetSlug: string
+): any | null {
+  if (!payload || typeof payload !== "object" || !targetSlug) return null;
+
+  function matches(ep: any): boolean {
+    if (!ep || typeof ep !== "object") return false;
+    const candidates = [ep.slug, ep.url, ep.href, ep.path, ep.link];
+    for (const cand of candidates) {
+      if (typeof cand === "string" && cand.trim()) {
+        const cleaned = cand.split("?")[0].split("#")[0].replace(/\/+$/, "");
+        const slug = cleaned.split("/").pop();
+        if (slug === targetSlug) return true;
+      }
+    }
+    return false;
+  }
+
+  if (
+    matches(payload) &&
+    (payload.id != null || payload.episode_id != null)
+  ) {
+    return payload;
+  }
+  if (
+    payload.data &&
+    matches(payload.data) &&
+    (payload.data.id != null || payload.data.episode_id != null)
+  ) {
+    return payload.data;
+  }
+  if (
+    payload.episode &&
+    matches(payload.episode) &&
+    (payload.episode.id != null || payload.episode.episode_id != null)
+  ) {
+    return payload.episode;
+  }
+  if (
+    payload.data?.episode &&
+    matches(payload.data.episode) &&
+    (payload.data.episode.id != null || payload.data.episode.episode_id != null)
+  ) {
+    return payload.data.episode;
+  }
+
+  let rawEpisodes: any[] = [];
+  if (Array.isArray(payload)) {
+    rawEpisodes = payload;
+  } else if (Array.isArray(payload.data)) {
+    rawEpisodes = payload.data;
+  } else if (Array.isArray(payload.episodes)) {
+    rawEpisodes = payload.episodes;
+  } else if (Array.isArray(payload.data?.episodes)) {
+    rawEpisodes = payload.data.episodes;
+  } else if (Array.isArray(payload.data?.seasons)) {
+    for (const season of payload.data.seasons) {
+      if (Array.isArray(season?.episodes)) {
+        rawEpisodes.push(...season.episodes);
+      }
+    }
+  } else if (Array.isArray(payload.seasons)) {
+    for (const season of payload.seasons) {
+      if (Array.isArray(season?.episodes)) {
+        rawEpisodes.push(...season.episodes);
+      }
+    }
+  }
+
+  for (const ep of rawEpisodes) {
+    if (
+      matches(ep) &&
+      (ep?.id != null || ep?.episode_id != null)
+    ) {
+      return ep;
+    }
+  }
+
+  return null;
 }

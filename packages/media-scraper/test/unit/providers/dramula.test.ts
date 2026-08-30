@@ -279,7 +279,7 @@ describe("DramulaProvider", () => {
       ]);
     });
 
-    it("extracts fallback show slug from ep.show?.title_slug or ep.show_slug on episode object", () => {
+    it("extracts show slug from ep.show?.title_slug or ep.show_slug on episode object", () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
@@ -311,6 +311,83 @@ describe("DramulaProvider", () => {
         {
           title: "2",
           url: "https://dramula.com/watch/my-drama-2026/s1e2",
+        },
+      ]);
+    });
+
+    it("derives videoSources from SvelteKit SSR JSON payload when iframe DOM node is missing using explicit url", () => {
+      const sveltekitHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head><title>Teach You a Lesson - Dramula</title></head>
+          <body>
+            <h1>Teach You a Lesson</h1>
+            <script
+              type="application/json"
+              data-sveltekit-fetched=""
+              data-url="https://api.dramula.com/api/titles/teach-you-a-lesson-2026?include=episodes"
+            >
+              {
+                "status": 200,
+                "statusText": "OK",
+                "headers": {},
+                "body": "{\\"data\\":{\\"slug\\":\\"teach-you-a-lesson-2026\\",\\"episodes\\":[{\\"id\\":10387,\\"episode_number\\":10,\\"name\\":\\"10\\",\\"slug\\":\\"s1e10\\"}]}}"
+              }
+            </script>
+          </body>
+        </html>
+      `;
+
+      const episode = provider.parseEpisodeHtml(
+        sveltekitHtml,
+        "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10"
+      );
+
+      expect(episode.videoSources).toEqual([
+        {
+          type: "embed",
+          url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
+          label: "BelloCloud",
+        },
+      ]);
+    });
+
+    it("derives videoSources from SvelteKit SSR JSON payload when iframe DOM node is missing using canonical link", () => {
+      const sveltekitHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Teach You a Lesson - Dramula</title>
+            <link rel="canonical" href="https://dramula.com/watch/teach-you-a-lesson-2026/s1e10" />
+          </head>
+          <body>
+            <h1>Teach You a Lesson</h1>
+            <script
+              type="application/json"
+              data-sveltekit-fetched=""
+            >
+              {
+                "status": 200,
+                "body": {
+                  "data": {
+                    "episodes": [
+                      { "id": 10387, "slug": "s1e10" }
+                    ]
+                  }
+                }
+              }
+            </script>
+          </body>
+        </html>
+      `;
+
+      const episode = provider.parseEpisodeHtml(sveltekitHtml);
+
+      expect(episode.videoSources).toEqual([
+        {
+          type: "embed",
+          url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
+          label: "BelloCloud",
         },
       ]);
     });
