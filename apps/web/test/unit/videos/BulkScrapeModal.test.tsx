@@ -108,8 +108,8 @@ describe('BulkScrapeModal component', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders Step 1 form when open', () => {
-    renderWithProviders(
+  it('renders Step 1 form when open including Dramula source option', async () => {
+    const { user } = renderWithProviders(
       <BulkScrapeModal
         open={true}
         onOpenChange={vi.fn()}
@@ -120,7 +120,13 @@ describe('BulkScrapeModal component', () => {
 
     expect(screen.getByText('Bulk Add Sources')).toBeInTheDocument();
     expect(screen.getByLabelText(/Season \/ Scraper URL/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Source Type/i)).toBeInTheDocument();
+    const sourceTypeSelect = screen.getByLabelText(/Source Type/i);
+    expect(sourceTypeSelect).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Dramula' })).toBeInTheDocument();
+
+    await user.selectOptions(sourceTypeSelect, 'dramula');
+    expect(sourceTypeSelect).toHaveValue('dramula');
+
     expect(screen.getByLabelText(/Target Season/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Episode Offset/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Preview/i })).toBeInTheDocument();

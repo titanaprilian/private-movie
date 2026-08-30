@@ -61,7 +61,7 @@ export interface TmdbMatchInput {
   localSeasonId?: string;
 }
 
-export type VideoSource = "otakudesu";
+export type VideoSource = "otakudesu" | "dramula";
 
 export type { EpisodeRow as SavedEpisode, SeasonRow as SavedSeason, SeriesRow as SavedSeries } from "@repo/db";
 export type { EpisodeWithVideoSources };

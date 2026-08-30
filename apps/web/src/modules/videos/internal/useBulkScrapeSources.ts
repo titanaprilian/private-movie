@@ -299,7 +299,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
       const res = await apiPreviewBulkSources({
         seriesId: targetSeriesId,
         sourceUrl,
-        source: (sourceType as 'otakudesu') || 'otakudesu',
+        source: (sourceType as 'otakudesu' | 'dramula') || 'otakudesu',
         episodeOffset,
         seasonId: selectedSeasonId || undefined,
       });
@@ -319,7 +319,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
             {
               type: sourceType === 'direct' ? 'direct' : 'embed',
               url: ep.scrapedUrl,
-              label: 'Otakudesu',
+              label: sourceType === 'dramula' ? 'Dramula' : 'Otakudesu',
             },
           ],
         };

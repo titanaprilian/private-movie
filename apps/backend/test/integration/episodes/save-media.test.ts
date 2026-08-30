@@ -118,6 +118,51 @@ describe("POST /save-media", () => {
   });
 
   describe("happy path", () => {
+    it("accepts dramula source type for episode and series payloads returning 200 OK", async () => {
+      const { accessToken } = await registerUser(app);
+      const epSourceUrl = "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1";
+      const seriesSourceUrl = "https://dramula.com/watch/teach-you-a-lesson-2026";
+
+      const response = await request(app, {
+        method: "POST",
+        path: "/save-media",
+        headers: authHeaders(accessToken),
+        body: {
+          episode: {
+            sourceUrl: epSourceUrl,
+            source: "dramula",
+            title: "Dramula Episode 1",
+            videoType: "TV",
+            videoSources: [
+              {
+                type: "embed",
+                url: "https://videobello.net/embed/123",
+                label: "BelloCloud",
+              },
+            ],
+            metadata: {},
+          },
+          series: {
+            sourceUrl: seriesSourceUrl,
+            source: "dramula",
+            title: "Teach You A Lesson",
+            description: "Dramula drama series",
+            posterUrl: "https://dramula.com/poster.jpg",
+          },
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          episode: { id: string };
+          series: { title: string } | null;
+        };
+      };
+      expect(body.data.episode.id).toBeDefined();
+      expect(body.data.series?.title).toBe("Teach You A Lesson");
+    });
+
     it("creates episode record and stub parent series when series is null", async () => {
       const { accessToken } = await registerUser(app);
       const epSourceUrl = "https://otakudesu.blog/episode/save-media-integ-1/";

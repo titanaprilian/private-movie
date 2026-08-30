@@ -11,6 +11,13 @@ const sampleOneSeasonHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
   "utf8"
 );
+const sampleDramulaHtml = readFileSync(
+  resolve(
+    import.meta.dirname,
+    "../../../../../packages/media-scraper/test/fixtures/episodes/sample-dramula.html"
+  ),
+  "utf8"
+);
 
 describe("POST /series/:id/preview-bulk-sources", () => {
   let app: App;
@@ -22,6 +29,9 @@ describe("POST /series/:id/preview-bulk-sources", () => {
         get: async (url) => {
           if (url.includes("otakudesu.blog/anime/grand-blue-s3-sub-indo")) {
             return sampleOneSeasonHtml;
+          }
+          if (url.includes("dramula.com")) {
+            return sampleDramulaHtml;
           }
           throw new Error(`Unexpected fetch URL: ${url}`);
         },
@@ -261,6 +271,45 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     expect(unmatchedEp?.calculatedOrder).toBe(99);
     expect(unmatchedEp?.matchedLocalEpisodeId).toBeNull();
     expect(unmatchedEp?.matchStatus).toBe("unmatched");
+  });
+
+  it("accepts dramula source type and previews bulk sources returning 200 OK", async () => {
+    const { seriesId } = await createSeriesWithEpisodes(
+      "Dramula Test Series",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    );
+
+    const sourceUrl = "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1";
+    const res = await request(app, {
+      method: "POST",
+      path: `/series/${seriesId}/preview-bulk-sources`,
+      headers,
+      body: {
+        sourceUrl,
+        source: "dramula",
+        episodeOffset: 0,
+      },
+    });
+
+    expect(res.status).toBe(200);
+    const body = res.body as {
+      data: {
+        scrapedEpisodes: Array<{
+          scrapedTitle: string;
+          scrapedUrl: string;
+          episodeNumber: number | null;
+          matchedLocalEpisodeId: string | null;
+          matchStatus: string;
+        }>;
+      };
+    };
+
+    expect(body.data).toBeDefined();
+    expect(body.data.scrapedEpisodes.length).toBe(10);
+    expect(body.data.scrapedEpisodes[0]?.scrapedTitle).toBe("1");
+    expect(body.data.scrapedEpisodes[0]?.scrapedUrl).toBe(
+      "/watch/teach-you-a-lesson-2026/s1e1"
+    );
   });
 
   it("indicates hasSources: true for local episodes that have existing video sources", async () => {

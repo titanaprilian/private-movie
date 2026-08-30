@@ -336,7 +336,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       {
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
-          source: t.Literal("otakudesu"),
+          source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
           html: t.Optional(t.String()),
         }),
       }
@@ -375,7 +375,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       {
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
-          source: t.Literal("otakudesu"),
+          source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
           html: t.Optional(t.String()),
         }),
       }
@@ -411,7 +411,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         body: t.Object({
           episode: t.Object({
             sourceUrl: t.String({ format: "uri" }),
-            source: t.Literal("otakudesu"),
+            source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
             title: t.String(),
             videoType: t.Optional(t.Nullable(t.String())),
             videoSources: t.Optional(
@@ -430,7 +430,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             t.Nullable(
               t.Object({
                 sourceUrl: t.String({ format: "uri" }),
-                source: t.Literal("otakudesu"),
+                source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
                 title: t.String(),
                 description: t.Nullable(t.String()),
                 posterUrl: t.Nullable(t.String()),
@@ -538,7 +538,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         query: t.Object({
           page: t.Optional(t.Number({ default: 1, minimum: 1 })),
           limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
-          source: t.Optional(t.Literal("otakudesu")),
+          source: t.Optional(t.Union([t.Literal("otakudesu"), t.Literal("dramula")])),
           q: t.Optional(t.String()),
           genre: t.Optional(t.String()),
         }),
@@ -614,7 +614,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
-          source: t.Literal("otakudesu"),
+          source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
           episodeOffset: t.Optional(t.Number()),
           seasonId: t.Optional(t.String()),
           html: t.Optional(t.String()),

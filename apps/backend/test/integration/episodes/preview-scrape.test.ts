@@ -97,6 +97,24 @@ describe("POST /preview-scrape", () => {
   });
 
   describe("happy path", () => {
+    it("previews scrape with dramula source payload returning 200 OK", async () => {
+      const { accessToken } = await registerUser(app);
+      const sourceUrl = "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1";
+
+      const response = await request(app, {
+        method: "POST",
+        path: "/preview-scrape",
+        headers: authHeaders(accessToken),
+        body: {
+          sourceUrl,
+          source: "dramula",
+          html: sampleAHtml,
+        },
+      });
+
+      expect(response.status).toBe(200);
+    });
+
     it("previews scrape with URL only (no html field) by fetching HTML automatically", async () => {
       const { accessToken } = await registerUser(app);
       const sourceUrl =

@@ -159,6 +159,7 @@ export function BulkScrapeModal({
                     className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
                   >
                     <option value="otakudesu">Otakudesu</option>
+                    <option value="dramula">Dramula</option>
                     <option value="direct">Direct Link</option>
                     <option value="embed">Embed</option>
                   </select>

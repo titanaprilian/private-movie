@@ -122,7 +122,7 @@ export interface FetchSeriesParams {
   limit?: number;
   q?: string;
   genre?: string;
-  source?: 'otakudesu';
+  source?: 'otakudesu' | 'dramula';
 }
 
 export async function fetchSeries(
@@ -164,7 +164,7 @@ export function seriesListQueryOptions(params?: FetchSeriesParams) {
 export interface FetchEpisodesParams {
   page?: number;
   limit?: number;
-  source?: 'otakudesu';
+  source?: 'otakudesu' | 'dramula';
 }
 
 export async function fetchEpisodes(
@@ -243,7 +243,7 @@ export function seriesDetailQueryOptions(id: string) {
 
 export interface PreviewScrapeParams {
   sourceUrl: string;
-  source: 'otakudesu';
+  source: 'otakudesu' | 'dramula';
   html?: string;
 }
 
@@ -319,7 +319,7 @@ export async function previewScrape(
 export interface PreviewScrapeSeriesResult {
   series: {
     sourceUrl: string;
-    source: 'otakudesu';
+    source: 'otakudesu' | 'dramula';
     title: string;
     description: string | null;
     posterUrl: string | null;
@@ -379,7 +379,7 @@ export async function saveMedia(
   const res = await api['save-media'].post({
     episode: params.episode as {
       sourceUrl: string;
-      source: 'otakudesu';
+      source: 'otakudesu' | 'dramula';
       title: string;
       videoType: string | null;
       videoSources?: Array<{
@@ -393,7 +393,7 @@ export async function saveMedia(
     series: params.series
       ? {
           sourceUrl: params.series.sourceUrl,
-          source: params.series.source as 'otakudesu',
+          source: params.series.source as 'otakudesu' | 'dramula',
           title: params.series.title,
           description: params.series.description,
           posterUrl: params.series.posterUrl,
@@ -798,7 +798,7 @@ export async function syncSeasonTmdb(
 export interface PreviewBulkSourcesParams {
   seriesId: string;
   sourceUrl: string;
-  source?: 'otakudesu';
+  source?: 'otakudesu' | 'dramula';
   episodeOffset?: number;
   seasonId?: string;
 }
