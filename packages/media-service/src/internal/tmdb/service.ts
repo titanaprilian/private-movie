@@ -176,7 +176,7 @@ export async function fetchTmdbSeriesData(
         await sleepFn(2000);
         return defaultFetchFn(url, init);
       }
-      throw new Error(`TMDB API Error: ${res.status} ${res.statusText}`);
+      throw new TmdbFetchError(`TMDB API Error: ${res.status} ${res.statusText}`, res.status);
     }
     return res.json();
   };
