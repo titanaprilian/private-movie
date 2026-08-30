@@ -92,6 +92,7 @@ export type SeasonWithEpisodes = SeasonRow & {
 
 export type SeriesWithSeasons = SeriesRow & {
   seasons: SeasonRow[];
+  genres?: Array<{ id: string; name: string; slug: string }>;
 };
 
 export interface SeriesListResult {
@@ -103,6 +104,7 @@ export type SeriesWithEpisodes = SeriesRow & {
   seasons: SeasonWithEpisodes[];
   episodes: EpisodeWithVideoSources[];
   relations: SeriesRelationItem[];
+  genres?: Array<{ id: string; name: string; slug: string }>;
 };
 
 export interface SeriesWithMetadata extends SeriesRow {
@@ -255,11 +257,23 @@ export function createSeriesRepositoryInternal<
         episodes: episodesBySeasonMap.get(s.id) ?? [],
       }));
 
+      const seriesGenres = await db
+        .select({
+          id: genres.id,
+          name: genres.name,
+          slug: genres.slug,
+        })
+        .from(seriesToGenres)
+        .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+        .where(eq(seriesToGenres.seriesId, id))
+        .orderBy(asc(genres.name));
+
       return {
         ...seriesRow,
         seasons: seasonsWithEpisodes,
         episodes: episodesWithSources,
         relations: [],
+        genres: seriesGenres,
       };
     },
 
@@ -313,6 +327,7 @@ export function createSeriesRepositoryInternal<
 
       const seriesIds = rows.map((s) => s.id);
       const seasonsMap = new Map<string, SeasonRow[]>();
+      const genresMap = new Map<string, Array<{ id: string; name: string; slug: string }>>();
 
       if (seriesIds.length > 0) {
         const childSeasons = await db
@@ -336,11 +351,30 @@ export function createSeriesRepositoryInternal<
           list.push(s);
           seasonsMap.set(s.seriesId, list);
         }
+
+        const allGenres = await db
+          .select({
+            seriesId: seriesToGenres.seriesId,
+            id: genres.id,
+            name: genres.name,
+            slug: genres.slug,
+          })
+          .from(seriesToGenres)
+          .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+          .where(inArray(seriesToGenres.seriesId, seriesIds))
+          .orderBy(asc(genres.name));
+
+        for (const g of allGenres) {
+          const list = genresMap.get(g.seriesId) ?? [];
+          list.push({ id: g.id, name: g.name, slug: g.slug });
+          genresMap.set(g.seriesId, list);
+        }
       }
 
       const seriesWithSeasons: SeriesWithSeasons[] = rows.map((s) => ({
         ...s,
         seasons: seasonsMap.get(s.id) ?? [],
+        genres: genresMap.get(s.id) ?? [],
       }));
 
       return {

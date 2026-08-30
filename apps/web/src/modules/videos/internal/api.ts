@@ -114,6 +114,7 @@ export interface SeriesDetails {
   seasons?: SeasonDetails[];
   episodes: Episode[];
   relations?: SeriesRelationItem[];
+  genres?: Array<{ id: string; name: string; slug: string }> | string[];
 }
 
 export interface FetchSeriesParams {
