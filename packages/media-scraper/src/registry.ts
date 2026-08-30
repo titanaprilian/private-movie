@@ -1,4 +1,5 @@
 import type { MediaProvider } from "./types";
+import { DramulaProvider } from "./providers/dramula";
 import { OtakudesuProvider } from "./providers/otakudesu";
 
 export class MediaScraper {
@@ -6,7 +7,12 @@ export class MediaScraper {
 
   private providers: MediaProvider[] = [];
 
-  constructor(providers: MediaProvider[] = [new OtakudesuProvider()]) {
+  constructor(
+    providers: MediaProvider[] = [
+      new OtakudesuProvider(),
+      new DramulaProvider(),
+    ]
+  ) {
     this.providers = [...providers];
   }
 
