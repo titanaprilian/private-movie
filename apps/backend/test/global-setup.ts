@@ -3,10 +3,23 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { MIGRATIONS_FOLDER } from "@repo/db";
 
-const TEST_DATABASE_URL =
-  process.env.DATABASE_URL ??
-  process.env.TEST_DATABASE_URL ??
-  "postgres://postgres:root_password@localhost:5432/private_movie_test";
+function resolveTestDatabaseUrl(): string {
+  const envUrl =
+    process.env.TEST_DATABASE_URL ??
+    process.env.DATABASE_URL ??
+    "postgres://postgres:root_password@localhost:5432/private_movie_test";
+  try {
+    const url = new URL(envUrl);
+    if (!url.pathname.endsWith("_test")) {
+      url.pathname = `${url.pathname}_test`;
+    }
+    return url.toString();
+  } catch {
+    return envUrl;
+  }
+}
+
+const TEST_DATABASE_URL = resolveTestDatabaseUrl();
 
 export async function setup() {
   const url = new URL(TEST_DATABASE_URL);

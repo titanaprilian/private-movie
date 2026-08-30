@@ -38,6 +38,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CustomVideoPlayer } from './CustomVideoPlayer';
+import { formatEmbedUrl } from './embedUrl';
 
 import { Button } from '@/components/ui/button';
 
@@ -962,7 +963,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
                   ) : (
                     <div className="aspect-video w-full rounded border border-c bg-black overflow-hidden">
                       <iframe
-                        src={activeSource.url}
+                        src={formatEmbedUrl(activeSource.url)}
                         title={selectedEpisode.title}
                         allowFullScreen
                         className="w-full h-full border-0"

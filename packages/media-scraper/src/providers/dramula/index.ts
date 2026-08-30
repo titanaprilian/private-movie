@@ -21,15 +21,15 @@ export class DramulaProvider implements MediaProvider {
     fetchFn: FetchFn
   ): Promise<ScrapedSeries> {
     const html = await fetchFn.get(url);
-    const episode = this.parseEpisodeHtml(html);
+    const episode = this.parseEpisodeHtml(html, url);
     return {
       title: episode.title,
       episodes: episode.episodes ?? [],
     };
   }
 
-  public parseEpisodeHtml(html: string): ScrapedEpisode {
-    return parseDramulaEpisodeHtml(html);
+  public parseEpisodeHtml(html: string, url?: string): ScrapedEpisode {
+    return parseDramulaEpisodeHtml(html, url);
   }
 
   public async parseEpisode(
@@ -37,7 +37,7 @@ export class DramulaProvider implements MediaProvider {
     fetchFn: FetchFn
   ): Promise<ScrapedEpisode> {
     const html = await fetchFn.get(url);
-    return this.parseEpisodeHtml(html);
+    return this.parseEpisodeHtml(html, url);
   }
 
   public async resolveVideoSources(
@@ -49,7 +49,7 @@ export class DramulaProvider implements MediaProvider {
       return context.videoSources as ScrapedVideoSource[];
     }
     const html = (context?.html as string) ?? (await fetchFn.get(url));
-    const episode = this.parseEpisodeHtml(html);
+    const episode = this.parseEpisodeHtml(html, url);
     return episode.videoSources;
   }
 }

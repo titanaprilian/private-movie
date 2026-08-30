@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowLeft, ChevronDown, ListVideo, Play, RefreshCw, SkipBack, SkipForward } from 'lucide-react';
 import { useWatchState } from './useWatchState';
 import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from './api';
+import { formatEmbedUrl } from '../../videos/internal/embedUrl';
 
 export interface SeriesWatchViewProps {
   seriesId?: string;
@@ -177,7 +178,7 @@ export function SeriesWatchView({
               <div className="aspect-video w-full overflow-hidden rounded-md border border-c bg-black">
                 <iframe
                   data-testid="watch-player"
-                  src={activeSource.url}
+                  src={formatEmbedUrl(activeSource.url)}
                   title={activeEpisode?.title ?? 'Video player'}
                   className="h-full w-full"
                   allowFullScreen

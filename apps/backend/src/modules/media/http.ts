@@ -41,6 +41,59 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
 
   return new Elysia({ name: "media-routes" })
     .get(
+      "/media/proxy-embed",
+      async ({ query, set }) => {
+        try {
+          const parsedUrl = new URL(query.url);
+          const origin = parsedUrl.origin;
+          const res = await fetch(query.url, {
+            headers: {
+              Referer: "https://dramula.com",
+            },
+          });
+          if (!res.ok) {
+            return errorResponse(
+              set,
+              res.status,
+              new Error(`Failed to fetch embed content: ${res.statusText}`)
+            );
+          }
+          const html = await res.text();
+          let modifiedHtml = html;
+          if (/(<head[^>]*>)/i.test(modifiedHtml)) {
+            modifiedHtml = modifiedHtml.replace(
+              /(<head[^>]*>)/i,
+              `$1<base href="${origin}/">`
+            );
+          } else if (/(<html[^>]*>)/i.test(modifiedHtml)) {
+            modifiedHtml = modifiedHtml.replace(
+              /(<html[^>]*>)/i,
+              `$1<head><base href="${origin}/"></head>`
+            );
+          } else {
+            modifiedHtml = `<base href="${origin}/">${modifiedHtml}`;
+          }
+          return new Response(modifiedHtml, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+            },
+          });
+        } catch (error) {
+          return errorResponse(
+            set,
+            400,
+            error instanceof Error ? error : new Error("Invalid URL or fetch failed")
+          );
+        }
+      },
+      {
+        query: t.Object({
+          url: t.String(),
+        }),
+      }
+    )
+    .get(
       "/episodes",
       async ({ query }) => {
         const page = query.page ?? 1;
