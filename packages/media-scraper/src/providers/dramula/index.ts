@@ -7,7 +7,7 @@ import type {
   ScrapedVideoSource,
   BrowserFn,
 } from "../../types";
-import { parseDramulaEpisodeHtml } from "./parse";
+import { parseDramulaEpisodeHtml, resolveVideobelloHash } from "./parse";
 
 export * from "./parse";
 
@@ -52,27 +52,74 @@ export class DramulaProvider implements MediaProvider {
     context?: Record<string, unknown>,
     browserFn?: BrowserFn
   ): Promise<ScrapedVideoSource[]> {
-    if (context?.videoSources && Array.isArray(context.videoSources)) {
-      return context.videoSources as ScrapedVideoSource[];
-    }
+    let sources: ScrapedVideoSource[] = [];
 
-    if (browserFn) {
-      const hydratedHtml = await browserFn(url);
-      const $ = cheerio.load(hydratedHtml);
-      const iframeSrc = $("iframe[src]").first().attr("src");
-      if (iframeSrc) {
-        return [
-          {
-            type: "embed",
-            url: iframeSrc,
-            label: "BelloCloud",
-          },
-        ];
+    if (context?.videoSources && Array.isArray(context.videoSources)) {
+      sources = context.videoSources as ScrapedVideoSource[];
+    } else {
+      if (browserFn) {
+        try {
+          const hydratedHtml = await browserFn(url);
+          const $ = cheerio.load(hydratedHtml);
+          const iframeSrc = $("iframe[src]").first().attr("src");
+          if (iframeSrc && !iframeSrc.includes(".00000000")) {
+            sources = [
+              {
+                type: "embed",
+                url: iframeSrc,
+                label: "BelloCloud",
+              },
+            ];
+          }
+        } catch {
+          // fall through if browserFn fails
+        }
+      }
+
+      if (sources.length === 0) {
+        const html = (context?.html as string) ?? (await fetchFn.get(url));
+        const episode = await this.parseEpisodeHtml(html, url, fetchFn);
+        sources = episode.videoSources;
       }
     }
 
+    const hasUnresolved = sources.some((s) => s.url.includes(".00000000"));
+    if (!hasUnresolved) {
+      return sources;
+    }
+
     const html = (context?.html as string) ?? (await fetchFn.get(url));
-    const episode = await this.parseEpisodeHtml(html, url, fetchFn);
-    return episode.videoSources;
+
+    const resolvedSources = await Promise.all(
+      sources.map(async (source) => {
+        if (!source.url.includes(".00000000")) {
+          return source;
+        }
+
+        if (browserFn) {
+          try {
+            const hydratedHtml = await browserFn(url);
+            const $ = cheerio.load(hydratedHtml);
+            const iframeSrc = $("iframe[src]").first().attr("src");
+            if (iframeSrc && !iframeSrc.includes(".00000000")) {
+              return {
+                ...source,
+                url: iframeSrc,
+              };
+            }
+          } catch {
+            // fall through to resolveVideobelloHash
+          }
+        }
+
+        const extractedHash = await resolveVideobelloHash(html, url, fetchFn);
+        return {
+          ...source,
+          url: source.url.replace(".00000000", `.${extractedHash}`),
+        };
+      })
+    );
+
+    return resolvedSources;
   }
 }

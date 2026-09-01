@@ -422,13 +422,6 @@ export async function parseDramulaEpisodeHtml(
     });
   }
 
-  for (const source of videoSources) {
-    if (source.url.includes(".00000000")) {
-      const extractedHash = await resolveVideobelloHash(html, url, fetchFn);
-      source.url = source.url.replace(".00000000", `.${extractedHash}`);
-    }
-  }
-
   return {
     title,
     videoSources,
