@@ -39,7 +39,8 @@ self.addEventListener('fetch', (event) => {
   // Check if this request should be intercepted
   const shouldIntercept =
     url.hostname.includes('videobello.net') ||
-    url.hostname.includes('skylayer64.online');
+    url.hostname.includes('skylayer64.online') ||
+    url.hostname.includes('cloudremux.online');
 
   if (shouldIntercept) {
     console.log('[Service Worker] Intercepting:', url.href);
