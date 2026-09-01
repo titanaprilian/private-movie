@@ -16,7 +16,12 @@ export function formatEmbedUrl(url: string): string {
     
     if (hashMatch && hashMatch[1]) {
       const hash = hashMatch[1];
-      return `/embed/${hash}`;
+      try {
+        const parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+        return `/embed/${hash}${parsedUrl.search}`;
+      } catch {
+        return `/embed/${hash}`;
+      }
     }
     
     // Fallback to old behavior if hash extraction fails

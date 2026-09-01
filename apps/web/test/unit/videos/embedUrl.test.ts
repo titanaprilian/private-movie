@@ -12,7 +12,7 @@ describe('formatEmbedUrl', () => {
     it('should handle videobello URLs with query parameters', () => {
       const url = 'https://videobello.net/embed/abc123xyz?param=value';
       const result = formatEmbedUrl(url);
-      expect(result).toBe('/embed/abc123xyz');
+      expect(result).toBe('/embed/abc123xyz?param=value');
     });
 
     it('should handle videobello URLs with hash fragments', () => {
@@ -24,7 +24,7 @@ describe('formatEmbedUrl', () => {
     it('should handle videobello URLs with both query and fragment', () => {
       const url = 'https://videobello.net/embed/hash-123?foo=bar#baz';
       const result = formatEmbedUrl(url);
-      expect(result).toBe('/embed/hash-123');
+      expect(result).toBe('/embed/hash-123?foo=bar');
     });
 
     it('should fallback to old proxy behavior if hash extraction fails', () => {

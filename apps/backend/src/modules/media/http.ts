@@ -75,8 +75,9 @@ export const embedRoutes = () => {
           await new Promise(resolve => setTimeout(resolve, 100));
           
           // Now fetch the actual embed HTML from proxy-embed
-          // The hash will be used to construct the actual videobello URL
-          const embedUrl = '/api/media/proxy-embed?url=' + encodeURIComponent('https://videobello.net/embed/${hash}');
+          // The hash will be used to construct the actual videobello URL, preserving query parameters
+          const queryParams = window.location.search;
+          const embedUrl = '/api/media/proxy-embed?url=' + encodeURIComponent('https://videobello.net/embed/${hash}' + queryParams);
           const response = await fetch(embedUrl);
           
           if (!response.ok) {
