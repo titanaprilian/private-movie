@@ -4,9 +4,8 @@
  * This Service Worker intercepts requests to videobello.net and skylayer64.online
  * and routes them through our backend relay to apply the required Referer header.
  * 
- * NOTE: At this stage, actual interception logic is not yet implemented.
- * This is a bootstrap stub that registers successfully and claims clients.
- * Ticket #2 will implement the actual fetch interception and relay logic.
+ * This allows BelloCloud video streams to bypass CDN restrictions and play
+ * seamlessly in the local environment.
  */
 
 // Install event - cache nothing for now
@@ -33,20 +32,67 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Fetch event - pass through for now (no interception yet)
+// Fetch event - intercept and relay targeted requests
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
-  // TODO (Ticket #2): Intercept videobello.net and skylayer64.online requests
-  // and route them through /api/media/relay
-  // For now, just pass through all requests unchanged
-  
-  // Log requests to the domains we'll eventually intercept
-  if (url.hostname.includes('videobello.net') || url.hostname.includes('skylayer64.online')) {
-    console.log('[Service Worker] Would intercept:', url.href);
-    // TODO: Implement relay logic here in ticket #2
+  // Check if this request should be intercepted
+  const shouldIntercept =
+    url.hostname.includes('videobello.net') ||
+    url.hostname.includes('skylayer64.online');
+
+  if (shouldIntercept) {
+    console.log('[Service Worker] Intercepting:', url.href);
+    
+    // Route through our backend relay
+    event.respondWith(
+      (async () => {
+        try {
+          // Construct relay URL
+          const relayUrl = `/api/media/relay?url=${encodeURIComponent(url.href)}`;
+          
+          // Build headers to forward
+          const headers = new Headers();
+          
+          // Forward Range header if present (critical for video scrubbing)
+          const rangeHeader = event.request.headers.get('Range');
+          if (rangeHeader) {
+            headers.set('Range', rangeHeader);
+          }
+          
+          // Forward other potentially important headers
+          const acceptHeader = event.request.headers.get('Accept');
+          if (acceptHeader) {
+            headers.set('Accept', acceptHeader);
+          }
+          
+          // Make the relay request
+          const response = await fetch(relayUrl, {
+            method: event.request.method,
+            headers: headers,
+            // Don't include credentials in relay request
+            credentials: 'omit',
+          });
+          
+          console.log(
+            '[Service Worker] Relay response:',
+            response.status,
+            response.statusText
+          );
+          
+          return response;
+        } catch (error) {
+          console.error('[Service Worker] Relay failed:', error);
+          // Return error response
+          return new Response('Service Worker relay failed', {
+            status: 502,
+            statusText: 'Bad Gateway',
+          });
+        }
+      })()
+    );
+  } else {
+    // Pass through all other requests unchanged
+    event.respondWith(fetch(event.request));
   }
-  
-  // Pass through - no interception yet
-  event.respondWith(fetch(event.request));
 });

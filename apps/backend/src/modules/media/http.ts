@@ -182,6 +182,106 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       }
     )
     .get(
+      "/media/relay",
+      async ({ query, set, request }) => {
+        try {
+          // Validate URL parameter
+          if (!query.url) {
+            return errorResponse(
+              set,
+              400,
+              new Error("Missing required 'url' query parameter")
+            );
+          }
+
+          // Parse and validate the target URL
+          let targetUrl: URL;
+          try {
+            targetUrl = new URL(query.url);
+          } catch {
+            return errorResponse(
+              set,
+              400,
+              new Error("Invalid URL format")
+            );
+          }
+
+          // Build headers for the outbound request
+          const outboundHeaders: HeadersInit = {
+            // Spoof the Referer to bypass CDN restrictions
+            Referer: "https://dramula.com",
+          };
+
+          // Forward Range header if present (critical for video scrubbing)
+          const rangeHeader = request.headers.get("Range");
+          if (rangeHeader) {
+            outboundHeaders["Range"] = rangeHeader;
+          }
+
+          // Forward other potentially important headers
+          const userAgent = request.headers.get("User-Agent");
+          if (userAgent) {
+            outboundHeaders["User-Agent"] = userAgent;
+          }
+
+          // Fetch from the target URL with spoofed headers
+          const targetResponse = await fetch(targetUrl.toString(), {
+            headers: outboundHeaders,
+          });
+
+          // If target returns error, pass it through
+          if (!targetResponse.ok) {
+            return errorResponse(
+              set,
+              targetResponse.status,
+              new Error(`Target server returned ${targetResponse.status}: ${targetResponse.statusText}`)
+            );
+          }
+
+          // Stream the response directly without buffering
+          // Preserve important headers from the target response
+          const responseHeaders: HeadersInit = {};
+          
+          const contentType = targetResponse.headers.get("Content-Type");
+          if (contentType) {
+            responseHeaders["Content-Type"] = contentType;
+          }
+
+          const contentLength = targetResponse.headers.get("Content-Length");
+          if (contentLength) {
+            responseHeaders["Content-Length"] = contentLength;
+          }
+
+          const contentRange = targetResponse.headers.get("Content-Range");
+          if (contentRange) {
+            responseHeaders["Content-Range"] = contentRange;
+          }
+
+          const acceptRanges = targetResponse.headers.get("Accept-Ranges");
+          if (acceptRanges) {
+            responseHeaders["Accept-Ranges"] = acceptRanges;
+          }
+
+          // Return the stream directly
+          return new Response(targetResponse.body, {
+            status: targetResponse.status,
+            headers: responseHeaders,
+          });
+        } catch (error) {
+          return errorResponse(
+            set,
+            500,
+            error instanceof Error ? error : new Error("Relay request failed")
+          );
+        }
+      },
+      {
+        query: t.Object({
+          url: t.String(),
+        }),
+      }
+    )
+    .get(
       "/episodes",
       async ({ query }) => {
         const page = query.page ?? 1;
