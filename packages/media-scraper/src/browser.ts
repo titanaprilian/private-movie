@@ -1,8 +1,10 @@
+import type { Browser } from "playwright";
 import { chromium } from "playwright-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import type { BrowserFn } from "./types";
 
 let stealthInitialized = false;
+let globalBrowser: Browser | null = null;
 
 export function getStealthChromium(): typeof chromium {
   if (!stealthInitialized) {
@@ -18,32 +20,51 @@ export interface CreateStealthBrowserFnOptions {
   userAgent?: string;
 }
 
+export async function initBrowser(
+  options: CreateStealthBrowserFnOptions = {}
+): Promise<Browser> {
+  if (globalBrowser) {
+    return globalBrowser;
+  }
+
+  const { headless = true } = options;
+  const stealthChromium = getStealthChromium();
+  globalBrowser = (await stealthChromium.launch({
+    headless,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-blink-features=AutomationControlled",
+    ],
+  })) as unknown as Browser;
+
+  return globalBrowser;
+}
+
+export async function closeBrowser(): Promise<void> {
+  if (globalBrowser) {
+    await globalBrowser.close();
+    globalBrowser = null;
+  }
+}
+
 export function createStealthBrowserFn(
   options: CreateStealthBrowserFnOptions = {}
 ): BrowserFn {
   const {
-    headless = true,
     timeout = 10000,
     userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
   } = options;
 
   return async (url: string): Promise<string> => {
-    const stealthChromium = getStealthChromium();
-    const browser = await stealthChromium.launch({
-      headless,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-blink-features=AutomationControlled",
-      ],
+    const browser = await initBrowser(options);
+
+    const context = await browser.newContext({
+      userAgent,
+      locale: "en-US",
     });
 
     try {
-      const context = await browser.newContext({
-        userAgent,
-        locale: "en-US",
-      });
-
       await context.addInitScript(`
         Object.defineProperty(window, "outerWidth", {
           get: () => window.innerWidth,
@@ -75,7 +96,7 @@ export function createStealthBrowserFn(
       const html = await page.content();
       return html;
     } finally {
-      await browser.close();
+      await context.close();
     }
   };
 }

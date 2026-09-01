@@ -13,7 +13,11 @@ import {
   type ParsedAjaxActions,
   type ParsedDownloadLink,
   type FetchFn as ScraperFetchFn,
+  type BrowserFn,
+  type CreateStealthBrowserFnOptions,
 } from "@repo/media-scraper";
+
+export type { BrowserFn, CreateStealthBrowserFnOptions };
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
 import { createSeasonsRepositoryInternal, SeasonNotFoundError, SeasonNotLinkedToTmdbError } from "./internal/seasons/repository";
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
@@ -230,6 +234,7 @@ export interface SaveMediaResult {
 
 export interface SaveEpisodeServiceOptions {
   fetchHtml?: FetchFn;
+  browserFn?: BrowserFn;
 }
 
 export interface MergeSeasonsInput {
@@ -691,7 +696,12 @@ export function createMediaService<
         throw new EpisodeFetchError(`No provider found for ${sourceUrl}`);
       }
 
-      const sources = await provider.resolveVideoSources(sourceUrl, fetchHtml);
+      const sources = await provider.resolveVideoSources(
+        sourceUrl,
+        fetchHtml,
+        undefined,
+        options?.browserFn
+      );
 
       await videoSourceRepository.deleteByEpisodeId(episodeId);
 

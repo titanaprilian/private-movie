@@ -21,6 +21,7 @@ import {
   VideoSourceNotFoundError,
   TmdbFetchError,
   type FetchFn,
+  type BrowserFn,
 } from "@repo/media-service";
 import { EpisodeMissingFieldsError, EpisodeParseError, SeriesParseError, MirrorResolveError } from "@repo/media-scraper";
 
@@ -28,11 +29,13 @@ export interface MediaRoutesOptions {
   db: Parameters<typeof createSaveEpisodeService>[0];
   authService: AuthenticationService;
   fetchHtml?: FetchFn;
+  browserFn?: BrowserFn;
 }
 
 export const mediaRoutes = (options: MediaRoutesOptions) => {
   const mediaService = createSaveEpisodeService(options.db, {
     fetchHtml: options.fetchHtml,
+    browserFn: options.browserFn,
   });
   const episodeRepository = createEpisodeRepositoryInternal(options.db);
   const seriesRepository = createSeriesRepositoryInternal(options.db);

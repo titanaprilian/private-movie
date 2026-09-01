@@ -308,7 +308,7 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     expect(body.data.scrapedEpisodes.length).toBe(10);
     expect(body.data.scrapedEpisodes[0]?.scrapedTitle).toBe("1");
     expect(body.data.scrapedEpisodes[0]?.scrapedUrl).toBe(
-      "/watch/teach-you-a-lesson-2026/s1e1"
+      "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1"
     );
   });
 

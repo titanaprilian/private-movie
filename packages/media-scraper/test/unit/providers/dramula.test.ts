@@ -316,7 +316,45 @@ describe("DramulaProvider", () => {
       ]);
     });
 
-    it("derives videoSources and resolves 8-character hash from SvelteKit JS bundle when iframe DOM node is missing", async () => {
+    it("returns raw .00000000 videoSources from SvelteKit JSON SSR parsing when iframe DOM node is missing without throwing", async () => {
+      const sveltekitHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head><title>Teach You a Lesson - Dramula</title></head>
+          <body>
+            <h1>Teach You a Lesson</h1>
+            <script src="/_app/immutable/nodes/38.D4Z5fheZ.js"></script>
+            <script
+              type="application/json"
+              data-sveltekit-fetched=""
+              data-url="https://api.dramula.com/api/titles/teach-you-a-lesson-2026?include=episodes"
+            >
+              {
+                "status": 200,
+                "statusText": "OK",
+                "headers": {},
+                "body": "{\\"data\\":{\\"slug\\":\\"teach-you-a-lesson-2026\\",\\"episodes\\":[{\\"id\\":10387,\\"episode_number\\":10,\\"name\\":\\"10\\",\\"slug\\":\\"s1e10\\"}]}}"
+              }
+            </script>
+          </body>
+        </html>
+      `;
+
+      const episode = await provider.parseEpisodeHtml(
+        sveltekitHtml,
+        "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10"
+      );
+
+      expect(episode.videoSources).toEqual([
+        {
+          type: "embed",
+          url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
+          label: "BelloCloud",
+        },
+      ]);
+    });
+
+    it("resolves 8-character hash in resolveVideoSources when raw .00000000 sources are present", async () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
@@ -342,6 +380,9 @@ describe("DramulaProvider", () => {
 
       const mockFetchFn: FetchFn = {
         async get(url: string) {
+          if (url === "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10") {
+            return sveltekitHtml;
+          }
           if (url === "https://dramula.com/_app/immutable/nodes/38.D4Z5fheZ.js") {
             return `
               const domain = "https://videobello.net/embed/";
@@ -355,13 +396,12 @@ describe("DramulaProvider", () => {
         },
       };
 
-      const episode = await provider.parseEpisodeHtml(
-        sveltekitHtml,
+      const sources = await provider.resolveVideoSources(
         "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10",
         mockFetchFn
       );
 
-      expect(episode.videoSources).toEqual([
+      expect(sources).toEqual([
         {
           type: "embed",
           url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.3795c347?source=0",
@@ -370,42 +410,49 @@ describe("DramulaProvider", () => {
       ]);
     });
 
-    it("throws explicit error when fetchFn is missing and videobello hash resolution is needed", async () => {
-      const sveltekitHtml = `
-        <!DOCTYPE html>
+    it("upgrades raw .00000000 sources in resolveVideoSources using browserFn when provided", async () => {
+      const rawSources = [
+        {
+          type: "embed" as const,
+          url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
+          label: "BelloCloud",
+        },
+      ];
+
+      const mockBrowserFn = async () => `
         <html>
-          <head>
-            <title>Teach You a Lesson - Dramula</title>
-            <link rel="canonical" href="https://dramula.com/watch/teach-you-a-lesson-2026/s1e10" />
-          </head>
           <body>
-            <h1>Teach You a Lesson</h1>
-            <script src="/_app/immutable/nodes/38.js"></script>
-            <script
-              type="application/json"
-              data-sveltekit-fetched=""
-            >
-              {
-                "status": 200,
-                "body": {
-                  "data": {
-                    "episodes": [
-                      { "id": 10387, "slug": "s1e10" }
-                    ]
-                  }
-                }
-              }
-            </script>
+            <iframe src="https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.99999999?source=0"></iframe>
           </body>
         </html>
       `;
 
-      await expect(provider.parseEpisodeHtml(sveltekitHtml)).rejects.toThrow(
-        EpisodeParseError
+      const mockFetchFn: FetchFn = {
+        async get() {
+          return "";
+        },
+        async post() {
+          return "";
+        },
+      };
+
+      const sources = await provider.resolveVideoSources(
+        "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10",
+        mockFetchFn,
+        { videoSources: rawSources },
+        mockBrowserFn
       );
+
+      expect(sources).toEqual([
+        {
+          type: "embed",
+          url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.99999999?source=0",
+          label: "BelloCloud",
+        },
+      ]);
     });
 
-    it("throws explicit error when Svelte JS bundle fails to fetch or hash cannot be extracted", async () => {
+    it("throws explicit error in resolveVideoSources when Svelte JS bundle fails to fetch or hash cannot be extracted", async () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
@@ -437,6 +484,9 @@ describe("DramulaProvider", () => {
 
       const failingFetchFn: FetchFn = {
         async get(url: string) {
+          if (url === "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10") {
+            return sveltekitHtml;
+          }
           return "console.log('no hash here');";
         },
         async post() {
@@ -445,7 +495,10 @@ describe("DramulaProvider", () => {
       };
 
       await expect(
-        provider.parseEpisodeHtml(sveltekitHtml, undefined, failingFetchFn)
+        provider.resolveVideoSources(
+          "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10",
+          failingFetchFn
+        )
       ).rejects.toThrow(EpisodeParseError);
     });
   });

@@ -1,5 +1,14 @@
-import { beforeEach } from "vitest";
+import { afterAll, beforeAll, beforeEach } from "vitest";
+import { closeBrowser, initBrowser } from "@repo/media-scraper";
 import { truncateAll } from "./utils/db";
+
+beforeAll(async () => {
+  await initBrowser();
+});
+
+afterAll(async () => {
+  await closeBrowser();
+});
 
 /**
  * Every integration test starts with a clean database. Truncation runs before

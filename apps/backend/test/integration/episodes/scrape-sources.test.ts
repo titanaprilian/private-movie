@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import crypto from "node:crypto";
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, vi } from "vitest";
 import { episodes, seasons, series, videoSources } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { buildApp, request, type App } from "../../utils/app";
@@ -227,5 +227,50 @@ describe("POST /episodes/:id/scrape-sources", () => {
     });
 
     expect(res.status).toBe(404);
+  });
+
+  it("resolves Dramula video sources end-to-end via the injected browserFn when scraping a Dramula episode", async () => {
+    const { episodeId } = await createEpisodeFixture();
+    const mockBrowserFn = vi.fn().mockResolvedValue(`
+      <html>
+        <body>
+          <iframe src="https://videobello.example.com/embed/dramula-ep1-hash"></iframe>
+        </body>
+      </html>
+    `);
+
+    const dramulaApp = await buildApp({
+      browserFn: mockBrowserFn,
+      fetchHtml: {
+        get: async () => "<html><body><iframe src='https://dramula.com/video.00000000'></iframe></body></html>",
+        post: async () => "",
+      },
+    });
+
+    const user = await registerUser(dramulaApp, {
+      email: "dramula-tester@example.com",
+      password: "password123",
+      name: "Dramula Tester",
+    });
+    const dramulaHeaders = authHeaders(user.accessToken);
+
+    const res = await request(dramulaApp, {
+      method: "POST",
+      path: `/episodes/${episodeId}/scrape-sources`,
+      headers: dramulaHeaders,
+      body: {
+        sourceUrl: "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1",
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockBrowserFn).toHaveBeenCalledWith("https://dramula.com/watch/teach-you-a-lesson-2026/s1e1");
+
+    const savedSources = await db
+      .select()
+      .from(videoSources)
+      .where(eq(videoSources.episodeId, episodeId));
+
+    expect(savedSources.some((vs) => vs.url.includes("videobello.example.com"))).toBe(true);
   });
 });

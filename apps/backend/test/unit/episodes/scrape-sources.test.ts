@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import crypto from "node:crypto";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { episodes, seasons, series, videoSources } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { createMediaService, EpisodeFetchError, EpisodeNotFoundError, type FetchFn } from "@repo/media-service";
@@ -163,5 +163,29 @@ describe("createMediaService scrapeAndSaveSources", () => {
     const containsOld = savedVs.some((vs) => vs.id === oldVsId);
     expect(containsOld).toBe(false);
     expect(savedVs.length).toBe(result.videoSources.length);
+  });
+
+  it("passes browserFn to resolveVideoSources when provided in createMediaService options", async () => {
+    const episodeId = await createEpisodeFixture();
+    const mockBrowserFn = vi.fn().mockResolvedValue(`
+      <html>
+        <body>
+          <iframe src="https://videobello.example.com/embed/xyz123"></iframe>
+        </body>
+      </html>
+    `);
+
+    const customService = createMediaService(db, {
+      fetchHtml: buildMockFetchFn(),
+      browserFn: mockBrowserFn,
+    });
+
+    const result = await customService.scrapeAndSaveSources(
+      episodeId,
+      "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1"
+    );
+
+    expect(mockBrowserFn).toHaveBeenCalledWith("https://dramula.com/watch/teach-you-a-lesson-2026/s1e1");
+    expect(result.videoSources.some((vs) => vs.url.includes("videobello.example.com"))).toBe(true);
   });
 });

@@ -8,13 +8,14 @@ import { authRoutes } from "./modules/authentication/http";
 import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes } from "./modules/media/http";
-import type { FetchFn } from "@repo/media-service";
+import type { FetchFn, BrowserFn } from "@repo/media-service";
 import { InternalServerError } from "./lib/errors";
 
 export interface CreateAppDeps {
   db: DbClient;
   auth: AuthenticationService;
   fetchHtml?: FetchFn;
+  browserFn?: BrowserFn;
 }
 
 function getAllowedOrigin(): string | undefined {
@@ -104,7 +105,14 @@ export const createApp = (deps: CreateAppDeps) => {
       app
         .use(healthRoutes({ db }))
         .use(authRoutes({ authService: auth }))
-        .use(mediaRoutes({ db, authService: auth, fetchHtml: deps.fetchHtml }))
+        .use(
+          mediaRoutes({
+            db,
+            authService: auth,
+            fetchHtml: deps.fetchHtml,
+            browserFn: deps.browserFn,
+          })
+        )
         .use(genreRoutes({ db, authService: auth }))
     );
 };
