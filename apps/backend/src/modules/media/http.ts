@@ -61,7 +61,11 @@ export const embedRoutes = () => {
       // Register the Service Worker
       if ('serviceWorker' in navigator) {
         try {
-          const registration = await navigator.serviceWorker.register('/media-proxy-sw.js');
+          const timestamp = Date.now();
+          const registration = await navigator.serviceWorker.register('/media-proxy-sw.js?v=' + timestamp);
+          
+          // Force network update of the Service Worker to prevent caching stale logic
+          await registration.update();
           
           // Wait for the service worker to be active and claim control
           await navigator.serviceWorker.ready;
@@ -208,22 +212,19 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           }
 
           // Build headers for the outbound request
-          const outboundHeaders: HeadersInit = {
+          const outboundHeaders: Record<string, string> = {
             // Spoof the Referer to bypass CDN restrictions
             Referer: "https://dramula.com",
           };
 
-          // Forward Range header if present (critical for video scrubbing)
-          const rangeHeader = request.headers.get("Range");
-          if (rangeHeader) {
-            outboundHeaders["Range"] = rangeHeader;
-          }
-
-          // Forward other potentially important headers
-          const userAgent = request.headers.get("User-Agent");
-          if (userAgent) {
-            outboundHeaders["User-Agent"] = userAgent;
-          }
+          // Forward safe headers from the client
+          request.headers.forEach((value, key) => {
+            const lowerKey = key.toLowerCase();
+            const unsafeHeaders = ['host', 'origin', 'referer', 'cookie', 'connection', 'accept-encoding'];
+            if (!unsafeHeaders.includes(lowerKey)) {
+              outboundHeaders[key] = value;
+            }
+          });
 
           // Fetch from the target URL with spoofed headers
           const targetResponse = await fetch(targetUrl.toString(), {
