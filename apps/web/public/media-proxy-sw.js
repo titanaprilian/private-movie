@@ -80,7 +80,15 @@ self.addEventListener('fetch', (event) => {
             response.statusText
           );
           
-          return response;
+          // We must return a synthetically constructed Response. 
+          // If we return the raw fetch() response, the browser updates the 
+          // resolved URL of the script module to the backend relay URL.
+          // That breaks relative ES imports (Dynamic chunks like ./chunks/...).
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          });
         } catch (error) {
           console.error('[Service Worker] Relay failed:', error);
           // Return error response
