@@ -7,7 +7,7 @@ import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
 import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
-import { mediaRoutes } from "./modules/media/http";
+import { mediaRoutes, embedRoutes } from "./modules/media/http";
 import type { FetchFn, BrowserFn } from "@repo/media-service";
 import { InternalServerError } from "./lib/errors";
 
@@ -30,6 +30,7 @@ export const createApp = (deps: CreateAppDeps) => {
   const allowedOrigin = getAllowedOrigin();
 
   return new Elysia({ name: "app" })
+    .use(embedRoutes())
     .use(
       cors({
         origin: (request) => {

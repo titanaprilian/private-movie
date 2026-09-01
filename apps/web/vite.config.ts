@@ -10,6 +10,14 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, 'src'),
     },
   },
+  server: {
+    proxy: {
+      '/embed': {
+        target: process.env.VITE_API_URL || 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
   preview: {
     port: 5173,
   },

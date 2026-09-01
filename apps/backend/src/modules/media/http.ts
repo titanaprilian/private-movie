@@ -32,6 +32,91 @@ export interface MediaRoutesOptions {
   browserFn?: BrowserFn;
 }
 
+/**
+ * Root-level route for the embed sandbox bootstrap.
+ * Registers at `/embed/:hash` (not under `/api` prefix).
+ */
+export const embedRoutes = () => {
+  return new Elysia({ name: "embed-routes" })
+    .get(
+      "/embed/:hash",
+      async ({ params }) => {
+        const { hash } = params;
+        
+        // Generate the HTML bootstrap document that:
+        // 1. Registers the Service Worker
+        // 2. Waits for activation and claims control
+        // 3. Fetches the actual embed HTML from /api/media/proxy-embed
+        // 4. Injects it via document.write()
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Embed</title>
+</head>
+<body>
+  <script>
+    (async () => {
+      // Register the Service Worker
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.register('/media-proxy-sw.js');
+          
+          // Wait for the service worker to be active and claim control
+          await navigator.serviceWorker.ready;
+          
+          // Force the service worker to claim this page immediately
+          if (registration.active) {
+            await registration.active.postMessage({ type: 'CLAIM_CLIENTS' });
+          }
+          
+          // Wait a bit to ensure clients.claim() has completed
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Now fetch the actual embed HTML from proxy-embed
+          // The hash will be used to construct the actual videobello URL
+          const embedUrl = '/api/media/proxy-embed?url=' + encodeURIComponent('https://videobello.net/embed/${hash}');
+          const response = await fetch(embedUrl);
+          
+          if (!response.ok) {
+            document.body.innerHTML = '<p>Failed to load embed content</p>';
+            return;
+          }
+          
+          const embedHtml = await response.text();
+          
+          // Inject the embed HTML into the document
+          document.open();
+          document.write(embedHtml);
+          document.close();
+        } catch (error) {
+          console.error('Service Worker registration failed:', error);
+          document.body.innerHTML = '<p>Service Worker failed to load</p>';
+        }
+      } else {
+        document.body.innerHTML = '<p>Service Workers are not supported in this browser</p>';
+      }
+    })();
+  </script>
+</body>
+</html>`;
+
+        return new Response(html, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+          },
+        });
+      },
+      {
+        params: t.Object({
+          hash: t.String(),
+        }),
+      }
+    );
+};
+
 export const mediaRoutes = (options: MediaRoutesOptions) => {
   const mediaService = createSaveEpisodeService(options.db, {
     fetchHtml: options.fetchHtml,
