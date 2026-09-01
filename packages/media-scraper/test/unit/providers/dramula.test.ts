@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   DramulaProvider,
   MediaScraper,
+  EpisodeParseError,
   type FetchFn,
 } from "../../../src";
 
@@ -161,7 +162,7 @@ describe("DramulaProvider", () => {
   });
 
   describe("SvelteKit JSON SSR parsing", () => {
-    it("extracts episodes from script[data-sveltekit-fetched] when episode-tile DOM nodes are missing", () => {
+    it("extracts episodes from script[data-sveltekit-fetched] when episode-tile DOM nodes are missing", async () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
@@ -185,7 +186,7 @@ describe("DramulaProvider", () => {
         </html>
       `;
 
-      const episode = provider.parseEpisodeHtml(sveltekitHtml);
+      const episode = await provider.parseEpisodeHtml(sveltekitHtml);
 
       expect(episode.title).toBe("Teach You a Lesson");
       expect(episode.videoSources).toEqual([
@@ -207,7 +208,7 @@ describe("DramulaProvider", () => {
       ]);
     });
 
-    it("ensures relative URLs in script payload or relative paths are formatted as absolute URLs", () => {
+    it("ensures relative URLs in script payload or relative paths are formatted as absolute URLs", async () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
@@ -231,7 +232,7 @@ describe("DramulaProvider", () => {
         </html>
       `;
 
-      const episode = provider.parseEpisodeHtml(sveltekitHtml);
+      const episode = await provider.parseEpisodeHtml(sveltekitHtml);
 
       expect(episode.episodes).toEqual([
         {
@@ -245,7 +246,7 @@ describe("DramulaProvider", () => {
       ]);
     });
 
-    it("extracts show slug from /shows/ data-url and injects it into episode URLs when episode slug is relative without show slug", () => {
+    it("extracts show slug from /shows/ data-url and injects it into episode URLs when episode slug is relative without show slug", async () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
@@ -269,7 +270,7 @@ describe("DramulaProvider", () => {
         </html>
       `;
 
-      const episode = provider.parseEpisodeHtml(sveltekitHtml);
+      const episode = await provider.parseEpisodeHtml(sveltekitHtml);
 
       expect(episode.episodes).toEqual([
         {
@@ -279,7 +280,7 @@ describe("DramulaProvider", () => {
       ]);
     });
 
-    it("extracts show slug from ep.show?.title_slug or ep.show_slug on episode object", () => {
+    it("extracts show slug from ep.show?.title_slug or ep.show_slug on episode object", async () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
@@ -301,7 +302,7 @@ describe("DramulaProvider", () => {
         </html>
       `;
 
-      const episode = provider.parseEpisodeHtml(sveltekitHtml);
+      const episode = await provider.parseEpisodeHtml(sveltekitHtml);
 
       expect(episode.episodes).toEqual([
         {
@@ -315,13 +316,14 @@ describe("DramulaProvider", () => {
       ]);
     });
 
-    it("derives videoSources from SvelteKit SSR JSON payload when iframe DOM node is missing using explicit url", () => {
+    it("derives videoSources and resolves 8-character hash from SvelteKit JS bundle when iframe DOM node is missing", async () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
           <head><title>Teach You a Lesson - Dramula</title></head>
           <body>
             <h1>Teach You a Lesson</h1>
+            <script src="/_app/immutable/nodes/38.D4Z5fheZ.js"></script>
             <script
               type="application/json"
               data-sveltekit-fetched=""
@@ -338,21 +340,37 @@ describe("DramulaProvider", () => {
         </html>
       `;
 
-      const episode = provider.parseEpisodeHtml(
+      const mockFetchFn: FetchFn = {
+        async get(url: string) {
+          if (url === "https://dramula.com/_app/immutable/nodes/38.D4Z5fheZ.js") {
+            return `
+              const domain = "https://videobello.net/embed/";
+              const suffix = ".3795c347?source=0";
+            `;
+          }
+          throw new Error(`Unexpected fetch URL: ${url}`);
+        },
+        async post() {
+          throw new Error("Not implemented");
+        },
+      };
+
+      const episode = await provider.parseEpisodeHtml(
         sveltekitHtml,
-        "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10"
+        "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10",
+        mockFetchFn
       );
 
       expect(episode.videoSources).toEqual([
         {
           type: "embed",
-          url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
+          url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.3795c347?source=0",
           label: "BelloCloud",
         },
       ]);
     });
 
-    it("derives videoSources from SvelteKit SSR JSON payload when iframe DOM node is missing using canonical link", () => {
+    it("throws explicit error when fetchFn is missing and videobello hash resolution is needed", async () => {
       const sveltekitHtml = `
         <!DOCTYPE html>
         <html>
@@ -362,6 +380,7 @@ describe("DramulaProvider", () => {
           </head>
           <body>
             <h1>Teach You a Lesson</h1>
+            <script src="/_app/immutable/nodes/38.js"></script>
             <script
               type="application/json"
               data-sveltekit-fetched=""
@@ -381,15 +400,53 @@ describe("DramulaProvider", () => {
         </html>
       `;
 
-      const episode = provider.parseEpisodeHtml(sveltekitHtml);
+      await expect(provider.parseEpisodeHtml(sveltekitHtml)).rejects.toThrow(
+        EpisodeParseError
+      );
+    });
 
-      expect(episode.videoSources).toEqual([
-        {
-          type: "embed",
-          url: "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
-          label: "BelloCloud",
+    it("throws explicit error when Svelte JS bundle fails to fetch or hash cannot be extracted", async () => {
+      const sveltekitHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Teach You a Lesson - Dramula</title>
+            <link rel="canonical" href="https://dramula.com/watch/teach-you-a-lesson-2026/s1e10" />
+          </head>
+          <body>
+            <h1>Teach You a Lesson</h1>
+            <script src="/_app/immutable/nodes/38.js"></script>
+            <script
+              type="application/json"
+              data-sveltekit-fetched=""
+            >
+              {
+                "status": 200,
+                "body": {
+                  "data": {
+                    "episodes": [
+                      { "id": 10387, "slug": "s1e10" }
+                    ]
+                  }
+                }
+              }
+            </script>
+          </body>
+        </html>
+      `;
+
+      const failingFetchFn: FetchFn = {
+        async get(url: string) {
+          return "console.log('no hash here');";
         },
-      ]);
+        async post() {
+          throw new Error("Not implemented");
+        },
+      };
+
+      await expect(
+        provider.parseEpisodeHtml(sveltekitHtml, undefined, failingFetchFn)
+      ).rejects.toThrow(EpisodeParseError);
     });
   });
 });

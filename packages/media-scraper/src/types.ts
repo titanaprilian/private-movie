@@ -3,6 +3,8 @@ export interface FetchFn {
   post(url: string, body: string): Promise<string>;
 }
 
+export type BrowserFn = (url: string) => Promise<string>;
+
 export interface ScrapedEpisodeRef {
   title: string;
   url: string;
@@ -62,6 +64,7 @@ export interface MediaProvider {
   resolveVideoSources(
     url: string,
     fetchFn: FetchFn,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
+    browserFn?: BrowserFn
   ): Promise<ScrapedVideoSource[]>;
 }
