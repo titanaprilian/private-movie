@@ -186,7 +186,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
       }
     )
-    .get(
+    .all(
       "/media/relay",
       async ({ query, set, request }) => {
         try {
@@ -226,9 +226,11 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             }
           });
 
-          // Fetch from the target URL with spoofed headers
+          // Fetch from the target URL with spoofed headers and corresponding method/body
           const targetResponse = await fetch(targetUrl.toString(), {
+            method: request.method,
             headers: outboundHeaders,
+            body: ['GET', 'HEAD'].includes(request.method.toUpperCase()) ? undefined : await request.clone().arrayBuffer()
           });
 
           // If target returns error, pass it through

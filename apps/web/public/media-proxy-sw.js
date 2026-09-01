@@ -54,25 +54,30 @@ self.addEventListener('fetch', (event) => {
           // Build headers to forward
           const headers = new Headers();
           
-          // Forward Range header if present (critical for video scrubbing)
-          const rangeHeader = event.request.headers.get('Range');
-          if (rangeHeader) {
-            headers.set('Range', rangeHeader);
+          // Forward all headers from the original request except unsafe ones
+          for (const [key, value] of event.request.headers.entries()) {
+            const lowerKey = key.toLowerCase();
+            // Don't forward host, origin, referer, or cookies - let the backend handle these securely
+            if (!['host', 'origin', 'referer', 'cookie'].includes(lowerKey)) {
+              headers.set(key, value);
+            }
           }
           
-          // Forward other potentially important headers
-          const acceptHeader = event.request.headers.get('Accept');
-          if (acceptHeader) {
-            headers.set('Accept', acceptHeader);
-          }
-          
-          // Make the relay request
-          const response = await fetch(relayUrl, {
+          // Build fetch options
+          const fetchOptions = {
             method: event.request.method,
             headers: headers,
-            // Don't include credentials in relay request
             credentials: 'omit',
-          });
+          };
+
+          // If the request has a body (POST, PUT, PATCH), we must forward it
+          if (['POST', 'PUT', 'PATCH'].includes(event.request.method.toUpperCase())) {
+             // Use arrayBuffer to safely copy the data, some browsers struggle to pipe ReadableStreams
+             fetchOptions.body = await event.request.clone().arrayBuffer();
+          }
+
+          // Make the relay request
+          const response = await fetch(relayUrl, fetchOptions);
           
           console.log(
             '[Service Worker] Relay response:',
