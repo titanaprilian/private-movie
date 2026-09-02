@@ -2,7 +2,7 @@
  * Service Worker for Media Relay Sandbox
  * 
  * This Service Worker intercepts requests to videobello.net, skylayer64.online,
- * cloudremux.online, cloudflow, and streamflow domains and routes them through
+ * cloudremux.online, cloudflow, streamflow, and medialayer domains and routes them through
  * our backend relay to apply the required Referer header.
  * 
  * This allows BelloCloud video streams to bypass CDN restrictions and play
@@ -43,7 +43,8 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('skylayer64.online') ||
     url.hostname.includes('cloudremux.online') ||
     url.hostname.includes('cloudflow') ||
-    url.hostname.includes('streamflow');
+    url.hostname.includes('streamflow') ||
+    url.hostname.includes('medialayer');
 
   if (shouldIntercept) {
     console.log('[Service Worker] Intercepting:', url.href);

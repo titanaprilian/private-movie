@@ -6,9 +6,10 @@ describe('media-proxy-sw.js', () => {
   const swPath = path.resolve(__dirname, '../../../public/media-proxy-sw.js');
   const swContent = fs.readFileSync(swPath, 'utf-8');
 
-  it('should include cloudflow and streamflow in domain interception logic', () => {
+  it('should include cloudflow, streamflow, and medialayer in domain interception logic', () => {
     expect(swContent).toContain("url.hostname.includes('cloudflow')");
     expect(swContent).toContain("url.hostname.includes('streamflow')");
+    expect(swContent).toContain("url.hostname.includes('medialayer')");
   });
 
   it('should intercept existing domains videobello.net, skylayer64.online, and cloudremux.online', () => {
