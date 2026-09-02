@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,8 @@ import { AlertCircle, ArrowLeft, ChevronDown, ListVideo, Play, RefreshCw, SkipBa
 import { useWatchState } from './useWatchState';
 import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from './api';
 import { formatEmbedUrl } from '../../videos/internal/embedUrl';
+import { useInputMode } from '@/hooks/useInputMode';
+import { useWatchNav } from './useWatchNav';
 
 export interface SeriesWatchViewProps {
   seriesId?: string;
@@ -114,6 +117,99 @@ export function SeriesWatchView({
     initialSourceIndex,
   });
 
+  const { isSpatialMode } = useInputMode();
+
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const backRef = useRef<HTMLAnchorElement | null>(null);
+  const controlsRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const episodeRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const hasSeries = Boolean(series);
+
+  const availableEpisodesForNav = state.availableEpisodes ?? [];
+  const sourcesForNav = state.activeEpisode?.videoSources ?? [];
+  const controlsCount = 2 + sourcesForNav.length;
+  const episodesCount = availableEpisodesForNav.length || 1;
+
+  const { activeZone, focusIndex } = useWatchNav({
+    controlsCount: hasSeries ? controlsCount : 2,
+    episodesCount: hasSeries ? episodesCount : 1,
+    iframeRef,
+  });
+
+  // Programmatic focus + scrollIntoView when activeZone/focusIndex changes (spatial mode only)
+  useEffect(() => {
+    if (!hasSeries) return;
+    if (!isSpatialMode) return;
+
+    let el: HTMLElement | null = null;
+    if (activeZone === 'back') {
+      el = backRef.current;
+    } else if (activeZone === 'player') {
+      el = iframeRef.current;
+    } else if (activeZone === 'controls') {
+      el = controlsRefs.current[focusIndex] ?? null;
+    } else if (activeZone === 'episodes') {
+      el = episodeRefs.current[focusIndex] ?? null;
+    }
+
+    if (el) {
+      try {
+        el.focus();
+      } catch {
+        // ignore
+      }
+      try {
+        if (typeof el.scrollIntoView === 'function') {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [activeZone, focusIndex, isSpatialMode, hasSeries]);
+
+  // Initial focus on controls bar Prev button when page loads in spatial mode
+  useEffect(() => {
+    if (!hasSeries) return;
+    if (!isSpatialMode) return;
+    if (activeZone !== 'controls' || focusIndex !== 0) return;
+    const t = setTimeout(() => {
+      try {
+        controlsRefs.current[0]?.focus();
+        controlsRefs.current[0]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      } catch {
+        // ignore
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, [hasSeries, isSpatialMode, activeZone, focusIndex]);
+
+  // Handle Enter for non-player zones: click the focused element
+  useEffect(() => {
+    if (!hasSeries) return;
+    if (!isSpatialMode) return;
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      // player zone is handled by useWatchNav (dispatch Space), don't interfere
+      if (activeZone === 'player') return;
+      if (activeZone === 'back') {
+        e.preventDefault();
+        backRef.current?.click();
+      } else if (activeZone === 'controls') {
+        e.preventDefault();
+        controlsRefs.current[focusIndex]?.click();
+      } else if (activeZone === 'episodes') {
+        e.preventDefault();
+        episodeRefs.current[focusIndex]?.click();
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [activeZone, focusIndex, isSpatialMode, hasSeries]);
+
   if (isLoading && !series) {
     return <WatchViewSkeleton />;
   }
@@ -154,6 +250,9 @@ export function SeriesWatchView({
   const sources = activeEpisode?.videoSources ?? [];
   const seasons = series.seasons ?? [];
 
+  const backFocused = isSpatialMode && activeZone === 'back';
+  const playerFocused = isSpatialMode && activeZone === 'player';
+
   return (
     <div className="min-h-screen bg-bg text-fg font-sans">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -165,9 +264,13 @@ export function SeriesWatchView({
                 variant="ghost"
                 size="sm"
                 asChild
-                className="gap-2 text-muted hover:text-fg"
+                className={`gap-2 text-muted hover:text-fg ${backFocused ? 'ring-2 ring-white' : ''}`}
               >
-                <Link to="/" aria-label="Back to home catalogue">
+                <Link
+                  to="/"
+                  aria-label="Back to home catalogue"
+                  ref={backRef as unknown as React.Ref<HTMLAnchorElement>}
+                >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Back</span>
                 </Link>
@@ -175,8 +278,11 @@ export function SeriesWatchView({
             </div>
 
             {activeSource ? (
-              <div className="aspect-video w-full overflow-hidden rounded-md border border-c bg-black">
+              <div
+                className={`aspect-video w-full overflow-hidden rounded-md border border-c bg-black ${playerFocused ? 'ring-2 ring-white' : ''}`}
+              >
                 <iframe
+                  ref={iframeRef}
                   data-testid="watch-player"
                   src={formatEmbedUrl(activeSource.url)}
                   title={activeEpisode?.title ?? 'Video player'}
@@ -192,40 +298,60 @@ export function SeriesWatchView({
             )}
 
             {/* Player controls */}
-            <div className="mt-4 flex flex-wrap items-center gap-2 border border-c bg-card p-3">
+            <div
+              data-testid="watch-controls"
+              className="mt-4 flex flex-wrap items-center gap-2 border border-c bg-card p-3"
+            >
               <Button
+                ref={(el) => {
+                  controlsRefs.current[0] = el;
+                }}
                 variant="secondary"
                 size="sm"
                 onClick={goToPrevEpisode}
                 disabled={!hasPrevEpisode}
                 aria-label="Prev episode"
+                className={isSpatialMode && activeZone === 'controls' && focusIndex === 0 ? 'ring-2 ring-white' : ''}
               >
                 <SkipBack className="h-4 w-4" />
                 Prev
               </Button>
               <Button
+                ref={(el) => {
+                  controlsRefs.current[1] = el;
+                }}
                 variant="secondary"
                 size="sm"
                 onClick={goToNextEpisode}
                 disabled={!hasNextEpisode}
                 aria-label="Next episode"
+                className={isSpatialMode && activeZone === 'controls' && focusIndex === 1 ? 'ring-2 ring-white' : ''}
               >
                 Next
                 <SkipForward className="h-4 w-4" />
               </Button>
 
               <div className="ml-auto flex flex-wrap items-center gap-2">
-                {sources.map((source, index) => (
-                  <Button
-                    key={source.id}
-                    variant={state.activeSourceIndex === index ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => selectSource(index)}
-                    aria-label={source.label}
-                  >
-                    {source.label}
-                  </Button>
-                ))}
+                {sources.map((source, index) => {
+                  const sourceFocusIndex = 2 + index;
+                  const isSourceFocused =
+                    isSpatialMode && activeZone === 'controls' && focusIndex === sourceFocusIndex;
+                  return (
+                    <Button
+                      key={source.id}
+                      ref={(el) => {
+                        controlsRefs.current[sourceFocusIndex] = el;
+                      }}
+                      variant={state.activeSourceIndex === index ? 'default' : 'secondary'}
+                      size="sm"
+                      onClick={() => selectSource(index)}
+                      aria-label={source.label}
+                      className={isSourceFocused ? 'ring-2 ring-white' : ''}
+                    >
+                      {source.label}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 
@@ -280,18 +406,23 @@ export function SeriesWatchView({
               </div>
 
               <div className="flex-1 space-y-2 overflow-y-auto p-3">
-                {availableEpisodes.map((episode) => {
+                {availableEpisodes.map((episode, idx) => {
                   const isActive = episode.id === state.activeEpisodeId;
+                  const isEpisodeFocused =
+                    isSpatialMode && activeZone === 'episodes' && focusIndex === idx;
                   return (
                     <button
                       key={episode.id}
+                      ref={(el) => {
+                        episodeRefs.current[idx] = el;
+                      }}
                       type="button"
                       onClick={() => selectEpisode(episode.id)}
                       className={`w-full rounded-md border p-3 text-left transition-colors ${
                         isActive
                           ? 'border-primary bg-active'
                           : 'border-c bg-transparent hover:bg-hover'
-                      }`}
+                      } ${isEpisodeFocused ? 'ring-2 ring-white' : ''}`}
                     >
                       <span className="mono text-xs text-muted">
                         EP {episode.order ?? ''}

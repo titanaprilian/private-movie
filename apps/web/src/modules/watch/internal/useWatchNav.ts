@@ -32,6 +32,17 @@ function dispatchToIframe(
   }
 }
 
+function focusIframe(iframeRef: React.RefObject<HTMLIFrameElement | null> | undefined) {
+  try {
+    const iframe =
+      iframeRef?.current ??
+      (document.querySelector('[data-testid="watch-player"]') as HTMLIFrameElement | null);
+    (iframe as unknown as HTMLElement | null)?.focus();
+  } catch {
+    // ignore focus errors
+  }
+}
+
 export function useWatchNav(options?: UseWatchNavOptions): UseWatchNavReturn {
   const controlsCount = options?.controlsCount ?? 4;
   const episodesCount = options?.episodesCount ?? 10;
@@ -88,6 +99,7 @@ export function useWatchNav(options?: UseWatchNavOptions): UseWatchNavReturn {
             setActiveZone('player');
             setFocusIndex(0);
             dispatchToIframe(iframeRefRef.current, 'f');
+            focusIframe(iframeRefRef.current);
           }
           break;
         }
@@ -115,6 +127,7 @@ export function useWatchNav(options?: UseWatchNavOptions): UseWatchNavReturn {
             setActiveZone('player');
             setFocusIndex(0);
             dispatchToIframe(iframeRefRef.current, 'f');
+            focusIframe(iframeRefRef.current);
           } else if (event.key === 'ArrowLeft') {
             setFocusIndex(Math.max(0, idx - 1));
           } else if (event.key === 'ArrowRight') {

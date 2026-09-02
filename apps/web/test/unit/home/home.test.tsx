@@ -1,5 +1,6 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
 import { describe, expect, it, beforeEach, vi, afterEach } from 'vitest';
+import { act } from '@testing-library/react';
 import { CinematicHome } from '@/modules/home';
 import { IndexPage } from '@/routes/index';
 import { setAccessToken } from '@/lib/api';
@@ -221,6 +222,92 @@ describe('CinematicHome component', () => {
 
     await user.click(scrollRightBtn);
     await user.click(scrollLeftBtn);
+  });
+
+  it('does not render My List or Mute buttons in hero banner', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/auth/refresh')) {
+        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+      }
+      if (url.includes('/series/home-feed')) {
+        return new Response(JSON.stringify({ data: mockHomeFeedData }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ data: null }), { status: 200 });
+    });
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('button', { name: /my list/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /mute/i })).not.toBeInTheDocument();
+  });
+
+  it('navigates hero play button and carousel cards via D-pad spatial mode focus ring', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/auth/refresh')) {
+        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+      }
+      if (url.includes('/series/home-feed')) {
+        return new Response(JSON.stringify({ data: mockHomeFeedData }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ data: null }), { status: 200 });
+    });
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+    });
+
+    // Activate spatial mode via arrow key press
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    });
+
+    const heroPlayButton = screen.getByRole('button', { name: /play/i });
+    expect(heroPlayButton).toHaveClass('ring-2', 'ring-white');
+
+    // Press ArrowDown again to move focus to first carousel row card (row 1, item 0)
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    });
+
+    expect(heroPlayButton).not.toHaveClass('ring-2');
+
+    const firstCard = screen.getAllByTestId('series-card')[0];
+    expect(firstCard).toHaveClass('ring-2', 'ring-white');
+
+    // Deactivate spatial mode via mousemove
+    act(() => {
+      window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+    });
+
+    expect(firstCard).not.toHaveClass('ring-2');
+
+    // Reactivate spatial mode via arrow key press (restores focus at row 1)
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    });
+
+    expect(firstCard).toHaveClass('ring-2', 'ring-white');
+
+    // Press ArrowUp again to move up to hero row 0
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    });
+
+    expect(heroPlayButton).toHaveClass('ring-2', 'ring-white');
   });
 });
 
