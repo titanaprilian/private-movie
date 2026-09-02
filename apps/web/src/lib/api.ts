@@ -2,8 +2,13 @@ import { edenTreaty } from '@elysiajs/eden';
 import type { App } from '@repo/backend';
 
 // Create a global eden client
-// During development, assume backend runs on localhost:3000
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+// Flow: if VITE_API_URL is set config-wise we check it, but if it points to localhost and we are hitting the app from LAN,
+// we override it to use the current host so that Vite's proxy takes over.
+let envApiUrl = import.meta.env.VITE_API_URL;
+if (typeof window !== 'undefined' && envApiUrl === 'http://localhost:3000' && window.location.hostname !== 'localhost') {
+  envApiUrl = window.location.origin;
+}
+const API_URL = envApiUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;

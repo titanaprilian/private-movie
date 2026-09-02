@@ -35,6 +35,10 @@ export const createApp = (deps: CreateAppDeps) => {
       cors({
         origin: (request) => {
           const origin = request.headers.get("origin");
+          // In development allow any origin matching local dev servers or same-origin
+          if (process.env.NODE_ENV === "development" && origin) {
+            return true;
+          }
           if (!origin || !allowedOrigin) {
             return false;
           }
