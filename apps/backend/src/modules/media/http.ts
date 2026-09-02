@@ -61,8 +61,7 @@ export const embedRoutes = () => {
       // Register the Service Worker
       if ('serviceWorker' in navigator) {
         try {
-          const timestamp = Date.now();
-          const registration = await navigator.serviceWorker.register('/media-proxy-sw.js?v=' + timestamp);
+          const registration = await navigator.serviceWorker.register('/media-proxy-sw.js');
           
           // Force network update of the Service Worker to prevent caching stale logic
           await registration.update();
