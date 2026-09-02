@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -12,6 +12,7 @@ import {
   Sparkles,
   AlertTriangle,
   RefreshCw,
+  Star,
 } from 'lucide-react';
 import {
   homeFeedQueryOptions,
@@ -25,6 +26,7 @@ export interface SeriesItem {
   synopsis: string;
   posterUrl: string;
   bannerUrl: string;
+  type: string;
   matchScore: string;
   year: number;
   rating: string;
@@ -43,7 +45,9 @@ export interface CarouselRowData {
 function mapSeriesToSeriesItem(s: BackendSeriesWithMetadata): SeriesItem {
   const genres = s.genres && s.genres.length > 0 ? s.genres.map((g) => g.name) : [];
   const year = s.createdAt ? new Date(s.createdAt).getFullYear() : 2026;
-  const rating = s.rating || (s.type === 'movie' ? 'PG-13' : 'TV-14');
+  const rawRating = s.rating || (s.type === 'movie' ? '7.5' : '8.0');
+  const rating = !isNaN(Number(rawRating)) ? Number(rawRating).toFixed(1) : rawRating;
+  const type = (s.type || 'tv').toUpperCase();
   const posterUrl =
     s.posterUrl ||
     s.backdropUrl ||
@@ -59,6 +63,7 @@ function mapSeriesToSeriesItem(s: BackendSeriesWithMetadata): SeriesItem {
     synopsis: s.description || 'No description available for this series.',
     posterUrl,
     bannerUrl,
+    type,
     matchScore: '98% Match',
     year,
     rating,
@@ -119,7 +124,7 @@ function HomeFeedRowSkeleton() {
         {Array.from({ length: 5 }).map((_, idx) => (
           <div
             key={idx}
-            className="w-[240px] sm:w-[280px] aspect-[16/9] flex-shrink-0 bg-zinc-900 border border-zinc-800 rounded-md animate-pulse"
+            className="w-[160px] sm:w-[180px] aspect-[2/3] flex-shrink-0 bg-zinc-900 border border-zinc-800 rounded-md animate-pulse"
           />
         ))}
       </div>
@@ -156,12 +161,6 @@ function HomeFeedErrorState({ onRetry }: { onRetry: () => void }) {
 function CarouselRowComponent({ row }: { row: CarouselRowData }) {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [myListIds, setMyListIds] = useState<Record<string, boolean>>({});
-
-  const toggleMyList = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMyListIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const scroll = (direction: 'left' | 'right') => {
     if (!containerRef.current) return;
@@ -197,84 +196,53 @@ function CarouselRowComponent({ row }: { row: CarouselRowData }) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {row.items.map((item, idx) => {
-            const inList = myListIds[item.id] ?? false;
+            const isFirst = idx === 0;
+            const isLast = idx === row.items.length - 1;
+            const transformOrigin = isFirst ? 'origin-left' : isLast ? 'origin-right' : 'origin-center';
 
             return (
               <div
                 key={`${row.id}-${item.id}-${idx}`}
                 data-testid="series-card"
                 onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: item.id } })}
-                className="w-[240px] sm:w-[280px] flex-shrink-0 snap-start group relative rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-300 transform hover:scale-105 sm:hover:scale-110 z-10 hover:z-30 shadow-md hover:shadow-2xl cursor-pointer"
+                className={`w-[160px] sm:w-[180px] flex-shrink-0 snap-start group relative rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-300 transform hover:scale-105 sm:hover:scale-110 ${transformOrigin} z-10 hover:z-30 shadow-md hover:shadow-2xl cursor-pointer overflow-hidden`}
               >
                 {/* Poster / Aspect Ratio Box */}
-                <div className="relative aspect-[16/9] w-full rounded-t-md overflow-hidden bg-zinc-800">
+                <div className="relative aspect-[2/3] w-full bg-zinc-800 overflow-hidden">
                   <img
                     src={item.posterUrl}
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-80" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-60" />
 
-                  {/* SUB/DUB Badge overlay */}
-                  <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                    <span className="bg-red-600/90 backdrop-blur-md text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow mono">
-                      {item.subDub}
+                  {/* Type Badge (Top Left) */}
+                  <div className="absolute top-2 left-2 z-10">
+                    <span className="bg-black/80 backdrop-blur-md text-zinc-200 font-mono font-bold text-[10px] uppercase px-1.5 py-0.5 rounded border border-zinc-700 shadow">
+                      {item.type}
                     </span>
                   </div>
 
-                  {/* Season Badge */}
-                  <div className="absolute top-2 right-2">
-                    <span className="bg-black/70 backdrop-blur-md text-zinc-300 text-[10px] font-mono px-1.5 py-0.5 rounded border border-zinc-700">
-                      {item.seasons} {item.seasons === 1 ? 'Season' : 'Seasons'}
+                  {/* Rating Badge (Bottom Left) */}
+                  <div className="absolute bottom-2.5 left-2.5 z-10 inline-flex items-center gap-1.5 bg-black/80 backdrop-blur-md text-white font-mono font-bold text-xs px-2.5 py-1 rounded border border-zinc-700/80 shadow-md leading-none">
+                    <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
+                    <span className="leading-none">{item.rating}</span>
+                  </div>
+
+                  {/* Season Badge (Top Right) */}
+                  <div className="absolute top-2 right-2 z-10">
+                    <span className="bg-zinc-950/90 text-white font-mono font-bold text-xs px-2 py-0.5 rounded shadow border border-zinc-700">
+                      S{item.seasons}
                     </span>
                   </div>
                 </div>
 
-                {/* Card Content / Hover Details */}
-                <div className="p-3 bg-zinc-900 rounded-b-md">
+                {/* Title beneath the poster */}
+                <div className="p-2 sm:p-3 bg-zinc-900">
                   <h3 className="text-sm font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">
                     {item.title}
                   </h3>
-
-                  {/* Hover Meta Row */}
-                  <div className="flex items-center justify-between text-xs mt-2 text-zinc-400">
-                    <div className="flex items-center gap-2">
-                      <span className="text-emerald-400 font-medium">{item.matchScore}</span>
-                      <span className="border border-zinc-700 px-1 rounded text-[10px] font-mono">{item.rating}</span>
-                    </div>
-                    <span className="font-mono text-[11px] text-zinc-400">{item.episodes} EPS</span>
-                  </div>
-
-                  {/* Action buttons revealed on hover */}
-                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-800/80">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: item.id } })}
-                        className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:bg-zinc-200 transition-colors shadow"
-                        aria-label={`Play ${item.title}`}
-                      >
-                        <Play className="w-4 h-4 fill-black text-black ml-0.5" />
-                      </button>
-                      <button
-                        onClick={(e) => toggleMyList(item.id, e)}
-                        className={`w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center transition-colors ${
-                          inList ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-white'
-                        }`}
-                        aria-label={inList ? `Remove ${item.title} from list` : `Add ${item.title} to list`}
-                      >
-                        {inList ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      {item.genres.slice(0, 2).map((g) => (
-                        <span key={g} className="text-[10px] font-mono text-zinc-400 bg-zinc-800 px-1.5 py-0.5 rounded">
-                          {g}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
             );

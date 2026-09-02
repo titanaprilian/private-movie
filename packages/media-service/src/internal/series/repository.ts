@@ -492,6 +492,13 @@ export function createSeriesRepositoryInternal<
         WHERE ${seasons.seriesId} = ${series.id} AND ${seasons.status} = 'ongoing'
       )`;
 
+      const hasKoreanDramaGenre = sql`EXISTS (
+        SELECT 1
+        FROM ${seriesToGenres}
+        INNER JOIN ${genres} ON ${seriesToGenres.genreId} = ${genres.id}
+        WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${genres.name} = 'Korean Drama'
+      )`;
+
       const [heroSeries] = await db
         .select()
         .from(series)
@@ -499,7 +506,7 @@ export function createSeriesRepositoryInternal<
         .orderBy(desc(series.updatedAt), desc(series.createdAt))
         .limit(1);
 
-      const [ongoingRows, recentlyAddedRows] = await Promise.all([
+      const [ongoingRows, recentlyAddedRows, koreanDramaRows] = await Promise.all([
         db
           .select()
           .from(series)
@@ -512,13 +519,19 @@ export function createSeriesRepositoryInternal<
           .where(hasVideoSources)
           .orderBy(desc(series.createdAt))
           .limit(10),
+        db
+          .select()
+          .from(series)
+          .where(and(hasKoreanDramaGenre, hasVideoSources))
+          .orderBy(desc(series.createdAt))
+          .limit(10),
       ]);
 
       const allSeriesMap = new Map<string, SeriesRow>();
       if (heroSeries) {
         allSeriesMap.set(heroSeries.id, heroSeries);
       }
-      for (const s of [...ongoingRows, ...recentlyAddedRows]) {
+      for (const s of [...ongoingRows, ...recentlyAddedRows, ...koreanDramaRows]) {
         allSeriesMap.set(s.id, s);
       }
 
@@ -601,6 +614,10 @@ export function createSeriesRepositoryInternal<
         {
           title: "Ongoing",
           items: ongoingRows.map((s) => enrichedMap.get(s.id)!),
+        },
+        {
+          title: "Korean Drama",
+          items: koreanDramaRows.map((s) => enrichedMap.get(s.id)!),
         },
         {
           title: "Recently Added",

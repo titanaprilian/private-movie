@@ -22,11 +22,13 @@ describe("GET /series/home-feed", () => {
     };
 
     expect(body.data.hero).toBeNull();
-    expect(body.data.rows).toHaveLength(2);
+    expect(body.data.rows).toHaveLength(3);
     expect(body.data.rows[0].title).toBe("Ongoing");
     expect(body.data.rows[0].items).toEqual([]);
-    expect(body.data.rows[1].title).toBe("Recently Added");
+    expect(body.data.rows[1].title).toBe("Korean Drama");
     expect(body.data.rows[1].items).toEqual([]);
+    expect(body.data.rows[2].title).toBe("Recently Added");
+    expect(body.data.rows[2].items).toEqual([]);
   });
 
   it("excludes series without video sources from hero, ongoing, and recently added rows", async () => {
@@ -76,11 +78,13 @@ describe("GET /series/home-feed", () => {
     };
 
     expect(body.data.hero).toBeNull();
-    expect(body.data.rows).toHaveLength(2);
+    expect(body.data.rows).toHaveLength(3);
     expect(body.data.rows[0].title).toBe("Ongoing");
     expect(body.data.rows[0].items).toHaveLength(0);
-    expect(body.data.rows[1].title).toBe("Recently Added");
+    expect(body.data.rows[1].title).toBe("Korean Drama");
     expect(body.data.rows[1].items).toHaveLength(0);
+    expect(body.data.rows[2].title).toBe("Recently Added");
+    expect(body.data.rows[2].items).toHaveLength(0);
   });
 
   it("returns populated hero, ongoing, and recently added rows when series have video sources", async () => {
@@ -261,16 +265,204 @@ describe("GET /series/home-feed", () => {
     expect(body.data.hero.seasonsCount).toBe(2);
     expect(body.data.hero.episodesCount).toBe(1);
 
-    expect(body.data.rows).toHaveLength(2);
+    expect(body.data.rows).toHaveLength(3);
 
     const ongoingRow = body.data.rows[0];
     expect(ongoingRow.title).toBe("Ongoing");
     expect(ongoingRow.items).toHaveLength(1);
     expect(ongoingRow.items[0].id).toBe(tvSeriesId);
 
-    const recentlyAddedRow = body.data.rows[1];
+    const koreanDramaRow = body.data.rows[1];
+    expect(koreanDramaRow.title).toBe("Korean Drama");
+    expect(koreanDramaRow.items).toHaveLength(0);
+
+    const recentlyAddedRow = body.data.rows[2];
     expect(recentlyAddedRow.title).toBe("Recently Added");
     expect(recentlyAddedRow.items).toHaveLength(2);
     expect(recentlyAddedRow.items.map((i) => i.id)).toEqual([movieSeriesId, tvSeriesId]);
+  });
+
+  it("returns Korean Drama row at index 1 with up to 10 latest Korean Drama series", async () => {
+    const now = new Date();
+    const olderDate = new Date(now.getTime() - 100000);
+
+    const koreanDramaGenreId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: koreanDramaGenreId,
+      name: "Korean Drama",
+      slug: "korean-drama",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const otherGenreId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: otherGenreId,
+      name: "Action",
+      slug: "action",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Korean Drama series with video sources - should appear in Korean Drama row
+    const kdSeriesId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: kdSeriesId,
+      title: "Squid Game",
+      description: "Korean survival drama",
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(seriesToGenres).values({
+      seriesId: kdSeriesId,
+      genreId: koreanDramaGenreId,
+    });
+
+    const kdSeasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: kdSeasonId,
+      seriesId: kdSeriesId,
+      title: "Season 1",
+      seasonNumber: 1,
+      status: "ongoing",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const kdEpId = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: kdEpId,
+      title: "Episode 1",
+      order: 1,
+      seasonId: kdSeasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: kdEpId,
+      type: "hls",
+      url: "https://example.com/squidgame.m3u8",
+      label: "1080p",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Generic series with video sources but NOT Korean Drama - should NOT appear in Korean Drama row
+    const genericSeriesId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: genericSeriesId,
+      title: "Generic Show",
+      description: "Not Korean Drama",
+      type: "tv",
+      createdAt: olderDate,
+      updatedAt: olderDate,
+    });
+
+    await db.insert(seriesToGenres).values({
+      seriesId: genericSeriesId,
+      genreId: otherGenreId,
+    });
+
+    const genericSeasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: genericSeasonId,
+      seriesId: genericSeriesId,
+      title: "Season 1",
+      seasonNumber: 1,
+      status: "completed",
+      createdAt: olderDate,
+      updatedAt: olderDate,
+    });
+
+    const genericEpId = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: genericEpId,
+      title: "Episode 1",
+      order: 1,
+      seasonId: genericSeasonId,
+      createdAt: olderDate,
+      updatedAt: olderDate,
+    });
+
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: genericEpId,
+      type: "hls",
+      url: "https://example.com/generic.m3u8",
+      label: "720p",
+      createdAt: olderDate,
+      updatedAt: olderDate,
+    });
+
+    // Korean Drama series WITHOUT video sources - should be excluded from Korean Drama row
+    const kdNoSourceId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: kdNoSourceId,
+      title: "No Source Drama",
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(seriesToGenres).values({
+      seriesId: kdNoSourceId,
+      genreId: koreanDramaGenreId,
+    });
+
+    const noSourceSeasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: noSourceSeasonId,
+      seriesId: kdNoSourceId,
+      title: "Season 1",
+      seasonNumber: 1,
+      status: "completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(episodes).values({
+      id: crypto.randomUUID(),
+      title: "Episode 1",
+      order: 1,
+      seasonId: noSourceSeasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    // No videoSources for this series
+
+    const response = await request(app, { path: "/series/home-feed" });
+
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        rows: Array<{
+          title: string;
+          items: Array<{ id: string; title: string }>;
+        }>;
+      };
+    };
+
+    expect(body.data.rows).toHaveLength(3);
+    expect(body.data.rows[0].title).toBe("Ongoing");
+    expect(body.data.rows[1].title).toBe("Korean Drama");
+    expect(body.data.rows[2].title).toBe("Recently Added");
+
+    const kdRow = body.data.rows[1];
+    expect(kdRow.items).toHaveLength(1);
+    expect(kdRow.items[0].id).toBe(kdSeriesId);
+    expect(kdRow.items[0].title).toBe("Squid Game");
+
+    // Generic series should not be in Korean Drama row
+    expect(kdRow.items.map((i) => i.id)).not.toContain(genericSeriesId);
+    // No-source drama should not be in Korean Drama row
+    expect(kdRow.items.map((i) => i.id)).not.toContain(kdNoSourceId);
+
+    // Korean Drama series with ongoing season should also appear in Ongoing row (duplicates allowed)
+    const ongoingRow2 = body.data.rows[0];
+    expect(ongoingRow2.items.map((i) => i.id)).toContain(kdSeriesId);
   });
 });

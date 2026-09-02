@@ -138,7 +138,7 @@ describe('CinematicHome component', () => {
     expect(myListButtons.length).toBeGreaterThan(0);
   });
 
-  it('renders carousel categories with series cards and hover details', async () => {
+  it('renders carousel categories with series cards and simplified UI', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
       if (url.includes('/auth/refresh')) {
@@ -162,8 +162,9 @@ describe('CinematicHome component', () => {
     const seriesCards = screen.getAllByTestId('series-card');
     expect(seriesCards.length).toBeGreaterThan(0);
 
-    const subDubTags = screen.getAllByText(/SUB \| DUB/i);
-    expect(subDubTags.length).toBeGreaterThan(0);
+    expect(screen.getByText('S4')).toBeInTheDocument();
+    expect(screen.getByText('TV')).toBeInTheDocument();
+    expect(screen.getByText('Demon Slayer: Hashira Training Arc')).toBeInTheDocument();
   });
 
   it('handles null hero gracefully when DB is empty', async () => {
