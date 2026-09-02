@@ -133,9 +133,6 @@ describe('CinematicHome component', () => {
 
     const playButtons = screen.getAllByRole('button', { name: /play/i });
     expect(playButtons.length).toBeGreaterThan(0);
-
-    const myListButtons = screen.getAllByRole('button', { name: /my list/i });
-    expect(myListButtons.length).toBeGreaterThan(0);
   });
 
   it('renders carousel categories with series cards and simplified UI', async () => {

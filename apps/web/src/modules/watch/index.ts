@@ -21,3 +21,10 @@ export type {
   UseWatchStateReturn,
 } from './internal/useWatchState';
 
+export { useWatchNav } from './internal/useWatchNav';
+export type {
+  WatchZone,
+  UseWatchNavOptions,
+  UseWatchNavReturn,
+} from './internal/useWatchNav';
+

@@ -1,19 +1,17 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
   Play,
-  Plus,
-  Check,
   ChevronLeft,
   ChevronRight,
-  Volume2,
-  VolumeX,
   Sparkles,
   AlertTriangle,
   RefreshCw,
   Star,
 } from 'lucide-react';
+import { useInputMode } from '@/hooks/useInputMode';
+import { useHomeFeedNav } from './useHomeFeedNav';
 import {
   homeFeedQueryOptions,
   type BackendSeriesWithMetadata,
@@ -158,7 +156,19 @@ function HomeFeedErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function CarouselRowComponent({ row }: { row: CarouselRowData }) {
+function CarouselRowComponent({
+  row,
+  rowIndex,
+  focusedRow,
+  focusedItem,
+  isSpatialMode,
+}: {
+  row: CarouselRowData;
+  rowIndex: number;
+  focusedRow: number;
+  focusedItem: number;
+  isSpatialMode: boolean;
+}) {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -199,13 +209,18 @@ function CarouselRowComponent({ row }: { row: CarouselRowData }) {
             const isFirst = idx === 0;
             const isLast = idx === row.items.length - 1;
             const transformOrigin = isFirst ? 'origin-left' : isLast ? 'origin-right' : 'origin-center';
+            const isFocused = isSpatialMode && focusedRow === rowIndex && focusedItem === idx;
 
             return (
               <div
                 key={`${row.id}-${item.id}-${idx}`}
                 data-testid="series-card"
+                data-nav-row={rowIndex}
+                data-nav-item={idx}
                 onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: item.id } })}
-                className={`w-[160px] sm:w-[180px] flex-shrink-0 snap-start group relative rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-300 transform hover:scale-105 sm:hover:scale-110 ${transformOrigin} z-10 hover:z-30 shadow-md hover:shadow-2xl cursor-pointer overflow-hidden`}
+                className={`w-[160px] sm:w-[180px] flex-shrink-0 snap-start group relative rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-300 transform hover:scale-105 sm:hover:scale-110 ${transformOrigin} z-10 hover:z-30 shadow-md hover:shadow-2xl cursor-pointer overflow-hidden ${
+                  isFocused ? 'ring-2 ring-white' : ''
+                }`}
               >
                 {/* Poster / Aspect Ratio Box */}
                 <div className="relative aspect-[2/3] w-full bg-zinc-800 overflow-hidden">
@@ -264,10 +279,23 @@ function CarouselRowComponent({ row }: { row: CarouselRowData }) {
 
 export function CinematicHome() {
   const navigate = useNavigate();
-  const [heroMuted, setHeroMuted] = useState(true);
-  const [heroInList, setHeroInList] = useState(false);
+  const { isSpatialMode } = useInputMode();
 
   const { data, isLoading, isError, refetch } = useQuery(homeFeedQueryOptions());
+
+  const heroAnime = data?.hero ? mapHeroToSeriesItem(data.hero) : null;
+  const carouselRows: CarouselRowData[] =
+    data?.rows.map((r, idx) => ({
+      id: `row-${idx}-${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      title: r.title,
+      items: r.items.map(mapSeriesToSeriesItem),
+    })) ?? [];
+
+  const { focusedRow, focusedItem } = useHomeFeedNav({
+    heroSeriesId: heroAnime?.id,
+    rows: carouselRows,
+    onSelectSeries: (seriesId) => navigate({ to: '/watch/$seriesId', params: { seriesId } }),
+  });
 
   if (isLoading) {
     return (
@@ -285,14 +313,6 @@ export function CinematicHome() {
   if (isError) {
     return <HomeFeedErrorState onRetry={() => refetch()} />;
   }
-
-  const heroAnime = data?.hero ? mapHeroToSeriesItem(data.hero) : null;
-  const carouselRows: CarouselRowData[] =
-    data?.rows.map((r, idx) => ({
-      id: `row-${idx}-${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-      title: r.title,
-      items: r.items.map(mapSeriesToSeriesItem),
-    })) ?? [];
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans selection:bg-red-600 selection:text-white">
@@ -340,29 +360,15 @@ export function CinematicHome() {
               {/* Action Buttons */}
               <div className="flex items-center gap-4 pt-4">
                 <button
+                  data-nav-row={0}
+                  data-nav-item={0}
                   onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: heroAnime.id } })}
-                  className="bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer"
+                  className={`bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer ${
+                    isSpatialMode && focusedRow === 0 && focusedItem === 0 ? 'ring-2 ring-white' : ''
+                  }`}
                 >
                   <Play className="w-5 h-5 fill-black text-black" />
                   <span>Play</span>
-                </button>
-
-                <button
-                  onClick={() => setHeroInList(!heroInList)}
-                  className={`px-6 py-3 rounded-md text-base font-medium transition-colors flex items-center gap-2 border shadow-lg cursor-pointer ${
-                    heroInList ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-zinc-900/80 hover:bg-zinc-800 text-white border-zinc-700'
-                  }`}
-                >
-                  {heroInList ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                  <span>{heroInList ? 'In My List' : 'My List'}</span>
-                </button>
-
-                <button
-                  onClick={() => setHeroMuted(!heroMuted)}
-                  className="w-12 h-12 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white border border-zinc-700 flex items-center justify-center transition-colors ml-auto md:ml-0"
-                  aria-label={heroMuted ? 'Unmute' : 'Mute'}
-                >
-                  {heroMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                 </button>
               </div>
 
@@ -389,8 +395,15 @@ export function CinematicHome() {
 
       {/* Content Carousel Rows */}
       <div className="relative z-30 pb-20 -mt-10 space-y-4">
-        {carouselRows.map((row) => (
-          <CarouselRowComponent key={row.id} row={row} />
+        {carouselRows.map((row, idx) => (
+          <CarouselRowComponent
+            key={row.id}
+            row={row}
+            rowIndex={idx + 1}
+            focusedRow={focusedRow}
+            focusedItem={focusedItem}
+            isSpatialMode={isSpatialMode}
+          />
         ))}
       </div>
     </div>
