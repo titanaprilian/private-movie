@@ -78,6 +78,8 @@ fun AppNavigation(
             val seriesId = backStackEntry.arguments?.getString("seriesId") ?: "unknown"
             DetailScreen(
                 seriesId = seriesId,
+                activeBackendUrl = activeUrl,
+                mediaRepository = mediaRepository,
                 onPlayEpisode = { episodeId ->
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
