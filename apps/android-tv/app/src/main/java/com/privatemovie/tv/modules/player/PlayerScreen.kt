@@ -46,9 +46,10 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
 import com.privatemovie.tv.modules.player.internal.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
+import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
+import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.internal.handleRemoteKey
-import com.privatemovie.tv.modules.player.internal.resolvePlaybackUrl
-import com.privatemovie.tv.modules.player.internal.resolveRendererForTypeName
+import com.privatemovie.tv.modules.player.internal.resolvePlayerHandoff
 import com.privatemovie.tv.modules.player.internal.shouldAutoFullscreenOnEntry
 
 /**
@@ -69,12 +70,27 @@ fun PlayerScreen(
     playbackUrl: String? = null,
     backendBaseUrl: String? = null
 ) {
-    val renderer: PlaybackRenderer = remember(playbackSourceTypeName) {
-        resolveRendererForTypeName(playbackSourceTypeName)
+    // End-to-end handoff resolution: the source picker (or direct play) hands
+    // a normalized playback target (type + url) to the player, which resolves
+    // the renderer and loadable URL or a clear failure for unavailable sources.
+    val handoffTarget = remember(playbackSourceTypeName, playbackUrl, episodeId) {
+        val source = if (!playbackUrl.isNullOrBlank() && !playbackSourceTypeName.isNullOrBlank()) {
+            PlaybackSourceRef(type = playbackSourceTypeName, url = playbackUrl)
+        } else if (!playbackUrl.isNullOrBlank()) {
+            // Type missing (e.g. legacy handoff): keep the URL, fall back to
+            // the WebView shell via renderer resolution.
+            PlaybackSourceRef(type = "", url = playbackUrl)
+        } else {
+            null
+        }
+        resolvePlayerHandoff(
+            handoff = buildPlayerHandoff(episodeId = episodeId, source = source),
+            backendBaseUrl = backendBaseUrl
+        )
     }
-    val resolvedUrl = remember(playbackUrl, backendBaseUrl) {
-        resolvePlaybackUrl(playbackUrl, backendBaseUrl)
-    }
+    val renderer: PlaybackRenderer = handoffTarget.renderer
+    val resolvedUrl = handoffTarget.resolvedUrl
+    val handoffFailure: String? = handoffTarget.failureMessage
 
     var isPlaying by remember { mutableStateOf(true) }
     var statusText by remember { mutableStateOf("Playing Episode $episodeId") }
@@ -206,7 +222,10 @@ fun PlayerScreen(
             },
         contentAlignment = Alignment.Center
     ) {
-        // Real renderer surface for the playback target.
+        // Real renderer surface for the playback target. Unavailable targets
+        // (missing/blank normalized URL) show a clear failure with an exit
+        // path instead of a blank surface or overlapping transport controls.
+        val combinedFailure: String? = handoffFailure ?: errorMessage
         when (renderer) {
             PlaybackRenderer.NATIVE -> if (resolvedUrl != null) {
                 NativePlayerView(
@@ -224,24 +243,31 @@ fun PlayerScreen(
                 )
             } else {
                 PlayerFailure(
-                    message = "No playable source for this episode",
+                    message = handoffFailure ?: "No playable source for this episode",
                     onExitPlayer = onExitPlayer
                 )
             }
-            PlaybackRenderer.WEBVIEW -> EmbedPlayerView(
-                embedUrl = playbackUrl,
-                backendBaseUrl = backendBaseUrl,
-                onWebViewReady = { webView -> embedWebView = webView },
-                onPageFinished = { isLoading = false },
-                onError = { message ->
-                    isLoading = false
-                    errorMessage = message
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+            PlaybackRenderer.WEBVIEW -> if (resolvedUrl != null) {
+                EmbedPlayerView(
+                    embedUrl = playbackUrl,
+                    backendBaseUrl = backendBaseUrl,
+                    onWebViewReady = { webView -> embedWebView = webView },
+                    onPageFinished = { isLoading = false },
+                    onError = { message ->
+                        isLoading = false
+                        errorMessage = message
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                PlayerFailure(
+                    message = handoffFailure ?: "No playable source for this episode",
+                    onExitPlayer = onExitPlayer
+                )
+            }
         }
 
-        if (isLoading && errorMessage == null && resolvedUrl != null) {
+        if (isLoading && combinedFailure == null && resolvedUrl != null) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(16.dp))
@@ -254,14 +280,20 @@ fun PlayerScreen(
         }
 
         errorMessage?.let { message ->
-            PlayerFailure(
-                message = message,
-                onExitPlayer = onExitPlayer
-            )
+            // Runtime renderer errors (native decode, embed load) surface here;
+            // handoff-level unavailability is already rendered above.
+            if (handoffFailure == null) {
+                PlayerFailure(
+                    message = message,
+                    onExitPlayer = onExitPlayer
+                )
+            }
         }
 
-        // Overlay Transport Controls for TV D-Pad navigation
-        if (errorMessage == null) {
+        // Overlay Transport Controls for TV D-Pad navigation.
+        // Hidden whenever playback cannot start so the failure state stays
+        // unambiguous instead of overlapping with transport buttons.
+        if (combinedFailure == null) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()

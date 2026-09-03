@@ -19,6 +19,10 @@ import com.privatemovie.tv.modules.config.BackendUrlStore
 import com.privatemovie.tv.modules.detail.DetailScreen
 import com.privatemovie.tv.modules.home.HomeScreen
 import com.privatemovie.tv.modules.player.PlayerScreen
+import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
+import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
+import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
 
 sealed class TvScreen(val route: String) {
     object Home : TvScreen("home")
@@ -82,15 +86,25 @@ fun AppNavigation(
                 mediaRepository = mediaRepository,
                 onPlayEpisode = { episodeId ->
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        remove<String>("playbackSourceType")
-                        remove<String>("playbackUrl")
+                        remove<String>(PLAYER_SOURCE_TYPE_KEY)
+                        remove<String>(PLAYER_SOURCE_URL_KEY)
                     }
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
                 onPlaySource = { episodeId, source ->
+                    // Source-picker handoff for normalized playback targets:
+                    // the detail flow hands the chosen type + url to the player,
+                    // which resolves the renderer (native vs WebView) and the
+                    // loadable URL or a clear failure for unavailable sources.
+                    val handoff = buildPlayerHandoff(
+                        episodeId = episodeId,
+                        source = PlaybackSourceRef(type = source.type, url = source.url)
+                    )
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        set("playbackSourceType", source.type)
-                        set("playbackUrl", source.url)
+                        handoff.sourceTypeName?.let { set(PLAYER_SOURCE_TYPE_KEY, it) }
+                            ?: remove<String>(PLAYER_SOURCE_TYPE_KEY)
+                        handoff.sourceUrl?.let { set(PLAYER_SOURCE_URL_KEY, it) }
+                            ?: remove<String>(PLAYER_SOURCE_URL_KEY)
                     }
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
@@ -111,8 +125,8 @@ fun AppNavigation(
                 onExitPlayer = {
                     navController.popBackStack()
                 },
-                playbackSourceTypeName = playbackHandle?.get<String>("playbackSourceType"),
-                playbackUrl = playbackHandle?.get<String>("playbackUrl"),
+                playbackSourceTypeName = playbackHandle?.get<String>(PLAYER_SOURCE_TYPE_KEY),
+                playbackUrl = playbackHandle?.get<String>(PLAYER_SOURCE_URL_KEY),
                 backendBaseUrl = activeUrl
             )
         }

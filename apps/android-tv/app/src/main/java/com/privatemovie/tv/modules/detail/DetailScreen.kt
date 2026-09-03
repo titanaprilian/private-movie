@@ -48,6 +48,8 @@ import com.privatemovie.tv.modules.detail.internal.TvSeason
 import com.privatemovie.tv.modules.detail.internal.TvSeriesDetails
 import com.privatemovie.tv.modules.detail.internal.TvVideoSource
 import com.privatemovie.tv.modules.detail.internal.toTvSeriesDetails
+import com.privatemovie.tv.modules.player.internal.EpisodePlaybackDecision
+import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
 
 /**
  * Public seam for the Android TV series watch/detail experience.
@@ -104,11 +106,19 @@ fun DetailScreen(
                 details = state.details,
                 activeBackendUrl = activeBackendUrl,
                 onSelectEpisode = { episode ->
-                    if (episode.videoSources.size > 1) {
-                        pendingSourcePickerEpisode = episode
-                    } else {
-                        val singleSource = episode.videoSources.firstOrNull()
-                        handleStartPlayback(episode, singleSource)
+                    // End-to-end flow decision shared with the player handoff:
+                    // unavailable episodes stay on detail with their inline
+                    // "No video sources" state, single-source episodes play
+                    // directly, and multi-source episodes open the picker.
+                    when (decideEpisodePlayback(episode.videoSources.size)) {
+                        is EpisodePlaybackDecision.Unavailable -> Unit
+                        is EpisodePlaybackDecision.PlaySingle -> {
+                            val singleSource = episode.videoSources.firstOrNull()
+                            handleStartPlayback(episode, singleSource)
+                        }
+                        is EpisodePlaybackDecision.NeedsSourcePicker -> {
+                            pendingSourcePickerEpisode = episode
+                        }
                     }
                 },
                 onBack = onBack
@@ -447,6 +457,7 @@ private fun TvEpisodeCard(
 
     Card(
         onClick = onSelect,
+        enabled = episode.videoSources.isNotEmpty(),
         colors = CardDefaults.cardColors(
             containerColor = if (isFocused) {
                 MaterialTheme.colorScheme.surfaceVariant
