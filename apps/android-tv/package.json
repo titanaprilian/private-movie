@@ -8,6 +8,7 @@
     "test": "./gradlew test",
     "lint": "./gradlew lint",
     "typecheck": "./gradlew compileDebugKotlin",
+    "dto:generate": "rm -rf /tmp/dto-gen && npx @openapitools/openapi-generator-cli generate -i ../../packages/contracts/openapi/mvp-media.openapi.json -g kotlin -o /tmp/dto-gen --global-property models --additional-properties=packageName=com.privatemovie.tv.dto,enumPropertyNaming=UPPERCASE,serializationLibrary=kotlinx_serialization,dateLibrary=string && rm -rf app/src/main/java/com/privatemovie/tv/dto/models && mkdir -p app/src/main/java/com/privatemovie/tv/dto/models && cp -r /tmp/dto-gen/src/main/kotlin/com/privatemovie/tv/dto/models/* app/src/main/java/com/privatemovie/tv/dto/models/",
     "clean": "./gradlew clean"
   }
 }
