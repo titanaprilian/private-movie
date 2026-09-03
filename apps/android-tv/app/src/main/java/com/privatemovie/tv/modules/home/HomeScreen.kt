@@ -1,7 +1,6 @@
 package com.privatemovie.tv.modules.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,8 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -31,12 +28,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Card as TvCard
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.home.internal.HomeUiState
 import com.privatemovie.tv.modules.home.internal.TvHomeFeed
@@ -286,27 +282,13 @@ private fun FeaturedHeroCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isFocused by remember { mutableStateOf(false) }
     val series = hero.series
 
-    Card(
+    TvCard(
         onClick = onSelect,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
         modifier = modifier
             .fillMaxWidth()
             .height(220.dp)
-            .onFocusChanged { isFocused = it.isFocused }
-            .then(
-                if (isFocused) {
-                    Modifier
-                        .scale(1.01f)
-                        .border(3.dp, MaterialTheme.colorScheme.primary)
-                } else {
-                    Modifier.border(1.dp, Color(0xFF3A3A3A))
-                }
-            )
     ) {
         Row(
             modifier = Modifier
@@ -358,30 +340,11 @@ fun SeriesCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isFocused by remember { mutableStateOf(false) }
-
-    Card(
+    TvCard(
         onClick = onSelect,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isFocused) {
-                MaterialTheme.colorScheme.surfaceVariant
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
         modifier = modifier
             .width(220.dp)
             .height(150.dp)
-            .onFocusChanged { isFocused = it.isFocused }
-            .then(
-                if (isFocused) {
-                    Modifier
-                        .scale(1.05f)
-                        .border(3.dp, MaterialTheme.colorScheme.primary)
-                } else {
-                    Modifier.border(1.dp, Color(0xFF3A3A3A))
-                }
-            )
     ) {
         Column(
             modifier = Modifier
