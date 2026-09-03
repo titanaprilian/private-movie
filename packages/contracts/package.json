@@ -14,7 +14,9 @@
     "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "openapi:generate": "bun scripts/generate-openapi.ts",
+    "openapi:check": "bun scripts/generate-openapi.ts && git diff --exit-code -- openapi/mvp-media.openapi.json"
   },
   "devDependencies": {
     "@repo/config-vitest": "workspace:*",

@@ -1,6 +1,7 @@
 import { InternalServerError } from "../../lib/errors";
 import { Elysia, t } from "elysia";
 import {
+  MVP_MEDIA_OPENAPI,
   UnauthorizedError,
   type AuthenticationService,
 } from "@repo/contracts";
@@ -132,6 +133,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
   const videoSourceRepository = createVideoSourceRepositoryInternal(options.db);
 
   return new Elysia({ name: "media-routes" })
+    .get("/openapi.json", () => MVP_MEDIA_OPENAPI)
     .get(
       "/media/proxy-embed",
       async ({ query, set }) => {
