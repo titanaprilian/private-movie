@@ -3,6 +3,7 @@ package com.privatemovie.tv.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -10,6 +11,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.privatemovie.tv.data.network.MediaApiClient
+import com.privatemovie.tv.data.repository.DefaultMediaRepository
+import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.config.BackendUrlOverrideScreen
 import com.privatemovie.tv.modules.config.BackendUrlStore
 import com.privatemovie.tv.modules.detail.DetailScreen
@@ -31,7 +35,12 @@ sealed class TvScreen(val route: String) {
 fun AppNavigation(
     urlStore: BackendUrlStore,
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    mediaRepository: MediaRepository = remember(urlStore) {
+        DefaultMediaRepository(
+            apiClient = MediaApiClient(baseUrlProvider = { urlStore.getUrl() })
+        )
+    }
 ) {
     val activeUrl by urlStore.activeUrl.collectAsState()
 
@@ -43,6 +52,7 @@ fun AppNavigation(
         composable(TvScreen.Home.route) {
             HomeScreen(
                 activeBackendUrl = activeUrl,
+                mediaRepository = mediaRepository,
                 onSelectSeries = { seriesId ->
                     navController.navigate(TvScreen.Detail.createRoute(seriesId))
                 },
