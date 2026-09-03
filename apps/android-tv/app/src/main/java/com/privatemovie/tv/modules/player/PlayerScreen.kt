@@ -3,6 +3,12 @@ package com.privatemovie.tv.modules.player
 import android.app.Activity
 import android.webkit.WebView
 import android.view.KeyEvent as AndroidKeyEvent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,13 +21,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,6 +50,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.tv.material3.Border
+import androidx.tv.material3.Button as TvButton
+import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
+import com.privatemovie.tv.modules.player.internal.DEFAULT_CONTROLS_TIMEOUT_MS
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
 import com.privatemovie.tv.modules.player.internal.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
@@ -51,6 +62,7 @@ import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.internal.handleRemoteKey
 import com.privatemovie.tv.modules.player.internal.resolvePlayerHandoff
 import com.privatemovie.tv.modules.player.internal.shouldAutoFullscreenOnEntry
+import kotlinx.coroutines.delay
 
 /**
  * Public seam for the dedicated Android TV player experience.
@@ -99,8 +111,32 @@ fun PlayerScreen(
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
     var embedWebView by remember { mutableStateOf<WebView?>(null) }
 
+    // Auto-hiding transport overlay state
+    var controlsVisible by remember { mutableStateOf(true) }
+    var userActivityNonce by remember { mutableLongStateOf(0L) }
+
     val view = LocalView.current
     val playerFocus = remember { FocusRequester() }
+    val playPauseFocus = remember { FocusRequester() }
+
+    // Auto-hide controls overlay after 3 seconds of inactivity
+    LaunchedEffect(controlsVisible, userActivityNonce) {
+        if (controlsVisible) {
+            delay(DEFAULT_CONTROLS_TIMEOUT_MS)
+            controlsVisible = false
+        }
+    }
+
+    // Programmatically focus Play/Pause button when overlay becomes visible
+    LaunchedEffect(controlsVisible) {
+        if (controlsVisible) {
+            try {
+                playPauseFocus.requestFocus()
+            } catch (_: Exception) {
+                // Best-effort in case view isn't yet attached
+            }
+        }
+    }
 
     fun attemptFullscreen() {
         try {
@@ -134,38 +170,52 @@ fun PlayerScreen(
 
     fun applyAction(action: PlayerControlAction) {
         when (action) {
-            is PlayerControlAction.TogglePlayPause -> when (renderer) {
-                PlaybackRenderer.NATIVE -> toggleNativePlayback()
-                PlaybackRenderer.WEBVIEW -> {
-                    embedWebView?.toggleHtml5Video()
-                    isPlaying = !isPlaying
-                    statusText = if (isPlaying) "Playing Episode $episodeId" else "Paused"
+            is PlayerControlAction.TogglePlayPause -> {
+                controlsVisible = true
+                userActivityNonce++
+                when (renderer) {
+                    PlaybackRenderer.NATIVE -> toggleNativePlayback()
+                    PlaybackRenderer.WEBVIEW -> {
+                        embedWebView?.toggleHtml5Video()
+                        isPlaying = !isPlaying
+                        statusText = if (isPlaying) "Playing Episode $episodeId" else "Paused"
+                    }
                 }
             }
             is PlayerControlAction.ExitPlayer -> onExitPlayer()
-            is PlayerControlAction.SeekBackward -> when (renderer) {
-                PlaybackRenderer.NATIVE -> seekNative(-action.seconds)
-                PlaybackRenderer.WEBVIEW -> {
-                    embedWebView?.sendDpadKey(AndroidKeyEvent.KEYCODE_DPAD_LEFT)
-                    statusText = "Seeking -${action.seconds}s"
+            is PlayerControlAction.SeekBackward -> {
+                controlsVisible = true
+                userActivityNonce++
+                when (renderer) {
+                    PlaybackRenderer.NATIVE -> seekNative(-action.seconds)
+                    PlaybackRenderer.WEBVIEW -> {
+                        embedWebView?.sendDpadKey(AndroidKeyEvent.KEYCODE_DPAD_LEFT)
+                        statusText = "Seeking -${action.seconds}s"
+                    }
                 }
             }
-            is PlayerControlAction.SeekForward -> when (renderer) {
-                PlaybackRenderer.NATIVE -> seekNative(action.seconds)
-                PlaybackRenderer.WEBVIEW -> {
-                    embedWebView?.sendDpadKey(AndroidKeyEvent.KEYCODE_DPAD_RIGHT)
-                    statusText = "Seeking +${action.seconds}s"
+            is PlayerControlAction.SeekForward -> {
+                controlsVisible = true
+                userActivityNonce++
+                when (renderer) {
+                    PlaybackRenderer.NATIVE -> seekNative(action.seconds)
+                    PlaybackRenderer.WEBVIEW -> {
+                        embedWebView?.sendDpadKey(AndroidKeyEvent.KEYCODE_DPAD_RIGHT)
+                        statusText = "Seeking +${action.seconds}s"
+                    }
                 }
             }
             is PlayerControlAction.RequestFullscreen -> attemptFullscreen()
             is PlayerControlAction.ShowControls -> {
-                // Handled / expanded in Compose UI overlay ticket
+                controlsVisible = true
+                userActivityNonce++
             }
         }
     }
 
     fun onRemoteKey(key: RemoteControlKey): Boolean {
-        applyAction(handleRemoteKey(key, renderer))
+        val action = handleRemoteKey(key, renderer, controlsVisible = controlsVisible)
+        applyAction(action)
         return true
     }
 
@@ -201,14 +251,21 @@ fun PlayerScreen(
             .focusRequester(playerFocus)
             .focusable()
             // Capture phase: back always exits and media keys always toggle,
-            // even when the WebView surface holds focus.
+            // even when the WebView surface holds focus. When controls are hidden,
+            // any remote key interception reveals controls.
             .onPreviewKeyEvent { event ->
-                when (mapKeyEvent(event)) {
+                val key = mapKeyEvent(event) ?: return@onPreviewKeyEvent false
+                when (key) {
                     RemoteControlKey.BACK,
-                    RemoteControlKey.PLAY_PAUSE -> onRemoteKey(
-                        mapKeyEvent(event) ?: return@onPreviewKeyEvent false
-                    )
-                    else -> false
+                    RemoteControlKey.PLAY_PAUSE -> onRemoteKey(key)
+                    else -> {
+                        if (!controlsVisible) {
+                            onRemoteKey(key)
+                            true
+                        } else {
+                            false
+                        }
+                    }
                 }
             }
             // Bubble phase: shell-owned surface behavior when the shell has focus.
@@ -219,7 +276,7 @@ fun PlayerScreen(
                 if (key == RemoteControlKey.BACK || key == RemoteControlKey.PLAY_PAUSE) {
                     return@onKeyEvent false
                 }
-                if (renderer == PlaybackRenderer.WEBVIEW && key == RemoteControlKey.CENTER_OK) {
+                if (renderer == PlaybackRenderer.WEBVIEW && key == RemoteControlKey.CENTER_OK && controlsVisible) {
                     embedWebView?.requestFocus()
                     return@onKeyEvent true
                 }
@@ -298,6 +355,7 @@ fun PlayerScreen(
         // Overlay Transport Controls for TV D-Pad navigation.
         // Hidden whenever playback cannot start so the failure state stays
         // unambiguous instead of overlapping with transport buttons.
+        // Top and bottom bars auto-hide during playback and reappear on user interaction.
         if (combinedFailure == null) {
             Column(
                 modifier = Modifier
@@ -306,56 +364,122 @@ fun PlayerScreen(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Top Bar
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                AnimatedVisibility(
+                    visible = controlsVisible,
+                    enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
+                    exit = fadeOut() + slideOutVertically(targetOffsetY = { -it })
                 ) {
-                    Column {
-                        Text(
-                            text = "Episode: $episodeId",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White
-                        )
-                        Text(
-                            text = statusText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.LightGray
-                        )
-                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Episode: $episodeId",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.White
+                            )
+                            Text(
+                                text = statusText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.LightGray
+                            )
+                        }
 
-                    Button(onClick = { onRemoteKey(RemoteControlKey.BACK) }) {
-                        Text("Exit Player (Back)")
+                        TvPlayerButton(
+                            onClick = { onRemoteKey(RemoteControlKey.BACK) }
+                        ) {
+                            Text("Exit Player (Back)")
+                        }
                     }
                 }
 
+                // Spacer when top bar is hidden to ensure bottom bar stays at bottom
+                if (!controlsVisible) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
                 // Bottom Transport Control Bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xAA000000))
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                AnimatedVisibility(
+                    visible = controlsVisible,
+                    enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                    exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
                 ) {
-                    Button(onClick = { onRemoteKey(RemoteControlKey.LEFT) }) {
-                        Text("<< Seek -10s")
-                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xAA000000), shape = RoundedCornerShape(12.dp))
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TvPlayerButton(
+                            onClick = { onRemoteKey(RemoteControlKey.LEFT) }
+                        ) {
+                            Text("<< Seek -10s")
+                        }
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
 
-                    Button(onClick = { onRemoteKey(RemoteControlKey.CENTER_OK) }) {
-                        Text(if (isPlaying) "Pause" else "Play")
-                    }
+                        TvPlayerButton(
+                            onClick = { onRemoteKey(RemoteControlKey.CENTER_OK) },
+                            modifier = Modifier.focusRequester(playPauseFocus)
+                        ) {
+                            Text(if (isPlaying) "Pause" else "Play")
+                        }
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
 
-                    Button(onClick = { onRemoteKey(RemoteControlKey.RIGHT) }) {
-                        Text("Seek +10s >>")
+                        TvPlayerButton(
+                            onClick = { onRemoteKey(RemoteControlKey.RIGHT) }
+                        ) {
+                            Text("Seek +10s >>")
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * TV-aware button for player transport controls.
+ * Provides a 1.1x scale factor and a bright, visible white border ring on focus.
+ */
+@Composable
+private fun TvPlayerButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val buttonShape = RoundedCornerShape(8.dp)
+    TvButton(
+        onClick = onClick,
+        modifier = modifier,
+        shape = TvButtonDefaults.shape(
+            shape = buttonShape,
+            focusedShape = buttonShape
+        ),
+        scale = TvButtonDefaults.scale(
+            scale = 1.0f,
+            focusedScale = 1.1f
+        ),
+        border = TvButtonDefaults.border(
+            border = Border.None,
+            focusedBorder = Border(
+                border = BorderStroke(width = 2.dp, color = Color.White),
+                shape = buttonShape
+            )
+        ),
+        colors = TvButtonDefaults.colors(
+            containerColor = Color(0xFF2C2C2C),
+            focusedContainerColor = MaterialTheme.colorScheme.primary,
+            contentColor = Color.White,
+            focusedContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    ) {
+        content()
     }
 }
 
@@ -384,7 +508,7 @@ private fun PlayerFailure(
                 color = Color.LightGray
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onExitPlayer) {
+            TvPlayerButton(onClick = onExitPlayer) {
                 Text("Exit Player (Back)")
             }
         }

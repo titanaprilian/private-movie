@@ -73,6 +73,47 @@ const val DEFAULT_SEEK_SECONDS = 10
 const val DEFAULT_CONTROLS_TIMEOUT_MS = 3000L
 
 /**
+ * State holder for player controls overlay visibility and auto-hide scheduling.
+ */
+class PlayerControlsState(
+    initialVisible: Boolean = true,
+    val timeoutMs: Long = DEFAULT_CONTROLS_TIMEOUT_MS
+) {
+    var isVisible: Boolean = initialVisible
+        private set
+
+    var activityNonce: Long = 0L
+        private set
+
+    fun show() {
+        isVisible = true
+        activityNonce++
+    }
+
+    fun hide() {
+        isVisible = false
+    }
+
+    fun resetTimeout() {
+        activityNonce++
+    }
+
+    fun onAction(action: PlayerControlAction) {
+        when (action) {
+            is PlayerControlAction.ShowControls -> show()
+            is PlayerControlAction.TogglePlayPause,
+            is PlayerControlAction.SeekBackward,
+            is PlayerControlAction.SeekForward -> {
+                isVisible = true
+                resetTimeout()
+            }
+            is PlayerControlAction.ExitPlayer,
+            is PlayerControlAction.RequestFullscreen -> Unit
+        }
+    }
+}
+
+/**
  * Pure transition logic determining next controls overlay visibility given
  * current visibility state and an action.
  */
