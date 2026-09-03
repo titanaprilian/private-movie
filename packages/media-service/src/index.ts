@@ -18,6 +18,8 @@ import {
 } from "@repo/media-scraper";
 
 export type { BrowserFn, CreateStealthBrowserFnOptions };
+import { normalizePlaybackUrl, normalizeVideoSource, normalizeVideoSources } from "./internal/playback/normalization";
+export { normalizePlaybackUrl, normalizeVideoSource, normalizeVideoSources };
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
 import { createSeasonsRepositoryInternal, SeasonNotFoundError, SeasonNotLinkedToTmdbError } from "./internal/seasons/repository";
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
@@ -553,7 +555,7 @@ export function createMediaService<
           source: input.source,
           title: scraped.title,
           videoType: scraped.videoType ?? null,
-          videoSources,
+          videoSources: normalizeVideoSources(videoSources),
           metadata,
         },
         series,

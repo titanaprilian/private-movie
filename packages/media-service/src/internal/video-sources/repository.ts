@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { videoSources, type VideoSourceRow } from "@repo/db";
+import { normalizeVideoSource, normalizeVideoSources } from "../playback/normalization";
 
 export class VideoSourceNotFoundError extends Error {
   constructor(message = "Video source not found") {
@@ -55,7 +56,7 @@ export function createVideoSourceRepositoryInternal<
           },
         })
         .returning();
-      return row;
+      return row ? normalizeVideoSource(row) : row;
     },
 
     async findById(id: string): Promise<VideoSourceRow | null> {
@@ -63,7 +64,7 @@ export function createVideoSourceRepositoryInternal<
         .select()
         .from(videoSources)
         .where(eq(videoSources.id, id));
-      return row ?? null;
+      return row ? normalizeVideoSource(row) : null;
     },
 
     async findByEpisodeId(episodeId: string): Promise<VideoSourceRow[]> {
@@ -72,7 +73,7 @@ export function createVideoSourceRepositoryInternal<
         .from(videoSources)
         .where(eq(videoSources.episodeId, episodeId))
         .orderBy(asc(videoSources.createdAt));
-      return rows;
+      return normalizeVideoSources(rows);
     },
 
     async update(
@@ -99,7 +100,7 @@ export function createVideoSourceRepositoryInternal<
         throw new VideoSourceNotFoundError(`Video source with id ${id} not found`);
       }
 
-      return row;
+      return normalizeVideoSource(row);
     },
 
     async delete(id: string): Promise<VideoSourceRow> {

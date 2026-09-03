@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, genres, seasons, series, seriesToGenres, videoSources, type EpisodeRow, type SeasonRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
+import { normalizeVideoSource } from "../playback/normalization";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
 
 export class SeriesNotFoundError extends Error {
@@ -233,7 +234,7 @@ export function createSeriesRepositoryInternal<
 
         for (const s of sources) {
           const list = sourcesMap.get(s.episodeId) ?? [];
-          list.push(s);
+          list.push(normalizeVideoSource(s));
           sourcesMap.set(s.episodeId, list);
         }
       }

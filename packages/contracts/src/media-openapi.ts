@@ -244,9 +244,14 @@ export const MVP_MEDIA_OPENAPI = {
           type: {
             type: "string",
             description:
-              "Client-consumable playback target kind (e.g. embed, direct).",
+              "Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player).",
+            enum: ["embed", "direct"],
           },
-          url: { type: "string" },
+          url: {
+            type: "string",
+            description:
+              "Normalized client-consumable playback target URL (e.g. /embed/{hash} for videobello embeds or direct video stream URL).",
+          },
           label: { type: "string" },
           quality: { type: ["string", "null"] },
           createdAt: { type: "string", format: "date-time" },

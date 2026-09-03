@@ -324,10 +324,15 @@
           },
           "type": {
             "type": "string",
-            "description": "Client-consumable playback target kind (e.g. embed, direct)."
+            "description": "Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player).",
+            "enum": [
+              "embed",
+              "direct"
+            ]
           },
           "url": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized client-consumable playback target URL (e.g. /embed/{hash} for videobello embeds or direct video stream URL)."
           },
           "label": {
             "type": "string"
