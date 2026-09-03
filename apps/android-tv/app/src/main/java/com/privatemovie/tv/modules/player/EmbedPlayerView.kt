@@ -22,14 +22,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.viewinterop.AndroidView
+import com.privatemovie.tv.modules.player.internal.AUTOPLAY_UNLOCK_SCRIPT
 import com.privatemovie.tv.modules.player.internal.resolvePlaybackUrl
+import com.privatemovie.tv.modules.player.internal.resolveTvUserAgent
 
 /**
  * WebView playback surface for embed targets.
  *
  * TV-safe shell: JavaScript + DOM storage on, media autoplay allowed without a
  * user gesture, and provider fullscreen requests ([WebChromeClient.onShowCustomView])
- * are hosted in a fullscreen overlay. The created [WebView] is handed out via
+ * are hosted in a fullscreen overlay. The WebView is disguised as standard
+ * Chrome mobile (no `wv` flag) and a synthetic user gesture is injected on
+ * page finish to unlock nested-iframe autoplay. The created [WebView] is handed out via
  * [onWebViewReady] so the shell can forward seek-oriented D-pad keys and issue
  * best-effort play/pause toggles without depending on provider DOM structure.
  */
@@ -124,11 +128,24 @@ private fun createTvWebView(
         settings.mediaPlaybackRequiresUserGesture = false
         settings.loadWithOverviewMode = true
         settings.useWideViewPort = true
+        // Disguise as standard Chrome mobile: restrictive providers refuse
+        // to load when they detect the Android WebView `wv` flag in the
+        // User-Agent. Applies globally, including inner iframes.
+        settings.userAgentString = resolveTvUserAgent(settings.userAgentString)
         isFocusable = true
         isFocusableInTouchMode = false
 
         webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView, url: String) {
+                // Simulate a user gesture on the top-level document so
+                // Android WebView cascades autoplay permission into nested
+                // iframes (e.g. vidhide players that otherwise stay black).
+                // Best-effort: provider DOM differences are out of contract.
+                try {
+                    view.evaluateJavascript(AUTOPLAY_UNLOCK_SCRIPT, null)
+                } catch (_: Exception) {
+                    // Best-effort only.
+                }
                 onPageFinished()
             }
 

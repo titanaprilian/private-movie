@@ -158,6 +158,9 @@ fun PlayerScreen(
                 }
             }
             is PlayerControlAction.RequestFullscreen -> attemptFullscreen()
+            is PlayerControlAction.ShowControls -> {
+                // Handled / expanded in Compose UI overlay ticket
+            }
         }
     }
 
@@ -176,6 +179,8 @@ fun PlayerScreen(
             AndroidKeyEvent.KEYCODE_ESCAPE -> RemoteControlKey.BACK
             AndroidKeyEvent.KEYCODE_DPAD_LEFT -> RemoteControlKey.LEFT
             AndroidKeyEvent.KEYCODE_DPAD_RIGHT -> RemoteControlKey.RIGHT
+            AndroidKeyEvent.KEYCODE_DPAD_UP -> RemoteControlKey.UP
+            AndroidKeyEvent.KEYCODE_DPAD_DOWN -> RemoteControlKey.DOWN
             AndroidKeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
             AndroidKeyEvent.KEYCODE_MEDIA_PLAY,
             AndroidKeyEvent.KEYCODE_MEDIA_PAUSE -> RemoteControlKey.PLAY_PAUSE

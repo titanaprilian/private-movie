@@ -1,18 +1,21 @@
 package com.privatemovie.tv.modules.player
 
 import com.privatemovie.tv.dto.models.VideoSource
+import com.privatemovie.tv.modules.player.internal.DEFAULT_CONTROLS_TIMEOUT_MS
 import com.privatemovie.tv.modules.player.internal.DEFAULT_SEEK_SECONDS
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
 import com.privatemovie.tv.modules.player.internal.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
 import com.privatemovie.tv.modules.player.internal.handleRemoteKey
 import com.privatemovie.tv.modules.player.internal.initialActionsOnEntry
+import com.privatemovie.tv.modules.player.internal.nextControlsVisibility
 import com.privatemovie.tv.modules.player.internal.resolveRenderer
 import com.privatemovie.tv.modules.player.internal.resolveRendererForTypeName
 import com.privatemovie.tv.modules.player.internal.shouldAutoFullscreenOnEntry
 import com.privatemovie.tv.modules.player.internal.supportsSeek
 import com.privatemovie.tv.modules.player.internal.resolvePlaybackUrl
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -108,6 +111,73 @@ class PlayerShellTest {
             PlayerControlAction.TogglePlayPause,
             handleRemoteKey(RemoteControlKey.PLAY_PAUSE, PlaybackRenderer.WEBVIEW)
         )
+    }
+
+    @Test
+    fun `interactions while controls are hidden signal the UI to show controls without triggering underlying action`() {
+        val keysRevealingControls = listOf(
+            RemoteControlKey.CENTER_OK,
+            RemoteControlKey.LEFT,
+            RemoteControlKey.RIGHT,
+            RemoteControlKey.PLAY_PAUSE,
+            RemoteControlKey.UP,
+            RemoteControlKey.DOWN
+        )
+
+        for (renderer in PlaybackRenderer.entries) {
+            for (key in keysRevealingControls) {
+                assertEquals(
+                    "Key $key should reveal controls on renderer $renderer when controls are hidden",
+                    PlayerControlAction.ShowControls,
+                    handleRemoteKey(key, renderer, controlsVisible = false)
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `back key exits playback even when controls are hidden`() {
+        for (renderer in PlaybackRenderer.entries) {
+            assertEquals(
+                PlayerControlAction.ExitPlayer,
+                handleRemoteKey(RemoteControlKey.BACK, renderer, controlsVisible = false)
+            )
+        }
+    }
+
+    @Test
+    fun `up and down keys when controls are visible signal ShowControls to refresh inactivity timeout`() {
+        for (renderer in PlaybackRenderer.entries) {
+            assertEquals(
+                PlayerControlAction.ShowControls,
+                handleRemoteKey(RemoteControlKey.UP, renderer, controlsVisible = true)
+            )
+            assertEquals(
+                PlayerControlAction.ShowControls,
+                handleRemoteKey(RemoteControlKey.DOWN, renderer, controlsVisible = true)
+            )
+        }
+    }
+
+    @Test
+    fun `default controls timeout constant is 3000ms`() {
+        assertEquals(3000L, DEFAULT_CONTROLS_TIMEOUT_MS)
+    }
+
+    @Test
+    fun `next controls visibility updates state correctly`() {
+        // Any ShowControls action transitions hidden overlay to visible
+        assertTrue(nextControlsVisibility(currentVisible = false, action = PlayerControlAction.ShowControls))
+        assertTrue(nextControlsVisibility(currentVisible = true, action = PlayerControlAction.ShowControls))
+
+        // Actions like TogglePlayPause keep controls visible and reset timeout in UI
+        assertTrue(nextControlsVisibility(currentVisible = true, action = PlayerControlAction.TogglePlayPause))
+        assertTrue(nextControlsVisibility(currentVisible = true, action = PlayerControlAction.SeekForward()))
+        assertTrue(nextControlsVisibility(currentVisible = true, action = PlayerControlAction.SeekBackward()))
+
+        // Exit or RequestFullscreen don't force controls visible if hidden
+        assertFalse(nextControlsVisibility(currentVisible = false, action = PlayerControlAction.RequestFullscreen))
+        assertFalse(nextControlsVisibility(currentVisible = false, action = PlayerControlAction.ExitPlayer))
     }
 
     @Test

@@ -36,12 +36,18 @@ enum class RemoteControlKey {
 
     /** Dedicated play/pause media key when available. */
     PLAY_PAUSE,
+
+    /** D-pad up: vertical navigation or revealing overlay when hidden. */
+    UP,
+
+    /** D-pad down: vertical navigation or revealing overlay when hidden. */
+    DOWN,
 }
 
 /**
  * Declarative control actions the player shell can take in response to a
  * remote-control intent. The Compose layer applies these (toggle playback,
- * seek, exit, fullscreen attempt) against the active [PlaybackRenderer].
+ * seek, exit, fullscreen attempt, show controls overlay) against the active [PlaybackRenderer].
  */
 sealed interface PlayerControlAction {
     /** Primary activation and media-key behavior: toggle play/pause. */
@@ -58,9 +64,30 @@ sealed interface PlayerControlAction {
 
     /** Fullscreen attempt for the player surface / provider-compatible embeds. */
     data object RequestFullscreen : PlayerControlAction
+
+    /** Signals the UI to show the controls overlay and reset inactivity timeout. */
+    data object ShowControls : PlayerControlAction
 }
 
 const val DEFAULT_SEEK_SECONDS = 10
+const val DEFAULT_CONTROLS_TIMEOUT_MS = 3000L
+
+/**
+ * Pure transition logic determining next controls overlay visibility given
+ * current visibility state and an action.
+ */
+fun nextControlsVisibility(
+    currentVisible: Boolean,
+    action: PlayerControlAction
+): Boolean =
+    when (action) {
+        is PlayerControlAction.ShowControls,
+        is PlayerControlAction.TogglePlayPause,
+        is PlayerControlAction.SeekBackward,
+        is PlayerControlAction.SeekForward -> true
+        is PlayerControlAction.ExitPlayer,
+        is PlayerControlAction.RequestFullscreen -> currentVisible
+    }
 
 /**
  * Chooses the renderer for a normalized [VideoSource] playback target.
@@ -128,16 +155,37 @@ fun resolvePlaybackUrl(rawUrl: String?, backendBaseUrl: String?): String? {
 
 /**
  * Maps an MVP remote-control [key] to its declarative [PlayerControlAction]
- * for the active [renderer].
+ * for the active [renderer] and [controlsVisible] state.
+ *
+ * When controls are hidden, any user interaction (D-pad or media keys)
+ * signals [PlayerControlAction.ShowControls] so the overlay can be revealed
+ * and focused without accidentally triggering underlying actions immediately,
+ * except for [RemoteControlKey.BACK] which predictably exits playback immediately.
  */
 fun handleRemoteKey(
     key: RemoteControlKey,
-    renderer: PlaybackRenderer
-): PlayerControlAction =
-    when (key) {
+    renderer: PlaybackRenderer,
+    controlsVisible: Boolean = true
+): PlayerControlAction {
+    if (!controlsVisible) {
+        return when (key) {
+            RemoteControlKey.BACK -> PlayerControlAction.ExitPlayer
+            RemoteControlKey.CENTER_OK,
+            RemoteControlKey.LEFT,
+            RemoteControlKey.RIGHT,
+            RemoteControlKey.PLAY_PAUSE,
+            RemoteControlKey.UP,
+            RemoteControlKey.DOWN -> PlayerControlAction.ShowControls
+        }
+    }
+
+    return when (key) {
         RemoteControlKey.CENTER_OK -> PlayerControlAction.TogglePlayPause
         RemoteControlKey.BACK -> PlayerControlAction.ExitPlayer
         RemoteControlKey.LEFT -> PlayerControlAction.SeekBackward()
         RemoteControlKey.RIGHT -> PlayerControlAction.SeekForward()
         RemoteControlKey.PLAY_PAUSE -> PlayerControlAction.TogglePlayPause
+        RemoteControlKey.UP,
+        RemoteControlKey.DOWN -> PlayerControlAction.ShowControls
     }
+}
