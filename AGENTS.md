@@ -64,6 +64,7 @@ The Deep Modules architecture maps onto each framework in the monorepo as follow
 | --- | --- | --- | --- | --- |
 | **Elysia (Backend)** | `src/modules/<feature>/index.ts` | `src/modules/<feature>/internal/` | `src/modules/<feature>/http.ts` (Elysia plugin) | `src/app.ts` (`createApp` factory) |
 | **Next.js (Frontend)** | `src/modules/<feature>/index.ts` exporting components/hooks | `src/modules/<feature>/internal/` (UI components, local state, mappers) | Page / Layout components | Page / Layout components (thin composition roots) |
+| **Android TV (Kotlin)** | `src/main/java/com/privatemovie/tv/modules/<feature>/` | `src/main/java/com/privatemovie/tv/modules/<feature>/internal/` | `src/main/java/com/privatemovie/tv/navigation/AppNavigation.kt` | `MainActivity.kt` |
 
 ## Database & Migrations (Strict Safety Rule)
 

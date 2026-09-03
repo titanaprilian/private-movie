@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Private Movie TV</string>
+    <string name="default_backend_url">http://10.0.2.2:3000</string>
+    <string name="home_title">Private Movie TV</string>
+    <string name="detail_title">Series Detail</string>
+    <string name="player_title">Player</string>
+    <string name="dev_settings_title">Backend URL Developer Override</string>
+</resources>

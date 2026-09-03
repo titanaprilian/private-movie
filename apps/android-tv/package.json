@@ -1,0 +1,13 @@
+{
+  "name": "@repo/android-tv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "./gradlew assembleDebug",
+    "test": "./gradlew test",
+    "lint": "./gradlew lint",
+    "typecheck": "./gradlew compileDebugKotlin",
+    "clean": "./gradlew clean"
+  }
+}
