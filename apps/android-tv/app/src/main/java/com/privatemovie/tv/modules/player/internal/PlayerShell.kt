@@ -1,0 +1,143 @@
+package com.privatemovie.tv.modules.player.internal
+
+import com.privatemovie.tv.dto.models.VideoSource
+
+/**
+ * Internal player-shell logic for the dedicated Android TV player screen.
+ *
+ * Pure Kotlin with no Android framework dependencies so unit tests can verify
+ * control-intent behavior without depending on third-party embed DOM details.
+ * The Compose [PlayerScreen] public seam maps Android key events and transport
+ * buttons into these intents and renders the resolved [PlaybackRenderer].
+ */
+
+/** Client-consumable playback renderer for a normalized playback target. */
+enum class PlaybackRenderer {
+    /** Direct stream targets use the native Android playback stack. */
+    NATIVE,
+
+    /** Embed/web targets load inside the TV-safe WebView player shell. */
+    WEBVIEW,
+}
+
+/** Remote-control keys covered by the MVP contract at the app boundary. */
+enum class RemoteControlKey {
+    /** D-pad center / OK / Enter: primary playback interaction. */
+    CENTER_OK,
+
+    /** Back: exit playback predictably to the watch/detail flow. */
+    BACK,
+
+    /** D-pad left: seek-oriented behavior where supported. */
+    LEFT,
+
+    /** D-pad right: seek-oriented behavior where supported. */
+    RIGHT,
+
+    /** Dedicated play/pause media key when available. */
+    PLAY_PAUSE,
+}
+
+/**
+ * Declarative control actions the player shell can take in response to a
+ * remote-control intent. The Compose layer applies these (toggle playback,
+ * seek, exit, fullscreen attempt) against the active [PlaybackRenderer].
+ */
+sealed interface PlayerControlAction {
+    /** Primary activation and media-key behavior: toggle play/pause. */
+    data object TogglePlayPause : PlayerControlAction
+
+    /** Back navigation: exit playback to the watch/detail flow. */
+    data object ExitPlayer : PlayerControlAction
+
+    /** Seek-oriented left behavior (native guaranteed, embed best-effort). */
+    data class SeekBackward(val seconds: Int = DEFAULT_SEEK_SECONDS) : PlayerControlAction
+
+    /** Seek-oriented right behavior (native guaranteed, embed best-effort). */
+    data class SeekForward(val seconds: Int = DEFAULT_SEEK_SECONDS) : PlayerControlAction
+
+    /** Fullscreen attempt for the player surface / provider-compatible embeds. */
+    data object RequestFullscreen : PlayerControlAction
+}
+
+const val DEFAULT_SEEK_SECONDS = 10
+
+/**
+ * Chooses the renderer for a normalized [VideoSource] playback target.
+ * Direct targets use native playback; embed targets use the WebView shell.
+ */
+fun resolveRenderer(sourceType: VideoSource.Type): PlaybackRenderer =
+    when (sourceType) {
+        VideoSource.Type.DIRECT -> PlaybackRenderer.NATIVE
+        VideoSource.Type.EMBED -> PlaybackRenderer.WEBVIEW
+    }
+
+/**
+ * Chooses the renderer from a raw contract type name. Unknown or missing
+ * values fall back to [PlaybackRenderer.WEBVIEW] because the catalog is
+ * embed-heavy and the WebView shell is the safe default.
+ */
+fun resolveRendererForTypeName(typeName: String?): PlaybackRenderer =
+    when (typeName?.lowercase()) {
+        "direct" -> PlaybackRenderer.NATIVE
+        else -> PlaybackRenderer.WEBVIEW
+    }
+
+/**
+ * Whether the renderer attempts seek for left/right intents. MVP answers true
+ * for both: native seeking is platform-supported and embed seeking is
+ * attempted best-effort through provider-compatible controls.
+ */
+fun supportsSeek(renderer: PlaybackRenderer): Boolean =
+    when (renderer) {
+        PlaybackRenderer.NATIVE -> true
+        PlaybackRenderer.WEBVIEW -> true
+    }
+
+/** The player shell auto-attempts fullscreen on entry (TV-only dedicated flow). */
+fun shouldAutoFullscreenOnEntry(): Boolean = true
+
+/**
+ * Declarative actions dispatched automatically when entering the player
+ * screen for the given [renderer]. Currently a single fullscreen attempt;
+ * embed renderers additionally map it through provider-compatible controls
+ * at the Compose/WebView boundary.
+ */
+fun initialActionsOnEntry(renderer: PlaybackRenderer): List<PlayerControlAction> =
+    when (renderer) {
+        PlaybackRenderer.NATIVE -> listOf(PlayerControlAction.RequestFullscreen)
+        PlaybackRenderer.WEBVIEW -> listOf(PlayerControlAction.RequestFullscreen)
+    }
+
+/**
+ * Resolves a normalized playback target URL into a loadable absolute URL.
+ *
+ * Backend-normalized embed targets may be origin-relative (e.g. `/embed/{hash}`
+ * for videobello embeds); those are joined onto [backendBaseUrl]. Absolute
+ * URLs pass through untouched. Returns null when there is no target to play.
+ */
+fun resolvePlaybackUrl(rawUrl: String?, backendBaseUrl: String?): String? {
+    if (rawUrl.isNullOrBlank()) return null
+    val trimmed = rawUrl.trim()
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed
+    if (trimmed.startsWith("/") && !backendBaseUrl.isNullOrBlank()) {
+        return backendBaseUrl.trim().trimEnd('/') + trimmed
+    }
+    return trimmed
+}
+
+/**
+ * Maps an MVP remote-control [key] to its declarative [PlayerControlAction]
+ * for the active [renderer].
+ */
+fun handleRemoteKey(
+    key: RemoteControlKey,
+    renderer: PlaybackRenderer
+): PlayerControlAction =
+    when (key) {
+        RemoteControlKey.CENTER_OK -> PlayerControlAction.TogglePlayPause
+        RemoteControlKey.BACK -> PlayerControlAction.ExitPlayer
+        RemoteControlKey.LEFT -> PlayerControlAction.SeekBackward()
+        RemoteControlKey.RIGHT -> PlayerControlAction.SeekForward()
+        RemoteControlKey.PLAY_PAUSE -> PlayerControlAction.TogglePlayPause
+    }

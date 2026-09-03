@@ -81,6 +81,17 @@ fun AppNavigation(
                 activeBackendUrl = activeUrl,
                 mediaRepository = mediaRepository,
                 onPlayEpisode = { episodeId ->
+                    navController.currentBackStackEntry?.savedStateHandle?.apply {
+                        remove<String>("playbackSourceType")
+                        remove<String>("playbackUrl")
+                    }
+                    navController.navigate(TvScreen.Player.createRoute(episodeId))
+                },
+                onPlaySource = { episodeId, source ->
+                    navController.currentBackStackEntry?.savedStateHandle?.apply {
+                        set("playbackSourceType", source.type)
+                        set("playbackUrl", source.url)
+                    }
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
                 onBack = {
@@ -94,11 +105,15 @@ fun AppNavigation(
             arguments = listOf(navArgument("episodeId") { type = NavType.StringType })
         ) { backStackEntry ->
             val episodeId = backStackEntry.arguments?.getString("episodeId") ?: "unknown"
+            val playbackHandle = navController.previousBackStackEntry?.savedStateHandle
             PlayerScreen(
                 episodeId = episodeId,
                 onExitPlayer = {
                     navController.popBackStack()
-                }
+                },
+                playbackSourceTypeName = playbackHandle?.get<String>("playbackSourceType"),
+                playbackUrl = playbackHandle?.get<String>("playbackUrl"),
+                backendBaseUrl = activeUrl
             )
         }
     }
