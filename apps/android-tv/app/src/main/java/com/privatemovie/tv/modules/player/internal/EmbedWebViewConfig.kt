@@ -98,8 +98,20 @@ const val AUTOPLAY_UNLOCK_SCRIPT =
         "try{" +
         "if(typeof jwplayer !== 'undefined'){" +
         "var jwp=jwplayer();" +
-        "if(jwp&&jwp.resize){jwp.resize('100%','100%');}" +
+        "if(jwp){" +
+        "try{" +
+        "var container = jwp.getContainer();" +
+        "if(container){" +
+        "container.style.width='100vw';" +
+        "container.style.height='100vh';" +
+        "container.style.visibility='visible';" +
+        "container.style.display='block';" +
+        "container.style.opacity='1';" +
+        "}" +
+        "}catch(_){}" +
+        "if(jwp.resize){jwp.resize('100%','100%');}" +
         "jwp.play();" +
+        "}" +
         "}" +
         "}catch(_){}" +
         "try{" +
