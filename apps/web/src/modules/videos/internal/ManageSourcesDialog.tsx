@@ -7,8 +7,7 @@ import {
   updateVideoSource,
   deleteVideoSource,
   previewScrape,
-  presignUploadSource,
-  uploadBinaryToS3,
+  uploadEpisodeVideoSource,
   type VideoSource,
   type VideoSourceInput,
 } from './api';
@@ -165,7 +164,7 @@ export function ManageSourcesDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadLabel, setUploadLabel] = useState('');
   const [uploadQuality, setUploadQuality] = useState('');
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'presigning' | 'uploading' | 'registering'>('idle');
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading'>('idle');
   const [uploadProgress, setUploadProgress] = useState({ percent: 0, loaded: 0, total: 0 });
   const [s3Warning, setS3Warning] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -202,21 +201,17 @@ export function ManageSourcesDialog({
     setS3Warning(null);
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    setUploadStatus('presigning');
+    setUploadStatus('uploading');
     setUploadProgress({ percent: 0, loaded: 0, total: selectedFile.size });
 
     try {
-      const { uploadUrl, key } = await presignUploadSource(episode.id, {
-        filename: selectedFile.name,
-        contentType: selectedFile.type || 'video/mp4',
-      });
-
-      if (controller.signal.aborted) return;
-
-      setUploadStatus('uploading');
-      await uploadBinaryToS3({
-        url: uploadUrl,
+      // Upload through the backend proxy endpoint so the browser never
+      // talks to B2 directly (no CORS preflight). The backend uploads to
+      // S3 and registers the `s3` source in one step.
+      await uploadEpisodeVideoSource(episode.id, {
         file: selectedFile,
+        label: uploadLabel.trim(),
+        quality: uploadQuality.trim() || undefined,
         signal: controller.signal,
         onProgress: (progress) => {
           setUploadProgress(progress);
@@ -224,14 +219,6 @@ export function ManageSourcesDialog({
       });
 
       if (controller.signal.aborted) return;
-
-      setUploadStatus('registering');
-      await addVideoSources(episode.id, {
-        type: 's3',
-        url: key,
-        label: uploadLabel.trim(),
-        quality: uploadQuality.trim() || null,
-      });
 
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
       toast.success('video.source_add', {
@@ -630,9 +617,7 @@ export function ManageSourcesDialog({
                 <div className="p-2.5 border border-c rounded bg-sidebar space-y-2 text-xs">
                   <div className="flex items-center justify-between mono">
                     <span className="font-semibold text-foreground">
-                      {uploadStatus === 'presigning' && 'Presigning...'}
-                      {uploadStatus === 'uploading' && 'Uploading to S3...'}
-                      {uploadStatus === 'registering' && 'Registering source...'}
+                      Uploading...
                     </span>
                     <span className="text-muted text-[11px]">
                       {(uploadProgress.loaded / (1024 * 1024)).toFixed(1)} MB / {(uploadProgress.total / (1024 * 1024)).toFixed(1)} MB ({uploadProgress.percent}%)

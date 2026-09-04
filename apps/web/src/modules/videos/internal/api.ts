@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, getAccessToken } from '@/lib/api';
 
 export interface VideoSource {
   id: string;
@@ -963,6 +963,146 @@ export async function presignUploadSource(
   return res.data.data as PresignUploadSourceResult;
 }
 
+export interface UploadEpisodeVideoSourceOptions {
+  file: File;
+  label: string;
+  quality?: string;
+  onProgress?: (progress: {
+    percent: number;
+    loaded: number;
+    total: number;
+  }) => void;
+  signal?: AbortSignal;
+}
+
+function getApiBaseUrl(): string {
+  const envApiUrl = import.meta.env.VITE_API_URL as string | undefined;
+  if (typeof window !== 'undefined') {
+    if (
+      envApiUrl === 'http://localhost:3000' &&
+      window.location.hostname !== 'localhost'
+    ) {
+      return window.location.origin;
+    }
+    if (envApiUrl) return envApiUrl;
+    return window.location.origin;
+  }
+  return envApiUrl || 'http://localhost:3000';
+}
+
+function parseUploadErrorPayload(raw: string): { code?: string; message?: string } {
+  try {
+    const json = JSON.parse(raw) as {
+      error?: { code?: string; message?: string };
+      code?: string;
+      message?: string;
+    };
+    return {
+      code: json?.error?.code || json?.code,
+      message: json?.error?.message || json?.message,
+    };
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Upload a video file through the backend proxy endpoint
+ * `POST /api/media/episodes/:id/sources/upload` (multipart/form-data).
+ * The backend streams the file to S3/B2 and registers the `s3` source,
+ * so the browser never talks to B2 directly (no CORS preflight).
+ */
+export function uploadEpisodeVideoSource(
+  episodeId: string,
+  options: UploadEpisodeVideoSourceOptions
+): Promise<Episode> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const url = `${getApiBaseUrl()}/api/media/episodes/${encodeURIComponent(
+      episodeId
+    )}/sources/upload`;
+    xhr.open('POST', url);
+    xhr.withCredentials = true;
+
+    const token = getAccessToken();
+    if (token) {
+      xhr.setRequestHeader('authorization', `Bearer ${token}`);
+    }
+    // Note: do NOT set Content-Type manually — the browser sets the
+    // multipart/form-data boundary automatically.
+
+    const { signal, onProgress } = options;
+
+    if (signal) {
+      if (signal.aborted) {
+        xhr.abort();
+        reject(new DOMException('Aborted', 'AbortError'));
+        return;
+      }
+      signal.addEventListener(
+        'abort',
+        () => {
+          xhr.abort();
+          reject(new DOMException('Aborted', 'AbortError'));
+        },
+        { once: true }
+      );
+    }
+
+    if (xhr.upload && onProgress) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress({ percent, loaded: event.loaded, total: event.total });
+        }
+      };
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const json = JSON.parse(xhr.responseText) as {
+            data?: unknown;
+          };
+          if (json && 'data' in json && json.data) {
+            resolve(json.data as Episode);
+          } else {
+            reject(new Error('Failed to upload video source'));
+          }
+        } catch {
+          reject(new Error('Failed to upload video source'));
+        }
+        return;
+      }
+
+      const { code, message } = parseUploadErrorPayload(xhr.responseText);
+      const err = new Error(
+        message || `Failed to upload video source (status ${xhr.status})`
+      ) as Error & { code?: string; status?: number };
+      if (code) err.code = code;
+      err.status = xhr.status;
+      reject(err);
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Network error during video upload'));
+    };
+
+    xhr.onabort = () => {
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+
+    const form = new FormData();
+    form.append('file', options.file, options.file.name);
+    form.append('label', options.label);
+    if (options.quality) {
+      form.append('quality', options.quality);
+    }
+
+    xhr.send(form);
+  });
+}
+
 export interface UploadBinaryOptions {
   url: string;
   file: File;
@@ -979,6 +1119,7 @@ export function uploadBinaryToS3({
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', url);
+    // Note: Do not set unnecessary custom headers to avoid S3 SignatureDoesNotMatch or CORS preflight blocks
     if (file.type) {
       xhr.setRequestHeader('Content-Type', file.type);
     }

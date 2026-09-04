@@ -23,6 +23,7 @@ import {
   fetchSeriesTmdbPreview,
   presignUploadSource,
   uploadBinaryToS3,
+  uploadEpisodeVideoSource,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -1235,6 +1236,186 @@ describe('videos api', () => {
     expect(mockXhr.setRequestHeader).toHaveBeenCalledWith('Content-Type', 'video/mp4');
     expect(mockXhr.send).toHaveBeenCalledWith(file);
     expect(progressEvents).toEqual([50, 100]);
+
+    xhrSpy.mockRestore();
+  });
+
+  it('uploadEpisodeVideoSource POSTs multipart FormData to the backend proxy endpoint', async () => {
+    const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+    const mockEpisode = {
+      id: 'ep-1',
+      title: 'Episode 1',
+      videoSources: [],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(function () {
+        mockXhr.status = 200;
+        mockXhr.responseText = JSON.stringify({ data: mockEpisode });
+        mockXhr.onload();
+      }),
+      abort: vi.fn(),
+      upload: {},
+      status: 0,
+      responseText: '',
+      withCredentials: false,
+      onload: null as any,
+      onerror: null as any,
+      onabort: null as any,
+    };
+
+    const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
+      return mockXhr as any;
+    } as any);
+
+    const res = await uploadEpisodeVideoSource('ep-1', {
+      file,
+      label: 'S3 High Quality',
+      quality: '1080p',
+    });
+
+    expect(mockXhr.open).toHaveBeenCalledWith(
+      'POST',
+      expect.stringContaining('/api/media/episodes/ep-1/sources/upload')
+    );
+    expect(mockXhr.withCredentials).toBe(true);
+    // Browser must set the multipart boundary itself — no manual Content-Type
+    expect(mockXhr.setRequestHeader).not.toHaveBeenCalledWith(
+      'Content-Type',
+      expect.anything()
+    );
+    const form = (mockXhr.send as ReturnType<typeof vi.fn>).mock.calls[0][0] as unknown as FormData;
+    expect(form).toBeInstanceOf(FormData);
+    expect((form.get('file') as File).name).toBe('test.mp4');
+    expect(form.get('label')).toBe('S3 High Quality');
+    expect(form.get('quality')).toBe('1080p');
+    expect(res.id).toBe('ep-1');
+
+    xhrSpy.mockRestore();
+  });
+
+  it('uploadEpisodeVideoSource emits upload progress percentages', async () => {
+    const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+    const progressEvents: number[] = [];
+
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(function () {
+        if (mockXhr.upload && mockXhr.upload.onprogress) {
+          mockXhr.upload.onprogress({ lengthComputable: true, loaded: 25, total: 100 });
+          mockXhr.upload.onprogress({ lengthComputable: true, loaded: 100, total: 100 });
+        }
+        mockXhr.status = 200;
+        mockXhr.responseText = JSON.stringify({ data: { id: 'ep-1' } });
+        mockXhr.onload();
+      }),
+      abort: vi.fn(),
+      upload: {
+        onprogress: null as any,
+      },
+      status: 0,
+      responseText: '',
+      withCredentials: false,
+      onload: null as any,
+      onerror: null as any,
+      onabort: null as any,
+    };
+
+    const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
+      return mockXhr as any;
+    } as any);
+
+    await uploadEpisodeVideoSource('ep-1', {
+      file,
+      label: 'Label',
+      onProgress: (p) => {
+        progressEvents.push(p.percent);
+      },
+    });
+
+    expect(progressEvents).toEqual([25, 100]);
+
+    xhrSpy.mockRestore();
+  });
+
+  it('uploadEpisodeVideoSource aborts when signal is aborted', async () => {
+    const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+    const controller = new AbortController();
+
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(function () {
+        controller.abort();
+      }),
+      abort: vi.fn(function () {
+        if (mockXhr.onabort) mockXhr.onabort();
+      }),
+      upload: {},
+      status: 0,
+      responseText: '',
+      withCredentials: false,
+      onload: null as any,
+      onerror: null as any,
+      onabort: null as any,
+    };
+
+    const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
+      return mockXhr as any;
+    } as any);
+
+    await expect(
+      uploadEpisodeVideoSource('ep-1', {
+        file,
+        label: 'Label',
+        signal: controller.signal,
+      })
+    ).rejects.toThrow('Aborted');
+
+    expect(mockXhr.abort).toHaveBeenCalled();
+
+    xhrSpy.mockRestore();
+  });
+
+  it('uploadEpisodeVideoSource surfaces S3_NOT_CONFIGURED code on 503', async () => {
+    const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(function () {
+        mockXhr.status = 503;
+        mockXhr.responseText = JSON.stringify({
+          error: { code: 'S3_NOT_CONFIGURED', message: 'S3 storage service is not configured' },
+        });
+        mockXhr.onload();
+      }),
+      abort: vi.fn(),
+      upload: {},
+      status: 0,
+      responseText: '',
+      withCredentials: false,
+      onload: null as any,
+      onerror: null as any,
+      onabort: null as any,
+    };
+
+    const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
+      return mockXhr as any;
+    } as any);
+
+    const err = await uploadEpisodeVideoSource('ep-1', {
+      file,
+      label: 'Label',
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error & { code?: string }).code).toBe('S3_NOT_CONFIGURED');
 
     xhrSpy.mockRestore();
   });

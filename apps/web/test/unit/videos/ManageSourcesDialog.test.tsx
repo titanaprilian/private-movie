@@ -24,6 +24,7 @@ vi.mock('@/modules/videos/internal/api', async () => {
     deleteVideoSource: vi.fn(),
     presignUploadSource: vi.fn(),
     uploadBinaryToS3: vi.fn(),
+    uploadEpisodeVideoSource: vi.fn(),
   };
 });
 
@@ -166,16 +167,14 @@ describe('ManageSourcesDialog component', () => {
     expect(screen.getByLabelText(/label/i)).toHaveValue('my-episode-video');
   });
 
-  it('uploads via presigned URL with progress and registers an s3 source', async () => {
-    vi.mocked(apiModule.presignUploadSource).mockResolvedValueOnce({
-      uploadUrl: 'https://s3.example.com/put-url',
-      key: 'episodes/ep-123/uuid-my-video.mp4',
-    });
-    vi.mocked(apiModule.uploadBinaryToS3).mockImplementation(async ({ onProgress }) => {
-      onProgress?.({ percent: 50, loaded: 50 * 1024 * 1024, total: 100 * 1024 * 1024 });
-      onProgress?.({ percent: 100, loaded: 100 * 1024 * 1024, total: 100 * 1024 * 1024 });
-    });
-    vi.mocked(apiModule.addVideoSources).mockResolvedValueOnce(mockEpisode);
+  it('uploads via the backend proxy endpoint with progress and switches to edit tab', async () => {
+    vi.mocked(apiModule.uploadEpisodeVideoSource).mockImplementation(
+      async (_episodeId, { onProgress }) => {
+        onProgress?.({ percent: 50, loaded: 50 * 1024 * 1024, total: 100 * 1024 * 1024 });
+        onProgress?.({ percent: 100, loaded: 100 * 1024 * 1024, total: 100 * 1024 * 1024 });
+        return mockEpisode;
+      }
+    );
 
     const { user, queryClient } = renderWithProviders(
       <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
@@ -196,33 +195,24 @@ describe('ManageSourcesDialog component', () => {
     expect(uploadBtn).toBeEnabled();
     await user.click(uploadBtn);
 
-    // Presign requested via POST /api/media/episodes/:id/sources/presign-upload contract
+    // File uploaded through the backend proxy endpoint (no B2 CORS):
+    // POST /api/media/episodes/:id/sources/upload via multipart XHR
     await waitFor(() => {
-      expect(apiModule.presignUploadSource).toHaveBeenCalledWith('ep-123', {
-        filename: 'my-video.mp4',
-        contentType: 'video/mp4',
-      });
+      expect(apiModule.uploadEpisodeVideoSource).toHaveBeenCalledOnce();
     });
-
-    // Binary uploaded directly to presigned URL with progress + file payload
-    await waitFor(() => {
-      expect(apiModule.uploadBinaryToS3).toHaveBeenCalled();
-    });
-    const uploadArgs = vi.mocked(apiModule.uploadBinaryToS3).mock.calls[0][0];
-    expect(uploadArgs.url).toBe('https://s3.example.com/put-url');
+    const [episodeId, uploadArgs] = vi.mocked(apiModule.uploadEpisodeVideoSource).mock.calls[0];
+    expect(episodeId).toBe('ep-123');
     expect(uploadArgs.file).toBe(file);
+    expect(uploadArgs.label).toBe('my-video');
+    expect(uploadArgs.quality).toBe('1080p');
     expect(uploadArgs.signal).toBeInstanceOf(AbortSignal);
     expect(typeof uploadArgs.onProgress).toBe('function');
 
-    // Source registered with type s3 + S3 key, cache invalidated, toast shown, tab switched
-    await waitFor(() => {
-      expect(apiModule.addVideoSources).toHaveBeenCalledWith('ep-123', {
-        type: 's3',
-        url: 'episodes/ep-123/uuid-my-video.mp4',
-        label: 'my-video',
-        quality: '1080p',
-      });
-    });
+    // Successful upload automatically registers the S3 source server-side:
+    // no separate client-side source registration call is needed
+    expect(apiModule.addVideoSources).not.toHaveBeenCalled();
+
+    // Cache invalidated, toast shown, tab switched to Edit Existing
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
       expect(toast.success).toHaveBeenCalledWith('video.source_add', {
@@ -233,14 +223,11 @@ describe('ManageSourcesDialog component', () => {
   });
 
   it('cancel aborts the active upload and resets the upload UI', async () => {
-    vi.mocked(apiModule.presignUploadSource).mockResolvedValueOnce({
-      uploadUrl: 'https://s3.example.com/put-url',
-      key: 'episodes/ep-123/uuid-big-video.mp4',
-    });
-    // Never-resolving upload that rejects on abort, simulating mid-flight cancellation
-    vi.mocked(apiModule.uploadBinaryToS3).mockImplementation(
-      ({ onProgress, signal }) =>
-        new Promise<void>((_resolve, reject) => {
+    // Never-resolving proxy upload that emits progress then rejects on abort,
+    // simulating mid-flight cancellation
+    vi.mocked(apiModule.uploadEpisodeVideoSource).mockImplementation(
+      (_episodeId, { onProgress, signal }) =>
+        new Promise<apiModule.Episode>((_resolve, reject) => {
           onProgress?.({ percent: 17, loaded: 142 * 1024 * 1024, total: 850 * 1024 * 1024 });
           signal?.addEventListener('abort', () => {
             reject(new DOMException('Aborted', 'AbortError'));
@@ -262,7 +249,7 @@ describe('ManageSourcesDialog component', () => {
     await user.click(screen.getByRole('button', { name: /^upload$/i }));
 
     // Live percentage + MB progress feedback while uploading
-    expect(await screen.findByText('Uploading to S3...')).toBeInTheDocument();
+    expect(await screen.findByText('Uploading...')).toBeInTheDocument();
     expect(screen.getByText(/142\.0 MB \/ 850\.0 MB \(17%\)/)).toBeInTheDocument();
 
     // Cancel mid-flight
@@ -270,7 +257,7 @@ describe('ManageSourcesDialog component', () => {
 
     // Upload UI reset: no progress, dropzone placeholder back, Upload button back disabled
     await waitFor(() => {
-      expect(screen.queryByText('Uploading to S3...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Uploading...')).not.toBeInTheDocument();
       expect(screen.getByText(/click to select or drag video here/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /^upload$/i })).toBeDisabled();
     });
@@ -280,7 +267,7 @@ describe('ManageSourcesDialog component', () => {
   it('shows a warning banner when S3 storage is unconfigured', async () => {
     const err = new Error('S3 storage service is not configured') as Error & { code: string };
     err.code = 'S3_NOT_CONFIGURED';
-    vi.mocked(apiModule.presignUploadSource).mockRejectedValueOnce(err);
+    vi.mocked(apiModule.uploadEpisodeVideoSource).mockRejectedValueOnce(err);
 
     const { user } = renderWithProviders(
       <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
@@ -299,7 +286,7 @@ describe('ManageSourcesDialog component', () => {
     expect(toast.error).toHaveBeenCalledWith('video.s3_upload', {
       description: 'S3 storage service is not configured',
     });
-    expect(apiModule.uploadBinaryToS3).not.toHaveBeenCalled();
+    expect(apiModule.uploadEpisodeVideoSource).toHaveBeenCalledOnce();
     expect(apiModule.addVideoSources).not.toHaveBeenCalled();
   });
 
