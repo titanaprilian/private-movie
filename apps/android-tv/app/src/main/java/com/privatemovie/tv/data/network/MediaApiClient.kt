@@ -21,9 +21,9 @@ class MediaApiClient(
         return url.trimEnd('/')
     }
 
-    suspend fun getHomeFeed(): ApiResponse<HomeFeedSuccessResponse> {
+    suspend fun getHomeFeed(sourceTypes: String = "direct,s3"): ApiResponse<HomeFeedSuccessResponse> {
         val baseUrl = sanitizeBaseUrl(baseUrlProvider())
-        val endpointUrl = "$baseUrl/api/series/home-feed"
+        val endpointUrl = "$baseUrl/api/series/home-feed?sourceTypes=$sourceTypes"
         return try {
             val response = transport.get(endpointUrl)
             parseResponse<HomeFeedSuccessResponse>(response)
@@ -32,9 +32,9 @@ class MediaApiClient(
         }
     }
 
-    suspend fun getSeriesById(seriesId: String): ApiResponse<SeriesDetailsSuccessResponse> {
+    suspend fun getSeriesById(seriesId: String, sourceTypes: String = "direct,s3"): ApiResponse<SeriesDetailsSuccessResponse> {
         val baseUrl = sanitizeBaseUrl(baseUrlProvider())
-        val endpointUrl = "$baseUrl/api/series/$seriesId"
+        val endpointUrl = "$baseUrl/api/series/$seriesId?sourceTypes=$sourceTypes"
         return try {
             val response = transport.get(endpointUrl)
             parseResponse<SeriesDetailsSuccessResponse>(response)

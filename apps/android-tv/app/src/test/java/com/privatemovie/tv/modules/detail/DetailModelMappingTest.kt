@@ -36,13 +36,24 @@ class DetailModelMappingTest {
             quality = "720p"
         )
 
+        val source3 = VideoSource(
+            id = "src-3",
+            episodeId = "ep-1",
+            type = VideoSource.Type.S3,
+            url = "https://example.com/s3/1.mp4",
+            label = "Server 3 (S3)",
+            createdAt = "2026-01-01T00:00:00Z",
+            updatedAt = "2026-01-01T00:00:00Z",
+            quality = "1080p"
+        )
+
         val episode1 = EpisodeWithSources(
             id = "ep-1",
             title = "Episode 1: Dawn",
             order = 1,
             createdAt = "2026-01-01T00:00:00Z",
             updatedAt = "2026-01-01T00:00:00Z",
-            videoSources = listOf(source1, source2),
+            videoSources = listOf(source1, source2, source3),
             description = "First episode"
         )
 
@@ -93,7 +104,7 @@ class DetailModelMappingTest {
         val tvEpisode = tvSeason.episodes[0]
         assertEquals("ep-1", tvEpisode.id)
         assertEquals("Episode 1: Dawn", tvEpisode.title)
-        assertEquals(2, tvEpisode.videoSources.size)
+        assertEquals(3, tvEpisode.videoSources.size)
 
         assertEquals("src-1", tvEpisode.videoSources[0].id)
         assertEquals("Server 1", tvEpisode.videoSources[0].label)
@@ -104,6 +115,12 @@ class DetailModelMappingTest {
         assertEquals("Server 2", tvEpisode.videoSources[1].label)
         assertEquals("direct", tvEpisode.videoSources[1].type)
         assertEquals("720p", tvEpisode.videoSources[1].quality)
+
+        assertEquals("src-3", tvEpisode.videoSources[2].id)
+        assertEquals("Server 3 (S3)", tvEpisode.videoSources[2].label)
+        assertEquals("s3", tvEpisode.videoSources[2].type)
+        assertEquals("https://example.com/s3/1.mp4", tvEpisode.videoSources[2].url)
+        assertEquals("1080p", tvEpisode.videoSources[2].quality)
     }
 
     @Test

@@ -137,6 +137,16 @@ class DtoSerializationTest {
                             "quality": null,
                             "createdAt": "2026-01-01T00:00:00.000Z",
                             "updatedAt": "2026-01-01T00:00:00.000Z"
+                          },
+                          {
+                            "id": "src-s3",
+                            "episodeId": "ep-1",
+                            "type": "s3",
+                            "url": "https://s3.example.com/video.mp4",
+                            "label": "S3 Stream",
+                            "quality": "1080p",
+                            "createdAt": "2026-01-01T00:00:00.000Z",
+                            "updatedAt": "2026-01-01T00:00:00.000Z"
                           }
                         ]
                       }
@@ -158,7 +168,7 @@ class DtoSerializationTest {
 
         val episode = series.seasons[0].episodes[0]
         assertEquals("ep-1", episode.id)
-        assertEquals(2, episode.videoSources.size)
+        assertEquals(3, episode.videoSources.size)
 
         val embedSource = episode.videoSources[0]
         assertEquals(VideoSource.Type.EMBED, embedSource.type)
@@ -167,6 +177,10 @@ class DtoSerializationTest {
         val directSource = episode.videoSources[1]
         assertEquals(VideoSource.Type.DIRECT, directSource.type)
         assertEquals("https://cdn.example.com/video.mp4", directSource.url)
+
+        val s3Source = episode.videoSources[2]
+        assertEquals(VideoSource.Type.S3, s3Source.type)
+        assertEquals("https://s3.example.com/video.mp4", s3Source.url)
     }
 
     @Test

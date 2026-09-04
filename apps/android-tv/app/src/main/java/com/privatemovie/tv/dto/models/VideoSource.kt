@@ -80,7 +80,8 @@ data class VideoSource (
     @Serializable
     enum class Type(val value: kotlin.String) {
         @SerialName(value = "embed") EMBED("embed"),
-        @SerialName(value = "direct") DIRECT("direct");
+        @SerialName(value = "direct") DIRECT("direct"),
+        @SerialName(value = "s3") S3("s3");
     }
 
 }

@@ -51,7 +51,7 @@ class MediaApiClientTest {
 
         val result = client.getHomeFeed()
 
-        assertEquals("http://10.0.2.2:3000/api/series/home-feed", fakeTransport.lastRequestedUrl)
+        assertEquals("http://10.0.2.2:3000/api/series/home-feed?sourceTypes=direct,s3", fakeTransport.lastRequestedUrl)
         assertTrue(result is ApiResponse.Success)
         val successData = (result as ApiResponse.Success).data.data
         assertEquals(1, successData.rows.size)
@@ -81,7 +81,7 @@ class MediaApiClientTest {
 
         val result = client.getSeriesById("unknown-id")
 
-        assertEquals("http://localhost:3000/api/series/unknown-id", fakeTransport.lastRequestedUrl)
+        assertEquals("http://localhost:3000/api/series/unknown-id?sourceTypes=direct,s3", fakeTransport.lastRequestedUrl)
         assertTrue(result is ApiResponse.Error)
         val errorResult = result as ApiResponse.Error
         assertEquals(404, errorResult.statusCode)
@@ -105,11 +105,11 @@ class MediaApiClientTest {
         )
 
         client.getHomeFeed()
-        assertEquals("http://10.0.2.2:3000/api/series/home-feed", fakeTransport.lastRequestedUrl)
+        assertEquals("http://10.0.2.2:3000/api/series/home-feed?sourceTypes=direct,s3", fakeTransport.lastRequestedUrl)
 
         currentBaseUrl = "http://192.168.1.50:3000"
         client.getHomeFeed()
-        assertEquals("http://192.168.1.50:3000/api/series/home-feed", fakeTransport.lastRequestedUrl)
+        assertEquals("http://192.168.1.50:3000/api/series/home-feed?sourceTypes=direct,s3", fakeTransport.lastRequestedUrl)
     }
 
     @Test
