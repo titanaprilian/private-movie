@@ -21,6 +21,8 @@ import {
   scrapeEpisodeSources,
   importTmdb,
   fetchSeriesTmdbPreview,
+  presignUploadSource,
+  uploadBinaryToS3,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -1147,5 +1149,132 @@ describe('videos api', () => {
 
     fetchSpy.mockRestore();
   });
+
+  it('presignUploadSource posts to /episodes/:id/sources/presign-upload', async () => {
+    const mockData = {
+      data: {
+        uploadUrl: 'https://s3.example.com/presigned-put',
+        key: 'episodes/ep-1/test.mp4',
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        postBody = (init?.body as string) || '';
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await presignUploadSource('ep-1', { filename: 'test.mp4', contentType: 'video/mp4' });
+
+    expect(postUrl).toContain('/episodes/ep-1/sources/presign-upload');
+    expect(JSON.parse(postBody)).toEqual({ filename: 'test.mp4', contentType: 'video/mp4' });
+    expect(res.uploadUrl).toBe('https://s3.example.com/presigned-put');
+    expect(res.key).toBe('episodes/ep-1/test.mp4');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('uploadBinaryToS3 executes XMLHttpRequest PUT, emits progress, and completes', async () => {
+    const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+    const progressEvents: number[] = [];
+
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(function () {
+        if (mockXhr.upload && mockXhr.upload.onprogress) {
+          mockXhr.upload.onprogress({
+            lengthComputable: true,
+            loaded: 50,
+            total: 100,
+          });
+          mockXhr.upload.onprogress({
+            lengthComputable: true,
+            loaded: 100,
+            total: 100,
+          });
+        }
+        mockXhr.status = 200;
+        mockXhr.onload();
+      }),
+      abort: vi.fn(),
+      upload: {
+        onprogress: null as any,
+      },
+      status: 200,
+      onload: null as any,
+      onerror: null as any,
+      onabort: null as any,
+    };
+
+    const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
+      return mockXhr as any;
+    } as any);
+
+    await uploadBinaryToS3({
+      url: 'https://s3.example.com/put-url',
+      file,
+      onProgress: (p) => {
+        progressEvents.push(p.percent);
+      },
+    });
+
+    expect(mockXhr.open).toHaveBeenCalledWith('PUT', 'https://s3.example.com/put-url');
+    expect(mockXhr.setRequestHeader).toHaveBeenCalledWith('Content-Type', 'video/mp4');
+    expect(mockXhr.send).toHaveBeenCalledWith(file);
+    expect(progressEvents).toEqual([50, 100]);
+
+    xhrSpy.mockRestore();
+  });
+
+  it('uploadBinaryToS3 aborts when signal is aborted', async () => {
+    const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+    const controller = new AbortController();
+
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(function () {
+        controller.abort();
+      }),
+      abort: vi.fn(function () {
+        if (mockXhr.onabort) mockXhr.onabort();
+      }),
+      upload: {},
+      status: 0,
+      onload: null as any,
+      onerror: null as any,
+      onabort: null as any,
+    };
+
+    const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
+      return mockXhr as any;
+    } as any);
+
+    await expect(
+      uploadBinaryToS3({
+        url: 'https://s3.example.com/put-url',
+        file,
+        signal: controller.signal,
+      })
+    ).rejects.toThrow('Aborted');
+
+    expect(mockXhr.abort).toHaveBeenCalled();
+
+    xhrSpy.mockRestore();
+  });
 });
+
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { updateSeries, type SeriesDetails, type SeriesItem } from './api';
@@ -25,11 +25,35 @@ export interface EditSeriesDialogProps {
   seriesList?: SeriesItem[];
 }
 
+const EMPTY_SERIES_LIST: SeriesItem[] = [];
+
+interface RelationSelection {
+  relatedSeriesId: string;
+  relationType: string;
+  title?: string | null;
+}
+
+function sameIdList(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+function sameRelations(a: RelationSelection[], b: RelationSelection[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (r, i) =>
+        r.relatedSeriesId === b[i].relatedSeriesId &&
+        r.relationType === b[i].relationType &&
+        (r.title ?? null) === (b[i].title ?? null)
+    )
+  );
+}
+
 export function EditSeriesDialog({
   open,
   onOpenChange,
   series,
-  seriesList = [],
+  seriesList = EMPTY_SERIES_LIST,
 }: EditSeriesDialogProps) {
   const queryClient = useQueryClient();
   const { data: genres = [] } = useQuery(genresQueryOptions());
@@ -45,6 +69,12 @@ export function EditSeriesDialog({
   const [newRelationId, setNewRelationId] = useState('');
   const [newRelationType, setNewRelationType] = useState('sequel');
 
+  // Read via ref so the sync effect below doesn't depend on the caller's
+  // array identity (an inline/default `[]` is a new reference every render,
+  // which would re-trigger the effect and its setStates in an endless loop).
+  const seriesListRef = useRef(seriesList);
+  seriesListRef.current = seriesList;
+
   useEffect(() => {
     if (open && series) {
       setEditTitle(series.title ?? '');
@@ -52,6 +82,7 @@ export function EditSeriesDialog({
       setEditPosterUrl(series.posterUrl ?? '');
       setEditIsFeatured(Boolean(series.isFeatured));
 
+      const knownSeriesList = seriesListRef.current;
       let initialGenreIds: string[] = [];
       if ('genreIds' in series && series.genreIds && Array.isArray(series.genreIds) && series.genreIds.length > 0) {
         initialGenreIds = series.genreIds;
@@ -66,18 +97,22 @@ export function EditSeriesDialog({
           })
           .filter(Boolean);
       }
-      setSelectedGenreIds(initialGenreIds);
+      setSelectedGenreIds((prev) =>
+        sameIdList(prev, initialGenreIds) ? prev : initialGenreIds
+      );
 
       const initialRelations = (series.relations ?? []).map((r) => ({
         relatedSeriesId: r.relatedSeriesId,
         relationType: r.relationType,
-        title: r.title ?? seriesList.find((s) => s.id === r.relatedSeriesId)?.title ?? r.relatedSeriesId,
+        title: r.title ?? knownSeriesList.find((s) => s.id === r.relatedSeriesId)?.title ?? r.relatedSeriesId,
       }));
-      setSelectedRelations(initialRelations);
+      setSelectedRelations((prev) =>
+        sameRelations(prev, initialRelations) ? prev : initialRelations
+      );
       setNewRelationId('');
       setNewRelationType('sequel');
     }
-  }, [open, series, genres, seriesList]);
+  }, [open, series, genres]);
 
   const updateMutation = useMutation({
     mutationFn: (data: Parameters<typeof updateSeries>[1]) =>

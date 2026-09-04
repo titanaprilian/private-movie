@@ -3,14 +3,14 @@ import { api } from '@/lib/api';
 
 export interface VideoSource {
   id: string;
-  type: 'embed' | 'direct';
+  type: 'embed' | 'direct' | 's3';
   url: string;
   label: string;
   quality?: string | null;
 }
 
 export interface VideoSourceInput {
-  type: 'embed' | 'direct';
+  type: 'embed' | 'direct' | 's3';
   url: string;
   label: string;
   quality?: string | null;
@@ -478,7 +478,7 @@ export async function scrapeEpisodeSources(
 }
 
 export interface AddVideoSourceInput {
-  type: 'embed' | 'direct';
+  type: 'embed' | 'direct' | 's3';
   url: string;
   label: string;
   quality?: string | null;
@@ -507,7 +507,7 @@ export async function addVideoSource(
 export const addVideoSources = addVideoSource;
 
 export interface UpdateVideoSourceInput {
-  type?: 'embed' | 'direct';
+  type?: 'embed' | 'direct' | 's3';
   url?: string;
   label?: string;
   quality?: string | null;
@@ -933,6 +933,97 @@ export async function fetchSeriesTmdbPreview(
 
   return res.data.data as unknown as TmdbPreviewResult;
 }
+
+export interface PresignUploadSourceParams {
+  filename: string;
+  contentType?: string;
+}
+
+export interface PresignUploadSourceResult {
+  uploadUrl: string;
+  key: string;
+}
+
+export async function presignUploadSource(
+  episodeId: string,
+  params: PresignUploadSourceParams
+): Promise<PresignUploadSourceResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.episodes as any)[episodeId].sources['presign-upload'].post(params);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    const errorVal = res.error?.value as { error?: { code?: string; message?: string }; code?: string; message?: string } | undefined;
+    const code = errorVal?.error?.code || errorVal?.code;
+    const message = errorVal?.error?.message || errorVal?.message || (res.error?.value as { message?: string })?.message || 'Failed to request presigned upload URL';
+    const err = new Error(message) as Error & { code?: string };
+    if (code) err.code = code;
+    throw err;
+  }
+
+  return res.data.data as PresignUploadSourceResult;
+}
+
+export interface UploadBinaryOptions {
+  url: string;
+  file: File;
+  onProgress?: (progress: { percent: number; loaded: number; total: number }) => void;
+  signal?: AbortSignal;
+}
+
+export function uploadBinaryToS3({
+  url,
+  file,
+  onProgress,
+  signal,
+}: UploadBinaryOptions): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    if (file.type) {
+      xhr.setRequestHeader('Content-Type', file.type);
+    }
+
+    if (signal) {
+      if (signal.aborted) {
+        xhr.abort();
+        reject(new DOMException('Aborted', 'AbortError'));
+        return;
+      }
+      signal.addEventListener('abort', () => {
+        xhr.abort();
+        reject(new DOMException('Aborted', 'AbortError'));
+      });
+    }
+
+    if (xhr.upload && onProgress) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress({ percent, loaded: event.loaded, total: event.total });
+        }
+      };
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`S3 upload failed with status ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Network error during S3 upload'));
+    };
+
+    xhr.onabort = () => {
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+
+    xhr.send(file);
+  });
+}
+
 
 
 
