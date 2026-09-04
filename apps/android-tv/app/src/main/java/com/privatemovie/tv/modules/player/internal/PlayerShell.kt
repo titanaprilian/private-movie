@@ -13,11 +13,8 @@ import com.privatemovie.tv.dto.models.VideoSource
 
 /** Client-consumable playback renderer for a normalized playback target. */
 enum class PlaybackRenderer {
-    /** Direct stream targets use the native Android playback stack. */
+    /** Direct stream targets and S3 storage targets use the native Android playback stack. */
     NATIVE,
-
-    /** Embed/web targets load inside the TV-safe WebView player shell. */
-    WEBVIEW,
 }
 
 /** Remote-control keys covered by the MVP contract at the app boundary. */
@@ -132,50 +129,30 @@ fun nextControlsVisibility(
 
 /**
  * Chooses the renderer for a normalized [VideoSource] playback target.
- * Direct targets use native playback; embed targets use the WebView shell.
+ * Direct and S3 targets use native playback.
  */
-fun resolveRenderer(sourceType: VideoSource.Type): PlaybackRenderer =
-    when (sourceType) {
-        VideoSource.Type.DIRECT -> PlaybackRenderer.NATIVE
-        VideoSource.Type.EMBED -> PlaybackRenderer.WEBVIEW
-    }
+fun resolveRenderer(sourceType: VideoSource.Type): PlaybackRenderer = PlaybackRenderer.NATIVE
 
 /**
- * Chooses the renderer from a raw contract type name. Unknown or missing
- * values fall back to [PlaybackRenderer.WEBVIEW] because the catalog is
- * embed-heavy and the WebView shell is the safe default.
+ * Chooses the renderer from a raw contract type name. All supported targets
+ * use native playback via ExoPlayer.
  */
-fun resolveRendererForTypeName(typeName: String?): PlaybackRenderer =
-    when (typeName?.lowercase()) {
-        "direct" -> PlaybackRenderer.NATIVE
-        else -> PlaybackRenderer.WEBVIEW
-    }
+fun resolveRendererForTypeName(typeName: String?): PlaybackRenderer = PlaybackRenderer.NATIVE
 
 /**
- * Whether the renderer attempts seek for left/right intents. MVP answers true
- * for both: native seeking is platform-supported and embed seeking is
- * attempted best-effort through provider-compatible controls.
+ * Whether the renderer attempts seek for left/right intents. Native seeking is platform-supported.
  */
-fun supportsSeek(renderer: PlaybackRenderer): Boolean =
-    when (renderer) {
-        PlaybackRenderer.NATIVE -> true
-        PlaybackRenderer.WEBVIEW -> true
-    }
+fun supportsSeek(renderer: PlaybackRenderer): Boolean = true
 
 /** The player shell auto-attempts fullscreen on entry (TV-only dedicated flow). */
 fun shouldAutoFullscreenOnEntry(): Boolean = true
 
 /**
  * Declarative actions dispatched automatically when entering the player
- * screen for the given [renderer]. Currently a single fullscreen attempt;
- * embed renderers additionally map it through provider-compatible controls
- * at the Compose/WebView boundary.
+ * screen for the given [renderer]. Currently a single fullscreen attempt.
  */
 fun initialActionsOnEntry(renderer: PlaybackRenderer): List<PlayerControlAction> =
-    when (renderer) {
-        PlaybackRenderer.NATIVE -> listOf(PlayerControlAction.RequestFullscreen)
-        PlaybackRenderer.WEBVIEW -> listOf(PlayerControlAction.RequestFullscreen)
-    }
+    listOf(PlayerControlAction.RequestFullscreen)
 
 /**
  * Resolves a normalized playback target URL into a loadable absolute URL.

@@ -95,33 +95,17 @@ class WatchToPlayerFlowTest {
     }
 
     @Test
-    fun `embed absolute target resolves to webview playback`() {
+    fun `s3 target resolves to native playback`() {
         val resolved = resolvePlayerHandoff(
             handoff = buildPlayerHandoff(
                 episodeId = "ep-1",
-                source = PlaybackSourceRef(type = "embed", url = "https://thirdparty.com/embed/ep1")
+                source = PlaybackSourceRef(type = "s3", url = "https://s3.example.com/stream/ep1.mp4")
             ),
             backendBaseUrl = "http://10.0.2.2:3000"
         )
 
-        assertEquals(PlaybackRenderer.WEBVIEW, resolved.renderer)
-        assertEquals("https://thirdparty.com/embed/ep1", resolved.resolvedUrl)
-        assertNull(resolved.failureMessage)
-        assertTrue(resolved.isPlayable)
-    }
-
-    @Test
-    fun `backend-normalized relative embed target resolves against the backend base url`() {
-        val resolved = resolvePlayerHandoff(
-            handoff = buildPlayerHandoff(
-                episodeId = "ep-1",
-                source = PlaybackSourceRef(type = "embed", url = "/embed/abc123?source=0")
-            ),
-            backendBaseUrl = "http://10.0.2.2:3000"
-        )
-
-        assertEquals(PlaybackRenderer.WEBVIEW, resolved.renderer)
-        assertEquals("http://10.0.2.2:3000/embed/abc123?source=0", resolved.resolvedUrl)
+        assertEquals(PlaybackRenderer.NATIVE, resolved.renderer)
+        assertEquals("https://s3.example.com/stream/ep1.mp4", resolved.resolvedUrl)
         assertNull(resolved.failureMessage)
         assertTrue(resolved.isPlayable)
     }
@@ -152,7 +136,7 @@ class WatchToPlayerFlowTest {
     }
 
     @Test
-    fun `unsupported source type falls back to the webview shell`() {
+    fun `unknown source type resolves to native renderer`() {
         val resolved = resolvePlayerHandoff(
             handoff = buildPlayerHandoff(
                 episodeId = "ep-1",
@@ -161,9 +145,7 @@ class WatchToPlayerFlowTest {
             backendBaseUrl = "http://10.0.2.2:3000"
         )
 
-        // Embed-heavy catalog: unknown kinds stay watchable via WebView
-        // instead of crashing or showing a blank screen.
-        assertEquals(PlaybackRenderer.WEBVIEW, resolved.renderer)
+        assertEquals(PlaybackRenderer.NATIVE, resolved.renderer)
         assertEquals("https://cdn.example.com/stream.m3u8", resolved.resolvedUrl)
         assertTrue(resolved.isPlayable)
     }

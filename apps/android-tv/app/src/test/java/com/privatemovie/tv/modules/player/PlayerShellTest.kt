@@ -23,35 +23,27 @@ import org.junit.Test
 class PlayerShellTest {
 
     @Test
-    fun `direct source resolves to native renderer`() {
+    fun `direct and s3 sources resolve to native renderer`() {
         assertEquals(PlaybackRenderer.NATIVE, resolveRenderer(VideoSource.Type.DIRECT))
+        assertEquals(PlaybackRenderer.NATIVE, resolveRenderer(VideoSource.Type.S3))
     }
 
     @Test
-    fun `embed source resolves to webview renderer`() {
-        assertEquals(PlaybackRenderer.WEBVIEW, resolveRenderer(VideoSource.Type.EMBED))
-    }
-
-    @Test
-    fun `type name resolution is case-insensitive and defaults to webview`() {
+    fun `type name resolution returns native renderer for all types`() {
         assertEquals(PlaybackRenderer.NATIVE, resolveRendererForTypeName("direct"))
         assertEquals(PlaybackRenderer.NATIVE, resolveRendererForTypeName("DIRECT"))
-        assertEquals(PlaybackRenderer.WEBVIEW, resolveRendererForTypeName("embed"))
-        assertEquals(PlaybackRenderer.WEBVIEW, resolveRendererForTypeName("EMBED"))
-        assertEquals(PlaybackRenderer.WEBVIEW, resolveRendererForTypeName("unknown-provider"))
-        assertEquals(PlaybackRenderer.WEBVIEW, resolveRendererForTypeName(null))
+        assertEquals(PlaybackRenderer.NATIVE, resolveRendererForTypeName("s3"))
+        assertEquals(PlaybackRenderer.NATIVE, resolveRendererForTypeName("S3"))
+        assertEquals(PlaybackRenderer.NATIVE, resolveRendererForTypeName("unknown"))
+        assertEquals(PlaybackRenderer.NATIVE, resolveRendererForTypeName(null))
     }
 
     @Test
-    fun `player auto-attempts fullscreen on entry for both renderers`() {
+    fun `player auto-attempts fullscreen on entry for native renderer`() {
         assertTrue(shouldAutoFullscreenOnEntry())
         assertEquals(
             listOf(PlayerControlAction.RequestFullscreen),
             initialActionsOnEntry(PlaybackRenderer.NATIVE)
-        )
-        assertEquals(
-            listOf(PlayerControlAction.RequestFullscreen),
-            initialActionsOnEntry(PlaybackRenderer.WEBVIEW)
         )
     }
 
@@ -61,28 +53,19 @@ class PlayerShellTest {
             PlayerControlAction.TogglePlayPause,
             handleRemoteKey(RemoteControlKey.CENTER_OK, PlaybackRenderer.NATIVE)
         )
-        assertEquals(
-            PlayerControlAction.TogglePlayPause,
-            handleRemoteKey(RemoteControlKey.CENTER_OK, PlaybackRenderer.WEBVIEW)
-        )
     }
 
     @Test
-    fun `back exits playback for both renderers`() {
+    fun `back exits playback`() {
         assertEquals(
             PlayerControlAction.ExitPlayer,
             handleRemoteKey(RemoteControlKey.BACK, PlaybackRenderer.NATIVE)
-        )
-        assertEquals(
-            PlayerControlAction.ExitPlayer,
-            handleRemoteKey(RemoteControlKey.BACK, PlaybackRenderer.WEBVIEW)
         )
     }
 
     @Test
     fun `left and right attempt seek where supported`() {
         assertTrue(supportsSeek(PlaybackRenderer.NATIVE))
-        assertTrue(supportsSeek(PlaybackRenderer.WEBVIEW))
         assertEquals(
             PlayerControlAction.SeekBackward(DEFAULT_SEEK_SECONDS),
             handleRemoteKey(RemoteControlKey.LEFT, PlaybackRenderer.NATIVE)
@@ -91,14 +74,6 @@ class PlayerShellTest {
             PlayerControlAction.SeekForward(DEFAULT_SEEK_SECONDS),
             handleRemoteKey(RemoteControlKey.RIGHT, PlaybackRenderer.NATIVE)
         )
-        assertEquals(
-            PlayerControlAction.SeekBackward(DEFAULT_SEEK_SECONDS),
-            handleRemoteKey(RemoteControlKey.LEFT, PlaybackRenderer.WEBVIEW)
-        )
-        assertEquals(
-            PlayerControlAction.SeekForward(DEFAULT_SEEK_SECONDS),
-            handleRemoteKey(RemoteControlKey.RIGHT, PlaybackRenderer.WEBVIEW)
-        )
     }
 
     @Test
@@ -106,10 +81,6 @@ class PlayerShellTest {
         assertEquals(
             PlayerControlAction.TogglePlayPause,
             handleRemoteKey(RemoteControlKey.PLAY_PAUSE, PlaybackRenderer.NATIVE)
-        )
-        assertEquals(
-            PlayerControlAction.TogglePlayPause,
-            handleRemoteKey(RemoteControlKey.PLAY_PAUSE, PlaybackRenderer.WEBVIEW)
         )
     }
 

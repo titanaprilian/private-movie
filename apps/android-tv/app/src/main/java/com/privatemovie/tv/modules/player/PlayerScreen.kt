@@ -1,7 +1,6 @@
 package com.privatemovie.tv.modules.player
 
 import android.app.Activity
-import android.webkit.WebView
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -67,11 +66,8 @@ import kotlinx.coroutines.delay
 /**
  * Public seam for the dedicated Android TV player experience.
  *
- * Separate from the watch/detail screen: owns fullscreen behavior, renderer
- * selection (native Media3 surface vs WebView shell), and the MVP
- * remote-control contract at the app boundary. Control-intent decisions live
- * in `modules/player/internal/PlayerShell.kt` so they stay unit-testable
- * without third-party embed DOM details.
+ * Exclusively uses native Media3 ExoPlayer for playback. Controls navigation,
+ * fullscreen behavior, and TV remote key mappings.
  */
 @Composable
 fun PlayerScreen(
@@ -82,15 +78,10 @@ fun PlayerScreen(
     playbackUrl: String? = null,
     backendBaseUrl: String? = null
 ) {
-    // End-to-end handoff resolution: the source picker (or direct play) hands
-    // a normalized playback target (type + url) to the player, which resolves
-    // the renderer and loadable URL or a clear failure for unavailable sources.
     val handoffTarget = remember(playbackSourceTypeName, playbackUrl, episodeId) {
         val source = if (!playbackUrl.isNullOrBlank() && !playbackSourceTypeName.isNullOrBlank()) {
             PlaybackSourceRef(type = playbackSourceTypeName, url = playbackUrl)
         } else if (!playbackUrl.isNullOrBlank()) {
-            // Type missing (e.g. legacy handoff): keep the URL, fall back to
-            // the WebView shell via renderer resolution.
             PlaybackSourceRef(type = "", url = playbackUrl)
         } else {
             null
@@ -109,7 +100,6 @@ fun PlayerScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
-    var embedWebView by remember { mutableStateOf<WebView?>(null) }
 
     // Auto-hiding transport overlay state
     var controlsVisible by remember { mutableStateOf(true) }
@@ -148,7 +138,7 @@ fun PlayerScreen(
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         } catch (_: Exception) {
-            // Best-effort: TV launcher / embed variations must not crash playback.
+            // Best-effort: TV launcher variations must not crash playback.
         }
     }
 
@@ -173,37 +163,18 @@ fun PlayerScreen(
             is PlayerControlAction.TogglePlayPause -> {
                 controlsVisible = true
                 userActivityNonce++
-                when (renderer) {
-                    PlaybackRenderer.NATIVE -> toggleNativePlayback()
-                    PlaybackRenderer.WEBVIEW -> {
-                        embedWebView?.toggleHtml5Video()
-                        isPlaying = !isPlaying
-                        statusText = if (isPlaying) "Playing Episode $episodeId" else "Paused"
-                    }
-                }
+                toggleNativePlayback()
             }
             is PlayerControlAction.ExitPlayer -> onExitPlayer()
             is PlayerControlAction.SeekBackward -> {
                 controlsVisible = true
                 userActivityNonce++
-                when (renderer) {
-                    PlaybackRenderer.NATIVE -> seekNative(-action.seconds)
-                    PlaybackRenderer.WEBVIEW -> {
-                        embedWebView?.sendDpadKey(AndroidKeyEvent.KEYCODE_DPAD_LEFT)
-                        statusText = "Seeking -${action.seconds}s"
-                    }
-                }
+                seekNative(-action.seconds)
             }
             is PlayerControlAction.SeekForward -> {
                 controlsVisible = true
                 userActivityNonce++
-                when (renderer) {
-                    PlaybackRenderer.NATIVE -> seekNative(action.seconds)
-                    PlaybackRenderer.WEBVIEW -> {
-                        embedWebView?.sendDpadKey(AndroidKeyEvent.KEYCODE_DPAD_RIGHT)
-                        statusText = "Seeking +${action.seconds}s"
-                    }
-                }
+                seekNative(action.seconds)
             }
             is PlayerControlAction.RequestFullscreen -> attemptFullscreen()
             is PlayerControlAction.ShowControls -> {
@@ -250,9 +221,6 @@ fun PlayerScreen(
             .background(Color.Black)
             .focusRequester(playerFocus)
             .focusable()
-            // Capture phase: back always exits and media keys always toggle,
-            // even when the WebView surface holds focus. When controls are hidden,
-            // any remote key interception reveals controls.
             .onPreviewKeyEvent { event ->
                 val key = mapKeyEvent(event) ?: return@onPreviewKeyEvent false
                 when (key) {
@@ -268,65 +236,35 @@ fun PlayerScreen(
                     }
                 }
             }
-            // Bubble phase: shell-owned surface behavior when the shell has focus.
-            // A focused WebView consumes directionals/center itself (page-native
-            // primary activation and seek where the provider supports it).
             .onKeyEvent { event ->
                 val key = mapKeyEvent(event) ?: return@onKeyEvent false
                 if (key == RemoteControlKey.BACK || key == RemoteControlKey.PLAY_PAUSE) {
                     return@onKeyEvent false
                 }
-                if (renderer == PlaybackRenderer.WEBVIEW && key == RemoteControlKey.CENTER_OK && controlsVisible) {
-                    embedWebView?.requestFocus()
-                    return@onKeyEvent true
-                }
                 onRemoteKey(key)
             },
         contentAlignment = Alignment.Center
     ) {
-        // Real renderer surface for the playback target. Unavailable targets
-        // (missing/blank normalized URL) show a clear failure with an exit
-        // path instead of a blank surface or overlapping transport controls.
         val combinedFailure: String? = handoffFailure ?: errorMessage
-        when (renderer) {
-            PlaybackRenderer.NATIVE -> if (resolvedUrl != null) {
-                NativePlayerView(
-                    streamUrl = resolvedUrl,
-                    onPlayerReady = { player -> exoPlayer = player },
-                    onFirstFrame = {
-                        isLoading = false
-                        isPlaying = true
-                    },
-                    onError = { message ->
-                        isLoading = false
-                        errorMessage = message
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                PlayerFailure(
-                    message = handoffFailure ?: "No playable source for this episode",
-                    onExitPlayer = onExitPlayer
-                )
-            }
-            PlaybackRenderer.WEBVIEW -> if (resolvedUrl != null) {
-                EmbedPlayerView(
-                    embedUrl = playbackUrl,
-                    backendBaseUrl = backendBaseUrl,
-                    onWebViewReady = { webView -> embedWebView = webView },
-                    onPageFinished = { isLoading = false },
-                    onError = { message ->
-                        isLoading = false
-                        errorMessage = message
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                PlayerFailure(
-                    message = handoffFailure ?: "No playable source for this episode",
-                    onExitPlayer = onExitPlayer
-                )
-            }
+        if (resolvedUrl != null) {
+            NativePlayerView(
+                streamUrl = resolvedUrl,
+                onPlayerReady = { player -> exoPlayer = player },
+                onFirstFrame = {
+                    isLoading = false
+                    isPlaying = true
+                },
+                onError = { message ->
+                    isLoading = false
+                    errorMessage = message
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            PlayerFailure(
+                message = handoffFailure ?: "No playable source for this episode",
+                onExitPlayer = onExitPlayer
+            )
         }
 
         if (isLoading && combinedFailure == null && resolvedUrl != null) {
@@ -342,8 +280,6 @@ fun PlayerScreen(
         }
 
         errorMessage?.let { message ->
-            // Runtime renderer errors (native decode, embed load) surface here;
-            // handoff-level unavailability is already rendered above.
             if (handoffFailure == null) {
                 PlayerFailure(
                     message = message,
@@ -353,9 +289,6 @@ fun PlayerScreen(
         }
 
         // Overlay Transport Controls for TV D-Pad navigation.
-        // Hidden whenever playback cannot start so the failure state stays
-        // unambiguous instead of overlapping with transport buttons.
-        // Top and bottom bars auto-hide during playback and reappear on user interaction.
         if (combinedFailure == null) {
             Column(
                 modifier = Modifier
@@ -395,7 +328,6 @@ fun PlayerScreen(
                     }
                 }
 
-                // Spacer when top bar is hidden to ensure bottom bar stays at bottom
                 if (!controlsVisible) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
