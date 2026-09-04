@@ -102,7 +102,7 @@ const val AUTOPLAY_UNLOCK_SCRIPT =
         "}catch(_){}" +
         "try{" +
         "var style=d.createElement('style');" +
-        "style.innerHTML='.jw-player,.jwplayer{width:100% !important;height:100% !important;position:absolute !important;top:0 !important;left:0 !important;visibility:visible !important;opacity:1 !important;display:block !important;z-index:999999 !important;} .vjs-tech{position:absolute !important;top:0 !important;left:0 !important;visibility:visible !important;opacity:1 !important;display:block !important;z-index:999999 !important;}';" +
+        "style.innerHTML='.jwplayer, .jw-wrapper, .jw-media, .jw-video { width: 100% !important; height: 100% !important; position: absolute !important; top: 0 !important; left: 0 !important; visibility: visible !important; opacity: 1 !important; display: block !important; z-index: 999999 !important; object-fit: contain !important; } .vjs-tech { width: 100% !important; height: 100% !important; position: absolute !important; top: 0 !important; left: 0 !important; visibility: visible !important; opacity: 1 !important; display: block !important; z-index: 999999 !important; object-fit: contain !important; }';" +
         "d.head.appendChild(style);" +
         "var divs=d.querySelectorAll('div');" +
         "for(var i=0;i<divs.length;i++){" +
