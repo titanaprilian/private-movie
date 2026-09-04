@@ -1280,7 +1280,7 @@ describe('videos api', () => {
 
     expect(mockXhr.open).toHaveBeenCalledWith(
       'POST',
-      expect.stringContaining('/api/media/episodes/ep-1/sources/upload')
+      expect.stringContaining('/api/episodes/ep-1/sources/upload')
     );
     expect(mockXhr.withCredentials).toBe(true);
     // Browser must set the multipart boundary itself — no manual Content-Type

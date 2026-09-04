@@ -1008,7 +1008,7 @@ function parseUploadErrorPayload(raw: string): { code?: string; message?: string
 
 /**
  * Upload a video file through the backend proxy endpoint
- * `POST /api/media/episodes/:id/sources/upload` (multipart/form-data).
+ * `POST /api/episodes/:id/sources/upload` (multipart/form-data).
  * The backend streams the file to S3/B2 and registers the `s3` source,
  * so the browser never talks to B2 directly (no CORS preflight).
  */
@@ -1018,7 +1018,7 @@ export function uploadEpisodeVideoSource(
 ): Promise<Episode> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    const url = `${getApiBaseUrl()}/api/media/episodes/${encodeURIComponent(
+    const url = `${getApiBaseUrl()}/api/episodes/${encodeURIComponent(
       episodeId
     )}/sources/upload`;
     xhr.open('POST', url);
