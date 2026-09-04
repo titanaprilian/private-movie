@@ -34,7 +34,17 @@ export const MVP_MEDIA_OPENAPI = {
         operationId: "getHomeFeed",
         summary: "Get public home feed",
         description:
-          "Returns the featured hero series (when present) and the Ongoing, Korean Drama, and Recently Added rows backed by series that have video sources.",
+          "Returns the featured hero series (when present) and the Ongoing, Korean Drama, and Recently Added rows backed by series that have video sources. When `sourceTypes` is supplied (e.g. `direct,s3`), only series with at least one episode containing a matching video source type are included.",
+        parameters: [
+          {
+            name: "sourceTypes",
+            in: "query",
+            required: false,
+            description:
+              "Optional comma-separated list of video source types to filter by (e.g. `direct,s3`). When omitted, all series with video sources are returned.",
+            schema: { type: "string", examples: ["direct,s3"] },
+          },
+        ],
         responses: {
           "200": {
             description: "Home feed wrapped in the shared success envelope.",
@@ -54,7 +64,7 @@ export const MVP_MEDIA_OPENAPI = {
         operationId: "getSeriesById",
         summary: "Get public series details with episodes",
         description:
-          "Returns a series with its nested seasons, episodes, video sources, relations, and genres.",
+          "Returns a series with its nested seasons, episodes, video sources, relations, and genres. When `sourceTypes` is supplied (e.g. `direct,s3`), episodes only include video sources with matching types.",
         parameters: [
           {
             name: "id",
@@ -62,6 +72,14 @@ export const MVP_MEDIA_OPENAPI = {
             required: true,
             description: "Series identifier.",
             schema: { type: "string" },
+          },
+          {
+            name: "sourceTypes",
+            in: "query",
+            required: false,
+            description:
+              "Optional comma-separated list of video source types to filter episode video sources by (e.g. `direct,s3`). When omitted, all video sources are returned.",
+            schema: { type: "string", examples: ["direct,s3"] },
           },
         ],
         responses: {

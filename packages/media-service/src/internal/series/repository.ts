@@ -191,7 +191,10 @@ export function createSeriesRepositoryInternal<
       return row ?? null;
     },
 
-    async findByIdWithEpisodes(id: string): Promise<SeriesWithEpisodes | null> {
+    async findByIdWithEpisodes(
+      id: string,
+      sourceTypes?: string[]
+    ): Promise<SeriesWithEpisodes | null> {
       const [seriesRow] = await db
         .select()
         .from(series)
@@ -242,7 +245,18 @@ export function createSeriesRepositoryInternal<
           s3StorageService: options?.s3StorageService,
         });
 
+        const filterSet =
+          sourceTypes && sourceTypes.length > 0
+            ? new Set(
+                sourceTypes.map((t) => t.trim()).filter((t) => t.length > 0)
+              )
+            : null;
+        const hasFilter = filterSet !== null && filterSet.size > 0;
+
         for (const s of normalizedSources) {
+          if (hasFilter && !filterSet!.has(s.type)) {
+            continue;
+          }
           const list = sourcesMap.get(s.episodeId) ?? [];
           list.push(s);
           sourcesMap.set(s.episodeId, list);
@@ -488,8 +502,27 @@ export function createSeriesRepositoryInternal<
       return row;
     },
 
-    async getHomeFeed(): Promise<HomeFeedPayload> {
-      const hasVideoSources = sql`EXISTS (
+    async getHomeFeed(sourceTypes?: string[]): Promise<HomeFeedPayload> {
+      const normalizedTypes = (sourceTypes ?? [])
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+      const hasTypeFilter = normalizedTypes.length > 0;
+      const typeList = hasTypeFilter
+        ? sql.join(
+            normalizedTypes.map((t) => sql`${t}`),
+            sql`, `
+          )
+        : null;
+      const hasVideoSources = hasTypeFilter
+        ? sql`EXISTS (
+        SELECT 1
+        FROM ${videoSources}
+        INNER JOIN ${episodes} ON ${videoSources.episodeId} = ${episodes.id}
+        INNER JOIN ${seasons} ON ${episodes.seasonId} = ${seasons.id}
+        WHERE ${seasons.seriesId} = ${series.id}
+        AND ${videoSources.type} IN (${typeList})
+      )`
+        : sql`EXISTS (
         SELECT 1
         FROM ${videoSources}
         INNER JOIN ${episodes} ON ${videoSources.episodeId} = ${episodes.id}

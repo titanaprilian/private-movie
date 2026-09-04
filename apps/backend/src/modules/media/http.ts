@@ -38,6 +38,32 @@ export interface MediaRoutesOptions {
 }
 
 /**
+ * Parse the optional `sourceTypes` query parameter. Accepts a
+ * comma-separated string (`?sourceTypes=direct,s3`) or a repeated
+ * array (`?sourceTypes=direct&sourceTypes=s3`). Returns `undefined`
+ * when omitted or empty so repositories keep their default behavior.
+ */
+function parseSourceTypesParam(input: unknown): string[] | undefined {
+  if (input === undefined || input === null) {
+    return undefined;
+  }
+  const rawList = Array.isArray(input) ? input : [input];
+  const out: string[] = [];
+  for (const item of rawList) {
+    if (typeof item !== "string") {
+      continue;
+    }
+    for (const part of item.split(",")) {
+      const trimmed = part.trim();
+      if (trimmed.length > 0) {
+        out.push(trimmed);
+      }
+    }
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+/**
  * Root-level route for the embed sandbox bootstrap.
  * Registers at `/embed/:hash` (not under `/api` prefix).
  */
@@ -936,15 +962,17 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
     )
     .get(
       "/series/home-feed",
-      async () => {
-        const feed = await seriesRepository.getHomeFeed();
+      async ({ query }) => {
+        const sourceTypes = parseSourceTypesParam(query?.sourceTypes);
+        const feed = await seriesRepository.getHomeFeed(sourceTypes);
         return successResponse(feed);
       }
     )
     .get(
       "/series/:id",
-      async ({ params, set }) => {
-        const s = await seriesRepository.findByIdWithEpisodes(params.id);
+      async ({ params, query, set }) => {
+        const sourceTypes = parseSourceTypesParam(query?.sourceTypes);
+        const s = await seriesRepository.findByIdWithEpisodes(params.id, sourceTypes);
         if (!s) {
           return errorResponse(
             set,
