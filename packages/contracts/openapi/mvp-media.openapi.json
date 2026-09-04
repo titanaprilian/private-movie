@@ -324,10 +324,11 @@
           },
           "type": {
             "type": "string",
-            "description": "Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player).",
+            "description": "Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player, 's3' for S3 object storage).",
             "enum": [
               "embed",
-              "direct"
+              "direct",
+              "s3"
             ]
           },
           "url": {

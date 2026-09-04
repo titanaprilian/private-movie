@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { InternalServerError } from "../../lib/errors";
 import { Elysia, t } from "elysia";
 import {
@@ -23,6 +24,7 @@ import {
   TmdbFetchError,
   type FetchFn,
   type BrowserFn,
+  S3NotConfiguredError,
   type S3StorageService,
 } from "@repo/media-service";
 import { EpisodeMissingFieldsError, EpisodeParseError, SeriesParseError, MirrorResolveError } from "@repo/media-scraper";
@@ -337,6 +339,65 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       }
     )
     .post(
+      "/episodes/:id/sources/presign-upload",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const episode = await episodeRepository.findById(params.id);
+        if (!episode) {
+          return errorResponse(
+            set,
+            404,
+            new EpisodeNotFoundError(`Episode with id ${params.id} not found`)
+          );
+        }
+
+        if (!options.s3StorageService || !options.s3StorageService.isConfigured()) {
+          return errorResponse(
+            set,
+            503,
+            new S3NotConfiguredError("S3 storage service is not configured")
+          );
+        }
+
+        try {
+          const key = `episodes/${params.id}/${randomUUID()}-${body.filename}`;
+          const res = await options.s3StorageService.getPresignedUploadUrl(
+            key,
+            body.contentType ?? undefined
+          );
+          return successResponse(res);
+        } catch (err) {
+          if (err instanceof S3NotConfiguredError) {
+            return errorResponse(set, 503, err);
+          }
+          throw err;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          filename: t.String(),
+          contentType: t.Optional(t.Nullable(t.String())),
+        }),
+      }
+    )
+    .post(
       "/episodes/:id/sources",
       async ({ params, body, headers, set }) => {
         const authHeader = headers["authorization"];
@@ -383,7 +444,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         body: t.Object({
           videoSources: t.Array(
             t.Object({
-              type: t.Union([t.Literal("embed"), t.Literal("direct")]),
+              type: t.Union([t.Literal("embed"), t.Literal("direct"), t.Literal("s3")]),
               url: t.String(),
               label: t.String(),
               quality: t.Optional(t.Nullable(t.String())),
@@ -488,7 +549,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           sourceId: t.String(),
         }),
         body: t.Object({
-          type: t.Optional(t.Union([t.Literal("embed"), t.Literal("direct")])),
+          type: t.Optional(t.Union([t.Literal("embed"), t.Literal("direct"), t.Literal("s3")])),
           url: t.Optional(t.String()),
           label: t.Optional(t.String()),
           quality: t.Optional(t.Nullable(t.String())),

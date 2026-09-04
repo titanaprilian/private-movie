@@ -244,8 +244,8 @@ export const MVP_MEDIA_OPENAPI = {
           type: {
             type: "string",
             description:
-              "Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player).",
-            enum: ["embed", "direct"],
+              "Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player, 's3' for S3 object storage).",
+            enum: ["embed", "direct", "s3"],
           },
           url: {
             type: "string",

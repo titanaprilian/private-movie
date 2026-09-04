@@ -1,5 +1,5 @@
 import type { createApp } from "@/app";
-import type { FetchFn, BrowserFn } from "@repo/media-service";
+import type { FetchFn, BrowserFn, S3StorageService } from "@repo/media-service";
 import { createStealthBrowserFn } from "@repo/media-scraper";
 
 export type App = ReturnType<typeof createApp>;
@@ -27,6 +27,7 @@ export interface RequestResult {
 export async function buildApp(options?: {
   fetchHtml?: FetchFn;
   browserFn?: BrowserFn;
+  s3StorageService?: S3StorageService;
 }): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
@@ -54,6 +55,7 @@ export async function buildApp(options?: {
     auth,
     fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
     browserFn: options?.browserFn ?? createStealthBrowserFn(),
+    s3StorageService: options?.s3StorageService,
   });
 }
 
