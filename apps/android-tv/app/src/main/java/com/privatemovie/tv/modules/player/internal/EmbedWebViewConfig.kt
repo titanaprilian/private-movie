@@ -97,7 +97,9 @@ const val AUTOPLAY_UNLOCK_SCRIPT =
         "}catch(_){}" +
         "try{" +
         "if(typeof jwplayer !== 'undefined'){" +
-        "jwplayer().play();" +
+        "var jwp=jwplayer();" +
+        "if(jwp&&jwp.resize){jwp.resize('100%','100%');}" +
+        "jwp.play();" +
         "}" +
         "}catch(_){}" +
         "try{" +
