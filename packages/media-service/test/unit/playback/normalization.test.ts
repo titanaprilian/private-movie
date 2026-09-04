@@ -41,7 +41,7 @@ describe("playback target normalization", () => {
   });
 
   describe("normalizeVideoSource", () => {
-    it("normalizes the url property while keeping other fields intact", () => {
+    it("normalizes the url property while keeping other fields intact", async () => {
       const source = {
         id: "src-1",
         episodeId: "ep-1",
@@ -51,7 +51,7 @@ describe("playback target normalization", () => {
         quality: "1080p",
       };
 
-      const result = normalizeVideoSource(source);
+      const result = await normalizeVideoSource(source);
 
       expect(result).toEqual({
         id: "src-1",
@@ -65,7 +65,7 @@ describe("playback target normalization", () => {
   });
 
   describe("normalizeVideoSources", () => {
-    it("normalizes an array of video sources including direct and embed targets", () => {
+    it("normalizes an array of video sources including direct and embed targets", async () => {
       const sources = [
         {
           id: "src-1",
@@ -79,7 +79,7 @@ describe("playback target normalization", () => {
         },
       ];
 
-      const result = normalizeVideoSources(sources);
+      const result = await normalizeVideoSources(sources);
 
       expect(result).toEqual([
         {
@@ -93,6 +93,100 @@ describe("playback target normalization", () => {
           url: "https://stream.example.com/video.m3u8",
         },
       ]);
+    });
+
+    it("resolves s3 sources into presigned playback URLs using s3StorageService", async () => {
+      const mockS3Service = {
+        isConfigured: () => true,
+        getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
+        getPresignedPlaybackUrl: async (key: string, expiresIn?: number) => {
+          return `https://s3.signed/${key}?expires=${expiresIn ?? 21600}`;
+        },
+        deleteObject: async () => {},
+        deleteObjects: async () => {},
+      };
+
+      const sources = [
+        {
+          id: "src-1",
+          type: "s3",
+          url: "episodes/ep-1/test.mp4",
+        },
+        {
+          id: "src-2",
+          type: "direct",
+          url: "https://example.com/direct.mp4",
+        },
+      ];
+
+      const result = await normalizeVideoSources(sources, { s3StorageService: mockS3Service });
+
+      expect(result).toEqual([
+        {
+          id: "src-1",
+          type: "s3",
+          url: "https://s3.signed/episodes/ep-1/test.mp4?expires=21600",
+        },
+        {
+          id: "src-2",
+          type: "direct",
+          url: "https://example.com/direct.mp4",
+        },
+      ]);
+    });
+
+    it("keeps s3 source url intact if s3StorageService is not configured or throws error", async () => {
+      const failingS3Service = {
+        isConfigured: () => false,
+        getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
+        getPresignedPlaybackUrl: async () => {
+          throw new Error("S3 error");
+        },
+        deleteObject: async () => {},
+        deleteObjects: async () => {},
+      };
+
+      const sources = [
+        {
+          id: "src-1",
+          type: "s3",
+          url: "episodes/ep-1/test.mp4",
+        },
+      ];
+
+      const result = await normalizeVideoSources(sources, { s3StorageService: failingS3Service });
+
+      expect(result).toEqual([
+        {
+          id: "src-1",
+          type: "s3",
+          url: "episodes/ep-1/test.mp4",
+        },
+      ]);
+    });
+
+    it("does not re-sign if s3 url is already a signed http(s) url", async () => {
+      const mockS3Service = {
+        isConfigured: () => true,
+        getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
+        getPresignedPlaybackUrl: async () => "https://should-not-reach-here",
+        deleteObject: async () => {},
+        deleteObjects: async () => {},
+      };
+
+      const sources = [
+        {
+          id: "src-1",
+          type: "s3",
+          url: "https://s3.us-east.backblazeb2.com/bucket/episodes/ep-1/test.mp4?X-Amz-Signature=123",
+        },
+      ];
+
+      const result = await normalizeVideoSources(sources, { s3StorageService: mockS3Service });
+
+      expect(result[0].url).toBe(
+        "https://s3.us-east.backblazeb2.com/bucket/episodes/ep-1/test.mp4?X-Amz-Signature=123"
+      );
     });
   });
 });

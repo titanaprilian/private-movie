@@ -27,8 +27,20 @@ export { createS3StorageService, S3NotConfiguredError };
 export type { S3StorageService, S3StorageServiceOptions };
 
 export type { BrowserFn, CreateStealthBrowserFnOptions };
-import { normalizePlaybackUrl, normalizeVideoSource, normalizeVideoSources } from "./internal/playback/normalization";
-export { normalizePlaybackUrl, normalizeVideoSource, normalizeVideoSources };
+import {
+  normalizePlaybackUrl,
+  normalizeVideoSource,
+  normalizeVideoSources,
+  normalizeVideoSourceSync,
+  normalizeVideoSourcesSync,
+} from "./internal/playback/normalization";
+export {
+  normalizePlaybackUrl,
+  normalizeVideoSource,
+  normalizeVideoSources,
+  normalizeVideoSourceSync,
+  normalizeVideoSourcesSync,
+};
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
 import { createSeasonsRepositoryInternal, SeasonNotFoundError, SeasonNotLinkedToTmdbError } from "./internal/seasons/repository";
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
@@ -100,17 +112,21 @@ export type {
   EpisodeOrderUpdateInput,
   EpisodeListParams,
   EpisodeListResult,
+  EpisodeRepositoryOptions,
 } from "./internal/episodes/repository";
 export type {
   SeriesUpsertInput,
   UpdateSeriesInput,
   SeriesListParams,
   SeriesListResult,
+  SeriesRepositoryOptions,
 } from "./internal/series/repository";
 export type {
   VideoSourceUpsertInput,
   UpdateVideoSourceInput,
+  VideoSourceRepositoryOptions,
 } from "./internal/video-sources/repository";
+
 
 export {
   EpisodeParseError,
@@ -420,9 +436,15 @@ export function createMediaService<
   db: PgDatabase<THKT, TSchema>,
   options?: SaveEpisodeServiceOptions
 ): MediaService {
-  const episodeRepository = createEpisodeRepositoryInternal(db);
-  const seriesRepository = createSeriesRepositoryInternal(db);
-  const videoSourceRepository = createVideoSourceRepositoryInternal(db);
+  const episodeRepository = createEpisodeRepositoryInternal(db, {
+    s3StorageService: options?.s3StorageService,
+  });
+  const seriesRepository = createSeriesRepositoryInternal(db, {
+    s3StorageService: options?.s3StorageService,
+  });
+  const videoSourceRepository = createVideoSourceRepositoryInternal(db, {
+    s3StorageService: options?.s3StorageService,
+  });
   const fetchHtml = options?.fetchHtml ?? defaultFetchFn;
 
   return {
@@ -565,7 +587,7 @@ export function createMediaService<
           source: input.source,
           title: scraped.title,
           videoType: scraped.videoType ?? null,
-          videoSources: normalizeVideoSources(videoSources),
+          videoSources: normalizeVideoSourcesSync(videoSources),
           metadata,
         },
         series,
@@ -733,10 +755,16 @@ export function createMediaService<
 
     async saveMedia(input: SaveMediaInput): Promise<SaveMediaResult> {
       return await db.transaction(async (tx) => {
-        const episodeRepositoryTx = createEpisodeRepositoryInternal(tx);
-        const seriesRepositoryTx = createSeriesRepositoryInternal(tx);
+        const episodeRepositoryTx = createEpisodeRepositoryInternal(tx, {
+          s3StorageService: options?.s3StorageService,
+        });
+        const seriesRepositoryTx = createSeriesRepositoryInternal(tx, {
+          s3StorageService: options?.s3StorageService,
+        });
         const seasonsRepositoryTx = createSeasonsRepositoryInternal(tx);
-        const videoSourceRepositoryTx = createVideoSourceRepositoryInternal(tx);
+        const videoSourceRepositoryTx = createVideoSourceRepositoryInternal(tx, {
+          s3StorageService: options?.s3StorageService,
+        });
 
         let seasonId: string | null = null;
         let seriesRow: SeriesRow | null = null;

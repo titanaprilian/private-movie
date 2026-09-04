@@ -2,8 +2,14 @@ import { randomUUID } from "node:crypto";
 import { and, asc, count, eq, inArray, isNull, max } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@repo/db";
-import { normalizeVideoSource, normalizeVideoSources } from "../playback/normalization";
+import { normalizeVideoSourceSync, normalizeVideoSources } from "../playback/normalization";
 import type { ParsedMetadata } from "@repo/media-scraper";
+import type { S3StorageService } from "../s3/s3-storage-service";
+
+export interface EpisodeRepositoryOptions {
+  s3StorageService?: S3StorageService;
+}
+
 
 export class EpisodeNotFoundError extends Error {
   constructor(message = "Episode not found") {
@@ -57,7 +63,7 @@ export interface EpisodeListResult {
 export function createEpisodeRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
->(db: PgDatabase<THKT, TSchema>) {
+>(db: PgDatabase<THKT, TSchema>, options?: EpisodeRepositoryOptions) {
   return {
     async upsert(input: EpisodeUpsertInput): Promise<EpisodeRow> {
       const now = new Date();
@@ -119,9 +125,13 @@ export function createEpisodeRepositoryInternal<
         .where(eq(videoSources.episodeId, id))
         .orderBy(asc(videoSources.createdAt));
 
+      const normalizedSources = await normalizeVideoSources(sources, {
+        s3StorageService: options?.s3StorageService,
+      });
+
       return {
         ...row,
-        videoSources: normalizeVideoSources(sources),
+        videoSources: normalizedSources,
       };
     },
 
@@ -169,9 +179,13 @@ export function createEpisodeRepositoryInternal<
           .where(inArray(videoSources.episodeId, episodeIds))
           .orderBy(asc(videoSources.createdAt));
 
-        for (const s of sources) {
+        const normalizedSources = await normalizeVideoSources(sources, {
+          s3StorageService: options?.s3StorageService,
+        });
+
+        for (const s of normalizedSources) {
           const list = sourcesMap.get(s.episodeId) ?? [];
-          list.push(normalizeVideoSource(s));
+          list.push(s);
           sourcesMap.set(s.episodeId, list);
         }
       }
@@ -215,9 +229,13 @@ export function createEpisodeRepositoryInternal<
         .where(eq(videoSources.episodeId, id))
         .orderBy(asc(videoSources.createdAt));
 
+      const normalizedSources = await normalizeVideoSources(sources, {
+        s3StorageService: options?.s3StorageService,
+      });
+
       return {
         ...row,
-        videoSources: normalizeVideoSources(sources),
+        videoSources: normalizedSources,
       };
     },
 

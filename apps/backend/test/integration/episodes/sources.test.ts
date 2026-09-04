@@ -117,6 +117,129 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       expect(body.data.videoSources.map((s) => s.id)).toContain(source2.id);
     });
 
+    it("resolves presigned GET playback URLs for s3 sources on GET /episodes/:id while leaving db key unmodified", async () => {
+      const mockS3Service = {
+        isConfigured: () => true,
+        getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
+        getPresignedPlaybackUrl: async (key: string, expiresIn?: number) =>
+          `https://s3.signed.com/${key}?expires=${expiresIn ?? 21600}`,
+        deleteObject: async () => {},
+        deleteObjects: async () => {},
+      };
+
+      const customApp = await buildApp({ s3StorageService: mockS3Service });
+      const episode = await insertTestEpisode();
+      const s3Key = `episodes/${episode.id}/video-1080p.mp4`;
+      const s3Source = await insertTestVideoSource(episode.id, {
+        type: "s3",
+        url: s3Key,
+        label: "B2 S3 Source",
+        quality: "1080p",
+      });
+      const directSource = await insertTestVideoSource(episode.id, {
+        type: "direct",
+        url: "https://example.com/direct.mp4",
+        label: "Direct",
+      });
+
+      const response = await request(customApp, {
+        path: `/episodes/${episode.id}`,
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          id: string;
+          videoSources: Array<{ id: string; type: string; url: string; label: string }>;
+        };
+      };
+
+      const resolvedS3 = body.data.videoSources.find((s) => s.id === s3Source.id);
+      expect(resolvedS3).toBeDefined();
+      expect(resolvedS3?.url).toBe(`https://s3.signed.com/${s3Key}?expires=21600`);
+
+      const resolvedDirect = body.data.videoSources.find((s) => s.id === directSource.id);
+      expect(resolvedDirect?.url).toBe("https://example.com/direct.mp4");
+
+      // Verify raw database row was NOT modified
+      const [dbSource] = await db
+        .select()
+        .from(videoSourcesTable)
+        .where(eq(videoSourcesTable.id, s3Source.id));
+      expect(dbSource.url).toBe(s3Key);
+    });
+
+    it("returns nested episodes with presigned GET playback URLs for s3 sources on GET /series/:id", async () => {
+      const mockS3Service = {
+        isConfigured: () => true,
+        getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
+        getPresignedPlaybackUrl: async (key: string, expiresIn?: number) =>
+          `https://s3.signed.com/${key}?expires=${expiresIn ?? 21600}`,
+        deleteObject: async () => {},
+        deleteObjects: async () => {},
+      };
+
+      const customApp = await buildApp({ s3StorageService: mockS3Service });
+      const seasonId = await ensureSeason(crypto.randomUUID());
+      const [season] = await db.select().from(seasons).where(eq(seasons.id, seasonId));
+      const seriesId = season.seriesId;
+
+      const epId = crypto.randomUUID();
+      await db.insert(episodes).values({
+        id: epId,
+        seasonId,
+        title: "Series Ep 1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const s3Key = `episodes/${epId}/series-ep.mp4`;
+      const s3Source = await insertTestVideoSource(epId, {
+        type: "s3",
+        url: s3Key,
+        label: "B2 S3 Ep Source",
+      });
+
+      const response = await request(customApp, {
+        path: `/series/${seriesId}`,
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          id: string;
+          episodes: Array<{
+            id: string;
+            videoSources: Array<{ id: string; type: string; url: string }>;
+          }>;
+          seasons: Array<{
+            id: string;
+            episodes: Array<{
+              id: string;
+              videoSources: Array<{ id: string; type: string; url: string }>;
+            }>;
+          }>;
+        };
+      };
+
+      const epInEpisodes = body.data.episodes.find((e) => e.id === epId);
+      const srcInEpisodes = epInEpisodes?.videoSources.find((s) => s.id === s3Source.id);
+      expect(srcInEpisodes?.url).toBe(`https://s3.signed.com/${s3Key}?expires=21600`);
+
+      const epInSeasons = body.data.seasons
+        .find((s) => s.id === seasonId)
+        ?.episodes.find((e) => e.id === epId);
+      const srcInSeasons = epInSeasons?.videoSources.find((s) => s.id === s3Source.id);
+      expect(srcInSeasons?.url).toBe(`https://s3.signed.com/${s3Key}?expires=21600`);
+
+      // Verify db key intact
+      const [dbSource] = await db
+        .select()
+        .from(videoSourcesTable)
+        .where(eq(videoSourcesTable.id, s3Source.id));
+      expect(dbSource.url).toBe(s3Key);
+    });
+
     it("returns 404 EPISODE_NOT_FOUND for non-existent episode id", async () => {
       const nonexistentId = crypto.randomUUID();
 

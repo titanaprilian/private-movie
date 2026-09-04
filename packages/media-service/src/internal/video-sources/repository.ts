@@ -3,6 +3,12 @@ import { asc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { videoSources, type VideoSourceRow } from "@repo/db";
 import { normalizeVideoSource, normalizeVideoSources } from "../playback/normalization";
+import type { S3StorageService } from "../s3/s3-storage-service";
+
+export interface VideoSourceRepositoryOptions {
+  s3StorageService?: S3StorageService;
+}
+
 
 export class VideoSourceNotFoundError extends Error {
   constructor(message = "Video source not found") {
@@ -30,7 +36,7 @@ export interface UpdateVideoSourceInput {
 export function createVideoSourceRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
->(db: PgDatabase<THKT, TSchema>) {
+>(db: PgDatabase<THKT, TSchema>, options?: VideoSourceRepositoryOptions) {
   return {
     async upsert(input: VideoSourceUpsertInput): Promise<VideoSourceRow> {
       const now = new Date();
@@ -56,7 +62,7 @@ export function createVideoSourceRepositoryInternal<
           },
         })
         .returning();
-      return row ? normalizeVideoSource(row) : row;
+      return row ? await normalizeVideoSource(row, { s3StorageService: options?.s3StorageService }) : row;
     },
 
     async findById(id: string): Promise<VideoSourceRow | null> {
@@ -64,7 +70,7 @@ export function createVideoSourceRepositoryInternal<
         .select()
         .from(videoSources)
         .where(eq(videoSources.id, id));
-      return row ? normalizeVideoSource(row) : null;
+      return row ? await normalizeVideoSource(row, { s3StorageService: options?.s3StorageService }) : null;
     },
 
     async findByEpisodeId(episodeId: string): Promise<VideoSourceRow[]> {
@@ -73,7 +79,7 @@ export function createVideoSourceRepositoryInternal<
         .from(videoSources)
         .where(eq(videoSources.episodeId, episodeId))
         .orderBy(asc(videoSources.createdAt));
-      return normalizeVideoSources(rows);
+      return await normalizeVideoSources(rows, { s3StorageService: options?.s3StorageService });
     },
 
     async update(
@@ -100,7 +106,7 @@ export function createVideoSourceRepositoryInternal<
         throw new VideoSourceNotFoundError(`Video source with id ${id} not found`);
       }
 
-      return normalizeVideoSource(row);
+      return await normalizeVideoSource(row, { s3StorageService: options?.s3StorageService });
     },
 
     async delete(id: string): Promise<VideoSourceRow> {

@@ -2,8 +2,14 @@ import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, genres, seasons, series, seriesToGenres, videoSources, type EpisodeRow, type SeasonRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
-import { normalizeVideoSource } from "../playback/normalization";
+import { normalizeVideoSources } from "../playback/normalization";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
+import type { S3StorageService } from "../s3/s3-storage-service";
+
+export interface SeriesRepositoryOptions {
+  s3StorageService?: S3StorageService;
+}
+
 
 export class SeriesNotFoundError extends Error {
   constructor(message = "Series not found") {
@@ -131,7 +137,7 @@ export interface HomeFeedPayload {
 export function createSeriesRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
->(db: PgDatabase<THKT, TSchema>) {
+>(db: PgDatabase<THKT, TSchema>, options?: SeriesRepositoryOptions) {
   return {
     async upsert(input: SeriesUpsertInput): Promise<SeriesRow> {
       const now = new Date();
@@ -232,9 +238,13 @@ export function createSeriesRepositoryInternal<
           .where(inArray(videoSources.episodeId, episodeIds))
           .orderBy(asc(videoSources.createdAt));
 
-        for (const s of sources) {
+        const normalizedSources = await normalizeVideoSources(sources, {
+          s3StorageService: options?.s3StorageService,
+        });
+
+        for (const s of normalizedSources) {
           const list = sourcesMap.get(s.episodeId) ?? [];
-          list.push(normalizeVideoSource(s));
+          list.push(s);
           sourcesMap.set(s.episodeId, list);
         }
       }

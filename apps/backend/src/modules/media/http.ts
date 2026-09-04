@@ -132,10 +132,16 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
     browserFn: options.browserFn,
     s3StorageService: options.s3StorageService,
   });
-  const episodeRepository = createEpisodeRepositoryInternal(options.db);
-  const seriesRepository = createSeriesRepositoryInternal(options.db);
+  const episodeRepository = createEpisodeRepositoryInternal(options.db, {
+    s3StorageService: options.s3StorageService,
+  });
+  const seriesRepository = createSeriesRepositoryInternal(options.db, {
+    s3StorageService: options.s3StorageService,
+  });
   const seasonsRepository = createSeasonsRepositoryInternal(options.db);
-  const videoSourceRepository = createVideoSourceRepositoryInternal(options.db);
+  const videoSourceRepository = createVideoSourceRepositoryInternal(options.db, {
+    s3StorageService: options.s3StorageService,
+  });
 
   return new Elysia({ name: "media-routes" })
     .get("/openapi.json", () => MVP_MEDIA_OPENAPI)
