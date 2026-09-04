@@ -94,5 +94,14 @@ const val AUTOPLAY_UNLOCK_SCRIPT =
         "try{var v=videos[i];if(v.paused){var p=v.play();if(p&&p.catch){p.catch(function(){});}}}" +
         "catch(_){}" +
         "}" +
+        "try{" +
+        "if(typeof jwplayer !== 'undefined'){" +
+        "jwplayer().play();" +
+        "}" +
+        "}catch(_){}" +
+        "try{" +
+        "var style=d.createElement('style');" +
+        "style.innerHTML='body{margin:0;padding:0;} .jw-player,.jwplayer{width:100% !important;height:100% !important;position:absolute !important;top:0 !important;left:0 !important;visibility:visible !important;opacity:1 !important;} .vjs-tech{width:100% !important;height:100% !important;position:absolute !important;top:0 !important;left:0 !important;visibility:visible !important;opacity:1 !important;}';" +
+        "d.head.appendChild(style);" +
         "}catch(_){}" +
         "}catch(_){}})();"
