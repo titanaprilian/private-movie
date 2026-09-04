@@ -404,6 +404,80 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       }
     )
     .post(
+      "/episodes/:id/sources/upload",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const episode = await episodeRepository.findById(params.id);
+        if (!episode) {
+          return errorResponse(
+            set,
+            404,
+            new EpisodeNotFoundError(`Episode with id ${params.id} not found`)
+          );
+        }
+
+        if (!options.s3StorageService || !options.s3StorageService.isConfigured()) {
+          return errorResponse(
+            set,
+            503,
+            new S3NotConfiguredError("S3 storage service is not configured")
+          );
+        }
+
+        const file = body.file;
+        const filename = file.name || "video.mp4";
+        const key = `episodes/${params.id}/${randomUUID()}-${filename}`;
+        const contentType = file.type || "video/mp4";
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+
+          await options.s3StorageService.uploadObject(key, buffer, contentType);
+
+          await videoSourceRepository.upsert({
+            episodeId: params.id,
+            type: "s3",
+            url: key,
+            label: body.label,
+            quality: body.quality ?? null,
+          });
+
+          const updated = await episodeRepository.findById(params.id);
+          return successResponse(updated);
+        } catch (err) {
+          if (err instanceof S3NotConfiguredError) {
+            return errorResponse(set, 503, err);
+          }
+          throw err;
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          file: t.File(),
+          label: t.String(),
+          quality: t.Optional(t.Nullable(t.String())),
+        }),
+      }
+    )
+    .post(
       "/episodes/:id/sources",
       async ({ params, body, headers, set }) => {
         const authHeader = headers["authorization"];

@@ -20,6 +20,11 @@ export interface S3StorageService {
   isConfigured(): boolean;
   getPresignedUploadUrl(key: string, contentType?: string): Promise<{ uploadUrl: string; key: string }>;
   getPresignedPlaybackUrl(key: string, expiresInSeconds?: number): Promise<string>;
+  uploadObject(
+    key: string,
+    body: ReadableStream | Buffer | Blob | Uint8Array,
+    contentType?: string
+  ): Promise<void>;
   deleteObject(key: string): Promise<void>;
   deleteObjects(keys: string[]): Promise<void>;
 }
@@ -84,7 +89,10 @@ class DefaultS3StorageService implements S3StorageService {
   private readonly configured: boolean;
 
   constructor(options?: S3StorageServiceOptions) {
-    const endpoint = (options?.endpoint ?? process.env.S3_ENDPOINT ?? "").trim();
+    let endpoint = (options?.endpoint ?? process.env.S3_ENDPOINT ?? "").trim();
+    if (endpoint && !endpoint.startsWith("http://") && !endpoint.startsWith("https://")) {
+      endpoint = `https://${endpoint}`;
+    }
     const region = (options?.region ?? process.env.S3_REGION ?? "us-east-005").trim();
     const bucket = (options?.bucket ?? process.env.S3_BUCKET ?? "").trim();
     const accessKeyId = (options?.accessKeyId ?? process.env.S3_ACCESS_KEY_ID ?? "").trim();
@@ -107,6 +115,10 @@ class DefaultS3StorageService implements S3StorageService {
           accessKeyId,
           secretAccessKey,
         },
+        // Backblaze B2 S3 compatibility: disable flexible checksums on presigned URLs
+        // and force path-style or standard addressing
+        requestChecksumCalculation: "WHEN_REQUIRED",
+        responseChecksumValidation: "WHEN_REQUIRED",
       });
     } else {
       this.configured = false;
@@ -140,7 +152,11 @@ class DefaultS3StorageService implements S3StorageService {
       ...(contentType ? { ContentType: contentType } : {}),
     });
 
-    const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 });
+    // Sign with unhoisted or standard parameters
+    const uploadUrl = await getSignedUrl(client, command, {
+      expiresIn: 3600,
+      unhoistableHeaders: new Set(["x-id"]),
+    });
     return { uploadUrl, key };
   }
 
@@ -160,6 +176,26 @@ class DefaultS3StorageService implements S3StorageService {
 
     const expiresIn = expiresInSeconds ?? this.defaultExpiresIn;
     return await getSignedUrl(client, command, { expiresIn });
+  }
+
+  async uploadObject(
+    key: string,
+    body: ReadableStream | Buffer | Blob | Uint8Array,
+    contentType?: string
+  ): Promise<void> {
+    const client = this.ensureConfigured();
+    if (!key) {
+      throw new Error("Key is required for uploadObject");
+    }
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      Body: body,
+      ...(contentType ? { ContentType: contentType } : {}),
+    });
+
+    await client.send(command);
   }
 
   async deleteObject(key: string): Promise<void> {

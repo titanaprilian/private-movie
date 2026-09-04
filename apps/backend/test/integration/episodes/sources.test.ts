@@ -123,6 +123,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
         getPresignedPlaybackUrl: async (key: string, expiresIn?: number) =>
           `https://s3.signed.com/${key}?expires=${expiresIn ?? 21600}`,
+        uploadObject: async () => {},
         deleteObject: async () => {},
         deleteObjects: async () => {},
       };
@@ -175,6 +176,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
         getPresignedPlaybackUrl: async (key: string, expiresIn?: number) =>
           `https://s3.signed.com/${key}?expires=${expiresIn ?? 21600}`,
+        uploadObject: async () => {},
         deleteObject: async () => {},
         deleteObjects: async () => {},
       };
@@ -292,6 +294,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
           getPresignedPlaybackUrl: async () => {
             throw new Error("Not implemented");
           },
+          uploadObject: async () => {
+            throw new Error("Not implemented");
+          },
           deleteObject: async () => {},
           deleteObjects: async () => {},
         },
@@ -320,6 +325,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
           key,
         }),
         getPresignedPlaybackUrl: async (key: string) => `https://s3.example.com/${key}?playback=true`,
+        uploadObject: async () => {},
         deleteObject: async () => {},
         deleteObjects: async () => {},
       };
@@ -339,6 +345,146 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const body = response.body as { data: { uploadUrl: string; key: string } };
       expect(body.data.uploadUrl).toContain("https://s3.example.com/episodes/");
       expect(body.data.key).toMatch(new RegExp(`^episodes/${episode.id}/.+-movie\\.mp4$`));
+    });
+  });
+
+  describe("POST /episodes/:id/sources/upload", () => {
+    it("returns 401 when unauthenticated", async () => {
+      const episode = await insertTestEpisode();
+      const formData = new FormData();
+      formData.append("file", new Blob(["video bytes"], { type: "video/mp4" }), "episode.mp4");
+      formData.append("label", "Direct Upload");
+
+      const response = await request(app, {
+        method: "POST",
+        path: `/episodes/${episode.id}/sources/upload`,
+        body: formData,
+      });
+
+      expect(response.status).toBe(401);
+    });
+
+    it("returns 404 EPISODE_NOT_FOUND when uploading source to non-existent episode", async () => {
+      const { accessToken } = await registerUser(app);
+      const nonexistentId = crypto.randomUUID();
+      const formData = new FormData();
+      formData.append("file", new Blob(["video bytes"], { type: "video/mp4" }), "episode.mp4");
+      formData.append("label", "Direct Upload");
+
+      const response = await request(app, {
+        method: "POST",
+        path: `/episodes/${nonexistentId}/sources/upload`,
+        headers: authHeaders(accessToken),
+        body: formData,
+      });
+
+      expect(response.status).toBe(404);
+      const body = response.body as { error: { code: string; message: string } };
+      expect(body.error.code).toBe("EPISODE_NOT_FOUND");
+    });
+
+    it("returns 503 S3_NOT_CONFIGURED when S3 storage is not configured", async () => {
+      const unconfiguredApp = await buildApp({
+        s3StorageService: {
+          isConfigured: () => false,
+          getPresignedUploadUrl: async () => {
+            throw new Error("Not implemented");
+          },
+          getPresignedPlaybackUrl: async () => {
+            throw new Error("Not implemented");
+          },
+          uploadObject: async () => {
+            throw new Error("Not implemented");
+          },
+          deleteObject: async () => {},
+          deleteObjects: async () => {},
+        },
+      });
+
+      const { accessToken } = await registerUser(unconfiguredApp);
+      const episode = await insertTestEpisode();
+      const formData = new FormData();
+      formData.append("file", new Blob(["video bytes"], { type: "video/mp4" }), "episode.mp4");
+      formData.append("label", "Direct Upload");
+
+      const response = await request(unconfiguredApp, {
+        method: "POST",
+        path: `/episodes/${episode.id}/sources/upload`,
+        headers: authHeaders(accessToken),
+        body: formData,
+      });
+
+      expect(response.status).toBe(503);
+      const body = response.body as { error: { code: string; message: string } };
+      expect(body.error.code).toBe("S3_NOT_CONFIGURED");
+    });
+
+    it("successfully uploads file to S3, persists s3 video source to DB, and returns updated episode envelope", async () => {
+      let uploadedKey = "";
+      let uploadedContentType = "";
+      let uploadedData: any = null;
+
+      const mockS3Service = {
+        isConfigured: () => true,
+        getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
+        getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}?playback=true`,
+        uploadObject: async (key: string, body: any, contentType?: string) => {
+          uploadedKey = key;
+          uploadedContentType = contentType ?? "";
+          uploadedData = body;
+        },
+        deleteObject: async () => {},
+        deleteObjects: async () => {},
+      };
+
+      const customApp = await buildApp({ s3StorageService: mockS3Service });
+      const { accessToken } = await registerUser(customApp);
+      const episode = await insertTestEpisode();
+
+      const formData = new FormData();
+      formData.append("file", new Blob(["my video binary data"], { type: "video/mp4" }), "awesome-movie.mp4");
+      formData.append("label", "Main B2 Source");
+      formData.append("quality", "1080p");
+
+      const response = await request(customApp, {
+        method: "POST",
+        path: `/episodes/${episode.id}/sources/upload`,
+        headers: authHeaders(accessToken),
+        body: formData,
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          id: string;
+          videoSources: Array<{ id: string; type: string; url: string; label: string; quality: string | null }>;
+        };
+      };
+
+      expect(body.data.id).toBe(episode.id);
+      expect(body.data.videoSources).toHaveLength(1);
+      const createdSource = body.data.videoSources[0];
+      expect(createdSource.type).toBe("s3");
+      expect(createdSource.label).toBe("Main B2 Source");
+      expect(createdSource.quality).toBe("1080p");
+      // GET playback URL resolved for client response
+      expect(createdSource.url).toContain("https://s3.signed.com/episodes/");
+
+      // Check S3 storage call
+      expect(uploadedKey).toMatch(new RegExp(`^episodes/${episode.id}/.+-awesome-movie\\.mp4$`));
+      expect(uploadedContentType).toBe("video/mp4");
+      expect(uploadedData).toBeDefined();
+
+      // Check real DB row persisted S3 key
+      const [dbSource] = await db
+        .select()
+        .from(videoSourcesTable)
+        .where(eq(videoSourcesTable.id, createdSource.id));
+      expect(dbSource).toBeDefined();
+      expect(dbSource.type).toBe("s3");
+      expect(dbSource.url).toBe(uploadedKey);
+      expect(dbSource.label).toBe("Main B2 Source");
+      expect(dbSource.quality).toBe("1080p");
     });
   });
 

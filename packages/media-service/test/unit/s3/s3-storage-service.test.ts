@@ -100,6 +100,11 @@ describe("S3StorageService", () => {
       const service = createS3StorageService();
       await expect(service.deleteObjects(["test-key"])).rejects.toThrow(S3NotConfiguredError);
     });
+
+    it("throws S3NotConfiguredError on uploadObject", async () => {
+      const service = createS3StorageService();
+      await expect(service.uploadObject("test-key", Buffer.from("hello"))).rejects.toThrow(S3NotConfiguredError);
+    });
   });
 
   describe("Configured S3StorageService operations", () => {
@@ -132,7 +137,7 @@ describe("S3StorageService", () => {
             ContentType: "video/mp4",
           },
         }),
-        { expiresIn: 3600 }
+        expect.objectContaining({ expiresIn: 3600 })
       );
     });
 
@@ -200,6 +205,26 @@ describe("S3StorageService", () => {
             Delete: {
               Objects: [{ Key: "episodes/123/v1.mp4" }, { Key: "episodes/123/v2.mp4" }],
             },
+          },
+        })
+      );
+    });
+
+    it("uploads object using PutObjectCommand", async () => {
+      mockSend.mockResolvedValueOnce({});
+
+      const service = createS3StorageService(validConfig);
+      const data = Buffer.from("test video content");
+      await service.uploadObject("episodes/123/uploaded.mp4", data, "video/mp4");
+
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "PutObjectCommand",
+          input: {
+            Bucket: "my-bucket",
+            Key: "episodes/123/uploaded.mp4",
+            Body: data,
+            ContentType: "video/mp4",
           },
         })
       );

@@ -8,7 +8,7 @@ export interface RequestOptions {
   method?: string;
   path: string;
   headers?: Record<string, string>;
-  body?: object;
+  body?: object | FormData;
   cookies?: Record<string, string>;
 }
 
@@ -73,7 +73,9 @@ export async function request(
   const url = new URL(normalizedPath, "http://localhost");
   const headers = new Headers();
 
-  if (options.body) {
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+
+  if (options.body && !isFormData) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -96,7 +98,7 @@ export async function request(
   };
 
   if (options.body) {
-    init.body = JSON.stringify(options.body);
+    init.body = isFormData ? (options.body as FormData) : JSON.stringify(options.body);
   }
 
   const response = await app.handle(new Request(url.toString(), init));
