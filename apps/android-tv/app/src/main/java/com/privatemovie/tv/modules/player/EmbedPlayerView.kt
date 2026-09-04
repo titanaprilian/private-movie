@@ -129,6 +129,8 @@ private fun createTvWebView(
         settings.mediaPlaybackRequiresUserGesture = false
         settings.loadWithOverviewMode = true
         settings.useWideViewPort = true
+        settings.setSupportMultipleWindows(true)
+        settings.javaScriptCanOpenWindowsAutomatically = true
         // Disguise as standard Chrome mobile: restrictive providers refuse
         // to load when they detect the Android WebView `wv` flag in the
         // User-Agent. Applies globally, including inner iframes.
@@ -162,6 +164,16 @@ private fun createTvWebView(
         }
 
         webChromeClient = object : WebChromeClient() {
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: android.os.Message?
+            ): Boolean {
+                // Prevent actual popup creation while satisfying scripts that attempt window.open
+                return false
+            }
+
             override fun onShowCustomView(
                 view: View,
                 callback: CustomViewCallback

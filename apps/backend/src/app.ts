@@ -18,16 +18,20 @@ export interface CreateAppDeps {
   browserFn?: BrowserFn;
 }
 
-function getAllowedOrigin(): string | undefined {
+function getAllowedOrigins(): string[] {
   if (process.env.NODE_ENV === "development") {
-    return "http://localhost:5173";
+    return [];
   }
-  return process.env.CORS_ORIGIN || "http://localhost:5173";
+  const raw = process.env.CORS_ORIGIN || "http://localhost:5173";
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 export const createApp = (deps: CreateAppDeps) => {
   const { db, auth } = deps;
-  const allowedOrigin = getAllowedOrigin();
+  const allowedOrigins = getAllowedOrigins();
 
   return new Elysia({ name: "app" })
     .use(embedRoutes())
@@ -39,10 +43,10 @@ export const createApp = (deps: CreateAppDeps) => {
           if (process.env.NODE_ENV === "development" && origin) {
             return true;
           }
-          if (!origin || !allowedOrigin) {
+          if (!origin || allowedOrigins.length === 0) {
             return false;
           }
-          return origin === allowedOrigin;
+          return allowedOrigins.includes(origin);
         },
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
         allowedHeaders: ["Content-Type", "Authorization"],

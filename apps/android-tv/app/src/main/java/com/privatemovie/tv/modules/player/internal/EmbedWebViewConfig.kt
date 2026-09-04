@@ -123,7 +123,6 @@ const val AUTOPLAY_UNLOCK_SCRIPT =
         "for(var i=0;i<divs.length;i++){" +
         "if(divs[i].textContent.indexOf('Disable ADBlock')!==-1 && divs[i].children.length===0){" +
         "divs[i].style.display='none';" +
-        "if(divs[i].parentElement){divs[i].parentElement.style.display='none';}" +
         "}" +
         "}" +
         "}catch(_){}" +

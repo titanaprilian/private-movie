@@ -10,8 +10,9 @@ const db = createDbClient(process.env.DATABASE_URL);
 const auth = createAuthenticationService(db);
 
 const port = Number(process.env.PORT ?? 3000);
+const hostname = process.env.HOST ?? "0.0.0.0";
 
-const app = createApp({ db, auth, browserFn }).listen(port);
+const app = createApp({ db, auth, browserFn }).listen({ port, hostname });
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
