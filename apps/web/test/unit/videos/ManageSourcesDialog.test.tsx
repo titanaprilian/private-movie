@@ -302,4 +302,124 @@ describe('ManageSourcesDialog component', () => {
     expect(apiModule.uploadBinaryToS3).not.toHaveBeenCalled();
     expect(apiModule.addVideoSources).not.toHaveBeenCalled();
   });
+
+  it('renders s3 badge with purple styling and allows editing s3 sources', async () => {
+    const s3Episode: apiModule.Episode = {
+      ...mockEpisode,
+      videoSources: [
+        {
+          id: 'src-s3-1',
+          type: 's3',
+          url: 'episodes/ep-123/video.mp4',
+          label: 'Backblaze B2 Mirror',
+          quality: '1080p',
+        },
+      ],
+    };
+
+    const updatedEpisode: apiModule.Episode = {
+      ...s3Episode,
+      videoSources: [
+        {
+          ...s3Episode.videoSources![0],
+          label: 'Updated B2 Mirror',
+          quality: '4k',
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.updateVideoSource).mockResolvedValueOnce(updatedEpisode);
+
+    const { user, queryClient } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={s3Episode} seriesId="series-1" />
+    );
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    // Switch to Edit Existing tab
+    await user.click(screen.getByRole('tab', { name: /edit existing/i }));
+
+    // Verify S3 badge rendering
+    const s3Badge = screen.getByText('s3');
+    expect(s3Badge).toBeInTheDocument();
+    expect(s3Badge.className).toContain('bg-purple-100');
+    expect(s3Badge.className).toContain('text-purple-700');
+
+    // Verify S3 option in Type selector
+    const typeSelect = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(typeSelect.value).toBe('s3');
+    expect(screen.getByRole('option', { name: 'S3 Storage' })).toBeInTheDocument();
+
+    // Edit fields
+    const labelInput = screen.getByDisplayValue('Backblaze B2 Mirror');
+    await user.clear(labelInput);
+    await user.type(labelInput, 'Updated B2 Mirror');
+
+    const qualityInput = screen.getByDisplayValue('1080p');
+    await user.clear(qualityInput);
+    await user.type(qualityInput, '4k');
+
+    // Click Update Source
+    const updateBtn = screen.getByRole('button', { name: /update source/i });
+    await user.click(updateBtn);
+
+    await waitFor(() => {
+      expect(apiModule.updateVideoSource).toHaveBeenCalledWith('ep-123', 'src-s3-1', {
+        type: 's3',
+        label: 'Updated B2 Mirror',
+        url: 'episodes/ep-123/video.mp4',
+        quality: '4k',
+      });
+    });
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(toast.success).toHaveBeenCalledWith('video.source_update', {
+        description: 'Successfully updated video source',
+      });
+    });
+  });
+
+  it('deletes an S3 source and triggers query invalidation', async () => {
+    const s3Episode: apiModule.Episode = {
+      ...mockEpisode,
+      videoSources: [
+        {
+          id: 'src-s3-del',
+          type: 's3',
+          url: 'episodes/ep-123/del-video.mp4',
+          label: 'S3 to Delete',
+          quality: '720p',
+        },
+      ],
+    };
+
+    const emptyEpisode: apiModule.Episode = {
+      ...s3Episode,
+      videoSources: [],
+    };
+
+    vi.mocked(apiModule.deleteVideoSource).mockResolvedValueOnce(emptyEpisode);
+
+    const { user, queryClient } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={s3Episode} seriesId="series-1" />
+    );
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    // Switch to Edit Existing tab
+    await user.click(screen.getByRole('tab', { name: /edit existing/i }));
+
+    const removeBtn = screen.getByRole('button', { name: /remove source/i });
+    await user.click(removeBtn);
+
+    await waitFor(() => {
+      expect(apiModule.deleteVideoSource).toHaveBeenCalledWith('ep-123', 'src-s3-del');
+    });
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(toast.success).toHaveBeenCalledWith('video.source_delete', {
+        description: 'Successfully removed video source',
+      });
+    });
+  });
 });
