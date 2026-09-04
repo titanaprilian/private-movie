@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { videoSources, type VideoSourceRow } from "@repo/db";
 import { normalizeVideoSource, normalizeVideoSources } from "../playback/normalization";
-import type { S3StorageService } from "../s3/s3-storage-service";
+import { extractS3Key, type S3StorageService } from "../s3/s3-storage-service";
 
 export interface VideoSourceRepositoryOptions {
   s3StorageService?: S3StorageService;
@@ -117,6 +117,25 @@ export function createVideoSourceRepositoryInternal<
 
       if (!row) {
         throw new VideoSourceNotFoundError(`Video source with id ${id} not found`);
+      }
+
+      // Best-effort S3 object cleanup: DB deletion must succeed even if the
+      // remote delete fails (logged as a warning instead).
+      if (row.type === "s3") {
+        const s3 = options?.s3StorageService;
+        if (s3?.isConfigured()) {
+          const key = extractS3Key(row.url);
+          if (key) {
+            try {
+              await s3.deleteObject(key);
+            } catch (err) {
+              console.warn(
+                `[media-service] Failed to delete S3 object for video source ${id} (key: ${key}):`,
+                err instanceof Error ? err.message : err
+              );
+            }
+          }
+        }
       }
 
       return row;

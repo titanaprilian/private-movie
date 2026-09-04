@@ -31,6 +31,52 @@ export class S3NotConfiguredError extends Error {
   }
 }
 
+/**
+ * Extract the raw S3 object key from a stored video source URL.
+ *
+ * The `video_sources.url` column stores the object key (e.g.
+ * `episodes/{episodeId}/{filename}`) when `type` is `"s3"`, but older rows
+ * may hold `s3://bucket/key` URIs. Best-effort handling:
+ * - `s3://bucket/key` -> `key`
+ * - `s3://key` -> `key`
+ * - `https://.../<key>?query` -> `<key>` (pathname without leading slash)
+ * - plain keys (with optional leading slash) -> trimmed as-is
+ */
+export function extractS3Key(storedUrl: string): string {
+  if (!storedUrl) return "";
+  const trimmed = storedUrl.trim();
+  if (!trimmed) return "";
+
+  if (trimmed.startsWith("s3://")) {
+    const withoutScheme = trimmed.slice("s3://".length);
+    const parts = withoutScheme.split("/").filter(Boolean);
+    if (parts.length === 0) return "";
+    if (parts.length === 1) return parts[0];
+    // Assume first segment is the bucket name, rest is the key.
+    return parts.slice(1).join("/");
+  }
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    try {
+      const parsed = new URL(trimmed);
+      const pathname = parsed.pathname.replace(/^\/+/, "");
+      if (!pathname) return "";
+      const segments = pathname.split("/").filter(Boolean);
+      // Path-style S3 URLs embed the bucket as the first segment
+      // (`/bucket/key`). Without bucket knowledge we cannot reliably strip
+      // it, so return the full path — the caller best-effort deletes it.
+      // If the URL looks like a presigned B2 URL with only the key path,
+      // this is exactly the key.
+      void segments;
+      return pathname;
+    } catch {
+      return trimmed;
+    }
+  }
+
+  return trimmed.replace(/^\/+/, "");
+}
+
 class DefaultS3StorageService implements S3StorageService {
   private readonly client: S3Client | null = null;
   private readonly bucket: string;

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   createS3StorageService,
+  extractS3Key,
   S3NotConfiguredError,
 } from "../../../src/internal/s3/s3-storage-service";
 
@@ -209,6 +210,27 @@ describe("S3StorageService", () => {
       await service.deleteObjects([]);
 
       expect(mockSend).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("extractS3Key", () => {
+    it("returns plain object keys as-is", () => {
+      expect(extractS3Key("episodes/123/video.mp4")).toBe("episodes/123/video.mp4");
+    });
+
+    it("strips a leading slash from plain keys", () => {
+      expect(extractS3Key("/episodes/123/video.mp4")).toBe("episodes/123/video.mp4");
+    });
+
+    it("strips the bucket from s3:// URIs", () => {
+      expect(extractS3Key("s3://my-bucket/episodes/123/video.mp4")).toBe(
+        "episodes/123/video.mp4"
+      );
+    });
+
+    it("returns empty string for blank input", () => {
+      expect(extractS3Key("")).toBe("");
+      expect(extractS3Key("   ")).toBe("");
     });
   });
 });

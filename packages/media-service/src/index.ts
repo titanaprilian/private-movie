@@ -19,11 +19,12 @@ import {
 
 import {
   createS3StorageService,
+  extractS3Key,
   S3NotConfiguredError,
   type S3StorageService,
   type S3StorageServiceOptions,
 } from "./internal/s3/s3-storage-service";
-export { createS3StorageService, S3NotConfiguredError };
+export { createS3StorageService, S3NotConfiguredError, extractS3Key };
 export type { S3StorageService, S3StorageServiceOptions };
 
 export type { BrowserFn, CreateStealthBrowserFnOptions };

@@ -4,7 +4,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@repo/db";
 import { normalizeVideoSourceSync, normalizeVideoSources } from "../playback/normalization";
 import type { ParsedMetadata } from "@repo/media-scraper";
-import type { S3StorageService } from "../s3/s3-storage-service";
+import { extractS3Key, type S3StorageService } from "../s3/s3-storage-service";
 
 export interface EpisodeRepositoryOptions {
   s3StorageService?: S3StorageService;
@@ -290,6 +290,27 @@ export function createEpisodeRepositoryInternal<
     },
 
     async deleteEpisode(id: string): Promise<EpisodeRow> {
+      // Collect raw S3 keys before the DB delete cascades video_sources rows.
+      // Must read the raw table (not findById) so presigned-URL normalization
+      // does not rewrite the stored object keys.
+      let s3Keys: string[] = [];
+      const s3 = options?.s3StorageService;
+      if (s3?.isConfigured()) {
+        try {
+          const existing = await db
+            .select()
+            .from(videoSources)
+            .where(eq(videoSources.episodeId, id));
+          s3Keys = existing
+            .filter((src) => src.type === "s3")
+            .map((src) => extractS3Key(src.url))
+            .filter((key): key is string => Boolean(key));
+        } catch {
+          // If the pre-fetch fails, still attempt the DB delete below.
+          s3Keys = [];
+        }
+      }
+
       const [row] = await db
         .delete(episodes)
         .where(eq(episodes.id, id))
@@ -297,6 +318,19 @@ export function createEpisodeRepositoryInternal<
 
       if (!row) {
         throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
+      }
+
+      // Best-effort S3 object cleanup: DB deletion must succeed even if the
+      // remote delete fails (logged as a warning instead).
+      if (s3Keys.length > 0 && s3?.isConfigured()) {
+        try {
+          await s3.deleteObjects(s3Keys);
+        } catch (err) {
+          console.warn(
+            `[media-service] Failed to delete ${s3Keys.length} S3 object(s) for episode ${id}:`,
+            err instanceof Error ? err.message : err
+          );
+        }
       }
 
       return row;
