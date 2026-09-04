@@ -17,6 +17,15 @@ import {
   type CreateStealthBrowserFnOptions,
 } from "@repo/media-scraper";
 
+import {
+  createS3StorageService,
+  S3NotConfiguredError,
+  type S3StorageService,
+  type S3StorageServiceOptions,
+} from "./internal/s3/s3-storage-service";
+export { createS3StorageService, S3NotConfiguredError };
+export type { S3StorageService, S3StorageServiceOptions };
+
 export type { BrowserFn, CreateStealthBrowserFnOptions };
 import { normalizePlaybackUrl, normalizeVideoSource, normalizeVideoSources } from "./internal/playback/normalization";
 export { normalizePlaybackUrl, normalizeVideoSource, normalizeVideoSources };
@@ -237,6 +246,7 @@ export interface SaveMediaResult {
 export interface SaveEpisodeServiceOptions {
   fetchHtml?: FetchFn;
   browserFn?: BrowserFn;
+  s3StorageService?: S3StorageService;
 }
 
 export interface MergeSeasonsInput {

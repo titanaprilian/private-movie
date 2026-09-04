@@ -23,6 +23,7 @@ import {
   TmdbFetchError,
   type FetchFn,
   type BrowserFn,
+  type S3StorageService,
 } from "@repo/media-service";
 import { EpisodeMissingFieldsError, EpisodeParseError, SeriesParseError, MirrorResolveError } from "@repo/media-scraper";
 
@@ -31,6 +32,7 @@ export interface MediaRoutesOptions {
   authService: AuthenticationService;
   fetchHtml?: FetchFn;
   browserFn?: BrowserFn;
+  s3StorageService?: S3StorageService;
 }
 
 /**
@@ -126,6 +128,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
   const mediaService = createSaveEpisodeService(options.db, {
     fetchHtml: options.fetchHtml,
     browserFn: options.browserFn,
+    s3StorageService: options.s3StorageService,
   });
   const episodeRepository = createEpisodeRepositoryInternal(options.db);
   const seriesRepository = createSeriesRepositoryInternal(options.db);

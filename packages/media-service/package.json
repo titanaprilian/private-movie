@@ -17,6 +17,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1126.0",
+    "@aws-sdk/s3-request-presigner": "^3.1126.0",
     "@repo/db": "workspace:*",
     "@repo/media-scraper": "workspace:*",
     "drizzle-orm": "^0.45.2"
