@@ -123,6 +123,7 @@ private fun createTvWebView(
     onHideFullscreen: () -> Unit
 ): WebView {
     return WebView(ctx).apply {
+        WebView.setWebContentsDebuggingEnabled(true)
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         settings.mediaPlaybackRequiresUserGesture = false
