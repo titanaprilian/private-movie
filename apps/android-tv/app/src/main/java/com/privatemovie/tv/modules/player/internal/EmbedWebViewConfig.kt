@@ -127,4 +127,27 @@ const val AUTOPLAY_UNLOCK_SCRIPT =
         "}" +
         "}" +
         "}catch(_){}" +
+        "try{" +
+        "setInterval(function(){" +
+        "try{" +
+        "var p = d.querySelector('.jw-video') || d.querySelector('video');" +
+        "if(p){" +
+        "p.style.setProperty('width', '100vw', 'important');" +
+        "p.style.setProperty('height', '100vh', 'important');" +
+        "p.style.setProperty('visibility', 'visible', 'important');" +
+        "p.style.setProperty('opacity', '1', 'important');" +
+        "p.style.setProperty('display', 'block', 'important');" +
+        "var parent = p.parentElement;" +
+        "while(parent && parent.tagName !== 'BODY') {" +
+        "parent.style.setProperty('width', '100vw', 'important');" +
+        "parent.style.setProperty('height', '100vh', 'important');" +
+        "parent.style.setProperty('visibility', 'visible', 'important');" +
+        "parent.style.setProperty('opacity', '1', 'important');" +
+        "parent.style.setProperty('display', 'block', 'important');" +
+        "parent = parent.parentElement;" +
+        "}" +
+        "}" +
+        "}catch(_){}" +
+        "}, 500);" +
+        "}catch(_){}" +
         "}catch(_){}})();"
