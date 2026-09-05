@@ -11,6 +11,10 @@ export { BulkScrapeModal } from './internal/BulkScrapeModal';
 export type { BulkScrapeModalProps } from './internal/BulkScrapeModal';
 export { useBulkScrapeSources } from './internal/useBulkScrapeSources';
 export type { ScrapedEpisodePreviewItem, LocalEpisodeItem, ProcessingLogItem } from './internal/useBulkScrapeSources';
+export { BulkIngestModal } from './internal/BulkIngestModal';
+export type { BulkIngestModalProps } from './internal/BulkIngestModal';
+export { useBulkIngestSources } from './internal/useBulkIngestSources';
+export type { BulkIngestItem, UseBulkIngestSourcesOptions } from './internal/useBulkIngestSources';
 export {
   fetchEpisode,
   episodeQueryOptions,

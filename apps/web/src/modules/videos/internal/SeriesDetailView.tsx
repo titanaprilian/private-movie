@@ -26,6 +26,7 @@ import { TmdbMatchModal } from './TmdbMatchModal';
 import { MergeSeasonsModal } from './MergeSeasonsModal';
 import { SyncEpisodesModal } from './SyncEpisodesModal';
 import { BulkScrapeModal } from './BulkScrapeModal';
+import { BulkIngestModal } from './BulkIngestModal';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
   Dialog,
@@ -187,6 +188,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
   const [isSyncEpisodesOpen, setIsSyncEpisodesOpen] = useState(false);
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
+  const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
   const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
@@ -474,6 +476,14 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
                 className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
               >
                 Bulk Add Sources
+              </button>
+
+              <button
+                onClick={() => setIsBulkIngestOpen(true)}
+                type="button"
+                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                Bulk Ingest URLs
               </button>
               
               <button
@@ -1080,6 +1090,13 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
       <BulkScrapeModal
         open={isBulkScrapeOpen}
         onOpenChange={setIsBulkScrapeOpen}
+        seriesId={seriesId}
+        localEpisodes={localEpisodes}
+        seasons={series.seasons ?? []}
+      />
+      <BulkIngestModal
+        open={isBulkIngestOpen}
+        onOpenChange={setIsBulkIngestOpen}
         seriesId={seriesId}
         localEpisodes={localEpisodes}
         seasons={series.seasons ?? []}
