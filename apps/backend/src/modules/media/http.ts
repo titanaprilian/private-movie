@@ -464,22 +464,24 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
               });
 
               if (!remoteRes.ok) {
+                console.error(`[remote-ingest] Upstream returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`);
                 sendEvent("error", {
                   code: "REMOTE_FETCH_FAILED",
                   message: `Remote server returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`,
                 });
-                await new Promise((resolve) => setTimeout(resolve, 0));
-                controller.close();
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                try { controller.close(); } catch {}
                 return;
               }
 
               if (!remoteRes.body) {
+                console.error("[remote-ingest] Upstream returned empty response body");
                 sendEvent("error", {
                   code: "REMOTE_FETCH_FAILED",
                   message: "Remote server returned empty response body",
                 });
-                await new Promise((resolve) => setTimeout(resolve, 0));
-                controller.close();
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                try { controller.close(); } catch {}
                 return;
               }
 
@@ -532,7 +534,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                 code: "INGEST_FAILED",
                 message: errorMessage,
               });
-              await new Promise((resolve) => setTimeout(resolve, 0));
+              await new Promise((resolve) => setTimeout(resolve, 50));
               try { controller.close(); } catch {}
             }
           },
