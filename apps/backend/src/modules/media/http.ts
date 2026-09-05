@@ -438,8 +438,13 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         if (request.signal.aborted) {
           abortController.abort();
         } else {
-          request.signal.addEventListener("abort", () => abortController.abort(), { once: true });
+          request.signal.addEventListener("abort", () => {
+            console.log(`[remote-ingest] Client request.signal aborted for key ${key}`);
+            abortController.abort();
+          }, { once: true });
         }
+
+        console.log(`[remote-ingest] Starting ingestion for episode ${params.id}, target URL: ${targetUrl.toString()}`);
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
@@ -449,12 +454,13 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                 controller.enqueue(
                   encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
                 );
-              } catch {
-                // stream controller may be closed if client disconnected
+              } catch (e) {
+                console.error(`[remote-ingest] Failed to enqueue event ${event}:`, e);
               }
             };
 
             try {
+              console.log(`[remote-ingest] Fetching upstream URL with referer: ${refererHeader}`);
               const remoteRes = await fetch(targetUrl.toString(), {
                 headers: {
                   "User-Agent": userAgentHeader,
@@ -490,7 +496,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
               const expectedTotal = parsedLength && !Number.isNaN(parsedLength) && parsedLength > 0 ? parsedLength : undefined;
 
               const contentType = remoteRes.headers.get("content-type") || "video/mp4";
+              console.log(`[remote-ingest] Upstream connected OK (Content-Length: ${expectedTotal ?? "unknown"}, Content-Type: ${contentType}). Streaming to S3 key: ${key}`);
 
+              let lastLoggedMb = 0;
               await s3.uploadStream(key, remoteRes.body, {
                 contentType,
                 signal: abortController.signal,
@@ -499,6 +507,11 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                   const percent = effectiveTotal && effectiveTotal > 0
                     ? Math.min(100, Math.round((loaded / effectiveTotal) * 100))
                     : 0;
+                  const currentMb = Math.floor(loaded / (10 * 1024 * 1024)) * 10;
+                  if (currentMb > lastLoggedMb) {
+                    lastLoggedMb = currentMb;
+                    console.log(`[remote-ingest] Upload progress: ${(loaded / (1024 * 1024)).toFixed(1)} MB (${percent}%)`);
+                  }
                   sendEvent("progress", {
                     loaded,
                     total: effectiveTotal ?? 0,
@@ -506,6 +519,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                   });
                 },
               });
+
+              console.log(`[remote-ingest] S3 uploadStream finished successfully for key: ${key}. Updating DB...`);
 
               const videoSourceRow = await videoSourceRepository.upsert({
                 episodeId: params.id,
@@ -517,18 +532,22 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
 
               const updatedEpisode = await episodeRepository.findById(params.id);
 
+              console.log(`[remote-ingest] DB upsert complete for episode ${params.id}. Sending complete event...`);
+
               sendEvent("complete", {
                 episode: updatedEpisode,
                 videoSource: videoSourceRow,
               });
               await new Promise((resolve) => setTimeout(resolve, 50));
               try { controller.close(); } catch {}
+              console.log(`[remote-ingest] Ingestion completed successfully for episode ${params.id}`);
             } catch (err: unknown) {
               if (abortController.signal.aborted) {
+                console.warn(`[remote-ingest] Ingestion aborted for episode ${params.id}`);
                 try { controller.close(); } catch {}
                 return;
               }
-              console.error("[remote-ingest] Remote video ingestion failed:", err);
+              console.error("[remote-ingest] Remote video ingestion failed with exception:", err);
               const errorMessage = err instanceof Error ? err.message : String(err);
               sendEvent("error", {
                 code: "INGEST_FAILED",

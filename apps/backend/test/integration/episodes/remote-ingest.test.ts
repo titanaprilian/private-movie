@@ -563,7 +563,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     expect(errorEvent?.data.message).toBe("S3 connection timeout during multipart upload completion");
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "[remote-ingest] Remote video ingestion failed:",
+      "[remote-ingest] Remote video ingestion failed with exception:",
       expect.any(Error)
     );
 
