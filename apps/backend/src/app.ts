@@ -108,10 +108,15 @@ export const createApp = (deps: CreateAppDeps) => {
             return request.headers.get("x-test-rate-limit") !== "true";
           }
           
-          // Do not rate limit embed and media proxy endpoints 
+          // Do not rate limit embed, media proxy, and long-lived streaming endpoints 
           // (video streams rapidly fetch hundreds of chunks which breaks the global 100/min limit)
           const url = new URL(request.url);
-          return url.pathname.startsWith("/embed") || url.pathname.startsWith("/api/media/relay") || url.pathname.startsWith("/api/media/proxy");
+          return (
+            url.pathname.startsWith("/embed") ||
+            url.pathname.startsWith("/api/media/relay") ||
+            url.pathname.startsWith("/api/media/proxy") ||
+            url.pathname.endsWith("/remote-ingest")
+          );
         },
       })
     )
