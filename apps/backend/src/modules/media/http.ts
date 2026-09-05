@@ -435,13 +435,15 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         const userAgentHeader = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
         const abortController = new AbortController();
-        if (request.signal.aborted) {
+        const onClientAbort = () => {
+          console.log(`[remote-ingest] Client request.signal aborted for key ${key}`);
           abortController.abort();
+        };
+
+        if (request.signal.aborted) {
+          onClientAbort();
         } else {
-          request.signal.addEventListener("abort", () => {
-            console.log(`[remote-ingest] Client request.signal aborted for key ${key}`);
-            abortController.abort();
-          }, { once: true });
+          request.signal.addEventListener("abort", onClientAbort, { once: true });
         }
 
         console.log(`[remote-ingest] Starting ingestion for episode ${params.id}, target URL: ${targetUrl.toString()}`);
@@ -555,6 +557,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
               });
               await new Promise((resolve) => setTimeout(resolve, 50));
               try { controller.close(); } catch {}
+            } finally {
+              request.signal.removeEventListener("abort", onClientAbort);
             }
           },
         });
