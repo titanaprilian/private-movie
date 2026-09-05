@@ -1286,8 +1286,8 @@ export async function remoteIngestEpisodeVideoSource(
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
-    const parts = buffer.split('\n\n');
-    buffer = parts.pop() || '';
+    const parts = buffer.split(/\n\n+/);
+    buffer = parts.pop() ?? '';
 
     for (const chunk of parts) {
       parseSSEChunk(chunk);
@@ -1296,9 +1296,11 @@ export async function remoteIngestEpisodeVideoSource(
 
   buffer += decoder.decode();
   if (buffer.trim()) {
-    const parts = buffer.split('\n\n');
-    for (const chunk of parts) {
-      parseSSEChunk(chunk);
+    const chunks = buffer.split(/\n\n+/);
+    for (const chunk of chunks) {
+      if (chunk.trim()) {
+        parseSSEChunk(chunk);
+      }
     }
   }
 

@@ -519,7 +519,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                 episode: updatedEpisode,
                 videoSource: videoSourceRow,
               });
-              controller.close();
+              await new Promise((resolve) => setTimeout(resolve, 50));
+              try { controller.close(); } catch {}
             } catch (err: unknown) {
               if (abortController.signal.aborted) {
                 try { controller.close(); } catch {}
