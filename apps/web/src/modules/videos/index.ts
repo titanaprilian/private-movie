@@ -33,6 +33,8 @@ export {
   deleteVideoSource,
   scrapeEpisodeSources,
   uploadEpisodeVideoSource,
+  remoteIngestEpisodeVideoSource,
+  parseIngestUrl,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
 export type {
@@ -56,4 +58,6 @@ export type {
   SaveMediaResult,
   ScrapeEpisodeSourcesParams,
   UploadEpisodeVideoSourceOptions,
+  RemoteIngestEpisodeVideoSourceOptions,
+  ParsedIngestUrl,
 } from './internal/api';

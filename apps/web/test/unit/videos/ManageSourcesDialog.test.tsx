@@ -25,6 +25,7 @@ vi.mock('@/modules/videos/internal/api', async () => {
     presignUploadSource: vi.fn(),
     uploadBinaryToS3: vi.fn(),
     uploadEpisodeVideoSource: vi.fn(),
+    remoteIngestEpisodeVideoSource: vi.fn(),
   };
 });
 
@@ -407,6 +408,162 @@ describe('ManageSourcesDialog component', () => {
       expect(toast.success).toHaveBeenCalledWith('video.source_delete', {
         description: 'Successfully removed video source',
       });
+    });
+  });
+
+  it('renders Remote Ingest tab and auto-parses URL to prefill label and quality', async () => {
+    const { user } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+    );
+
+    const remoteTab = screen.getByRole('tab', { name: /remote ingest/i });
+    expect(remoteTab).toBeInTheDocument();
+
+    await user.click(remoteTab);
+    expect(screen.getByText('Ingest Remote Video URL to S3')).toBeInTheDocument();
+
+    const urlInput = screen.getByPlaceholderText('https://example.com/video.mp4');
+    await user.type(urlInput, 'https://cdn.example.com/shows/Movie.2026.1080p.mp4');
+
+    expect(screen.getByDisplayValue('S3 1080p')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('1080p')).toBeInTheDocument();
+  });
+
+  it('1-click "Ingest to S3" shortcut button on direct source populates form and switches tab', async () => {
+    const { user } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+    );
+
+    // Switch to edit existing tab
+    await user.click(screen.getByRole('tab', { name: /edit existing/i }));
+
+    const ingestShortcutBtn = screen.getByRole('button', { name: /ingest to s3/i });
+    expect(ingestShortcutBtn).toBeInTheDocument();
+
+    await user.click(ingestShortcutBtn);
+
+    // Should switch to remote ingest tab with pre-filled fields from direct source
+    expect(screen.getByText('Ingest Remote Video URL to S3')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('https://stream.com/video1.mp4')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('S3 1080p')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('1080p')).toBeInTheDocument();
+  });
+
+  it('remotes ingest with SSE progress updates and completes successfully', async () => {
+    const updatedEpisode: apiModule.Episode = {
+      ...mockEpisode,
+      videoSources: [
+        ...mockEpisode.videoSources!,
+        {
+          id: 'src-s3-new',
+          type: 's3',
+          url: 'episodes/ep-123/video.mp4',
+          label: 'S3 1080p',
+          quality: '1080p',
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.remoteIngestEpisodeVideoSource).mockImplementation(
+      async (_episodeId, { onProgress }) => {
+        onProgress?.({ percent: 45, loaded: 45 * 1024 * 1024, total: 100 * 1024 * 1024 });
+        onProgress?.({ percent: 100, loaded: 100 * 1024 * 1024, total: 100 * 1024 * 1024 });
+        return updatedEpisode;
+      }
+    );
+
+    const { user, queryClient } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+    );
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    await user.click(screen.getByRole('tab', { name: /remote ingest/i }));
+
+    const urlInput = screen.getByPlaceholderText('https://example.com/video.mp4');
+    await user.type(urlInput, 'https://remote.com/my-video.1080p.mp4');
+
+    // Open advanced headers section
+    await user.click(screen.getByText(/advanced headers/i));
+    const refererInput = screen.getByPlaceholderText('e.g. https://remotehost.com');
+    await user.type(refererInput, 'https://remote.com');
+
+    const startBtn = screen.getByRole('button', { name: /^ingest to s3$/i });
+    await user.click(startBtn);
+
+    await waitFor(() => {
+      expect(apiModule.remoteIngestEpisodeVideoSource).toHaveBeenCalledWith('ep-123', {
+        url: 'https://remote.com/my-video.1080p.mp4',
+        label: 'S3 1080p',
+        quality: '1080p',
+        referer: 'https://remote.com',
+        signal: expect.any(AbortSignal),
+        onProgress: expect.any(Function),
+      });
+    });
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(toast.success).toHaveBeenCalledWith('video.remote_ingest', {
+        description: 'Successfully ingested remote video to S3',
+      });
+      // Switched to Edit Existing tab showing server 1
+      expect(screen.getByDisplayValue('Server 1')).toBeInTheDocument();
+    });
+  });
+
+  it('cancel remote ingest aborts transfer and resets state', async () => {
+    vi.mocked(apiModule.remoteIngestEpisodeVideoSource).mockImplementation(
+      (_episodeId, { onProgress, signal }) =>
+        new Promise<apiModule.Episode>((_resolve, reject) => {
+          onProgress?.({ percent: 30, loaded: 30 * 1024 * 1024, total: 100 * 1024 * 1024 });
+          signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        })
+    );
+
+    const { user } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /remote ingest/i }));
+
+    const urlInput = screen.getByPlaceholderText('https://example.com/video.mp4');
+    await user.type(urlInput, 'https://remote.com/huge-video.mp4');
+
+    await user.click(screen.getByRole('button', { name: /^ingest to s3$/i }));
+
+    expect(await screen.findByText('Ingesting...')).toBeInTheDocument();
+    expect(screen.getByText(/30\.0 MB \/ 100\.0 MB \(30%\)/)).toBeInTheDocument();
+
+    // Click Cancel Ingest
+    await user.click(screen.getByRole('button', { name: /^cancel ingest$/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Ingesting...')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^ingest to s3$/i })).toBeDisabled();
+    });
+  });
+
+  it('displays S3NotConfiguredError banner on S3 unconfigured error', async () => {
+    const err = new Error('S3 storage service is not configured') as Error & { code: string };
+    err.code = 'S3_NOT_CONFIGURED';
+    vi.mocked(apiModule.remoteIngestEpisodeVideoSource).mockRejectedValueOnce(err);
+
+    const { user } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /remote ingest/i }));
+
+    const urlInput = screen.getByPlaceholderText('https://example.com/video.mp4');
+    await user.type(urlInput, 'https://remote.com/clip.mp4');
+
+    await user.click(screen.getByRole('button', { name: /^ingest to s3$/i }));
+
+    expect(await screen.findByText('S3 Storage Unconfigured')).toBeInTheDocument();
+    expect(toast.error).toHaveBeenCalledWith('video.remote_ingest', {
+      description: 'S3 storage service is not configured',
     });
   });
 });

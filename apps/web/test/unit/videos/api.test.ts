@@ -24,6 +24,7 @@ import {
   presignUploadSource,
   uploadBinaryToS3,
   uploadEpisodeVideoSource,
+  remoteIngestEpisodeVideoSource,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -1455,6 +1456,103 @@ describe('videos api', () => {
     expect(mockXhr.abort).toHaveBeenCalled();
 
     xhrSpy.mockRestore();
+  });
+
+  it('remoteIngestEpisodeVideoSource posts JSON payload and parses SSE stream events', async () => {
+    const mockEpisode: Episode = {
+      id: 'ep-remote-1',
+      sourceUrl: 'https://example.com',
+      source: 'direct',
+      title: 'Remote Episode',
+      videoSources: [
+        {
+          id: 'src-s3',
+          type: 's3',
+          url: 'episodes/ep-remote-1/test.mp4',
+          label: 'S3 1080p',
+          quality: '1080p',
+        },
+      ],
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-01',
+    };
+
+    const sseChunks = [
+      'event: progress\ndata: {"loaded":50,"total":100,"percent":50}\n\n',
+      'event: complete\ndata: {"episode":' + JSON.stringify(mockEpisode) + '}\n\n',
+    ];
+
+    let postUrl = '';
+    let postBody = '';
+    const progressEvents: number[] = [];
+
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const chunk of sseChunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl = typeof input === 'string' ? input : (input as Request).url;
+        postBody = init?.body as string;
+        return new Response(stream, {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        });
+      }
+    );
+
+    const res = await remoteIngestEpisodeVideoSource('ep-remote-1', {
+      url: 'https://remote.com/video.mp4',
+      label: 'S3 1080p',
+      quality: '1080p',
+      referer: 'https://remote.com',
+      onProgress: (p) => {
+        progressEvents.push(p.percent);
+      },
+    });
+
+    expect(postUrl).toContain('/api/episodes/ep-remote-1/sources/remote-ingest');
+    expect(JSON.parse(postBody)).toEqual({
+      url: 'https://remote.com/video.mp4',
+      label: 'S3 1080p',
+      quality: '1080p',
+      referer: 'https://remote.com',
+    });
+    expect(progressEvents).toEqual([50]);
+    expect(res.id).toBe('ep-remote-1');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('remoteIngestEpisodeVideoSource surfaces error code on non-2xx response', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: { code: 'S3_NOT_CONFIGURED', message: 'S3 storage service is not configured' },
+          }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+    );
+
+    const err = await remoteIngestEpisodeVideoSource('ep-remote-1', {
+      url: 'https://remote.com/video.mp4',
+      label: 'S3 1080p',
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error & { code?: string }).code).toBe('S3_NOT_CONFIGURED');
+
+    fetchSpy.mockRestore();
   });
 });
 

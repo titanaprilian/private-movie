@@ -1,5 +1,9 @@
 import { queryOptions } from '@tanstack/react-query';
 import { api, getAccessToken } from '@/lib/api';
+import { parseIngestUrl, type ParsedIngestUrl } from './parseIngestUrl';
+
+export { parseIngestUrl };
+export type { ParsedIngestUrl };
 
 export interface VideoSource {
   id: string;
@@ -1163,6 +1167,134 @@ export function uploadBinaryToS3({
 
     xhr.send(file);
   });
+}
+
+export interface RemoteIngestEpisodeVideoSourceOptions {
+  url: string;
+  label: string;
+  quality?: string | null;
+  referer?: string | null;
+  onProgress?: (progress: {
+    percent: number;
+    loaded: number;
+    total: number;
+  }) => void;
+  signal?: AbortSignal;
+}
+
+export async function remoteIngestEpisodeVideoSource(
+  episodeId: string,
+  options: RemoteIngestEpisodeVideoSourceOptions
+): Promise<Episode> {
+  const apiUrl = `${getApiBaseUrl()}/api/episodes/${encodeURIComponent(
+    episodeId
+  )}/sources/remote-ingest`;
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      url: options.url,
+      label: options.label,
+      quality: options.quality || undefined,
+      referer: options.referer || undefined,
+    }),
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    let errorCode: string | undefined;
+    let errorMessage = `Failed to ingest remote video (status ${response.status})`;
+    try {
+      const json = await response.json();
+      if (json?.error) {
+        errorCode = json.error.code;
+        errorMessage = json.error.message || errorMessage;
+      }
+    } catch {
+      // ignore JSON parse error
+    }
+    const err = new Error(errorMessage) as Error & {
+      code?: string;
+      status?: number;
+    };
+    if (errorCode) err.code = errorCode;
+    err.status = response.status;
+    throw err;
+  }
+
+  if (!response.body) {
+    throw new Error('No response body received for remote ingest stream');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let completedEpisode: Episode | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop() || '';
+
+    for (const chunk of parts) {
+      const lines = chunk.split('\n');
+      let eventType = '';
+      let eventDataStr = '';
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+          eventDataStr = line.slice(6).trim();
+        }
+      }
+
+      if (!eventType || !eventDataStr) continue;
+
+      let data: unknown;
+      try {
+        data = JSON.parse(eventDataStr);
+      } catch {
+        continue;
+      }
+
+      if (eventType === 'progress' && typeof data === 'object' && data !== null) {
+        const progressData = data as { percent?: number; loaded?: number; total?: number };
+        options.onProgress?.({
+          percent: progressData.percent ?? 0,
+          loaded: progressData.loaded ?? 0,
+          total: progressData.total ?? 0,
+        });
+      } else if (eventType === 'complete' && typeof data === 'object' && data !== null) {
+        const completeData = data as { episode?: Episode };
+        if (completeData.episode) {
+          completedEpisode = completeData.episode;
+        }
+      } else if (eventType === 'error' && typeof data === 'object' && data !== null) {
+        const errorData = data as { code?: string; message?: string };
+        const err = new Error(errorData.message || 'Remote ingest failed') as Error & { code?: string };
+        if (errorData.code) err.code = errorData.code;
+        throw err;
+      }
+    }
+  }
+
+  if (!completedEpisode) {
+    throw new Error('Ingest stream ended without completion event');
+  }
+
+  return completedEpisode;
 }
 
 
