@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@repo/config-vitest": "workspace:*",
-    "bun-types": "latest",
+    "bun-types": "^1.4.2",
     "drizzle-kit": "^0.31.10",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"

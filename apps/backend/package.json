@@ -27,7 +27,7 @@
     "@electric-sql/pglite": "^0.5.4",
     "@eslint/js": "^10.0.1",
     "@repo/config-vitest": "workspace:*",
-    "bun-types": "latest",
+    "bun-types": "^1.4.2",
     "eslint": "^10.8.0",
     "postgres": "^3.4.9",
     "typescript": "^5.8.0",
