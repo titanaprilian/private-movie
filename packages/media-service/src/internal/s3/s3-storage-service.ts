@@ -1,3 +1,4 @@
+import { type Readable } from "node:stream";
 import {
   S3Client,
   PutObjectCommand,
@@ -6,6 +7,7 @@ import {
   DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Upload } from "@aws-sdk/lib-storage";
 
 export interface S3StorageServiceOptions {
   endpoint?: string;
@@ -16,6 +18,12 @@ export interface S3StorageServiceOptions {
   presignedGetExpiresIn?: number;
 }
 
+export interface StreamUploadOptions {
+  contentType?: string;
+  onProgress?: (progress: { loaded: number; total?: number }) => void;
+  signal?: AbortSignal;
+}
+
 export interface S3StorageService {
   isConfigured(): boolean;
   getPresignedUploadUrl(key: string, contentType?: string): Promise<{ uploadUrl: string; key: string }>;
@@ -24,6 +32,11 @@ export interface S3StorageService {
     key: string,
     body: ReadableStream | Buffer | Blob | Uint8Array,
     contentType?: string
+  ): Promise<void>;
+  uploadStream(
+    key: string,
+    body: ReadableStream | Readable,
+    options?: StreamUploadOptions
   ): Promise<void>;
   deleteObject(key: string): Promise<void>;
   deleteObjects(keys: string[]): Promise<void>;
@@ -196,6 +209,68 @@ class DefaultS3StorageService implements S3StorageService {
     });
 
     await client.send(command);
+  }
+
+  async uploadStream(
+    key: string,
+    body: ReadableStream | Readable,
+    options?: StreamUploadOptions
+  ): Promise<void> {
+    const client = this.ensureConfigured();
+    if (!key) {
+      throw new Error("Key is required for uploadStream");
+    }
+
+    const upload = new Upload({
+      client,
+      params: {
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+        ...(options?.contentType ? { ContentType: options.contentType } : {}),
+      },
+      queueSize: 4,
+      partSize: 10 * 1024 * 1024,
+    });
+
+    if (options?.onProgress) {
+      upload.on("httpUploadProgress", (progress) => {
+        if (progress.loaded != null) {
+          options.onProgress!({
+            loaded: progress.loaded,
+            total: progress.total,
+          });
+        }
+      });
+    }
+
+    if (options?.signal) {
+      if (options.signal.aborted) {
+        await upload.abort();
+        throw options.signal.reason || new Error("Upload aborted");
+      }
+
+      const onAbort = () => {
+        upload.abort().catch(() => {});
+      };
+
+      options.signal.addEventListener("abort", onAbort, { once: true });
+      try {
+        await upload.done();
+        if (options.signal.aborted) {
+          throw options.signal.reason || new Error("Upload aborted");
+        }
+      } catch (err) {
+        if (options.signal.aborted) {
+          throw options.signal.reason || new Error("Upload aborted");
+        }
+        throw err;
+      } finally {
+        options.signal.removeEventListener("abort", onAbort);
+      }
+    } else {
+      await upload.done();
+    }
   }
 
   async deleteObject(key: string): Promise<void> {

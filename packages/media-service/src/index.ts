@@ -23,9 +23,10 @@ import {
   S3NotConfiguredError,
   type S3StorageService,
   type S3StorageServiceOptions,
+  type StreamUploadOptions,
 } from "./internal/s3/s3-storage-service";
 export { createS3StorageService, S3NotConfiguredError, extractS3Key };
-export type { S3StorageService, S3StorageServiceOptions };
+export type { S3StorageService, S3StorageServiceOptions, StreamUploadOptions };
 
 export type { BrowserFn, CreateStealthBrowserFnOptions };
 import {

@@ -18,6 +18,35 @@ vi.mock("@aws-sdk/client-s3", () => {
   };
 });
 
+const { mockUploadDone, mockUploadOn, mockUploadAbort, mockUploadConstructor } = vi.hoisted(() => {
+  const mockUploadDone = vi.fn();
+  const mockUploadOn = vi.fn();
+  const mockUploadAbort = vi.fn();
+  const mockUploadConstructor = vi.fn().mockImplementation((params) => {
+    const instance = {
+      done: mockUploadDone,
+      on: mockUploadOn,
+      abort: mockUploadAbort,
+      params,
+    };
+    mockUploadDone.mockResolvedValue({});
+    mockUploadOn.mockImplementation((event: string, listener: Function) => {
+      if (event === "httpUploadProgress") {
+        (instance as any)._progressListener = listener;
+      }
+      return instance;
+    });
+    return instance;
+  });
+  return { mockUploadDone, mockUploadOn, mockUploadAbort, mockUploadConstructor };
+});
+
+vi.mock("@aws-sdk/lib-storage", () => {
+  return {
+    Upload: mockUploadConstructor,
+  };
+});
+
 const mockGetSignedUrl = vi.fn();
 vi.mock("@aws-sdk/s3-request-presigner", () => {
   return {
@@ -104,6 +133,12 @@ describe("S3StorageService", () => {
     it("throws S3NotConfiguredError on uploadObject", async () => {
       const service = createS3StorageService();
       await expect(service.uploadObject("test-key", Buffer.from("hello"))).rejects.toThrow(S3NotConfiguredError);
+    });
+
+    it("throws S3NotConfiguredError on uploadStream", async () => {
+      const service = createS3StorageService();
+      const stream = new ReadableStream();
+      await expect(service.uploadStream("test-key", stream)).rejects.toThrow(S3NotConfiguredError);
     });
   });
 
@@ -235,6 +270,75 @@ describe("S3StorageService", () => {
       await service.deleteObjects([]);
 
       expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it("uploads stream using @aws-sdk/lib-storage Upload", async () => {
+      const service = createS3StorageService(validConfig);
+      const stream = new ReadableStream();
+      const onProgress = vi.fn();
+
+      mockUploadDone.mockImplementationOnce(async () => {
+        // simulate progress call
+        const instance = mockUploadConstructor.mock.results[mockUploadConstructor.mock.results.length - 1].value;
+        if (instance._progressListener) {
+          instance._progressListener({ loaded: 500, total: 1000 });
+        }
+      });
+
+      await service.uploadStream("episodes/123/stream.mp4", stream, {
+        contentType: "video/mp4",
+        onProgress,
+      });
+
+      expect(mockUploadConstructor).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({
+            Bucket: "my-bucket",
+            Key: "episodes/123/stream.mp4",
+            Body: stream,
+            ContentType: "video/mp4",
+          }),
+          queueSize: 4,
+          partSize: 10 * 1024 * 1024,
+        })
+      );
+      expect(onProgress).toHaveBeenCalledWith({ loaded: 500, total: 1000 });
+      expect(mockUploadDone).toHaveBeenCalled();
+    });
+
+    it("handles AbortSignal trigger on uploadStream", async () => {
+      const service = createS3StorageService(validConfig);
+      const stream = new ReadableStream();
+      const controller = new AbortController();
+
+      mockUploadDone.mockImplementationOnce(() => new Promise((resolve) => setTimeout(resolve, 50)));
+      mockUploadAbort.mockResolvedValueOnce(undefined);
+
+      const uploadPromise = service.uploadStream("episodes/123/stream.mp4", stream, {
+        signal: controller.signal,
+      });
+
+      controller.abort();
+
+      await expect(uploadPromise).rejects.toThrow();
+      expect(mockUploadAbort).toHaveBeenCalled();
+    });
+
+    it("rejects immediately if AbortSignal is already aborted", async () => {
+      const service = createS3StorageService(validConfig);
+      const stream = new ReadableStream();
+      const controller = new AbortController();
+      controller.abort();
+
+      mockUploadAbort.mockResolvedValueOnce(undefined);
+
+      await expect(
+        service.uploadStream("episodes/123/stream.mp4", stream, {
+          signal: controller.signal,
+        })
+      ).rejects.toThrow();
+
+      expect(mockUploadAbort).toHaveBeenCalled();
     });
   });
 
