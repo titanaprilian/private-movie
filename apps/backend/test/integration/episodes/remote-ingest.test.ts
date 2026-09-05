@@ -505,4 +505,75 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
       .where(eq(videoSourcesTable.episodeId, episode.id));
     expect(sourcesInDb).toHaveLength(0);
   });
+
+  it("handles S3 uploadStream exception cleanly, logs error, and flushes error event over SSE", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const mockS3Service = {
+      isConfigured: () => true,
+      getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
+      getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}`,
+      uploadObject: async () => {},
+      uploadStream: async () => {
+        throw new Error("S3 connection timeout during multipart upload completion");
+      },
+      deleteObject: async () => {},
+      deleteObjects: async () => {},
+    };
+
+    const customApp = await buildApp({ s3StorageService: mockS3Service });
+    const { accessToken } = await registerUser(customApp);
+    const episode = await insertTestEpisode();
+
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      if (url.startsWith("https://s3-error-test.com/")) {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode("chunk-1"));
+            controller.close();
+          },
+        });
+        return new Response(stream, { status: 200 });
+      }
+      return originalFetch(input, init);
+    }) as typeof fetch;
+
+    const response = await customApp.handle(
+      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
+        method: "POST",
+        headers: {
+          ...authHeaders(accessToken),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: "https://s3-error-test.com/large-video.mp4",
+          label: "S3 Error Source",
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const sseText = await response.text();
+    const events = parseSSE(sseText);
+
+    const errorEvent = events.find((e) => e.event === "error");
+    expect(errorEvent).toBeDefined();
+    expect(errorEvent?.data.code).toBe("INGEST_FAILED");
+    expect(errorEvent?.data.message).toBe("S3 connection timeout during multipart upload completion");
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[remote-ingest] Remote video ingestion failed:",
+      expect.any(Error)
+    );
+
+    // Verify DB row not written
+    const sourcesInDb = await db
+      .select()
+      .from(videoSourcesTable)
+      .where(eq(videoSourcesTable.episodeId, episode.id));
+    expect(sourcesInDb).toHaveLength(0);
+
+    consoleErrorSpy.mockRestore();
+  });
 });

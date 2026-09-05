@@ -468,6 +468,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                   code: "REMOTE_FETCH_FAILED",
                   message: `Remote server returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`,
                 });
+                await new Promise((resolve) => setTimeout(resolve, 0));
                 controller.close();
                 return;
               }
@@ -477,6 +478,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                   code: "REMOTE_FETCH_FAILED",
                   message: "Remote server returned empty response body",
                 });
+                await new Promise((resolve) => setTimeout(resolve, 0));
                 controller.close();
                 return;
               }
@@ -523,11 +525,13 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                 try { controller.close(); } catch {}
                 return;
               }
+              console.error("[remote-ingest] Remote video ingestion failed:", err);
               const errorMessage = err instanceof Error ? err.message : String(err);
               sendEvent("error", {
                 code: "INGEST_FAILED",
                 message: errorMessage,
               });
+              await new Promise((resolve) => setTimeout(resolve, 0));
               try { controller.close(); } catch {}
             }
           },

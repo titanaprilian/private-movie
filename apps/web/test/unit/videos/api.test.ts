@@ -1554,6 +1554,95 @@ describe('videos api', () => {
 
     fetchSpy.mockRestore();
   });
+
+  it('remoteIngestEpisodeVideoSource parses trailing complete event block without trailing double newline when stream ends', async () => {
+    const mockEpisode: Episode = {
+      id: 'ep-trailing-1',
+      sourceUrl: 'https://example.com',
+      source: 'direct',
+      title: 'Trailing Episode',
+      videoSources: [
+        {
+          id: 'src-s3-trailing',
+          type: 's3',
+          url: 'episodes/ep-trailing-1/test.mp4',
+          label: 'S3 1080p',
+          quality: '1080p',
+        },
+      ],
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-01',
+    };
+
+    // The stream sends progress with \n\n, but complete event arrives in final chunk WITHOUT trailing \n\n
+    const sseChunks = [
+      'event: progress\ndata: {"loaded":50,"total":100,"percent":50}\n\n',
+      'event: complete\ndata: {"episode":' + JSON.stringify(mockEpisode) + '}',
+    ];
+
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const chunk of sseChunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(stream, {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        })
+    );
+
+    const res = await remoteIngestEpisodeVideoSource('ep-trailing-1', {
+      url: 'https://remote.com/video.mp4',
+      label: 'S3 1080p',
+    });
+
+    expect(res.id).toBe('ep-trailing-1');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('remoteIngestEpisodeVideoSource parses trailing error event block without trailing double newline when stream ends', async () => {
+    const sseChunks = [
+      'event: progress\ndata: {"loaded":10,"total":100,"percent":10}\n\n',
+      'event: error\ndata: {"code":"INGEST_FAILED","message":"S3 multipart upload failed"}',
+    ];
+
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const chunk of sseChunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(stream, {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        })
+    );
+
+    const err = await remoteIngestEpisodeVideoSource('ep-trailing-err', {
+      url: 'https://remote.com/video.mp4',
+      label: 'S3 1080p',
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toBe('S3 multipart upload failed');
+    expect((err as Error & { code?: string }).code).toBe('INGEST_FAILED');
+
+    fetchSpy.mockRestore();
+  });
 });
 
 

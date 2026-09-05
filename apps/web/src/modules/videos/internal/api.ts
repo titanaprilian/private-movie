@@ -1239,6 +1239,48 @@ export async function remoteIngestEpisodeVideoSource(
   let buffer = '';
   let completedEpisode: Episode | null = null;
 
+  const parseSSEChunk = (chunk: string) => {
+    const lines = chunk.split('\n');
+    let eventType = '';
+    let eventDataStr = '';
+
+    for (const line of lines) {
+      if (line.startsWith('event: ')) {
+        eventType = line.slice(7).trim();
+      } else if (line.startsWith('data: ')) {
+        eventDataStr = line.slice(6).trim();
+      }
+    }
+
+    if (!eventType || !eventDataStr) return;
+
+    let data: unknown;
+    try {
+      data = JSON.parse(eventDataStr);
+    } catch {
+      return;
+    }
+
+    if (eventType === 'progress' && typeof data === 'object' && data !== null) {
+      const progressData = data as { percent?: number; loaded?: number; total?: number };
+      options.onProgress?.({
+        percent: progressData.percent ?? 0,
+        loaded: progressData.loaded ?? 0,
+        total: progressData.total ?? 0,
+      });
+    } else if (eventType === 'complete' && typeof data === 'object' && data !== null) {
+      const completeData = data as { episode?: Episode };
+      if (completeData.episode) {
+        completedEpisode = completeData.episode;
+      }
+    } else if (eventType === 'error' && typeof data === 'object' && data !== null) {
+      const errorData = data as { code?: string; message?: string };
+      const err = new Error(errorData.message || 'Remote ingest failed') as Error & { code?: string };
+      if (errorData.code) err.code = errorData.code;
+      throw err;
+    }
+  };
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -1248,45 +1290,15 @@ export async function remoteIngestEpisodeVideoSource(
     buffer = parts.pop() || '';
 
     for (const chunk of parts) {
-      const lines = chunk.split('\n');
-      let eventType = '';
-      let eventDataStr = '';
+      parseSSEChunk(chunk);
+    }
+  }
 
-      for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          eventType = line.slice(7).trim();
-        } else if (line.startsWith('data: ')) {
-          eventDataStr = line.slice(6).trim();
-        }
-      }
-
-      if (!eventType || !eventDataStr) continue;
-
-      let data: unknown;
-      try {
-        data = JSON.parse(eventDataStr);
-      } catch {
-        continue;
-      }
-
-      if (eventType === 'progress' && typeof data === 'object' && data !== null) {
-        const progressData = data as { percent?: number; loaded?: number; total?: number };
-        options.onProgress?.({
-          percent: progressData.percent ?? 0,
-          loaded: progressData.loaded ?? 0,
-          total: progressData.total ?? 0,
-        });
-      } else if (eventType === 'complete' && typeof data === 'object' && data !== null) {
-        const completeData = data as { episode?: Episode };
-        if (completeData.episode) {
-          completedEpisode = completeData.episode;
-        }
-      } else if (eventType === 'error' && typeof data === 'object' && data !== null) {
-        const errorData = data as { code?: string; message?: string };
-        const err = new Error(errorData.message || 'Remote ingest failed') as Error & { code?: string };
-        if (errorData.code) err.code = errorData.code;
-        throw err;
-      }
+  buffer += decoder.decode();
+  if (buffer.trim()) {
+    const parts = buffer.split('\n\n');
+    for (const chunk of parts) {
+      parseSSEChunk(chunk);
     }
   }
 
