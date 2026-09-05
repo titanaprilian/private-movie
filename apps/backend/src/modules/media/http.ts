@@ -371,6 +371,190 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       }
     )
     .post(
+      "/episodes/:id/sources/remote-ingest",
+      async ({ params, body, headers, request, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const episode = await episodeRepository.findById(params.id);
+        if (!episode) {
+          return errorResponse(
+            set,
+            404,
+            new EpisodeNotFoundError(`Episode with id ${params.id} not found`)
+          );
+        }
+
+        if (!options.s3StorageService || !options.s3StorageService.isConfigured()) {
+          return errorResponse(
+            set,
+            503,
+            new S3NotConfiguredError("S3 storage service is not configured")
+          );
+        }
+
+        let targetUrl: URL;
+        try {
+          targetUrl = new URL(body.url);
+        } catch {
+          return errorResponse(
+            set,
+            400,
+            new Error("Invalid URL format")
+          );
+        }
+
+        const s3 = options.s3StorageService;
+        let filename = "video.mp4";
+        const pathnameSegments = targetUrl.pathname.split("/").filter(Boolean);
+        if (pathnameSegments.length > 0) {
+          const rawFilename = decodeURIComponent(pathnameSegments[pathnameSegments.length - 1]);
+          const sanitized = rawFilename.replace(/[^a-zA-Z0-9_.-]/g, "_");
+          if (sanitized.length > 0) {
+            filename = sanitized;
+          }
+        }
+
+        const key = `episodes/${params.id}/${randomUUID()}-${filename}`;
+        const refererHeader = body.referer && body.referer.trim().length > 0
+          ? body.referer.trim()
+          : targetUrl.origin;
+
+        const userAgentHeader = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+
+        const abortController = new AbortController();
+        if (request.signal.aborted) {
+          abortController.abort();
+        } else {
+          request.signal.addEventListener("abort", () => abortController.abort(), { once: true });
+        }
+
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          async start(controller) {
+            const sendEvent = (event: string, data: unknown) => {
+              try {
+                controller.enqueue(
+                  encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+                );
+              } catch {
+                // stream controller may be closed if client disconnected
+              }
+            };
+
+            try {
+              const remoteRes = await fetch(targetUrl.toString(), {
+                headers: {
+                  "User-Agent": userAgentHeader,
+                  Referer: refererHeader,
+                },
+                signal: abortController.signal,
+              });
+
+              if (!remoteRes.ok) {
+                sendEvent("error", {
+                  code: "REMOTE_FETCH_FAILED",
+                  message: `Remote server returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`,
+                });
+                controller.close();
+                return;
+              }
+
+              if (!remoteRes.body) {
+                sendEvent("error", {
+                  code: "REMOTE_FETCH_FAILED",
+                  message: "Remote server returned empty response body",
+                });
+                controller.close();
+                return;
+              }
+
+              const contentLengthHeader = remoteRes.headers.get("content-length");
+              const parsedLength = contentLengthHeader ? parseInt(contentLengthHeader, 10) : undefined;
+              const expectedTotal = parsedLength && !Number.isNaN(parsedLength) && parsedLength > 0 ? parsedLength : undefined;
+
+              const contentType = remoteRes.headers.get("content-type") || "video/mp4";
+
+              await s3.uploadStream(key, remoteRes.body, {
+                contentType,
+                signal: abortController.signal,
+                onProgress: ({ loaded, total }) => {
+                  const effectiveTotal = expectedTotal ?? total;
+                  const percent = effectiveTotal && effectiveTotal > 0
+                    ? Math.min(100, Math.round((loaded / effectiveTotal) * 100))
+                    : 0;
+                  sendEvent("progress", {
+                    loaded,
+                    total: effectiveTotal ?? 0,
+                    percent,
+                  });
+                },
+              });
+
+              const videoSourceRow = await videoSourceRepository.upsert({
+                episodeId: params.id,
+                type: "s3",
+                url: key,
+                label: body.label,
+                quality: body.quality ?? null,
+              });
+
+              const updatedEpisode = await episodeRepository.findById(params.id);
+
+              sendEvent("complete", {
+                episode: updatedEpisode,
+                videoSource: videoSourceRow,
+              });
+              controller.close();
+            } catch (err: unknown) {
+              if (abortController.signal.aborted) {
+                try { controller.close(); } catch {}
+                return;
+              }
+              const errorMessage = err instanceof Error ? err.message : String(err);
+              sendEvent("error", {
+                code: "INGEST_FAILED",
+                message: errorMessage,
+              });
+              try { controller.close(); } catch {}
+            }
+          },
+        });
+
+        return new Response(stream, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+          },
+        });
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          url: t.String({ format: "uri" }),
+          label: t.String(),
+          quality: t.Optional(t.Nullable(t.String())),
+          referer: t.Optional(t.String()),
+        }),
+      }
+    )
+    .post(
       "/episodes/:id/sources/presign-upload",
       async ({ params, body, headers, set }) => {
         const authHeader = headers["authorization"];
