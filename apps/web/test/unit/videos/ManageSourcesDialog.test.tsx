@@ -25,6 +25,7 @@ vi.mock('@/modules/videos/internal/api', async () => {
     presignUploadSource: vi.fn(),
     uploadBinaryToS3: vi.fn(),
     uploadEpisodeVideoSource: vi.fn(),
+    getUploadProgress: vi.fn(),
     remoteIngestEpisodeVideoSource: vi.fn(),
   };
 });
@@ -615,7 +616,7 @@ describe('ManageSourcesDialog component', () => {
     });
   });
 
-  it('displays "Saving to cloud storage..." indicator when upload progress reaches 100%', async () => {
+  it('displays "Uploading to cloud storage..." indicator and polls getUploadProgress when client upload reaches 100%', async () => {
     let triggerProgress: ((progress: { percent: number; loaded: number; total: number }) => void) | undefined;
     vi.mocked(apiModule.uploadEpisodeVideoSource).mockImplementation(
       (_episodeId, { onProgress }) =>
@@ -624,6 +625,12 @@ describe('ManageSourcesDialog component', () => {
           // Keep promise pending so dialog stays in uploading state
         })
     );
+
+    vi.mocked(apiModule.getUploadProgress).mockResolvedValue({
+      percent: 45,
+      loaded: 45 * 1024 * 1024,
+      total: 100 * 1024 * 1024,
+    });
 
     const { user } = renderWithProviders(
       <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
@@ -640,9 +647,16 @@ describe('ManageSourcesDialog component', () => {
 
     expect(await screen.findByText('Uploading...')).toBeInTheDocument();
 
-    // Trigger 100% progress
+    // Trigger 100% phase 1 client-side progress
     triggerProgress?.({ percent: 100, loaded: 100 * 1024 * 1024, total: 100 * 1024 * 1024 });
 
-    expect(await screen.findByText(/saving to cloud storage\.\.\./i)).toBeInTheDocument();
+    expect(await screen.findByText(/uploading to cloud storage\.\.\./i)).toBeInTheDocument();
+
+    // Verify polling getUploadProgress
+    await waitFor(() => {
+      expect(apiModule.getUploadProgress).toHaveBeenCalled();
+    });
+
+    expect(await screen.findByText(/45\.0 MB \/ 100\.0 MB \(45%\)/)).toBeInTheDocument();
   });
 });

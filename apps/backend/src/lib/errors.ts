@@ -11,3 +11,10 @@ export class FileTooLargeError extends Error {
   }
 }
 
+export class UploadSessionNotFoundError extends Error {
+  constructor(message = "Upload session not found") {
+    super(message);
+    this.name = "UploadSessionNotFoundError";
+  }
+}
+

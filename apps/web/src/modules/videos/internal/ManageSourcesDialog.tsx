@@ -8,6 +8,7 @@ import {
   deleteVideoSource,
   previewScrape,
   uploadEpisodeVideoSource,
+  getUploadProgress,
   remoteIngestEpisodeVideoSource,
   parseIngestUrl,
   getMaxUploadSizeMb,
@@ -306,12 +307,29 @@ export function ManageSourcesDialog({
   const [uploadLabel, setUploadLabel] = useState('');
   const [uploadQuality, setUploadQuality] = useState('');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading'>('idle');
+  const [uploadPhase, setUploadPhase] = useState<'browser' | 'cloud'>('browser');
   const [uploadProgress, setUploadProgress] = useState({ percent: 0, loaded: 0, total: 0 });
   const [s3Warning, setS3Warning] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | number | null>(null);
+  const isPollingRef = useRef(false);
 
   const isUploading = uploadStatus !== 'idle';
+
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current as unknown as number);
+      pollingIntervalRef.current = null;
+    }
+    isPollingRef.current = false;
+  };
+
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, []);
 
   const handleFileSelect = (file: File | null) => {
     if (file) {
@@ -337,11 +355,13 @@ export function ManageSourcesDialog({
   };
 
   const cancelUpload = () => {
+    stopPolling();
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
     setUploadStatus('idle');
+    setUploadPhase('browser');
     setUploadProgress({ percent: 0, loaded: 0, total: 0 });
     setSelectedFile(null);
     setUploadLabel('');
@@ -355,9 +375,13 @@ export function ManageSourcesDialog({
     if (!episode || !selectedFile || !uploadLabel.trim()) return;
 
     setS3Warning(null);
+    stopPolling();
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    const sessionId = crypto.randomUUID();
+
     setUploadStatus('uploading');
+    setUploadPhase('browser');
     setUploadProgress({ percent: 0, loaded: 0, total: selectedFile.size });
 
     try {
@@ -368,9 +392,29 @@ export function ManageSourcesDialog({
         file: selectedFile,
         label: uploadLabel.trim(),
         quality: uploadQuality.trim() || undefined,
+        uploadSessionId: sessionId,
         signal: controller.signal,
         onProgress: (progress) => {
-          setUploadProgress(progress);
+          if (progress.percent >= 100 && !isPollingRef.current) {
+            isPollingRef.current = true;
+            setUploadPhase('cloud');
+            setUploadProgress({ percent: 0, loaded: 0, total: selectedFile.size });
+
+            pollingIntervalRef.current = setInterval(async () => {
+              try {
+                const cloudProg = await getUploadProgress(sessionId);
+                setUploadProgress({
+                  percent: cloudProg.percent,
+                  loaded: cloudProg.loaded,
+                  total: cloudProg.total > 0 ? cloudProg.total : selectedFile.size,
+                });
+              } catch {
+                // Ignore error if session expired or finished
+              }
+            }, 500);
+          } else if (!isPollingRef.current) {
+            setUploadProgress(progress);
+          }
         },
       });
 
@@ -383,6 +427,7 @@ export function ManageSourcesDialog({
 
       // Reset upload state and switch to existing
       setUploadStatus('idle');
+      setUploadPhase('browser');
       setUploadProgress({ percent: 0, loaded: 0, total: 0 });
       setSelectedFile(null);
       setUploadLabel('');
@@ -400,6 +445,7 @@ export function ManageSourcesDialog({
       }
 
       setUploadStatus('idle');
+      setUploadPhase('browser');
       abortControllerRef.current = null;
 
       if (error.code === 'S3_NOT_CONFIGURED' || error.message.includes('S3_NOT_CONFIGURED') || error.message.includes('not configured')) {
@@ -412,6 +458,8 @@ export function ManageSourcesDialog({
           description: `Failed to upload video: ${error.message}`,
         });
       }
+    } finally {
+      stopPolling();
     }
   };
 
@@ -923,13 +971,13 @@ export function ManageSourcesDialog({
                 <div className="p-2.5 border border-c rounded bg-sidebar space-y-2 text-xs">
                   <div className="flex items-center justify-between mono">
                     <span className="font-semibold text-foreground flex items-center gap-1.5">
-                      {uploadProgress.percent >= 100 ? (
+                      {uploadPhase === 'cloud' ? (
                         <>
                           <svg className="animate-spin h-3 w-3 text-primary shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
-                          <span>Saving to cloud storage...</span>
+                          <span>Uploading to cloud storage...</span>
                         </>
                       ) : (
                         'Uploading...'

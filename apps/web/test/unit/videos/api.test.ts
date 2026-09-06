@@ -24,6 +24,7 @@ import {
   presignUploadSource,
   uploadBinaryToS3,
   uploadEpisodeVideoSource,
+  getUploadProgress,
   remoteIngestEpisodeVideoSource,
   type Episode,
   type VideoSource,
@@ -1716,6 +1717,38 @@ describe('videos api', () => {
     expect(err).toBeInstanceOf(Error);
     expect((err as Error).message).toBe('S3 multipart upload failed');
     expect((err as Error & { code?: string }).code).toBe('INGEST_FAILED');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('getUploadProgress fetches progress data from /api/episodes/upload-progress/:sessionId', async () => {
+    const mockProgressData = {
+      data: {
+        loaded: 52428800,
+        total: 104857600,
+        percent: 50,
+      },
+    };
+
+    let fetchUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        fetchUrl = typeof input === 'string' ? input : (input as Request).url;
+        return new Response(JSON.stringify(mockProgressData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await getUploadProgress('sess-123');
+
+    expect(fetchUrl).toContain('/episodes/upload-progress/sess-123');
+    expect(res).toEqual({
+      loaded: 52428800,
+      total: 104857600,
+      percent: 50,
+    });
 
     fetchSpy.mockRestore();
   });

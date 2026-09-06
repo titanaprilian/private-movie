@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { FileTooLargeError, InternalServerError } from "../../lib/errors";
+import { FileTooLargeError, InternalServerError, UploadSessionNotFoundError } from "../../lib/errors";
 import { Elysia, t } from "elysia";
 import {
   MVP_MEDIA_OPENAPI,
@@ -168,6 +168,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
   const videoSourceRepository = createVideoSourceRepositoryInternal(options.db, {
     s3StorageService: options.s3StorageService,
   });
+
+  const uploadProgressCache = new Map<string, { loaded: number; total: number; percent: number }>();
 
   return new Elysia({ name: "media-routes" })
     .get("/openapi.json", () => MVP_MEDIA_OPENAPI)
@@ -348,6 +350,25 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           page: t.Optional(t.Number({ default: 1, minimum: 1 })),
           limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
           seasonId: t.Optional(t.String()),
+        }),
+      }
+    )
+    .get(
+      "/episodes/upload-progress/:sessionId",
+      async ({ params, set }) => {
+        const progress = uploadProgressCache.get(params.sessionId);
+        if (!progress) {
+          return errorResponse(
+            set,
+            404,
+            new UploadSessionNotFoundError(`Upload session with id ${params.sessionId} not found`)
+          );
+        }
+        return successResponse(progress);
+      },
+      {
+        params: t.Object({
+          sessionId: t.String(),
         }),
       }
     )
@@ -697,11 +718,33 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         const filename = file.name || "video.mp4";
         const key = `episodes/${params.id}/${randomUUID()}-${filename}`;
         const contentType = file.type || "video/mp4";
+        const uploadSessionId = body.uploadSessionId;
 
         try {
+          if (uploadSessionId) {
+            uploadProgressCache.set(uploadSessionId, {
+              loaded: 0,
+              total: file.size && typeof file.size === "number" ? file.size : 0,
+              percent: 0,
+            });
+          }
+
           await options.s3StorageService.uploadStream(key, file.stream(), {
             contentType,
             signal: request.signal,
+            onProgress: ({ loaded, total }) => {
+              if (uploadSessionId) {
+                const effectiveTotal = (file.size && typeof file.size === "number" && file.size > 0 ? file.size : total) ?? 0;
+                const percent = effectiveTotal && effectiveTotal > 0
+                  ? Math.min(100, Math.round((loaded / effectiveTotal) * 100))
+                  : 0;
+                uploadProgressCache.set(uploadSessionId, {
+                  loaded,
+                  total: effectiveTotal,
+                  percent,
+                });
+              }
+            },
           });
 
           await videoSourceRepository.upsert({
@@ -722,6 +765,10 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             return errorResponse(set, 503, err);
           }
           throw err;
+        } finally {
+          if (uploadSessionId) {
+            uploadProgressCache.delete(uploadSessionId);
+          }
         }
       },
       {
@@ -732,6 +779,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           file: t.File(),
           label: t.String(),
           quality: t.Optional(t.Nullable(t.String())),
+          uploadSessionId: t.Optional(t.Nullable(t.String())),
         }),
       }
     )

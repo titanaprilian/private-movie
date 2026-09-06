@@ -971,6 +971,7 @@ export interface UploadEpisodeVideoSourceOptions {
   file: File;
   label: string;
   quality?: string;
+  uploadSessionId?: string;
   onProgress?: (progress: {
     percent: number;
     loaded: number;
@@ -1127,9 +1128,32 @@ export function uploadEpisodeVideoSource(
     if (options.quality) {
       form.append('quality', options.quality);
     }
+    if (options.uploadSessionId) {
+      form.append('uploadSessionId', options.uploadSessionId);
+    }
 
     xhr.send(form);
   });
+}
+
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percent: number;
+}
+
+export async function getUploadProgress(sessionId: string): Promise<UploadProgress> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.episodes as any)['upload-progress'][sessionId].get();
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Upload session not found'
+    );
+  }
+
+  return res.data.data as UploadProgress;
 }
 
 export interface UploadBinaryOptions {
