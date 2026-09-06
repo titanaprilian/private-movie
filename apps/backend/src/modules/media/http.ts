@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { InternalServerError } from "../../lib/errors";
+import { FileTooLargeError, InternalServerError } from "../../lib/errors";
 import { Elysia, t } from "elysia";
 import {
   MVP_MEDIA_OPENAPI,
@@ -645,7 +645,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
     )
     .post(
       "/episodes/:id/sources/upload",
-      async ({ params, body, headers, set }) => {
+      async ({ params, body, headers, request, set }) => {
         const authHeader = headers["authorization"];
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
           return errorResponse(
@@ -659,6 +659,22 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           await options.authService.verifyAccessToken(token);
         } catch {
           return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        const maxUploadMb = parseInt(process.env.MAX_UPLOAD_SIZE_MB || "1024", 10) || 1024;
+        const maxSizeBytes = maxUploadMb * 1024 * 1024;
+        const file = body.file;
+
+        if (file && typeof file.size === "number" && file.size > maxSizeBytes) {
+          return errorResponse(
+            set,
+            413,
+            new FileTooLargeError(
+              maxUploadMb >= 1024 && maxUploadMb % 1024 === 0
+                ? `File size exceeds the maximum allowed limit of ${maxUploadMb / 1024}GB`
+                : `File size exceeds the maximum allowed limit of ${maxUploadMb}MB`
+            )
+          );
         }
 
         const episode = await episodeRepository.findById(params.id);
@@ -678,16 +694,15 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           );
         }
 
-        const file = body.file;
         const filename = file.name || "video.mp4";
         const key = `episodes/${params.id}/${randomUUID()}-${filename}`;
         const contentType = file.type || "video/mp4";
 
         try {
-          const arrayBuffer = await file.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-
-          await options.s3StorageService.uploadObject(key, buffer, contentType);
+          await options.s3StorageService.uploadStream(key, file.stream(), {
+            contentType,
+            signal: request.signal,
+          });
 
           await videoSourceRepository.upsert({
             episodeId: params.id,
@@ -700,6 +715,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           const updated = await episodeRepository.findById(params.id);
           return successResponse(updated);
         } catch (err) {
+          if (request.signal.aborted) {
+            return;
+          }
           if (err instanceof S3NotConfiguredError) {
             return errorResponse(set, 503, err);
           }

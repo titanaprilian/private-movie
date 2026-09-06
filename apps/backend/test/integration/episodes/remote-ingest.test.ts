@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll, afterEach } from "vitest";
+import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
 import { videoSources as videoSourcesTable, seasons, series, episodes } from "@repo/db";
 import { buildApp, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";

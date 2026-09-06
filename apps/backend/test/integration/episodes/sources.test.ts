@@ -1,10 +1,12 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { videoSources as videoSourcesTable, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
-import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
+import { registerUser, authHeaders } from "../../utils/auth";
 import { db } from "../../utils/db";
 import { episodes } from "@repo/db";
 import { eq } from "drizzle-orm";
+import type { StreamUploadOptions } from "@repo/media-service";
+import type { Readable } from "node:stream";
 
 async function ensureSeason(id: string): Promise<string> {
   const [existing] = await db.select().from(seasons).where(eq(seasons.id, id));
@@ -124,6 +126,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         getPresignedPlaybackUrl: async (key: string, expiresIn?: number) =>
           `https://s3.signed.com/${key}?expires=${expiresIn ?? 21600}`,
         uploadObject: async () => {},
+        uploadStream: async () => {},
         deleteObject: async () => {},
         deleteObjects: async () => {},
       };
@@ -177,6 +180,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         getPresignedPlaybackUrl: async (key: string, expiresIn?: number) =>
           `https://s3.signed.com/${key}?expires=${expiresIn ?? 21600}`,
         uploadObject: async () => {},
+        uploadStream: async () => {},
         deleteObject: async () => {},
         deleteObjects: async () => {},
       };
@@ -297,6 +301,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
           uploadObject: async () => {
             throw new Error("Not implemented");
           },
+          uploadStream: async () => {
+            throw new Error("Not implemented");
+          },
           deleteObject: async () => {},
           deleteObjects: async () => {},
         },
@@ -326,6 +333,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         }),
         getPresignedPlaybackUrl: async (key: string) => `https://s3.example.com/${key}?playback=true`,
         uploadObject: async () => {},
+        uploadStream: async () => {},
         deleteObject: async () => {},
         deleteObjects: async () => {},
       };
@@ -396,6 +404,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
           uploadObject: async () => {
             throw new Error("Not implemented");
           },
+          uploadStream: async () => {
+            throw new Error("Not implemented");
+          },
           deleteObject: async () => {},
           deleteObjects: async () => {},
         },
@@ -419,19 +430,31 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       expect(body.error.code).toBe("S3_NOT_CONFIGURED");
     });
 
-    it("successfully uploads file to S3, persists s3 video source to DB, and returns updated episode envelope", async () => {
+    it("successfully uploads file to S3 via uploadStream, persists s3 video source to DB, and returns updated episode envelope", async () => {
       let uploadedKey = "";
       let uploadedContentType = "";
-      let uploadedData: any = null;
+      let uploadedStream: ReadableStream | Readable | null = null;
+      let streamReceivedBytes = 0;
 
       const mockS3Service = {
         isConfigured: () => true,
         getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
         getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}?playback=true`,
-        uploadObject: async (key: string, body: any, contentType?: string) => {
+        uploadObject: async () => {},
+        uploadStream: async (key: string, body: ReadableStream | Readable, options?: StreamUploadOptions) => {
           uploadedKey = key;
-          uploadedContentType = contentType ?? "";
-          uploadedData = body;
+          uploadedContentType = options?.contentType ?? "";
+          uploadedStream = body;
+          // Consume stream to simulate transfer
+          const webStream = body as ReadableStream<Uint8Array>;
+          const reader = webStream.getReader ? webStream.getReader() : null;
+          if (reader) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              if (value) streamReceivedBytes += value.length;
+            }
+          }
         },
         deleteObject: async () => {},
         deleteObjects: async () => {},
@@ -473,7 +496,8 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       // Check S3 storage call
       expect(uploadedKey).toMatch(new RegExp(`^episodes/${episode.id}/.+-awesome-movie\\.mp4$`));
       expect(uploadedContentType).toBe("video/mp4");
-      expect(uploadedData).toBeDefined();
+      expect(uploadedStream).toBeDefined();
+      expect(streamReceivedBytes).toBe("my video binary data".length);
 
       // Check real DB row persisted S3 key
       const [dbSource] = await db
@@ -485,6 +509,143 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       expect(dbSource.url).toBe(uploadedKey);
       expect(dbSource.label).toBe("Main B2 Source");
       expect(dbSource.quality).toBe("1080p");
+    });
+
+    it("returns HTTP 413 and FILE_TOO_LARGE when uploaded file exceeds max upload limit", async () => {
+      const originalEnv = process.env.MAX_UPLOAD_SIZE_MB;
+      process.env.MAX_UPLOAD_SIZE_MB = "10"; // 10MB limit for test
+
+      try {
+        const mockS3Service = {
+          isConfigured: () => true,
+          getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
+          getPresignedPlaybackUrl: async () => "",
+          uploadObject: async () => {},
+          uploadStream: async () => {},
+          deleteObject: async () => {},
+          deleteObjects: async () => {},
+        };
+
+        const customApp = await buildApp({ s3StorageService: mockS3Service });
+        const { accessToken } = await registerUser(customApp);
+        const episode = await insertTestEpisode();
+
+        // Create a blob larger than 10MB (11MB)
+        const largeBlob = new Blob([new Uint8Array(11 * 1024 * 1024)], { type: "video/mp4" });
+        const formData = new FormData();
+        formData.append("file", largeBlob, "large-movie.mp4");
+        formData.append("label", "Oversized Source");
+
+        const response = await request(customApp, {
+          method: "POST",
+          path: `/episodes/${episode.id}/sources/upload`,
+          headers: authHeaders(accessToken),
+          body: formData,
+        });
+
+        expect(response.status).toBe(413);
+        const body = response.body as { error: { code: string; message: string } };
+        expect(body.error).toBeDefined();
+        expect(body.error.code).toBe("FILE_TOO_LARGE");
+        expect(body.error.message).toBe("File size exceeds the maximum allowed limit of 10MB");
+      } finally {
+        process.env.MAX_UPLOAD_SIZE_MB = originalEnv;
+      }
+    });
+
+    it("returns default 1GB error message when file exceeds default limit", async () => {
+      const originalEnv = process.env.MAX_UPLOAD_SIZE_MB;
+      process.env.MAX_UPLOAD_SIZE_MB = "1"; // Set to 1MB to test format mapping with a real 2MB blob
+
+      try {
+        const mockS3Service = {
+          isConfigured: () => true,
+          getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
+          getPresignedPlaybackUrl: async () => "",
+          uploadObject: async () => {},
+          uploadStream: async () => {},
+          deleteObject: async () => {},
+          deleteObjects: async () => {},
+        };
+
+        const customApp = await buildApp({ s3StorageService: mockS3Service });
+        const { accessToken } = await registerUser(customApp);
+        const episode = await insertTestEpisode();
+
+        const largeBlob = new Blob([new Uint8Array(2 * 1024 * 1024)], { type: "video/mp4" });
+        const formData = new FormData();
+        formData.append("file", largeBlob, "2mb-movie.mp4");
+        formData.append("label", "Oversized Source");
+
+        const response = await request(customApp, {
+          method: "POST",
+          path: `/episodes/${episode.id}/sources/upload`,
+          headers: authHeaders(accessToken),
+          body: formData,
+        });
+
+        expect(response.status).toBe(413);
+        const body = response.body as { error: { code: string; message: string } };
+        expect(body.error).toBeDefined();
+        expect(body.error.code).toBe("FILE_TOO_LARGE");
+        expect(body.error.message).toBe("File size exceeds the maximum allowed limit of 1MB");
+      } finally {
+        if (originalEnv !== undefined) {
+          process.env.MAX_UPLOAD_SIZE_MB = originalEnv;
+        } else {
+          delete process.env.MAX_UPLOAD_SIZE_MB;
+        }
+      }
+    });
+
+    it("handles request abort during streaming upload without unhandled errors", async () => {
+      let signalAborted = false;
+
+      const mockS3Service = {
+        isConfigured: () => true,
+        getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
+        getPresignedPlaybackUrl: async () => "",
+        uploadObject: async () => {},
+        uploadStream: async (_key: string, _body: ReadableStream | Readable, options?: StreamUploadOptions) => {
+          if (options?.signal) {
+            if (options.signal.aborted) {
+              signalAborted = true;
+              throw new Error("Aborted");
+            }
+            options.signal.addEventListener("abort", () => {
+              signalAborted = true;
+            });
+          }
+          // Simulate aborted stream
+          throw options?.signal?.reason || new Error("Upload aborted");
+        },
+        deleteObject: async () => {},
+        deleteObjects: async () => {},
+      };
+
+      const customApp = await buildApp({ s3StorageService: mockS3Service });
+      const { accessToken } = await registerUser(customApp);
+      const episode = await insertTestEpisode();
+
+      const controller = new AbortController();
+      controller.abort();
+
+      const formData = new FormData();
+      formData.append("file", new Blob(["video bytes"], { type: "video/mp4" }), "movie.mp4");
+      formData.append("label", "Abort Test");
+
+      const req = new Request(`http://localhost/api/episodes/${episode.id}/sources/upload`, {
+        method: "POST",
+        headers: {
+          ...authHeaders(accessToken),
+        },
+        body: formData,
+        signal: controller.signal,
+      });
+
+      const response = await customApp.handle(req);
+      expect(response.status).toBeDefined();
+      expect(signalAborted).toBe(true);
     });
   });
 

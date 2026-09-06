@@ -13,8 +13,14 @@ const s3StorageService = createS3StorageService();
 
 const port = Number(process.env.PORT ?? 3000);
 const hostname = process.env.HOST ?? "0.0.0.0";
+const maxUploadMb = parseInt(process.env.MAX_UPLOAD_SIZE_MB || "1024", 10) || 1024;
+const maxRequestBodySize = maxUploadMb * 1024 * 1024 + 20 * 1024 * 1024;
 
-const app = createApp({ db, auth, browserFn, s3StorageService }).listen({ port, hostname });
+const app = createApp({ db, auth, browserFn, s3StorageService }).listen({
+  port,
+  hostname,
+  maxRequestBodySize,
+});
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
