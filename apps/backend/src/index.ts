@@ -20,6 +20,7 @@ const app = createApp({ db, auth, browserFn, s3StorageService }).listen({
   port,
   hostname,
   maxRequestBodySize,
+  idleTimeout: 0,
 });
 
 console.log(

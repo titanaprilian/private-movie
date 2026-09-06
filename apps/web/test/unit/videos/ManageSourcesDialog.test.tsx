@@ -614,4 +614,35 @@ describe('ManageSourcesDialog component', () => {
       description: 'S3 storage service is not configured',
     });
   });
+
+  it('displays "Saving to cloud storage..." indicator when upload progress reaches 100%', async () => {
+    let triggerProgress: ((progress: { percent: number; loaded: number; total: number }) => void) | undefined;
+    vi.mocked(apiModule.uploadEpisodeVideoSource).mockImplementation(
+      (_episodeId, { onProgress }) =>
+        new Promise<apiModule.Episode>((_resolve) => {
+          triggerProgress = onProgress;
+          // Keep promise pending so dialog stays in uploading state
+        })
+    );
+
+    const { user } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /upload video/i }));
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: { files: [new File(['fake video'], 'my-video.mp4', { type: 'video/mp4' })] },
+    });
+
+    await user.click(screen.getByRole('button', { name: /^upload$/i }));
+
+    expect(await screen.findByText('Uploading...')).toBeInTheDocument();
+
+    // Trigger 100% progress
+    triggerProgress?.({ percent: 100, loaded: 100 * 1024 * 1024, total: 100 * 1024 * 1024 });
+
+    expect(await screen.findByText(/saving to cloud storage\.\.\./i)).toBeInTheDocument();
+  });
 });

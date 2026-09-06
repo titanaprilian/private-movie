@@ -6,6 +6,20 @@ import { queryClient } from './lib/queryClient';
 import { router } from './router';
 import './index.css';
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      try {
+        if (new URL(registration.scope).pathname === '/') {
+          registration.unregister();
+        }
+      } catch {
+        // ignore invalid URL
+      }
+    }
+  });
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
