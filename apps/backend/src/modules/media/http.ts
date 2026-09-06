@@ -92,7 +92,7 @@ export const embedRoutes = () => {
       // Register the Service Worker
       if ('serviceWorker' in navigator) {
         try {
-          const registration = await navigator.serviceWorker.register('/media-proxy-sw.js');
+          const registration = await navigator.serviceWorker.register('/media-proxy-sw.js', { scope: '/embed/' });
           
           // Force network update of the Service Worker to prevent caching stale logic
           await registration.update();

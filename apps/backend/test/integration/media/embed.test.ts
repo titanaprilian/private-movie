@@ -28,7 +28,7 @@ describe('GET /embed/:hash', () => {
     // Verify the HTML contains service worker registration
     expect(html).toContain('/media-proxy-sw.js');
     expect(html).not.toContain('/media-proxy-sw.js?v=');
-    expect(html).toContain('navigator.serviceWorker.register');
+    expect(html).toContain("navigator.serviceWorker.register('/media-proxy-sw.js', { scope: '/embed/' })");
 
     // Verify it waits for service worker activation
     expect(html).toContain('clients.claim');

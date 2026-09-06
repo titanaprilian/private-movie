@@ -17,4 +17,10 @@ describe('media-proxy-sw.js', () => {
     expect(swContent).toContain("url.hostname.includes('skylayer64.online')");
     expect(swContent).toContain("url.hostname.includes('cloudremux.online')");
   });
+
+  it('should not call respondWith on non-targeted requests and return early', () => {
+    expect(swContent).not.toContain('event.respondWith(fetch(event.request))');
+    expect(swContent).toContain('if (!shouldIntercept)');
+  });
 });
+
