@@ -10,6 +10,8 @@ import {
   uploadEpisodeVideoSource,
   remoteIngestEpisodeVideoSource,
   parseIngestUrl,
+  getMaxUploadSizeMb,
+  getMaxUploadSizeBytes,
   type VideoSource,
   type VideoSourceInput,
 } from './api';
@@ -312,6 +314,21 @@ export function ManageSourcesDialog({
   const isUploading = uploadStatus !== 'idle';
 
   const handleFileSelect = (file: File | null) => {
+    if (file) {
+      const maxBytes = getMaxUploadSizeBytes();
+      if (file.size > maxBytes) {
+        const maxMb = getMaxUploadSizeMb();
+        const maxGb = maxMb >= 1024 && maxMb % 1024 === 0 ? `${maxMb / 1024} GB` : `${maxMb} MB`;
+        toast.error('video.file_size_exceeded', {
+          description: `File size exceeds the maximum limit of ${maxGb}`,
+        });
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+    }
     setSelectedFile(file);
     if (file) {
       const baseName = file.name.replace(/\.[^/.]+$/, '');

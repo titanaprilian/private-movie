@@ -291,6 +291,54 @@ describe('ManageSourcesDialog component', () => {
     expect(apiModule.addVideoSources).not.toHaveBeenCalled();
   });
 
+  it('rejects oversized file selection with toast warning and prevents upload', async () => {
+    const { user } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /upload video/i }));
+
+    const oversizedFile = new File(['x'.repeat(100)], 'huge-video.mp4', { type: 'video/mp4' });
+    Object.defineProperty(oversizedFile, 'size', {
+      value: 1024 * 1024 * 1024 + 1024, // > 1GB
+    });
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: { files: [oversizedFile] },
+    });
+
+    expect(toast.error).toHaveBeenCalledWith('video.file_size_exceeded', {
+      description: 'File size exceeds the maximum limit of 1 GB',
+    });
+    expect(screen.getByRole('button', { name: /^upload$/i })).toBeDisabled();
+    expect(apiModule.uploadEpisodeVideoSource).not.toHaveBeenCalled();
+  });
+
+  it('surfaces descriptive error message when upload fails with HTTP 413 FILE_TOO_LARGE', async () => {
+    const err = new Error('File size exceeds the maximum allowed limit of 1GB') as Error & { code: string };
+    err.code = 'FILE_TOO_LARGE';
+    vi.mocked(apiModule.uploadEpisodeVideoSource).mockRejectedValueOnce(err);
+
+    const { user } = renderWithProviders(
+      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /upload video/i }));
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: { files: [new File(['fake video'], 'clip.mp4', { type: 'video/mp4' })] },
+    });
+
+    await user.click(screen.getByRole('button', { name: /^upload$/i }));
+
+    expect(toast.error).toHaveBeenCalledWith('video.s3_upload', {
+      description: 'Failed to upload video: File size exceeds the maximum allowed limit of 1GB',
+    });
+    expect(apiModule.uploadEpisodeVideoSource).toHaveBeenCalledOnce();
+  });
+
   it('renders s3 badge with purple styling and allows editing s3 sources', async () => {
     const s3Episode: apiModule.Episode = {
       ...mockEpisode,

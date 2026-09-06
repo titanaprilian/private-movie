@@ -994,6 +994,19 @@ function getApiBaseUrl(): string {
   return envApiUrl || 'http://localhost:3000';
 }
 
+export function getMaxUploadSizeMb(): number {
+  const envVal = import.meta.env.VITE_MAX_UPLOAD_SIZE_MB as string | undefined;
+  if (envVal) {
+    const parsed = parseInt(envVal, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return 1024;
+}
+
+export function getMaxUploadSizeBytes(): number {
+  return getMaxUploadSizeMb() * 1024 * 1024;
+}
+
 function parseUploadErrorPayload(raw: string): { code?: string; message?: string } {
   try {
     const json = JSON.parse(raw) as {
@@ -1079,7 +1092,19 @@ export function uploadEpisodeVideoSource(
         return;
       }
 
-      const { code, message } = parseUploadErrorPayload(xhr.responseText);
+      let { code, message } = parseUploadErrorPayload(xhr.responseText);
+
+      if (xhr.status === 413) {
+        if (!code) {
+          code = 'FILE_TOO_LARGE';
+        }
+        if (!message) {
+          const maxMb = getMaxUploadSizeMb();
+          const maxGb = maxMb >= 1024 && maxMb % 1024 === 0 ? `${maxMb / 1024} GB` : `${maxMb} MB`;
+          message = `File size exceeds the maximum allowed limit of ${maxGb}`;
+        }
+      }
+
       const err = new Error(
         message || `Failed to upload video source (status ${xhr.status})`
       ) as Error & { code?: string; status?: number };

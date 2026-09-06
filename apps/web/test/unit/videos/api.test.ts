@@ -1421,6 +1421,82 @@ describe('videos api', () => {
     xhrSpy.mockRestore();
   });
 
+  it('uploadEpisodeVideoSource surfaces FILE_TOO_LARGE code and message on 413 with JSON body', async () => {
+    const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(function () {
+        mockXhr.status = 413;
+        mockXhr.responseText = JSON.stringify({
+          error: { code: 'FILE_TOO_LARGE', message: 'File size exceeds the maximum allowed limit of 1GB' },
+        });
+        mockXhr.onload();
+      }),
+      abort: vi.fn(),
+      upload: {},
+      status: 0,
+      responseText: '',
+      withCredentials: false,
+      onload: null as any,
+      onerror: null as any,
+      onabort: null as any,
+    };
+
+    const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
+      return mockXhr as any;
+    } as any);
+
+    const err = await uploadEpisodeVideoSource('ep-1', {
+      file,
+      label: 'Label',
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error & { code?: string }).code).toBe('FILE_TOO_LARGE');
+    expect((err as Error).message).toBe('File size exceeds the maximum allowed limit of 1GB');
+
+    xhrSpy.mockRestore();
+  });
+
+  it('uploadEpisodeVideoSource falls back to FILE_TOO_LARGE on 413 with raw/plain-text response', async () => {
+    const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(function () {
+        mockXhr.status = 413;
+        mockXhr.responseText = '<html><body><h1>413 Request Entity Too Large</h1></body></html>';
+        mockXhr.onload();
+      }),
+      abort: vi.fn(),
+      upload: {},
+      status: 0,
+      responseText: '',
+      withCredentials: false,
+      onload: null as any,
+      onerror: null as any,
+      onabort: null as any,
+    };
+
+    const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
+      return mockXhr as any;
+    } as any);
+
+    const err = await uploadEpisodeVideoSource('ep-1', {
+      file,
+      label: 'Label',
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error & { code?: string }).code).toBe('FILE_TOO_LARGE');
+    expect((err as Error).message).toBe('File size exceeds the maximum allowed limit of 1 GB');
+
+    xhrSpy.mockRestore();
+  });
+
   it('uploadBinaryToS3 aborts when signal is aborted', async () => {
     const file = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
     const controller = new AbortController();

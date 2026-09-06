@@ -39,6 +39,8 @@ export {
   uploadEpisodeVideoSource,
   remoteIngestEpisodeVideoSource,
   parseIngestUrl,
+  getMaxUploadSizeMb,
+  getMaxUploadSizeBytes,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
 export type {
