@@ -822,7 +822,7 @@ describe('SeriesDetailView component', () => {
     expect(screen.getAllByText('Movie Main Stream').length).toBeGreaterThan(0);
   });
 
-  it('renders "Merge Seasons" button when multiple seasons exist and opens MergeSeasonsModal on click', async () => {
+  it('does not render "Merge Seasons" or "Add Season" buttons when multiple seasons exist', async () => {
     const mockMultiSeasonSeries: SeriesDetails = {
       id: 'merge-seasons-series',
       sourceUrl: 'https://otakudesu.cloud/anime/merge-seasons',
@@ -870,19 +870,12 @@ describe('SeriesDetailView component', () => {
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
     });
 
-    const user = userEvent.setup();
     renderWithProviders(<SeriesDetailView seriesId="merge-seasons-series" />);
 
     await screen.findByRole('heading', { level: 1, name: 'Attack on Titan' });
 
-    const mergeBtn = screen.getByRole('button', { name: /Merge Seasons/i });
-    expect(mergeBtn).toBeInTheDocument();
-
-    await user.click(mergeBtn);
-
-    expect(await screen.findByRole('heading', { name: 'Merge Seasons' })).toBeInTheDocument();
-    expect(screen.getAllByText('Season 4 Part 1').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Season 4 Part 2').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /Merge Seasons/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Add Season/i })).not.toBeInTheDocument();
   });
 
   it('renders "Sync Episodes" button when active season exists and opens SyncEpisodesModal on click', async () => {

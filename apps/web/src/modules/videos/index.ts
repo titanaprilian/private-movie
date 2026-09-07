@@ -3,8 +3,6 @@ export { SeriesDetailView } from './internal/SeriesDetailView';
 export { AddMediaDialog } from './internal/AddMediaDialog';
 export { CustomVideoPlayer } from './internal/CustomVideoPlayer';
 export type { CustomVideoPlayerProps } from './internal/CustomVideoPlayer';
-export { MergeSeasonsModal } from './internal/MergeSeasonsModal';
-export type { MergeSeasonsModalProps } from './internal/MergeSeasonsModal';
 export { SyncEpisodesModal } from './internal/SyncEpisodesModal';
 export type { SyncEpisodesModalProps } from './internal/SyncEpisodesModal';
 export { BulkScrapeModal } from './internal/BulkScrapeModal';
@@ -26,7 +24,6 @@ export {
   seriesDetailQueryOptions,
   updateSeries,
   deleteSeries,
-  mergeSeasons,
   getSeasonTmdbPreview,
   syncSeasonTmdb,
   previewScrape,

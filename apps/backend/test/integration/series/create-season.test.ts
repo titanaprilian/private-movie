@@ -3,7 +3,6 @@ import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import { createDbClient, seasons, series } from "@repo/db";
 import crypto from "node:crypto";
-import { eq } from "drizzle-orm";
 
 const db = createDbClient(process.env.DATABASE_URL!);
 
@@ -36,7 +35,7 @@ async function createSeries(title: string) {
   return row;
 }
 
-describe("POST /series/:id/seasons", () => {
+describe("POST /series/:id/seasons (Decommissioned)", () => {
   let app: App;
   let headers: Record<string, string>;
 
@@ -50,29 +49,7 @@ describe("POST /series/:id/seasons", () => {
     headers = authHeaders(user.accessToken);
   });
 
-  it("returns 401 when authorization header is missing", async () => {
-    const result = await request(app, {
-      method: "POST",
-      path: `/series/${crypto.randomUUID()}/seasons`,
-      body: { title: "Season 1" },
-    });
-
-    expect(result.status).toBe(401);
-  });
-
-  it("returns 404 when series does not exist", async () => {
-    const result = await request(app, {
-      method: "POST",
-      path: `/series/${crypto.randomUUID()}/seasons`,
-      headers,
-      body: { title: "Season 1" },
-    });
-
-    expect(result.status).toBe(404);
-    expect(errorCode(result.body)).toBe("SERIES_NOT_FOUND");
-  });
-
-  it("creates a manual season and returns it", async () => {
+  it("returns 404 Not Found when invoked", async () => {
     const seriesRow = await createSeries("Manual Season Series");
 
     const result = await request(app, {
@@ -82,20 +59,7 @@ describe("POST /series/:id/seasons", () => {
       body: { title: "Season 2 (Specials)", description: "Created by hand" },
     });
 
-    expect(result.status).toBe(200);
-
-    const data = bodyData(result.body);
-    expect(data.title).toBe("Season 2 (Specials)");
-    expect(data.description).toBe("Created by hand");
-    expect(data.seriesId).toBe(seriesRow.id);
-    expect(data.id).toBeDefined();
-
-    const [dbRow] = await db
-      .select()
-      .from(seasons)
-      .where(eq(seasons.id, data.id));
-
-    expect(dbRow).toBeDefined();
+    expect(result.status).toBe(404);
   });
 });
 
@@ -124,26 +88,29 @@ describe("GET /seasons/:id", () => {
     expect(errorCode(result.body)).toBe("SEASON_NOT_FOUND");
   });
 
-  it("returns the created manual season", async () => {
+  it("returns existing season", async () => {
     const seriesRow = await createSeries("Get Season Series");
 
-    const createResult = await request(app, {
-      method: "POST",
-      path: `/series/${seriesRow.id}/seasons`,
-      headers,
-      body: { title: "Season X" },
-    });
-    const created = bodyData(createResult.body);
+    const [seasonRow] = await db
+      .insert(seasons)
+      .values({
+        id: crypto.randomUUID(),
+        seriesId: seriesRow.id,
+        title: "Season X",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
 
     const result = await request(app, {
       method: "GET",
-      path: `/seasons/${created.id}`,
+      path: `/seasons/${seasonRow.id}`,
       headers,
     });
 
     expect(result.status).toBe(200);
     const data = bodyData(result.body);
-    expect(data.id).toBe(created.id);
+    expect(data.id).toBe(seasonRow.id);
     expect(data.title).toBe("Season X");
   });
 });

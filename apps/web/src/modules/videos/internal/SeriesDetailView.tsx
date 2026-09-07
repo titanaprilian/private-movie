@@ -17,13 +17,11 @@ import {
   deleteSeason,
 } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
-import { AddSeasonDialog } from './AddSeasonDialog';
 import { EditSeasonDialog } from './EditSeasonDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { buildCrossSeasonMove } from './crossSeasonMove';
 import { TmdbMatchModal } from './TmdbMatchModal';
-import { MergeSeasonsModal } from './MergeSeasonsModal';
 import { SyncEpisodesModal } from './SyncEpisodesModal';
 import { BulkScrapeModal } from './BulkScrapeModal';
 import { BulkIngestModal } from './BulkIngestModal';
@@ -182,8 +180,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
   const [isTmdbMatchOpen, setIsTmdbMatchOpen] = useState(false);
-  const [isMergeSeasonsOpen, setIsMergeSeasonsOpen] = useState(false);
-  const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
   const [isSyncEpisodesOpen, setIsSyncEpisodesOpen] = useState(false);
@@ -452,16 +448,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
                 Edit Series
               </button>
 
-              {hasMultipleSeasons && (
-                <button
-                  onClick={() => setIsMergeSeasonsOpen(true)}
-                  type="button"
-                  className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
-                >
-                  Merge Seasons
-                </button>
-              )}
-
               <button
                 onClick={() => setIsTmdbMatchOpen(true)}
                 type="button"
@@ -559,26 +545,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
               </div>
             </>
           )}
-          <button
-            onClick={() => setIsAddSeasonOpen(true)}
-            type="button"
-            className={`border border-c hover-bg px-3 py-1 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1 shrink-0 ${
-              hasMultipleSeasons ? '' : 'ml-auto'
-            }`}
-            aria-label="Add Season"
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add Season
-          </button>
           {activeSeason && (
             <>
               <button
@@ -1081,12 +1047,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         open={isTmdbMatchOpen}
         onOpenChange={setIsTmdbMatchOpen}
       />
-      <MergeSeasonsModal
-        seriesId={seriesId}
-        seasons={series.seasons ?? []}
-        open={isMergeSeasonsOpen}
-        onOpenChange={setIsMergeSeasonsOpen}
-      />
       <BulkScrapeModal
         open={isBulkScrapeOpen}
         onOpenChange={setIsBulkScrapeOpen}
@@ -1100,12 +1060,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         seriesId={seriesId}
         localEpisodes={localEpisodes}
         seasons={series.seasons ?? []}
-      />
-      <AddSeasonDialog
-        seriesId={seriesId}
-        open={isAddSeasonOpen}
-        onOpenChange={setIsAddSeasonOpen}
-        onCreated={(season) => setSelectedSeasonId(season.id)}
       />
       {activeSeason && (
         <>
