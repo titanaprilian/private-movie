@@ -50,13 +50,11 @@ import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from ".
 import {
   fetchFromTmdb,
   fetchTmdbSeriesData,
-  getTmdbPreview,
   saveTmdbSeries,
   TmdbFetchError,
   type FetchTmdbSeriesOptions,
   type TmdbEpisodeDetails,
   type TmdbImportInput,
-  type TmdbPreviewResult,
   type TmdbSeasonDetailsResponse,
   type TmdbSeasonEpisodeItem,
   type TmdbSeasonFullData,
@@ -71,7 +69,6 @@ export type {
   FetchTmdbSeriesOptions,
   TmdbEpisodeDetails,
   TmdbImportInput,
-  TmdbPreviewResult,
   TmdbSeasonDetailsResponse,
   TmdbSeasonEpisodeItem,
   TmdbSeasonFullData,
@@ -80,14 +77,6 @@ export type {
   TmdbSeriesFullData,
   TmdbSeriesSeasonMeta,
 };
-
-export interface TmdbMatchInput {
-  seriesId: string;
-  type: "movie" | "tv";
-  tmdbId: number;
-  season?: number;
-  localSeasonId?: string;
-}
 
 export type VideoSource = "otakudesu" | "dramula";
 
@@ -358,8 +347,6 @@ export interface MediaService {
   previewBulkSources(input: PreviewBulkSourcesInput): Promise<PreviewBulkSourcesResult>;
   scrapeAndSaveSources(episodeId: string, sourceUrl: string): Promise<EpisodeWithVideoSources>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
-  getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult>;
-  matchTmdb(input: TmdbMatchInput): Promise<SeriesWithSeasons>;
   importTmdb(input: TmdbImportInput): Promise<SeriesWithSeasons>;
 }
 
@@ -795,185 +782,6 @@ export function createMediaService<
         return {
           episode: episodeWithSources!,
           series: seriesRow ? { ...seriesRow, seasons: childSeasons } : null,
-        };
-      });
-    },
-
-    async getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult> {
-      return getTmdbPreview(type, tmdbId, season);
-    },
-
-    async matchTmdb(input: TmdbMatchInput): Promise<SeriesWithSeasons> {
-      const targetSeries = await seriesRepository.findById(input.seriesId);
-      if (!targetSeries) {
-        throw new SeriesNotFoundError(`Series not found`);
-      }
-
-      let details: any;
-      let seasonDetails: any = null;
-      let poster_path = null;
-      let backdrop_path = null;
-      let title = "";
-      let overview = "";
-      let vote_average = null;
-      const seasonNum = input.season ?? 1;
-
-      if (input.type === "movie") {
-        details = await fetchFromTmdb<any>(`/movie/${input.tmdbId}?language=en-US`);
-        title = details.title;
-        overview = details.overview;
-        poster_path = details.poster_path;
-        backdrop_path = details.backdrop_path;
-        vote_average = details.vote_average;
-      } else {
-        details = await fetchFromTmdb<any>(`/tv/${input.tmdbId}?language=en-US`);
-        const targetSeasonData = Array.isArray(details.seasons)
-          ? details.seasons.find((s: any) => s.season_number === seasonNum)
-          : null;
-        seasonDetails = targetSeasonData ?? null;
-
-        title = details.name;
-        overview = details.overview;
-        poster_path = details.poster_path;
-        backdrop_path = details.backdrop_path;
-        vote_average = details.vote_average;
-      }
-
-      const ratingStr = vote_average ? String(vote_average) : undefined;
-
-      return await db.transaction(async (tx) => {
-        const seriesRepositoryTx = createSeriesRepositoryInternal(tx);
-        const seasonsRepositoryTx = createSeasonsRepositoryInternal(tx);
-
-        const existingTmdbSeries = await seriesRepositoryTx.findByTmdbId(details.id);
-
-        let activeSeriesId: string;
-
-        if (existingTmdbSeries && existingTmdbSeries.id !== targetSeries.id) {
-          await seasonsRepositoryTx.reparentSeasons(targetSeries.id, existingTmdbSeries.id);
-
-          const updatedDescription = overview || existingTmdbSeries.description;
-          const updatedPoster = poster_path || existingTmdbSeries.posterUrl;
-
-          const payload = {
-            title: title || existingTmdbSeries.title,
-            description: updatedDescription,
-            posterUrl: updatedPoster,
-            backdropUrl: backdrop_path || existingTmdbSeries.backdropUrl,
-            rating: ratingStr || existingTmdbSeries.rating,
-            tmdbId: details.id,
-            tmdbSyncStatus: "SYNCED" as const,
-          };
-
-          await seriesRepositoryTx.updateSeries(existingTmdbSeries.id, payload);
-          await seriesRepositoryTx.deleteSeries(targetSeries.id);
-          activeSeriesId = existingTmdbSeries.id;
-        } else {
-          const updatedDescription = overview || targetSeries.description;
-          const updatedPoster = poster_path || targetSeries.posterUrl;
-
-          const payload = {
-            title: title || targetSeries.title,
-            description: updatedDescription,
-            posterUrl: updatedPoster,
-            backdropUrl: backdrop_path,
-            rating: ratingStr,
-            tmdbId: details.id,
-            tmdbSyncStatus: "SYNCED" as const,
-          };
-
-          await seriesRepositoryTx.updateSeries(targetSeries.id, payload);
-          activeSeriesId = targetSeries.id;
-        }
-
-        await tx
-          .delete(seriesToGenres)
-          .where(eq(seriesToGenres.seriesId, activeSeriesId));
-
-        const rawGenres: string[] = Array.isArray(details.genres)
-          ? details.genres.map((g: any) => (typeof g === "string" ? g : g?.name)).filter(Boolean)
-          : [];
-        const genreNames = Array.from(
-          new Set(rawGenres.map((g) => g.trim()).filter(Boolean))
-        );
-
-        if (genreNames.length > 0) {
-          const genreValues = genreNames.map((name) => ({
-            id: randomUUID(),
-            name,
-            slug: slugifyGenre(name),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }));
-
-          const genreRows = await tx
-            .insert(genres)
-            .values(genreValues)
-            .onConflictDoUpdate({
-              target: genres.name,
-              set: {
-                updatedAt: new Date(),
-              },
-            })
-            .returning({ id: genres.id });
-
-          const seriesToGenreRows = (genreRows || []).map((g: any) => ({
-            seriesId: activeSeriesId,
-            genreId: g.id,
-          }));
-
-          if (seriesToGenreRows.length > 0) {
-            await tx
-              .insert(seriesToGenres)
-              .values(seriesToGenreRows)
-              .onConflictDoNothing();
-          }
-        }
-
-        if (input.type === "tv") {
-          const childSeasons = await tx
-            .select()
-            .from(seasons)
-            .where(eq(seasons.seriesId, activeSeriesId))
-            .orderBy(asc(seasons.createdAt));
-
-          let targetSeasonRow = input.localSeasonId
-            ? childSeasons.find((s) => s.id === input.localSeasonId)
-            : undefined;
-
-          if (!targetSeasonRow) {
-            targetSeasonRow = childSeasons.find((s) => s.seasonNumber === seasonNum);
-          }
-
-          if (!targetSeasonRow) {
-            targetSeasonRow = childSeasons.find((s) => s.seasonNumber == null) ?? childSeasons[0];
-          }
-
-          if (targetSeasonRow) {
-            const seasonOverview = seasonDetails?.overview || details.overview;
-            const seasonPoster = seasonDetails?.poster_path || details.poster_path;
-
-            await seasonsRepositoryTx.updateSeason(targetSeasonRow.id, {
-              seasonNumber: seasonNum,
-              posterUrl: seasonPoster,
-              title: seasonDetails?.name,
-              description: seasonOverview,
-              tmdbSyncStatus: "SYNCED",
-            });
-          }
-        }
-
-        const finalSeries = await seriesRepositoryTx.findById(activeSeriesId);
-        const finalSeasons = await tx
-          .select()
-          .from(seasons)
-          .where(eq(seasons.seriesId, activeSeriesId))
-          .orderBy(asc(seasons.createdAt));
-
-        return {
-          ...finalSeries!,
-          seasons: finalSeasons,
-          relations: [],
         };
       });
     },

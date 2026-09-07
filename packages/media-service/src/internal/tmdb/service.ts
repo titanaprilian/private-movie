@@ -43,12 +43,6 @@ export async function fetchFromTmdb<T>(endpoint: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export interface TmdbPreviewResult {
-  title: string;
-  overview: string;
-  posterUrl: string | null;
-}
-
 export interface TmdbSeasonEpisodeItem {
   id?: number;
   episode_number: number;
@@ -443,33 +437,5 @@ export async function saveTmdbSeries(
 
 export async function fetchTmdbSeasonDetails(tmdbId: number, seasonNumber: number): Promise<TmdbSeasonResponse> {
   return fetchFromTmdb<TmdbSeasonResponse>(`/tv/${tmdbId}/season/${seasonNumber}?language=en-US`);
-}
-
-export async function getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult> {
-  let title = "";
-  let overview = "";
-  let poster_path: string | null = null;
-  
-  if (type === "movie") {
-    const data = await fetchFromTmdb<any>(`/movie/${tmdbId}?language=en-US`);
-    title = data.title || "";
-    overview = data.overview || "";
-    poster_path = data.poster_path;
-  } else {
-    const details = await fetchFromTmdb<any>(`/tv/${tmdbId}?language=en-US`);
-    const seasonData = season !== undefined && Array.isArray(details.seasons)
-      ? details.seasons.find((s: any) => s.season_number === season)
-      : null;
-
-    title = details.name || "";
-    overview = seasonData?.overview || details.overview || "";
-    poster_path = seasonData?.poster_path || details.poster_path;
-  }
-
-  return {
-    title,
-    overview,
-    posterUrl: poster_path ? `https://image.tmdb.org/t/p/w500${poster_path}` : null,
-  };
 }
 

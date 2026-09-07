@@ -16,15 +16,12 @@ import {
   updateEpisodeOrders,
   deleteSeason,
 } from './api';
-import { AddMediaDialog } from './AddMediaDialog';
 import { EditSeasonDialog } from './EditSeasonDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { buildCrossSeasonMove } from './crossSeasonMove';
-import { TmdbMatchModal } from './TmdbMatchModal';
 import { BulkScrapeModal } from './BulkScrapeModal';
 import { BulkIngestModal } from './BulkIngestModal';
-import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
   Dialog,
   DialogContent,
@@ -65,7 +62,6 @@ export interface SeriesDetailViewProps {
 
 export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: SeriesDetailViewProps) {
   const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));
-  const openDialog = useScrapeWorkerStore((state) => state.openDialog);
 
   const queryClient = useQueryClient();
 
@@ -178,7 +174,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
-  const [isTmdbMatchOpen, setIsTmdbMatchOpen] = useState(false);
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
@@ -354,10 +349,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
     });
   };
 
-  const handleAddEpisode = () => {
-    openDialog();
-  };
-
   const handleEdit = () => {
     if (!selectedEpisode) return;
     setEditTitle(selectedEpisode.title ?? '');
@@ -447,14 +438,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
               </button>
 
               <button
-                onClick={() => setIsTmdbMatchOpen(true)}
-                type="button"
-                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
-              >
-                Match TMDB
-              </button>
-
-              <button
                 onClick={() => setIsBulkScrapeOpen(true)}
                 type="button"
                 className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
@@ -468,24 +451,6 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
                 className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
               >
                 Bulk Ingest URLs
-              </button>
-              
-              <button
-                onClick={handleAddEpisode}
-                type="button"
-                className="bg-primary text-primary-fg hover:opacity-90 px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                Add Episode
               </button>
             </div>
           </div>
@@ -1013,19 +978,10 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
           )}
         </div>
       </div>
-      <AddMediaDialog />
       <EditSeriesDialog
         open={isEditSeriesOpen}
         onOpenChange={setIsEditSeriesOpen}
         series={series}
-      />
-      <TmdbMatchModal
-        seriesId={seriesId}
-        defaultType={series.type === 'movie' ? 'movie' : 'tv'}
-        defaultSeason={activeSeasonNumber}
-        localSeasonId={activeSeason?.id}
-        open={isTmdbMatchOpen}
-        onOpenChange={setIsTmdbMatchOpen}
       />
       <BulkScrapeModal
         open={isBulkScrapeOpen}

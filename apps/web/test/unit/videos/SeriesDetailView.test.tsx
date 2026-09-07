@@ -248,10 +248,6 @@ describe('SeriesDetailView component', () => {
 
     const user = userEvent.setup();
 
-    const addButton = screen.getByRole('button', { name: /add episode/i });
-    await user.click(addButton);
-    expect(await screen.findByText('Add Series')).toBeInTheDocument();
-
     // Test Edit Dialog
     const editButton = screen.getByRole('button', { name: /^edit$/i });
     await user.click(editButton);
@@ -1036,5 +1032,65 @@ describe('SeriesDetailView component', () => {
         isFeatured: true,
       })
     );
+  });
+
+  it('does not render "Match TMDB" or "+ Add Episode" buttons in header, and preserves other header actions', async () => {
+    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    expect(screen.queryByRole('button', { name: /Match TMDB/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Add Episode/i })).not.toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: /Edit Series/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Bulk Add Sources/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Bulk Ingest URLs/i })).toBeInTheDocument();
+  });
+
+  it('renders season action buttons cleanly right-aligned with ml-auto', async () => {
+    const mockSeasonSeries: SeriesDetails = {
+      ...mockSeries,
+      seasons: [
+        {
+          id: 'dm-season-1',
+          seriesId: 'deep-modules',
+          sourceUrl: 'https://otakudesu.cloud/anime/deep-modules',
+          source: 'otakudesu',
+          title: 'Season 1',
+          description: 'First season',
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [],
+        },
+      ],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: mockSeasonSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    });
+
+    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    const editSeasonBtn = screen.getByRole('button', { name: /Edit Season/i });
+    const deleteSeasonBtn = screen.getByRole('button', { name: /Delete Season/i });
+
+    expect(editSeasonBtn).toBeInTheDocument();
+    expect(deleteSeasonBtn).toBeInTheDocument();
+    expect(editSeasonBtn.className).toContain('ml-auto');
   });
 });
