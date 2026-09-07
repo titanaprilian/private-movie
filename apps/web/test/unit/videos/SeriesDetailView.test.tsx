@@ -250,7 +250,7 @@ describe('SeriesDetailView component', () => {
 
     const addButton = screen.getByRole('button', { name: /add episode/i });
     await user.click(addButton);
-    expect(await screen.findByText('Add Media Wizard')).toBeInTheDocument();
+    expect(await screen.findByText('Add Series')).toBeInTheDocument();
 
     // Test Edit Dialog
     const editButton = screen.getByRole('button', { name: /^edit$/i });

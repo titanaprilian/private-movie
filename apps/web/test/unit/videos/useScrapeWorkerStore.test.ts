@@ -8,8 +8,6 @@ vi.mock('@/modules/videos/internal/api', async () => {
   );
   return {
     ...actual,
-    previewScrape: vi.fn(),
-    previewScrapeSeries: vi.fn(),
     fetchSeriesTmdbPreview: vi.fn(),
   };
 });
@@ -25,13 +23,12 @@ describe('useScrapeWorkerStore', () => {
     const state = useScrapeWorkerStore.getState();
     expect(state.isOpen).toBe(false);
     expect(state.step).toBe(1);
-    expect(state.sourceUrl).toBe('');
-    expect(state.source).toBe('otakudesu');
+    expect(state.tmdbType).toBe('tv');
+    expect(state.tmdbId).toBe('');
+    expect(state.includeSpecials).toBe(false);
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
-    expect(state.previewData).toBeNull();
-    expect(state.editablePreviewSeries).toBeNull();
-    expect(state.editablePreviewEpisodes).toBeNull();
+    expect(state.tmdbPreviewData).toBeNull();
   });
 
   it('opens and closes dialog', () => {
@@ -42,14 +39,14 @@ describe('useScrapeWorkerStore', () => {
     expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
   });
 
-  it('updates TMDB form state fields', () => {
-    useScrapeWorkerStore.getState().setSource('tmdb');
+  it('updates form state fields', () => {
     useScrapeWorkerStore.getState().setTmdbType('movie');
     useScrapeWorkerStore.getState().setTmdbId('550');
+    useScrapeWorkerStore.getState().setIncludeSpecials(true);
 
-    expect(useScrapeWorkerStore.getState().source).toBe('tmdb');
     expect(useScrapeWorkerStore.getState().tmdbType).toBe('movie');
     expect(useScrapeWorkerStore.getState().tmdbId).toBe('550');
+    expect(useScrapeWorkerStore.getState().includeSpecials).toBe(true);
   });
 
   it('submits TMDB preview successfully and transitions to step 2', async () => {
@@ -61,7 +58,6 @@ describe('useScrapeWorkerStore', () => {
 
     vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(mockTmdbPreview);
 
-    useScrapeWorkerStore.getState().setSource('tmdb');
     useScrapeWorkerStore.getState().setTmdbType('movie');
     useScrapeWorkerStore.getState().setTmdbId('550');
 
@@ -75,178 +71,41 @@ describe('useScrapeWorkerStore', () => {
     expect(useScrapeWorkerStore.getState().error).toBeNull();
   });
 
-  it('returns false and sets error if tmdbId is missing or invalid on TMDB submitPreview', async () => {
-    useScrapeWorkerStore.getState().setSource('tmdb');
+  it('returns false and sets error if tmdbId is missing or invalid on submitPreview', async () => {
     useScrapeWorkerStore.getState().setTmdbId('');
 
-    const success = await useScrapeWorkerStore.getState().submitPreview();
-
+    let success = await useScrapeWorkerStore.getState().submitPreview();
     expect(success).toBe(false);
     expect(useScrapeWorkerStore.getState().error).toBe('TMDB ID is required.');
     expect(useScrapeWorkerStore.getState().step).toBe(1);
+
+    useScrapeWorkerStore.getState().setTmdbId('abc');
+    success = await useScrapeWorkerStore.getState().submitPreview();
+    expect(success).toBe(false);
+    expect(useScrapeWorkerStore.getState().error).toBe('TMDB ID must be a valid positive number.');
+    expect(useScrapeWorkerStore.getState().step).toBe(1);
+
+    useScrapeWorkerStore.getState().setTmdbId('-5');
+    success = await useScrapeWorkerStore.getState().submitPreview();
+    expect(success).toBe(false);
+    expect(useScrapeWorkerStore.getState().error).toBe('TMDB ID must be a valid positive number.');
+    expect(useScrapeWorkerStore.getState().step).toBe(1);
   });
 
-  it('successfully submits preview and transitions to step 2', async () => {
-    const mockPreviewData: apiModule.PreviewScrapeResult = {
-      episode: {
-        sourceUrl: 'https://otakudesu.cloud/ep1',
-        source: 'otakudesu',
-        title: 'Test Episode 1',
-        videoType: 'mp4',
-        videoSources: [
-          {
-            type: 'direct',
-            url: 'https://video.stream/ep1.mp4',
-            label: 'Server 1',
-          },
-        ],
-        metadata: { animePageUrl: 'https://otakudesu.cloud/anime/test' },
-      },
-      series: {
-        sourceUrl: 'https://otakudesu.cloud/anime/test',
-        source: 'otakudesu',
-        title: 'Test Series',
-        description: 'Series description',
-        posterUrl: 'https://otakudesu.cloud/poster.jpg',
-      },
-      warnings: ['Failed to fetch episode duration'],
-    };
-
-    vi.mocked(apiModule.previewScrape).mockResolvedValueOnce(mockPreviewData);
-
-    useScrapeWorkerStore.getState().setSourceUrl('https://otakudesu.cloud/ep1');
-
-    const promise = useScrapeWorkerStore.getState().submitPreview();
-
-    expect(useScrapeWorkerStore.getState().isLoading).toBe(true);
-
-    const success = await promise;
-
-    expect(success).toBe(true);
-    expect(useScrapeWorkerStore.getState().isLoading).toBe(false);
-    expect(useScrapeWorkerStore.getState().step).toBe(2);
-    expect(useScrapeWorkerStore.getState().previewData).toEqual(mockPreviewData);
-    expect(useScrapeWorkerStore.getState().editablePreviewSeries).toEqual(mockPreviewData.series);
-    expect(useScrapeWorkerStore.getState().error).toBeNull();
-  });
-
-  it('handles preview scrape error and stays on step 1', async () => {
-    vi.mocked(apiModule.previewScrape).mockRejectedValueOnce(
-      new Error('Invalid HTML payload')
+  it('handles preview fetch error and stays on step 1', async () => {
+    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockRejectedValueOnce(
+      new Error('TMDB media not found')
     );
 
-    useScrapeWorkerStore.getState().setSourceUrl('https://otakudesu.cloud/ep1');
+    useScrapeWorkerStore.getState().setTmdbId('999999');
 
     const success = await useScrapeWorkerStore.getState().submitPreview();
 
     expect(success).toBe(false);
     expect(useScrapeWorkerStore.getState().isLoading).toBe(false);
     expect(useScrapeWorkerStore.getState().step).toBe(1);
-    expect(useScrapeWorkerStore.getState().previewData).toBeNull();
-    expect(useScrapeWorkerStore.getState().error).toBe('Invalid HTML payload');
-  });
-
-  it('calls previewScrapeSeries when sourceUrl matches a series URL signature (/anime/)', async () => {
-    const mockSeriesData: apiModule.PreviewScrapeSeriesResult = {
-      series: {
-        sourceUrl: 'https://otakudesu.cloud/anime/grand-blue-s3-sub-indo/',
-        source: 'otakudesu',
-        title: 'Grand Blue Season 3',
-        description: 'Diving club anime',
-        posterUrl: 'https://otakudesu.cloud/poster.jpg',
-      },
-      episodes: [
-        {
-          title: 'Episode 1',
-          url: 'https://otakudesu.cloud/episode/gb-ep-1',
-          date: '10 Jan 2025',
-        },
-      ],
-    };
-
-    vi.mocked(apiModule.previewScrapeSeries).mockResolvedValueOnce(mockSeriesData);
-
-    useScrapeWorkerStore
-      .getState()
-      .setSourceUrl('https://otakudesu.cloud/anime/grand-blue-s3-sub-indo/');
-
-    const success = await useScrapeWorkerStore.getState().submitPreview();
-
-    expect(success).toBe(true);
-    expect(apiModule.previewScrapeSeries).toHaveBeenCalledWith({
-      sourceUrl: 'https://otakudesu.cloud/anime/grand-blue-s3-sub-indo/',
-      source: 'otakudesu',
-    });
-    expect(apiModule.previewScrape).not.toHaveBeenCalled();
-    expect(useScrapeWorkerStore.getState().step).toBe(2);
-    expect(useScrapeWorkerStore.getState().isBatch).toBe(true);
-    expect(useScrapeWorkerStore.getState().seriesPreviewData).toEqual(mockSeriesData);
-    expect(useScrapeWorkerStore.getState().editablePreviewSeries).toEqual(mockSeriesData.series);
-    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes).toEqual([
-      expect.objectContaining(mockSeriesData.episodes[0]),
-    ]);
-    expect(useScrapeWorkerStore.getState().previewData).toBeNull();
-  });
-
-  it('allows setting and updating editablePreviewEpisodes draft state', () => {
-    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
-      {
-        title: 'Original Episode 1',
-        url: 'https://otakudesu.cloud/episode/ep-1',
-        date: '10 Jan 2025',
-      },
-      {
-        title: 'Original Episode 2',
-        url: 'https://otakudesu.cloud/episode/ep-2',
-        date: '11 Jan 2025',
-      },
-    ]);
-
-    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes).toHaveLength(2);
-
-    useScrapeWorkerStore.getState().updateEditablePreviewEpisode(0, {
-      title: 'Custom Edited Title Ep 1',
-      url: 'https://otakudesu.cloud/episode/ep-1-custom',
-    });
-
-    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes?.[0]).toEqual({
-      title: 'Custom Edited Title Ep 1',
-      url: 'https://otakudesu.cloud/episode/ep-1-custom',
-      date: '10 Jan 2025',
-    });
-  });
-
-  it('allows setting and updating editablePreviewSeries draft state', () => {
-    useScrapeWorkerStore.getState().setEditablePreviewSeries({
-      sourceUrl: 'https://otakudesu.cloud/anime/test',
-      source: 'otakudesu',
-      title: 'Original Title',
-      description: 'Original Description',
-      posterUrl: 'https://otakudesu.cloud/poster.jpg',
-    });
-
-    expect(useScrapeWorkerStore.getState().editablePreviewSeries).toEqual({
-      sourceUrl: 'https://otakudesu.cloud/anime/test',
-      source: 'otakudesu',
-      title: 'Original Title',
-      description: 'Original Description',
-      posterUrl: 'https://otakudesu.cloud/poster.jpg',
-    });
-
-    useScrapeWorkerStore.getState().updateEditablePreviewSeries({
-      title: 'Edited Title',
-      description: 'Edited Description',
-    });
-
-    expect(useScrapeWorkerStore.getState().editablePreviewSeries?.title).toBe(
-      'Edited Title'
-    );
-    expect(
-      useScrapeWorkerStore.getState().editablePreviewSeries?.description
-    ).toBe('Edited Description');
-    expect(
-      useScrapeWorkerStore.getState().editablePreviewSeries?.posterUrl
-    ).toBe('https://otakudesu.cloud/poster.jpg');
+    expect(useScrapeWorkerStore.getState().tmdbPreviewData).toBeNull();
+    expect(useScrapeWorkerStore.getState().error).toBe('TMDB media not found');
   });
 
   it('allows navigating back to step 1 from step 2', () => {
@@ -255,126 +114,5 @@ describe('useScrapeWorkerStore', () => {
 
     useScrapeWorkerStore.getState().backToStep1();
     expect(useScrapeWorkerStore.getState().step).toBe(1);
-  });
-
-  it('allows adding an empty episode draft row', () => {
-    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
-      {
-        title: 'Episode 1',
-        url: 'https://otakudesu.cloud/episode/ep-1',
-        date: '10 Jan 2025',
-      },
-    ]);
-
-    useScrapeWorkerStore.getState().addEditablePreviewEpisode();
-
-    const episodes = useScrapeWorkerStore.getState().editablePreviewEpisodes;
-    expect(episodes).toHaveLength(2);
-    expect(episodes?.[1]).toEqual(
-      expect.objectContaining({
-        title: '',
-        url: '',
-        date: null,
-      })
-    );
-  });
-
-  it('allows setting an optional embedUrl on an episode draft row via updateEditablePreviewEpisode', () => {
-    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
-      {
-        title: 'Episode 1',
-        url: 'https://otakudesu.cloud/episode/ep-1',
-        date: '10 Jan 2025',
-      },
-    ]);
-
-    useScrapeWorkerStore.getState().updateEditablePreviewEpisode(0, {
-      embedUrl: 'https://embed.com/ep1',
-    });
-
-    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes?.[0]).toEqual({
-      title: 'Episode 1',
-      url: 'https://otakudesu.cloud/episode/ep-1',
-      date: '10 Jan 2025',
-      embedUrl: 'https://embed.com/ep1',
-    });
-  });
-
-  it('allows clearing an embedUrl on an episode draft row', () => {
-    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
-      {
-        title: 'Episode 1',
-        url: 'https://otakudesu.cloud/episode/ep-1',
-        date: '10 Jan 2025',
-        embedUrl: 'https://embed.com/ep1',
-      },
-    ]);
-
-    useScrapeWorkerStore.getState().updateEditablePreviewEpisode(0, {
-      embedUrl: '',
-    });
-
-    expect(useScrapeWorkerStore.getState().editablePreviewEpisodes?.[0]).toEqual({
-      title: 'Episode 1',
-      url: 'https://otakudesu.cloud/episode/ep-1',
-      date: '10 Jan 2025',
-      embedUrl: '',
-    });
-  });
-
-  it('allows deleting an episode draft row by index', () => {
-    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
-      {
-        title: 'Episode 1',
-        url: 'https://otakudesu.cloud/episode/ep-1',
-        date: '10 Jan 2025',
-      },
-      {
-        title: 'Episode 2',
-        url: 'https://otakudesu.cloud/episode/ep-2',
-        date: '11 Jan 2025',
-      },
-      {
-        title: 'Episode 3',
-        url: 'https://otakudesu.cloud/episode/ep-3',
-        date: '12 Jan 2025',
-      },
-    ]);
-
-    useScrapeWorkerStore.getState().deleteEditablePreviewEpisode(1);
-
-    const episodes = useScrapeWorkerStore.getState().editablePreviewEpisodes;
-    expect(episodes).toHaveLength(2);
-    expect(episodes?.[0].title).toBe('Episode 1');
-    expect(episodes?.[1].title).toBe('Episode 3');
-  });
-
-  it('allows reordering episode draft rows via reorderEditablePreviewEpisodes', () => {
-    useScrapeWorkerStore.getState().setEditablePreviewEpisodes([
-      {
-        title: 'Episode 1',
-        url: 'https://otakudesu.cloud/episode/ep-1',
-        date: '10 Jan 2025',
-      },
-      {
-        title: 'Episode 2',
-        url: 'https://otakudesu.cloud/episode/ep-2',
-        date: '11 Jan 2025',
-      },
-      {
-        title: 'Episode 3',
-        url: 'https://otakudesu.cloud/episode/ep-3',
-        date: '12 Jan 2025',
-      },
-    ]);
-
-    // Move Episode 3 (index 2) to top (index 0)
-    useScrapeWorkerStore.getState().reorderEditablePreviewEpisodes(2, 0);
-
-    const episodes = useScrapeWorkerStore.getState().editablePreviewEpisodes;
-    expect(episodes).toHaveLength(3);
-    expect(episodes?.[0].title).toBe('Episode 3');
-    expect(episodes?.[1].title).toBe('Episode 1');
-    expect(episodes?.[2].title).toBe('Episode 2');
   });
 });
