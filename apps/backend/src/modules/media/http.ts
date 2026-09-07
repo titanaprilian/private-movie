@@ -324,6 +324,120 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         }),
       }
     )
+    .post(
+      "/media/sources/check",
+      async ({ body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        let targetUrl: URL;
+        try {
+          targetUrl = new URL(body.url);
+        } catch {
+          return errorResponse(
+            set,
+            400,
+            new Error("Invalid URL format")
+          );
+        }
+
+        const startTime = Date.now();
+        const outboundHeaders: Record<string, string> = {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        };
+
+        if (body.referer && body.referer.trim().length > 0) {
+          outboundHeaders["Referer"] = body.referer.trim();
+        } else {
+          outboundHeaders["Referer"] = targetUrl.origin;
+        }
+
+        try {
+          // Attempt a HEAD request first with a 5-second timeout and follow redirects
+          const headRes = await fetch(targetUrl.toString(), {
+            method: "HEAD",
+            headers: outboundHeaders,
+            redirect: "follow",
+            signal: AbortSignal.timeout(5000),
+          });
+
+          // If HEAD succeeds (2xx) or returns 3xx (if not redirected), consider it working
+          if (headRes.ok || (headRes.status >= 200 && headRes.status < 400)) {
+            return successResponse({
+              status: "working",
+              statusCode: headRes.status,
+              latencyMs: Date.now() - startTime,
+              error: null,
+            });
+          }
+
+          // If HEAD is 405 Method Not Allowed or 403 Forbidden, fall back to a ranged GET bytes=0-0
+          if (headRes.status === 405 || headRes.status === 403) {
+            const getRes = await fetch(targetUrl.toString(), {
+              method: "GET",
+              headers: {
+                ...outboundHeaders,
+                Range: "bytes=0-0",
+              },
+              redirect: "follow",
+              signal: AbortSignal.timeout(5000),
+            });
+
+            if (getRes.ok || getRes.status === 206 || (getRes.status >= 200 && getRes.status < 400)) {
+              return successResponse({
+                status: "working",
+                statusCode: getRes.status,
+                latencyMs: Date.now() - startTime,
+                error: null,
+              });
+            }
+
+            return successResponse({
+              status: "broken",
+              statusCode: getRes.status,
+              latencyMs: Date.now() - startTime,
+              error: `Target server returned HTTP ${getRes.status}: ${getRes.statusText}`,
+            });
+          }
+
+          return successResponse({
+            status: "broken",
+            statusCode: headRes.status,
+            latencyMs: Date.now() - startTime,
+            error: `Target server returned HTTP ${headRes.status}: ${headRes.statusText}`,
+          });
+        } catch (err: unknown) {
+          const latencyMs = Date.now() - startTime;
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          return successResponse({
+            status: "broken",
+            statusCode: null,
+            latencyMs,
+            error: errorMessage,
+          });
+        }
+      },
+      {
+        body: t.Object({
+          url: t.String(),
+          type: t.Union([t.Literal("direct"), t.Literal("embed"), t.Literal("s3")]),
+          referer: t.Optional(t.String()),
+        }),
+      }
+    )
     .get(
       "/episodes",
       async ({ query }) => {

@@ -114,6 +114,23 @@ export type MediaSeriesDetails = {
   genres: MediaGenre[];
 };
 
+export type MediaSourceCheckStatus = "working" | "broken";
+
+export type MediaSourceCheckResult = {
+  status: MediaSourceCheckStatus;
+  statusCode: number | null;
+  latencyMs: number;
+  error: string | null;
+};
+
+export type MediaSourceCheckRequest = {
+  url: string;
+  type: "direct" | "embed" | "s3";
+  referer?: string;
+};
+
+export type MediaSourceCheckResponse = MediaSuccessEnvelope<MediaSourceCheckResult>;
+
 export type MediaHomeFeedResponse = MediaSuccessEnvelope<MediaHomeFeed>;
 export type MediaSeriesDetailsResponse =
   MediaSuccessEnvelope<MediaSeriesDetails>;
