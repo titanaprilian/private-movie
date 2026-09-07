@@ -20,6 +20,16 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function SeriesGrid() {
   const search = useSearch({ from: '/admin/videos/' }) as {
@@ -37,6 +47,47 @@ export function SeriesGrid() {
   const [inputValue, setInputValue] = useState(search.q ?? '');
   const [editingSeries, setEditingSeries] = useState<SeriesItem | null>(null);
   const [deletingSeries, setDeletingSeries] = useState<SeriesItem | null>(null);
+
+  const selectedSlugs = search.genre
+    ? search.genre
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
+  const handleToggleGenre = (slug: string) => {
+    const next = selectedSlugs.includes(slug)
+      ? selectedSlugs.filter((s) => s !== slug)
+      : [...selectedSlugs, slug];
+    navigate({
+      search: (old: Record<string, unknown>) => ({
+        ...old,
+        genre: next.length > 0 ? next.join(',') : undefined,
+        page: 1,
+      }),
+    });
+  };
+
+  const handleRemoveGenre = (slug: string) => {
+    const next = selectedSlugs.filter((s) => s !== slug);
+    navigate({
+      search: (old: Record<string, unknown>) => ({
+        ...old,
+        genre: next.length > 0 ? next.join(',') : undefined,
+        page: 1,
+      }),
+    });
+  };
+
+  const handleClearAllGenres = () => {
+    navigate({
+      search: (old: Record<string, unknown>) => ({
+        ...old,
+        genre: undefined,
+        page: 1,
+      }),
+    });
+  };
 
   useEffect(() => {
     setInputValue(search.q ?? '');
@@ -123,67 +174,127 @@ export function SeriesGrid() {
         </button>
       </div>
 
-      {/* Filter bar & Genre Pills */}
+      {/* Filter bar & Genre Combobox */}
       <div className="bg-card border border-c rounded p-3 space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Filter series..."
-            className="w-full max-w-xs px-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
-          />
+        <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2 w-full max-w-sm">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Filter series..."
+              className="w-full max-w-xs px-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
+            />
+            {genres.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    role="combobox"
+                    aria-label="Filter by genre"
+                    className="px-3 py-1.5 rounded border border-c bg-transparent text-xs mono font-medium hover-bg flex items-center gap-1.5 cursor-pointer text-foreground shrink-0"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                    </svg>
+                    <span>
+                      {selectedSlugs.length === 0
+                        ? 'Filter by genre'
+                        : `Genres (${selectedSlugs.length})`}
+                    </span>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search genres..." />
+                    <CommandList>
+                      <CommandEmpty>No genres found.</CommandEmpty>
+                      <CommandGroup>
+                        {genres.map((genre) => {
+                          const isChecked = selectedSlugs.includes(genre.slug);
+                          return (
+                            <CommandItem
+                              key={genre.id}
+                              value={genre.name}
+                              onSelect={() => handleToggleGenre(genre.slug)}
+                              className="flex items-center gap-2 px-2 py-1.5 cursor-pointer"
+                            >
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() => handleToggleGenre(genre.slug)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <span className="text-xs mono">{genre.name}</span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
           <span className="text-xs text-muted mono">
             {meta.total} {meta.total === 1 ? 'series' : 'series'}
           </span>
         </div>
 
-        {genres.length > 0 && (
+        {selectedSlugs.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-c">
-            <button
-              type="button"
-              onClick={() => {
-                navigate({
-                  search: (old: Record<string, unknown>) => ({
-                    ...old,
-                    genre: undefined,
-                    page: 1,
-                  }),
-                });
-              }}
-              className={`px-2.5 py-1 rounded text-xs mono font-medium border transition-colors cursor-pointer ${
-                !search.genre
-                  ? 'bg-primary text-primary-fg border-primary'
-                  : 'border-c hover-bg text-muted'
-              }`}
-            >
-              All
-            </button>
-            {genres.map((genre) => {
-              const isSelected = search.genre === genre.slug;
+            {selectedSlugs.map((slug) => {
+              const genreObj = genres.find((g) => g.slug === slug);
+              const name = genreObj ? genreObj.name : slug;
               return (
-                <button
-                  key={genre.id}
-                  type="button"
-                  onClick={() => {
-                    navigate({
-                      search: (old: Record<string, unknown>) => ({
-                        ...old,
-                        genre: isSelected ? undefined : genre.slug,
-                        page: 1,
-                      }),
-                    });
-                  }}
-                  className={`px-2.5 py-1 rounded text-xs mono font-medium border transition-colors cursor-pointer ${
-                    isSelected
-                      ? 'bg-primary text-primary-fg border-primary'
-                      : 'border-c hover-bg text-muted'
-                  }`}
+                <span
+                  key={slug}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs mono font-medium bg-primary/10 text-primary border border-primary/20"
                 >
-                  {genre.name}
-                </button>
+                  <span>{name}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${name} filter`}
+                    onClick={() => handleRemoveGenre(slug)}
+                    className="hover:opacity-75 focus:outline-none cursor-pointer"
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
               );
             })}
+            <button
+              type="button"
+              onClick={handleClearAllGenres}
+              className="text-xs text-muted hover:text-fg mono transition-colors underline cursor-pointer ml-1"
+            >
+              Clear all
+            </button>
           </div>
         )}
       </div>

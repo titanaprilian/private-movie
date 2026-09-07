@@ -246,50 +246,76 @@ describe('SeriesGrid component', () => {
     const addBtn = screen.getByRole('button', { name: /Add Series/i });
     await user.click(addBtn);
 
-    expect(screen.getByText('Add Media Wizard')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Add Series' })).toBeInTheDocument();
   });
 
-  it('renders genre pills and highlights active genre matched from URL state', () => {
+  it('renders compact genre filter trigger button and active genre badges when genre param is set', () => {
     renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined, genre: 'sci-fi' });
 
-    expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Action' })).toBeInTheDocument();
-
-    const sciFiBtn = screen.getByRole('button', { name: 'Sci-Fi' });
-    expect(sciFiBtn).toBeInTheDocument();
-    expect(sciFiBtn.className).toContain('bg-primary');
+    expect(screen.getByRole('combobox', { name: 'Filter by genre' })).toHaveTextContent('Genres (1)');
+    expect(screen.getByText('Sci-Fi')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Sci-Fi filter' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeInTheDocument();
   });
 
-  it('navigates with ?genre= when clicking an unselected genre pill', async () => {
+  it('opens combobox popover, filters genres by search, and navigates with multi-select ?genre= value', async () => {
     const { user } = renderSeriesGrid();
 
-    const sciFiBtn = screen.getByRole('button', { name: 'Sci-Fi' });
-    await user.click(sciFiBtn);
+    const trigger = screen.getByRole('combobox', { name: 'Filter by genre' });
+    expect(trigger).toHaveTextContent('Filter by genre');
+    await user.click(trigger);
+
+    const genreInput = screen.getByPlaceholderText('Search genres...');
+    expect(genreInput).toBeInTheDocument();
+
+    // Filter genre list by query
+    fireEvent.change(genreInput, { target: { value: 'Action' } });
+    expect(screen.getByText('Action')).toBeInTheDocument();
+    expect(screen.queryByText('Sci-Fi')).not.toBeInTheDocument();
+
+    // Select Action
+    await user.click(screen.getByText('Action'));
 
     expect(mockNavigate).toHaveBeenCalledWith({
       search: expect.any(Function),
     });
 
     const searchFn = mockNavigate.mock.calls[0][0].search;
-    expect(searchFn({})).toEqual({ genre: 'sci-fi', page: 1 });
+    expect(searchFn({})).toEqual({ genre: 'action', page: 1 });
   });
 
-  it('removes ?genre= search param when clicking an already selected genre pill or All pill', async () => {
+  it('removes genre via badge (x) button or clears all via Clear all button', async () => {
     const { user } = renderSeriesGrid(mockSeriesResponse, {
-      page: 1,
+      page: 2,
       q: undefined,
-      genre: 'sci-fi',
+      genre: 'action,sci-fi',
     });
 
-    const sciFiBtn = screen.getByRole('button', { name: 'Sci-Fi' });
-    await user.click(sciFiBtn);
+    expect(screen.getByRole('combobox', { name: 'Filter by genre' })).toHaveTextContent('Genres (2)');
+    expect(screen.getByText('Action')).toBeInTheDocument();
+    expect(screen.getByText('Sci-Fi')).toBeInTheDocument();
+
+    // Click (x) on Action badge
+    const removeActionBtn = screen.getByRole('button', { name: 'Remove Action filter' });
+    await user.click(removeActionBtn);
 
     expect(mockNavigate).toHaveBeenCalledWith({
       search: expect.any(Function),
     });
+    const searchFn1 = mockNavigate.mock.calls[0][0].search;
+    expect(searchFn1({ genre: 'action,sci-fi', page: 2 })).toEqual({ genre: 'sci-fi', page: 1 });
 
-    const searchFn = mockNavigate.mock.calls[0][0].search;
-    expect(searchFn({ genre: 'sci-fi' })).toEqual({ genre: undefined, page: 1 });
+    mockNavigate.mockReset();
+
+    // Click Clear all
+    const clearAllBtn = screen.getByRole('button', { name: 'Clear all' });
+    await user.click(clearAllBtn);
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+    const searchFn2 = mockNavigate.mock.calls[0][0].search;
+    expect(searchFn2({ genre: 'action,sci-fi', page: 2 })).toEqual({ genre: undefined, page: 1 });
   });
 
   it('renders Edit and Delete buttons on each series card', () => {
