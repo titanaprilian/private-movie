@@ -323,13 +323,22 @@ export function createSeriesRepositoryInternal<
       }
 
       if (params.genre && params.genre.trim() !== "") {
-        const matchingSeriesIds = db
-          .select({ id: seriesToGenres.seriesId })
-          .from(seriesToGenres)
-          .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
-          .where(eq(genres.slug, params.genre.trim()));
+        const slugs = params.genre
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
 
-        conditions.push(inArray(series.id, matchingSeriesIds));
+        if (slugs.length > 0) {
+          const matchingSeriesIds = db
+            .select({ id: seriesToGenres.seriesId })
+            .from(seriesToGenres)
+            .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+            .where(inArray(genres.slug, slugs))
+            .groupBy(seriesToGenres.seriesId)
+            .having(sql`COUNT(DISTINCT ${genres.slug}) = ${slugs.length}`);
+
+          conditions.push(inArray(series.id, matchingSeriesIds));
+        }
       }
 
       const where =

@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, seasons, series } from "@repo/db";
+import { episodes, genres, seasons, series, seriesToGenres } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
 
@@ -251,6 +251,44 @@ describe("GET /series", () => {
     expect(descBody.data.series).toHaveLength(1);
     expect(descBody.data.series[0].title).toBe("Death Note");
     expect(descBody.data.meta.total).toBe(1);
+  });
+
+  it("filters series by single genre and multiple genres using AND logic via comma-separated query param", async () => {
+    const actionGenreId = crypto.randomUUID();
+    const comedyGenreId = crypto.randomUUID();
+
+    await db.insert(genres).values([
+      { id: actionGenreId, name: "Action", slug: "action" },
+      { id: comedyGenreId, name: "Comedy", slug: "comedy" },
+    ]);
+
+    const sActionOnly = await insertSeriesRow({ title: "Action Only Series" });
+    const sComedyOnly = await insertSeriesRow({ title: "Comedy Only Series" });
+    const sBoth = await insertSeriesRow({ title: "Action Comedy Series" });
+
+    await db.insert(seriesToGenres).values([
+      { seriesId: sActionOnly.id, genreId: actionGenreId },
+      { seriesId: sComedyOnly.id, genreId: comedyGenreId },
+      { seriesId: sBoth.id, genreId: actionGenreId },
+      { seriesId: sBoth.id, genreId: comedyGenreId },
+    ]);
+
+    // Test single genre: action
+    const actionRes = await request(app, { path: "/series?genre=action" });
+    expect(actionRes.status).toBe(200);
+    const actionBody = actionRes.body as { data: { series: { id: string }[]; meta: { total: number } } };
+    const actionIds = actionBody.data.series.map((s) => s.id);
+    expect(actionIds).toContain(sActionOnly.id);
+    expect(actionIds).toContain(sBoth.id);
+    expect(actionIds).not.toContain(sComedyOnly.id);
+
+    // Test multi-genre: action,comedy (AND logic)
+    const bothRes = await request(app, { path: "/series?genre=action,comedy" });
+    expect(bothRes.status).toBe(200);
+    const bothBody = bothRes.body as { data: { series: { id: string }[]; meta: { total: number } } };
+    const bothIds = bothBody.data.series.map((s) => s.id);
+    expect(bothIds).toEqual([sBoth.id]);
+    expect(bothBody.data.meta.total).toBe(1);
   });
 });
 

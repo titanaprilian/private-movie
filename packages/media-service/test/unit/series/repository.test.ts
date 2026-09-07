@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { episodes, seasons, series } from "@repo/db";
+import { episodes, seasons, series, seriesToGenres } from "@repo/db";
 import {
   compareSeasons,
   createSeriesRepositoryInternal,
@@ -81,5 +81,49 @@ describe("series repository findByIdWithEpisodes season sorting", () => {
     expect(result?.seasons).toHaveLength(4);
     expect(result?.seasons.map((s) => s.seasonNumber)).toEqual([1, 3, 0, null]);
     expect(result?.seasons.map((s) => s.id)).toEqual(["s1", "s3", "s0", "sNull"]);
+  });
+});
+
+describe("series repository list multi-genre filtering", () => {
+  it("filters series by multiple genre slugs using AND logic", async () => {
+    const mockDb = {
+      select: vi.fn().mockImplementation(() => {
+        return {
+          from: vi.fn().mockImplementation((table) => {
+            if (table === seriesToGenres) {
+              return {
+                innerJoin: vi.fn().mockReturnValue({
+                  where: vi.fn().mockReturnValue({
+                    groupBy: vi.fn().mockReturnValue({
+                      having: vi.fn().mockResolvedValue([]),
+                    }),
+                  }),
+                }),
+              };
+            }
+            if (table === series) {
+              return {
+                where: vi.fn().mockReturnValue({
+                  orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                      offset: vi.fn().mockResolvedValue([]),
+                    }),
+                  }),
+                }),
+              };
+            }
+            return {
+              where: vi.fn().mockResolvedValue([{ value: 0 }]),
+            };
+          }),
+        };
+      }),
+    };
+
+    const repository = createSeriesRepositoryInternal(mockDb as any);
+    const result = await repository.list({ page: 1, limit: 10, genre: "action, comedy" });
+
+    expect(result.series).toEqual([]);
+    expect(result.total).toBe(0);
   });
 });
