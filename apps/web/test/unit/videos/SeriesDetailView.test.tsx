@@ -878,7 +878,7 @@ describe('SeriesDetailView component', () => {
     expect(screen.queryByRole('button', { name: /Add Season/i })).not.toBeInTheDocument();
   });
 
-  it('renders "Sync Episodes" button when active season exists and opens SyncEpisodesModal on click', async () => {
+  it('does not render "Sync Episodes" button in season toolbar', async () => {
     const mockSyncSeries: SeriesDetails = {
       id: 'sync-episodes-series',
       sourceUrl: 'https://otakudesu.cloud/anime/sync-series',
@@ -915,17 +915,11 @@ describe('SeriesDetailView component', () => {
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
     });
 
-    const user = userEvent.setup();
     renderWithProviders(<SeriesDetailView seriesId="sync-episodes-series" />);
 
     await screen.findByRole('heading', { level: 1, name: 'Frieren' });
 
-    const syncBtn = screen.getByRole('button', { name: /Sync Episodes/i });
-    expect(syncBtn).toBeInTheDocument();
-
-    await user.click(syncBtn);
-
-    expect(await screen.findByText('Sync Season Episodes from TMDB')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Sync Episodes/i })).not.toBeInTheDocument();
   });
 
   it('renders "Bulk Add Sources" button and opens BulkScrapeModal on click', async () => {

@@ -44,12 +44,11 @@ export {
   normalizeVideoSourcesSync,
 };
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
-import { createSeasonsRepositoryInternal, SeasonNotFoundError, SeasonNotLinkedToTmdbError } from "./internal/seasons/repository";
+import { createSeasonsRepositoryInternal, SeasonNotFoundError } from "./internal/seasons/repository";
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
 import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
 import {
   fetchFromTmdb,
-  fetchTmdbSeasonDetails,
   fetchTmdbSeriesData,
   getTmdbPreview,
   saveTmdbSeries,
@@ -104,7 +103,7 @@ export type {
   HomeFeedPayload,
 } from "./internal/series/repository";
 export { EpisodeNotFoundError, createEpisodeRepositoryInternal } from "./internal/episodes/repository";
-export { SeasonNotFoundError, SeasonNotEmptyError, SeasonNotLinkedToTmdbError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
+export { SeasonNotFoundError, SeasonNotEmptyError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
 export type { SeasonUpsertInput, CreateSeasonInput } from "./internal/seasons/repository";
 export { SeriesNotFoundError, createSeriesRepositoryInternal } from "./internal/series/repository";
 export { VideoSourceNotFoundError, createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
@@ -267,63 +266,6 @@ export interface SaveEpisodeServiceOptions {
   s3StorageService?: S3StorageService;
 }
 
-export interface TmdbEpisodePreviewUpdateItem {
-  id: string;
-  order: number;
-  existingTitle: string;
-  newTitle: string;
-  existingDescription: string | null;
-  newDescription: string | null;
-  existingThumbnailUrl: string | null;
-  newThumbnailUrl: string | null;
-  existingRating: string | null;
-  newRating: string | null;
-  existingAirDate: string | null;
-  newAirDate: string | null;
-  existingDuration: number | null;
-  newDuration: number | null;
-  tmdbId: number | null;
-}
-
-export interface TmdbEpisodePreviewInsertItem {
-  order: number;
-  title: string;
-  description: string | null;
-  thumbnailUrl: string | null;
-  rating: string | null;
-  airDate: string | null;
-  duration: number | null;
-  tmdbId: number | null;
-}
-
-export interface TmdbEpisodePreviewUnmappedItem {
-  id: string;
-  order: number;
-  title: string;
-}
-
-export interface SeasonTmdbPreviewResult {
-  seasonId: string;
-  tmdbId: number;
-  tmdbSeason: number;
-  updates: TmdbEpisodePreviewUpdateItem[];
-  inserts: TmdbEpisodePreviewInsertItem[];
-  unmapped: TmdbEpisodePreviewUnmappedItem[];
-}
-
-export interface SeasonTmdbSyncOptions {
-  tmdbId?: number;
-  tmdbSeason?: number;
-}
-
-export interface SeasonTmdbSyncResult {
-  success: true;
-  seasonId: string;
-  updatedCount: number;
-  insertedCount: number;
-  unmappedCount: number;
-}
-
 export interface PreviewBulkSourcesInput {
   seriesId: string;
   sourceUrl: string;
@@ -417,8 +359,6 @@ export interface MediaService {
   scrapeAndSaveSources(episodeId: string, sourceUrl: string): Promise<EpisodeWithVideoSources>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   getTmdbPreview(type: "movie" | "tv", tmdbId: number, season?: number): Promise<TmdbPreviewResult>;
-  getSeasonTmdbPreview(seasonId: string, options?: SeasonTmdbSyncOptions): Promise<SeasonTmdbPreviewResult>;
-  syncSeasonTmdb(seasonId: string, options?: SeasonTmdbSyncOptions): Promise<SeasonTmdbSyncResult>;
   matchTmdb(input: TmdbMatchInput): Promise<SeriesWithSeasons>;
   importTmdb(input: TmdbImportInput): Promise<SeriesWithSeasons>;
 }
@@ -1034,215 +974,6 @@ export function createMediaService<
           ...finalSeries!,
           seasons: finalSeasons,
           relations: [],
-        };
-      });
-    },
-
-    async getSeasonTmdbPreview(
-      seasonId: string,
-      options?: SeasonTmdbSyncOptions
-    ): Promise<SeasonTmdbPreviewResult> {
-      const seasonsRepositoryTx = createSeasonsRepositoryInternal(db);
-      const seriesRepositoryTx = createSeriesRepositoryInternal(db);
-      const seasonRow = await seasonsRepositoryTx.findById(seasonId);
-      if (!seasonRow) {
-        throw new SeasonNotFoundError(`Season with id ${seasonId} not found`);
-      }
-
-      const seriesRow = await seriesRepositoryTx.findById(seasonRow.seriesId);
-      const tmdbId = options?.tmdbId ?? seriesRow?.tmdbId;
-      const tmdbSeason = options?.tmdbSeason ?? seasonRow.seasonNumber;
-
-      if (tmdbId == null || tmdbSeason == null) {
-        throw new SeasonNotLinkedToTmdbError("Season is not linked to TMDB");
-      }
-
-      const tmdbData = await fetchTmdbSeasonDetails(tmdbId, tmdbSeason);
-      const tmdbEpisodes = Array.isArray(tmdbData.episodes) ? tmdbData.episodes : [];
-
-      const localEpisodes = await db
-        .select()
-        .from(episodes)
-        .where(eq(episodes.seasonId, seasonId))
-        .orderBy(asc(episodes.order));
-
-      const localMap = new Map<number, typeof localEpisodes[number]>();
-      for (const ep of localEpisodes) {
-        localMap.set(ep.order, ep);
-      }
-
-      const updates: TmdbEpisodePreviewUpdateItem[] = [];
-      const inserts: TmdbEpisodePreviewInsertItem[] = [];
-      const matchedOrders = new Set<number>();
-
-      for (const ep of tmdbEpisodes) {
-        const order = ep.episode_number;
-        const newTitle = ep.name && ep.name.trim() !== "" ? ep.name : `Episode ${order}`;
-        const newDescription = ep.overview ?? null;
-        const newThumbnailUrl = ep.still_path ? `https://image.tmdb.org/t/p/w500${ep.still_path}` : null;
-        const newRating = ep.vote_average != null ? String(ep.vote_average) : null;
-        const newAirDate = ep.air_date ?? null;
-        const newDuration = ep.runtime != null ? Number(ep.runtime) : null;
-        const epTmdbId = ep.id != null ? Number(ep.id) : null;
-
-        const existing = localMap.get(order);
-        if (existing) {
-          matchedOrders.add(order);
-          updates.push({
-            id: existing.id,
-            order,
-            existingTitle: existing.title,
-            newTitle,
-            existingDescription: existing.description ?? null,
-            newDescription,
-            existingThumbnailUrl: existing.thumbnailUrl ?? null,
-            newThumbnailUrl,
-            existingRating: existing.rating ?? null,
-            newRating,
-            existingAirDate: existing.airDate ? existing.airDate.toISOString() : null,
-            newAirDate,
-            existingDuration: existing.duration ?? null,
-            newDuration,
-            tmdbId: epTmdbId,
-          });
-        } else {
-          inserts.push({
-            order,
-            title: newTitle,
-            description: newDescription,
-            thumbnailUrl: newThumbnailUrl,
-            rating: newRating,
-            airDate: newAirDate,
-            duration: newDuration,
-            tmdbId: epTmdbId,
-          });
-        }
-      }
-
-      const unmapped: TmdbEpisodePreviewUnmappedItem[] = [];
-      for (const ep of localEpisodes) {
-        if (!matchedOrders.has(ep.order)) {
-          unmapped.push({
-            id: ep.id,
-            order: ep.order,
-            title: ep.title,
-          });
-        }
-      }
-
-      return {
-        seasonId,
-        tmdbId,
-        tmdbSeason,
-        updates,
-        inserts,
-        unmapped,
-      };
-    },
-
-    async syncSeasonTmdb(
-      seasonId: string,
-      options?: SeasonTmdbSyncOptions
-    ): Promise<SeasonTmdbSyncResult> {
-      const seasonsRepositoryTx = createSeasonsRepositoryInternal(db);
-      const seriesRepositoryTx = createSeriesRepositoryInternal(db);
-      const seasonRow = await seasonsRepositoryTx.findById(seasonId);
-      if (!seasonRow) {
-        throw new SeasonNotFoundError(`Season with id ${seasonId} not found`);
-      }
-
-      const seriesRow = await seriesRepositoryTx.findById(seasonRow.seriesId);
-      const tmdbId = options?.tmdbId ?? seriesRow?.tmdbId;
-      const tmdbSeason = options?.tmdbSeason ?? seasonRow.seasonNumber;
-
-      if (tmdbId == null || tmdbSeason == null) {
-        throw new SeasonNotLinkedToTmdbError("Season is not linked to TMDB");
-      }
-
-      const tmdbData = await fetchTmdbSeasonDetails(tmdbId, tmdbSeason);
-      const tmdbEpisodes = Array.isArray(tmdbData.episodes) ? tmdbData.episodes : [];
-
-      return await db.transaction(async (tx) => {
-        const seasonsTx = createSeasonsRepositoryInternal(tx);
-        await seasonsTx.updateSeason(seasonId, {
-          seasonNumber: tmdbSeason,
-          tmdbSyncStatus: "SYNCED",
-        });
-
-        const localEpisodes = await tx
-          .select()
-          .from(episodes)
-          .where(eq(episodes.seasonId, seasonId));
-
-        const localMap = new Map<number, typeof localEpisodes[number]>();
-        for (const ep of localEpisodes) {
-          localMap.set(ep.order, ep);
-        }
-
-        let updatedCount = 0;
-        let insertedCount = 0;
-        const matchedOrders = new Set<number>();
-        const now = new Date();
-
-        for (const ep of tmdbEpisodes) {
-          const order = ep.episode_number;
-          const title = ep.name && ep.name.trim() !== "" ? ep.name : `Episode ${order}`;
-          const description = ep.overview ?? null;
-          const thumbnailUrl = ep.still_path ? `https://image.tmdb.org/t/p/w500${ep.still_path}` : null;
-          const rating = ep.vote_average != null ? String(ep.vote_average) : null;
-          const duration = ep.runtime != null ? Number(ep.runtime) : null;
-          const epTmdbId = ep.id != null ? Number(ep.id) : null;
-
-          let airDate: Date | null = null;
-          if (ep.air_date) {
-            const d = new Date(ep.air_date);
-            if (!isNaN(d.getTime())) airDate = d;
-          }
-
-          const existing = localMap.get(order);
-          if (existing) {
-            matchedOrders.add(order);
-            await tx
-              .update(episodes)
-              .set({
-                title,
-                description,
-                thumbnailUrl,
-                rating,
-                duration,
-                airDate,
-                updatedAt: now,
-              })
-              .where(eq(episodes.id, existing.id));
-            updatedCount++;
-          } else {
-            await tx
-              .insert(episodes)
-              .values({
-                id: randomUUID(),
-                seasonId,
-                order,
-                title,
-                description,
-                thumbnailUrl,
-                rating,
-                duration,
-                airDate,
-                createdAt: now,
-                updatedAt: now,
-              });
-            insertedCount++;
-          }
-        }
-
-        const unmappedCount = localEpisodes.length - matchedOrders.size;
-
-        return {
-          success: true,
-          seasonId,
-          updatedCount,
-          insertedCount,
-          unmappedCount,
         };
       });
     },

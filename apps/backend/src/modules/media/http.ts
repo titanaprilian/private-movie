@@ -17,7 +17,6 @@ import {
   EpisodeNotFoundError,
   SeasonNotFoundError,
   SeasonNotEmptyError,
-  SeasonNotLinkedToTmdbError,
   SeriesFetchError,
   SeriesNotFoundError,
   VideoSourceNotFoundError,
@@ -1446,93 +1445,6 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         params: t.Object({
           id: t.String(),
         }),
-      }
-    )
-    .get(
-      "/seasons/:id/episodes/tmdb-preview",
-      async ({ params, query: q, set }) => {
-        try {
-          const data = await mediaService.getSeasonTmdbPreview(params.id, {
-            tmdbId: q.tmdbId,
-            tmdbSeason: q.tmdbSeason,
-          });
-          return successResponse(data);
-        } catch (e: unknown) {
-          const err = e as Error;
-          if (e instanceof SeasonNotFoundError || err?.name === "SeasonNotFoundError") {
-            return errorResponse(set, 404, err);
-          }
-          if (e instanceof SeasonNotLinkedToTmdbError || err?.name === "SeasonNotLinkedToTmdbError") {
-            return errorResponse(set, 400, err);
-          }
-          if (e instanceof TmdbFetchError || err?.name === "TmdbFetchError") {
-            const tmdbErr = e as TmdbFetchError;
-            return errorResponse(set, tmdbErr.status === 404 ? 404 : 400, tmdbErr);
-          }
-          console.error("[tmdb-preview error]", e);
-          return errorResponse(set, 500, new InternalServerError());
-        }
-      },
-      {
-        params: t.Object({
-          id: t.String(),
-        }),
-        query: t.Object({
-          tmdbId: t.Optional(t.Numeric()),
-          tmdbSeason: t.Optional(t.Numeric()),
-        }),
-      }
-    )
-    .post(
-      "/seasons/:id/episodes/tmdb-sync",
-      async ({ params, body, headers, set }) => {
-        const authHeader = headers["authorization"];
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-          return errorResponse(
-            set,
-            401,
-            new UnauthorizedError("missing or invalid authorization header")
-          );
-        }
-        const token = authHeader.substring(7);
-        try {
-          await options.authService.verifyAccessToken(token);
-        } catch {
-          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
-        }
-
-        try {
-          const result = await mediaService.syncSeasonTmdb(params.id, {
-            tmdbId: body?.tmdbId,
-            tmdbSeason: body?.tmdbSeason,
-          });
-          return successResponse(result);
-        } catch (e: unknown) {
-          const err = e as Error;
-          if (e instanceof SeasonNotFoundError || err?.name === "SeasonNotFoundError") {
-            return errorResponse(set, 404, err);
-          }
-          if (e instanceof SeasonNotLinkedToTmdbError || err?.name === "SeasonNotLinkedToTmdbError") {
-            return errorResponse(set, 400, err);
-          }
-          if (e instanceof TmdbFetchError || err?.name === "TmdbFetchError") {
-            const tmdbErr = e as TmdbFetchError;
-            return errorResponse(set, tmdbErr.status === 404 ? 404 : 400, tmdbErr);
-          }
-          console.error("[tmdb-sync error]", e);
-          return errorResponse(set, 500, new InternalServerError());
-        }
-      },
-      {
-        params: t.Object({
-          id: t.String(),
-        }),
-        body: t.Optional(
-          t.Object({
-            tmdbId: t.Optional(t.Numeric()),
-            tmdbSeason: t.Optional(t.Numeric()),
-          })
-        ),
       }
     )
     .patch(
