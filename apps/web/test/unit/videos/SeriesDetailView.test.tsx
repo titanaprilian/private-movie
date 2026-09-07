@@ -223,11 +223,11 @@ describe('SeriesDetailView component', () => {
     });
     await user.click(actionMenuButton);
 
-    // Test Edit Dialog
+    // Test Edit Action opens Episode Detail Drawer
     const editButton = screen.getByRole('button', { name: /^edit$/i });
     await user.click(editButton);
 
-    expect(await screen.findByRole('heading', { name: 'Edit Episode' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: `Episode Details: ${firstEpisode.title}` })).toBeInTheDocument();
     
     const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
     const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
@@ -235,13 +235,13 @@ describe('SeriesDetailView component', () => {
     expect(titleInput.value).toBe(firstEpisode.title);
     expect(descInput.value).toBe(firstEpisode.description);
 
-    // Save changes
-    const saveButton = screen.getByRole('button', { name: 'Save Changes' });
-    await user.click(saveButton);
+    // Close drawer
+    const closeBtn = screen.getByRole('button', { name: /close drawer/i });
+    await user.click(closeBtn);
 
     // Re-open action menu for Delete Dialog
     await user.click(actionMenuButton);
-    const deleteButton = screen.getByRole('button', { name: /delete/i });
+    const deleteButton = screen.getByRole('button', { name: /^delete$/i });
     await user.click(deleteButton);
 
     expect(await screen.findByRole('heading', { name: 'Delete Episode' })).toBeInTheDocument();
@@ -1013,5 +1013,185 @@ describe('SeriesDetailView component', () => {
     expect(screen.getByRole('button', { name: /Edit Season/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Copy Season ID/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Delete Season/i })).toBeInTheDocument();
+  });
+
+  it('handles batch cross-season move execution via confirmation dialog', async () => {
+    const mockSeasonSeries: SeriesDetails = {
+      ...mockSeries,
+      seasons: [
+        {
+          id: 'dm-season-1',
+          seriesId: 'deep-modules',
+          sourceUrl: 'https://otakudesu.cloud/anime/deep-modules',
+          source: 'otakudesu',
+          title: 'Season 1',
+          description: 'First season',
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: mockSeries.episodes.map((e) => ({
+            ...e,
+            seasonId: 'dm-season-1',
+          })),
+        },
+        {
+          id: 'dm-season-2',
+          seriesId: 'deep-modules',
+          sourceUrl: 'https://otakudesu.cloud/anime/deep-modules-s2',
+          source: 'otakudesu',
+          title: 'Season 2',
+          description: 'Second season',
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [],
+        },
+      ],
+      episodes: mockSeries.episodes.map((e) => ({
+        ...e,
+        seasonId: 'dm-season-1',
+      })),
+    };
+
+    let reorderCalled = false;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/deep-modules/episodes/order') && init?.method === 'PATCH') {
+        reorderCalled = true;
+        return new Response(JSON.stringify({ data: { success: true } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: mockSeasonSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    // Select row 1
+    const checkbox1 = screen.getByLabelText('Select Intro to Deep Modules');
+    await user.click(checkbox1);
+
+    // Open Batch Move Modal
+    const moveBtn = screen.getByRole('button', { name: /move to season/i });
+    await user.click(moveBtn);
+
+    expect(screen.getByRole('heading', { name: /move episodes to season/i })).toBeInTheDocument();
+
+    // Confirm Move
+    const confirmMoveBtn = screen.getByRole('button', { name: /^move episodes$/i });
+    await user.click(confirmMoveBtn);
+
+    expect(reorderCalled).toBe(true);
+  });
+
+  it('handles batch delete execution via confirmation dialog', async () => {
+    let deletedCount = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/episodes/') && init?.method === 'DELETE') {
+        deletedCount++;
+        return new Response(JSON.stringify({ data: { id: 'deleted' } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: mockSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    // Select all visible episodes via header checkbox
+    const headerCheckbox = screen.getByLabelText('Select all visible episodes');
+    await user.click(headerCheckbox);
+
+    // Click delete selected in toolbar
+    const deleteBatchBtn = screen.getByRole('button', { name: /delete selected/i });
+    await user.click(deleteBatchBtn);
+
+    expect(screen.getByRole('heading', { name: /delete selected episodes/i })).toBeInTheDocument();
+
+    // Confirm Delete
+    const confirmDeleteBtn = screen.getByRole('button', { name: /delete 4 episodes/i });
+    await user.click(confirmDeleteBtn);
+
+    expect(deletedCount).toBe(4);
+  });
+
+  it('opens slide-out drawer on episode row click or edit click and closes via close button', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: mockSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    // Drawer is closed initially
+    expect(screen.queryByRole('dialog', { name: /Episode Details:/i })).not.toBeInTheDocument();
+
+    // Click episode row
+    const epRow = screen.getByText('Intro to Deep Modules');
+    await user.click(epRow);
+
+    // Drawer is now open
+    expect(screen.getByRole('dialog', { name: 'Episode Details: Intro to Deep Modules' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Intro to Deep Modules')).toBeInTheDocument();
+
+    // Close drawer via close button
+    const closeBtn = screen.getByRole('button', { name: /close drawer/i });
+    await user.click(closeBtn);
+
+    expect(screen.queryByRole('dialog', { name: /Episode Details:/i })).not.toBeInTheDocument();
+  });
+
+  it('automatically opens drawer on initial render when initialOrder or initialEpisodeId is provided', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: mockSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    renderWithProviders(
+      <SeriesDetailView seriesId={mockSeries.id} initialEpisodeId="dm-01" />
+    );
+
+    // Drawer automatically opens for dm-01
+    expect(await screen.findByRole('dialog', { name: 'Episode Details: Intro to Deep Modules' })).toBeInTheDocument();
   });
 });

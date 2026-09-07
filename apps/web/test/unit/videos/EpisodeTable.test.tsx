@@ -245,4 +245,95 @@ describe('EpisodeTable Component', () => {
     await user.click(deleteBtn);
     expect(onDeleteEpisode).toHaveBeenCalledWith(mockEpisodes[0]);
   });
+
+  it('supports selecting individual rows and displays the batch toolbar with selection count', async () => {
+    const user = userEvent.setup();
+    const onBatchDelete = vi.fn();
+    const onBatchMoveToSeason = vi.fn();
+
+    renderEpisodeTable({
+      onBatchDelete,
+      onBatchMoveToSeason,
+    });
+
+    // Initially no toolbar
+    expect(screen.queryByRole('toolbar', { name: /batch actions toolbar/i })).not.toBeInTheDocument();
+
+    // Select row 1
+    const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
+    await user.click(checkbox1);
+
+    // Toolbar appears with count 1
+    expect(screen.getByRole('toolbar', { name: /batch actions toolbar/i })).toBeInTheDocument();
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+
+    // Select row 2
+    const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
+    await user.click(checkbox2);
+    expect(screen.getByText('2 selected')).toBeInTheDocument();
+
+    // Trigger batch move action
+    const moveBtn = screen.getByRole('button', { name: /move to season/i });
+    await user.click(moveBtn);
+    expect(onBatchMoveToSeason).toHaveBeenCalledWith([mockEpisodes[0], mockEpisodes[1]]);
+
+    // Trigger batch delete action
+    const deleteBatchBtn = screen.getByRole('button', { name: /delete selected/i });
+    await user.click(deleteBatchBtn);
+    expect(onBatchDelete).toHaveBeenCalledWith([mockEpisodes[0], mockEpisodes[1]]);
+
+    // Click Deselect All
+    const deselectBtn = screen.getByRole('button', { name: /deselect all/i });
+    await user.click(deselectBtn);
+    expect(screen.queryByRole('toolbar', { name: /batch actions toolbar/i })).not.toBeInTheDocument();
+  });
+
+  it('handles select all and partial selection indeterminate state on the table header checkbox', async () => {
+    const user = userEvent.setup();
+    renderEpisodeTable();
+
+    const headerCheckbox = screen.getByLabelText('Select all visible episodes') as HTMLInputElement;
+    expect(headerCheckbox.checked).toBe(false);
+    expect(headerCheckbox.indeterminate).toBe(false);
+
+    // Select 1 item (partial selection)
+    const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
+    await user.click(checkbox1);
+
+    expect(headerCheckbox.checked).toBe(false);
+    expect(headerCheckbox.indeterminate).toBe(true);
+
+    // Click header checkbox -> should select all 3
+    await user.click(headerCheckbox);
+    expect(screen.getByText('3 selected')).toBeInTheDocument();
+    expect(headerCheckbox.indeterminate).toBe(false);
+    expect(headerCheckbox.checked).toBe(true);
+
+    // Click header checkbox again -> should unselect all
+    await user.click(headerCheckbox);
+    expect(screen.queryByRole('toolbar', { name: /batch actions toolbar/i })).not.toBeInTheDocument();
+    expect(headerCheckbox.indeterminate).toBe(false);
+    expect(headerCheckbox.checked).toBe(false);
+  });
+
+  it('disables drag-and-drop when multiple rows are selected', async () => {
+    const user = userEvent.setup();
+    renderEpisodeTable();
+
+    const handle1 = screen.getByLabelText('Reorder Episode 1: The Beginning');
+    expect(handle1).not.toHaveClass('cursor-not-allowed');
+
+    // Select 1 item -> DnD is still enabled if not filtered/sorted
+    const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
+    await user.click(checkbox1);
+    expect(handle1).not.toHaveClass('cursor-not-allowed');
+
+    // Select 2nd item -> DnD becomes disabled
+    const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
+    await user.click(checkbox2);
+
+    expect(screen.getByText('Reordering disabled')).toBeInTheDocument();
+    expect(screen.getAllByTitle(/multiple episodes are selected/i).length).toBeGreaterThan(0);
+    expect(handle1).toHaveClass('cursor-not-allowed');
+  });
 });

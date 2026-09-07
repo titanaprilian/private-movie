@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
+import { Checkbox } from '@/components/ui/checkbox';
+import { EpisodeBatchToolbar } from './EpisodeBatchToolbar';
 import type { SeriesDetails } from './api';
 
 export type Episode = SeriesDetails['episodes'][number];
@@ -14,6 +16,13 @@ export interface EpisodeTableProps {
   onDeleteEpisode?: (episode: Episode) => void;
   onManageSources?: (episode: Episode) => void;
   selectedEpisodeId?: string | null;
+
+  // Multi-selection & Batch Action props
+  selectedEpisodeIds?: string[];
+  onSelectedEpisodeIdsChange?: (selectedIds: string[]) => void;
+  onBatchMoveToSeason?: (selectedEpisodes: Episode[]) => void;
+  onBatchDelete?: (selectedEpisodes: Episode[]) => void;
+  disableBatchMove?: boolean;
 }
 
 function parseDurationToSeconds(duration?: number | string | null): number {
@@ -47,11 +56,31 @@ export function EpisodeTable({
   onDeleteEpisode,
   onManageSources,
   selectedEpisodeId,
+  selectedEpisodeIds,
+  onSelectedEpisodeIdsChange,
+  onBatchMoveToSeason,
+  onBatchDelete,
+  disableBatchMove = false,
 }: EpisodeTableProps) {
+  const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
+  const isControlledSelection = selectedEpisodeIds !== undefined;
+  const activeSelectedIds = isControlledSelection
+    ? selectedEpisodeIds
+    : internalSelectedIds;
+
+  const updateSelectedIds = (newIds: string[]) => {
+    if (!isControlledSelection) {
+      setInternalSelectedIds(newIds);
+    }
+    onSelectedEpisodeIdsChange?.(newIds);
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('order');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [openMenuEpisodeId, setOpenMenuEpisodeId] = useState<string | null>(null);
+
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -64,7 +93,8 @@ export function EpisodeTable({
 
   const isFiltered = searchQuery.trim().length > 0;
   const isCustomSorted = sortField !== 'order' || sortDirection !== 'asc';
-  const isDragDisabled = isFiltered || isCustomSorted;
+  const hasMultipleSelected = activeSelectedIds.length > 1;
+  const isDragDisabled = isFiltered || isCustomSorted || hasMultipleSelected;
 
   const filteredEpisodes = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -88,7 +118,10 @@ export function EpisodeTable({
           break;
         }
         case 'title': {
-          comparison = a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' });
+          comparison = a.title.localeCompare(b.title, undefined, {
+            numeric: true,
+            sensitivity: 'base',
+          });
           break;
         }
         case 'duration': {
@@ -109,16 +142,83 @@ export function EpisodeTable({
     return sorted;
   }, [filteredEpisodes, sortField, sortDirection]);
 
-  const dragDisabledTooltip = isFiltered && isCustomSorted
-    ? 'Drag-and-drop is disabled while search filter and custom sorting are active.'
-    : isFiltered
-      ? 'Drag-and-drop is disabled while search filter is active.'
-      : isCustomSorted
-        ? 'Drag-and-drop is disabled while custom sorting is active. Sort by Order (Asc) to enable reordering.'
-        : '';
+  // Selection calculations on visible (filtered & sorted) episodes
+  const visibleEpisodeIds = useMemo(
+    () => sortedEpisodes.map((ep) => ep.id),
+    [sortedEpisodes]
+  );
+  const selectedVisibleCount = visibleEpisodeIds.filter((id) =>
+    activeSelectedIds.includes(id)
+  ).length;
+
+  const allVisibleSelected =
+    visibleEpisodeIds.length > 0 &&
+    selectedVisibleCount === visibleEpisodeIds.length;
+  const isIndeterminate =
+    selectedVisibleCount > 0 && selectedVisibleCount < visibleEpisodeIds.length;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [isIndeterminate]);
+
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const merged = Array.from(
+        new Set([...activeSelectedIds, ...visibleEpisodeIds])
+      );
+      updateSelectedIds(merged);
+    } else {
+      const remaining = activeSelectedIds.filter(
+        (id) => !visibleEpisodeIds.includes(id)
+      );
+      updateSelectedIds(remaining);
+    }
+  };
+
+  const handleToggleEpisode = (episodeId: string) => {
+    if (activeSelectedIds.includes(episodeId)) {
+      updateSelectedIds(activeSelectedIds.filter((id) => id !== episodeId));
+    } else {
+      updateSelectedIds([...activeSelectedIds, episodeId]);
+    }
+  };
+
+  const handleDeselectAll = () => {
+    updateSelectedIds([]);
+  };
+
+  const selectedEpisodesList = useMemo(() => {
+    const idSet = new Set(activeSelectedIds);
+    return episodes.filter((ep) => idSet.has(ep.id));
+  }, [episodes, activeSelectedIds]);
+
+  const dragDisabledTooltip = hasMultipleSelected
+    ? 'Drag-and-drop is disabled while multiple episodes are selected.'
+    : isFiltered && isCustomSorted
+      ? 'Drag-and-drop is disabled while search filter and custom sorting are active.'
+      : isFiltered
+        ? 'Drag-and-drop is disabled while search filter is active.'
+        : isCustomSorted
+          ? 'Drag-and-drop is disabled while custom sorting is active. Sort by Order (Asc) to enable reordering.'
+          : '';
 
   return (
     <div className="bg-card border border-c rounded overflow-hidden flex flex-col space-y-0">
+      {/* Batch Action Toolbar */}
+      {activeSelectedIds.length > 0 && (
+        <div className="p-2 border-b border-c bg-sidebar/50">
+          <EpisodeBatchToolbar
+            selectedCount={activeSelectedIds.length}
+            onDeselectAll={handleDeselectAll}
+            onMoveToSeason={() => onBatchMoveToSeason?.(selectedEpisodesList)}
+            onDeleteSelected={() => onBatchDelete?.(selectedEpisodesList)}
+            disableMove={disableBatchMove}
+          />
+        </div>
+      )}
+
       {/* Search & Status Bar */}
       <div className="p-3 border-b border-c flex flex-wrap items-center justify-between gap-2.5">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
@@ -156,7 +256,8 @@ export function EpisodeTable({
           )}
 
           <span className="text-xs mono text-muted">
-            {sortedEpisodes.length} {sortedEpisodes.length === 1 ? 'episode' : 'episodes'}
+            {sortedEpisodes.length}{' '}
+            {sortedEpisodes.length === 1 ? 'episode' : 'episodes'}
           </span>
         </div>
       </div>
@@ -172,6 +273,16 @@ export function EpisodeTable({
             >
               <thead>
                 <tr className="border-b border-c bg-sidebar text-muted uppercase tracking-wide text-[11px] mono select-none">
+                  {/* Select All Checkbox */}
+                  <th className="w-10 px-3 py-2 text-center">
+                    <Checkbox
+                      ref={headerCheckboxRef}
+                      checked={allVisibleSelected}
+                      onCheckedChange={handleToggleSelectAll}
+                      aria-label="Select all visible episodes"
+                      disabled={sortedEpisodes.length === 0}
+                    />
+                  </th>
                   <th className="w-10 px-3 py-2 text-center">
                     <span className="sr-only">Reorder handle</span>
                   </th>
@@ -182,7 +293,13 @@ export function EpisodeTable({
                       className="flex items-center gap-1 font-mono hover:text-current cursor-pointer transition-colors"
                     >
                       <span>#</span>
-                      <span className="text-[10px]">{sortField === 'order' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}</span>
+                      <span className="text-[10px]">
+                        {sortField === 'order'
+                          ? sortDirection === 'asc'
+                            ? '↑'
+                            : '↓'
+                          : '↕'}
+                      </span>
                     </button>
                   </th>
                   <th className="px-3 py-2">
@@ -192,7 +309,13 @@ export function EpisodeTable({
                       className="flex items-center gap-1 font-mono hover:text-current cursor-pointer transition-colors"
                     >
                       <span>Title</span>
-                      <span className="text-[10px]">{sortField === 'title' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}</span>
+                      <span className="text-[10px]">
+                        {sortField === 'title'
+                          ? sortDirection === 'asc'
+                            ? '↑'
+                            : '↓'
+                          : '↕'}
+                      </span>
                     </button>
                   </th>
                   <th className="w-24 px-3 py-2">
@@ -202,7 +325,13 @@ export function EpisodeTable({
                       className="flex items-center gap-1 font-mono hover:text-current cursor-pointer transition-colors"
                     >
                       <span>Duration</span>
-                      <span className="text-[10px]">{sortField === 'duration' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}</span>
+                      <span className="text-[10px]">
+                        {sortField === 'duration'
+                          ? sortDirection === 'asc'
+                            ? '↑'
+                            : '↓'
+                          : '↕'}
+                      </span>
                     </button>
                   </th>
                   <th className="w-28 px-3 py-2 text-center">Sources</th>
@@ -214,7 +343,13 @@ export function EpisodeTable({
                       className="flex items-center gap-1 font-mono hover:text-current cursor-pointer transition-colors"
                     >
                       <span>Release Date</span>
-                      <span className="text-[10px]">{sortField === 'releaseDate' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}</span>
+                      <span className="text-[10px]">
+                        {sortField === 'releaseDate'
+                          ? sortDirection === 'asc'
+                            ? '↑'
+                            : '↓'
+                          : '↕'}
+                      </span>
                     </button>
                   </th>
                   <th className="w-14 px-3 py-2 text-right">
@@ -225,13 +360,19 @@ export function EpisodeTable({
               <tbody className="divide-y divide-[var(--border)]">
                 {sortedEpisodes.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-xs text-muted mono">
-                      {isFiltered ? 'No episodes match your search.' : 'No episodes in this season.'}
+                    <td
+                      colSpan={9}
+                      className="p-8 text-center text-xs text-muted mono"
+                    >
+                      {isFiltered
+                        ? 'No episodes match your search.'
+                        : 'No episodes in this season.'}
                     </td>
                   </tr>
                 ) : (
                   sortedEpisodes.map((episode, index) => {
                     const isSelected = selectedEpisodeId === episode.id;
+                    const isRowChecked = activeSelectedIds.includes(episode.id);
                     const sourcesCount = episode.videoSources?.length ?? 0;
                     const isReady = sourcesCount > 0;
                     const releaseDate = getReleaseDate(episode);
@@ -250,13 +391,36 @@ export function EpisodeTable({
                             {...draggableProvided.draggableProps}
                             onClick={() => onSelectEpisode?.(episode)}
                             className={`group cursor-pointer transition-colors ${
-                              isSelected
-                                ? 'bg-[var(--active)] text-primary font-medium'
-                                : 'hover-bg'
-                            } ${snapshot.isDragging ? 'bg-[var(--active)] shadow-md opacity-90' : ''}`}
+                              isRowChecked
+                                ? 'bg-primary/5'
+                                : isSelected
+                                  ? 'bg-[var(--active)] text-primary font-medium'
+                                  : 'hover-bg'
+                            } ${
+                              snapshot.isDragging
+                                ? 'bg-[var(--active)] shadow-md opacity-90'
+                                : ''
+                            }`}
                           >
+                            {/* Checkbox column */}
+                            <td
+                              className="w-10 px-3 py-2 text-center"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Checkbox
+                                checked={isRowChecked}
+                                onCheckedChange={() =>
+                                  handleToggleEpisode(episode.id)
+                                }
+                                aria-label={`Select ${episode.title}`}
+                              />
+                            </td>
+
                             {/* Drag Handle */}
-                            <td className="w-10 px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                            <td
+                              className="w-10 px-3 py-2 text-center"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <div
                                 {...draggableProvided.dragHandleProps}
                                 className={`p-1 inline-flex items-center justify-center rounded text-muted hover:text-current ${
@@ -264,7 +428,11 @@ export function EpisodeTable({
                                     ? 'cursor-not-allowed opacity-30'
                                     : 'cursor-grab active:cursor-grabbing'
                                 }`}
-                                title={isDragDisabled ? dragDisabledTooltip : 'Drag to reorder'}
+                                title={
+                                  isDragDisabled
+                                    ? dragDisabledTooltip
+                                    : 'Drag to reorder'
+                                }
                                 aria-label={`Reorder ${episode.title}`}
                               >
                                 <svg
@@ -310,7 +478,11 @@ export function EpisodeTable({
                             {/* Sources Count */}
                             <td className="w-28 px-3 py-2 text-center">
                               <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded border border-c bg-sidebar text-muted">
-                                <span className={`w-1.5 h-1.5 rounded-full ${isReady ? 'bg-green-500' : 'bg-amber-500'}`} />
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    isReady ? 'bg-green-500' : 'bg-amber-500'
+                                  }`}
+                                />
                                 <span>{sourcesCount}</span>
                               </span>
                             </td>
@@ -334,10 +506,16 @@ export function EpisodeTable({
                             </td>
 
                             {/* Row Actions */}
-                            <td className="w-14 px-3 py-2 text-right relative" onClick={(e) => e.stopPropagation()}>
+                            <td
+                              className="w-14 px-3 py-2 text-right relative"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <button
                                 type="button"
-                                onClick={() => setOpenMenuEpisodeId(isMenuOpen ? null : episode.id)}
+                                onClick={() =>
+                                  setOpenMenuEpisodeId(
+                                    isMenuOpen ? null : episode.id
+                                  )}
                                 aria-label={`Actions for ${episode.title}`}
                                 className="p-1 rounded border border-c hover-bg text-muted hover:text-current transition-colors cursor-pointer"
                               >
@@ -377,7 +555,7 @@ export function EpisodeTable({
                                           stroke="currentColor"
                                           strokeWidth="2"
                                         >
-                                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                           <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                                         </svg>
                                         Edit

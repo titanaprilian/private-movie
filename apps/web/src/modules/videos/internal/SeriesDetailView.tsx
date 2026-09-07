@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import {
   DragDropContext,
@@ -14,6 +14,7 @@ import {
   deleteEpisode,
   updateEpisodeOrders,
   deleteSeason,
+  type UpdateEpisodeData,
 } from './api';
 import { EditSeasonDialog } from './EditSeasonDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
@@ -22,6 +23,9 @@ import { buildCrossSeasonMove } from './crossSeasonMove';
 import { BulkScrapeModal } from './BulkScrapeModal';
 import { BulkIngestModal } from './BulkIngestModal';
 import { EpisodeTable } from './EpisodeTable';
+import { BatchMoveSeasonDialog } from './BatchMoveSeasonDialog';
+import { BatchDeleteDialog } from './BatchDeleteDialog';
+import { EpisodeDetailDrawer } from './EpisodeDetailDrawer';
 import {
   Dialog,
   DialogContent,
@@ -39,13 +43,21 @@ type Episode = SeriesDetails['episodes'][number];
 export interface SeriesDetailViewProps {
   seriesId: string;
   initialOrder?: number;
+  initialEpisodeId?: string;
   initialSeasonId?: string;
 }
 
-export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: SeriesDetailViewProps) {
+export function SeriesDetailView({
+  seriesId,
+  initialOrder,
+  initialEpisodeId,
+  initialSeasonId,
+}: SeriesDetailViewProps) {
   const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));
 
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
 
   const [localEpisodes, setLocalEpisodes] = useState<Episode[]>([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(
@@ -133,17 +145,87 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   });
 
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(
-    null
+    initialEpisodeId ?? null
   );
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+  // Sync drawer state with URL search params or initial props
   useEffect(() => {
-    if (initialOrder !== undefined && localEpisodes.length > 0) {
-      const match = localEpisodes.find((e) => e.order === initialOrder);
+    const epIdFromSearch =
+      (searchParams?.episodeId as string | undefined) ?? initialEpisodeId;
+    const orderFromSearch =
+      typeof searchParams?.order === 'number'
+        ? (searchParams.order as number)
+        : initialOrder !== undefined
+          ? initialOrder
+          : undefined;
+
+    if (epIdFromSearch && localEpisodes.some((e) => e.id === epIdFromSearch)) {
+      setSelectedEpisodeId(epIdFromSearch);
+      setIsDrawerOpen(true);
+    } else if (orderFromSearch !== undefined && localEpisodes.length > 0) {
+      const match = localEpisodes.find((e) => e.order === orderFromSearch);
       if (match) {
         setSelectedEpisodeId(match.id);
+        setIsDrawerOpen(true);
       }
     }
-  }, [initialOrder, localEpisodes]);
+  }, [
+    searchParams?.episodeId,
+    searchParams?.order,
+    initialEpisodeId,
+    initialOrder,
+    localEpisodes,
+  ]);
+
+  const updateDrawerUrl = useCallback(
+    (episode: Episode | null) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (navigate as any)({
+          search: (prev: Record<string, unknown>) => {
+            const next = { ...prev };
+            if (episode) {
+              next.episodeId = episode.id;
+              if (episode.order !== null && episode.order !== undefined) {
+                next.order = episode.order;
+              } else {
+                delete next.order;
+              }
+            } else {
+              delete next.episodeId;
+              delete next.order;
+            }
+            return next;
+          },
+          replace: true,
+        });
+      } catch {
+        // Fallback for tests or contexts where router navigate is mocked without search function
+      }
+    },
+    [navigate]
+  );
+
+  const handleOpenEpisodeDrawer = (episode: Episode) => {
+    setSelectedEpisodeId(episode.id);
+    setIsDrawerOpen(true);
+    updateDrawerUrl(episode);
+  };
+
+  const handleCloseEpisodeDrawer = (open: boolean) => {
+    setIsDrawerOpen(open);
+    if (!open) {
+      updateDrawerUrl(null);
+    }
+  };
+
+  const handleSaveDrawerEpisode = async (
+    episodeId: string,
+    data: UpdateEpisodeData
+  ) => {
+    await updateMutation.mutateAsync({ id: episodeId, data });
+  };
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -154,6 +236,10 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
   const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
   const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
+  const [isBatchMoveOpen, setIsBatchMoveOpen] = useState(false);
+  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
+  const [selectedEpisodeIds, setSelectedEpisodeIds] = useState<string[]>([]);
+  const [isBatchOperating, setIsBatchOperating] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -312,6 +398,100 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
     if (!selectedEpisode) return;
     deleteMutation.mutate(selectedEpisode.id);
     setIsDeleteDialogOpen(false);
+  };
+
+  const handleBatchMoveToSeason = async (targetSeasonId: string) => {
+    if (selectedEpisodeIds.length === 0) return;
+    setIsBatchOperating(true);
+
+    const previousEpisodes = [...localEpisodes];
+    // Calculate new states sequentially
+    let currentEpisodes = [...localEpisodes];
+    const allOrders: { id: string; order: number; seasonId?: string }[] = [];
+
+    for (const epId of selectedEpisodeIds) {
+      const move = buildCrossSeasonMove(currentEpisodes, epId, targetSeasonId);
+      if (move) {
+        currentEpisodes = move.episodes;
+        // Merge or replace orders for changed episodes
+        for (const orderItem of move.orders) {
+          const existingIdx = allOrders.findIndex((o) => o.id === orderItem.id);
+          if (existingIdx >= 0) {
+            allOrders[existingIdx] = orderItem;
+          } else {
+            allOrders.push(orderItem);
+          }
+        }
+      }
+    }
+
+    setLocalEpisodes(currentEpisodes);
+    queryClient.setQueryData(
+      ['series', seriesId],
+      (old: SeriesDetails | undefined) =>
+        old ? { ...old, episodes: currentEpisodes } : old
+    );
+
+    try {
+      await updateEpisodeOrders(seriesId, allOrders);
+      await queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+      toast.success(
+        `Successfully moved ${selectedEpisodeIds.length} ${
+          selectedEpisodeIds.length === 1 ? 'episode' : 'episodes'
+        }`
+      );
+      setSelectedEpisodeIds([]);
+      setIsBatchMoveOpen(false);
+    } catch (error) {
+      setLocalEpisodes(previousEpisodes);
+      queryClient.setQueryData(
+        ['series', seriesId],
+        (old: SeriesDetails | undefined) =>
+          old ? { ...old, episodes: previousEpisodes } : old
+      );
+      toast.error('video.move', {
+        description: `Failed to move episodes: ${(error as Error).message}`,
+      });
+    } finally {
+      setIsBatchOperating(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedEpisodeIds.length === 0) return;
+    setIsBatchOperating(true);
+
+    let successCount = 0;
+    const errors: string[] = [];
+
+    for (const epId of selectedEpisodeIds) {
+      try {
+        await deleteEpisode(epId);
+        successCount++;
+      } catch (err) {
+        errors.push((err as Error).message);
+      }
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+    setSelectedEpisodeIds([]);
+    setIsBatchDeleteOpen(false);
+    setIsBatchOperating(false);
+
+    if (successCount > 0) {
+      toast.success(
+        `Successfully deleted ${successCount} ${
+          successCount === 1 ? 'episode' : 'episodes'
+        }`
+      );
+    }
+    if (errors.length > 0) {
+      toast.error(
+        `Failed to delete ${errors.length} ${
+          errors.length === 1 ? 'episode' : 'episodes'
+        }`
+      );
+    }
   };
 
   return (
@@ -573,14 +753,13 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
       <EpisodeTable
         episodes={episodes}
         selectedEpisodeId={selectedEpisodeId}
-        onSelectEpisode={(ep) => setSelectedEpisodeId(ep.id)}
-        onEditEpisode={(ep) => {
-          setSelectedEpisodeId(ep.id);
-          setEditTitle(ep.title ?? '');
-          setEditVideoType(ep.videoType ?? '');
-          setEditDescription(ep.description ?? '');
-          setIsEditDialogOpen(true);
-        }}
+        selectedEpisodeIds={selectedEpisodeIds}
+        onSelectedEpisodeIdsChange={setSelectedEpisodeIds}
+        onBatchMoveToSeason={() => setIsBatchMoveOpen(true)}
+        onBatchDelete={() => setIsBatchDeleteOpen(true)}
+        disableBatchMove={!series.seasons || series.seasons.length <= 1}
+        onSelectEpisode={handleOpenEpisodeDrawer}
+        onEditEpisode={handleOpenEpisodeDrawer}
         onDeleteEpisode={(ep) => {
           setSelectedEpisodeId(ep.id);
           setIsDeleteDialogOpen(true);
@@ -589,6 +768,30 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
           setSelectedEpisodeId(ep.id);
           setIsManageSourcesOpen(true);
         }}
+      />
+      {/* Slide-Out Episode Detail Drawer */}
+      <EpisodeDetailDrawer
+        open={isDrawerOpen}
+        onOpenChange={handleCloseEpisodeDrawer}
+        episode={selectedEpisode}
+        onSave={handleSaveDrawerEpisode}
+        isSaving={updateMutation.isPending}
+      />
+      <BatchMoveSeasonDialog
+        open={isBatchMoveOpen}
+        onOpenChange={setIsBatchMoveOpen}
+        selectedEpisodeCount={selectedEpisodeIds.length}
+        seasons={series.seasons ?? []}
+        currentSeasonId={activeSeason?.id ?? null}
+        onConfirmMove={handleBatchMoveToSeason}
+        isPending={isBatchOperating}
+      />
+      <BatchDeleteDialog
+        open={isBatchDeleteOpen}
+        onOpenChange={setIsBatchDeleteOpen}
+        selectedEpisodeCount={selectedEpisodeIds.length}
+        onConfirmDelete={handleBatchDelete}
+        isPending={isBatchOperating}
       />
       <EditSeriesDialog
         open={isEditSeriesOpen}

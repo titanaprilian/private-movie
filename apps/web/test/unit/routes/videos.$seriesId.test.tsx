@@ -6,6 +6,8 @@ import { setAccessToken } from '@/lib/api';
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (config: unknown) => config,
   useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 interface RouteMock {

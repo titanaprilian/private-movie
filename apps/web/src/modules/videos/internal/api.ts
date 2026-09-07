@@ -419,11 +419,28 @@ export interface UpdateEpisodeData {
   title?: string;
   videoType?: string | null;
   description?: string | null;
+  duration?: number | string | null;
+  resolution?: string | null;
+  format?: string | null;
+  size?: string | null;
+  tags?: string[] | null;
   metadata?: Record<string, unknown>;
 }
 
 export async function updateEpisode(id: string, data: UpdateEpisodeData): Promise<Episode> {
-  const res = await api.episodes[id].patch(data);
+  const patchPayload: Record<string, unknown> = {};
+  if (data.title !== undefined) patchPayload.title = data.title;
+  if (data.description !== undefined) patchPayload.description = data.description;
+  if (data.videoType !== undefined) patchPayload.videoType = data.videoType;
+  if (data.duration !== undefined) patchPayload.duration = data.duration;
+  if (data.resolution !== undefined) patchPayload.resolution = data.resolution;
+  if (data.format !== undefined) patchPayload.format = data.format;
+  if (data.size !== undefined) patchPayload.size = data.size;
+  if (data.tags !== undefined) patchPayload.tags = data.tags;
+  if (data.metadata !== undefined) patchPayload.metadata = data.metadata;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.episodes as any)[id].patch(patchPayload);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
     throw new Error(
