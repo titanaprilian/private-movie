@@ -1047,7 +1047,7 @@ describe('SeriesDetailView component', () => {
     expect(screen.getByRole('button', { name: /Bulk Ingest URLs/i })).toBeInTheDocument();
   });
 
-  it('renders season action buttons cleanly right-aligned with ml-auto', async () => {
+  it('renders 3-dot contextual menu for active season actions when multiple seasons exist', async () => {
     const mockSeasonSeries: SeriesDetails = {
       ...mockSeries,
       seasons: [
@@ -1058,6 +1058,17 @@ describe('SeriesDetailView component', () => {
           source: 'otakudesu',
           title: 'Season 1',
           description: 'First season',
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+          episodes: [],
+        },
+        {
+          id: 'dm-season-2',
+          seriesId: 'deep-modules',
+          sourceUrl: 'https://otakudesu.cloud/anime/deep-modules-s2',
+          source: 'otakudesu',
+          title: 'Season 2',
+          description: 'Second season',
           createdAt: '2026-08-10',
           updatedAt: '2026-08-10',
           episodes: [],
@@ -1082,15 +1093,17 @@ describe('SeriesDetailView component', () => {
       );
     });
 
-    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-    const editSeasonBtn = screen.getByRole('button', { name: /Edit Season/i });
-    const deleteSeasonBtn = screen.getByRole('button', { name: /Delete Season/i });
+    const menuBtn = screen.getByRole('button', { name: /season actions/i });
+    expect(menuBtn).toBeInTheDocument();
 
-    expect(editSeasonBtn).toBeInTheDocument();
-    expect(deleteSeasonBtn).toBeInTheDocument();
-    expect(editSeasonBtn.className).toContain('ml-auto');
+    await user.click(menuBtn);
+
+    expect(screen.getByRole('button', { name: /Edit Season/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Copy Season ID/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Delete Season/i })).toBeInTheDocument();
   });
 });

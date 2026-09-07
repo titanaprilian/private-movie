@@ -53,6 +53,19 @@ const season1 = {
   ],
 };
 
+const season2 = {
+  id: 'season-2-id',
+  seriesId: 'edit-season-series',
+  sourceUrl: 'https://otakudesu.cloud/season-2',
+  source: 'otakudesu',
+  title: 'Season 2',
+  description: null,
+  posterUrl: null,
+  createdAt: '2026-08-10',
+  updatedAt: '2026-08-10',
+  episodes: [],
+};
+
 const mockSeries: SeriesDetails = {
   id: 'edit-season-series',
   sourceUrl: 'https://otakudesu.cloud/anime/edit-season',
@@ -62,7 +75,7 @@ const mockSeries: SeriesDetails = {
   posterUrl: null,
   createdAt: '2026-08-10',
   updatedAt: '2026-08-10',
-  seasons: [season1],
+  seasons: [season1, season2],
   episodes: season1.episodes,
 };
 
@@ -139,6 +152,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
 
     await screen.findByRole('heading', { level: 1, name: 'Edit Season Anime' });
 
+    await user.click(screen.getByRole('button', { name: /season actions/i }));
     await user.click(screen.getByRole('button', { name: /edit season/i }));
 
     expect(
@@ -170,6 +184,26 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('copies active season ID to clipboard from 3-dot dropdown menu', async () => {
+    setupFetch();
+    const writeTextSpy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
+
+    const { user } = renderWithProviders(
+      <>
+        <SeriesDetailView seriesId="edit-season-series" />
+        <Toaster />
+      </>
+    );
+
+    await screen.findByRole('heading', { level: 1, name: 'Edit Season Anime' });
+
+    await user.click(screen.getByRole('button', { name: /season actions/i }));
+    await user.click(screen.getByRole('button', { name: /copy season id/i }));
+
+    expect(writeTextSpy).toHaveBeenCalledWith('season-1-id');
+    expect(await screen.findByText('Season ID copied to clipboard')).toBeInTheDocument();
+  });
+
   it('deletes an empty season via DELETE /seasons/:id', async () => {
     const fetchSpy = setupFetch();
 
@@ -182,6 +216,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
 
     await screen.findByRole('heading', { level: 1, name: 'Edit Season Anime' });
 
+    await user.click(screen.getByRole('button', { name: /season actions/i }));
     await user.click(screen.getByRole('button', { name: /delete season/i }));
 
     expect(
@@ -219,6 +254,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
 
     await screen.findByRole('heading', { level: 1, name: 'Edit Season Anime' });
 
+    await user.click(screen.getByRole('button', { name: /season actions/i }));
     await user.click(screen.getByRole('button', { name: /delete season/i }));
     await screen.findByRole('heading', { name: 'Delete Season' });
     await user.click(screen.getByRole('button', { name: /^delete$/i }));
@@ -228,7 +264,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     expect(
       await screen.findByText('Season still contains 1 episode(s) and cannot be deleted')
     ).toBeInTheDocument();
-    // The season remains in the UI (edit/delete controls still available)
-    expect(screen.getByRole('button', { name: /edit season/i })).toBeInTheDocument();
+    // The season menu trigger is still available
+    expect(screen.getByRole('button', { name: /season actions/i })).toBeInTheDocument();
   });
 });

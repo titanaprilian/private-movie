@@ -176,6 +176,7 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
   const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
+  const [isSeasonMenuOpen, setIsSeasonMenuOpen] = useState(false);
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
   const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
   const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
@@ -205,17 +206,10 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
     );
   }
 
-  const activeSeasonIndex = series?.seasons
-    ? series.seasons.findIndex((s) => s.id === selectedSeasonId)
-    : -1;
-
   const activeSeason =
     series?.seasons && series.seasons.length > 0
       ? (selectedSeasonId ? series.seasons.find((s) => s.id === selectedSeasonId) : series.seasons[0]) ?? series.seasons[0]
       : null;
-
-  const activeSeasonNumber =
-    activeSeason?.tmdbSeason ?? (activeSeasonIndex >= 0 ? activeSeasonIndex + 1 : 1);
 
   const currentDescription = activeSeason?.description || series.description;
   const currentPosterUrl = activeSeason?.posterUrl || series.posterUrl;
@@ -461,92 +455,152 @@ export function SeriesDetailView({ seriesId, initialOrder, initialSeasonId }: Se
         </div>
       </div>
 
-      {/* Season Selector section (season tabs double as drop targets for
-          cross-season episode moves) */}
-      {series.seasons && (
-        <div className="flex flex-wrap items-center gap-2 p-2.5 rounded border border-c bg-card">
-          {hasMultipleSeasons && (
-            <>
-              <span className="text-xs font-medium mono uppercase tracking-wider text-muted mr-1">
-                Season:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {series.seasons.map((season, index) => {
-                  const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
-                  const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
-                  return (
-                    <Droppable
-                      key={season.id}
-                      droppableId={`season-tab-${season.id}`}
-                    >
-                      {(tabProvided, tabSnapshot) => (
-                        <div
-                          ref={tabProvided.innerRef}
-                          {...tabProvided.droppableProps}
-                          className={`rounded ${
-                            tabSnapshot.isDraggingOver
-                              ? 'ring-2 ring-[var(--primary)]'
-                              : ''
+      {/* Season Navigation Bar (season tabs double as drop targets for cross-season episode moves; collapses when seasons <= 1) */}
+      {series.seasons && hasMultipleSeasons && (
+        <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded border border-c bg-card">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium mono uppercase tracking-wider text-muted mr-1">
+              Season:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {series.seasons.map((season, index) => {
+                const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
+                const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
+                return (
+                  <Droppable
+                    key={season.id}
+                    droppableId={`season-tab-${season.id}`}
+                  >
+                    {(tabProvided, tabSnapshot) => (
+                      <div
+                        ref={tabProvided.innerRef}
+                        {...tabProvided.droppableProps}
+                        className={`rounded ${
+                          tabSnapshot.isDraggingOver
+                            ? 'ring-2 ring-[var(--primary)]'
+                            : ''
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSeasonId(season.id)}
+                          className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors border ${
+                            isActive
+                              ? 'bg-primary text-primary-fg border-primary'
+                              : 'bg-card text-fg border-c hover-bg'
                           }`}
                         >
-                          <button
-                            type="button"
-                            onClick={() => setSelectedSeasonId(season.id)}
-                            className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors border ${
-                              isActive
-                                ? 'bg-primary text-primary-fg border-primary'
-                                : 'bg-card text-fg border-c hover-bg'
-                            }`}
-                          >
-                            {title}
-                          </button>
-                        </div>
-                      )}
-                    </Droppable>
-                  );
-                })}
-              </div>
-            </>
-          )}
+                          {title}
+                        </button>
+                      </div>
+                    )}
+                  </Droppable>
+                );
+              })}
+            </div>
+          </div>
+
           {activeSeason && (
-            <>
+            <div className="relative ml-auto">
               <button
-                onClick={() => setIsEditSeasonOpen(true)}
                 type="button"
-                className="border border-c hover-bg px-3 py-1 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1 shrink-0 ml-auto"
-                aria-label="Edit Season"
+                onClick={() => setIsSeasonMenuOpen((prev) => !prev)}
+                aria-label="Season actions"
+                className="p-1.5 rounded border border-c bg-card text-muted hover:text-current hover-bg cursor-pointer transition-colors flex items-center justify-center"
               >
                 <svg
-                  width="12"
-                  height="12"
+                  width="14"
+                  height="14"
                   viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+                  fill="currentColor"
                 >
-                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                  <circle cx="12" cy="5" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="12" cy="19" r="2" />
                 </svg>
-                Edit Season
               </button>
-              <button
-                onClick={() => setIsDeleteSeasonOpen(true)}
-                type="button"
-                className="border border-c hover-bg px-3 py-1 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1 shrink-0 text-red-600 dark:text-red-400"
-                aria-label="Delete Season"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                </svg>
-                Delete Season
-              </button>
-            </>
+
+              {isSeasonMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setIsSeasonMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1 z-20 w-44 bg-card border border-c rounded shadow-sm py-1 divide-y divide-[var(--border)]">
+                    <div className="py-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSeasonMenuOpen(false);
+                          setIsEditSeasonOpen(true);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        </svg>
+                        Edit Season
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSeasonMenuOpen(false);
+                          if (activeSeason) {
+                            if (navigator.clipboard?.writeText) {
+                              navigator.clipboard.writeText(activeSeason.id);
+                            }
+                            toast.success('Season ID copied to clipboard');
+                          }
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                        </svg>
+                        Copy Season ID
+                      </button>
+                    </div>
+                    <div className="py-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSeasonMenuOpen(false);
+                          setIsDeleteSeasonOpen(true);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover-bg text-red-600 dark:text-red-400 transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                        </svg>
+                        Delete Season
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       )}
