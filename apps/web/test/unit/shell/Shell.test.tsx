@@ -47,9 +47,9 @@ describe('Shell layout component', () => {
       </Shell>
     );
 
-    const videosLinks = screen.getAllByRole('link', { name: /videos/i });
-    expect(videosLinks.length).toBeGreaterThan(0);
-    expect(videosLinks[0]).toHaveAttribute('href', '/admin/videos');
+    const seriesLinks = screen.getAllByRole('link', { name: /series/i });
+    expect(seriesLinks.length).toBeGreaterThan(0);
+    expect(seriesLinks[0]).toHaveAttribute('href', '/admin/videos');
 
     expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
     expect(screen.queryByText('Customers')).not.toBeInTheDocument();

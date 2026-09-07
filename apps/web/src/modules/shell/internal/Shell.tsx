@@ -103,7 +103,7 @@ export function Shell({ children }: ShellProps) {
               <polygon points="23 7 16 12 23 17 23 7" />
               <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
             </svg>
-            {!sidebarCollapsed && <span>Videos</span>}
+            {!sidebarCollapsed && <span>Series</span>}
           </Link>
           <Link
             to="/admin/genres"
@@ -198,7 +198,7 @@ export function Shell({ children }: ShellProps) {
             onClick={() => setIsMobileOpen(false)}
             className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
           >
-            Videos
+            Series
           </Link>
           <Link
             to="/admin/genres"

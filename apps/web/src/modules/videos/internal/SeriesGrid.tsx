@@ -99,9 +99,9 @@ export function SeriesGrid() {
       {/* Header section */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold">Videos</h1>
+          <h1 className="text-lg font-semibold">Series</h1>
           <p className="text-xs text-muted">
-            Manage and browse your video catalog.
+            Manage and browse your series catalog.
           </p>
         </div>
         <button
@@ -119,7 +119,7 @@ export function SeriesGrid() {
           >
             <path d="M12 5v14M5 12h14" />
           </svg>
-          Add Video
+          Add Series
         </button>
       </div>
 
@@ -208,7 +208,7 @@ export function SeriesGrid() {
                   className="flex flex-col flex-1 cursor-pointer"
                 >
                   {/* Poster / Thumbnail */}
-                  <div className="relative aspect-[16/10] overflow-hidden bg-black/10 dark:bg-white/5 flex items-center justify-center">
+                  <div className="relative aspect-[3/4] overflow-hidden bg-black/10 dark:bg-white/5 flex items-center justify-center">
                     {item.posterUrl ? (
                       <img
                         src={item.posterUrl}

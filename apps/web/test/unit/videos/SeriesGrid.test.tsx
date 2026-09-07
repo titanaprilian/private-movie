@@ -133,26 +133,29 @@ function renderSeriesGrid(
 }
 
 describe('SeriesGrid component', () => {
-  it('renders page heading, add video button and filter placeholder', () => {
+  it('renders page heading, add series button, subtitle and filter placeholder', () => {
     renderSeriesGrid();
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Videos' })
+      screen.getByRole('heading', { level: 1, name: 'Series' })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /Add (Video|Media)/i })
+      screen.getByText('Manage and browse your series catalog.')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Add Series/i })
     ).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Filter series...')).toBeInTheDocument();
   });
 
-  it('renders series cards with poster images, title, description and episode count badge', () => {
-    renderSeriesGrid();
+  it('renders series cards with poster images, title, description, episode count badge, and 3:4 aspect ratio', () => {
+    const { container } = renderSeriesGrid();
 
     expect(screen.getByText('Solo Leveling')).toBeInTheDocument();
     expect(
       screen.getByText('Sung Jinwoo ascends from E-rank hunter to shadow monarch.')
     ).toBeInTheDocument();
-    expect(screen.getByText('Frieren: Beyond Journey\'s End')).toBeInTheDocument();
+    expect(screen.getByText("Frieren: Beyond Journey's End")).toBeInTheDocument();
     expect(
       screen.getByText('An elf mage reflects on life after defeating the Demon King.')
     ).toBeInTheDocument();
@@ -162,6 +165,34 @@ describe('SeriesGrid component', () => {
 
     const img = screen.getByAltText('Solo Leveling');
     expect(img).toHaveAttribute('src', 'https://example.com/solo-leveling.jpg');
+
+    const posterContainers = container.querySelectorAll('.aspect-\\[3\\/4\\]');
+    expect(posterContainers.length).toBe(2);
+  });
+
+  it('renders fallback initial placeholder in 3:4 container when posterUrl is missing', () => {
+    const noPosterResponse = {
+      series: [
+        {
+          id: 'series-3',
+          title: 'No Poster Anime',
+          source: 'tmdb',
+          sourceUrl: 'https://www.themoviedb.org/tv/12345',
+          description: 'A series without poster.',
+          posterUrl: null as unknown as string,
+          episodes: [],
+          createdAt: '2025-01-10T00:00:00.000Z',
+          updatedAt: '2025-01-10T00:00:00.000Z',
+        },
+      ],
+      meta: { total: 1, page: 1, limit: 20 },
+    };
+    const { container } = renderSeriesGrid(noPosterResponse);
+
+    expect(screen.getByText('N')).toBeInTheDocument();
+    const posterContainer = container.querySelector('.aspect-\\[3\\/4\\]');
+    expect(posterContainer).toBeInTheDocument();
+    expect(posterContainer).toHaveTextContent('N');
   });
 
   it('triggers debounced navigate when typing in filter input', () => {
@@ -209,10 +240,10 @@ describe('SeriesGrid component', () => {
     expect(link).toHaveAttribute('href', '/admin/videos/series-1');
   });
 
-  it('opens AddMediaDialog when Add Video button is clicked', async () => {
+  it('opens AddMediaDialog when Add Series button is clicked', async () => {
     const { user } = renderSeriesGrid();
 
-    const addBtn = screen.getByRole('button', { name: /Add (Video|Media)/i });
+    const addBtn = screen.getByRole('button', { name: /Add Series/i });
     await user.click(addBtn);
 
     expect(screen.getByText('Add Media Wizard')).toBeInTheDocument();
