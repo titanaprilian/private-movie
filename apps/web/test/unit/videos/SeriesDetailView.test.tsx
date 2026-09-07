@@ -141,10 +141,6 @@ const mockSeries: SeriesDetails = {
 
 const firstEpisode = mockSeries.episodes[0];
 
-function firstEpisodeHeading() {
-  return screen.getByRole('heading', { level: 2, name: firstEpisode.title });
-}
-
 describe('SeriesDetailView component', () => {
   beforeEach(() => {
     setAccessToken('test-token');
@@ -171,12 +167,12 @@ describe('SeriesDetailView component', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: mockSeries.title })).toBeInTheDocument();
     expect(
-      screen.getByText(`${mockSeries.episodes.length} episodes`)
-    ).toBeInTheDocument();
+      screen.getAllByText(new RegExp(`${mockSeries.episodes.length}\\s+episodes`, 'i')).length
+    ).toBeGreaterThan(0);
     expect(screen.getByText(mockSeries.description!)).toBeInTheDocument();
   });
 
-  it('renders a scrollable list of episodes in the left pane', async () => {
+  it('renders a full-width data table of episodes for the active season', async () => {
     renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
@@ -186,41 +182,14 @@ describe('SeriesDetailView component', () => {
     }
   });
 
-  it('renders details pane on the right for the default selected episode', async () => {
-    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    expect(firstEpisodeHeading()).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
-  });
-
-  it('updates the selected episode details when an item in the left pane is clicked', async () => {
+  it('filters episode list based on search filter input', async () => {
     const { user } = renderWithProviders(
       <SeriesDetailView seriesId={mockSeries.id} />
     );
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-    const secondEpisode = mockSeries.episodes[1];
-    const secondItem = screen.getAllByText(secondEpisode.title)[0];
-    await user.click(secondItem);
-
-    expect(
-      screen.getByRole('heading', { level: 2, name: secondEpisode.title })
-    ).toBeInTheDocument();
-    expect(screen.getByText(secondEpisode.description!)).toBeInTheDocument();
-  });
-
-  it('filters episode list based on filter input', async () => {
-    const { user } = renderWithProviders(
-      <SeriesDetailView seriesId={mockSeries.id} />
-    );
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    const searchInput = screen.getByPlaceholderText(/filter episodes/i);
+    const searchInput = screen.getByRole('textbox', { name: /search episodes/i });
     await user.type(searchInput, 'TanStack');
 
     expect(
@@ -236,7 +205,7 @@ describe('SeriesDetailView component', () => {
     expect(screen.getByText(/unknown-series/)).toBeInTheDocument();
   });
 
-  it('opens custom Edit and Delete dialogs when edit and delete buttons are clicked', async () => {
+  it('opens custom Edit and Delete dialogs via row action menu', async () => {
     renderWithProviders(
       <>
         <SeriesDetailView seriesId={mockSeries.id} />
@@ -247,6 +216,12 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     const user = userEvent.setup();
+
+    // Open row actions menu for first episode
+    const actionMenuButton = screen.getByRole('button', {
+      name: `Actions for ${firstEpisode.title}`,
+    });
+    await user.click(actionMenuButton);
 
     // Test Edit Dialog
     const editButton = screen.getByRole('button', { name: /^edit$/i });
@@ -264,7 +239,8 @@ describe('SeriesDetailView component', () => {
     const saveButton = screen.getByRole('button', { name: 'Save Changes' });
     await user.click(saveButton);
 
-    // Test Delete Dialog
+    // Re-open action menu for Delete Dialog
+    await user.click(actionMenuButton);
     const deleteButton = screen.getByRole('button', { name: /delete/i });
     await user.click(deleteButton);
 
@@ -275,40 +251,13 @@ describe('SeriesDetailView component', () => {
     await user.click(confirmDeleteButton);
   });
 
-  it('renders custom video player with videoUrl when available and displays Ready badge', async () => {
+  it('renders Ready and No Stream badges in the episode table', async () => {
     renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
-    expect(video).toBeInTheDocument();
-    expect(video.src).toBe('https://stream.com/dm-01.mp4');
-    expect(screen.getByText('Ready')).toBeInTheDocument();
-  });
-
-  it('renders fallback UI and No Stream badge when videoUrl is missing', async () => {
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    const noStreamEpisode = screen.getAllByText('Episode Without Any Stream')[0];
-    await user.click(noStreamEpisode);
-
-    expect(screen.queryByTitle('Episode Without Any Stream')).not.toBeInTheDocument();
-    expect(screen.getByText('No Stream Available')).toBeInTheDocument();
+    expect(screen.getAllByText('Ready').length).toBeGreaterThan(0);
     expect(screen.getByText('No Stream')).toBeInTheDocument();
-  });
-
-  it('extracts and renders metadata.genres when tags is null or empty', async () => {
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    const noStreamEpisode = screen.getAllByText('Episode Without Video Stream')[0];
-    await user.click(noStreamEpisode);
-
-    expect(screen.getAllByText('Action').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Drama').length).toBeGreaterThan(0);
   });
 
   it('renders drag handles for episode reordering', async () => {
@@ -321,54 +270,7 @@ describe('SeriesDetailView component', () => {
     }
   });
 
-  it('renders source selector button group with Direct and Embed sections', async () => {
-    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    expect(screen.getByText('Direct')).toBeInTheDocument();
-    expect(screen.getByText('Embed')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Server 1/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Server 2/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Embed Stream/i })).toBeInTheDocument();
-  });
-
-  it('auto-plays the first source when an episode is selected', async () => {
-    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
-    expect(video).toBeInTheDocument();
-    expect(video.src).toBe(firstEpisode.videoSources[0].url);
-  });
-
-  it('clicking a source button switches the active video source', async () => {
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
-
-    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
-
-    // Initially playing first source (direct - Server 1)
-    let video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
-    expect(video.src).toBe('https://stream.com/dm-01.mp4');
-
-    // Click Server 2 (direct 720p)
-    const server2Btn = screen.getByRole('button', { name: /Server 2/i });
-    await user.click(server2Btn);
-
-    video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
-    expect(video.src).toBe('https://stream.com/dm-01-720p.mp4');
-
-    // Click Embed Stream button
-    const embedBtn = screen.getByRole('button', { name: /Embed Stream/i });
-    await user.click(embedBtn);
-
-    const iframe = screen.getByTitle(firstEpisode.title) as HTMLIFrameElement;
-    expect(iframe).toBeInTheDocument();
-    expect(iframe.src).toBe('https://embed.com/dm-01');
-  });
-
-  it('allows adding, updating, and removing video sources in manage sources dialog', async () => {
+  it('allows adding, updating, and removing video sources in manage sources dialog via row actions', async () => {
     let sourceUpdated = false;
     let sourceDeleted = false;
 
@@ -436,6 +338,12 @@ describe('SeriesDetailView component', () => {
     );
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    // Open row action menu for first episode
+    const actionMenuButton = screen.getByRole('button', {
+      name: `Actions for ${firstEpisode.title}`,
+    });
+    await user.click(actionMenuButton);
 
     // Open manage sources dialog
     const manageSourcesBtn = screen.getByRole('button', { name: /^sources$/i });
