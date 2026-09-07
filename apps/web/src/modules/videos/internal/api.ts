@@ -1235,6 +1235,69 @@ export async function remoteIngestEpisodeVideoSource(
   return completedEpisode;
 }
 
+export interface CheckVideoSourceInput {
+  url: string;
+  type: 'direct' | 'embed' | 's3';
+  referer?: string | null;
+}
+
+export interface CheckVideoSourceResult {
+  status: 'working' | 'broken';
+  statusCode?: number | null;
+  latencyMs?: number | null;
+  error?: string | null;
+}
+
+export async function checkVideoSource(
+  input: CheckVideoSourceInput
+): Promise<CheckVideoSourceResult> {
+  const apiUrl = `${getApiBaseUrl()}/api/media/sources/check`;
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      url: input.url,
+      type: input.type,
+      referer: input.referer || undefined,
+    }),
+  });
+
+  if (!response.ok) {
+    let message = `Health check failed with status ${response.status}`;
+    try {
+      const errJson = await response.json();
+      if (errJson?.error?.message) {
+        message = errJson.error.message;
+      }
+    } catch {
+      // ignore
+    }
+    return {
+      status: 'broken',
+      statusCode: response.status,
+      error: message,
+    };
+  }
+
+  const json = await response.json();
+  const data = json?.data;
+  return {
+    status: data?.status ?? 'broken',
+    statusCode: data?.statusCode ?? response.status,
+    latencyMs: data?.latencyMs,
+    error: data?.error ?? null,
+  };
+}
+
+
 
 
 

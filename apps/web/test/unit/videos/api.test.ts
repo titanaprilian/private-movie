@@ -24,6 +24,7 @@ import {
   uploadEpisodeVideoSource,
   getUploadProgress,
   remoteIngestEpisodeVideoSource,
+  checkVideoSource,
   type Episode,
   type VideoSource,
 } from '@/modules/videos/internal/api';
@@ -1658,6 +1659,55 @@ describe('videos api', () => {
       loaded: 52428800,
       total: 104857600,
       percent: 50,
+    });
+
+    fetchSpy.mockRestore();
+  });
+
+  it('checkVideoSource sends POST to /api/media/sources/check and returns health status result', async () => {
+    let calledUrl = '';
+    let calledMethod = '';
+    let calledBody: Record<string, unknown> | null = null;
+
+    const mockCheckResult = {
+      data: {
+        status: 'working' as const,
+        statusCode: 200,
+        latencyMs: 120,
+        error: null,
+      },
+    };
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        calledUrl = typeof input === 'string' ? input : (input as Request).url;
+        calledMethod = init?.method ?? 'GET';
+        calledBody = init?.body ? (JSON.parse(init.body as string) as Record<string, unknown>) : null;
+        return new Response(JSON.stringify(mockCheckResult), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await checkVideoSource({
+      url: 'https://stream.example.com/video.mp4',
+      type: 'direct',
+      referer: 'https://example.com',
+    });
+
+    expect(calledUrl).toContain('/api/media/sources/check');
+    expect(calledMethod).toBe('POST');
+    expect(calledBody).toEqual({
+      url: 'https://stream.example.com/video.mp4',
+      type: 'direct',
+      referer: 'https://example.com',
+    });
+    expect(res).toEqual({
+      status: 'working',
+      statusCode: 200,
+      latencyMs: 120,
+      error: null,
     });
 
     fetchSpy.mockRestore();

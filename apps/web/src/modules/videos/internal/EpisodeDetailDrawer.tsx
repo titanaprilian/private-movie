@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { SeriesDetails, UpdateEpisodeData } from './api';
+import { SourceManagementTable } from './SourceManagementTable';
 
 export type Episode = SeriesDetails['episodes'][number];
 
@@ -13,6 +14,7 @@ export interface EpisodeDetailDrawerProps {
   episode: Episode | null;
   onSave: (episodeId: string, data: UpdateEpisodeData) => Promise<void> | void;
   isSaving?: boolean;
+  onOpenAdvancedIngest?: (tab: 'remote-ingest' | 'upload-s3') => void;
 }
 
 interface FormState {
@@ -48,6 +50,7 @@ export function EpisodeDetailDrawer({
   episode,
   onSave,
   isSaving = false,
+  onOpenAdvancedIngest,
 }: EpisodeDetailDrawerProps) {
   const [formState, setFormState] = useState<FormState>(() =>
     getInitialFormState(episode)
@@ -327,6 +330,14 @@ export function EpisodeDetailDrawer({
                   className="h-8 text-xs"
                 />
               </div>
+            </div>
+
+            {/* Embedded Source Management Table */}
+            <div className="pt-2">
+              <SourceManagementTable
+                episode={episode}
+                onOpenAdvancedIngest={onOpenAdvancedIngest}
+              />
             </div>
           </form>
 

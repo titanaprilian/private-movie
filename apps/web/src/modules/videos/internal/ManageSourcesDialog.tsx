@@ -35,6 +35,7 @@ interface ManageSourcesDialogProps {
   onOpenChange: (open: boolean) => void;
   episode: Episode | null;
   seriesId: string;
+  initialTab?: 'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing';
 }
 
 function EditSourceRow({
@@ -170,10 +171,17 @@ export function ManageSourcesDialog({
   onOpenChange,
   episode,
   seriesId,
+  initialTab,
 }: ManageSourcesDialogProps) {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing'>('add-url');
+
+  useEffect(() => {
+    if (open && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [extractedSources, setExtractedSources] = useState<VideoSourceInput[] | null>(null);
   const [previewWarnings, setPreviewWarnings] = useState<string[]>([]);

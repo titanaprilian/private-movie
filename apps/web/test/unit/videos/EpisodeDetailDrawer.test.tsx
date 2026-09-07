@@ -182,4 +182,44 @@ describe('EpisodeDetailDrawer Component', () => {
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('embeds SourceManagementTable and triggers onOpenAdvancedIngest when ingest buttons are clicked', async () => {
+    const user = userEvent.setup();
+    const onOpenAdvancedIngest = vi.fn();
+
+    const episodeWithSources: Episode = {
+      ...mockEpisode,
+      videoSources: [
+        {
+          id: 'src-1',
+          type: 'direct',
+          url: 'https://stream.example.com/source1.mp4',
+          label: 'Direct Server',
+          quality: '1080p',
+        },
+      ],
+    };
+
+    renderWithProviders(
+      <EpisodeDetailDrawer
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={episodeWithSources}
+        onSave={vi.fn()}
+        onOpenAdvancedIngest={onOpenAdvancedIngest}
+      />
+    );
+
+    expect(screen.getByText('Video Sources')).toBeInTheDocument();
+    expect(screen.getByText('Direct Server')).toBeInTheDocument();
+
+    const ingestBtn = screen.getByRole('button', { name: /^ingest$/i });
+    const uploadBtn = screen.getByRole('button', { name: /^upload$/i });
+
+    await user.click(ingestBtn);
+    expect(onOpenAdvancedIngest).toHaveBeenCalledWith('remote-ingest');
+
+    await user.click(uploadBtn);
+    expect(onOpenAdvancedIngest).toHaveBeenCalledWith('upload-s3');
+  });
 });

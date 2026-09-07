@@ -230,6 +230,9 @@ export function SeriesDetailView({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
+  const [manageSourcesInitialTab, setManageSourcesInitialTab] = useState<
+    'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing' | undefined
+  >(undefined);
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
   const [isSeasonMenuOpen, setIsSeasonMenuOpen] = useState(false);
@@ -776,6 +779,10 @@ export function SeriesDetailView({
         episode={selectedEpisode}
         onSave={handleSaveDrawerEpisode}
         isSaving={updateMutation.isPending}
+        onOpenAdvancedIngest={(tab) => {
+          setManageSourcesInitialTab(tab);
+          setIsManageSourcesOpen(true);
+        }}
       />
       <BatchMoveSeasonDialog
         open={isBatchMoveOpen}
@@ -910,9 +917,13 @@ export function SeriesDetailView({
       {/* Manage Sources Dialog */}
       <ManageSourcesDialog
         open={isManageSourcesOpen}
-        onOpenChange={setIsManageSourcesOpen}
+        onOpenChange={(open) => {
+          setIsManageSourcesOpen(open);
+          if (!open) setManageSourcesInitialTab(undefined);
+        }}
         episode={selectedEpisode}
         seriesId={seriesId}
+        initialTab={manageSourcesInitialTab}
       />
 
       {/* Delete Episode Confirmation Dialog */}
