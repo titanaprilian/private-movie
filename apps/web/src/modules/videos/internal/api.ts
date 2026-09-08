@@ -69,11 +69,20 @@ export interface SeriesItem {
   description?: string | null;
   posterUrl?: string | null;
   isFeatured?: boolean | null;
+  hasOngoing?: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
   genreIds?: string[];
   genres?: Array<{ id: string; name: string; slug: string }> | string[];
   relations?: SeriesRelationItem[];
+  seasons?: Array<{
+    id: string;
+    seriesId?: string;
+    title?: string;
+    status?: 'completed' | 'ongoing' | 'pending' | string | null;
+    seasonNumber?: number | null;
+    [key: string]: unknown;
+  }>;
 }
 
 export interface SeriesListResponse {
@@ -130,17 +139,21 @@ export interface FetchSeriesParams {
   q?: string;
   genre?: string;
   source?: 'otakudesu' | 'dramula';
+  filter?: 'all' | 'featured' | 'ongoing';
+  tab?: 'all' | 'featured' | 'ongoing';
 }
 
 export async function fetchSeries(
   params?: FetchSeriesParams
 ): Promise<SeriesListResponse> {
+  const filter = params?.filter ?? params?.tab;
   const rawQuery = {
     page: params?.page,
     limit: params?.limit,
     q: params?.q,
     genre: params?.genre,
     source: params?.source,
+    filter: filter && filter !== 'all' ? filter : undefined,
   };
 
   const query = Object.fromEntries(
@@ -148,7 +161,14 @@ export async function fetchSeries(
   );
 
   const res = await api.series.get({
-    $query: query as { page?: number; limit?: number; q?: string; genre?: string; source?: 'otakudesu' },
+    $query: query as {
+      page?: number;
+      limit?: number;
+      q?: string;
+      genre?: string;
+      source?: 'otakudesu';
+      filter?: 'all' | 'featured' | 'ongoing';
+    },
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {

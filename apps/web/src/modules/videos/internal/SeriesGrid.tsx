@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Command,
   CommandEmpty,
@@ -36,6 +37,7 @@ export function SeriesGrid() {
     page?: number;
     q?: string;
     genre?: string;
+    tab?: 'all' | 'featured' | 'ongoing';
   };
   const navigate = useNavigate({ from: '/admin/videos/' });
   const openDialog = useScrapeWorkerStore((state) => state.openDialog);
@@ -47,6 +49,19 @@ export function SeriesGrid() {
   const [inputValue, setInputValue] = useState(search.q ?? '');
   const [editingSeries, setEditingSeries] = useState<SeriesItem | null>(null);
   const [deletingSeries, setDeletingSeries] = useState<SeriesItem | null>(null);
+
+  const activeTab =
+    search.tab === 'featured' || search.tab === 'ongoing' ? search.tab : 'all';
+
+  const handleTabChange = (nextTab: string) => {
+    navigate({
+      search: (old: Record<string, unknown>) => ({
+        ...old,
+        tab: nextTab === 'all' ? undefined : (nextTab as 'featured' | 'ongoing'),
+        page: 1,
+      }),
+    });
+  };
 
   const selectedSlugs = search.genre
     ? search.genre
@@ -173,6 +188,19 @@ export function SeriesGrid() {
           Add Series
         </button>
       </div>
+
+      {/* Top-level Filter Tabs: All, Featured, Ongoing */}
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full sm:w-auto"
+      >
+        <TabsList className="grid grid-cols-3 sm:inline-flex w-full sm:w-auto">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="featured">Featured</TabsTrigger>
+          <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Filter bar & Genre Combobox */}
       <div className="bg-card border border-c rounded p-3 space-y-3">
@@ -308,6 +336,11 @@ export function SeriesGrid() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {seriesList.map((item: SeriesItem & { episodes?: unknown[]; episodeCount?: number }) => {
             const epCount = item.episodes?.length ?? item.episodeCount ?? 0;
+            const isFeatured = Boolean(item.isFeatured);
+            const isOngoing = Boolean(
+              item.hasOngoing || item.seasons?.some((s) => s.status === 'ongoing')
+            );
+
             return (
               <div
                 key={item.id}
@@ -330,6 +363,22 @@ export function SeriesGrid() {
                     ) : (
                       <div className="w-12 h-12 rounded border border-c bg-muted/20 flex items-center justify-center text-sm font-mono text-muted">
                         {item.title.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+
+                    {/* Status Badges Overlay */}
+                    {(isFeatured || isOngoing) && (
+                      <div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
+                        {isFeatured && (
+                          <span className="text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-primary/30 bg-card/90 backdrop-blur-xs text-primary shadow-xs">
+                            Featured
+                          </span>
+                        )}
+                        {isOngoing && (
+                          <span className="text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-amber-500/40 bg-card/90 backdrop-blur-xs text-amber-600 dark:text-amber-400 shadow-xs">
+                            Ongoing
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

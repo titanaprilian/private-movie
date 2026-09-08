@@ -7,6 +7,7 @@ export type SeriesListSearch = {
   page?: number;
   q?: string;
   genre?: string;
+  tab?: 'all' | 'featured' | 'ongoing';
 };
 
 export const Route = createFileRoute('/admin/videos/')({
@@ -23,11 +24,17 @@ export const Route = createFileRoute('/admin/videos/')({
     const rawGenre =
       typeof search.genre === 'string' ? search.genre.trim() : undefined;
     const genre = rawGenre && rawGenre.length > 0 ? rawGenre : undefined;
+    const rawTab =
+      typeof search.tab === 'string' ? search.tab.trim().toLowerCase() : undefined;
+    const tab =
+      rawTab === 'featured' || rawTab === 'ongoing' || rawTab === 'all'
+        ? (rawTab as 'all' | 'featured' | 'ongoing')
+        : undefined;
 
-    return { page, q, genre };
+    return { page, q, genre, tab };
   },
-  loaderDeps: ({ search: { page, q, genre } }) => ({ page, q, genre }),
-  loader: ({ deps }: { deps?: { page?: number; q?: string; genre?: string } } = {}) =>
+  loaderDeps: ({ search: { page, q, genre, tab } }) => ({ page, q, genre, tab }),
+  loader: ({ deps }: { deps?: SeriesListSearch } = {}) =>
     Promise.all([
       queryClient.ensureQueryData(genresQueryOptions()),
       queryClient.ensureQueryData(seriesListQueryOptions(deps)),

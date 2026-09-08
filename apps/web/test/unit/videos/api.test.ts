@@ -349,6 +349,46 @@ describe('videos api', () => {
     fetchSpy.mockRestore();
   });
 
+  it('fetchSeries passes filter or tab query parameter to backend API request URL', async () => {
+    const mockData = {
+      data: {
+        series: [],
+        meta: {
+          total: 0,
+          page: 1,
+          limit: 20,
+        },
+      },
+    };
+
+    let requestedUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        requestedUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    await fetchSeries({ page: 1, limit: 20, tab: 'featured' });
+    expect(requestedUrl).toContain('filter=featured');
+
+    await fetchSeries({ page: 1, limit: 20, tab: 'ongoing' });
+    expect(requestedUrl).toContain('filter=ongoing');
+
+    await fetchSeries({ page: 1, limit: 20, filter: 'featured' });
+    expect(requestedUrl).toContain('filter=featured');
+
+    fetchSpy.mockRestore();
+  });
+
   it('fetchSeries strips undefined query parameters from API request URL', async () => {
     const mockData = {
       data: {

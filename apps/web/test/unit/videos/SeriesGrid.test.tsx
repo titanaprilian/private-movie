@@ -1,6 +1,12 @@
 import { createTestQueryClient, renderWithProviders, screen, fireEvent, within } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { SeriesGrid, seriesListQueryOptions, updateSeries, deleteSeries } from '@/modules/videos';
+import {
+  SeriesGrid,
+  seriesListQueryOptions,
+  updateSeries,
+  deleteSeries,
+  type SeriesListResponse,
+} from '@/modules/videos';
 import { genresQueryOptions, type Genre } from '@/modules/genres';
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
@@ -27,10 +33,11 @@ vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
 });
 
 const mockNavigate = vi.fn();
-let mockSearchState: { page?: number; q?: string; genre?: string } = {
+let mockSearchState: { page?: number; q?: string; genre?: string; tab?: 'all' | 'featured' | 'ongoing' } = {
   page: 1,
   q: undefined,
   genre: undefined,
+  tab: undefined,
 };
 
 vi.mock('@tanstack/react-router', () => ({
@@ -56,6 +63,7 @@ vi.mock('@tanstack/react-router', () => ({
       if (searchObj.page) searchParams.set('page', String(searchObj.page));
       if (searchObj.q) searchParams.set('q', searchObj.q);
       if (searchObj.genre) searchParams.set('genre', searchObj.genre);
+      if (searchObj.tab) searchParams.set('tab', searchObj.tab);
       const str = searchParams.toString();
       if (str) href += `?${str}`;
     }
@@ -83,6 +91,8 @@ const mockSeriesResponse = {
       sourceUrl: 'https://otakudesu.cloud/anime/solo-leveling',
       description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
       posterUrl: 'https://example.com/solo-leveling.jpg',
+      isFeatured: false,
+      seasons: [],
       episodes: [
         { id: 'ep-1', title: 'Episode 1' },
         { id: 'ep-2', title: 'Episode 2' },
@@ -97,6 +107,10 @@ const mockSeriesResponse = {
       sourceUrl: 'https://otakudesu.cloud/anime/frieren',
       description: 'An elf mage reflects on life after defeating the Demon King.',
       posterUrl: 'https://example.com/frieren.jpg',
+      isFeatured: false,
+      seasons: [
+        { id: 'sea-2', title: 'Season 1', status: 'completed' },
+      ],
       episodes: [],
       createdAt: '2025-01-10T00:00:00.000Z',
       updatedAt: '2025-01-10T00:00:00.000Z',
@@ -110,11 +124,12 @@ const mockSeriesResponse = {
 };
 
 function renderSeriesGrid(
-  customResponse = mockSeriesResponse,
-  searchState: { page?: number; q?: string; genre?: string } = {
+  customResponse: unknown = mockSeriesResponse,
+  searchState: { page?: number; q?: string; genre?: string; tab?: 'all' | 'featured' | 'ongoing' } = {
     page: 1,
     q: undefined,
     genre: undefined,
+    tab: undefined,
   },
   genresList: Genre[] = mockGenresList
 ) {
@@ -127,7 +142,7 @@ function renderSeriesGrid(
       staleTime: Infinity,
     },
   });
-  queryClient.setQueryData(seriesListQueryOptions(searchState).queryKey, customResponse);
+  queryClient.setQueryData(seriesListQueryOptions(searchState).queryKey, customResponse as SeriesListResponse);
   queryClient.setQueryData(genresQueryOptions().queryKey, genresList);
   return renderWithProviders(<SeriesGrid />, { queryClient });
 }
@@ -521,5 +536,137 @@ describe('SeriesGrid component', () => {
         },
       ],
     });
+  });
+
+  it('renders top-level filter tabs (All, Featured, Ongoing) and indicates active tab', () => {
+    renderSeriesGrid();
+
+    const allTab = screen.getByRole('tab', { name: 'All' });
+    const featuredTab = screen.getByRole('tab', { name: 'Featured' });
+    const ongoingTab = screen.getByRole('tab', { name: 'Ongoing' });
+
+    expect(allTab).toBeInTheDocument();
+    expect(featuredTab).toBeInTheDocument();
+    expect(ongoingTab).toBeInTheDocument();
+
+    expect(allTab).toHaveAttribute('data-state', 'active');
+    expect(featuredTab).toHaveAttribute('data-state', 'inactive');
+    expect(ongoingTab).toHaveAttribute('data-state', 'inactive');
+  });
+
+  it('switches tab to Featured, updates tab search param, resets page to 1, and preserves q and genre', async () => {
+    const { user } = renderSeriesGrid(mockSeriesResponse, {
+      page: 3,
+      q: 'leveling',
+      genre: 'action',
+      tab: undefined,
+    });
+
+    const featuredTab = screen.getByRole('tab', { name: 'Featured' });
+    await user.click(featuredTab);
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(
+      searchFn({ page: 3, q: 'leveling', genre: 'action', tab: undefined })
+    ).toEqual({
+      page: 1,
+      q: 'leveling',
+      genre: 'action',
+      tab: 'featured',
+    });
+  });
+
+  it('switches tab to Ongoing, updates tab search param, resets page to 1, and preserves q and genre', async () => {
+    const { user } = renderSeriesGrid(mockSeriesResponse, {
+      page: 2,
+      q: 'hunter',
+      genre: 'action',
+      tab: 'featured',
+    });
+
+    const ongoingTab = screen.getByRole('tab', { name: 'Ongoing' });
+    await user.click(ongoingTab);
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(
+      searchFn({ page: 2, q: 'hunter', genre: 'action', tab: 'featured' })
+    ).toEqual({
+      page: 1,
+      q: 'hunter',
+      genre: 'action',
+      tab: 'ongoing',
+    });
+  });
+
+  it('switches tab to All, clears tab search param, resets page to 1, and preserves q and genre', async () => {
+    const { user } = renderSeriesGrid(mockSeriesResponse, {
+      page: 2,
+      q: 'hunter',
+      genre: 'action',
+      tab: 'ongoing',
+    });
+
+    const allTab = screen.getByRole('tab', { name: 'All' });
+    await user.click(allTab);
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(
+      searchFn({ page: 2, q: 'hunter', genre: 'action', tab: 'ongoing' })
+    ).toEqual({
+      page: 1,
+      q: 'hunter',
+      genre: 'action',
+      tab: undefined,
+    });
+  });
+
+  it('renders Featured and Ongoing badges on series cards based on isFeatured and seasons status', () => {
+    const badgeResponse = {
+      series: [
+        {
+          ...mockSeriesResponse.series[0],
+          isFeatured: true,
+          seasons: [{ id: 'sea-1', status: 'ongoing' }],
+        },
+        mockSeriesResponse.series[1],
+      ],
+      meta: { total: 2, page: 1, limit: 20 },
+    };
+    renderSeriesGrid(badgeResponse);
+
+    // Solo Leveling isFeatured: true, has ongoing season -> badges inside card
+    const soloCard = screen.getByText('Solo Leveling').closest('.group');
+    expect(soloCard).not.toBeNull();
+    const soloWithin = within(soloCard as HTMLElement);
+    expect(soloWithin.getByText('Featured')).toBeInTheDocument();
+    expect(soloWithin.getByText('Ongoing')).toBeInTheDocument();
+
+    // Frieren isFeatured: false, completed season -> should not have badges on its card
+    const frierenCard = screen.getByText("Frieren: Beyond Journey's End").closest('.group');
+    expect(frierenCard).not.toBeNull();
+    const frierenWithin = within(frierenCard as HTMLElement);
+    expect(frierenWithin.queryByText('Featured')).not.toBeInTheDocument();
+    expect(frierenWithin.queryByText('Ongoing')).not.toBeInTheDocument();
+  });
+
+  it('renders accurate total count in filter bar matching backend meta', () => {
+    renderSeriesGrid({
+      series: mockSeriesResponse.series,
+      meta: { total: 42, page: 1, limit: 20 },
+    });
+
+    expect(screen.getByText('42 series')).toBeInTheDocument();
   });
 });
