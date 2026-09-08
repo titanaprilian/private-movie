@@ -1194,4 +1194,74 @@ describe('SeriesDetailView component', () => {
     // Drawer automatically opens for dm-01
     expect(await screen.findByRole('dialog', { name: 'Episode Details: Intro to Deep Modules' })).toBeInTheDocument();
   });
+
+  it('renders "Sync with TMDB" button in disabled state when series has no tmdbId', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: { ...mockSeries, tmdbId: null } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    const syncBtn = screen.getByRole('button', { name: /Sync with TMDB/i });
+    expect(syncBtn).toBeInTheDocument();
+    expect(syncBtn).toBeDisabled();
+  });
+
+  it('clicking "Sync with TMDB" opens SyncTmdbModal when series has tmdbId', async () => {
+    const seriesWithTmdb: SeriesDetails = {
+      ...mockSeries,
+      tmdbId: 1399,
+      type: 'tv',
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: seriesWithTmdb }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/series/tmdb-preview')) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              title: 'Deep Modules TMDB',
+              overview: 'Preview overview',
+              posterUrl: null,
+              releaseDate: '2026-08-10',
+              status: 'Returning Series',
+              seasons: [{ seasonNumber: 1, name: 'Season 1', episodeCount: 3, posterUrl: null }],
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    const syncBtn = screen.getByRole('button', { name: /Sync with TMDB/i });
+    expect(syncBtn).toBeEnabled();
+
+    await user.click(syncBtn);
+
+    expect(await screen.findByRole('heading', { level: 2, name: 'Sync with TMDB' })).toBeInTheDocument();
+  });
 });

@@ -9,6 +9,10 @@ export { useBulkScrapeSources } from './internal/useBulkScrapeSources';
 export type { ScrapedEpisodePreviewItem, LocalEpisodeItem, ProcessingLogItem } from './internal/useBulkScrapeSources';
 export { BulkIngestModal } from './internal/BulkIngestModal';
 export type { BulkIngestModalProps } from './internal/BulkIngestModal';
+export { SyncTmdbModal } from './internal/SyncTmdbModal';
+export type { SyncTmdbModalProps } from './internal/SyncTmdbModal';
+export { computeSyncDiff } from './internal/computeSyncDiff';
+export type { SeasonDiffItem } from './internal/computeSyncDiff';
 export { useBulkIngestSources } from './internal/useBulkIngestSources';
 export type { BulkIngestItem, UseBulkIngestSourcesOptions } from './internal/useBulkIngestSources';
 export {
@@ -32,6 +36,9 @@ export {
   uploadEpisodeVideoSource,
   remoteIngestEpisodeVideoSource,
   parseIngestUrl,
+  importTmdb,
+  syncSeriesTmdb,
+  fetchSeriesTmdbPreview,
   getMaxUploadSizeMb,
   getMaxUploadSizeBytes,
 } from './internal/api';
@@ -55,6 +62,8 @@ export type {
   PreviewScrapeResult,
   SaveMediaParams,
   SaveMediaResult,
+  ImportTmdbParams,
+  SyncTmdbParams,
   ScrapeEpisodeSourcesParams,
   UploadEpisodeVideoSourceOptions,
   RemoteIngestEpisodeVideoSourceOptions,

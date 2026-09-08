@@ -18,6 +18,7 @@ import {
 } from './api';
 import { EditSeasonDialog } from './EditSeasonDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
+import { SyncTmdbModal } from './SyncTmdbModal';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
 import { buildCrossSeasonMove } from './crossSeasonMove';
 import { BulkScrapeModal } from './BulkScrapeModal';
@@ -236,6 +237,7 @@ export function SeriesDetailView({
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
   const [isSeasonMenuOpen, setIsSeasonMenuOpen] = useState(false);
+  const [isSyncTmdbOpen, setIsSyncTmdbOpen] = useState(false);
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
   const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
   const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
@@ -553,6 +555,26 @@ export function SeriesDetailView({
               </button>
 
               <button
+                onClick={() => setIsSyncTmdbOpen(true)}
+                type="button"
+                disabled={!series.tmdbId}
+                title={!series.tmdbId ? 'Link TMDB in Edit Series to enable sync' : undefined}
+                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                </svg>
+                Sync with TMDB
+              </button>
+
+              <button
                 onClick={() => setIsBulkScrapeOpen(true)}
                 type="button"
                 className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
@@ -803,6 +825,11 @@ export function SeriesDetailView({
       <EditSeriesDialog
         open={isEditSeriesOpen}
         onOpenChange={setIsEditSeriesOpen}
+        series={series}
+      />
+      <SyncTmdbModal
+        open={isSyncTmdbOpen}
+        onOpenChange={setIsSyncTmdbOpen}
         series={series}
       />
       <BulkScrapeModal

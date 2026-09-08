@@ -112,6 +112,9 @@ export interface SeriesDetails {
   type?: 'movie' | 'tv' | null;
   description?: string | null;
   posterUrl?: string | null;
+  backdropUrl?: string | null;
+  tmdbId?: number | null;
+  tmdbSyncStatus?: string | null;
   isFeatured?: boolean | null;
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -770,6 +773,29 @@ export interface ImportTmdbParams {
   type: 'tv' | 'movie';
   tmdbId: number;
   includeSpecials?: boolean;
+}
+
+export interface SyncTmdbParams {
+  type: 'tv' | 'movie';
+  tmdbId: number;
+  includeSpecials?: boolean;
+}
+
+export async function syncSeriesTmdb(
+  seriesId: string,
+  params: SyncTmdbParams
+): Promise<SeriesDetails> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[seriesId]['tmdb-sync'].post(params);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to sync series with TMDB'
+    );
+  }
+
+  return res.data.data as unknown as SeriesDetails;
 }
 
 export async function importTmdb(

@@ -18,6 +18,7 @@ import {
   saveBulkSources,
   scrapeEpisodeSources,
   importTmdb,
+  syncSeriesTmdb,
   fetchSeriesTmdbPreview,
   presignUploadSource,
   uploadBinaryToS3,
@@ -1025,6 +1026,79 @@ describe('videos api', () => {
     expect(postUrl).toContain('/series/tmdb-import');
     expect(JSON.parse(postBody)).toEqual({ type: 'tv', tmdbId: 1399 });
     expect(res.id).toBe('series-tmdb-1');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('syncSeriesTmdb posts payload to /series/:id/tmdb-sync', async () => {
+    const mockData = {
+      data: {
+        id: 'series-uuid-1',
+        title: 'TMDB Synced Series',
+        source: 'tmdb',
+        sourceUrl: 'https://themoviedb.org/tv/1399',
+        tmdbId: 1399,
+        tmdbSyncStatus: 'SYNCED',
+        episodes: [],
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    };
+
+    let postUrl = '';
+    let postBody = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input, init) => {
+        postUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        postBody = (init?.body as string) || '';
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await syncSeriesTmdb('series-uuid-1', {
+      type: 'tv',
+      tmdbId: 1399,
+      includeSpecials: true,
+    });
+
+    expect(postUrl).toContain('/series/series-uuid-1/tmdb-sync');
+    expect(JSON.parse(postBody)).toEqual({
+      type: 'tv',
+      tmdbId: 1399,
+      includeSpecials: true,
+    });
+    expect(res.id).toBe('series-uuid-1');
+    expect(res.tmdbSyncStatus).toBe('SYNCED');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('syncSeriesTmdb throws error when backend API fails', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+          {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+    );
+
+    await expect(
+      syncSeriesTmdb('series-uuid-1', {
+        type: 'tv',
+        tmdbId: 1399,
+      })
+    ).rejects.toThrow('Failed to sync series with TMDB');
 
     fetchSpy.mockRestore();
   });
