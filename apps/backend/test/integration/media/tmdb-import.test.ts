@@ -1,9 +1,25 @@
 import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
-import { createDbClient } from "@repo/db";
 
-const db = createDbClient(process.env.DATABASE_URL);
+interface TmdbImportResponse {
+  data: {
+    title: string;
+    type: string;
+    tmdbId: number;
+    tmdbSyncStatus: string;
+    seasons: Array<{
+      seasonNumber: number;
+    }>;
+  };
+}
+
+interface ErrorResponse {
+  error: {
+    code: string;
+    message: string;
+  };
+}
 
 describe("POST /series/tmdb-import", () => {
   let app: App;
@@ -131,7 +147,7 @@ describe("POST /series/tmdb-import", () => {
     const result = await request(app, reqOptions);
     expect(result.status).toBe(200);
 
-    const body = result.body as any;
+    const body = result.body as TmdbImportResponse;
     expect(body.data.title).toBe("Mock TV Show");
     expect(body.data.type).toBe("tv");
     expect(body.data.tmdbId).toBe(100);
@@ -171,7 +187,7 @@ describe("POST /series/tmdb-import", () => {
     const result = await request(app, reqOptions);
     expect(result.status).toBe(200);
 
-    const body = result.body as any;
+    const body = result.body as TmdbImportResponse;
     expect(body.data.title).toBe("Mock Movie Title");
     expect(body.data.type).toBe("movie");
     expect(body.data.tmdbId).toBe(500);
@@ -197,7 +213,7 @@ describe("POST /series/tmdb-import", () => {
 
     const result = await request(app, reqOptions);
     expect(result.status).toBe(404);
-    const body = result.body as any;
+    const body = result.body as ErrorResponse;
     expect(body.error.code).toBe("TMDB_FETCH");
   });
 });

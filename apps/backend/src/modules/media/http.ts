@@ -612,7 +612,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                   message: `Remote server returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`,
                 });
                 await new Promise((resolve) => setTimeout(resolve, 50));
-                try { controller.close(); } catch {}
+                try { controller.close(); } catch { /* ignore if already closed */ }
                 return;
               }
 
@@ -623,7 +623,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                   message: "Remote server returned empty response body",
                 });
                 await new Promise((resolve) => setTimeout(resolve, 50));
-                try { controller.close(); } catch {}
+                try { controller.close(); } catch { /* ignore if already closed */ }
                 return;
               }
 
@@ -675,12 +675,12 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                 videoSource: videoSourceRow,
               });
               await new Promise((resolve) => setTimeout(resolve, 50));
-              try { controller.close(); } catch {}
+              try { controller.close(); } catch { /* ignore if already closed */ }
               console.log(`[remote-ingest] Ingestion completed successfully for episode ${params.id}`);
             } catch (err: unknown) {
               if (abortController.signal.aborted) {
                 console.warn(`[remote-ingest] Ingestion aborted for episode ${params.id}`);
-                try { controller.close(); } catch {}
+                try { controller.close(); } catch { /* ignore if already closed */ }
                 return;
               }
               console.error("[remote-ingest] Remote video ingestion failed with exception:", err);
@@ -690,7 +690,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                 message: errorMessage,
               });
               await new Promise((resolve) => setTimeout(resolve, 50));
-              try { controller.close(); } catch {}
+              try { controller.close(); } catch { /* ignore if already closed */ }
             } finally {
               request.signal.removeEventListener("abort", onClientAbort);
             }

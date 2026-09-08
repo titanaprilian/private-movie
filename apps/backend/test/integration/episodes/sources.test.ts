@@ -327,7 +327,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
     it("issues a valid presigned upload URL and key when configured and authenticated", async () => {
       const mockS3Service = {
         isConfigured: () => true,
-        getPresignedUploadUrl: async (key: string, contentType?: string) => ({
+        getPresignedUploadUrl: async (key: string, _contentType?: string) => ({
           uploadUrl: `https://s3.example.com/${key}?signature=test`,
           key,
         }),

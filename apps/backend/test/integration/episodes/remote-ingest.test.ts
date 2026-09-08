@@ -4,6 +4,18 @@ import { buildApp, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import { db } from "../../utils/db";
 import { eq } from "drizzle-orm";
+import type { StreamUploadOptions } from "@repo/media-service";
+import type { Readable } from "node:stream";
+
+interface CompleteEventData {
+  episode: { id: string };
+  videoSource: { id: string; type: string; label: string; quality: string | null };
+}
+
+interface ErrorEventData {
+  code: string;
+  message: string;
+}
 
 const originalFetch = globalThis.fetch;
 
@@ -11,9 +23,9 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-function parseSSE(sseText: string): Array<{ event: string; data: any }> {
+function parseSSE(sseText: string): Array<{ event: string; data: Record<string, unknown> }> {
   const blocks = sseText.split("\n\n").filter((b) => b.trim().length > 0);
-  const events: Array<{ event: string; data: any }> = [];
+  const events: Array<{ event: string; data: Record<string, unknown> }> = [];
   for (const block of blocks) {
     const lines = block.split("\n");
     let event = "";
@@ -27,9 +39,9 @@ function parseSSE(sseText: string): Array<{ event: string; data: any }> {
     }
     if (event && dataStr) {
       try {
-        events.push({ event, data: JSON.parse(dataStr) });
+        events.push({ event, data: JSON.parse(dataStr) as Record<string, unknown> });
       } catch {
-        events.push({ event, data: dataStr });
+        events.push({ event, data: { raw: dataStr } });
       }
     }
   }
@@ -177,17 +189,15 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
 
   it("successfully ingests remote video stream to S3, emits SSE progress and complete events, and saves s3 source in DB", async () => {
     let capturedUploadKey = "";
-    let capturedUploadOptions: any = null;
 
     const mockS3Service = {
       isConfigured: () => true,
       getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
       getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}?signed=true`,
       uploadObject: async () => {},
-      uploadStream: async (key: string, bodyStream: any, options?: any) => {
+      uploadStream: async (key: string, bodyStream: ReadableStream<Uint8Array> | Readable, options?: StreamUploadOptions) => {
         capturedUploadKey = key;
-        capturedUploadOptions = options;
-        const reader = bodyStream.getReader();
+        const reader = (bodyStream as ReadableStream<Uint8Array>).getReader();
         let loadedBytes = 0;
         while (true) {
           const { done, value } = await reader.read();
@@ -275,10 +285,11 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     });
 
     expect(completeEvent).toBeDefined();
-    expect(completeEvent?.data.videoSource.type).toBe("s3");
-    expect(completeEvent?.data.videoSource.label).toBe("S3 1080p Ingested");
-    expect(completeEvent?.data.videoSource.quality).toBe("1080p");
-    expect(completeEvent?.data.episode.id).toBe(episode.id);
+    const completeData = completeEvent?.data as unknown as CompleteEventData;
+    expect(completeData.videoSource.type).toBe("s3");
+    expect(completeData.videoSource.label).toBe("S3 1080p Ingested");
+    expect(completeData.videoSource.quality).toBe("1080p");
+    expect(completeData.episode.id).toBe(episode.id);
 
     // Verify User-Agent and Referer headers forwarded
     expect(outboundHeaders["user-agent"]).toContain("Mozilla/5.0");
@@ -303,8 +314,8 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
       getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
       getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}`,
       uploadObject: async () => {},
-      uploadStream: async (_key: string, bodyStream: any) => {
-        const reader = bodyStream.getReader();
+      uploadStream: async (_key: string, bodyStream: ReadableStream<Uint8Array> | Readable) => {
+        const reader = (bodyStream as ReadableStream<Uint8Array>).getReader();
         while (true) {
           const { done } = await reader.read();
           if (done) break;
@@ -396,8 +407,9 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
 
     const errorEvent = events.find((e) => e.event === "error");
     expect(errorEvent).toBeDefined();
-    expect(errorEvent?.data.code).toBe("REMOTE_FETCH_FAILED");
-    expect(errorEvent?.data.message).toContain("404");
+    const errorData = errorEvent?.data as unknown as ErrorEventData;
+    expect(errorData.code).toBe("REMOTE_FETCH_FAILED");
+    expect(errorData.message).toContain("404");
 
     // DB should remain empty for this episode
     const sourcesInDb = await db
@@ -415,7 +427,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
       getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
       getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}`,
       uploadObject: async () => {},
-      uploadStream: async (_key: string, bodyStream: any, options?: any) => {
+      uploadStream: async (_key: string, bodyStream: ReadableStream<Uint8Array> | Readable, options?: StreamUploadOptions) => {
         if (options?.signal?.aborted) {
           s3UploadAborted = true;
           throw new Error("Upload aborted");
@@ -427,7 +439,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
           };
           options?.signal?.addEventListener("abort", onAbort, { once: true });
 
-          const reader = bodyStream.getReader();
+          const reader = (bodyStream as ReadableStream<Uint8Array>).getReader();
           const readChunk = async () => {
             try {
               const { done } = await reader.read();
@@ -559,8 +571,9 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
 
     const errorEvent = events.find((e) => e.event === "error");
     expect(errorEvent).toBeDefined();
-    expect(errorEvent?.data.code).toBe("INGEST_FAILED");
-    expect(errorEvent?.data.message).toBe("S3 connection timeout during multipart upload completion");
+    const errorData = errorEvent?.data as unknown as ErrorEventData;
+    expect(errorData.code).toBe("INGEST_FAILED");
+    expect(errorData.message).toBe("S3 connection timeout during multipart upload completion");
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "[remote-ingest] Remote video ingestion failed with exception:",

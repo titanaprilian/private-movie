@@ -1,11 +1,10 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import type { App } from '../../utils/app';
 import { buildApp } from '../../utils/app';
 import { truncateAll } from '../../utils/db';
 
 describe('GET /api/media/relay', () => {
   let app: App;
-  let mockServerUrl: string;
 
   beforeAll(async () => {
     app = await buildApp();

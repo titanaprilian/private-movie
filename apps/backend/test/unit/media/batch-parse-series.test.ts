@@ -3,7 +3,6 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   OtakudesuProvider,
-  SeriesParseError,
 } from "@repo/media-scraper";
 
 const sampleOneSeasonHtml = fs.readFileSync(

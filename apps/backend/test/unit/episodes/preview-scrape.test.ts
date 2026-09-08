@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createMediaService, EpisodeFetchError, type FetchFn } from "@repo/media-service";
-import { EpisodeParseError, MirrorResolveError, extractDirectVideoSources } from "@repo/media-scraper";
+import { EpisodeParseError, MirrorResolveError } from "@repo/media-scraper";
 
 const sampleAHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
@@ -18,10 +18,6 @@ const sampleSeriesHtml = readFileSync(
 );
 const sampleDirectVideoHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-direct-video.html"),
-  "utf8"
-);
-const sampleMp4VideoHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/episodes/sample-mp4-video.html"),
   "utf8"
 );
 
@@ -367,8 +363,6 @@ describe("previewScrape mirror resolution", () => {
 });
 
 describe("previewScrape direct video extraction", () => {
-  const ANIME_URL = "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/";
-
   function buildDirectVideoFetchFn(options?: { failIframe?: boolean; failSeries?: boolean }): FetchFn {
     const ANIME_URL = "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/";
     return {

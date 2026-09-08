@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
 import { episodes, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
-import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
+import { registerUser, authHeaders } from "../../utils/auth";
 import { db } from "../../utils/db";
 
 async function insertTestSeries(): Promise<{ id: string }> {
