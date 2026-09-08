@@ -12,8 +12,17 @@
       "outputs": ["dist/**", ".tanstack/**"],
       "env": ["VITE_API_URL"]
     },
+    "@repo/android-tv#typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "@repo/android-tv#lint": {
+      "dependsOn": ["@repo/android-tv#typecheck"]
+    },
+    "@repo/android-tv#test": {
+      "dependsOn": ["@repo/android-tv#lint"]
+    },
     "@repo/android-tv#build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "@repo/android-tv#test"],
       "outputs": ["app/build/outputs/**"]
     },
     "test": {
