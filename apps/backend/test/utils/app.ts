@@ -1,6 +1,5 @@
 import type { createApp } from "@/app";
 import type { FetchFn, BrowserFn, S3StorageService } from "@repo/media-service";
-import { createStealthBrowserFn } from "@repo/media-scraper";
 
 export type App = ReturnType<typeof createApp>;
 
@@ -50,11 +49,13 @@ export async function buildApp(options?: {
     },
   };
 
+  const defaultBrowserFn: BrowserFn = async () => "";
+
   return createApp({
     db,
     auth,
     fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
-    browserFn: options?.browserFn ?? createStealthBrowserFn(),
+    browserFn: options?.browserFn ?? defaultBrowserFn,
     s3StorageService: options?.s3StorageService,
   });
 }
