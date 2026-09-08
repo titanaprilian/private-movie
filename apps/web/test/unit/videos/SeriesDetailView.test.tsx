@@ -655,7 +655,7 @@ describe('SeriesDetailView component', () => {
     );
   });
 
-  it('gracefully hides season selector tabs when series has 1 or no distinct seasons', async () => {
+  it('renders season navigation bar, status badge, and disabled delete action for single-season series', async () => {
     const mockSingleSeasonSeries: SeriesDetails = {
       id: 'single-season-series',
       sourceUrl: 'https://otakudesu.cloud/anime/single-season',
@@ -672,6 +672,7 @@ describe('SeriesDetailView component', () => {
           sourceUrl: 'https://otakudesu.cloud/single-season',
           source: 'otakudesu',
           title: 'Season 1',
+          status: 'ongoing',
           description: 'Single Season',
           posterUrl: null,
           createdAt: '2026-08-10',
@@ -717,13 +718,73 @@ describe('SeriesDetailView component', () => {
       return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
     });
 
+    const user = userEvent.setup();
     renderWithProviders(<SeriesDetailView seriesId="single-season-series" />);
 
     await screen.findByRole('heading', { level: 1, name: 'Single Season Movie' });
 
-    // Season tab for "Season 1" should NOT be rendered since seasons <= 1
-    expect(screen.queryByRole('button', { name: 'Season 1' })).not.toBeInTheDocument();
+    // Season tab for "Season 1" IS rendered when series has 1 season
+    expect(screen.getByRole('button', { name: 'Season 1' })).toBeInTheDocument();
+    expect(screen.getByTestId('season-status-badge')).toHaveTextContent('ongoing');
     expect(screen.getAllByText('Movie Main Stream').length).toBeGreaterThan(0);
+
+    // 3-dot Season Actions menu is rendered and accessible
+    const seasonActionsBtn = screen.getByRole('button', { name: /season actions/i });
+    expect(seasonActionsBtn).toBeInTheDocument();
+    await user.click(seasonActionsBtn);
+
+    // Edit Season is available
+    const editSeasonBtn = screen.getByRole('button', { name: /edit season/i });
+    expect(editSeasonBtn).toBeInTheDocument();
+
+    // Delete Season is disabled for single-season series
+    const deleteSeasonBtn = screen.getByRole('button', { name: /delete season/i });
+    expect(deleteSeasonBtn).toBeDisabled();
+  });
+
+  it('safely hides season selector tabs when series has 0 seasons', async () => {
+    const mockZeroSeasonSeries: SeriesDetails = {
+      id: 'zero-season-series',
+      sourceUrl: 'https://otakudesu.cloud/anime/zero-season',
+      source: 'otakudesu',
+      title: 'Zero Season Anime',
+      description: 'Anime overview',
+      posterUrl: null,
+      createdAt: '2026-08-10',
+      updatedAt: '2026-08-10',
+      seasons: [],
+      episodes: [
+        {
+          id: 'z-ep1',
+          sourceUrl: 'https://otakudesu.cloud/z-ep1',
+          source: 'otakudesu',
+          title: 'Special Episode',
+          order: 1,
+          videoSources: [],
+          createdAt: '2026-08-10',
+          updatedAt: '2026-08-10',
+        },
+      ],
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/zero-season-series')) {
+        return new Response(JSON.stringify({ data: mockZeroSeasonSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+    });
+
+    renderWithProviders(<SeriesDetailView seriesId="zero-season-series" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Zero Season Anime' });
+
+    expect(screen.queryByRole('button', { name: /season actions/i })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('season-status-badge')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Special Episode').length).toBeGreaterThan(0);
   });
 
   it('does not render "Merge Seasons" or "Add Season" buttons when multiple seasons exist', async () => {

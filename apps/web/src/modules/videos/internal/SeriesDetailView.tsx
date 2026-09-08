@@ -71,15 +71,13 @@ export function SeriesDetailView({
     }
   }, [series?.episodes]);
 
-  const hasMultipleSeasons = Boolean(series?.seasons && series.seasons.length > 1);
-
   useEffect(() => {
-    if (hasMultipleSeasons && series?.seasons && series.seasons.length > 0) {
+    if (series?.seasons && series.seasons.length > 0) {
       if (!selectedSeasonId || !series.seasons.some((s) => s.id === selectedSeasonId)) {
         setSelectedSeasonId(series.seasons[0].id);
       }
     }
-  }, [series?.seasons, hasMultipleSeasons, selectedSeasonId]);
+  }, [series?.seasons, selectedSeasonId]);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateEpisode>[1] }) =>
@@ -280,7 +278,10 @@ export function SeriesDetailView({
   const currentPosterUrl = activeSeason?.posterUrl || series.posterUrl;
 
   const seasonEpisodes = (() => {
-    if (!hasMultipleSeasons || !activeSeason) {
+    if (!series?.seasons || series.seasons.length === 0 || !activeSeason) {
+      return localEpisodes;
+    }
+    if (series.seasons.length === 1) {
       return localEpisodes;
     }
     const activeSeasonEpIds = new Set(
@@ -522,7 +523,7 @@ export function SeriesDetailView({
               </span>
               <span className={`text-xs mono px-2 py-0.5 rounded border ${
                 activeSeason?.status === 'ongoing'
-                  ? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
                   : 'border-c bg-sidebar text-muted'
               } capitalize`}>
                 {activeSeason?.status || 'completed'}
@@ -598,8 +599,8 @@ export function SeriesDetailView({
         </div>
       </div>
 
-      {/* Season Navigation Bar (season tabs double as drop targets for cross-season episode moves; collapses when seasons <= 1) */}
-      {series.seasons && hasMultipleSeasons && (
+      {/* Season Navigation Bar */}
+      {series.seasons && series.seasons.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded border border-c bg-card">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-medium mono uppercase tracking-wider text-muted mr-1">
@@ -641,6 +642,18 @@ export function SeriesDetailView({
                 );
               })}
             </div>
+            {activeSeason && (
+              <span
+                data-testid="season-status-badge"
+                className={`text-xs mono px-2 py-0.5 rounded border capitalize ${
+                  activeSeason.status === 'ongoing'
+                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                    : 'border-c bg-sidebar text-muted'
+                }`}
+              >
+                {activeSeason.status || 'completed'}
+              </span>
+            )}
           </div>
 
           {activeSeason && (
@@ -721,11 +734,22 @@ export function SeriesDetailView({
                     <div className="py-0.5">
                       <button
                         type="button"
+                        disabled={series.seasons.length <= 1}
+                        title={
+                          series.seasons.length <= 1
+                            ? 'Cannot delete the only season in a series'
+                            : undefined
+                        }
                         onClick={() => {
+                          if (series.seasons && series.seasons.length <= 1) return;
                           setIsSeasonMenuOpen(false);
                           setIsDeleteSeasonOpen(true);
                         }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover-bg text-red-600 dark:text-red-400 transition-colors flex items-center gap-2 cursor-pointer"
+                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
+                          series.seasons.length <= 1
+                            ? 'opacity-50 cursor-not-allowed text-muted'
+                            : 'hover-bg text-red-600 dark:text-red-400 cursor-pointer'
+                        }`}
                       >
                         <svg
                           width="12"
@@ -877,10 +901,16 @@ export function SeriesDetailView({
             <Button
               type="button"
               variant="destructive"
-              disabled={deleteSeasonMutation.isPending}
-              onClick={() =>
-                activeSeason && deleteSeasonMutation.mutate(activeSeason.id)
+              disabled={
+                deleteSeasonMutation.isPending ||
+                (series.seasons ? series.seasons.length <= 1 : false)
               }
+              onClick={() => {
+                if (series.seasons && series.seasons.length <= 1) return;
+                if (activeSeason) {
+                  deleteSeasonMutation.mutate(activeSeason.id);
+                }
+              }}
             >
               {deleteSeasonMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
