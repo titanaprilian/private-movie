@@ -8,6 +8,8 @@ async function insertSeriesRow(options?: {
   title?: string;
   description?: string | null;
   createdAt?: Date;
+  isFeatured?: boolean;
+  seasonStatus?: string;
 }): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
   const title = options?.title ?? `Series ${id}`;
@@ -20,6 +22,7 @@ async function insertSeriesRow(options?: {
     title,
     description,
     posterUrl: "https://example.com/poster.jpg",
+    isFeatured: options?.isFeatured ?? false,
     createdAt: now,
     updatedAt: now,
   });
@@ -30,6 +33,7 @@ async function insertSeriesRow(options?: {
     title,
     description,
     posterUrl: "https://example.com/poster.jpg",
+    status: options?.seasonStatus ?? "completed",
     createdAt: now,
     updatedAt: now,
   });
@@ -289,6 +293,66 @@ describe("GET /series", () => {
     const bothIds = bothBody.data.series.map((s) => s.id);
     expect(bothIds).toEqual([sBoth.id]);
     expect(bothBody.data.meta.total).toBe(1);
+  });
+
+  it("filters series by filter=featured, filter=ongoing, or filter=all", async () => {
+    const sNormal = await insertSeriesRow({ title: "Normal Show", isFeatured: false, seasonStatus: "completed" });
+    const sFeatured = await insertSeriesRow({ title: "Featured Show", isFeatured: true, seasonStatus: "completed" });
+    const sOngoing = await insertSeriesRow({ title: "Ongoing Show", isFeatured: false, seasonStatus: "ongoing" });
+    const sBoth = await insertSeriesRow({ title: "Featured Ongoing Show", isFeatured: true, seasonStatus: "ongoing" });
+
+    // filter=all or omitted
+    const allRes = await request(app, { path: "/series?filter=all" });
+    expect(allRes.status).toBe(200);
+    const allBody = allRes.body as { data: { series: { id: string }[]; meta: { total: number } } };
+    const allIds = allBody.data.series.map((s) => s.id);
+    expect(allIds).toContain(sNormal.id);
+    expect(allIds).toContain(sFeatured.id);
+    expect(allIds).toContain(sOngoing.id);
+    expect(allIds).toContain(sBoth.id);
+
+    // filter=featured
+    const featuredRes = await request(app, { path: "/series?filter=featured" });
+    expect(featuredRes.status).toBe(200);
+    const featuredBody = featuredRes.body as { data: { series: { id: string; isFeatured: boolean }[]; meta: { total: number } } };
+    const featuredIds = featuredBody.data.series.map((s) => s.id);
+    expect(featuredIds).toContain(sFeatured.id);
+    expect(featuredIds).toContain(sBoth.id);
+    expect(featuredIds).not.toContain(sNormal.id);
+    expect(featuredIds).not.toContain(sOngoing.id);
+    expect(featuredBody.data.meta.total).toBe(2);
+
+    // filter=ongoing
+    const ongoingRes = await request(app, { path: "/series?filter=ongoing" });
+    expect(ongoingRes.status).toBe(200);
+    const ongoingBody = ongoingRes.body as { data: { series: { id: string; seasons: { status: string }[] }[]; meta: { total: number } } };
+    const ongoingIds = ongoingBody.data.series.map((s) => s.id);
+    expect(ongoingIds).toContain(sOngoing.id);
+    expect(ongoingIds).toContain(sBoth.id);
+    expect(ongoingIds).not.toContain(sNormal.id);
+    expect(ongoingIds).not.toContain(sFeatured.id);
+    expect(ongoingBody.data.meta.total).toBe(2);
+    expect(ongoingBody.data.series.every((s) => s.seasons.some((sea) => sea.status === "ongoing"))).toBe(true);
+  });
+
+  it("composes filter parameter with q search and genre query params", async () => {
+    const dramaGenreId = crypto.randomUUID();
+    await db.insert(genres).values([
+      { id: dramaGenreId, name: "Drama", slug: "drama" },
+    ]);
+
+    const s1 = await insertSeriesRow({ title: "My Hero Drama", isFeatured: true, seasonStatus: "ongoing" });
+    await insertSeriesRow({ title: "My Hero Comedy", isFeatured: true, seasonStatus: "completed" });
+    await db.insert(seriesToGenres).values([
+      { seriesId: s1.id, genreId: dramaGenreId },
+    ]);
+
+    // filter=ongoing & q=hero & genre=drama
+    const res = await request(app, { path: "/series?filter=ongoing&q=hero&genre=drama" });
+    expect(res.status).toBe(200);
+    const body = res.body as { data: { series: { id: string }[]; meta: { total: number } } };
+    expect(body.data.series.map((s) => s.id)).toEqual([s1.id]);
+    expect(body.data.meta.total).toBe(1);
   });
 });
 

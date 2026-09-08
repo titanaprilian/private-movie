@@ -84,7 +84,7 @@ describe("series repository findByIdWithEpisodes season sorting", () => {
   });
 });
 
-describe("series repository list multi-genre filtering", () => {
+describe("series repository list filtering", () => {
   it("filters series by multiple genre slugs using AND logic", async () => {
     const mockDb = {
       select: vi.fn().mockImplementation(() => {
@@ -125,5 +125,39 @@ describe("series repository list multi-genre filtering", () => {
 
     expect(result.series).toEqual([]);
     expect(result.total).toBe(0);
+  });
+
+  it("supports filter=featured and filter=ongoing parameters", async () => {
+    const whereSpy = vi.fn();
+    const mockDb = {
+      select: vi.fn().mockImplementation(() => {
+        return {
+          from: vi.fn().mockImplementation((table) => {
+            if (table === series) {
+              return {
+                where: whereSpy.mockReturnValue({
+                  orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                      offset: vi.fn().mockResolvedValue([]),
+                    }),
+                  }),
+                }),
+              };
+            }
+            return {
+              where: vi.fn().mockResolvedValue([{ value: 0 }]),
+            };
+          }),
+        };
+      }),
+    };
+
+    const repository = createSeriesRepositoryInternal(mockDb as any);
+    await repository.list({ page: 1, limit: 10, filter: "featured" });
+    expect(whereSpy).toHaveBeenCalled();
+
+    whereSpy.mockClear();
+    await repository.list({ page: 1, limit: 10, filter: "ongoing" });
+    expect(whereSpy).toHaveBeenCalled();
   });
 });

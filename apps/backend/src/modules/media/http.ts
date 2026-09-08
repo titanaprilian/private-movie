@@ -1326,13 +1326,14 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       async ({ query }) => {
         const page = query.page ?? 1;
         const limit = query.limit ?? 20;
-        const { source, q, genre } = query;
+        const { source, q, genre, filter } = query;
         const result = await seriesRepository.list({
           page,
           limit,
           source,
           q,
           genre,
+          filter,
         });
         return successResponse({
           series: result.series,
@@ -1350,6 +1351,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           source: t.Optional(t.Union([t.Literal("otakudesu"), t.Literal("dramula")])),
           q: t.Optional(t.String()),
           genre: t.Optional(t.String()),
+          filter: t.Optional(t.Union([t.Literal("all"), t.Literal("featured"), t.Literal("ongoing")])),
         }),
       }
     )

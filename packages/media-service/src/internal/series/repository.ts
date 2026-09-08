@@ -91,6 +91,7 @@ export interface SeriesListParams {
   source?: string;
   q?: string;
   genre?: string;
+  filter?: "all" | "featured" | "ongoing";
 }
 
 export type SeasonWithEpisodes = SeasonRow & {
@@ -318,6 +319,24 @@ export function createSeriesRepositoryInternal<
           or(
             ilike(series.title, pattern),
             ilike(series.description, pattern)
+          )
+        );
+      }
+
+      if (params.filter === "featured") {
+        conditions.push(eq(series.isFeatured, true));
+      } else if (params.filter === "ongoing") {
+        conditions.push(
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(seasons)
+              .where(
+                and(
+                  eq(seasons.seriesId, series.id),
+                  eq(seasons.status, "ongoing")
+                )
+              )
           )
         );
       }
