@@ -1335,21 +1335,21 @@ describe('videos api', () => {
           });
         }
         mockXhr.status = 200;
-        mockXhr.onload();
+        mockXhr.onload?.();
       }),
       abort: vi.fn(),
       upload: {
-        onprogress: null as any,
+        onprogress: null as ((event: { lengthComputable: boolean; loaded: number; total: number }) => void) | null,
       },
       status: 200,
-      onload: null as any,
-      onerror: null as any,
-      onabort: null as any,
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
     };
 
     const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
-      return mockXhr as any;
-    } as any);
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
 
     await uploadBinaryToS3({
       url: 'https://s3.example.com/put-url',
@@ -1383,21 +1383,21 @@ describe('videos api', () => {
       send: vi.fn(function () {
         mockXhr.status = 200;
         mockXhr.responseText = JSON.stringify({ data: mockEpisode });
-        mockXhr.onload();
+        mockXhr.onload?.();
       }),
       abort: vi.fn(),
       upload: {},
       status: 0,
       responseText: '',
       withCredentials: false,
-      onload: null as any,
-      onerror: null as any,
-      onabort: null as any,
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
     };
 
     const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
-      return mockXhr as any;
-    } as any);
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
 
     const res = await uploadEpisodeVideoSource('ep-1', {
       file,
@@ -1439,23 +1439,23 @@ describe('videos api', () => {
         }
         mockXhr.status = 200;
         mockXhr.responseText = JSON.stringify({ data: { id: 'ep-1' } });
-        mockXhr.onload();
+        mockXhr.onload?.();
       }),
       abort: vi.fn(),
       upload: {
-        onprogress: null as any,
+        onprogress: null as ((event: { lengthComputable: boolean; loaded: number; total: number }) => void) | null,
       },
       status: 0,
       responseText: '',
       withCredentials: false,
-      onload: null as any,
-      onerror: null as any,
-      onabort: null as any,
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
     };
 
     const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
-      return mockXhr as any;
-    } as any);
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
 
     await uploadEpisodeVideoSource('ep-1', {
       file,
@@ -1487,14 +1487,14 @@ describe('videos api', () => {
       status: 0,
       responseText: '',
       withCredentials: false,
-      onload: null as any,
-      onerror: null as any,
-      onabort: null as any,
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
     };
 
     const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
-      return mockXhr as any;
-    } as any);
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
 
     await expect(
       uploadEpisodeVideoSource('ep-1', {
@@ -1520,21 +1520,21 @@ describe('videos api', () => {
         mockXhr.responseText = JSON.stringify({
           error: { code: 'S3_NOT_CONFIGURED', message: 'S3 storage service is not configured' },
         });
-        mockXhr.onload();
+        mockXhr.onload?.();
       }),
       abort: vi.fn(),
       upload: {},
       status: 0,
       responseText: '',
       withCredentials: false,
-      onload: null as any,
-      onerror: null as any,
-      onabort: null as any,
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
     };
 
     const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
-      return mockXhr as any;
-    } as any);
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
 
     const err = await uploadEpisodeVideoSource('ep-1', {
       file,
@@ -1558,21 +1558,21 @@ describe('videos api', () => {
         mockXhr.responseText = JSON.stringify({
           error: { code: 'FILE_TOO_LARGE', message: 'File size exceeds the maximum allowed limit of 1GB' },
         });
-        mockXhr.onload();
+        mockXhr.onload?.();
       }),
       abort: vi.fn(),
       upload: {},
       status: 0,
       responseText: '',
       withCredentials: false,
-      onload: null as any,
-      onerror: null as any,
-      onabort: null as any,
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
     };
 
     const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
-      return mockXhr as any;
-    } as any);
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
 
     const err = await uploadEpisodeVideoSource('ep-1', {
       file,
@@ -1595,21 +1595,21 @@ describe('videos api', () => {
       send: vi.fn(function () {
         mockXhr.status = 413;
         mockXhr.responseText = '<html><body><h1>413 Request Entity Too Large</h1></body></html>';
-        mockXhr.onload();
+        mockXhr.onload?.();
       }),
       abort: vi.fn(),
       upload: {},
       status: 0,
       responseText: '',
       withCredentials: false,
-      onload: null as any,
-      onerror: null as any,
-      onabort: null as any,
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
     };
 
     const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
-      return mockXhr as any;
-    } as any);
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
 
     const err = await uploadEpisodeVideoSource('ep-1', {
       file,
@@ -1638,14 +1638,14 @@ describe('videos api', () => {
       }),
       upload: {},
       status: 0,
-      onload: null as any,
-      onerror: null as any,
-      onabort: null as any,
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
     };
 
     const xhrSpy = vi.spyOn(window, 'XMLHttpRequest').mockImplementation(function () {
-      return mockXhr as any;
-    } as any);
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
 
     await expect(
       uploadBinaryToS3({

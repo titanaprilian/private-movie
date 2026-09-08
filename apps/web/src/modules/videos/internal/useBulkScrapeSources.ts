@@ -10,7 +10,7 @@ export interface SeasonGroupOption {
   id: string;
   title?: string | null;
   tmdbSeason?: number | null;
-  episodes?: Array<{ id: string; title: string; order?: number; hasSources?: boolean; videoSources?: any[] }>;
+  episodes?: Array<{ id: string; title: string; order?: number; hasSources?: boolean; videoSources?: unknown[] }>;
 }
 
 export interface ScrapedEpisodePreviewItem {
@@ -37,12 +37,12 @@ export interface LocalEpisodeItem {
   seasonTitle?: string;
   seasonNumber?: number;
   hasSources?: boolean;
-  videoSources?: any[];
+  videoSources?: unknown[];
 }
 
-export function checkEpisodeHasSources(ep?: { hasSources?: boolean; videoSources?: any[] } | null): boolean {
+export function checkEpisodeHasSources(ep?: { hasSources?: boolean; videoSources?: unknown[] } | null): boolean {
   if (!ep) return false;
-  return ep.hasSources ?? (Array.isArray((ep as any).videoSources) && (ep as any).videoSources.length > 0);
+  return ep.hasSources ?? (Array.isArray(ep.videoSources) && ep.videoSources.length > 0);
 }
 
 export interface ProcessingLogItem {
@@ -112,7 +112,7 @@ export function getSeasonOffsetInfo(
 
   if (!seasonId) return emptyInfo;
 
-  let epList: Array<{ id: string; order?: number; hasSources?: boolean; videoSources?: any[] }> = [];
+  let epList: Array<{ id: string; order?: number; hasSources?: boolean; videoSources?: unknown[] }> = [];
 
   if (seasons && seasons.length > 0) {
     const seasonObj = seasons.find((s) => s.id === seasonId);
@@ -165,6 +165,11 @@ export function calculateSeasonOffset(
 
 export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   const queryClient = useQueryClient();
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  });
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceType, setSourceType] = useState(options?.initialSourceType ?? 'otakudesu');
@@ -439,14 +444,16 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
               )
             );
             successCount += 1;
-          } catch (err: any) {
+          } catch (err: unknown) {
+            const errorMessage =
+              err instanceof Error ? err.message : 'Failed to scrape episode sources';
             setProcessingLogs((prev) =>
               prev.map((log, idx) =>
                 idx === i
                   ? {
                       ...log,
                       status: 'error',
-                      message: `${item.scrapedTitle}: ${err?.message || 'Failed to scrape episode sources'}`,
+                      message: `${item.scrapedTitle}: ${errorMessage}`,
                     }
                   : log
               )
@@ -477,9 +484,11 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
 
         options?.onSuccess?.();
         return { success: true, savedCount: successCount, skippedCount, errorCount };
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to save bulk sources.';
         toast.error('Save Bulk Sources Error', {
-          description: error?.message || 'Failed to save bulk sources.',
+          description: errorMessage,
         });
         throw error;
       } finally {
@@ -523,10 +532,13 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   const reset = useCallback(() => {
     setStep(1);
     setSourceUrl('');
-    const defaultSeasonId = seasonOptions[0]?.id ?? '';
+    const currentSeasons = optionsRef.current?.seasons;
+    const currentLocalEps = optionsRef.current?.localEpisodes;
+    const currentSeasonOptions = getSeasonOptions(currentSeasons, currentLocalEps);
+    const defaultSeasonId = currentSeasonOptions[0]?.id ?? '';
     setSelectedSeasonId(defaultSeasonId);
     const initialOffset = defaultSeasonId
-      ? calculateSeasonOffset(defaultSeasonId, options?.seasons, options?.localEpisodes)
+      ? calculateSeasonOffset(defaultSeasonId, currentSeasons, currentLocalEps)
       : 0;
     setEpisodeOffset(initialOffset);
     setPreviewItems([]);
@@ -535,13 +547,13 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     setIsProcessing(false);
     setCompletedCount(0);
     resetPreviewRef.current();
-  }, [seasonOptions, options?.seasons, options?.localEpisodes]);
+  }, []);
 
   const totalCount = previewItems.length;
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const localEpisodesMap = useMemo(() => {
-    const map = new Map<string, { id: string; title: string; order?: number; hasSources?: boolean; videoSources?: any[] }>();
+    const map = new Map<string, { id: string; title: string; order?: number; hasSources?: boolean; videoSources?: unknown[] }>();
 
     if (options?.localEpisodes) {
       for (const ep of options.localEpisodes) {

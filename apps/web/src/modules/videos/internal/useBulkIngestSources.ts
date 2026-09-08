@@ -37,6 +37,10 @@ export interface UseBulkIngestSourcesOptions {
 
 export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
   const queryClient = useQueryClient();
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  });
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [rawUrlsText, setRawUrlsText] = useState('');
@@ -271,8 +275,11 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
           )
         );
         successCount++;
-      } catch (err: any) {
-        if (controller.signal.aborted || err.name === 'AbortError') {
+      } catch (err: unknown) {
+        const isAbort =
+          controller.signal.aborted ||
+          (err instanceof Error && err.name === 'AbortError');
+        if (isAbort) {
           setItems((prev) =>
             prev.map((item, idx) =>
               idx === i ? { ...item, status: 'failed', errorMessage: 'Cancelled' } : item
@@ -281,13 +288,16 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
           break;
         }
 
+        const errorMessage =
+          err instanceof Error ? err.message || 'Ingest failed' : 'Ingest failed';
+
         setItems((prev) =>
           prev.map((item, idx) =>
             idx === i
               ? {
                   ...item,
                   status: 'failed',
-                  errorMessage: err.message || 'Ingest failed',
+                  errorMessage,
                 }
               : item
           )
@@ -360,9 +370,13 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
     setItems([]);
     setIsProcessing(false);
     setCompletedCount(0);
-    const defaultSeasonId = seasonOptions[0]?.id ?? '';
+    const currentSeasonOptions = getSeasonOptions(
+      optionsRef.current?.seasons,
+      optionsRef.current?.localEpisodes
+    );
+    const defaultSeasonId = currentSeasonOptions[0]?.id ?? '';
     setSelectedSeasonId(defaultSeasonId);
-  }, [seasonOptions]);
+  }, []);
 
   const progressPercentage =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;

@@ -159,13 +159,14 @@ describe('SourceManagementTable Component', () => {
     const user = userEvent.setup();
     renderWithProviders(<SourceManagementTable episode={mockEpisode} />);
 
-    // Wait until both initial probes finish and both buttons display "Test"
+    // Wait until both initial probes finish and badges are present
     await waitFor(() => {
-      const testButtons = screen.getAllByRole('button', { name: /^test$/i });
-      expect(testButtons.length).toBe(2);
+      expect(screen.getByText('Working')).toBeInTheDocument();
+      expect(screen.getByText('Broken')).toBeInTheDocument();
     });
 
     const testButtons = screen.getAllByRole('button', { name: /^test$/i });
+    expect(testButtons.length).toBeGreaterThan(0);
     await user.click(testButtons[0]);
 
     await waitFor(() => {

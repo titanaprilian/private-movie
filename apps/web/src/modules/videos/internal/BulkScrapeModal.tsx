@@ -74,7 +74,7 @@ export function BulkScrapeModal({
       reset();
       setShowOverwriteConfirm(false);
     }
-  }, [open]);
+  }, [open, reset]);
 
   const handleOpenChange = (openState: boolean) => {
     if (isProcessing) return;

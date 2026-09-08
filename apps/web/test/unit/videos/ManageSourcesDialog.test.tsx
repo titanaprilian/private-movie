@@ -620,7 +620,7 @@ describe('ManageSourcesDialog component', () => {
     let triggerProgress: ((progress: { percent: number; loaded: number; total: number }) => void) | undefined;
     vi.mocked(apiModule.uploadEpisodeVideoSource).mockImplementation(
       (_episodeId, { onProgress }) =>
-        new Promise<apiModule.Episode>((_resolve) => {
+        new Promise<apiModule.Episode>(() => {
           triggerProgress = onProgress;
           // Keep promise pending so dialog stays in uploading state
         })

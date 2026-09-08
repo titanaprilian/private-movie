@@ -573,7 +573,7 @@ describe('useBulkScrapeSources hook', () => {
       const mockEpisodesWithVideoSources = [
         { id: 'ep-10', title: 'Ep 10', order: 1, videoSources: [{ type: 'otakudesu', url: 'http://ep10' }] },
         { id: 'ep-20', title: 'Ep 20', order: 2, videoSources: [] },
-      ] as any;
+      ];
 
       const { result } = renderHook(
         () => useBulkScrapeSources({ localEpisodes: mockEpisodesWithVideoSources }),
