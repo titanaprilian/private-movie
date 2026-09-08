@@ -788,19 +788,35 @@ export async function importTmdb(
   return res.data.data as unknown as SeriesDetails;
 }
 
+export interface TmdbPreviewSeason {
+  seasonNumber: number;
+  name: string;
+  episodeCount: number;
+  posterUrl: string | null;
+}
+
 export interface TmdbPreviewResult {
   title: string;
   overview: string;
   posterUrl: string | null;
+  backdropUrl?: string | null;
+  releaseDate?: string | null;
+  genres?: string[];
+  totalSeasons?: number;
+  totalEpisodes?: number;
+  status?: string | null;
+  seasons?: TmdbPreviewSeason[];
+  runtime?: number | null;
 }
 
 export async function fetchSeriesTmdbPreview(
   type: 'tv' | 'movie',
-  tmdbId: number
+  tmdbId: number,
+  includeSpecials?: boolean
 ): Promise<TmdbPreviewResult> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.series as any)['tmdb']['tmdb-preview'].get({
-    $query: { type, tmdbId },
+  const res = await (api.series as any)['tmdb-preview'].get({
+    $query: { type, tmdbId, includeSpecials },
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {

@@ -60,11 +60,12 @@ describe('useScrapeWorkerStore', () => {
 
     useScrapeWorkerStore.getState().setTmdbType('movie');
     useScrapeWorkerStore.getState().setTmdbId('550');
+    useScrapeWorkerStore.getState().setIncludeSpecials(true);
 
     const success = await useScrapeWorkerStore.getState().submitPreview();
 
     expect(success).toBe(true);
-    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('movie', 550);
+    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('movie', 550, true);
     expect(useScrapeWorkerStore.getState().isLoading).toBe(false);
     expect(useScrapeWorkerStore.getState().step).toBe(2);
     expect(useScrapeWorkerStore.getState().tmdbPreviewData).toEqual(mockTmdbPreview);

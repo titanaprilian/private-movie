@@ -1029,12 +1029,22 @@ describe('videos api', () => {
     fetchSpy.mockRestore();
   });
 
-  it('fetchSeriesTmdbPreview gets preview data from /series/tmdb/tmdb-preview', async () => {
+  it('fetchSeriesTmdbPreview gets preview data from /series/tmdb-preview', async () => {
     const mockData = {
       data: {
         title: 'TMDB Show',
         overview: 'Show overview',
         posterUrl: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+        backdropUrl: 'https://image.tmdb.org/t/p/w500/backdrop.jpg',
+        releaseDate: '2022-01-01',
+        genres: ['Action', 'Drama'],
+        status: 'Returning Series',
+        totalSeasons: 2,
+        totalEpisodes: 20,
+        seasons: [
+          { seasonNumber: 1, name: 'Season 1', episodeCount: 10, posterUrl: null },
+          { seasonNumber: 2, name: 'Season 2', episodeCount: 10, posterUrl: null },
+        ],
       },
     };
 
@@ -1054,12 +1064,15 @@ describe('videos api', () => {
       }
     );
 
-    const res = await fetchSeriesTmdbPreview('tv', 1399);
+    const res = await fetchSeriesTmdbPreview('tv', 1399, true);
 
-    expect(getUrl).toContain('/series/tmdb/tmdb-preview');
+    expect(getUrl).toContain('/series/tmdb-preview');
     expect(getUrl).toContain('type=tv');
     expect(getUrl).toContain('tmdbId=1399');
+    expect(getUrl).toContain('includeSpecials=true');
     expect(res.title).toBe('TMDB Show');
+    expect(res.totalSeasons).toBe(2);
+    expect(res.seasons).toHaveLength(2);
 
     fetchSpy.mockRestore();
   });

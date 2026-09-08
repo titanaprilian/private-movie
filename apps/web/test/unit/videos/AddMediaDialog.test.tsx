@@ -76,12 +76,21 @@ describe('AddMediaDialog component', () => {
     expect(useScrapeWorkerStore.getState().step).toBe(1);
   });
 
-  it('fetches TMDB preview and transitions to Step 2 with preview snapshot', async () => {
+  it('fetches TMDB preview and transitions to Step 2 with preview snapshot and TV season breakdown', async () => {
     const mockTmdbPreview: apiModule.TmdbPreviewResult = {
       title: 'Game of Thrones',
       overview:
         'Seven noble families fight for control of the mythical land of Westeros.',
       posterUrl: 'https://image.tmdb.org/t/p/w500/got.jpg',
+      releaseDate: '2011-04-17',
+      genres: ['Sci-Fi & Fantasy', 'Drama'],
+      status: 'Ended',
+      totalSeasons: 2,
+      totalEpisodes: 18,
+      seasons: [
+        { seasonNumber: 1, name: 'Season 1', episodeCount: 10, posterUrl: null },
+        { seasonNumber: 2, name: 'Season 2', episodeCount: 8, posterUrl: null },
+      ],
     };
 
     vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
@@ -98,7 +107,7 @@ describe('AddMediaDialog component', () => {
     const nextBtn = screen.getByRole('button', { name: /^Next$/i });
     await user.click(nextBtn);
 
-    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('tv', 1399);
+    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('tv', 1399, true);
 
     await waitFor(() => {
       expect(screen.getByText('TMDB Snapshot Overview')).toBeInTheDocument();
@@ -115,12 +124,53 @@ describe('AddMediaDialog component', () => {
       'src',
       'https://image.tmdb.org/t/p/w500/got.jpg'
     );
+    expect(screen.getByText('2011-04-17')).toBeInTheDocument();
+    expect(screen.getByText('Sci-Fi & Fantasy')).toBeInTheDocument();
+    expect(screen.getByText('Drama')).toBeInTheDocument();
+    expect(screen.getByText('Ended')).toBeInTheDocument();
+    expect(screen.getByText(/Season Breakdown/i)).toBeInTheDocument();
+    expect(screen.getByText('Season 1')).toBeInTheDocument();
+    expect(screen.getByText('Season 2')).toBeInTheDocument();
+    expect(screen.getByText('10 eps')).toBeInTheDocument();
+    expect(screen.getByText('8 eps')).toBeInTheDocument();
+
     expect(
       screen.getByRole('button', { name: /← Back to Edit/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /Import Series/i })
     ).toBeInTheDocument();
+  });
+
+  it('renders movie runtime in Step 2 for movie preview', async () => {
+    const mockMoviePreview: apiModule.TmdbPreviewResult = {
+      title: 'Inception',
+      overview: 'A thief who steals corporate secrets...',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/inception.jpg',
+      releaseDate: '2010-07-16',
+      genres: ['Action', 'Sci-Fi'],
+      runtime: 148,
+    };
+
+    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
+      mockMoviePreview
+    );
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    await user.selectOptions(screen.getByLabelText(/Media Type/i), 'movie');
+    await user.type(screen.getByLabelText(/TMDB ID/i), '550');
+    await user.click(screen.getByRole('button', { name: /^Next$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Inception')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('148 mins')).toBeInTheDocument();
+    expect(screen.getByText('2010-07-16')).toBeInTheDocument();
+    expect(screen.getByText('Action')).toBeInTheDocument();
+    expect(screen.getByText('Sci-Fi')).toBeInTheDocument();
   });
 
   it('allows navigating back to Step 1 from Step 2 via "← Back to Edit"', async () => {

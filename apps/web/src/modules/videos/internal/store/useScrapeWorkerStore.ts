@@ -47,7 +47,7 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
   backToStep1: () => set({ step: 1 }),
 
   submitPreview: async () => {
-    const { tmdbType, tmdbId } = get();
+    const { tmdbType, tmdbId, includeSpecials } = get();
 
     if (!tmdbId.trim()) {
       set({ error: 'TMDB ID is required.' });
@@ -63,7 +63,7 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const data = await fetchSeriesTmdbPreview(tmdbType, parsedId);
+      const data = await fetchSeriesTmdbPreview(tmdbType, parsedId, includeSpecials);
       set({
         isLoading: false,
         tmdbPreviewData: data,

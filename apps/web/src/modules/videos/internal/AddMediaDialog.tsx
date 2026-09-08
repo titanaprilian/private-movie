@@ -147,36 +147,112 @@ export function AddMediaDialog() {
               )}
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {tmdbPreviewData && (
-                <div className="bg-card border border-c rounded p-4 space-y-3">
-                  <div className="flex items-center justify-between border-b border-c pb-2">
-                    <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
-                      TMDB Snapshot Overview
-                    </span>
-                    <span className="text-[10px] mono px-2 py-0.5 rounded bg-muted/20 border border-c text-muted uppercase">
-                      {tmdbType} • ID #{tmdbId}
-                    </span>
-                  </div>
+                <>
+                  <div className="bg-card border border-c rounded p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-c pb-2">
+                      <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+                        TMDB Snapshot Overview
+                      </span>
+                      <span className="text-[10px] mono px-2 py-0.5 rounded bg-muted/20 border border-c text-muted uppercase">
+                        {tmdbType} • ID #{tmdbId}
+                      </span>
+                    </div>
 
-                  <div className="flex gap-4">
-                    {tmdbPreviewData.posterUrl && (
-                      <img
-                        src={tmdbPreviewData.posterUrl}
-                        alt={tmdbPreviewData.title}
-                        className="w-20 h-28 object-cover rounded border border-c shrink-0"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <h3 className="text-sm font-semibold text-current">
-                        {tmdbPreviewData.title}
-                      </h3>
-                      <p className="text-xs text-muted leading-relaxed line-clamp-4">
-                        {tmdbPreviewData.overview || 'No overview available.'}
-                      </p>
+                    <div className="flex gap-4">
+                      {tmdbPreviewData.posterUrl && (
+                        <img
+                          src={tmdbPreviewData.posterUrl}
+                          alt={tmdbPreviewData.title}
+                          className="w-20 h-28 object-cover rounded border border-c shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <h3 className="text-sm font-semibold text-current">
+                          {tmdbPreviewData.title}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {tmdbPreviewData.releaseDate && (
+                            <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                              {tmdbPreviewData.releaseDate}
+                            </span>
+                          )}
+                          {tmdbType === 'movie' && typeof tmdbPreviewData.runtime === 'number' && (
+                            <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                              {tmdbPreviewData.runtime} mins
+                            </span>
+                          )}
+                          {tmdbType === 'tv' && (
+                            <>
+                              {tmdbPreviewData.status && (
+                                <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                                  {tmdbPreviewData.status}
+                                </span>
+                              )}
+                              {typeof tmdbPreviewData.totalSeasons === 'number' && (
+                                <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                                  {tmdbPreviewData.totalSeasons} Seasons
+                                </span>
+                              )}
+                              {typeof tmdbPreviewData.totalEpisodes === 'number' && (
+                                <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                                  {tmdbPreviewData.totalEpisodes} Episodes
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        {tmdbPreviewData.genres && tmdbPreviewData.genres.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {tmdbPreviewData.genres.map((genre) => (
+                              <span
+                                key={genre}
+                                className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-card text-muted"
+                              >
+                                {genre}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs text-muted leading-relaxed line-clamp-3">
+                          {tmdbPreviewData.overview || 'No overview available.'}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+
+                  {tmdbType === 'tv' && tmdbPreviewData.seasons && tmdbPreviewData.seasons.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+                          Season Breakdown
+                        </span>
+                        <span className="text-[10px] mono text-muted">
+                          {tmdbPreviewData.totalSeasons ?? tmdbPreviewData.seasons.length} Seasons • {tmdbPreviewData.totalEpisodes ?? 0} Episodes
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                        {tmdbPreviewData.seasons.map((season) => (
+                          <div
+                            key={season.seasonNumber}
+                            className="flex items-center justify-between p-2 rounded border border-c bg-card text-xs"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="mono text-muted text-[11px] font-medium">
+                                S{season.seasonNumber}
+                              </span>
+                              <span className="font-medium text-fg">{season.name}</span>
+                            </div>
+                            <span className="mono text-[10px] px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                              {season.episodeCount} {season.episodeCount === 1 ? 'ep' : 'eps'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {importTmdbMutation.error && (
