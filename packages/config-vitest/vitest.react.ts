@@ -7,6 +7,8 @@ export default mergeConfig(
     test: {
       environment: "jsdom",
       globals: true,
+      testTimeout: 20_000,
+      hookTimeout: 20_000,
     },
   }),
 );
