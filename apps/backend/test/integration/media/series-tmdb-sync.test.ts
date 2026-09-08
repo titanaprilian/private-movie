@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import crypto from "node:crypto";
-import { createSaveEpisodeService, type SeriesWithEpisodes } from "@repo/media-service";
+import { createSaveEpisodeService, type SeriesWithEpisodes, type TmdbSyncPreviewResult } from "@repo/media-service";
 import { createDbClient } from "@repo/db";
 
 interface ErrorResponseBody {
@@ -240,5 +240,200 @@ describe("POST /series/:id/tmdb-sync", () => {
     expect(ep2).toBeDefined();
     expect(ep2?.id).not.toBe(existingEpisodeId);
     expect(ep2?.title).toBe("Newly Aired Episode 2");
+  });
+});
+
+describe("GET /series/:id/tmdb-sync-preview", () => {
+  let app: App;
+  let headers: Record<string, string>;
+
+  beforeAll(async () => {
+    process.env.TMDB_API_KEY = "test-tmdb-key";
+    app = await buildApp();
+    const user = await registerUser(app, {
+      email: `series-tmdb-preview-${crypto.randomUUID()}@example.com`,
+      password: "password123",
+      name: "Series TMDB Sync Preview Tester",
+    });
+    headers = authHeaders(user.accessToken);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns 401 Unauthorized when Bearer token is missing or invalid", async () => {
+    const validUuid = crypto.randomUUID();
+    const resNoToken = await request(app, {
+      method: "GET",
+      path: `/series/${validUuid}/tmdb-sync-preview?type=tv&tmdbId=100`,
+    });
+    expect(resNoToken.status).toBe(401);
+
+    const resInvalidToken = await request(app, {
+      method: "GET",
+      path: `/series/${validUuid}/tmdb-sync-preview?type=tv&tmdbId=100`,
+      headers: { authorization: "Bearer invalid-token" },
+    });
+    expect(resInvalidToken.status).toBe(401);
+  });
+
+  it("returns 404 Not Found when target series ID does not exist", async () => {
+    const nonExistentId = crypto.randomUUID();
+    const res = await request(app, {
+      method: "GET",
+      path: `/series/${nonExistentId}/tmdb-sync-preview?type=tv&tmdbId=100`,
+      headers,
+    });
+
+    expect(res.status).toBe(404);
+    const body = res.body as ErrorResponseBody;
+    expect(body.error.code).toBe("SERIES_NOT_FOUND");
+  });
+
+  it("returns 404 Not Found when TMDB returns 404 for tmdbId", async () => {
+    const mediaService = createSaveEpisodeService(db);
+    const initial = await mediaService.saveMedia({
+      episode: {
+        sourceUrl: "https://example.com/ep1",
+        source: "otakudesu",
+        title: "Initial Episode",
+        metadata: {},
+      },
+      series: {
+        sourceUrl: "https://example.com/anime/test-series-sync-prev-404",
+        source: "otakudesu",
+        title: "Test Series Sync Prev 404",
+        description: "Initial description",
+        posterUrl: "https://example.com/poster.jpg",
+      },
+    });
+
+    const seriesId = initial.series!.id;
+
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const url = input.toString();
+      if (url.includes("/tv/999999")) {
+        return new Response(JSON.stringify({ status_message: "The resource you requested could not be found." }), {
+          status: 404,
+        });
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const res = await request(app, {
+      method: "GET",
+      path: `/series/${seriesId}/tmdb-sync-preview?type=tv&tmdbId=999999`,
+      headers,
+    });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("returns detailed diff including episodeChanges, seasonDiffs, and seriesUpdated=true", async () => {
+    const mediaService = createSaveEpisodeService(db);
+    const initial = await mediaService.saveMedia({
+      episode: {
+        sourceUrl: "https://example.com/ep1",
+        source: "otakudesu",
+        title: "Old Episode 1 Title",
+        metadata: {},
+      },
+      series: {
+        sourceUrl: "https://example.com/anime/test-series-sync-prev-diff",
+        source: "otakudesu",
+        title: "Old Series Title",
+        description: "Old Series Description",
+        posterUrl: "https://example.com/old_poster.jpg",
+      },
+    });
+
+    const seriesId = initial.series!.id;
+
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const url = input.toString();
+      if (url.includes("/tv/500/season/1")) {
+        return new Response(
+          JSON.stringify({
+            season_number: 1,
+            name: "Season 1",
+            overview: "Season 1 overview",
+            poster_path: "/s1.jpg",
+            episodes: [
+              {
+                episode_number: 1,
+                name: "Updated Episode 1 Title",
+                overview: "Freshly translated overview from TMDB",
+                still_path: "/ep1_thumb.jpg",
+                air_date: "2023-01-01",
+              },
+              {
+                episode_number: 2,
+                name: "New Episode 2",
+                overview: "New ep overview",
+                still_path: "/ep2_thumb.jpg",
+                air_date: "2023-01-08",
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes("/tv/500")) {
+        return new Response(
+          JSON.stringify({
+            id: 500,
+            name: "Updated Series Title",
+            overview: "Updated Series Description",
+            poster_path: "/new_poster.jpg",
+            backdrop_path: "/new_backdrop.jpg",
+            vote_average: 8.8,
+            first_air_date: "2023-01-01",
+            genres: [{ id: 1, name: "Anime" }],
+            seasons: [
+              {
+                season_number: 1,
+                name: "Season 1",
+                poster_path: "/season1.jpg",
+                episode_count: 2,
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const res = await request(app, {
+      method: "GET",
+      path: `/series/${seriesId}/tmdb-sync-preview?type=tv&tmdbId=500`,
+      headers,
+    });
+
+    expect(res.status).toBe(200);
+
+    const body = res.body as SuccessResponseBody<TmdbSyncPreviewResult>;
+    expect(body.data.seriesId).toBe(seriesId);
+    expect(body.data.seriesUpdated).toBe(true);
+    expect(body.data.series.title).toBe("Updated Series Title");
+    expect(body.data.series.overview).toBe("Updated Series Description");
+    expect(body.data.totalNewEpisodes).toBe(1); // Episode 2 is new
+    expect(body.data.totalUpdatedEpisodes).toBe(1); // Episode 1 has changed title/overview/thumbnail
+    expect(body.data.seasonDiffs).toHaveLength(1);
+    expect(body.data.seasonDiffs[0].diff).toBe(1);
+    expect(body.data.episodeChanges).toHaveLength(1);
+    expect(body.data.episodeChanges[0]).toEqual(
+      expect.objectContaining({
+        seasonNumber: 1,
+        episodeNumber: 1,
+        oldTitle: "Old Episode 1 Title",
+        newTitle: "Updated Episode 1 Title",
+        newOverview: "Freshly translated overview from TMDB",
+        titleChanged: true,
+        overviewChanged: true,
+        thumbnailChanged: true,
+      })
+    );
   });
 });

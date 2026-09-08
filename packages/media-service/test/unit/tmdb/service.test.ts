@@ -564,3 +564,209 @@ describe("createMediaService syncTmdb", () => {
     expect(result).toBeDefined();
   });
 });
+
+describe("createMediaService getTmdbSyncPreview", () => {
+  it("throws SeriesNotFoundError when series does not exist", async () => {
+    const mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    } as any;
+
+    const mediaService = createMediaService(mockDb);
+
+    await expect(
+      mediaService.getTmdbSyncPreview("non-existent-id", { type: "tv", tmdbId: 100 })
+    ).rejects.toThrow(SeriesNotFoundError);
+  });
+
+  it("calculates diffs, flags modified episode titles/overviews/thumbnails, and computes new episodes", async () => {
+    const seriesId = "series-diff-1";
+
+    const mockSeriesRow = {
+      id: seriesId,
+      title: "Local Title",
+      description: "Old Local Description",
+      type: "tv",
+      posterUrl: "https://image.tmdb.org/t/p/w500/old_poster.jpg",
+      backdropUrl: null,
+      rating: "7.0",
+      tmdbId: 100,
+      tmdbSyncStatus: "SYNCED",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
+
+    const mockSeasonRow = {
+      id: "season-1",
+      seriesId,
+      seasonNumber: 1,
+      title: "Season 1",
+      description: "Season 1 desc",
+      posterUrl: null,
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
+
+    const mockEpisodeRow = {
+      id: "ep-1",
+      seasonId: "season-1",
+      order: 1,
+      title: "Old Episode Title",
+      description: "Old Episode Overview",
+      thumbnailUrl: "https://image.tmdb.org/t/p/w500/old_ep1.jpg",
+      rating: "8.0",
+      airDate: "2021-01-01",
+      duration: 45,
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
+
+    const mockDb = {
+      select: vi.fn().mockImplementation(() => {
+        return {
+          from: vi.fn().mockImplementation((table: any) => {
+            return {
+              innerJoin: vi.fn().mockReturnThis(),
+              where: vi.fn().mockImplementation(() => {
+                const promise = Promise.resolve([mockSeriesRow]);
+                (promise as any).orderBy = vi.fn().mockImplementation(() => {
+                  const tableName = table?.[Symbol.for("drizzle:Name")] || table?.name || table?._?.name;
+                  if (tableName === "seasons") {
+                    return Promise.resolve([mockSeasonRow]);
+                  }
+                  if (tableName === "episodes") {
+                    return Promise.resolve([mockEpisodeRow]);
+                  }
+                  return Promise.resolve([]);
+                });
+                return promise;
+              }),
+              orderBy: vi.fn().mockImplementation(() => {
+                return Promise.resolve([]);
+              }),
+            };
+          }),
+        };
+      }),
+    } as any;
+
+    process.env.TMDB_API_KEY = "test-key";
+    const mockFetchFn = vi.fn().mockImplementation((url: string) => {
+      if (url === "https://api.themoviedb.org/3/tv/100") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: 100,
+              name: "New TMDB Title",
+              overview: "New TMDB Description",
+              poster_path: "/new_poster.jpg",
+              backdrop_path: "/new_backdrop.jpg",
+              first_air_date: "2021-01-01",
+              vote_average: 8.5,
+              genres: [{ id: 1, name: "Drama" }],
+              seasons: [
+                { id: 11, season_number: 1, name: "Season 1", episode_count: 2 },
+                { id: 12, season_number: 2, name: "Season 2", episode_count: 5 },
+              ],
+            }),
+            { status: 200 }
+          )
+        );
+      }
+
+      if (url === "https://api.themoviedb.org/3/tv/100/season/1") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: 11,
+              season_number: 1,
+              name: "Season 1",
+              episodes: [
+                {
+                  episode_number: 1,
+                  name: "Updated Episode Title",
+                  overview: "Updated Episode Overview",
+                  still_path: "/new_ep1.jpg",
+                  air_date: "2021-01-01",
+                },
+                {
+                  episode_number: 2,
+                  name: "Episode 2 (Brand New)",
+                  overview: "Brand new ep overview",
+                  still_path: "/new_ep2.jpg",
+                  air_date: "2021-01-08",
+                },
+              ],
+            }),
+            { status: 200 }
+          )
+        );
+      }
+
+      if (url === "https://api.themoviedb.org/3/tv/100/season/2") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: 12,
+              season_number: 2,
+              name: "Season 2",
+              episodes: [
+                {
+                  episode_number: 1,
+                  name: "S2 Episode 1",
+                  overview: "S2 Ep 1",
+                  still_path: null,
+                  air_date: "2022-01-01",
+                },
+              ],
+            }),
+            { status: 200 }
+          )
+        );
+      }
+
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    vi.spyOn(global, "fetch").mockImplementation(mockFetchFn as any);
+
+    const mediaService = createMediaService(mockDb);
+    const preview = await mediaService.getTmdbSyncPreview(seriesId, {
+      type: "tv",
+      tmdbId: 100,
+    });
+
+    expect(preview.seriesId).toBe(seriesId);
+    expect(preview.seriesUpdated).toBe(true);
+    expect(preview.series.title).toBe("New TMDB Title");
+    expect(preview.series.overview).toBe("New TMDB Description");
+    expect(preview.series.rating).toBe("8.5");
+
+    // Season diffs
+    expect(preview.totalNewSeasons).toBe(1); // Season 2 is new
+    expect(preview.totalNewEpisodes).toBe(2); // 1 new ep in S1, 1 new ep in S2
+    expect(preview.seasonDiffs).toHaveLength(2);
+
+    // Episode changes
+    expect(preview.totalUpdatedEpisodes).toBe(1);
+    expect(preview.episodeChanges).toHaveLength(1);
+    expect(preview.episodeChanges[0]).toEqual(
+      expect.objectContaining({
+        seasonNumber: 1,
+        episodeNumber: 1,
+        oldTitle: "Old Episode Title",
+        newTitle: "Updated Episode Title",
+        oldOverview: "Old Episode Overview",
+        newOverview: "Updated Episode Overview",
+        oldThumbnailUrl: "https://image.tmdb.org/t/p/w500/old_ep1.jpg",
+        newThumbnailUrl: "https://image.tmdb.org/t/p/w500/new_ep1.jpg",
+        titleChanged: true,
+        overviewChanged: true,
+        thumbnailChanged: true,
+      })
+    );
+  });
+});

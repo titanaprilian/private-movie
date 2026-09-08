@@ -58,6 +58,10 @@ import {
   type TmdbEpisodeDetails,
   type TmdbImportInput,
   type TmdbSyncInput,
+  type TmdbSyncPreviewInput,
+  type TmdbSyncPreviewResult,
+  type SeasonSyncDiffItem,
+  type EpisodeChangeItem,
   type TmdbPreviewResult,
   type TmdbPreviewSeason,
   type TmdbSeasonDetailsResponse,
@@ -76,6 +80,10 @@ export type {
   TmdbEpisodeDetails,
   TmdbImportInput,
   TmdbSyncInput,
+  TmdbSyncPreviewInput,
+  TmdbSyncPreviewResult,
+  SeasonSyncDiffItem,
+  EpisodeChangeItem,
   TmdbPreviewResult,
   TmdbPreviewSeason,
   TmdbSeasonDetailsResponse,
@@ -358,6 +366,7 @@ export interface MediaService {
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   importTmdb(input: TmdbImportInput): Promise<SeriesWithSeasons>;
   getTmdbPreview(type: "tv" | "movie", tmdbId: number, includeSpecials?: boolean): Promise<TmdbPreviewResult>;
+  getTmdbSyncPreview(seriesId: string, input: TmdbSyncPreviewInput): Promise<TmdbSyncPreviewResult>;
   syncTmdb(seriesId: string, input: TmdbSyncInput): Promise<SeriesWithEpisodes>;
 }
 
@@ -807,6 +816,155 @@ export function createMediaService<
 
     async getTmdbPreview(type: "tv" | "movie", tmdbId: number, includeSpecials?: boolean): Promise<TmdbPreviewResult> {
       return getTmdbPreview(tmdbId, { type, includeSpecials });
+    },
+
+    async getTmdbSyncPreview(
+      seriesId: string,
+      input: TmdbSyncPreviewInput
+    ): Promise<TmdbSyncPreviewResult> {
+      const existingSeries = await seriesRepository.findByIdWithEpisodes(seriesId);
+      if (!existingSeries) {
+        throw new SeriesNotFoundError(`Series with id ${seriesId} not found`);
+      }
+
+      const data = await fetchTmdbSeriesData(input.tmdbId, {
+        type: input.type,
+        includeSpecials: input.includeSpecials,
+      });
+
+      const incomingRating = data.voteAverage ? String(data.voteAverage) : null;
+      const seriesUpdated =
+        (existingSeries.description ?? null) !== (data.description ?? null) ||
+        (existingSeries.posterUrl ?? null) !== (data.posterPath ?? null) ||
+        (existingSeries.backdropUrl ?? null) !== (data.backdropPath ?? null) ||
+        (existingSeries.rating ?? null) !== (incomingRating ?? null) ||
+        (existingSeries.title ?? null) !== (data.title ?? null);
+
+      const seasonDiffs: SeasonSyncDiffItem[] = [];
+      const episodeChanges: EpisodeChangeItem[] = [];
+
+      const localSeasons = existingSeries.seasons || [];
+      const localAllEpisodes = existingSeries.episodes || [];
+
+      for (const sMeta of data.seasons) {
+        let localSeason = localSeasons.find(
+          (s) => s.seasonNumber === sMeta.seasonNumber
+        );
+
+        let isNewSeason = false;
+        let localEpisodes: EpisodeWithVideoSources[] = [];
+
+        if (localSeason) {
+          localEpisodes = localSeason.episodes || [];
+        } else if (localSeasons.length === 0 && sMeta.seasonNumber === 1 && localAllEpisodes.length > 0) {
+          localEpisodes = localAllEpisodes;
+        } else {
+          isNewSeason = true;
+        }
+
+        const diff = isNewSeason
+          ? sMeta.episodes.length
+          : Math.max(0, sMeta.episodes.length - localEpisodes.length);
+
+        let badgeText = "";
+        let badgeType: SeasonSyncDiffItem["badgeType"] = "existing";
+
+        if (isNewSeason) {
+          badgeText = `New Season (${sMeta.episodes.length} ${
+            sMeta.episodes.length === 1 ? "ep" : "eps"
+          })`;
+          badgeType = "new-season";
+        } else if (diff > 0) {
+          badgeText = `+${diff} new ${diff === 1 ? "ep" : "eps"} (${localEpisodes.length} → ${sMeta.episodes.length})`;
+          badgeType = "new-eps";
+        } else {
+          badgeText = `Existing (${localEpisodes.length} ${
+            localEpisodes.length === 1 ? "ep" : "eps"
+          })`;
+          badgeType = "existing";
+        }
+
+        seasonDiffs.push({
+          seasonNumber: sMeta.seasonNumber,
+          name: sMeta.name,
+          incomingEpisodeCount: sMeta.episodes.length,
+          localEpisodeCount: localEpisodes.length,
+          diff,
+          isNewSeason,
+          badgeText,
+          badgeType,
+        });
+
+        if (!isNewSeason && localEpisodes.length > 0) {
+          for (const ep of sMeta.episodes) {
+            const localEp = localEpisodes.find((e) => e.order === ep.episode_number);
+            if (localEp) {
+              const incomingTitle = ep.name || `Episode ${ep.episode_number}`;
+              const incomingOverview = ep.overview ?? null;
+              const incomingThumbnail = ep.still_path
+                ? ep.still_path.startsWith("http")
+                  ? ep.still_path
+                  : `https://image.tmdb.org/t/p/w500${ep.still_path}`
+                : null;
+              const incomingAirDate = ep.air_date
+                ? new Date(ep.air_date).toISOString().split("T")[0]
+                : null;
+              const oldAirDate = localEp.airDate
+                ? localEp.airDate instanceof Date
+                  ? localEp.airDate.toISOString().split("T")[0]
+                  : String(localEp.airDate).split("T")[0]
+                : null;
+
+              const titleChanged = (localEp.title ?? "") !== incomingTitle;
+              const overviewChanged = (localEp.description ?? null) !== incomingOverview;
+              const thumbnailChanged = (localEp.thumbnailUrl ?? null) !== incomingThumbnail;
+              const airDateChanged = (oldAirDate ?? null) !== incomingAirDate;
+
+              if (titleChanged || overviewChanged || thumbnailChanged || airDateChanged) {
+                episodeChanges.push({
+                  seasonNumber: sMeta.seasonNumber,
+                  episodeNumber: ep.episode_number,
+                  oldTitle: localEp.title,
+                  newTitle: incomingTitle,
+                  oldOverview: localEp.description ?? null,
+                  newOverview: incomingOverview,
+                  oldThumbnailUrl: localEp.thumbnailUrl ?? null,
+                  newThumbnailUrl: incomingThumbnail,
+                  oldAirDate,
+                  newAirDate: incomingAirDate,
+                  titleChanged,
+                  overviewChanged,
+                  thumbnailChanged,
+                  airDateChanged,
+                });
+              }
+            }
+          }
+        }
+      }
+
+      const totalNewEpisodes = seasonDiffs.reduce((acc, item) => acc + item.diff, 0);
+      const totalNewSeasons = seasonDiffs.filter((item) => item.isNewSeason).length;
+      const totalUpdatedEpisodes = episodeChanges.length;
+
+      return {
+        seriesId,
+        seriesUpdated,
+        series: {
+          title: data.title,
+          overview: data.description,
+          posterUrl: data.posterPath,
+          backdropUrl: data.backdropPath,
+          rating: incomingRating,
+          releaseDate: data.firstAirDate,
+          genres: data.genres,
+        },
+        totalNewEpisodes,
+        totalNewSeasons,
+        totalUpdatedEpisodes,
+        seasonDiffs,
+        episodeChanges,
+      };
     },
 
     async syncTmdb(seriesId: string, input: TmdbSyncInput): Promise<SeriesWithEpisodes> {

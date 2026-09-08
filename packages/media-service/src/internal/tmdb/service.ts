@@ -159,6 +159,60 @@ export interface TmdbSyncInput {
   includeSpecials?: boolean;
 }
 
+export interface TmdbSyncPreviewInput {
+  type: "tv" | "movie";
+  tmdbId: number;
+  includeSpecials?: boolean;
+}
+
+export interface EpisodeChangeItem {
+  seasonNumber: number;
+  episodeNumber: number;
+  oldTitle: string;
+  newTitle: string;
+  oldOverview: string | null;
+  newOverview: string | null;
+  oldThumbnailUrl: string | null;
+  newThumbnailUrl: string | null;
+  oldAirDate: string | null;
+  newAirDate: string | null;
+  titleChanged: boolean;
+  overviewChanged: boolean;
+  thumbnailChanged: boolean;
+  airDateChanged: boolean;
+}
+
+export interface SeasonSyncDiffItem {
+  seasonNumber: number;
+  name: string;
+  incomingEpisodeCount: number;
+  localEpisodeCount: number;
+  diff: number;
+  isNewSeason: boolean;
+  badgeText: string;
+  badgeType: "existing" | "new-eps" | "new-season";
+}
+
+export interface TmdbSyncPreviewResult {
+  seriesId: string;
+  seriesUpdated: boolean;
+  series: {
+    title: string;
+    overview: string | null;
+    posterUrl: string | null;
+    backdropUrl: string | null;
+    rating: string | null;
+    releaseDate: string | null;
+    genres: string[];
+    status?: string | null;
+  };
+  totalNewEpisodes: number;
+  totalNewSeasons: number;
+  totalUpdatedEpisodes: number;
+  seasonDiffs: SeasonSyncDiffItem[];
+  episodeChanges: EpisodeChangeItem[];
+}
+
 export interface TmdbPreviewSeason {
   seasonNumber: number;
   name: string;
@@ -344,25 +398,25 @@ export async function fetchTmdbSeriesData(
     const rawSeasons = Array.isArray(seriesData.seasons) ? seriesData.seasons : [];
     const targetSeasons = rawSeasons.filter((s) => (includeSpecials ? s.season_number >= 0 : s.season_number > 0));
 
-    const seasonsFullData: TmdbSeasonFullData[] = [];
+    const seasonsFullData: TmdbSeasonFullData[] = await Promise.all(
+      targetSeasons.map(async (sMeta) => {
+        const seasonUrl = `https://api.themoviedb.org/3/tv/${tmdbId}/season/${sMeta.season_number}`;
+        const seasonData: TmdbSeasonDetailsResponse = await fetchFn(seasonUrl, { headers });
 
-    for (const sMeta of targetSeasons) {
-      const seasonUrl = `https://api.themoviedb.org/3/tv/${tmdbId}/season/${sMeta.season_number}`;
-      const seasonData: TmdbSeasonDetailsResponse = await fetchFn(seasonUrl, { headers });
-
-      seasonsFullData.push({
-        seasonNumber: sMeta.season_number,
-        name: seasonData.name ?? sMeta.name ?? `Season ${sMeta.season_number}`,
-        overview: seasonData.overview ?? sMeta.overview ?? null,
-        posterPath: seasonData.poster_path
-          ? `https://image.tmdb.org/t/p/w500${seasonData.poster_path}`
-          : sMeta.poster_path
-          ? `https://image.tmdb.org/t/p/w500${sMeta.poster_path}`
-          : null,
-        airDate: seasonData.air_date ?? sMeta.air_date ?? null,
-        episodes: Array.isArray(seasonData.episodes) ? seasonData.episodes : [],
-      });
-    }
+        return {
+          seasonNumber: sMeta.season_number,
+          name: seasonData.name ?? sMeta.name ?? `Season ${sMeta.season_number}`,
+          overview: seasonData.overview ?? sMeta.overview ?? null,
+          posterPath: seasonData.poster_path
+            ? `https://image.tmdb.org/t/p/w500${seasonData.poster_path}`
+            : sMeta.poster_path
+            ? `https://image.tmdb.org/t/p/w500${sMeta.poster_path}`
+            : null,
+          airDate: seasonData.air_date ?? sMeta.air_date ?? null,
+          episodes: Array.isArray(seasonData.episodes) ? seasonData.episodes : [],
+        };
+      })
+    );
 
     return {
       tmdbId: seriesData.id ?? tmdbId,
