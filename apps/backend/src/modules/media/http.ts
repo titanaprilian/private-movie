@@ -1435,6 +1435,51 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
 
     // --- TMDB MANUAL MATCH START ---
     .post(
+      "/series/:id/tmdb-sync",
+      async ({ params, body, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const result = await mediaService.syncTmdb(params.id, body);
+          return successResponse(result);
+        } catch (e: unknown) {
+          if (e instanceof SeriesNotFoundError) {
+            return errorResponse(set, 404, e);
+          }
+          if (e instanceof TmdbFetchError) {
+            return errorResponse(set, e.status === 404 ? 404 : 400, e);
+          }
+          if (e instanceof Error) {
+            return errorResponse(set, 400, e);
+          }
+          return errorResponse(set, 500, new InternalServerError());
+        }
+      },
+      {
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          type: t.Union([t.Literal("tv"), t.Literal("movie")]),
+          tmdbId: t.Numeric(),
+          includeSpecials: t.Optional(t.Boolean()),
+        }),
+      }
+    )
+    .post(
       "/series/tmdb-import",
       async ({ body, headers, set }) => {
         const authHeader = headers["authorization"];

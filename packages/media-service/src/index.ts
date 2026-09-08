@@ -57,6 +57,7 @@ import {
   type GetTmdbPreviewOptions,
   type TmdbEpisodeDetails,
   type TmdbImportInput,
+  type TmdbSyncInput,
   type TmdbPreviewResult,
   type TmdbPreviewSeason,
   type TmdbSeasonDetailsResponse,
@@ -74,6 +75,7 @@ export type {
   GetTmdbPreviewOptions,
   TmdbEpisodeDetails,
   TmdbImportInput,
+  TmdbSyncInput,
   TmdbPreviewResult,
   TmdbPreviewSeason,
   TmdbSeasonDetailsResponse,
@@ -249,7 +251,7 @@ export interface SaveMediaInput {
   series?: SaveMediaSeriesInput | null;
 }
 
-import type { SeriesWithSeasons } from "./internal/series/repository";
+import type { SeriesWithSeasons, SeriesWithEpisodes } from "./internal/series/repository";
 
 export interface SaveMediaResult {
   episode: EpisodeWithVideoSources;
@@ -356,6 +358,7 @@ export interface MediaService {
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   importTmdb(input: TmdbImportInput): Promise<SeriesWithSeasons>;
   getTmdbPreview(type: "tv" | "movie", tmdbId: number, includeSpecials?: boolean): Promise<TmdbPreviewResult>;
+  syncTmdb(seriesId: string, input: TmdbSyncInput): Promise<SeriesWithEpisodes>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -804,6 +807,143 @@ export function createMediaService<
 
     async getTmdbPreview(type: "tv" | "movie", tmdbId: number, includeSpecials?: boolean): Promise<TmdbPreviewResult> {
       return getTmdbPreview(tmdbId, { type, includeSpecials });
+    },
+
+    async syncTmdb(seriesId: string, input: TmdbSyncInput): Promise<SeriesWithEpisodes> {
+      const existingSeries = await seriesRepository.findById(seriesId);
+      if (!existingSeries) {
+        throw new SeriesNotFoundError(`Series with id ${seriesId} not found`);
+      }
+
+      const data = await fetchTmdbSeriesData(input.tmdbId, {
+        type: input.type,
+        includeSpecials: input.includeSpecials,
+      });
+
+      await db.transaction(async (tx: any) => {
+        await tx
+          .update(series)
+          .set({
+            title: data.title,
+            description: data.description,
+            posterUrl: data.posterPath,
+            backdropUrl: data.backdropPath,
+            rating: data.voteAverage ? String(data.voteAverage) : null,
+            tmdbId: data.tmdbId,
+            type: data.type ?? input.type,
+            tmdbSyncStatus: "SYNCED",
+            updatedAt: new Date(),
+          })
+          .where(eq(series.id, seriesId));
+
+        await tx
+          .delete(seriesToGenres)
+          .where(eq(seriesToGenres.seriesId, seriesId));
+
+        const rawGenres = data.genres || [];
+        const genreNames = Array.from(
+          new Set(rawGenres.map((g) => g.trim()).filter(Boolean))
+        );
+
+        if (genreNames.length > 0) {
+          const genreValues = genreNames.map((name) => ({
+            id: randomUUID(),
+            name,
+            slug: slugifyGenre(name),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }));
+
+          const genreRows = await tx
+            .insert(genres)
+            .values(genreValues)
+            .onConflictDoUpdate({
+              target: genres.name,
+              set: {
+                updatedAt: new Date(),
+              },
+            })
+            .returning({ id: genres.id });
+
+          const seriesToGenreRows = (genreRows || []).map((g: any) => ({
+            seriesId,
+            genreId: g.id,
+          }));
+
+          if (seriesToGenreRows.length > 0) {
+            await tx
+              .insert(seriesToGenres)
+              .values(seriesToGenreRows)
+              .onConflictDoNothing();
+          }
+        }
+
+        for (const season of data.seasons) {
+          const [seasonRow] = await tx
+            .insert(seasons)
+            .values({
+              id: randomUUID(),
+              seriesId,
+              seasonNumber: season.seasonNumber,
+              title: season.name,
+              description: season.overview,
+              posterUrl: season.posterPath,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              tmdbSyncStatus: "SYNCED",
+            })
+            .onConflictDoUpdate({
+              target: [seasons.seriesId, seasons.seasonNumber],
+              set: {
+                title: season.name,
+                description: season.overview,
+                posterUrl: season.posterPath,
+                updatedAt: new Date(),
+                tmdbSyncStatus: "SYNCED",
+              },
+            })
+            .returning();
+
+          for (const episode of season.episodes) {
+            const thumbnailUrl = episode.still_path
+              ? episode.still_path.startsWith("http")
+                ? episode.still_path
+                : `https://image.tmdb.org/t/p/w500${episode.still_path}`
+              : null;
+
+            await tx
+              .insert(episodes)
+              .values({
+                id: randomUUID(),
+                seasonId: seasonRow.id,
+                order: episode.episode_number,
+                title: episode.name || `Episode ${episode.episode_number}`,
+                description: episode.overview,
+                thumbnailUrl,
+                rating: episode.vote_average ? String(episode.vote_average) : null,
+                airDate: episode.air_date ? new Date(episode.air_date) : null,
+                duration: episode.runtime || null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .onConflictDoUpdate({
+                target: [episodes.seasonId, episodes.order],
+                set: {
+                  title: episode.name || `Episode ${episode.episode_number}`,
+                  description: episode.overview,
+                  thumbnailUrl,
+                  rating: episode.vote_average ? String(episode.vote_average) : null,
+                  airDate: episode.air_date ? new Date(episode.air_date) : null,
+                  duration: episode.runtime || null,
+                  updatedAt: new Date(),
+                },
+              });
+          }
+        }
+      });
+
+      const updated = await seriesRepository.findByIdWithEpisodes(seriesId);
+      return updated!;
     },
   };
 }

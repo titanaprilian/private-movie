@@ -4,6 +4,7 @@ import {
   saveTmdbSeries,
   getTmdbPreview,
   TmdbFetchError,
+  SeriesNotFoundError,
   createMediaService,
 } from "../../../src";
 
@@ -406,5 +407,160 @@ describe("saveTmdbSeries database upserts", () => {
     const episodeValues = mockValues.mock.calls[4][0];
     expect(episodeValues.order).toBe(1);
     expect(episodeValues.duration).toBe(148);
+  });
+});
+
+describe("createMediaService syncTmdb", () => {
+  it("throws SeriesNotFoundError when target seriesId does not exist", async () => {
+    const mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      }),
+    } as any;
+
+    const mediaService = createMediaService(mockDb);
+
+    await expect(
+      mediaService.syncTmdb("non-existent-id", { type: "tv", tmdbId: 100 })
+    ).rejects.toThrow(SeriesNotFoundError);
+  });
+
+  it("updates series metadata, genres, upserts seasons and episodes in transaction", async () => {
+    const seriesId = "existing-series-id";
+
+    const mockSeriesRow = {
+      id: seriesId,
+      title: "Old Title",
+      description: "Old Description",
+      type: "tv",
+      posterUrl: null,
+      backdropUrl: null,
+      rating: null,
+      tmdbId: 100,
+      tmdbSyncStatus: "PENDING",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
+
+    const mockUpdatedSeriesRow = {
+      ...mockSeriesRow,
+      title: "Updated TMDB Title",
+      description: "Updated TMDB Description",
+      tmdbSyncStatus: "SYNCED",
+    };
+
+    const mockWhere = vi.fn().mockResolvedValue(undefined);
+    const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
+
+    const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
+    const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
+
+    const mockReturning = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: "genre-id-1" }])
+      .mockResolvedValueOnce([{ id: "season-id-1", seasonNumber: 1 }]);
+
+    const mockOnConflictDoNothing = vi.fn().mockResolvedValue(undefined);
+    const mockOnConflictDoUpdate = vi.fn().mockReturnValue({
+      returning: mockReturning,
+      then: (cb: any) => Promise.resolve([{ id: "ep-id-1" }]).then(cb),
+    });
+
+    const mockValues = vi.fn().mockImplementation(() => ({
+      onConflictDoUpdate: mockOnConflictDoUpdate,
+      onConflictDoNothing: mockOnConflictDoNothing,
+    }));
+
+    const mockInsert = vi.fn().mockReturnValue({
+      values: mockValues,
+    });
+
+    const mockTx = {
+      update: mockUpdate,
+      insert: mockInsert,
+      delete: mockDelete,
+    };
+
+    const mockDb = {
+      select: vi.fn().mockImplementation(() => {
+        return {
+          from: vi.fn().mockImplementation((table: any) => {
+            return {
+              innerJoin: vi.fn().mockReturnThis(),
+              where: vi.fn().mockImplementation(() => {
+                const promise = Promise.resolve([mockSeriesRow]);
+                (promise as any).orderBy = vi.fn().mockResolvedValue([]);
+                return promise;
+              }),
+              orderBy: vi.fn().mockImplementation(() => {
+                return Promise.resolve([]);
+              }),
+            };
+          }),
+        };
+      }),
+      transaction: vi.fn(async (cb: any) => cb(mockTx)),
+    } as any;
+
+    process.env.TMDB_API_KEY = "test-key";
+    const mockFetchFn = vi.fn().mockImplementation((url: string) => {
+      if (url === "https://api.themoviedb.org/3/tv/100") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: 100,
+              name: "Updated TMDB Title",
+              overview: "Updated TMDB Description",
+              poster_path: "/poster.jpg",
+              backdrop_path: "/backdrop.jpg",
+              vote_average: 8.5,
+              genres: [{ id: 1, name: "Action" }],
+              seasons: [{ season_number: 1, name: "Season 1", episode_count: 1 }],
+            }),
+            { status: 200 }
+          )
+        );
+      }
+      if (url === "https://api.themoviedb.org/3/tv/100/season/1") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              season_number: 1,
+              name: "Season 1",
+              episodes: [
+                {
+                  episode_number: 1,
+                  name: "Episode 1",
+                  overview: "Ep 1 description",
+                },
+              ],
+            }),
+            { status: 200 }
+          )
+        );
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    vi.spyOn(global, "fetch").mockImplementation(mockFetchFn as any);
+
+    const mediaService = createMediaService(mockDb);
+    const result = await mediaService.syncTmdb(seriesId, {
+      type: "tv",
+      tmdbId: 100,
+    });
+
+    expect(mockDb.transaction).toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalled();
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Updated TMDB Title",
+        description: "Updated TMDB Description",
+        tmdbSyncStatus: "SYNCED",
+      })
+    );
+    expect(result).toBeDefined();
   });
 });

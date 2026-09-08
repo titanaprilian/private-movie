@@ -204,7 +204,7 @@ describe("GET /series/tmdb-preview", () => {
     expect(body.data.totalSeasons).toBe(2);
     expect(body.data.totalEpisodes).toBe(13);
     expect(body.data.seasons).toHaveLength(2);
-    expect(body.data.seasons[0].seasonNumber).toBe(0);
+    expect(body.data.seasons![0].seasonNumber).toBe(0);
   });
 
   it("successfully fetches Movie preview snapshot", async () => {

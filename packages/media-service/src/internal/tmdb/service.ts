@@ -153,6 +153,12 @@ export interface TmdbImportInput {
   includeSpecials?: boolean;
 }
 
+export interface TmdbSyncInput {
+  type: "tv" | "movie";
+  tmdbId: number;
+  includeSpecials?: boolean;
+}
+
 export interface TmdbPreviewSeason {
   seasonNumber: number;
   name: string;
