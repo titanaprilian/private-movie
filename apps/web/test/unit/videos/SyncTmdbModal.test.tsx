@@ -25,6 +25,7 @@ vi.mock('@/modules/videos/internal/api', async () => {
     ...actual,
     syncSeriesTmdb: vi.fn(),
     fetchSeriesTmdbPreview: vi.fn(),
+    fetchSeriesTmdbSyncPreview: vi.fn(),
   };
 });
 
@@ -234,6 +235,9 @@ describe('computeSyncDiff', () => {
 describe('SyncTmdbModal component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(apiModule.fetchSeriesTmdbSyncPreview).mockRejectedValue(
+      new Error('Sync preview endpoint fallback')
+    );
   });
 
   it('renders nothing when closed', () => {
@@ -263,7 +267,10 @@ describe('SyncTmdbModal component', () => {
     );
 
     expect(screen.getByText('Sync with TMDB')).toBeInTheDocument();
-    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('tv', 1399, false);
+
+    await waitFor(() => {
+      expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('tv', 1399, false);
+    });
 
     await waitFor(() => {
       expect(screen.getByText('TMDB Snapshot Overview')).toBeInTheDocument();
@@ -471,5 +478,79 @@ describe('SyncTmdbModal component', () => {
     await user.click(cancelBtn);
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('renders detailed episode changes when fetchSeriesTmdbSyncPreview returns metadata changes', async () => {
+    const mockSyncPreviewResult: apiModule.TmdbSyncPreviewResult = {
+      seriesId: mockSeriesTv.id,
+      seriesUpdated: true,
+      series: {
+        title: 'Game of Thrones',
+        overview: 'Updated show overview',
+        posterUrl: 'https://image.tmdb.org/t/p/w500/got.jpg',
+        backdropUrl: null,
+        rating: '9.0',
+        releaseDate: '2011-04-17',
+        genres: ['Drama'],
+        status: 'Ended',
+      },
+      totalNewEpisodes: 1,
+      totalNewSeasons: 0,
+      totalUpdatedEpisodes: 1,
+      seasonDiffs: [
+        {
+          seasonNumber: 1,
+          name: 'Season 1',
+          incomingEpisodeCount: 3,
+          localEpisodeCount: 2,
+          diff: 1,
+          isNewSeason: false,
+          badgeText: '+1 new ep (2 → 3)',
+          badgeType: 'new-eps',
+        },
+      ],
+      episodeChanges: [
+        {
+          seasonNumber: 1,
+          episodeNumber: 1,
+          oldTitle: 'Winter Is Coming',
+          newTitle: 'Winter Is Coming (Remastered)',
+          oldOverview: 'Old overview',
+          newOverview: 'New overview',
+          oldThumbnailUrl: null,
+          newThumbnailUrl: 'https://image.tmdb.org/t/p/w500/thumb.jpg',
+          oldAirDate: '2011-04-17',
+          newAirDate: '2011-04-17',
+          titleChanged: true,
+          overviewChanged: true,
+          thumbnailChanged: true,
+          airDateChanged: false,
+        },
+      ],
+    };
+
+    vi.mocked(apiModule.fetchSeriesTmdbSyncPreview).mockResolvedValueOnce(
+      mockSyncPreviewResult
+    );
+
+    renderWithProviders(
+      <SyncTmdbModal
+        open={true}
+        onOpenChange={vi.fn()}
+        series={mockSeriesTv}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Episode Metadata Updates \(1\)/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('S1E1')).toBeInTheDocument();
+    expect(screen.getByText('Winter Is Coming')).toBeInTheDocument();
+    expect(screen.getByText('Winter Is Coming (Remastered)')).toBeInTheDocument();
+    expect(screen.getByText('Title')).toBeInTheDocument();
+    expect(screen.getByText('Overview')).toBeInTheDocument();
+    expect(screen.getByText('Thumbnail')).toBeInTheDocument();
+    expect(screen.getByText('1 updated episode')).toBeInTheDocument();
   });
 });

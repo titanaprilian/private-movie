@@ -20,6 +20,7 @@ import {
   importTmdb,
   syncSeriesTmdb,
   fetchSeriesTmdbPreview,
+  fetchSeriesTmdbSyncPreview,
   presignUploadSource,
   uploadBinaryToS3,
   uploadEpisodeVideoSource,
@@ -1147,6 +1148,92 @@ describe('videos api', () => {
     expect(res.title).toBe('TMDB Show');
     expect(res.totalSeasons).toBe(2);
     expect(res.seasons).toHaveLength(2);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('fetchSeriesTmdbSyncPreview gets preview data from /series/:id/tmdb-sync-preview', async () => {
+    const mockData = {
+      data: {
+        seriesId: 'series-uuid-1',
+        seriesUpdated: true,
+        series: {
+          title: 'TMDB Synced Show',
+          overview: 'Show overview',
+          posterUrl: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+          backdropUrl: 'https://image.tmdb.org/t/p/w500/backdrop.jpg',
+          rating: '8.5',
+          releaseDate: '2022-01-01',
+          genres: ['Action', 'Drama'],
+          status: 'Returning Series',
+        },
+        totalNewEpisodes: 1,
+        totalNewSeasons: 0,
+        totalUpdatedEpisodes: 1,
+        seasonDiffs: [
+          {
+            seasonNumber: 1,
+            name: 'Season 1',
+            incomingEpisodeCount: 11,
+            localEpisodeCount: 10,
+            diff: 1,
+            isNewSeason: false,
+            badgeText: '+1 new ep (10 → 11)',
+            badgeType: 'new-eps',
+          },
+        ],
+        episodeChanges: [
+          {
+            seasonNumber: 1,
+            episodeNumber: 1,
+            oldTitle: 'Episode 1',
+            newTitle: 'Episode 1: Pilot',
+            oldOverview: 'Old overview',
+            newOverview: 'New overview',
+            oldThumbnailUrl: null,
+            newThumbnailUrl: 'https://image.tmdb.org/t/p/w500/ep1.jpg',
+            oldAirDate: '2022-01-01',
+            newAirDate: '2022-01-01',
+            titleChanged: true,
+            overviewChanged: true,
+            thumbnailChanged: true,
+            airDateChanged: false,
+          },
+        ],
+      },
+    };
+
+    let getUrl = '';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input) => {
+        getUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        return new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    const res = await fetchSeriesTmdbSyncPreview('series-uuid-1', {
+      type: 'tv',
+      tmdbId: 1399,
+      includeSpecials: false,
+    });
+
+    expect(getUrl).toContain('/series/series-uuid-1/tmdb-sync-preview');
+    expect(getUrl).toContain('type=tv');
+    expect(getUrl).toContain('tmdbId=1399');
+    expect(res.seriesId).toBe('series-uuid-1');
+    expect(res.seriesUpdated).toBe(true);
+    expect(res.totalNewEpisodes).toBe(1);
+    expect(res.totalUpdatedEpisodes).toBe(1);
+    expect(res.episodeChanges).toHaveLength(1);
+    expect(res.episodeChanges[0].titleChanged).toBe(true);
 
     fetchSpy.mockRestore();
   });

@@ -1233,7 +1233,33 @@ describe('SeriesDetailView component', () => {
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      if (url.includes('/series/tmdb-preview')) {
+      if (url.includes('tmdb-sync-preview')) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              seriesId: 'deep-modules',
+              seriesUpdated: false,
+              series: {
+                title: 'Deep Modules TMDB',
+                overview: 'Preview overview',
+                posterUrl: null,
+                backdropUrl: null,
+                rating: '8.0',
+                releaseDate: '2026-08-10',
+                genres: [],
+                status: 'Returning Series',
+              },
+              totalNewEpisodes: 1,
+              totalNewSeasons: 0,
+              totalUpdatedEpisodes: 0,
+              seasonDiffs: [{ seasonNumber: 1, name: 'Season 1', incomingEpisodeCount: 3, localEpisodeCount: 2, diff: 1, isNewSeason: false, badgeText: '+1 new ep (2 → 3)', badgeType: 'new-eps' }],
+              episodeChanges: [],
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (url.includes('tmdb-preview')) {
         return new Response(
           JSON.stringify({
             data: {

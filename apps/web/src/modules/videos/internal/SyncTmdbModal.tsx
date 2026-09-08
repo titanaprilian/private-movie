@@ -3,9 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   fetchSeriesTmdbPreview,
+  fetchSeriesTmdbSyncPreview,
   syncSeriesTmdb,
   type SeriesDetails,
   type TmdbPreviewResult,
+  type TmdbSyncPreviewResult,
 } from './api';
 import { computeSyncDiff } from './computeSyncDiff';
 import {
@@ -50,6 +52,7 @@ export function SyncTmdbModal({
 
   const [includeSpecials, setIncludeSpecials] = useState(false);
   const [tmdbPreviewData, setTmdbPreviewData] = useState<TmdbPreviewResult | null>(null);
+  const [syncPreviewData, setSyncPreviewData] = useState<TmdbSyncPreviewResult | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
 
@@ -60,12 +63,14 @@ export function SyncTmdbModal({
     if (!isModalOpen) {
       setIncludeSpecials(false);
       setTmdbPreviewData(null);
+      setSyncPreviewData(null);
       setPreviewError(null);
       return;
     }
 
     if (!tmdbId) {
       setTmdbPreviewData(null);
+      setSyncPreviewData(null);
       setPreviewError('This series does not have a linked TMDB ID. Please link it in Edit Series first.');
       return;
     }
@@ -74,28 +79,70 @@ export function SyncTmdbModal({
     setIsLoadingPreview(true);
     setPreviewError(null);
 
-    fetchSeriesTmdbPreview(seriesType, tmdbId, includeSpecials)
-      .then((data) => {
+    // Try detailed sync preview endpoint first, fall back to basic preview endpoint if needed
+    fetchSeriesTmdbSyncPreview(series.id, {
+      type: seriesType,
+      tmdbId,
+      includeSpecials,
+    })
+      .then((syncResult) => {
         if (isMounted) {
-          setTmdbPreviewData(data);
+          setSyncPreviewData(syncResult);
+          setTmdbPreviewData({
+            title: syncResult.series?.title || '',
+            overview: syncResult.series?.overview || '',
+            posterUrl: syncResult.series?.posterUrl || null,
+            backdropUrl: syncResult.series?.backdropUrl || null,
+            releaseDate: syncResult.series?.releaseDate || null,
+            genres: syncResult.series?.genres || [],
+            status: syncResult.series?.status || null,
+            seasons: (syncResult.seasonDiffs || []).map((s) => ({
+              seasonNumber: s.seasonNumber,
+              name: s.name,
+              episodeCount: s.incomingEpisodeCount,
+              posterUrl: null,
+            })),
+          });
           setIsLoadingPreview(false);
         }
       })
-      .catch((err: Error) => {
-        if (isMounted) {
-          setPreviewError(err.message || 'Failed to fetch TMDB preview');
-          setIsLoadingPreview(false);
-        }
+      .catch(() => {
+        // Fallback to fetchSeriesTmdbPreview
+        fetchSeriesTmdbPreview(seriesType, tmdbId, includeSpecials)
+          .then((data) => {
+            if (isMounted) {
+              setTmdbPreviewData(data);
+              setIsLoadingPreview(false);
+            }
+          })
+          .catch((err: Error) => {
+            if (isMounted) {
+              setPreviewError(err.message || 'Failed to fetch TMDB preview');
+              setIsLoadingPreview(false);
+            }
+          });
       });
 
     return () => {
       isMounted = false;
     };
-  }, [isModalOpen, seriesType, tmdbId, includeSpecials]);
+  }, [isModalOpen, series.id, seriesType, tmdbId, includeSpecials]);
 
   const { seasonDiffs, totalNewEpisodes, totalNewSeasons } = useMemo(() => {
-    return computeSyncDiff(series, tmdbPreviewData);
-  }, [series, tmdbPreviewData]);
+    if (syncPreviewData) {
+      return {
+        seasonDiffs: syncPreviewData.seasonDiffs || [],
+        totalNewEpisodes: syncPreviewData.totalNewEpisodes || 0,
+        totalNewSeasons: syncPreviewData.totalNewSeasons || 0,
+      };
+    }
+    const computed = computeSyncDiff(series, tmdbPreviewData);
+    return {
+      seasonDiffs: computed?.seasonDiffs || [],
+      totalNewEpisodes: computed?.totalNewEpisodes || 0,
+      totalNewSeasons: computed?.totalNewSeasons || 0,
+    };
+  }, [series, tmdbPreviewData, syncPreviewData]);
 
   const syncMutation = useMutation({
     mutationFn: () => {
@@ -293,6 +340,11 @@ export function SyncTmdbModal({
                         +{totalNewSeasons} new {totalNewSeasons === 1 ? 'season' : 'seasons'}
                       </span>
                     )}
+                    {syncPreviewData && syncPreviewData.totalUpdatedEpisodes > 0 && (
+                      <span className="text-[11px] mono px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">
+                        {syncPreviewData.totalUpdatedEpisodes} updated {syncPreviewData.totalUpdatedEpisodes === 1 ? 'episode' : 'episodes'}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -325,6 +377,59 @@ export function SyncTmdbModal({
                   </div>
                 )}
               </div>
+
+              {/* Episode Metadata Updates List */}
+              {syncPreviewData?.episodeChanges && syncPreviewData.episodeChanges.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+                      Episode Metadata Updates ({syncPreviewData.episodeChanges.length})
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto pr-1">
+                    {syncPreviewData.episodeChanges.map((change) => (
+                      <div
+                        key={`${change.seasonNumber}-${change.episodeNumber}`}
+                        className="p-2 rounded border border-c bg-card text-xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="mono font-medium text-[11px] text-muted">
+                            S{change.seasonNumber}E{change.episodeNumber}
+                          </span>
+                          <div className="flex gap-1">
+                            {change.titleChanged && (
+                              <span className="text-[9px] mono px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                                Title
+                              </span>
+                            )}
+                            {change.overviewChanged && (
+                              <span className="text-[9px] mono px-1.5 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                                Overview
+                              </span>
+                            )}
+                            {change.thumbnailChanged && (
+                              <span className="text-[9px] mono px-1.5 py-0.5 rounded border border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-400">
+                                Thumbnail
+                              </span>
+                            )}
+                            {change.airDateChanged && (
+                              <span className="text-[9px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                                Air Date
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {change.titleChanged && (
+                          <div className="text-[11px] text-muted">
+                            <span className="line-through">{change.oldTitle}</span> →{' '}
+                            <span className="font-medium text-fg">{change.newTitle}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

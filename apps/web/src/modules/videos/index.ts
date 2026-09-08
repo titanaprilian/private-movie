@@ -39,6 +39,7 @@ export {
   importTmdb,
   syncSeriesTmdb,
   fetchSeriesTmdbPreview,
+  fetchSeriesTmdbSyncPreview,
   getMaxUploadSizeMb,
   getMaxUploadSizeBytes,
 } from './internal/api';
@@ -64,6 +65,10 @@ export type {
   SaveMediaResult,
   ImportTmdbParams,
   SyncTmdbParams,
+  FetchSeriesTmdbSyncPreviewParams,
+  TmdbSyncPreviewResult,
+  SeasonSyncDiffItem,
+  EpisodeChangeItem,
   ScrapeEpisodeSourcesParams,
   UploadEpisodeVideoSourceOptions,
   RemoteIngestEpisodeVideoSourceOptions,

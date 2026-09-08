@@ -855,6 +855,79 @@ export async function fetchSeriesTmdbPreview(
   return res.data.data as unknown as TmdbPreviewResult;
 }
 
+export interface FetchSeriesTmdbSyncPreviewParams {
+  type: 'tv' | 'movie';
+  tmdbId: number;
+  includeSpecials?: boolean;
+}
+
+export interface EpisodeChangeItem {
+  seasonNumber: number;
+  episodeNumber: number;
+  oldTitle: string;
+  newTitle: string;
+  oldOverview: string | null;
+  newOverview: string | null;
+  oldThumbnailUrl: string | null;
+  newThumbnailUrl: string | null;
+  oldAirDate: string | null;
+  newAirDate: string | null;
+  titleChanged: boolean;
+  overviewChanged: boolean;
+  thumbnailChanged: boolean;
+  airDateChanged: boolean;
+}
+
+export interface SeasonSyncDiffItem {
+  seasonNumber: number;
+  name: string;
+  incomingEpisodeCount: number;
+  localEpisodeCount: number;
+  diff: number;
+  isNewSeason: boolean;
+  badgeText: string;
+  badgeType: 'existing' | 'new-eps' | 'new-season';
+}
+
+export interface TmdbSyncPreviewResult {
+  seriesId: string;
+  seriesUpdated: boolean;
+  series: {
+    title: string;
+    overview: string | null;
+    posterUrl: string | null;
+    backdropUrl: string | null;
+    rating: string | null;
+    releaseDate: string | null;
+    genres: string[];
+    status?: string | null;
+  };
+  totalNewEpisodes: number;
+  totalNewSeasons: number;
+  totalUpdatedEpisodes: number;
+  seasonDiffs: SeasonSyncDiffItem[];
+  episodeChanges: EpisodeChangeItem[];
+}
+
+export async function fetchSeriesTmdbSyncPreview(
+  seriesId: string,
+  params: FetchSeriesTmdbSyncPreviewParams
+): Promise<TmdbSyncPreviewResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[seriesId]['tmdb-sync-preview'].get({
+    $query: params,
+  });
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(
+      (res.error?.value as { message?: string })?.message ||
+        'Failed to fetch TMDB sync preview'
+    );
+  }
+
+  return res.data.data as unknown as TmdbSyncPreviewResult;
+}
+
 export interface PresignUploadSourceParams {
   filename: string;
   contentType?: string;
