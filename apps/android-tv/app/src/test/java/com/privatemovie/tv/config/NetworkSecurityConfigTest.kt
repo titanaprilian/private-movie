@@ -26,7 +26,7 @@ class NetworkSecurityConfigTest {
     }
 
     @Test
-    fun `network security config permits cleartext only for 10_0_2_2`() {
+    fun `network security config permits cleartext for local LAN development`() {
         val configFile = File("src/main/res/xml/network_security_config.xml")
         assertTrue("network_security_config.xml should exist", configFile.exists())
 
@@ -45,12 +45,9 @@ class NetworkSecurityConfigTest {
         val domainElement = domainNodes.item(0) as Element
         assertEquals("10.0.2.2", domainElement.textContent.trim())
 
-        // Check base-config or other configs do not permit general cleartext
         val baseConfigNodes = doc.getElementsByTagName("base-config")
-        if (baseConfigNodes.length > 0) {
-            val baseConfigElement = baseConfigNodes.item(0) as Element
-            val permitted = baseConfigElement.getAttribute("cleartextTrafficPermitted")
-            assertTrue(permitted.isEmpty() || permitted == "false")
-        }
+        assertEquals("Should have exactly one base-config", 1, baseConfigNodes.length)
+        val baseConfigElement = baseConfigNodes.item(0) as Element
+        assertEquals("true", baseConfigElement.getAttribute("cleartextTrafficPermitted"))
     }
 }
