@@ -1478,6 +1478,49 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       }
     )
     .get(
+      "/series/tmdb-preview",
+      async ({ query, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const result = await mediaService.getTmdbPreview(
+            query.type,
+            query.tmdbId,
+            query.includeSpecials
+          );
+          return successResponse(result);
+        } catch (e: unknown) {
+          if (e instanceof TmdbFetchError) {
+            return errorResponse(set, e.status === 404 ? 404 : 400, e);
+          }
+          if (e instanceof Error) {
+            return errorResponse(set, 400, e);
+          }
+          return errorResponse(set, 500, new InternalServerError());
+        }
+      },
+      {
+        query: t.Object({
+          type: t.Union([t.Literal("tv"), t.Literal("movie")]),
+          tmdbId: t.Numeric(),
+          includeSpecials: t.Optional(t.Boolean()),
+        }),
+      }
+    )
+    .get(
       "/seasons/:id",
       async ({ params, set }) => {
         const season = await seasonsRepository.findById(params.id);

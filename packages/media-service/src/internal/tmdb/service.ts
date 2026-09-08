@@ -153,6 +153,111 @@ export interface TmdbImportInput {
   includeSpecials?: boolean;
 }
 
+export interface TmdbPreviewSeason {
+  seasonNumber: number;
+  name: string;
+  episodeCount: number;
+  posterUrl: string | null;
+}
+
+export interface TmdbPreviewResult {
+  title: string;
+  overview: string;
+  posterUrl: string | null;
+  backdropUrl: string | null;
+  releaseDate: string | null;
+  genres: string[];
+  totalSeasons?: number;
+  totalEpisodes?: number;
+  status?: string | null;
+  seasons?: TmdbPreviewSeason[];
+  runtime?: number | null;
+}
+
+export interface GetTmdbPreviewOptions {
+  type?: "tv" | "movie";
+  includeSpecials?: boolean;
+  token?: string;
+  fetchFn?: (url: string, init?: RequestInit) => Promise<any>;
+}
+
+export async function getTmdbPreview(
+  tmdbId: number,
+  options: GetTmdbPreviewOptions = {}
+): Promise<TmdbPreviewResult> {
+  const type = options.type ?? "tv";
+  const token = options.token ?? process.env.TMDB_TOKEN ?? process.env.TMDB_API_KEY;
+
+  const defaultFetchFn = async (url: string, init?: RequestInit) => {
+    const res = await fetch(url, init);
+    if (!res.ok) {
+      if (res.status === 429) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return defaultFetchFn(url, init);
+      }
+      throw new TmdbFetchError(`TMDB API Error: ${res.status} ${res.statusText}`, res.status);
+    }
+    return res.json();
+  };
+
+  const fetchFn = options.fetchFn ?? defaultFetchFn;
+  const headers: Record<string, string> = {
+    accept: "application/json",
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  if (type === "movie") {
+    const movieUrl = `https://api.themoviedb.org/3/movie/${tmdbId}`;
+    const movieData: TmdbSeriesDetailsResponse = await fetchFn(movieUrl, { headers });
+
+    const title = movieData.title || movieData.name || `Movie ${tmdbId}`;
+    const posterUrl = movieData.poster_path ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null;
+    const backdropUrl = movieData.backdrop_path ? `https://image.tmdb.org/t/p/w500${movieData.backdrop_path}` : null;
+    const releaseDate = movieData.release_date || movieData.first_air_date || null;
+
+    return {
+      title,
+      overview: movieData.overview ?? "",
+      posterUrl,
+      backdropUrl,
+      releaseDate,
+      genres: (movieData.genres || []).map((g) => g.name),
+      runtime: movieData.runtime ?? null,
+    };
+  } else {
+    const seriesUrl = `https://api.themoviedb.org/3/tv/${tmdbId}`;
+    const seriesData: TmdbSeriesDetailsResponse = await fetchFn(seriesUrl, { headers });
+
+    const includeSpecials = options.includeSpecials ?? false;
+    const rawSeasons = Array.isArray(seriesData.seasons) ? seriesData.seasons : [];
+    const targetSeasons = rawSeasons.filter((s) => (includeSpecials ? s.season_number >= 0 : s.season_number > 0));
+
+    const seasonsPreview: TmdbPreviewSeason[] = targetSeasons.map((s) => ({
+      seasonNumber: s.season_number,
+      name: s.name || `Season ${s.season_number}`,
+      episodeCount: s.episode_count ?? 0,
+      posterUrl: s.poster_path ? `https://image.tmdb.org/t/p/w500${s.poster_path}` : null,
+    }));
+
+    const totalEpisodes = seasonsPreview.reduce((sum, s) => sum + s.episodeCount, 0);
+
+    return {
+      title: seriesData.name || seriesData.title || `Series ${tmdbId}`,
+      overview: seriesData.overview ?? "",
+      posterUrl: seriesData.poster_path ? `https://image.tmdb.org/t/p/w500${seriesData.poster_path}` : null,
+      backdropUrl: seriesData.backdrop_path ? `https://image.tmdb.org/t/p/w500${seriesData.backdrop_path}` : null,
+      releaseDate: seriesData.first_air_date ?? null,
+      genres: (seriesData.genres || []).map((g) => g.name),
+      status: seriesData.status ?? null,
+      totalSeasons: seasonsPreview.length,
+      totalEpisodes,
+      seasons: seasonsPreview,
+    };
+  }
+}
+
 export async function fetchTmdbSeriesData(
   tmdbId: number,
   options: FetchTmdbSeriesOptions = {}

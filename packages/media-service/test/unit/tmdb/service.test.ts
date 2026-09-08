@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   fetchTmdbSeriesData,
   saveTmdbSeries,
+  getTmdbPreview,
+  TmdbFetchError,
   createMediaService,
 } from "../../../src";
 
@@ -153,6 +155,159 @@ describe("TMDB Service fetchTmdbSeriesData", () => {
     expect(ep.episode_number).toBe(1);
     expect(ep.name).toBe("Inception");
     expect(ep.runtime).toBe(148);
+  });
+});
+
+describe("TMDB Service getTmdbPreview", () => {
+  const mockFetchFn = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns TV show preview snapshot excluding specials when includeSpecials is false", async () => {
+    mockFetchFn.mockImplementation((url: string) => {
+      if (url === "https://api.themoviedb.org/3/tv/100") {
+        return Promise.resolve({
+          id: 100,
+          name: "Test TV Show",
+          overview: "A great TV show overview.",
+          poster_path: "/tv_poster.jpg",
+          backdrop_path: "/tv_backdrop.jpg",
+          first_air_date: "2021-01-01",
+          status: "Returning Series",
+          genres: [{ id: 1, name: "Drama" }, { id: 2, name: "Action" }],
+          seasons: [
+            { id: 10, season_number: 0, name: "Specials", episode_count: 5, poster_path: "/s0.jpg" },
+            { id: 11, season_number: 1, name: "Season 1", episode_count: 10, poster_path: "/s1.jpg" },
+            { id: 12, season_number: 2, name: "Season 2", episode_count: 12, poster_path: "/s2.jpg" },
+          ],
+        });
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    const preview = await getTmdbPreview(100, {
+      type: "tv",
+      includeSpecials: false,
+      token: "test-token",
+      fetchFn: mockFetchFn,
+    });
+
+    expect(preview).toEqual({
+      title: "Test TV Show",
+      overview: "A great TV show overview.",
+      posterUrl: "https://image.tmdb.org/t/p/w500/tv_poster.jpg",
+      backdropUrl: "https://image.tmdb.org/t/p/w500/tv_backdrop.jpg",
+      releaseDate: "2021-01-01",
+      genres: ["Drama", "Action"],
+      status: "Returning Series",
+      totalSeasons: 2,
+      totalEpisodes: 22,
+      seasons: [
+        {
+          seasonNumber: 1,
+          name: "Season 1",
+          episodeCount: 10,
+          posterUrl: "https://image.tmdb.org/t/p/w500/s1.jpg",
+        },
+        {
+          seasonNumber: 2,
+          name: "Season 2",
+          episodeCount: 12,
+          posterUrl: "https://image.tmdb.org/t/p/w500/s2.jpg",
+        },
+      ],
+    });
+  });
+
+  it("returns TV show preview snapshot including specials when includeSpecials is true", async () => {
+    mockFetchFn.mockImplementation((url: string) => {
+      if (url === "https://api.themoviedb.org/3/tv/100") {
+        return Promise.resolve({
+          id: 100,
+          name: "Test TV Show",
+          overview: "A great TV show overview.",
+          poster_path: "/tv_poster.jpg",
+          backdrop_path: "/tv_backdrop.jpg",
+          first_air_date: "2021-01-01",
+          status: "Returning Series",
+          genres: [{ id: 1, name: "Drama" }],
+          seasons: [
+            { id: 10, season_number: 0, name: "Specials", episode_count: 5, poster_path: "/s0.jpg" },
+            { id: 11, season_number: 1, name: "Season 1", episode_count: 10, poster_path: "/s1.jpg" },
+          ],
+        });
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    const preview = await getTmdbPreview(100, {
+      type: "tv",
+      includeSpecials: true,
+      token: "test-token",
+      fetchFn: mockFetchFn,
+    });
+
+    expect(preview.totalSeasons).toBe(2);
+    expect(preview.totalEpisodes).toBe(15);
+    expect(preview.seasons).toHaveLength(2);
+    expect(preview.seasons![0].seasonNumber).toBe(0);
+    expect(preview.seasons![0].name).toBe("Specials");
+  });
+
+  it("returns Movie preview snapshot with runtime and undefined TV fields", async () => {
+    mockFetchFn.mockImplementation((url: string) => {
+      if (url === "https://api.themoviedb.org/3/movie/500") {
+        return Promise.resolve({
+          id: 500,
+          title: "Inception",
+          overview: "A thief who steals corporate secrets...",
+          poster_path: "/inception.jpg",
+          backdrop_path: "/inception_bg.jpg",
+          release_date: "2010-07-16",
+          vote_average: 8.8,
+          runtime: 148,
+          genres: [
+            { id: 28, name: "Action" },
+            { id: 878, name: "Sci-Fi" },
+          ],
+        });
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    const preview = await getTmdbPreview(500, {
+      type: "movie",
+      token: "test-token",
+      fetchFn: mockFetchFn,
+    });
+
+    expect(preview).toEqual({
+      title: "Inception",
+      overview: "A thief who steals corporate secrets...",
+      posterUrl: "https://image.tmdb.org/t/p/w500/inception.jpg",
+      backdropUrl: "https://image.tmdb.org/t/p/w500/inception_bg.jpg",
+      releaseDate: "2010-07-16",
+      genres: ["Action", "Sci-Fi"],
+      runtime: 148,
+      totalSeasons: undefined,
+      totalEpisodes: undefined,
+      status: undefined,
+      seasons: undefined,
+    });
+  });
+
+  it("throws TmdbFetchError with status 404 when TMDB returns 404", async () => {
+    mockFetchFn.mockRejectedValue(new TmdbFetchError("TMDB API Error: 404 Not Found", 404));
+
+    await expect(
+      getTmdbPreview(999999, {
+        type: "movie",
+        token: "test-token",
+        fetchFn: mockFetchFn,
+      })
+    ).rejects.toThrow(TmdbFetchError);
   });
 });
 
