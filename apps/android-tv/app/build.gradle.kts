@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.coil.compose)
     // Native playback surface for direct stream targets.
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
