@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -36,6 +36,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,6 +48,7 @@ import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
 import androidx.tv.material3.Card as TvCard
 import androidx.tv.material3.CardDefaults as TvCardDefaults
+import com.privatemovie.tv.components.EdgeScaleTransform
 import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
 import com.privatemovie.tv.components.TvMediaImage
@@ -327,13 +330,15 @@ private fun HomeFeedContent(
                     )
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
                     ) {
-                        items(row.items, key = { it.id }) { series ->
+                        itemsIndexed(row.items, key = { _, series -> series.id }) { index, series ->
+                            val transformOrigin = EdgeScaleTransform(index, row.items.size)
                             SeriesPosterCard(
                                 series = series,
                                 baseUrl = baseUrl,
-                                onSelect = { onSelectSeries(series.id) }
+                                onSelect = { onSelectSeries(series.id) },
+                                transformOrigin = transformOrigin
                             )
                         }
                     }
@@ -414,7 +419,7 @@ private fun FeaturedHeroCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(340.dp)
+            .height(420.dp)
             .clip(cardShape)
             .background(Color(0xFF18181F))
     ) {
@@ -465,8 +470,7 @@ private fun FeaturedHeroCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 32.dp, vertical = 24.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(0.65f)
@@ -571,6 +575,8 @@ private fun FeaturedHeroCard(
                 )
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Primary Action Button taking initial focus
             val ctaShape = RoundedCornerShape(8.dp)
             TvButton(
@@ -613,7 +619,8 @@ fun SeriesPosterCard(
     series: TvSeries,
     baseUrl: String,
     onSelect: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    transformOrigin: TransformOrigin = TransformOrigin.Center
 ) {
     val cardShape = RoundedCornerShape(10.dp)
 
@@ -644,6 +651,9 @@ fun SeriesPosterCard(
             modifier = Modifier
                 .width(160.dp)
                 .height(240.dp)
+                .graphicsLayer {
+                    this.transformOrigin = transformOrigin
+                }
         ) {
             Box(
                 modifier = Modifier

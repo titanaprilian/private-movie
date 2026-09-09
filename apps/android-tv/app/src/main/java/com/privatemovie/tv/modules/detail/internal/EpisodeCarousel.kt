@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card as TvCard
 import androidx.tv.material3.CardDefaults as TvCardDefaults
+import com.privatemovie.tv.components.EdgeScaleTransform
 import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
 import com.privatemovie.tv.components.TvMediaImage
@@ -64,14 +67,16 @@ fun EpisodeCarousel(
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(20.dp),
-        contentPadding = PaddingValues(vertical = 12.dp)
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
     ) {
-        items(episodes, key = { it.id }) { episode ->
+        itemsIndexed(episodes, key = { _, episode -> episode.id }) { index, episode ->
+            val transformOrigin = EdgeScaleTransform(index, episodes.size)
             EpisodeThumbnailCard(
                 episode = episode,
                 baseUrl = baseUrl,
                 onSelect = { onSelectEpisode(episode) },
-                onFocus = { onEpisodeFocused(episode) }
+                onFocus = { onEpisodeFocused(episode) },
+                transformOrigin = transformOrigin
             )
         }
     }
@@ -83,7 +88,8 @@ fun EpisodeThumbnailCard(
     baseUrl: String?,
     onSelect: () -> Unit,
     onFocus: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    transformOrigin: TransformOrigin = TransformOrigin.Center
 ) {
     val cardShape = RoundedCornerShape(12.dp)
     var isFocused by remember { mutableStateOf(false) }
@@ -92,6 +98,9 @@ fun EpisodeThumbnailCard(
         onClick = onSelect,
         modifier = modifier
             .width(260.dp)
+            .graphicsLayer {
+                this.transformOrigin = transformOrigin
+            }
             .onFocusChanged { state ->
                 isFocused = state.isFocused
                 if (state.isFocused) {
