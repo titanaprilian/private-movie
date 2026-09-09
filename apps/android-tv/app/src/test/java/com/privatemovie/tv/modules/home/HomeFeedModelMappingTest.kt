@@ -61,10 +61,19 @@ class HomeFeedModelMappingTest {
         assertEquals("Hero Title", tvHomeFeed.hero?.series?.title)
         assertEquals(listOf("TV Series", "Action"), tvHomeFeed.hero?.tags)
         assertEquals("Action", tvHomeFeed.hero?.series?.genres?.first()?.name)
+        assertEquals("https://example.com/poster.jpg", tvHomeFeed.hero?.series?.posterUrl)
+        assertEquals("https://example.com/backdrop.jpg", tvHomeFeed.hero?.series?.backdropUrl)
+        assertEquals("8.5", tvHomeFeed.hero?.series?.rating)
+        assertEquals("Hero Description", tvHomeFeed.hero?.series?.description)
 
         assertEquals(1, tvHomeFeed.rows.size)
         assertEquals("Ongoing", tvHomeFeed.rows[0].title)
         assertEquals("series-1", tvHomeFeed.rows[0].items[0].id)
+        assertEquals("Series 1 Title", tvHomeFeed.rows[0].items[0].title)
+        assertEquals("tv", tvHomeFeed.rows[0].items[0].type)
+        assertNull(tvHomeFeed.rows[0].items[0].posterUrl)
+        assertNull(tvHomeFeed.rows[0].items[0].backdropUrl)
+        assertNull(tvHomeFeed.rows[0].items[0].rating)
     }
 
     @Test
