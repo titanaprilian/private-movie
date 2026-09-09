@@ -5,6 +5,7 @@ import com.privatemovie.tv.dto.models.Genre
 import com.privatemovie.tv.dto.models.SeasonWithEpisodes
 import com.privatemovie.tv.dto.models.SeriesDetails
 import com.privatemovie.tv.dto.models.VideoSource
+import com.privatemovie.tv.modules.player.internal.PlaybackMetadataHandoff
 
 data class TvVideoSource(
     val id: String,
@@ -105,5 +106,34 @@ fun SeriesDetails.toTvSeriesDetails(): TvSeriesDetails {
 fun findFirstPlayableEpisode(details: TvSeriesDetails): TvEpisode? {
     val fromSeason = details.seasons.firstOrNull { it.episodes.isNotEmpty() }?.episodes?.firstOrNull()
     return fromSeason ?: details.standaloneEpisodes.firstOrNull()
+}
+
+/**
+ * Searches series details for an episode and builds a populated [PlaybackMetadataHandoff].
+ */
+fun TvSeriesDetails.findMetadataForEpisode(episodeId: String): PlaybackMetadataHandoff {
+    for (season in seasons) {
+        val ep = season.episodes.find { it.id == episodeId }
+        if (ep != null) {
+            return PlaybackMetadataHandoff(
+                seriesTitle = title,
+                seasonTitle = season.title,
+                seasonNumber = season.seasonNumber,
+                episodeOrder = ep.order,
+                episodeTitle = ep.title
+            )
+        }
+    }
+    val standalone = standaloneEpisodes.find { it.id == episodeId }
+    if (standalone != null) {
+        return PlaybackMetadataHandoff(
+            seriesTitle = title,
+            seasonTitle = null,
+            seasonNumber = null,
+            episodeOrder = standalone.order,
+            episodeTitle = standalone.title
+        )
+    }
+    return PlaybackMetadataHandoff(seriesTitle = title)
 }
 

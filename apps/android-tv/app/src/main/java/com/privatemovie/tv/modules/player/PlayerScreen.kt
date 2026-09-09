@@ -44,6 +44,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -57,6 +58,8 @@ import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
 import com.privatemovie.tv.modules.player.internal.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
+import com.privatemovie.tv.modules.player.internal.formatPlayerHeadline
+import com.privatemovie.tv.modules.player.internal.formatPlayerSubtitle
 import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.internal.handleRemoteKey
 import com.privatemovie.tv.modules.player.internal.resolvePlayerHandoff
@@ -76,8 +79,23 @@ fun PlayerScreen(
     modifier: Modifier = Modifier,
     playbackSourceTypeName: String? = null,
     playbackUrl: String? = null,
+    seriesTitle: String? = null,
+    seasonTitle: String? = null,
+    seasonNumber: Int? = null,
+    episodeOrder: Int? = null,
+    episodeTitle: String? = null,
     backendBaseUrl: String? = null
 ) {
+    val headlineText = remember(seriesTitle) { formatPlayerHeadline(seriesTitle) }
+    val subtitleText = remember(seasonNumber, seasonTitle, episodeOrder, episodeTitle) {
+        formatPlayerSubtitle(
+            seasonNumber = seasonNumber,
+            seasonTitle = seasonTitle,
+            episodeOrder = episodeOrder,
+            episodeTitle = episodeTitle
+        )
+    }
+
     val handoffTarget = remember(playbackSourceTypeName, playbackUrl, episodeId) {
         val source = if (!playbackUrl.isNullOrBlank() && !playbackSourceTypeName.isNullOrBlank()) {
             PlaybackSourceRef(type = playbackSourceTypeName, url = playbackUrl)
@@ -87,7 +105,15 @@ fun PlayerScreen(
             null
         }
         resolvePlayerHandoff(
-            handoff = buildPlayerHandoff(episodeId = episodeId, source = source),
+            handoff = buildPlayerHandoff(
+                episodeId = episodeId,
+                source = source,
+                seriesTitle = seriesTitle,
+                seasonTitle = seasonTitle,
+                seasonNumber = seasonNumber,
+                episodeOrder = episodeOrder,
+                episodeTitle = episodeTitle
+            ),
             backendBaseUrl = backendBaseUrl
         )
     }
@@ -96,7 +122,7 @@ fun PlayerScreen(
     val handoffFailure: String? = handoffTarget.failureMessage
 
     var isPlaying by remember { mutableStateOf(true) }
-    var statusText by remember { mutableStateOf("Playing Episode $episodeId") }
+    var statusText by remember { mutableStateOf("Playing") }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
@@ -146,7 +172,7 @@ fun PlayerScreen(
         exoPlayer?.let { player ->
             player.playWhenReady = !player.playWhenReady
             isPlaying = player.playWhenReady
-            statusText = if (isPlaying) "Playing Episode $episodeId" else "Paused"
+            statusText = if (isPlaying) "Playing" else "Paused"
         }
     }
 
@@ -166,6 +192,9 @@ fun PlayerScreen(
                 toggleNativePlayback()
             }
             is PlayerControlAction.ExitPlayer -> onExitPlayer()
+            is PlayerControlAction.HideControls -> {
+                controlsVisible = false
+            }
             is PlayerControlAction.SeekBackward -> {
                 controlsVisible = true
                 userActivityNonce++
@@ -205,6 +234,8 @@ fun PlayerScreen(
             AndroidKeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
             AndroidKeyEvent.KEYCODE_MEDIA_PLAY,
             AndroidKeyEvent.KEYCODE_MEDIA_PAUSE -> RemoteControlKey.PLAY_PAUSE
+            AndroidKeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> RemoteControlKey.FAST_FORWARD
+            AndroidKeyEvent.KEYCODE_MEDIA_REWIND -> RemoteControlKey.REWIND
             else -> null
         }
     }
@@ -224,24 +255,26 @@ fun PlayerScreen(
             .onPreviewKeyEvent { event ->
                 val key = mapKeyEvent(event) ?: return@onPreviewKeyEvent false
                 when (key) {
-                    RemoteControlKey.BACK,
-                    RemoteControlKey.PLAY_PAUSE -> onRemoteKey(key)
+                    RemoteControlKey.BACK -> {
+                        onRemoteKey(key)
+                        true
+                    }
+                    RemoteControlKey.PLAY_PAUSE,
+                    RemoteControlKey.FAST_FORWARD,
+                    RemoteControlKey.REWIND -> {
+                        onRemoteKey(key)
+                        true
+                    }
                     else -> {
                         if (!controlsVisible) {
                             onRemoteKey(key)
                             true
                         } else {
+                            userActivityNonce++
                             false
                         }
                     }
                 }
-            }
-            .onKeyEvent { event ->
-                val key = mapKeyEvent(event) ?: return@onKeyEvent false
-                if (key == RemoteControlKey.BACK || key == RemoteControlKey.PLAY_PAUSE) {
-                    return@onKeyEvent false
-                }
-                onRemoteKey(key)
             },
         contentAlignment = Alignment.Center
     ) {
@@ -309,10 +342,17 @@ fun PlayerScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Episode: $episodeId",
-                                style = MaterialTheme.typography.titleLarge,
+                                text = headlineText,
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                 color = Color.White
                             )
+                            if (subtitleText.isNotBlank()) {
+                                Text(
+                                    text = subtitleText,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.9f)
+                                )
+                            }
                             Text(
                                 text = statusText,
                                 style = MaterialTheme.typography.bodySmall,
@@ -347,7 +387,7 @@ fun PlayerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TvPlayerButton(
-                            onClick = { onRemoteKey(RemoteControlKey.LEFT) }
+                            onClick = { applyAction(PlayerControlAction.SeekBackward()) }
                         ) {
                             Text("<< Seek -10s")
                         }
@@ -355,7 +395,7 @@ fun PlayerScreen(
                         Spacer(modifier = Modifier.width(16.dp))
 
                         TvPlayerButton(
-                            onClick = { onRemoteKey(RemoteControlKey.CENTER_OK) },
+                            onClick = { applyAction(PlayerControlAction.TogglePlayPause) },
                             modifier = Modifier.focusRequester(playPauseFocus)
                         ) {
                             Text(if (isPlaying) "Pause" else "Play")
@@ -364,7 +404,7 @@ fun PlayerScreen(
                         Spacer(modifier = Modifier.width(16.dp))
 
                         TvPlayerButton(
-                            onClick = { onRemoteKey(RemoteControlKey.RIGHT) }
+                            onClick = { applyAction(PlayerControlAction.SeekForward()) }
                         ) {
                             Text("Seek +10s >>")
                         }

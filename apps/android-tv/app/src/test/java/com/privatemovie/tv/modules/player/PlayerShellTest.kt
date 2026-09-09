@@ -48,49 +48,58 @@ class PlayerShellTest {
     }
 
     @Test
-    fun `center OK triggers primary playback interaction`() {
+    fun `back key dismisses overlay when controls are visible`() {
         assertEquals(
-            PlayerControlAction.TogglePlayPause,
-            handleRemoteKey(RemoteControlKey.CENTER_OK, PlaybackRenderer.NATIVE)
+            PlayerControlAction.HideControls,
+            handleRemoteKey(RemoteControlKey.BACK, PlaybackRenderer.NATIVE, controlsVisible = true)
         )
     }
 
     @Test
-    fun `back exits playback`() {
+    fun `back key exits playback when controls are hidden`() {
         assertEquals(
             PlayerControlAction.ExitPlayer,
-            handleRemoteKey(RemoteControlKey.BACK, PlaybackRenderer.NATIVE)
+            handleRemoteKey(RemoteControlKey.BACK, PlaybackRenderer.NATIVE, controlsVisible = false)
         )
     }
 
     @Test
-    fun `left and right attempt seek where supported`() {
+    fun `left and right keys when controls are visible refresh inactivity without triggering automatic seek`() {
         assertTrue(supportsSeek(PlaybackRenderer.NATIVE))
         assertEquals(
-            PlayerControlAction.SeekBackward(DEFAULT_SEEK_SECONDS),
-            handleRemoteKey(RemoteControlKey.LEFT, PlaybackRenderer.NATIVE)
+            PlayerControlAction.ShowControls,
+            handleRemoteKey(RemoteControlKey.LEFT, PlaybackRenderer.NATIVE, controlsVisible = true)
         )
         assertEquals(
-            PlayerControlAction.SeekForward(DEFAULT_SEEK_SECONDS),
-            handleRemoteKey(RemoteControlKey.RIGHT, PlaybackRenderer.NATIVE)
+            PlayerControlAction.ShowControls,
+            handleRemoteKey(RemoteControlKey.RIGHT, PlaybackRenderer.NATIVE, controlsVisible = true)
         )
     }
 
     @Test
-    fun `play pause media key toggles playback`() {
-        assertEquals(
-            PlayerControlAction.TogglePlayPause,
-            handleRemoteKey(RemoteControlKey.PLAY_PAUSE, PlaybackRenderer.NATIVE)
-        )
+    fun `physical media keys execute immediate playback actions regardless of overlay visibility`() {
+        for (visible in listOf(true, false)) {
+            assertEquals(
+                PlayerControlAction.TogglePlayPause,
+                handleRemoteKey(RemoteControlKey.PLAY_PAUSE, PlaybackRenderer.NATIVE, controlsVisible = visible)
+            )
+            assertEquals(
+                PlayerControlAction.SeekForward(DEFAULT_SEEK_SECONDS),
+                handleRemoteKey(RemoteControlKey.FAST_FORWARD, PlaybackRenderer.NATIVE, controlsVisible = visible)
+            )
+            assertEquals(
+                PlayerControlAction.SeekBackward(DEFAULT_SEEK_SECONDS),
+                handleRemoteKey(RemoteControlKey.REWIND, PlaybackRenderer.NATIVE, controlsVisible = visible)
+            )
+        }
     }
 
     @Test
-    fun `interactions while controls are hidden signal the UI to show controls without triggering underlying action`() {
+    fun `directional and center interactions while controls are hidden signal the UI to show controls`() {
         val keysRevealingControls = listOf(
             RemoteControlKey.CENTER_OK,
             RemoteControlKey.LEFT,
             RemoteControlKey.RIGHT,
-            RemoteControlKey.PLAY_PAUSE,
             RemoteControlKey.UP,
             RemoteControlKey.DOWN
         )
@@ -145,6 +154,9 @@ class PlayerShellTest {
         assertTrue(nextControlsVisibility(currentVisible = true, action = PlayerControlAction.TogglePlayPause))
         assertTrue(nextControlsVisibility(currentVisible = true, action = PlayerControlAction.SeekForward()))
         assertTrue(nextControlsVisibility(currentVisible = true, action = PlayerControlAction.SeekBackward()))
+
+        // HideControls action transitions visible overlay to hidden
+        assertFalse(nextControlsVisibility(currentVisible = true, action = PlayerControlAction.HideControls))
 
         // Exit or RequestFullscreen don't force controls visible if hidden
         assertFalse(nextControlsVisibility(currentVisible = false, action = PlayerControlAction.RequestFullscreen))

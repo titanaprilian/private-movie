@@ -48,8 +48,10 @@ import com.privatemovie.tv.modules.detail.internal.TvSeason
 import com.privatemovie.tv.modules.detail.internal.TvSeriesDetails
 import com.privatemovie.tv.modules.detail.internal.TvVideoSource
 import com.privatemovie.tv.modules.detail.internal.findFirstPlayableEpisode
+import com.privatemovie.tv.modules.detail.internal.findMetadataForEpisode
 import com.privatemovie.tv.modules.detail.internal.toTvSeriesDetails
 import com.privatemovie.tv.modules.player.internal.EpisodePlaybackDecision
+import com.privatemovie.tv.modules.player.internal.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
 
 /**
@@ -71,11 +73,11 @@ import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
 fun DetailScreen(
     seriesId: String,
     mediaRepository: MediaRepository,
-    onPlayEpisode: (String) -> Unit,
+    onPlayEpisode: (episodeId: String, metadata: PlaybackMetadataHandoff) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     activeBackendUrl: String? = null,
-    onPlaySource: ((episodeId: String, videoSource: TvVideoSource) -> Unit)? = null
+    onPlaySource: ((episodeId: String, videoSource: TvVideoSource, metadata: PlaybackMetadataHandoff) -> Unit)? = null
 ) {
     var uiState by remember { mutableStateOf<DetailUiState>(DetailUiState.Loading) }
     var reloadKey by remember { mutableIntStateOf(0) }
@@ -91,10 +93,15 @@ fun DetailScreen(
     }
 
     val handleStartPlayback: (TvEpisode, TvVideoSource?) -> Unit = { episode, source ->
+        val metadata = (uiState as? DetailUiState.Success)?.details?.findMetadataForEpisode(episode.id)
+            ?: PlaybackMetadataHandoff(
+                episodeOrder = episode.order,
+                episodeTitle = episode.title
+            )
         if (source != null && onPlaySource != null) {
-            onPlaySource(episode.id, source)
+            onPlaySource(episode.id, source, metadata)
         } else {
-            onPlayEpisode(episode.id)
+            onPlayEpisode(episode.id, metadata)
         }
     }
 

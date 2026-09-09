@@ -22,17 +22,23 @@ enum class RemoteControlKey {
     /** D-pad center / OK / Enter: primary playback interaction. */
     CENTER_OK,
 
-    /** Back: exit playback predictably to the watch/detail flow. */
+    /** Back: dismiss controls overlay when visible, exit playback when hidden. */
     BACK,
 
-    /** D-pad left: seek-oriented behavior where supported. */
+    /** D-pad left: focus navigation across transport buttons. */
     LEFT,
 
-    /** D-pad right: seek-oriented behavior where supported. */
+    /** D-pad right: focus navigation across transport buttons. */
     RIGHT,
 
     /** Dedicated play/pause media key when available. */
     PLAY_PAUSE,
+
+    /** Dedicated fast-forward media key when available. */
+    FAST_FORWARD,
+
+    /** Dedicated rewind media key when available. */
+    REWIND,
 
     /** D-pad up: vertical navigation or revealing overlay when hidden. */
     UP,
@@ -44,7 +50,7 @@ enum class RemoteControlKey {
 /**
  * Declarative control actions the player shell can take in response to a
  * remote-control intent. The Compose layer applies these (toggle playback,
- * seek, exit, fullscreen attempt, show controls overlay) against the active [PlaybackRenderer].
+ * seek, exit, fullscreen attempt, show/hide controls overlay) against the active [PlaybackRenderer].
  */
 sealed interface PlayerControlAction {
     /** Primary activation and media-key behavior: toggle play/pause. */
@@ -64,6 +70,9 @@ sealed interface PlayerControlAction {
 
     /** Signals the UI to show the controls overlay and reset inactivity timeout. */
     data object ShowControls : PlayerControlAction
+
+    /** Signals the UI to hide/dismiss the controls overlay. */
+    data object HideControls : PlayerControlAction
 }
 
 const val DEFAULT_SEEK_SECONDS = 10
@@ -98,6 +107,7 @@ class PlayerControlsState(
     fun onAction(action: PlayerControlAction) {
         when (action) {
             is PlayerControlAction.ShowControls -> show()
+            is PlayerControlAction.HideControls -> hide()
             is PlayerControlAction.TogglePlayPause,
             is PlayerControlAction.SeekBackward,
             is PlayerControlAction.SeekForward -> {
@@ -123,6 +133,7 @@ fun nextControlsVisibility(
         is PlayerControlAction.TogglePlayPause,
         is PlayerControlAction.SeekBackward,
         is PlayerControlAction.SeekForward -> true
+        is PlayerControlAction.HideControls -> false
         is PlayerControlAction.ExitPlayer,
         is PlayerControlAction.RequestFullscreen -> currentVisible
     }
@@ -175,34 +186,51 @@ fun resolvePlaybackUrl(rawUrl: String?, backendBaseUrl: String?): String? {
  * Maps an MVP remote-control [key] to its declarative [PlayerControlAction]
  * for the active [renderer] and [controlsVisible] state.
  *
- * When controls are hidden, any user interaction (D-pad or media keys)
- * signals [PlayerControlAction.ShowControls] so the overlay can be revealed
- * and focused without accidentally triggering underlying actions immediately,
- * except for [RemoteControlKey.BACK] which predictably exits playback immediately.
+ * Rules:
+ * 1. Dedicated physical hardware media keys (PLAY_PAUSE, FAST_FORWARD, REWIND) execute immediate
+ *    playback actions regardless of overlay visibility.
+ * 2. When controls overlay is visible:
+ *    - Back key dismisses the overlay (HideControls) so playback continues unobstructed.
+ *    - D-pad navigation keys (LEFT, RIGHT, UP, DOWN) and CENTER_OK refresh inactivity timeout (ShowControls).
+ *      D-pad Left/Right does NOT trigger immediate seeks; focus traversal moves across transport buttons.
+ * 3. When controls overlay is hidden:
+ *    - Back key exits playback (ExitPlayer).
+ *    - Any D-pad/OK interaction reveals the controls overlay (ShowControls) and focuses center Play/Pause.
  */
 fun handleRemoteKey(
     key: RemoteControlKey,
     renderer: PlaybackRenderer,
     controlsVisible: Boolean = true
 ): PlayerControlAction {
+    when (key) {
+        RemoteControlKey.PLAY_PAUSE -> return PlayerControlAction.TogglePlayPause
+        RemoteControlKey.FAST_FORWARD -> return PlayerControlAction.SeekForward()
+        RemoteControlKey.REWIND -> return PlayerControlAction.SeekBackward()
+        else -> Unit
+    }
+
     if (!controlsVisible) {
         return when (key) {
             RemoteControlKey.BACK -> PlayerControlAction.ExitPlayer
+            RemoteControlKey.PLAY_PAUSE -> PlayerControlAction.TogglePlayPause
+            RemoteControlKey.FAST_FORWARD -> PlayerControlAction.SeekForward()
+            RemoteControlKey.REWIND -> PlayerControlAction.SeekBackward()
             RemoteControlKey.CENTER_OK,
             RemoteControlKey.LEFT,
             RemoteControlKey.RIGHT,
-            RemoteControlKey.PLAY_PAUSE,
             RemoteControlKey.UP,
             RemoteControlKey.DOWN -> PlayerControlAction.ShowControls
         }
     }
 
     return when (key) {
-        RemoteControlKey.CENTER_OK -> PlayerControlAction.TogglePlayPause
-        RemoteControlKey.BACK -> PlayerControlAction.ExitPlayer
-        RemoteControlKey.LEFT -> PlayerControlAction.SeekBackward()
-        RemoteControlKey.RIGHT -> PlayerControlAction.SeekForward()
+        RemoteControlKey.BACK -> PlayerControlAction.HideControls
         RemoteControlKey.PLAY_PAUSE -> PlayerControlAction.TogglePlayPause
+        RemoteControlKey.FAST_FORWARD -> PlayerControlAction.SeekForward()
+        RemoteControlKey.REWIND -> PlayerControlAction.SeekBackward()
+        RemoteControlKey.CENTER_OK,
+        RemoteControlKey.LEFT,
+        RemoteControlKey.RIGHT,
         RemoteControlKey.UP,
         RemoteControlKey.DOWN -> PlayerControlAction.ShowControls
     }

@@ -1,12 +1,19 @@
 package com.privatemovie.tv.modules.player
 
 import com.privatemovie.tv.modules.player.internal.EpisodePlaybackDecision
+import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_ORDER_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_TITLE_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_NUMBER_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_TITLE_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_SERIES_TITLE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
 import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
 import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
+import com.privatemovie.tv.modules.player.internal.formatPlayerHeadline
+import com.privatemovie.tv.modules.player.internal.formatPlayerSubtitle
 import com.privatemovie.tv.modules.player.internal.resolvePlayerHandoff
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -148,5 +155,52 @@ class WatchToPlayerFlowTest {
         assertEquals(PlaybackRenderer.NATIVE, resolved.renderer)
         assertEquals("https://cdn.example.com/stream.m3u8", resolved.resolvedUrl)
         assertTrue(resolved.isPlayable)
+    }
+
+    @Test
+    fun `headline formats series title or defaults gracefully`() {
+        assertEquals("Demon Slayer", formatPlayerHeadline("Demon Slayer"))
+        assertEquals("Private Movie", formatPlayerHeadline(null))
+        assertEquals("Private Movie", formatPlayerHeadline("  "))
+    }
+
+    @Test
+    fun `subtitle formats season and episode metadata cleanly`() {
+        assertEquals(
+            "Season 1 • Episode 1 — Cruelty",
+            formatPlayerSubtitle(
+                seasonNumber = 1,
+                seasonTitle = "Season 1",
+                episodeOrder = 1,
+                episodeTitle = "Cruelty"
+            )
+        )
+        assertEquals(
+            "Episode 1 — Cruelty",
+            formatPlayerSubtitle(
+                seasonNumber = null,
+                seasonTitle = null,
+                episodeOrder = 1,
+                episodeTitle = "Cruelty"
+            )
+        )
+        assertEquals(
+            "Episode 2",
+            formatPlayerSubtitle(
+                seasonNumber = null,
+                seasonTitle = null,
+                episodeOrder = 2,
+                episodeTitle = null
+            )
+        )
+        assertEquals(
+            "",
+            formatPlayerSubtitle(
+                seasonNumber = null,
+                seasonTitle = null,
+                episodeOrder = null,
+                episodeTitle = null
+            )
+        )
     }
 }

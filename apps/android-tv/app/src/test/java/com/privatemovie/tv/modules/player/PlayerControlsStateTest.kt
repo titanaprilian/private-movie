@@ -70,6 +70,13 @@ class PlayerControlsStateTest {
     }
 
     @Test
+    fun `onAction with HideControls hides controls`() {
+        val state = PlayerControlsState(initialVisible = true)
+        state.onAction(PlayerControlAction.HideControls)
+        assertFalse(state.isVisible)
+    }
+
+    @Test
     fun `onAction with non-revealing actions maintains hidden visibility`() {
         val state = PlayerControlsState(initialVisible = false)
         state.onAction(PlayerControlAction.RequestFullscreen)

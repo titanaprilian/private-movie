@@ -19,6 +19,11 @@ import com.privatemovie.tv.modules.config.BackendUrlStore
 import com.privatemovie.tv.modules.detail.DetailScreen
 import com.privatemovie.tv.modules.home.HomeScreen
 import com.privatemovie.tv.modules.player.PlayerScreen
+import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_ORDER_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_TITLE_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_NUMBER_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_TITLE_KEY
+import com.privatemovie.tv.modules.player.internal.PLAYER_SERIES_TITLE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
 import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
@@ -84,27 +89,44 @@ fun AppNavigation(
                 seriesId = seriesId,
                 activeBackendUrl = activeUrl,
                 mediaRepository = mediaRepository,
-                onPlayEpisode = { episodeId ->
+                onPlayEpisode = { episodeId, metadata ->
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
                         remove<String>(PLAYER_SOURCE_TYPE_KEY)
                         remove<String>(PLAYER_SOURCE_URL_KEY)
+                        metadata.seriesTitle?.let { set(PLAYER_SERIES_TITLE_KEY, it) }
+                            ?: remove<String>(PLAYER_SERIES_TITLE_KEY)
+                        metadata.seasonTitle?.let { set(PLAYER_SEASON_TITLE_KEY, it) }
+                            ?: remove<String>(PLAYER_SEASON_TITLE_KEY)
+                        metadata.seasonNumber?.let { set(PLAYER_SEASON_NUMBER_KEY, it) }
+                            ?: remove<Int>(PLAYER_SEASON_NUMBER_KEY)
+                        metadata.episodeOrder?.let { set(PLAYER_EPISODE_ORDER_KEY, it) }
+                            ?: remove<Int>(PLAYER_EPISODE_ORDER_KEY)
+                        metadata.episodeTitle?.let { set(PLAYER_EPISODE_TITLE_KEY, it) }
+                            ?: remove<String>(PLAYER_EPISODE_TITLE_KEY)
                     }
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
-                onPlaySource = { episodeId, source ->
-                    // Source-picker handoff for normalized playback targets:
-                    // the detail flow hands the chosen type + url to the player,
-                    // which resolves the renderer (native vs WebView) and the
-                    // loadable URL or a clear failure for unavailable sources.
+                onPlaySource = { episodeId, source, metadata ->
                     val handoff = buildPlayerHandoff(
                         episodeId = episodeId,
-                        source = PlaybackSourceRef(type = source.type, url = source.url)
+                        source = PlaybackSourceRef(type = source.type, url = source.url),
+                        metadata = metadata
                     )
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
                         handoff.sourceTypeName?.let { set(PLAYER_SOURCE_TYPE_KEY, it) }
                             ?: remove<String>(PLAYER_SOURCE_TYPE_KEY)
                         handoff.sourceUrl?.let { set(PLAYER_SOURCE_URL_KEY, it) }
                             ?: remove<String>(PLAYER_SOURCE_URL_KEY)
+                        handoff.seriesTitle?.let { set(PLAYER_SERIES_TITLE_KEY, it) }
+                            ?: remove<String>(PLAYER_SERIES_TITLE_KEY)
+                        handoff.seasonTitle?.let { set(PLAYER_SEASON_TITLE_KEY, it) }
+                            ?: remove<String>(PLAYER_SEASON_TITLE_KEY)
+                        handoff.seasonNumber?.let { set(PLAYER_SEASON_NUMBER_KEY, it) }
+                            ?: remove<Int>(PLAYER_SEASON_NUMBER_KEY)
+                        handoff.episodeOrder?.let { set(PLAYER_EPISODE_ORDER_KEY, it) }
+                            ?: remove<Int>(PLAYER_EPISODE_ORDER_KEY)
+                        handoff.episodeTitle?.let { set(PLAYER_EPISODE_TITLE_KEY, it) }
+                            ?: remove<String>(PLAYER_EPISODE_TITLE_KEY)
                     }
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
@@ -127,6 +149,11 @@ fun AppNavigation(
                 },
                 playbackSourceTypeName = playbackHandle?.get<String>(PLAYER_SOURCE_TYPE_KEY),
                 playbackUrl = playbackHandle?.get<String>(PLAYER_SOURCE_URL_KEY),
+                seriesTitle = playbackHandle?.get<String>(PLAYER_SERIES_TITLE_KEY),
+                seasonTitle = playbackHandle?.get<String>(PLAYER_SEASON_TITLE_KEY),
+                seasonNumber = playbackHandle?.get<Int>(PLAYER_SEASON_NUMBER_KEY),
+                episodeOrder = playbackHandle?.get<Int>(PLAYER_EPISODE_ORDER_KEY),
+                episodeTitle = playbackHandle?.get<String>(PLAYER_EPISODE_TITLE_KEY),
                 backendBaseUrl = activeUrl
             )
         }
