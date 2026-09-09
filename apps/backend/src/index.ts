@@ -1,10 +1,9 @@
 import { createDbClient } from "@repo/db";
-import { initBrowser, closeBrowser, createStealthBrowserFn } from "@repo/media-scraper";
+import { closeBrowser, createStealthBrowserFn } from "@repo/media-scraper";
 import { createS3StorageService } from "@repo/media-service";
 import { createApp } from "./app";
 import { createAuthenticationService } from "./modules/authentication";
 
-await initBrowser();
 const browserFn = createStealthBrowserFn();
 
 const db = createDbClient(process.env.DATABASE_URL);

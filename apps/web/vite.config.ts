@@ -14,11 +14,11 @@ export default defineConfig({
     host: true, // bind to 0.0.0.0 so LAN devices (e.g. TV) can reach the dev server
     proxy: {
       '/embed': {
-        target: process.env.VITE_API_URL || 'http://localhost:3000',
+        target: (process.env.VITE_API_URL || 'http://localhost:3000').replace(/\/api\/?$/, ''),
         changeOrigin: true,
       },
       '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:3000',
+        target: (process.env.VITE_API_URL || 'http://localhost:3000').replace(/\/api\/?$/, ''),
         changeOrigin: true,
         timeout: 0,
         proxyTimeout: 0,

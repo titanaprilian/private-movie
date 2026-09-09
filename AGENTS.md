@@ -14,6 +14,7 @@ When implementing a feature or fixing a bug, follow this strict execution sequen
 4. **implement** → Agents pick up tickets, write tests first (TDD), then implement
 5. **code-review** → Orchestrator reviews each completed ticket
 6. **push-to-github** → Orchestrator pushes when all tickets are complete
+7. **deploy** → Deploy services to VPS, manage Caddy domains, or sync database
 
 ---
 

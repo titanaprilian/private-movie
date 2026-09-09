@@ -992,17 +992,22 @@ export interface UploadEpisodeVideoSourceOptions {
 
 function getApiBaseUrl(): string {
   const envApiUrl = import.meta.env.VITE_API_URL as string | undefined;
+  let base: string;
   if (typeof window !== 'undefined') {
     if (
       envApiUrl === 'http://localhost:3000' &&
       window.location.hostname !== 'localhost'
     ) {
-      return window.location.origin;
+      base = window.location.origin;
+    } else if (envApiUrl) {
+      base = envApiUrl;
+    } else {
+      base = window.location.origin;
     }
-    if (envApiUrl) return envApiUrl;
-    return window.location.origin;
+  } else {
+    base = envApiUrl || 'http://localhost:3000';
   }
-  return envApiUrl || 'http://localhost:3000';
+  return base.replace(/\/api\/?$/, '');
 }
 
 export function getMaxUploadSizeMb(): number {

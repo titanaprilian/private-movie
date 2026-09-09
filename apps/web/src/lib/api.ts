@@ -8,7 +8,9 @@ let envApiUrl = import.meta.env.VITE_API_URL;
 if (typeof window !== 'undefined' && envApiUrl === 'http://localhost:3000' && window.location.hostname !== 'localhost') {
   envApiUrl = window.location.origin;
 }
-const API_URL = envApiUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+const rawBase = envApiUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+// Normalise base URL so whether VITE_API_URL includes a trailing /api or not, edenTreaty and direct calls resolve cleanly.
+const API_URL = rawBase.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;

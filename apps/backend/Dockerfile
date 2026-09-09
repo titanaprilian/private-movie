@@ -20,4 +20,4 @@ COPY --from=builder /app .
 
 EXPOSE 3000
 
-CMD ["bun", "apps/backend/dist/index.js"]
+CMD ["bun", "apps/backend/src/index.ts"]
