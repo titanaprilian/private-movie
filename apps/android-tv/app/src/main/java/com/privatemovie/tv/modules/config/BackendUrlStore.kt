@@ -46,7 +46,7 @@ class SharedPreferencesBackendUrlStore(
     }
 
     companion object {
-        const val DEFAULT_URL = "http://10.0.2.2:3000"
+        const val DEFAULT_URL = "https://anime.pylearn.my.id"
         private const val PREFS_NAME = "dev_backend_config"
         private const val KEY_BACKEND_URL = "backend_api_url"
 
