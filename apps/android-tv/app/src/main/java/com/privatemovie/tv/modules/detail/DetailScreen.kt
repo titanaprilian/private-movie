@@ -1,27 +1,23 @@
 package com.privatemovie.tv.modules.detail
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,17 +31,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
-import androidx.tv.material3.Card as TvCard
+import androidx.compose.ui.unit.sp
+import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
+import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.detail.internal.DetailUiState
+import com.privatemovie.tv.modules.detail.internal.EpisodeCarousel
+import com.privatemovie.tv.modules.detail.internal.EpisodeInfoPanel
+import com.privatemovie.tv.modules.detail.internal.SeriesHeader
 import com.privatemovie.tv.modules.detail.internal.SourcePickerDialog
 import com.privatemovie.tv.modules.detail.internal.TvEpisode
 import com.privatemovie.tv.modules.detail.internal.TvSeason
 import com.privatemovie.tv.modules.detail.internal.TvSeriesDetails
 import com.privatemovie.tv.modules.detail.internal.TvVideoSource
+import com.privatemovie.tv.modules.detail.internal.findFirstPlayableEpisode
 import com.privatemovie.tv.modules.detail.internal.toTvSeriesDetails
 import com.privatemovie.tv.modules.player.internal.EpisodePlaybackDecision
 import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
@@ -54,8 +56,16 @@ import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
  * Public seam for the Android TV series watch/detail experience.
  *
  * Renders real public series metadata, seasons, and episodes fetched from [MediaRepository]
- * (`GET /api/series/{id}`). Provides D-pad navigation over seasons and episodes, and shows
- * an explicit source picker modal before playback when multiple video sources exist for an episode.
+ * (`GET /api/series/{id}`). Provides:
+ * 1. An immersive series header with 16:9 backdrop banner, 2:3 vertical poster card,
+ *    rich metadata, and a prominent "Play Now / Watch Episode 1" CTA button that receives
+ *    initial D-pad focus.
+ * 2. Horizontal season selector tabs when multiple seasons exist.
+ * 3. A horizontal 16:9 episode thumbnail carousel with episode order badges and titles.
+ * 4. A dynamic info panel updating with the highlighted episode's synopsis, title, and
+ *    playback sources as the user navigates across cards.
+ * 5. Single-click instant playback for single-source episodes and an explicit source picker
+ *    modal for multi-source episodes.
  */
 @Composable
 fun DetailScreen(
@@ -88,6 +98,19 @@ fun DetailScreen(
         }
     }
 
+    val handleSelectEpisode: (TvEpisode) -> Unit = { episode ->
+        when (decideEpisodePlayback(episode.videoSources.size)) {
+            is EpisodePlaybackDecision.Unavailable -> Unit
+            is EpisodePlaybackDecision.PlaySingle -> {
+                val singleSource = episode.videoSources.firstOrNull()
+                handleStartPlayback(episode, singleSource)
+            }
+            is EpisodePlaybackDecision.NeedsSourcePicker -> {
+                pendingSourcePickerEpisode = episode
+            }
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -104,22 +127,7 @@ fun DetailScreen(
             is DetailUiState.Success -> DetailContent(
                 details = state.details,
                 activeBackendUrl = activeBackendUrl,
-                onSelectEpisode = { episode ->
-                    // End-to-end flow decision shared with the player handoff:
-                    // unavailable episodes stay on detail with their inline
-                    // "No video sources" state, single-source episodes play
-                    // directly, and multi-source episodes open the picker.
-                    when (decideEpisodePlayback(episode.videoSources.size)) {
-                        is EpisodePlaybackDecision.Unavailable -> Unit
-                        is EpisodePlaybackDecision.PlaySingle -> {
-                            val singleSource = episode.videoSources.firstOrNull()
-                            handleStartPlayback(episode, singleSource)
-                        }
-                        is EpisodePlaybackDecision.NeedsSourcePicker -> {
-                            pendingSourcePickerEpisode = episode
-                        }
-                    }
-                },
+                onSelectEpisode = handleSelectEpisode,
                 onBack = onBack
             )
         }
@@ -153,11 +161,29 @@ private fun DetailLoading(
         ) {
             Text(
                 text = "Series Details",
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Button(onClick = onBack) {
-                Text("Back")
+            val backShape = RoundedCornerShape(8.dp)
+            TvButton(
+                onClick = onBack,
+                shape = TvButtonDefaults.shape(shape = backShape, focusedShape = backShape),
+                scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.05f),
+                border = TvButtonDefaults.border(
+                    border = Border.None,
+                    focusedBorder = Border(
+                        border = BorderStroke(width = 2.dp, color = Color.White),
+                        shape = backShape
+                    )
+                ),
+                colors = TvButtonDefaults.colors(
+                    containerColor = Color.White.copy(alpha = 0.15f),
+                    focusedContainerColor = Color.White.copy(alpha = 0.3f),
+                    contentColor = Color.White,
+                    focusedContentColor = Color.White
+                )
+            ) {
+                Text("Back", fontWeight = FontWeight.Medium)
             }
         }
 
@@ -198,11 +224,29 @@ private fun DetailError(
         ) {
             Text(
                 text = "Series Details",
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Button(onClick = onBack) {
-                Text("Back")
+            val backShape = RoundedCornerShape(8.dp)
+            TvButton(
+                onClick = onBack,
+                shape = TvButtonDefaults.shape(shape = backShape, focusedShape = backShape),
+                scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.05f),
+                border = TvButtonDefaults.border(
+                    border = Border.None,
+                    focusedBorder = Border(
+                        border = BorderStroke(width = 2.dp, color = Color.White),
+                        shape = backShape
+                    )
+                ),
+                colors = TvButtonDefaults.colors(
+                    containerColor = Color.White.copy(alpha = 0.15f),
+                    focusedContainerColor = Color.White.copy(alpha = 0.3f),
+                    contentColor = Color.White,
+                    focusedContentColor = Color.White
+                )
+            ) {
+                Text("Back", fontWeight = FontWeight.Medium)
             }
         }
 
@@ -215,7 +259,7 @@ private fun DetailError(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = "Could not load series",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -226,14 +270,48 @@ private fun DetailError(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Button(
+                    val btnShape = RoundedCornerShape(8.dp)
+                    TvButton(
                         onClick = onRetry,
-                        modifier = Modifier.focusRequester(retryFocus)
+                        modifier = Modifier.focusRequester(retryFocus),
+                        shape = TvButtonDefaults.shape(shape = btnShape, focusedShape = btnShape),
+                        scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.08f),
+                        border = TvButtonDefaults.border(
+                            border = Border.None,
+                            focusedBorder = Border(
+                                border = BorderStroke(width = 2.dp, color = Color.White),
+                                shape = btnShape
+                            )
+                        ),
+                        colors = TvButtonDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            focusedContainerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White,
+                            focusedContentColor = Color.White
+                        )
                     ) {
-                        Text("Retry")
+                        Text("Retry", fontWeight = FontWeight.Bold)
                     }
-                    OutlinedButton(onClick = onBack) {
-                        Text("Back to Home")
+
+                    TvButton(
+                        onClick = onBack,
+                        shape = TvButtonDefaults.shape(shape = btnShape, focusedShape = btnShape),
+                        scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.05f),
+                        border = TvButtonDefaults.border(
+                            border = Border.None,
+                            focusedBorder = Border(
+                                border = BorderStroke(width = 2.dp, color = Color.White),
+                                shape = btnShape
+                            )
+                        ),
+                        colors = TvButtonDefaults.colors(
+                            containerColor = Color.White.copy(alpha = 0.15f),
+                            focusedContainerColor = Color.White.copy(alpha = 0.25f),
+                            contentColor = Color.White,
+                            focusedContentColor = Color.White
+                        )
+                    ) {
+                        Text("Back to Home", fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -250,6 +328,22 @@ private fun DetailContent(
     modifier: Modifier = Modifier
 ) {
     var selectedSeasonIndex by remember { mutableIntStateOf(0) }
+    val firstEpisode = remember(details) { findFirstPlayableEpisode(details) }
+    var currentlyInspectedEpisode by remember(details, selectedSeasonIndex) {
+        val initialEp = if (details.seasons.isNotEmpty()) {
+            details.seasons.getOrNull(selectedSeasonIndex)?.episodes?.firstOrNull()
+        } else {
+            details.standaloneEpisodes.firstOrNull()
+        }
+        mutableStateOf(initialEp)
+    }
+
+    val playCtaFocusRequester = remember { FocusRequester() }
+
+    // Initial D-pad focus placed directly onto the Play Now CTA on screen entry
+    LaunchedEffect(details.id) {
+        playCtaFocusRequester.requestFocus()
+    }
 
     val currentEpisodes = if (details.seasons.isNotEmpty()) {
         details.seasons.getOrNull(selectedSeasonIndex)?.episodes ?: emptyList()
@@ -259,142 +353,81 @@ private fun DetailContent(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(28.dp),
+        contentPadding = PaddingValues(bottom = 40.dp)
     ) {
+        // 1. Immersive Series Header (Backdrop + Poster + Metadata + Play CTA)
         item(key = "header") {
-            SeriesHeaderCard(
+            SeriesHeader(
                 details = details,
-                activeBackendUrl = activeBackendUrl,
+                baseUrl = activeBackendUrl,
+                firstPlayableEpisode = firstEpisode,
+                playCtaFocusRequester = playCtaFocusRequester,
+                onPlayCta = {
+                    firstEpisode?.let { onSelectEpisode(it) }
+                },
                 onBack = onBack
             )
         }
 
+        // 2. Season Selector Tabs (if more than 1 season)
         if (details.seasons.size > 1) {
             item(key = "seasons-bar") {
                 SeasonSelectorBar(
                     seasons = details.seasons,
                     selectedIndex = selectedSeasonIndex,
-                    onSelectSeason = { index -> selectedSeasonIndex = index }
+                    onSelectSeason = { index ->
+                        selectedSeasonIndex = index
+                        val nextSeasonEp = details.seasons.getOrNull(index)?.episodes?.firstOrNull()
+                        currentlyInspectedEpisode = nextSeasonEp
+                    }
                 )
             }
         }
 
-        item(key = "section-title") {
-            val titleText = if (details.seasons.isNotEmpty()) {
+        // 3. Dynamic Episode Info Panel (shows title, full synopsis, and playback sources)
+        item(key = "dynamic-info-panel") {
+            EpisodeInfoPanel(
+                episode = currentlyInspectedEpisode
+            )
+        }
+
+        // 4. Horizontal 16:9 Episode Carousel Section
+        item(key = "episodes-section") {
+            val sectionTitle = if (details.seasons.isNotEmpty()) {
                 val currentSeason = details.seasons.getOrNull(selectedSeasonIndex)
                 currentSeason?.title ?: "Episodes"
             } else {
                 "Episodes"
             }
 
-            Text(
-                text = titleText,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-
-        if (currentEpisodes.isEmpty()) {
-            item(key = "empty-episodes") {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "No episodes available for this section.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    text = sectionTitle,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-            }
-        } else {
-            items(currentEpisodes, key = { it.id }) { episode ->
-                TvEpisodeCard(
-                    episode = episode,
-                    onSelect = { onSelectEpisode(episode) }
-                )
-            }
-        }
-    }
-}
 
-@Composable
-private fun SeriesHeaderCard(
-    details: TvSeriesDetails,
-    activeBackendUrl: String?,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = details.type.uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        if (details.rating != null) {
-                            Text(
-                                text = "  •  Rating: ${details.rating}",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.Yellow
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
+                if (currentEpisodes.isEmpty()) {
                     Text(
-                        text = details.title,
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "No episodes available for this section.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 16.dp)
                     )
-
-                    val genreNames = details.genres.joinToString("  •  ") { it.name }
-                    if (genreNames.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = genreNames,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.LightGray
-                        )
-                    }
-
-                    details.description?.let { desc ->
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = desc,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    activeBackendUrl?.let { url ->
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Connected Backend: $url",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Button(onClick = onBack) {
-                    Text("Back")
+                } else {
+                    EpisodeCarousel(
+                        episodes = currentEpisodes,
+                        baseUrl = activeBackendUrl,
+                        onSelectEpisode = onSelectEpisode,
+                        onEpisodeFocused = { episode ->
+                            currentlyInspectedEpisode = episode
+                        }
+                    )
                 }
             }
         }
@@ -414,84 +447,36 @@ private fun SeasonSelectorBar(
     ) {
         itemsIndexed(seasons) { index, season ->
             val isSelected = index == selectedIndex
+            val tabShape = RoundedCornerShape(8.dp)
 
             TvButton(
                 onClick = { onSelectSeason(index) },
+                shape = TvButtonDefaults.shape(
+                    shape = tabShape,
+                    focusedShape = tabShape
+                ),
+                scale = TvButtonDefaults.scale(
+                    scale = 1.0f,
+                    focusedScale = 1.05f
+                ),
+                border = TvButtonDefaults.border(
+                    border = Border.None,
+                    focusedBorder = Border(
+                        border = BorderStroke(width = 2.dp, color = Color.White),
+                        shape = tabShape
+                    )
+                ),
                 colors = TvButtonDefaults.colors(
-                    containerColor = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        Color(0xFF2C2C2C)
-                    }
-                )
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF252530),
+                    focusedContainerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF353545),
+                    contentColor = if (isSelected) Color.White else Color.White.copy(alpha = 0.85f),
+                    focusedContentColor = Color.White
+                ),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
             ) {
                 Text(
                     text = season.title,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TvEpisodeCard(
-    episode: TvEpisode,
-    onSelect: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val isEnabled = episode.videoSources.isNotEmpty()
-    TvCard(
-        onClick = { if (isEnabled) onSelect() },
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Episode ${episode.order} — ${episode.title}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                episode.description?.let { desc ->
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.LightGray,
-                        maxLines = 2
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val sourceCountText = when (episode.videoSources.size) {
-                    0 -> "No video sources"
-                    1 -> "1 Playback Source"
-                    else -> "${episode.videoSources.size} Playback Sources (Source Picker)"
-                }
-
-                Text(
-                    text = sourceCountText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (episode.videoSources.size > 1) MaterialTheme.colorScheme.primary else Color.Gray
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                onClick = onSelect,
-                enabled = episode.videoSources.isNotEmpty()
-            ) {
-                Text(
-                    if (episode.videoSources.size > 1) "Select Source & Play" else "Play Episode"
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                 )
             }
         }

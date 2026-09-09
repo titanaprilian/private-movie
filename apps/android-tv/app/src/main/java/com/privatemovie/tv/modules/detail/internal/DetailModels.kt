@@ -97,3 +97,13 @@ fun SeriesDetails.toTvSeriesDetails(): TvSeriesDetails {
         standaloneEpisodes = episodes.map { it.toTvEpisode() }
     )
 }
+
+/**
+ * Finds the first playable episode in a series (from the first season with episodes,
+ * or from standalone episodes if seasons are empty).
+ */
+fun findFirstPlayableEpisode(details: TvSeriesDetails): TvEpisode? {
+    val fromSeason = details.seasons.firstOrNull { it.episodes.isNotEmpty() }?.episodes?.firstOrNull()
+    return fromSeason ?: details.standaloneEpisodes.firstOrNull()
+}
+
