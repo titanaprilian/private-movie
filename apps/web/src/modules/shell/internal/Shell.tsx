@@ -122,6 +122,26 @@ export function Shell({ children }: ShellProps) {
             </svg>
             {!sidebarCollapsed && <span>Genres</span>}
           </Link>
+          <Link
+            to="/admin/storage"
+            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="shrink-0"
+            >
+              <rect x="2" y="2" width="20" height="8" rx="2" />
+              <rect x="2" y="14" width="20" height="8" rx="2" />
+              <line x1="6" y1="6" x2="6.01" y2="6" strokeWidth="3" />
+              <line x1="6" y1="18" x2="6.01" y2="18" strokeWidth="3" />
+            </svg>
+            {!sidebarCollapsed && <span>Storage</span>}
+          </Link>
         </nav>
 
         {/* User Profile at bottom */}
@@ -206,6 +226,13 @@ export function Shell({ children }: ShellProps) {
             className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
           >
             Genres
+          </Link>
+          <Link
+            to="/admin/storage"
+            onClick={() => setIsMobileOpen(false)}
+            className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
+          >
+            Storage
           </Link>
         </nav>
         <div className="p-3 border-t border-c">

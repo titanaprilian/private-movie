@@ -18,6 +18,7 @@ import { Route as WatchDemoRouteImport } from './routes/watch-demo'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminGenresRouteImport } from './routes/admin/genres'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
+import { Route as AdminStorageRouteImport } from './routes/admin/storage'
 import { Route as WatchSeriesIdRouteImport } from './routes/watch.$seriesId'
 import { Route as AdminVideosIndexRouteImport } from './routes/admin/videos.index'
 import { Route as AdminVideosSeriesIdRouteImport } from './routes/admin/videos.$seriesId'
@@ -67,6 +68,11 @@ const AdminProfileRoute = AdminProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminStorageRoute = AdminStorageRouteImport.update({
+  id: '/storage',
+  path: '/storage',
+  getParentRoute: () => AdminRoute,
+} as any)
 const WatchSeriesIdRoute = WatchSeriesIdRouteImport.update({
   id: '/watch/$seriesId',
   path: '/watch/$seriesId',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/storage': typeof AdminStorageRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/storage': typeof AdminStorageRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/storage': typeof AdminStorageRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
+    | '/admin/storage'
     | '/watch/$seriesId'
     | '/admin/'
     | '/admin/videos/$seriesId'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
+    | '/admin/storage'
     | '/watch/$seriesId'
     | '/admin'
     | '/admin/videos/$seriesId'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
+    | '/admin/storage'
     | '/watch/$seriesId'
     | '/admin/'
     | '/admin/videos/$seriesId'
@@ -244,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProfileRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/storage': {
+      id: '/admin/storage'
+      path: '/storage'
+      fullPath: '/admin/storage'
+      preLoaderRoute: typeof AdminStorageRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/watch/$seriesId': {
       id: '/watch/$seriesId'
       path: '/watch/$seriesId'
@@ -271,6 +290,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminGenresRoute: typeof AdminGenresRoute
   AdminProfileRoute: typeof AdminProfileRoute
+  AdminStorageRoute: typeof AdminStorageRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminVideosSeriesIdRoute: typeof AdminVideosSeriesIdRoute
   AdminVideosIndexRoute: typeof AdminVideosIndexRoute
@@ -279,6 +299,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminGenresRoute: AdminGenresRoute,
   AdminProfileRoute: AdminProfileRoute,
+  AdminStorageRoute: AdminStorageRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminVideosSeriesIdRoute: AdminVideosSeriesIdRoute,
   AdminVideosIndexRoute: AdminVideosIndexRoute,

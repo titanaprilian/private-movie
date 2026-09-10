@@ -1,5 +1,6 @@
 export { SeriesGrid } from './internal/SeriesGrid';
 export { SeriesDetailView } from './internal/SeriesDetailView';
+export { SeriesCombobox } from './internal/SeriesCombobox';
 export { AddMediaDialog } from './internal/AddMediaDialog';
 export { CustomVideoPlayer } from './internal/CustomVideoPlayer';
 export type { CustomVideoPlayerProps } from './internal/CustomVideoPlayer';

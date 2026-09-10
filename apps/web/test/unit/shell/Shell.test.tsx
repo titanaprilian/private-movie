@@ -51,6 +51,10 @@ describe('Shell layout component', () => {
     expect(seriesLinks.length).toBeGreaterThan(0);
     expect(seriesLinks[0]).toHaveAttribute('href', '/admin/videos');
 
+    const storageLinks = screen.getAllByRole('link', { name: /storage/i });
+    expect(storageLinks.length).toBeGreaterThan(0);
+    expect(storageLinks[0]).toHaveAttribute('href', '/admin/storage');
+
     expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
     expect(screen.queryByText('Customers')).not.toBeInTheDocument();
     expect(screen.queryByText('Orders')).not.toBeInTheDocument();
