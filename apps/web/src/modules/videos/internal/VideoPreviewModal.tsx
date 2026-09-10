@@ -59,7 +59,7 @@ export function VideoPreviewModal({
               src={embedUrl}
               title={source.label || 'Video Source Preview'}
               className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
               allowFullScreen
               sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             />

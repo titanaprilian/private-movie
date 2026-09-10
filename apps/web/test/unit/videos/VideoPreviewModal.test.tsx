@@ -68,7 +68,7 @@ describe('VideoPreviewModal Component', () => {
     expect(video).toBeInTheDocument();
   });
 
-  it('renders sandboxed iframe for embed video sources', () => {
+  it('renders sandboxed iframe for embed video sources with strict security attributes', () => {
     const embedSource: VideoSource = {
       id: 'src-embed',
       type: 'embed',
@@ -89,7 +89,20 @@ describe('VideoPreviewModal Component', () => {
     expect(iframe).toBeInTheDocument();
     expect(iframe.tagName.toLowerCase()).toBe('iframe');
     expect(iframe).toHaveAttribute('src', '/embed/ZXBpc29kZTE');
-    expect(iframe).toHaveAttribute('sandbox');
+    expect(iframe).toHaveAttribute(
+      'sandbox',
+      'allow-scripts allow-same-origin allow-forms allow-presentation'
+    );
+    expect(iframe).toHaveAttribute(
+      'allow',
+      'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen'
+    );
+    expect(iframe.hasAttribute('allowfullscreen')).toBe(true);
+
+    const sandbox = iframe.getAttribute('sandbox') || '';
+    expect(sandbox).not.toContain('allow-popups');
+    expect(sandbox).not.toContain('allow-popups-to-escape-sandbox');
+    expect(sandbox).not.toContain('allow-top-navigation');
   });
 
   it('invokes onOpenChange when closed via close button', async () => {

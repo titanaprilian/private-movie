@@ -287,7 +287,9 @@ export function SeriesWatchView({
                   src={formatEmbedUrl(activeSource.url)}
                   title={activeEpisode?.title ?? 'Video player'}
                   className="h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   allowFullScreen
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                   referrerPolicy="no-referrer"
                 />
               </div>
