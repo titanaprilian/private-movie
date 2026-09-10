@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { AlertTriangle } from 'lucide-react';
 import {
   storageMetricsQueryOptions,
   storageResourcesQueryOptions,
@@ -29,14 +30,17 @@ export function StorageView() {
   const {
     data: metrics,
     isLoading: isLoadingMetrics,
+    error: metricsError,
   } = useQuery(storageMetricsQueryOptions());
 
   const {
     data: resourcesData,
     isLoading: isLoadingResources,
+    error: resourcesError,
   } = useQuery(storageResourcesQueryOptions());
 
   const resources = resourcesData?.data ?? [];
+  const activeError = metricsError || resourcesError;
 
   // Dialog States
   const [isLimitDialogOpen, setIsLimitDialogOpen] = useState(false);
@@ -113,6 +117,24 @@ export function StorageView() {
           </p>
         </div>
       </div>
+
+      {/* S3 Configuration / Error Alert Banner */}
+      {activeError && (
+        <div
+          className="bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 rounded p-4 flex items-start gap-3"
+          data-testid="storage-error-alert"
+        >
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-fg">Storage Warning</h3>
+            <p className="text-xs text-muted">
+              {activeError instanceof Error
+                ? activeError.message
+                : 'S3 storage service is unavailable or unconfigured.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Metrics Section */}
       <StorageMetricsGrid

@@ -31,12 +31,13 @@ const mockMetrics: StorageMetrics = {
 
 const mockResources: StorageResource[] = [
   {
-    id: 'res-1',
+    id: 'src-1',
     key: 'movies/big_buck_bunny.mp4',
     filename: 'big_buck_bunny.mp4',
     sizeBytes: 5368709120, // 5 GB
     lastModified: '2026-09-01T10:00:00.000Z',
     status: 'linked',
+    isLoneSource: true,
     videoSource: {
       id: 'src-1',
       label: 'Main 1080p',
@@ -54,12 +55,13 @@ const mockResources: StorageResource[] = [
     },
   },
   {
-    id: 'res-2',
+    id: 'src-2',
     key: 'movies/small_clip.mp4',
     filename: 'small_clip.mp4',
     sizeBytes: 1073741824, // 1 GB
     lastModified: '2026-09-05T12:00:00.000Z',
     status: 'linked',
+    isLoneSource: false,
     videoSource: {
       id: 'src-2',
       label: 'Secondary 720p',
@@ -77,61 +79,154 @@ const mockResources: StorageResource[] = [
     },
   },
   {
-    id: 'res-3',
+    id: 'orphans/unlinked_trailer.mp4',
     key: 'orphans/unlinked_trailer.mp4',
     filename: 'unlinked_trailer.mp4',
     sizeBytes: 3221225472, // 3 GB
     lastModified: '2026-08-20T08:00:00.000Z',
     status: 'orphaned',
+    isLoneSource: false,
   },
   {
-    id: 'res-4',
+    id: 'orphans/temp_chunk.bin',
     key: 'orphans/temp_chunk.bin',
     filename: 'temp_chunk.bin',
     sizeBytes: 1073741824, // 1 GB
     lastModified: '2026-08-15T08:00:00.000Z',
     status: 'orphaned',
+    isLoneSource: false,
+  },
+];
+
+const mockBackendItems = [
+  {
+    key: 'movies/big_buck_bunny.mp4',
+    filename: 'big_buck_bunny.mp4',
+    sizeBytes: 5368709120,
+    lastModified: '2026-09-01T10:00:00.000Z',
+    status: 'linked' as const,
+    videoSourceId: 'src-1',
+    label: 'Main 1080p',
+    quality: '1080p',
+    episodeId: 'ep-1',
+    episodeTitle: 'Episode One',
+    episodeOrder: 1,
+    seasonId: 'season-1',
+    seasonNumber: 1,
+    seasonTitle: 'Season 1',
+    seriesId: 'series-1',
+    seriesTitle: 'Cyberpunk Series',
+    isLoneSource: true,
+  },
+  {
+    key: 'movies/small_clip.mp4',
+    filename: 'small_clip.mp4',
+    sizeBytes: 1073741824,
+    lastModified: '2026-09-05T12:00:00.000Z',
+    status: 'linked' as const,
+    videoSourceId: 'src-2',
+    label: 'Secondary 720p',
+    quality: '720p',
+    episodeId: 'ep-2',
+    episodeTitle: 'Episode Two',
+    episodeOrder: 2,
+    seasonId: 'season-1',
+    seasonNumber: 1,
+    seasonTitle: 'Season 1',
+    seriesId: 'series-1',
+    seriesTitle: 'Cyberpunk Series',
+    isLoneSource: false,
+  },
+  {
+    key: 'orphans/unlinked_trailer.mp4',
+    filename: 'unlinked_trailer.mp4',
+    sizeBytes: 3221225472,
+    lastModified: '2026-08-20T08:00:00.000Z',
+    status: 'orphaned' as const,
+    videoSourceId: null,
+    label: null,
+    quality: null,
+    episodeId: null,
+    episodeTitle: null,
+    episodeOrder: null,
+    seasonId: null,
+    seasonNumber: null,
+    seasonTitle: null,
+    seriesId: null,
+    seriesTitle: null,
+    isLoneSource: false,
+  },
+  {
+    key: 'orphans/temp_chunk.bin',
+    filename: 'temp_chunk.bin',
+    sizeBytes: 1073741824,
+    lastModified: '2026-08-15T08:00:00.000Z',
+    status: 'orphaned' as const,
+    videoSourceId: null,
+    label: null,
+    quality: null,
+    episodeId: null,
+    episodeTitle: null,
+    episodeOrder: null,
+    seasonId: null,
+    seasonNumber: null,
+    seasonTitle: null,
+    seriesId: null,
+    seriesTitle: null,
+    isLoneSource: false,
   },
 ];
 
 describe('Storage Management Console UI', () => {
-  const originalFetch = global.fetch;
-
   beforeEach(() => {
     vi.restoreAllMocks();
     setAccessToken('test-access-token');
-    global.fetch = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
       if (url.includes('/api/storage/metrics')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockMetrics,
-        } as Response);
+        return new Response(
+          JSON.stringify({
+            data: {
+              totalBytes: 10737418240,
+              limitBytes: 53687091200,
+              percentUsed: 20.0,
+              totalCount: 4,
+              linkedCount: 2,
+              orphanCount: 2,
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
       }
       if (url.includes('/api/storage/resources/preview-url')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ url: 'https://preview.s3.com/stream.mp4' }),
-        } as Response);
+        return new Response(
+          JSON.stringify({ data: { previewUrl: 'https://preview.s3.com/stream.mp4' } }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
       }
       if (url.includes('/api/storage/resources')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({
-            data: mockResources,
-            pagination: { page: 1, limit: 10, total: 4, totalPages: 1 },
+        return new Response(
+          JSON.stringify({
+            data: {
+              items: mockBackendItems,
+              total: 4,
+              page: 1,
+              limit: 10,
+              totalPages: 1,
+            },
           }),
-        } as Response);
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-      return Promise.resolve({
-        ok: true,
-        json: async () => ({ success: true }),
-      } as Response);
-    }) as unknown as typeof fetch;
+      return new Response(
+        JSON.stringify({ data: { success: true } }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    });
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
+    vi.restoreAllMocks();
   });
 
   describe('StorageMetricsGrid component', () => {
@@ -404,10 +499,34 @@ describe('Storage Management Console UI', () => {
         expect(screen.getByText(/Preview Video: big_buck_bunny.mp4/i)).toBeInTheDocument();
       });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/storage/resources/preview-url?key=movies%2Fbig_buck_bunny.mp4'),
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/storage/resources/preview-url?key=movies/big_buck_bunny.mp4'),
         expect.any(Object)
       );
+    });
+  });
+
+  describe('Unconfigured S3 / Error state display', () => {
+    it('displays error alert banner when S3 storage returns an error', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: 'S3_NOT_CONFIGURED',
+              message: 'S3 storage service is not configured',
+            },
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      });
+
+      renderWithProviders(<StorageView />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('storage-error-alert')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/S3 storage service is not configured/i)).toBeInTheDocument();
     });
   });
 });

@@ -1,5 +1,14 @@
 import { queryOptions } from '@tanstack/react-query';
-import { getAccessToken } from '@/lib/api';
+import { api } from '@/lib/api';
+import type {
+  StorageMetrics as BackendStorageMetrics,
+  StorageResourceItem,
+  StorageResourcesResponseData,
+  StorageLimitUpdateResponseData,
+  StorageDeleteResponseData,
+  StoragePurgeOrphansResponseData,
+  StoragePreviewUrlResponseData,
+} from '@repo/contracts';
 
 export interface StorageMetrics {
   totalSizeBytes: number;
@@ -8,6 +17,12 @@ export interface StorageMetrics {
   totalFiles: number;
   linkedFiles: number;
   orphanedFiles: number;
+  // Aliases for contract compatibility
+  totalBytes?: number;
+  limitBytes?: number;
+  totalCount?: number;
+  linkedCount?: number;
+  orphanCount?: number;
 }
 
 export interface VideoSourceMetadata {
@@ -36,6 +51,7 @@ export interface StorageResource {
   status: 'linked' | 'orphaned';
   videoSource?: VideoSourceMetadata;
   episode?: EpisodeMetadata;
+  isLoneSource?: boolean;
 }
 
 export interface StorageResourceFilterParams {
@@ -88,27 +104,79 @@ export function formatBytes(bytes: number, decimals = 1): string {
 }
 
 function extractErrorMessage(error: unknown, fallback: string): string {
+  if (!error) return fallback;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (typeof (error as any)?.message === 'string') return (error as any).message;
+  const err = error as any;
+  if (typeof err === 'string' && err !== '[object Object]') return err;
+
+  if (err.value) {
+    if (typeof err.value === 'string' && err.value !== '[object Object]') return err.value;
+    if (typeof err.value.error?.message === 'string') return err.value.error.message;
+    if (typeof err.value.message === 'string') return err.value.message;
+    if (typeof err.value.error === 'string') return err.value.error;
+  }
+  if (typeof err.error?.message === 'string') return err.error.message;
+  if (typeof err.error === 'string') return err.error;
+  if (typeof err.message === 'string' && err.message !== '[object Object]') return err.message;
   return fallback;
 }
 
-function getAuthHeaders(): Record<string, string> {
-  const token = getAccessToken();
-  return token ? { authorization: `Bearer ${token}` } : {};
+function mapResourceItem(item: StorageResourceItem): StorageResource {
+  const isLinked = item.status === 'linked';
+  return {
+    id: item.videoSourceId || item.key,
+    key: item.key,
+    filename: item.filename,
+    sizeBytes: item.sizeBytes,
+    lastModified: item.lastModified,
+    status: item.status,
+    isLoneSource: item.isLoneSource,
+    videoSource:
+      isLinked && item.videoSourceId
+        ? {
+            id: item.videoSourceId,
+            label: item.label || '',
+            quality: item.quality || '',
+            episodeId: item.episodeId || '',
+          }
+        : undefined,
+    episode:
+      isLinked && item.episodeId
+        ? {
+            id: item.episodeId,
+            title: item.episodeTitle || '',
+            episodeNumber: item.episodeOrder ?? 1,
+            seasonNumber: item.seasonNumber ?? 1,
+            seriesId: item.seriesId || '',
+            seriesTitle: item.seriesTitle || '',
+            sourceCount: item.isLoneSource ? 1 : 2,
+          }
+        : undefined,
+  };
 }
 
 export async function fetchStorageMetrics(): Promise<StorageMetrics> {
-  const res = await fetch('/api/storage/metrics', {
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    throw new Error(errText || 'Failed to fetch storage metrics');
+  const res = await api.storage.metrics.get();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as BackendStorageMetrics | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage metrics'));
   }
-  const json = await res.json();
-  return (json.data ?? json) as StorageMetrics;
+
+  return {
+    totalSizeBytes: data.totalBytes,
+    limitSizeBytes: data.limitBytes,
+    percentUsed: data.percentUsed,
+    totalFiles: data.totalCount,
+    linkedFiles: data.linkedCount,
+    orphanedFiles: data.orphanCount,
+    totalBytes: data.totalBytes,
+    limitBytes: data.limitBytes,
+    totalCount: data.totalCount,
+    linkedCount: data.linkedCount,
+    orphanCount: data.orphanCount,
+  };
 }
 
 export function storageMetricsQueryOptions() {
@@ -121,31 +189,40 @@ export function storageMetricsQueryOptions() {
 export async function fetchStorageResources(
   params: StorageResourceFilterParams = {}
 ): Promise<StorageResourcesResponse> {
-  const queryParams = new URLSearchParams();
-  if (params.status) queryParams.set('status', params.status);
-  if (params.search) queryParams.set('search', params.search);
-  if (params.sortBy) queryParams.set('sortBy', params.sortBy);
-  if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
-  if (params.page) queryParams.set('page', String(params.page));
-  if (params.limit) queryParams.set('limit', String(params.limit));
+  const query: Record<string, string> = {};
+  if (params.status) query.status = params.status;
+  if (params.search) query.search = params.search;
+  if (params.sortBy) query.sortBy = params.sortBy;
+  if (params.sortOrder) query.sortOrder = params.sortOrder;
+  if (params.page) query.page = String(params.page);
+  if (params.limit) query.limit = String(params.limit);
 
-  const url = `/api/storage/resources${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  const res = await fetch(url, {
-    headers: getAuthHeaders(),
-    credentials: 'include',
+  const res = await api.storage.resources.get({
+    $query: query as {
+      status?: string;
+      search?: string;
+      sortBy?: string;
+      sortOrder?: string;
+      page?: string;
+      limit?: string;
+    },
   });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    throw new Error(errText || 'Failed to fetch storage resources');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StorageResourcesResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage resources'));
   }
-  const json = await res.json();
-  if (Array.isArray(json)) {
-    return {
-      data: json,
-      pagination: { page: 1, limit: json.length, total: json.length, totalPages: 1 },
-    };
-  }
-  return json as StorageResourcesResponse;
+
+  return {
+    data: (data.items || []).map(mapResourceItem),
+    pagination: {
+      page: data.page,
+      limit: data.limit,
+      total: data.total,
+      totalPages: data.totalPages,
+    },
+  };
 }
 
 export function storageResourcesQueryOptions(params: StorageResourceFilterParams = {}) {
@@ -155,123 +232,114 @@ export function storageResourcesQueryOptions(params: StorageResourceFilterParams
   });
 }
 
-export async function refreshStorageScan(): Promise<{ success: boolean }> {
-  const res = await fetch('/api/storage/scan', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    throw new Error('Failed to refresh storage scan');
+export async function refreshStorageScan(): Promise<{ count: number; totalBytes: number }> {
+  const res = await api.storage.scan.post();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as { count: number; totalBytes: number } | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to refresh storage scan'));
   }
-  return res.json();
+
+  return data;
 }
 
-export async function updateStorageLimit(limitGb: number): Promise<{ limitGb: number }> {
-  const res = await fetch('/api/storage/limit', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify({ limitGb }),
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(extractErrorMessage(json, 'Failed to update storage limit'));
+export async function updateStorageLimit(limitGb: number): Promise<{ limitGb: number; limitBytes: number }> {
+  const res = await api.storage.limit.put({ limitGb });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StorageLimitUpdateResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to update storage limit'));
   }
-  const json = await res.json();
-  return (json.data ?? json) as { limitGb: number };
+
+  return data;
 }
 
 export async function updateSourceMetadata(
   id: string,
   input: EditSourceMetadataInput
-): Promise<StorageResource> {
-  const res = await fetch(`/api/storage/resources/${encodeURIComponent(id)}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify(input),
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(extractErrorMessage(json, 'Failed to update source metadata'));
+): Promise<VideoSourceMetadata> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage.resources as any)[id].patch(input);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = (res.data as any)?.data;
+  if (res.error || !raw) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to update source metadata'));
   }
-  const json = await res.json();
-  return (json.data ?? json) as StorageResource;
+
+  return {
+    id: raw.id,
+    label: raw.label,
+    quality: raw.quality ?? '',
+    episodeId: raw.episodeId,
+  };
 }
 
 export async function attachOrphanFile(
   input: AttachOrphanInput
-): Promise<StorageResource> {
-  const res = await fetch('/api/storage/resources/attach', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify(input),
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(extractErrorMessage(json, 'Failed to attach orphaned file'));
+): Promise<VideoSourceMetadata> {
+  const res = await api.storage.resources.attach.post(input);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = (res.data as any)?.data;
+  if (res.error || !raw) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to attach orphaned file'));
   }
-  const json = await res.json();
-  return (json.data ?? json) as StorageResource;
+
+  return {
+    id: raw.id,
+    label: raw.label,
+    quality: raw.quality ?? '',
+    episodeId: raw.episodeId,
+  };
 }
 
 export async function deleteStorageResources(
   keys: string[]
 ): Promise<BatchDeleteResponse> {
-  const res = await fetch('/api/storage/resources/delete', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify({ keys }),
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(extractErrorMessage(json, 'Failed to delete storage resources'));
+  const res = await api.storage.resources.delete.post({ keys });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StorageDeleteResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to delete storage resources'));
   }
-  const json = await res.json();
-  return (json.data ?? json) as BatchDeleteResponse;
+
+  return {
+    deletedKeys: data.deletedKeys,
+    reclaimedBytes: data.reclaimedBytes,
+  };
 }
 
 export async function purgeOrphanFiles(): Promise<BatchDeleteResponse> {
-  const res = await fetch('/api/storage/resources/purge-orphans', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(extractErrorMessage(json, 'Failed to purge orphaned files'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage.resources as any)['purge-orphans'].post();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StoragePurgeOrphansResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to purge orphaned files'));
   }
-  const json = await res.json();
-  return (json.data ?? json) as BatchDeleteResponse;
+
+  return {
+    deletedKeys: data.deletedKeys,
+    reclaimedBytes: data.reclaimedBytes,
+  };
 }
 
 export async function getStoragePreviewUrl(key: string): Promise<string> {
-  const res = await fetch(
-    `/api/storage/resources/preview-url?key=${encodeURIComponent(key)}`,
-    {
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    }
-  );
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(extractErrorMessage(json, 'Failed to get preview URL'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage.resources as any)['preview-url'].get({
+    $query: { key },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StoragePreviewUrlResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to get preview URL'));
   }
-  const json = await res.json();
-  return json.url ?? json.data?.url ?? json.data;
+
+  return data.previewUrl;
 }
