@@ -62,6 +62,32 @@ function parseSourceTypesParam(input: unknown): string[] | undefined {
   return out.length > 0 ? out : undefined;
 }
 
+const AD_SUPPRESSION_SHIM = `<script>
+  (function() {
+    window.open = function() {
+      return {
+        focus: function() {},
+        blur: function() {},
+        close: function() {},
+        closed: true
+      };
+    };
+    document.addEventListener('click', function(e) {
+      var target = e.target;
+      while (target && target !== document) {
+        if (target.tagName === 'A') {
+          if (target.getAttribute('target') === '_blank' || target.target === '_blank') {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+        }
+        target = target.parentNode;
+      }
+    }, true);
+  })();
+</script>`;
+
 /**
  * Root-level route for the embed sandbox bootstrap.
  * Registers at `/embed/:hash` (not under `/api` prefix).
@@ -84,6 +110,7 @@ export const embedRoutes = () => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Video Embed</title>
+  ${AD_SUPPRESSION_SHIM}
 </head>
 <body>
   <script>
@@ -195,15 +222,15 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           if (/(<head[^>]*>)/i.test(modifiedHtml)) {
             modifiedHtml = modifiedHtml.replace(
               /(<head[^>]*>)/i,
-              `$1<base href="${origin}/">`
+              `$1<base href="${origin}/">\n  ${AD_SUPPRESSION_SHIM}`
             );
           } else if (/(<html[^>]*>)/i.test(modifiedHtml)) {
             modifiedHtml = modifiedHtml.replace(
               /(<html[^>]*>)/i,
-              `$1<head><base href="${origin}/"></head>`
+              `$1<head><base href="${origin}/">\n  ${AD_SUPPRESSION_SHIM}</head>`
             );
           } else {
-            modifiedHtml = `<base href="${origin}/">${modifiedHtml}`;
+            modifiedHtml = `<head><base href="${origin}/">\n  ${AD_SUPPRESSION_SHIM}</head>${modifiedHtml}`;
           }
           return new Response(modifiedHtml, {
             status: 200,

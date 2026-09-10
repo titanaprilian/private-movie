@@ -80,4 +80,24 @@ describe('GET /embed/:hash', () => {
     expect(html).toContain('https://videobello.net/embed/');
     expect(html).toContain(`https://videobello.net/embed/${hash}`);
   });
+
+  it('should contain the ad-suppression script shim', async () => {
+    const hash = 'test-video-hash-123';
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/${hash}`)
+    );
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
+
+    expect(html).toContain('window.open = function()');
+    expect(html).toContain('focus: function()');
+    expect(html).toContain('blur: function()');
+    expect(html).toContain('close: function()');
+    expect(html).toContain('closed: true');
+    expect(html).toContain("document.addEventListener('click'");
+    expect(html).toContain("target.getAttribute('target') === '_blank'");
+    expect(html).toContain('e.preventDefault()');
+    expect(html).toContain('e.stopPropagation()');
+  });
 });

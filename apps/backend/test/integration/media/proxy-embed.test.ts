@@ -37,9 +37,37 @@ describe("GET /media/proxy-embed", () => {
     expect(capturedUrl).toBe("https://videobello.net/e/abcd123");
     expect(capturedHeaders["Referer"]).toBe("https://dramula.com");
     expect(response.headers.get("content-type")).toContain("text/html");
-    expect(response.body).toBe(
-      '<!DOCTYPE html><html><head><base href="https://videobello.net/"><title>Bello Player</title></head><body><video></video></body></html>'
-    );
+    expect(response.body).toContain('<base href="https://videobello.net/">');
+    expect(response.body).toContain('window.open = function()');
+    expect(response.body).toContain("document.addEventListener('click'");
+  });
+
+  it("injects ad suppression script shim into <head>", async () => {
+    vi.spyOn(global, "fetch").mockImplementation(async () => {
+      return new Response(
+        "<!DOCTYPE html><html><head><title>Bello Player</title></head><body><video></video></body></html>",
+        {
+          status: 200,
+          headers: { "Content-Type": "text/html" },
+        }
+      );
+    });
+
+    const response = await request(app, {
+      method: "GET",
+      path: "/media/proxy-embed?url=https://videobello.net/e/abcd123",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toContain('window.open = function()');
+    expect(response.body).toContain('focus: function()');
+    expect(response.body).toContain('blur: function()');
+    expect(response.body).toContain('close: function()');
+    expect(response.body).toContain('closed: true');
+    expect(response.body).toContain("document.addEventListener('click'");
+    expect(response.body).toContain("target.getAttribute('target') === '_blank'");
+    expect(response.body).toContain('e.preventDefault()');
+    expect(response.body).toContain('e.stopPropagation()');
   });
 
   it("returns 400 for invalid url parameter", async () => {
