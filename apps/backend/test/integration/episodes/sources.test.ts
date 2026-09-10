@@ -2,6 +2,7 @@ import { describe, expect, it, beforeAll } from "vitest";
 import { videoSources as videoSourcesTable, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
+import { createMockS3 } from "../../utils/s3";
 import { db } from "../../utils/db";
 import { episodes } from "@repo/db";
 import { eq } from "drizzle-orm";
@@ -120,16 +121,10 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
     });
 
     it("resolves presigned GET playback URLs for s3 sources on GET /episodes/:id while leaving db key unmodified", async () => {
-      const mockS3Service = {
-        isConfigured: () => true,
-        getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
+      const mockS3Service = createMockS3({
         getPresignedPlaybackUrl: async (key: string, expiresIn?: number) =>
           `https://s3.signed.com/${key}?expires=${expiresIn ?? 21600}`,
-        uploadObject: async () => {},
-        uploadStream: async () => {},
-        deleteObject: async () => {},
-        deleteObjects: async () => {},
-      };
+      });
 
       const customApp = await buildApp({ s3StorageService: mockS3Service });
       const episode = await insertTestEpisode();
@@ -174,16 +169,10 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
     });
 
     it("returns nested episodes with presigned GET playback URLs for s3 sources on GET /series/:id", async () => {
-      const mockS3Service = {
-        isConfigured: () => true,
-        getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
+      const mockS3Service = createMockS3({
         getPresignedPlaybackUrl: async (key: string, expiresIn?: number) =>
           `https://s3.signed.com/${key}?expires=${expiresIn ?? 21600}`,
-        uploadObject: async () => {},
-        uploadStream: async () => {},
-        deleteObject: async () => {},
-        deleteObjects: async () => {},
-      };
+      });
 
       const customApp = await buildApp({ s3StorageService: mockS3Service });
       const seasonId = await ensureSeason(crypto.randomUUID());
@@ -290,23 +279,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
 
     it("returns 503 S3_NOT_CONFIGURED when S3 storage service is not configured", async () => {
       const unconfiguredApp = await buildApp({
-        s3StorageService: {
+        s3StorageService: createMockS3({
           isConfigured: () => false,
-          getPresignedUploadUrl: async () => {
-            throw new Error("Not implemented");
-          },
-          getPresignedPlaybackUrl: async () => {
-            throw new Error("Not implemented");
-          },
-          uploadObject: async () => {
-            throw new Error("Not implemented");
-          },
-          uploadStream: async () => {
-            throw new Error("Not implemented");
-          },
-          deleteObject: async () => {},
-          deleteObjects: async () => {},
-        },
+        }),
       });
 
       const { accessToken } = await registerUser(unconfiguredApp);
@@ -325,18 +300,13 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
     });
 
     it("issues a valid presigned upload URL and key when configured and authenticated", async () => {
-      const mockS3Service = {
-        isConfigured: () => true,
+      const mockS3Service = createMockS3({
         getPresignedUploadUrl: async (key: string, _contentType?: string) => ({
           uploadUrl: `https://s3.example.com/${key}?signature=test`,
           key,
         }),
         getPresignedPlaybackUrl: async (key: string) => `https://s3.example.com/${key}?playback=true`,
-        uploadObject: async () => {},
-        uploadStream: async () => {},
-        deleteObject: async () => {},
-        deleteObjects: async () => {},
-      };
+      });
 
       const customApp = await buildApp({ s3StorageService: mockS3Service });
       const { accessToken } = await registerUser(customApp);
@@ -393,23 +363,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
 
     it("returns 503 S3_NOT_CONFIGURED when S3 storage is not configured", async () => {
       const unconfiguredApp = await buildApp({
-        s3StorageService: {
+        s3StorageService: createMockS3({
           isConfigured: () => false,
-          getPresignedUploadUrl: async () => {
-            throw new Error("Not implemented");
-          },
-          getPresignedPlaybackUrl: async () => {
-            throw new Error("Not implemented");
-          },
-          uploadObject: async () => {
-            throw new Error("Not implemented");
-          },
-          uploadStream: async () => {
-            throw new Error("Not implemented");
-          },
-          deleteObject: async () => {},
-          deleteObjects: async () => {},
-        },
+        }),
       });
 
       const { accessToken } = await registerUser(unconfiguredApp);
@@ -436,11 +392,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       let uploadedStream: ReadableStream | Readable | null = null;
       let streamReceivedBytes = 0;
 
-      const mockS3Service = {
-        isConfigured: () => true,
-        getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
-        getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}?playback=true`,
-        uploadObject: async () => {},
+      const mockS3Service = createMockS3({
         uploadStream: async (key: string, body: ReadableStream | Readable, options?: StreamUploadOptions) => {
           uploadedKey = key;
           uploadedContentType = options?.contentType ?? "";
@@ -456,9 +408,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
             }
           }
         },
-        deleteObject: async () => {},
-        deleteObjects: async () => {},
-      };
+      });
 
       const customApp = await buildApp({ s3StorageService: mockS3Service });
       const { accessToken } = await registerUser(customApp);
@@ -516,15 +466,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       process.env.MAX_UPLOAD_SIZE_MB = "10"; // 10MB limit for test
 
       try {
-        const mockS3Service = {
-          isConfigured: () => true,
-          getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
-          getPresignedPlaybackUrl: async () => "",
-          uploadObject: async () => {},
-          uploadStream: async () => {},
-          deleteObject: async () => {},
-          deleteObjects: async () => {},
-        };
+        const mockS3Service = createMockS3();
 
         const customApp = await buildApp({ s3StorageService: mockS3Service });
         const { accessToken } = await registerUser(customApp);
@@ -558,15 +500,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       process.env.MAX_UPLOAD_SIZE_MB = "1"; // Set to 1MB to test format mapping with a real 2MB blob
 
       try {
-        const mockS3Service = {
-          isConfigured: () => true,
-          getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
-          getPresignedPlaybackUrl: async () => "",
-          uploadObject: async () => {},
-          uploadStream: async () => {},
-          deleteObject: async () => {},
-          deleteObjects: async () => {},
-        };
+        const mockS3Service = createMockS3();
 
         const customApp = await buildApp({ s3StorageService: mockS3Service });
         const { accessToken } = await registerUser(customApp);
@@ -601,11 +535,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
     it("handles request abort during streaming upload without unhandled errors", async () => {
       let signalAborted = false;
 
-      const mockS3Service = {
-        isConfigured: () => true,
-        getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
-        getPresignedPlaybackUrl: async () => "",
-        uploadObject: async () => {},
+      const mockS3Service = createMockS3({
         uploadStream: async (_key: string, _body: ReadableStream | Readable, options?: StreamUploadOptions) => {
           if (options?.signal) {
             if (options.signal.aborted) {
@@ -619,9 +549,7 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
           // Simulate aborted stream
           throw options?.signal?.reason || new Error("Upload aborted");
         },
-        deleteObject: async () => {},
-        deleteObjects: async () => {},
-      };
+      });
 
       const customApp = await buildApp({ s3StorageService: mockS3Service });
       const { accessToken } = await registerUser(customApp);

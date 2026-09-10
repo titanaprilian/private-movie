@@ -2,6 +2,7 @@ import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
 import { videoSources as videoSourcesTable, seasons, series, episodes } from "@repo/db";
 import { buildApp, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
+import { createMockS3 } from "../../utils/s3";
 import { db } from "../../utils/db";
 import { eq } from "drizzle-orm";
 import type { StreamUploadOptions } from "@repo/media-service";
@@ -146,23 +147,9 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
 
   it("returns 503 S3_NOT_CONFIGURED when S3 credentials are unconfigured", async () => {
     const unconfiguredApp = await buildApp({
-      s3StorageService: {
+      s3StorageService: createMockS3({
         isConfigured: () => false,
-        getPresignedUploadUrl: async () => {
-          throw new Error("Not implemented");
-        },
-        getPresignedPlaybackUrl: async () => {
-          throw new Error("Not implemented");
-        },
-        uploadObject: async () => {
-          throw new Error("Not implemented");
-        },
-        uploadStream: async () => {
-          throw new Error("Not implemented");
-        },
-        deleteObject: async () => {},
-        deleteObjects: async () => {},
-      },
+      }),
     });
 
     const { accessToken } = await registerUser(unconfiguredApp);
@@ -190,7 +177,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
   it("successfully ingests remote video stream to S3, emits SSE progress and complete events, and saves s3 source in DB", async () => {
     let capturedUploadKey = "";
 
-    const mockS3Service = {
+    const mockS3Service = createMockS3({
       isConfigured: () => true,
       getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
       getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}?signed=true`,
@@ -208,7 +195,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
       },
       deleteObject: async () => {},
       deleteObjects: async () => {},
-    };
+    });
 
     const customApp = await buildApp({ s3StorageService: mockS3Service });
     const { accessToken } = await registerUser(customApp);
@@ -309,11 +296,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
   });
 
   it("defaults referer header to target URL origin when referer is omitted", async () => {
-    const mockS3Service = {
-      isConfigured: () => true,
-      getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
-      getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}`,
-      uploadObject: async () => {},
+    const mockS3Service = createMockS3({
       uploadStream: async (_key: string, bodyStream: ReadableStream<Uint8Array> | Readable) => {
         const reader = (bodyStream as ReadableStream<Uint8Array>).getReader();
         while (true) {
@@ -321,9 +304,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
           if (done) break;
         }
       },
-      deleteObject: async () => {},
-      deleteObjects: async () => {},
-    };
+    });
 
     const customApp = await buildApp({ s3StorageService: mockS3Service });
     const { accessToken } = await registerUser(customApp);
@@ -365,15 +346,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
   });
 
   it("emits error event and does not write to database when remote HTTP fetch fails (e.g. 404 from host)", async () => {
-    const mockS3Service = {
-      isConfigured: () => true,
-      getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
-      getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}`,
-      uploadObject: async () => {},
-      uploadStream: async () => {},
-      deleteObject: async () => {},
-      deleteObjects: async () => {},
-    };
+    const mockS3Service = createMockS3();
 
     const customApp = await buildApp({ s3StorageService: mockS3Service });
     const { accessToken } = await registerUser(customApp);
@@ -422,11 +395,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
   it("automatically terminates upstream fetch and S3 upload when client signal aborts", async () => {
     let s3UploadAborted = false;
 
-    const mockS3Service = {
-      isConfigured: () => true,
-      getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
-      getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}`,
-      uploadObject: async () => {},
+    const mockS3Service = createMockS3({
       uploadStream: async (_key: string, bodyStream: ReadableStream<Uint8Array> | Readable, options?: StreamUploadOptions) => {
         if (options?.signal?.aborted) {
           s3UploadAborted = true;
@@ -453,9 +422,7 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
           readChunk();
         });
       },
-      deleteObject: async () => {},
-      deleteObjects: async () => {},
-    };
+    });
 
     const customApp = await buildApp({ s3StorageService: mockS3Service });
     const { accessToken } = await registerUser(customApp);
@@ -521,17 +488,11 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
   it("handles S3 uploadStream exception cleanly, logs error, and flushes error event over SSE", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const mockS3Service = {
-      isConfigured: () => true,
-      getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
-      getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}`,
-      uploadObject: async () => {},
+    const mockS3Service = createMockS3({
       uploadStream: async () => {
         throw new Error("S3 connection timeout during multipart upload completion");
       },
-      deleteObject: async () => {},
-      deleteObjects: async () => {},
-    };
+    });
 
     const customApp = await buildApp({ s3StorageService: mockS3Service });
     const { accessToken } = await registerUser(customApp);

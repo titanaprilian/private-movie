@@ -5,6 +5,7 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Upload } from "@aws-sdk/lib-storage";
@@ -24,6 +25,30 @@ export interface StreamUploadOptions {
   signal?: AbortSignal;
 }
 
+export interface S3ObjectSummary {
+  key: string;
+  size: number;
+  lastModified: Date;
+  eTag?: string;
+}
+
+export interface ListObjectsOptions {
+  prefix?: string;
+  maxKeys?: number;
+  continuationToken?: string;
+}
+
+export interface ListObjectsResult {
+  objects: S3ObjectSummary[];
+  isTruncated: boolean;
+  nextContinuationToken?: string;
+}
+
+export interface BucketStorageUsage {
+  totalSizeBytes: number;
+  objectCount: number;
+}
+
 export interface S3StorageService {
   isConfigured(): boolean;
   getPresignedUploadUrl(key: string, contentType?: string): Promise<{ uploadUrl: string; key: string }>;
@@ -40,6 +65,9 @@ export interface S3StorageService {
   ): Promise<void>;
   deleteObject(key: string): Promise<void>;
   deleteObjects(keys: string[]): Promise<void>;
+  listObjects(options?: ListObjectsOptions): Promise<ListObjectsResult>;
+  listAllObjects(prefix?: string): Promise<S3ObjectSummary[]>;
+  getBucketStorageUsage(): Promise<BucketStorageUsage>;
 }
 
 export class S3NotConfiguredError extends Error {
@@ -297,6 +325,57 @@ class DefaultS3StorageService implements S3StorageService {
     });
 
     await client.send(command);
+  }
+
+  async listObjects(options?: ListObjectsOptions): Promise<ListObjectsResult> {
+    const client = this.ensureConfigured();
+    const command = new ListObjectsV2Command({
+      Bucket: this.bucket,
+      Prefix: options?.prefix,
+      MaxKeys: options?.maxKeys,
+      ContinuationToken: options?.continuationToken,
+    });
+
+    const response = await client.send(command);
+    const objects: S3ObjectSummary[] = (response.Contents ?? [])
+      .map((item) => ({
+        key: item.Key ?? "",
+        size: item.Size ?? 0,
+        lastModified: item.LastModified ?? new Date(),
+        eTag: item.ETag,
+      }))
+      .filter((item) => Boolean(item.key));
+
+    return {
+      objects,
+      isTruncated: Boolean(response.IsTruncated),
+      nextContinuationToken: response.NextContinuationToken,
+    };
+  }
+
+  async listAllObjects(prefix?: string): Promise<S3ObjectSummary[]> {
+    const allObjects: S3ObjectSummary[] = [];
+    let continuationToken: string | undefined = undefined;
+
+    do {
+      const result = await this.listObjects({
+        prefix,
+        continuationToken,
+      });
+      allObjects.push(...result.objects);
+      continuationToken = result.isTruncated ? result.nextContinuationToken : undefined;
+    } while (continuationToken);
+
+    return allObjects;
+  }
+
+  async getBucketStorageUsage(): Promise<BucketStorageUsage> {
+    const objects = await this.listAllObjects();
+    const totalSizeBytes = objects.reduce((sum, obj) => sum + (obj.size || 0), 0);
+    return {
+      totalSizeBytes,
+      objectCount: objects.length,
+    };
   }
 }
 

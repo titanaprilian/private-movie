@@ -8,6 +8,7 @@ import { authRoutes } from "./modules/authentication/http";
 import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes, embedRoutes } from "./modules/media/http";
+import { storageRoutes } from "./modules/storage/http";
 import type { FetchFn, BrowserFn, S3StorageService } from "@repo/media-service";
 import { InternalServerError } from "./lib/errors";
 
@@ -134,6 +135,13 @@ export const createApp = (deps: CreateAppDeps) => {
           })
         )
         .use(genreRoutes({ db, authService: auth }))
+        .use(
+          storageRoutes({
+            db,
+            authService: auth,
+            s3StorageService: deps.s3StorageService,
+          })
+        )
     );
 };
 

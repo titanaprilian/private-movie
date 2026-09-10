@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
+import { createMockS3 } from "../../utils/s3";
 import { db } from "../../utils/db";
 import { episodes, seasons, series } from "@repo/db";
 import { eq } from "drizzle-orm";
@@ -77,11 +78,7 @@ describe("Upload Progress API", () => {
       const sessionId = crypto.randomUUID();
       let progressDuringUpload: { loaded: number; total: number; percent: number } | null = null;
 
-      const mockS3Service = {
-        isConfigured: () => true,
-        getPresignedUploadUrl: async () => ({ uploadUrl: "", key: "" }),
-        getPresignedPlaybackUrl: async () => "",
-        uploadObject: async () => {},
+      const mockS3Service = createMockS3({
         uploadStream: async (_key: string, body: ReadableStream | Readable, options?: StreamUploadOptions) => {
           // Read stream and invoke progress
           options?.onProgress?.({ loaded: 500, total: 1000 });
@@ -95,9 +92,7 @@ describe("Upload Progress API", () => {
 
           options?.onProgress?.({ loaded: 1000, total: 1000 });
         },
-        deleteObject: async () => {},
-        deleteObjects: async () => {},
-      };
+      });
 
       const customApp = await buildApp({ s3StorageService: mockS3Service });
       const { accessToken } = await registerUser(customApp);

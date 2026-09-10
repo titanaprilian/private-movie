@@ -15,6 +15,7 @@ vi.mock("@aws-sdk/client-s3", () => {
     GetObjectCommand: vi.fn().mockImplementation((input) => ({ type: "GetObjectCommand", input })),
     DeleteObjectCommand: vi.fn().mockImplementation((input) => ({ type: "DeleteObjectCommand", input })),
     DeleteObjectsCommand: vi.fn().mockImplementation((input) => ({ type: "DeleteObjectsCommand", input })),
+    ListObjectsV2Command: vi.fn().mockImplementation((input) => ({ type: "ListObjectsV2Command", input })),
   };
 });
 
@@ -139,6 +140,21 @@ describe("S3StorageService", () => {
       const service = createS3StorageService();
       const stream = new ReadableStream();
       await expect(service.uploadStream("test-key", stream)).rejects.toThrow(S3NotConfiguredError);
+    });
+
+    it("throws S3NotConfiguredError on listObjects", async () => {
+      const service = createS3StorageService();
+      await expect(service.listObjects()).rejects.toThrow(S3NotConfiguredError);
+    });
+
+    it("throws S3NotConfiguredError on listAllObjects", async () => {
+      const service = createS3StorageService();
+      await expect(service.listAllObjects()).rejects.toThrow(S3NotConfiguredError);
+    });
+
+    it("throws S3NotConfiguredError on getBucketStorageUsage", async () => {
+      const service = createS3StorageService();
+      await expect(service.getBucketStorageUsage()).rejects.toThrow(S3NotConfiguredError);
     });
   });
 
@@ -339,6 +355,87 @@ describe("S3StorageService", () => {
       ).rejects.toThrow();
 
       expect(mockUploadAbort).toHaveBeenCalled();
+    });
+
+    it("lists objects using ListObjectsV2Command", async () => {
+      const date = new Date("2026-01-01T00:00:00.000Z");
+      mockSend.mockResolvedValueOnce({
+        Contents: [
+          { Key: "episodes/123/video.mp4", Size: 1048576, LastModified: date, ETag: '"etag1"' },
+          { Key: "episodes/123/thumb.jpg", Size: 2048, LastModified: date, ETag: '"etag2"' },
+        ],
+        IsTruncated: true,
+        NextContinuationToken: "next-token-123",
+      });
+
+      const service = createS3StorageService(validConfig);
+      const result = await service.listObjects({
+        prefix: "episodes/123/",
+        maxKeys: 10,
+        continuationToken: "prev-token",
+      });
+
+      expect(result).toEqual({
+        objects: [
+          { key: "episodes/123/video.mp4", size: 1048576, lastModified: date, eTag: '"etag1"' },
+          { key: "episodes/123/thumb.jpg", size: 2048, lastModified: date, eTag: '"etag2"' },
+        ],
+        isTruncated: true,
+        nextContinuationToken: "next-token-123",
+      });
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "ListObjectsV2Command",
+          input: {
+            Bucket: "my-bucket",
+            Prefix: "episodes/123/",
+            MaxKeys: 10,
+            ContinuationToken: "prev-token",
+          },
+        })
+      );
+    });
+
+    it("lists all objects by following continuation tokens", async () => {
+      const date = new Date("2026-01-01T00:00:00.000Z");
+      mockSend
+        .mockResolvedValueOnce({
+          Contents: [{ Key: "episodes/1/v.mp4", Size: 100, LastModified: date }],
+          IsTruncated: true,
+          NextContinuationToken: "token-2",
+        })
+        .mockResolvedValueOnce({
+          Contents: [{ Key: "episodes/2/v.mp4", Size: 200, LastModified: date }],
+          IsTruncated: false,
+        });
+
+      const service = createS3StorageService(validConfig);
+      const allObjects = await service.listAllObjects("episodes/");
+
+      expect(allObjects).toEqual([
+        { key: "episodes/1/v.mp4", size: 100, lastModified: date, eTag: undefined },
+        { key: "episodes/2/v.mp4", size: 200, lastModified: date, eTag: undefined },
+      ]);
+      expect(mockSend).toHaveBeenCalledTimes(2);
+    });
+
+    it("calculates bucket storage usage accurately", async () => {
+      const date = new Date("2026-01-01T00:00:00.000Z");
+      mockSend.mockResolvedValueOnce({
+        Contents: [
+          { Key: "episodes/1/v.mp4", Size: 500, LastModified: date },
+          { Key: "episodes/2/v.mp4", Size: 1500, LastModified: date },
+        ],
+        IsTruncated: false,
+      });
+
+      const service = createS3StorageService(validConfig);
+      const usage = await service.getBucketStorageUsage();
+
+      expect(usage).toEqual({
+        totalSizeBytes: 2000,
+        objectCount: 2,
+      });
     });
   });
 
