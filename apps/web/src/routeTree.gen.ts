@@ -19,6 +19,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminGenresRouteImport } from './routes/admin/genres'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
 import { Route as AdminStorageRouteImport } from './routes/admin/storage'
+import { Route as GuideAdblockRouteImport } from './routes/guide.adblock'
 import { Route as WatchSeriesIdRouteImport } from './routes/watch.$seriesId'
 import { Route as AdminVideosIndexRouteImport } from './routes/admin/videos.index'
 import { Route as AdminVideosSeriesIdRouteImport } from './routes/admin/videos.$seriesId'
@@ -73,6 +74,11 @@ const AdminStorageRoute = AdminStorageRouteImport.update({
   path: '/storage',
   getParentRoute: () => AdminRoute,
 } as any)
+const GuideAdblockRoute = GuideAdblockRouteImport.update({
+  id: '/guide/adblock',
+  path: '/guide/adblock',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WatchSeriesIdRoute = WatchSeriesIdRouteImport.update({
   id: '/watch/$seriesId',
   path: '/watch/$seriesId',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
+  '/guide/adblock': typeof GuideAdblockRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
+  '/guide/adblock': typeof GuideAdblockRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
+  '/guide/adblock': typeof GuideAdblockRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/admin/genres'
     | '/admin/profile'
     | '/admin/storage'
+    | '/guide/adblock'
     | '/watch/$seriesId'
     | '/admin/'
     | '/admin/videos/$seriesId'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/admin/genres'
     | '/admin/profile'
     | '/admin/storage'
+    | '/guide/adblock'
     | '/watch/$seriesId'
     | '/admin'
     | '/admin/videos/$seriesId'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/admin/genres'
     | '/admin/profile'
     | '/admin/storage'
+    | '/guide/adblock'
     | '/watch/$seriesId'
     | '/admin/'
     | '/admin/videos/$seriesId'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   WatchDemoRoute: typeof WatchDemoRoute
+  GuideAdblockRoute: typeof GuideAdblockRoute
   WatchSeriesIdRoute: typeof WatchSeriesIdRoute
 }
 
@@ -263,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStorageRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/guide/adblock': {
+      id: '/guide/adblock'
+      path: '/guide/adblock'
+      fullPath: '/guide/adblock'
+      preLoaderRoute: typeof GuideAdblockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/watch/$seriesId': {
       id: '/watch/$seriesId'
       path: '/watch/$seriesId'
@@ -314,6 +334,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   WatchDemoRoute: WatchDemoRoute,
+  GuideAdblockRoute: GuideAdblockRoute,
   WatchSeriesIdRoute: WatchSeriesIdRoute,
 }
 export const routeTree = rootRouteImport

@@ -151,4 +151,24 @@ describe('Router integration - /admin auth guard & relocated pages', () => {
 
     expect(router.state.location.pathname).toBe('/');
   });
+
+  it('allows /guide/adblock without authentication', async () => {
+    useAuthStore.setState({
+      isAuthenticated: false,
+      user: null,
+    });
+
+    const memoryHistory = createMemoryHistory({
+      initialEntries: ['/guide/adblock'],
+    });
+
+    const router = createRouter({
+      routeTree,
+      history: memoryHistory,
+    });
+
+    await router.load();
+
+    expect(router.state.location.pathname).toBe('/guide/adblock');
+  });
 });
