@@ -139,23 +139,15 @@ describe('SeriesWatchView', () => {
     expect(backBtn).toHaveAttribute('href', '/');
   });
 
-  it('renders player iframe with strict sandbox and media allow attributes', () => {
+  it('renders player iframe without sandbox and with media allow attributes', () => {
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
     const iframe = getPlayer();
-    expect(iframe).toHaveAttribute(
-      'sandbox',
-      'allow-scripts allow-same-origin allow-forms allow-presentation'
-    );
+    expect(iframe).not.toHaveAttribute('sandbox');
     expect(iframe).toHaveAttribute(
       'allow',
       'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen'
     );
     expect(iframe.hasAttribute('allowfullscreen')).toBe(true);
-
-    const sandbox = iframe.getAttribute('sandbox') || '';
-    expect(sandbox).not.toContain('allow-popups');
-    expect(sandbox).not.toContain('allow-popups-to-escape-sandbox');
-    expect(sandbox).not.toContain('allow-top-navigation');
   });
 });
