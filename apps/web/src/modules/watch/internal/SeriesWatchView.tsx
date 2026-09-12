@@ -1,13 +1,33 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, ArrowLeft, ChevronDown, ListVideo, Play, RefreshCw, SkipBack, SkipForward } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ChevronDown,
+  ExternalLink,
+  ListVideo,
+  Play,
+  RefreshCw,
+  ShieldAlert,
+  SkipBack,
+  SkipForward,
+} from 'lucide-react';
 import { useWatchState } from './useWatchState';
 import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from './api';
 import { formatEmbedUrl } from '../../videos/internal/embedUrl';
 import { useInputMode } from '@/hooks/useInputMode';
 import { useWatchNav } from './useWatchNav';
+import { useAdblockDetector } from './useAdblockDetector';
 
 export interface SeriesWatchViewProps {
   seriesId?: string;
@@ -118,6 +138,27 @@ export function SeriesWatchView({
   });
 
   const { isSpatialMode } = useInputMode();
+  const { isLoading: isDetectingAdblock, isBlocked: hasAdblock } = useAdblockDetector();
+  const [isWarningDismissed, setIsWarningDismissed] = useState<boolean>(() => {
+    try {
+      return typeof localStorage !== 'undefined' && localStorage.getItem('adblock_warning_dismissed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const showAdblockModal = !isDetectingAdblock && !hasAdblock && !isWarningDismissed;
+
+  const handleDismissWarning = () => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('adblock_warning_dismissed', 'true');
+      }
+    } catch {
+      // ignore
+    }
+    setIsWarningDismissed(true);
+  };
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const backRef = useRef<HTMLAnchorElement | null>(null);
@@ -448,6 +489,34 @@ export function SeriesWatchView({
           </aside>
         </div>
       </div>
+
+      <Dialog open={showAdblockModal} onOpenChange={(open) => !open && handleDismissWarning()}>
+        <DialogContent className="sm:max-w-md border border-c bg-card text-fg">
+          <DialogHeader className="gap-2 text-left">
+            <div className="flex items-center gap-2 text-amber-500">
+              <ShieldAlert className="h-5 w-5 shrink-0" />
+              <DialogTitle className="text-base font-semibold">Ad Blocker Recommended</DialogTitle>
+            </div>
+            <DialogDescription className="text-xs leading-relaxed text-muted space-y-2 pt-1">
+              <span>
+                Third-party video mirrors may serve popups and unexpected redirects during playback. We strongly recommend using an ad blocker (such as uBlock Origin or Brave Shields) for an uninterrupted experience.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" size="sm" onClick={handleDismissWarning}>
+              Continue anyway
+            </Button>
+            <Button size="sm" asChild>
+              <Link to="/guide/adblock" target="_blank" rel="noreferrer noopener" className="gap-1.5">
+                <span>View Adblock Guide</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

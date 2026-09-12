@@ -28,3 +28,6 @@ export type {
   UseWatchNavReturn,
 } from './internal/useWatchNav';
 
+export { useAdblockDetector } from './internal/useAdblockDetector';
+export type { AdblockDetectorResult } from './internal/useAdblockDetector';
+

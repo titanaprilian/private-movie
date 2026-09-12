@@ -150,4 +150,49 @@ describe('SeriesWatchView', () => {
     );
     expect(iframe.hasAttribute('allowfullscreen')).toBe(true);
   });
+
+  it('renders adblock advisory confirmation modal when adblocker is not detected and not dismissed', async () => {
+    localStorage.removeItem('adblock_warning_dismissed');
+    vi.spyOn(window, 'fetch').mockResolvedValue(new Response(''));
+
+    renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+    expect(await screen.findByRole('heading', { name: /ad blocker recommended/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /view adblock guide/i })).toHaveAttribute(
+      'href',
+      '/guide/adblock'
+    );
+    expect(screen.getByRole('button', { name: /continue anyway/i })).toBeInTheDocument();
+  });
+
+  it('dismisses advisory modal and sets localStorage when clicking "Continue anyway"', async () => {
+    localStorage.removeItem('adblock_warning_dismissed');
+    vi.spyOn(window, 'fetch').mockResolvedValue(new Response(''));
+
+    const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+    const continueBtn = await screen.findByRole('button', { name: /continue anyway/i });
+    await user.click(continueBtn);
+
+    expect(localStorage.getItem('adblock_warning_dismissed')).toBe('true');
+    expect(screen.queryByRole('heading', { name: /ad blocker recommended/i })).not.toBeInTheDocument();
+  });
+
+  it('does not render advisory modal when adblock_warning_dismissed is "true" in localStorage', () => {
+    localStorage.setItem('adblock_warning_dismissed', 'true');
+    vi.spyOn(window, 'fetch').mockResolvedValue(new Response(''));
+
+    renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+    expect(screen.queryByRole('heading', { name: /ad blocker recommended/i })).not.toBeInTheDocument();
+  });
+
+  it('does not render advisory modal when adblocker is detected', () => {
+    localStorage.removeItem('adblock_warning_dismissed');
+    vi.spyOn(window, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+
+    renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+    expect(screen.queryByRole('heading', { name: /ad blocker recommended/i })).not.toBeInTheDocument();
+  });
 });
