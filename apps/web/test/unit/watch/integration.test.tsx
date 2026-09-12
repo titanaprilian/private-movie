@@ -34,7 +34,9 @@ vi.mock('@/lib/api', () => ({
             seriesMockMap.get(prop) ?? {
               get: () =>
                 Promise.resolve({
-                  error: { value: { message: 'Failed to fetch series details' } },
+                  error: {
+                    value: { message: 'Failed to fetch series details' },
+                  },
                 }),
             }
           );
@@ -61,8 +63,18 @@ const mockSeriesPayload: WatchSeriesDetails = {
           seasonId: 'season-1',
           description: 'Database Episode One Description',
           videoSources: [
-            { id: 'src-1', type: 'embed', url: 'https://mirror-a.com/embed1', label: 'Server Alpha' },
-            { id: 'src-2', type: 'embed', url: 'https://mirror-b.com/embed1', label: 'Server Beta' },
+            {
+              id: 'src-1',
+              type: 'embed',
+              url: 'https://mirror-a.com/embed1',
+              label: 'Server Alpha',
+            },
+            {
+              id: 'src-2',
+              type: 'embed',
+              url: 'https://mirror-b.com/embed1',
+              label: 'Server Beta',
+            },
           ],
         },
         {
@@ -72,7 +84,12 @@ const mockSeriesPayload: WatchSeriesDetails = {
           seasonId: 'season-1',
           description: 'Database Episode Two Description',
           videoSources: [
-            { id: 'src-3', type: 'embed', url: 'https://mirror-a.com/embed2', label: 'Server Alpha' },
+            {
+              id: 'src-3',
+              type: 'embed',
+              url: 'https://mirror-a.com/embed2',
+              label: 'Server Alpha',
+            },
           ],
         },
       ],
@@ -89,7 +106,12 @@ const mockSeriesPayload: WatchSeriesDetails = {
           seasonId: 'season-2',
           description: 'Database Episode Three Description',
           videoSources: [
-            { id: 'src-4', type: 'embed', url: 'https://mirror-a.com/embed3', label: 'Server Alpha' },
+            {
+              id: 'src-4',
+              type: 'embed',
+              url: 'https://mirror-a.com/embed3',
+              label: 'Server Alpha',
+            },
           ],
         },
       ],
@@ -128,14 +150,18 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     const mockGet = vi.fn().mockImplementation(() => {
       mockGetCount++;
       if (mockGetCount === 1) {
-        return Promise.resolve({ error: { value: { message: 'Database Connection Error' } } });
+        return Promise.resolve({
+          error: { value: { message: 'Database Connection Error' } },
+        });
       }
       return Promise.resolve({ data: { data: mockSeriesPayload } });
     });
 
     seriesMockMap.set('series-error-1', { get: mockGet });
 
-    const { user } = renderWithProviders(<SeriesWatchView seriesId="series-error-1" />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView seriesId="series-error-1" />
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('watch-error')).toBeInTheDocument();
@@ -164,10 +190,18 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     });
 
     expect(getPlayer().src).toBe('https://mirror-a.com/embed1');
-    expect(screen.getByText('Database Episode One Description')).toBeInTheDocument();
-    expect(screen.getByText('Database Episode One')).toBeInTheDocument();
-    expect(screen.getByText('Database Episode Two')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /season/i })).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Database Episode One Description').length
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText('Database Episode One').length).toBeGreaterThan(
+      0
+    );
+    expect(screen.getAllByText('Database Episode Two').length).toBeGreaterThan(
+      0
+    );
+    expect(
+      screen.getAllByRole('combobox', { name: /season/i }).length
+    ).toBeGreaterThan(0);
   });
 
   it('updates activeEpisodeId, iframe src, and description when sidebar episode card is clicked', async () => {
@@ -177,16 +211,23 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
 
     seriesMockMap.set('series-real-1', { get: mockGet });
 
-    const { user } = renderWithProviders(<SeriesWatchView seriesId="series-real-1" />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView seriesId="series-real-1" />
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: /Database Episode Two/i }));
+    const ep2Buttons = screen.getAllByRole('button', {
+      name: /Database Episode Two/i,
+    });
+    await user.click(ep2Buttons[0]!);
 
     expect(getPlayer().src).toBe('https://mirror-a.com/embed2');
-    expect(screen.getByText('Database Episode Two Description')).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Database Episode Two Description').length
+    ).toBeGreaterThan(0);
   });
 
   it('switches server mirror source when server button is clicked', async () => {
@@ -196,7 +237,9 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
 
     seriesMockMap.set('series-real-1', { get: mockGet });
 
-    const { user } = renderWithProviders(<SeriesWatchView seriesId="series-real-1" />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView seriesId="series-real-1" />
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
@@ -207,7 +250,9 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     await user.click(screen.getByRole('button', { name: /Server Beta/i }));
 
     expect(getPlayer().src).toBe('https://mirror-b.com/embed1');
-    expect(screen.getByText('Database Episode One Description')).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Database Episode One Description').length
+    ).toBeGreaterThan(0);
   });
 
   it('increments active episode tracking state and handles edge bounds via Next/Prev buttons', async () => {
@@ -217,7 +262,9 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
 
     seriesMockMap.set('series-real-1', { get: mockGet });
 
-    const { user } = renderWithProviders(<SeriesWatchView seriesId="series-real-1" />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView seriesId="series-real-1" />
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
@@ -232,7 +279,9 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     await user.click(nextBtn);
 
     expect(getPlayer().src).toBe('https://mirror-a.com/embed2');
-    expect(screen.getByText('Database Episode Two Description')).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Database Episode Two Description').length
+    ).toBeGreaterThan(0);
 
     expect(screen.getByRole('button', { name: /prev/i })).toBeEnabled();
     expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();

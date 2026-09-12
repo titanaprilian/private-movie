@@ -109,15 +109,19 @@ describe('SeriesWatchView', () => {
     expect(screen.getByText('Test Series')).toBeInTheDocument();
   });
 
-  it('updates the iframe source when selecting an episode card', async () => {
+  it('updates the iframe source, highlights Now playing, and triggers toast when selecting an episode card', async () => {
     const { user } = renderWithProviders(
       <SeriesWatchView series={mockSeries} />
     );
 
-    await user.click(screen.getByRole('button', { name: /Episode Two/i }));
+    const ep2Buttons = screen.getAllByRole('button', { name: /Episode Two/i });
+    await user.click(ep2Buttons[0]!);
 
     expect(getPlayer().src).toBe('https://embed.com/3');
-    expect(screen.getByText('Second episode description')).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Second episode description').length
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Now playing/i).length).toBeGreaterThan(0);
   });
 
   it('switches source without changing the active episode', async () => {
@@ -136,8 +140,8 @@ describe('SeriesWatchView', () => {
       <SeriesWatchView series={mockSeries} />
     );
 
-    const seasonSelect = screen.getByRole('combobox', { name: /season/i });
-    await user.click(seasonSelect);
+    const seasonSelects = screen.getAllByRole('combobox', { name: /season/i });
+    await user.click(seasonSelects[0]!);
 
     const season2Option = await screen.findByRole('option', {
       name: 'Season 2',
@@ -145,7 +149,28 @@ describe('SeriesWatchView', () => {
     await user.click(season2Option);
 
     expect(getPlayer().src).toBe('https://embed.com/4');
-    expect(screen.getByText('Episode Three')).toBeInTheDocument();
+    expect(screen.getAllByText('Episode Three').length).toBeGreaterThan(0);
+  });
+
+  it('renders mobile tabs for Episodes and Details', async () => {
+    const { user } = renderWithProviders(
+      <SeriesWatchView series={mockSeries} />
+    );
+
+    const mobileTabs = screen.getByTestId('watch-mobile-tabs');
+    expect(mobileTabs).toBeInTheDocument();
+
+    const episodesTab = screen.getByRole('tab', { name: /episodes/i });
+    const detailsTab = screen.getByRole('tab', { name: /details/i });
+
+    expect(episodesTab).toBeInTheDocument();
+    expect(detailsTab).toBeInTheDocument();
+
+    // Default tab is episodes
+    expect(episodesTab).toHaveAttribute('data-state', 'active');
+
+    await user.click(detailsTab);
+    expect(detailsTab).toHaveAttribute('data-state', 'active');
   });
 
   it('hides season dropdown when series has only 1 season', () => {

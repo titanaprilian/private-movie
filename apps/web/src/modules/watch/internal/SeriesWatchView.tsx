@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
@@ -17,10 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 import {
   AlertCircle,
   ArrowLeft,
   ExternalLink,
+  Info,
   ListVideo,
   Play,
   RefreshCw,
@@ -184,8 +187,14 @@ export function SeriesWatchView({
 
   const hasSeries = Boolean(series);
 
-  const availableEpisodesForNav = state.availableEpisodes ?? [];
-  const sourcesForNav = state.activeEpisode?.videoSources ?? [];
+  const availableEpisodesForNav = useMemo(
+    () => state.availableEpisodes ?? [],
+    [state.availableEpisodes]
+  );
+  const sourcesForNav = useMemo(
+    () => state.activeEpisode?.videoSources ?? [],
+    [state.activeEpisode?.videoSources]
+  );
   const controlsCount = 2 + sourcesForNav.length;
   const episodesCount = availableEpisodesForNav.length || 1;
 
@@ -276,6 +285,30 @@ export function SeriesWatchView({
     return () => window.removeEventListener('keydown', handler);
   }, [activeZone, focusIndex, isSpatialMode, hasSeries]);
 
+  // Auto-scroll active episode card into view in episode playlist
+  useEffect(() => {
+    if (!hasSeries || !state.activeEpisodeId) return;
+    const activeIndex = availableEpisodesForNav.findIndex(
+      (e) => e.id === state.activeEpisodeId
+    );
+    if (activeIndex !== -1 && episodeRefs.current[activeIndex]) {
+      try {
+        episodeRefs.current[activeIndex]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest',
+        });
+      } catch {
+        // ignore
+      }
+    }
+  }, [
+    hasSeries,
+    state.activeEpisodeId,
+    state.activeSeasonId,
+    availableEpisodesForNav,
+  ]);
+
   if (isLoading && !series) {
     return <WatchViewSkeleton />;
   }
@@ -318,6 +351,95 @@ export function SeriesWatchView({
 
   const backFocused = isSpatialMode && activeZone === 'back';
   const playerFocused = isSpatialMode && activeZone === 'player';
+
+  const handleSelectEpisode = (episodeId: string) => {
+    selectEpisode(episodeId);
+    const ep = availableEpisodes.find((e) => e.id === episodeId);
+    if (ep) {
+      toast.info(`Switched to ${ep.title}`);
+    }
+  };
+
+  const renderEpisodeList = () => (
+    <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      {availableEpisodes.map((episode, idx) => {
+        const isActive = episode.id === state.activeEpisodeId;
+        const isEpisodeFocused =
+          isSpatialMode && activeZone === 'episodes' && focusIndex === idx;
+        return (
+          <button
+            key={episode.id}
+            ref={(el) => {
+              episodeRefs.current[idx] = el;
+            }}
+            type="button"
+            onClick={() => handleSelectEpisode(episode.id)}
+            className={`w-full rounded-md border p-3 text-left transition-colors ${
+              isActive
+                ? 'border-primary bg-active'
+                : 'border-c bg-transparent hover:bg-hover'
+            } ${isEpisodeFocused ? 'ring-2 ring-white' : ''}`}
+          >
+            <span className="mono text-xs text-muted">
+              EP {episode.order ?? ''}
+            </span>
+            <span
+              className={`mt-1 block text-sm font-medium ${
+                isActive ? 'text-primary' : 'text-fg'
+              }`}
+            >
+              {episode.title}
+            </span>
+            {isActive && (
+              <span className="mt-2 inline-flex items-center gap-1 text-xs text-primary">
+                <Play className="h-3 w-3 fill-primary" /> Now playing
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderSeasonSelector = () =>
+    seasons.length > 1 ? (
+      <Select
+        value={activeSeasonId ?? ''}
+        onValueChange={(val) => selectSeason(val)}
+      >
+        <SelectTrigger aria-label="Season">
+          <SelectValue placeholder="Select Season" />
+        </SelectTrigger>
+        <SelectContent>
+          {seasons.map((season) => (
+            <SelectItem key={season.id} value={season.id}>
+              {season.title}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    ) : null;
+
+  const renderMetadata = () => (
+    <div>
+      <h1 className="text-2xl sm:text-3xl font-bold">{series.title}</h1>
+      {activeEpisode && (
+        <h2 className="mono mt-2 text-base sm:text-lg text-muted">
+          {activeSeason
+            ? `${activeSeason.title} — Episode ${activeEpisode.order ?? ''}`
+            : `Episode ${activeEpisode.order ?? ''}`}
+        </h2>
+      )}
+      {activeEpisode?.description && (
+        <p className="mt-4 leading-relaxed text-muted">
+          {activeEpisode.description}
+        </p>
+      )}
+      {!activeEpisode?.description && series.description && (
+        <p className="mt-4 leading-relaxed text-muted">{series.description}</p>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-bg text-fg font-sans">
@@ -465,31 +587,53 @@ export function SeriesWatchView({
               </div>
             </div>
 
-            {/* Metadata / description */}
-            <div className="mt-6">
-              <h1 className="text-2xl sm:text-3xl font-bold">{series.title}</h1>
-              {activeEpisode && (
-                <h2 className="mono mt-2 text-base sm:text-lg text-muted">
-                  {activeSeason
-                    ? `${activeSeason.title} — Episode ${activeEpisode.order ?? ''}`
-                    : `Episode ${activeEpisode.order ?? ''}`}
-                </h2>
-              )}
-              {activeEpisode?.description && (
-                <p className="mt-4 leading-relaxed text-muted">
-                  {activeEpisode.description}
-                </p>
-              )}
-              {!activeEpisode?.description && series.description && (
-                <p className="mt-4 leading-relaxed text-muted">
-                  {series.description}
-                </p>
-              )}
+            {/* Mobile Tabbed View (< lg) */}
+            <div
+              className="mt-4 block lg:hidden"
+              data-testid="watch-mobile-tabs"
+            >
+              <Tabs defaultValue="episodes" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="episodes" className="gap-1.5">
+                    <ListVideo className="h-3.5 w-3.5" />
+                    <span>Episodes</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="details" className="gap-1.5">
+                    <Info className="h-3.5 w-3.5" />
+                    <span>Details</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="episodes" className="mt-3 space-y-3">
+                  {renderSeasonSelector()}
+                  <div className="rounded-md border border-c bg-card">
+                    {renderEpisodeList()}
+                  </div>
+                </TabsContent>
+
+                <TabsContent
+                  value="details"
+                  className="mt-3 rounded-md border border-c bg-card p-4"
+                >
+                  {renderMetadata()}
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            {/* Desktop Metadata / description (lg+) */}
+            <div
+              className="mt-6 hidden lg:block"
+              data-testid="watch-desktop-metadata"
+            >
+              {renderMetadata()}
             </div>
           </div>
 
-          {/* Right column: sticky sidebar */}
-          <aside className="w-full lg:w-[30%]">
+          {/* Desktop Right column: sticky sidebar (lg+) */}
+          <aside
+            className="hidden w-full lg:block lg:w-[30%]"
+            data-testid="watch-desktop-sidebar"
+          >
             <div className="flex max-h-[80vh] flex-col overflow-hidden rounded-md border border-c bg-card lg:sticky lg:top-6">
               <div className="border-b border-c p-4">
                 <div className="mb-3 flex items-center gap-2">
@@ -497,65 +641,10 @@ export function SeriesWatchView({
                   <h3 className="text-sm font-semibold">Episodes</h3>
                 </div>
 
-                {seasons.length > 1 && (
-                  <Select
-                    value={activeSeasonId ?? ''}
-                    onValueChange={(val) => selectSeason(val)}
-                  >
-                    <SelectTrigger aria-label="Season">
-                      <SelectValue placeholder="Select Season" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {seasons.map((season) => (
-                        <SelectItem key={season.id} value={season.id}>
-                          {season.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                {renderSeasonSelector()}
               </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto p-3">
-                {availableEpisodes.map((episode, idx) => {
-                  const isActive = episode.id === state.activeEpisodeId;
-                  const isEpisodeFocused =
-                    isSpatialMode &&
-                    activeZone === 'episodes' &&
-                    focusIndex === idx;
-                  return (
-                    <button
-                      key={episode.id}
-                      ref={(el) => {
-                        episodeRefs.current[idx] = el;
-                      }}
-                      type="button"
-                      onClick={() => selectEpisode(episode.id)}
-                      className={`w-full rounded-md border p-3 text-left transition-colors ${
-                        isActive
-                          ? 'border-primary bg-active'
-                          : 'border-c bg-transparent hover:bg-hover'
-                      } ${isEpisodeFocused ? 'ring-2 ring-white' : ''}`}
-                    >
-                      <span className="mono text-xs text-muted">
-                        EP {episode.order ?? ''}
-                      </span>
-                      <span
-                        className={`mt-1 block text-sm font-medium ${
-                          isActive ? 'text-primary' : 'text-fg'
-                        }`}
-                      >
-                        {episode.title}
-                      </span>
-                      {isActive && (
-                        <span className="mt-2 inline-flex items-center gap-1 text-xs text-primary">
-                          <Play className="h-3 w-3 fill-primary" /> Now playing
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              {renderEpisodeList()}
             </div>
           </aside>
         </div>
