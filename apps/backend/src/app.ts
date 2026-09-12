@@ -9,7 +9,7 @@ import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes, embedRoutes } from "./modules/media/http";
 import { storageRoutes } from "./modules/storage/http";
-import type { FetchFn, BrowserFn, S3StorageService } from "@repo/media-service";
+import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import { InternalServerError } from "./lib/errors";
 
 export interface CreateAppDeps {
@@ -18,6 +18,7 @@ export interface CreateAppDeps {
   fetchHtml?: FetchFn;
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
 }
 
 function getAllowedOrigins(): string[] {
@@ -132,6 +133,7 @@ export const createApp = (deps: CreateAppDeps) => {
             fetchHtml: deps.fetchHtml,
             browserFn: deps.browserFn,
             s3StorageService: deps.s3StorageService,
+            storageProviderRegistry: deps.storageProviderRegistry,
           })
         )
         .use(genreRoutes({ db, authService: auth }))
@@ -140,6 +142,7 @@ export const createApp = (deps: CreateAppDeps) => {
             db,
             authService: auth,
             s3StorageService: deps.s3StorageService,
+            storageProviderRegistry: deps.storageProviderRegistry,
           })
         )
     );

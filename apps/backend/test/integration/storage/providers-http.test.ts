@@ -9,7 +9,7 @@ import {
 import { storageProviders, videoSources, episodes, seasons, series } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { decryptCredential } from "@repo/media-service";
-import type { StorageProviderMasked } from "@repo/contracts";
+import type { StorageProviderItem } from "@repo/contracts";
 
 describe("Storage Providers HTTP API (/api/storage/providers)", () => {
 
@@ -65,7 +65,7 @@ describe("Storage Providers HTTP API (/api/storage/providers)", () => {
     });
 
     expect(res.status).toBe(200);
-    const { data } = res.body as { data: StorageProviderMasked };
+    const { data } = res.body as { data: StorageProviderItem };
     expect(data.id).toBeDefined();
     expect(data.name).toBe(payload.name);
     expect(data.accessKeyIdMasked).toBe("••••••••2345");
@@ -106,7 +106,7 @@ describe("Storage Providers HTTP API (/api/storage/providers)", () => {
         secretAccessKey: "WASABI_SECRET",
       },
     });
-    const { data: createdProv } = createRes.body as { data: StorageProviderMasked };
+    const { data: createdProv } = createRes.body as { data: StorageProviderItem };
 
     // Insert a video source linked to this provider
     const now = new Date();
@@ -160,7 +160,7 @@ describe("Storage Providers HTTP API (/api/storage/providers)", () => {
     });
 
     expect(listRes.status).toBe(200);
-    const { data: providersList } = listRes.body as { data: StorageProviderMasked[] };
+    const { data: providersList } = listRes.body as { data: StorageProviderItem[] };
     const target = providersList.find((p) => p.id === createdProv.id);
     expect(target).toBeDefined();
     expect(target?.linkedSourcesCount).toBe(1);
@@ -184,7 +184,7 @@ describe("Storage Providers HTTP API (/api/storage/providers)", () => {
         secretAccessKey: "MINIO_PASS",
       },
     });
-    const { data: createdProv } = createRes.body as { data: StorageProviderMasked };
+    const { data: createdProv } = createRes.body as { data: StorageProviderItem };
 
     const updateRes = await request(app, {
       method: "PUT",
@@ -198,7 +198,7 @@ describe("Storage Providers HTTP API (/api/storage/providers)", () => {
     });
 
     expect(updateRes.status).toBe(200);
-    const { data: updatedProv } = updateRes.body as { data: StorageProviderMasked };
+    const { data: updatedProv } = updateRes.body as { data: StorageProviderItem };
     expect(updatedProv.name).toBe("MinIO Local Updated");
     expect(updatedProv.storageLimitGb).toBe(200);
     expect(updatedProv.isDefault).toBe(true);
@@ -222,7 +222,7 @@ describe("Storage Providers HTTP API (/api/storage/providers)", () => {
         secretAccessKey: "B2_SECRET",
       },
     });
-    const { data: prov } = createRes.body as { data: StorageProviderMasked };
+    const { data: prov } = createRes.body as { data: StorageProviderItem };
 
     // Link a video source
     const now = new Date();

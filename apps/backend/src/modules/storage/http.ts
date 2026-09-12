@@ -4,7 +4,7 @@ import {
   type AuthenticationService,
   type StorageProviderType,
 } from "@repo/contracts";
-import { S3NotConfiguredError, type S3StorageService } from "@repo/media-service";
+import { S3NotConfiguredError, type S3StorageService, type StorageProviderRegistry } from "@repo/media-service";
 import { errorResponse, successResponse } from "../../lib/response";
 import {
   createStorageService,
@@ -18,11 +18,13 @@ export interface StorageRoutesOptions {
   db: Parameters<typeof createStorageService>[0];
   authService: AuthenticationService;
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
 }
 
 export const storageRoutes = (options: StorageRoutesOptions) => {
   const storageService = createStorageService(options.db, {
     s3StorageService: options.s3StorageService,
+    storageProviderRegistry: options.storageProviderRegistry,
   });
 
   async function checkAuth(

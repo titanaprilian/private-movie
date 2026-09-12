@@ -119,6 +119,7 @@ export function ProviderForm({
     if (!isEditing && !name && !endpoint) {
       handlePresetChange('backblaze');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleTestConnection = async () => {

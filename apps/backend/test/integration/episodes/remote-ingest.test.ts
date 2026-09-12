@@ -5,7 +5,7 @@ import { registerUser, authHeaders } from "../../utils/auth";
 import { createMockS3 } from "../../utils/s3";
 import { db } from "../../utils/db";
 import { eq } from "drizzle-orm";
-import type { StreamUploadOptions } from "@repo/media-service";
+import type { StreamUploadOptions, StorageProviderRegistry } from "@repo/media-service";
 import type { Readable } from "node:stream";
 
 interface CompleteEventData {
@@ -549,5 +549,119 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     expect(sourcesInDb).toHaveLength(0);
 
     consoleErrorSpy.mockRestore();
+  });
+
+  it("assigns storageProviderId when ingesting remote video stream targeting a specific provider", async () => {
+    const { storageProviders, series, seasons, episodes } = await import("@repo/db");
+    const { encryptCredential } = await import("@repo/media-service");
+
+    const [provider] = await db
+      .insert(storageProviders)
+      .values({
+        id: "prov-ingest-test-1",
+        name: "Remote Ingest Provider",
+        providerType: "cloudflare_r2",
+        endpoint: "https://r2.cloudflarestorage.com",
+        region: "auto",
+        bucket: "remote-r2-bucket",
+        accessKeyIdEnc: encryptCredential("R2_KEY"),
+        secretAccessKeyEnc: encryptCredential("R2_SECRET"),
+        storageLimitGb: 100,
+        isDefault: false,
+        isEnabled: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    const mockRegistry = {
+      getService: vi.fn().mockImplementation(async (id: string | null) => {
+        if (id === provider.id) {
+          return createMockS3({
+            uploadStream: async () => {},
+          });
+        }
+        return createMockS3();
+      }),
+      getDefaultProvider: vi.fn().mockResolvedValue({
+        provider,
+        service: createMockS3(),
+      }),
+      invalidateCache: vi.fn(),
+    };
+
+    const app = await buildApp({
+      storageProviderRegistry: mockRegistry as unknown as StorageProviderRegistry,
+    });
+    const { accessToken } = await registerUser(app);
+
+    const now = new Date();
+    const [sRow] = await db
+      .insert(series)
+      .values({ id: crypto.randomUUID(), title: "Series Ingest", createdAt: now, updatedAt: now })
+      .returning();
+    const [seaRow] = await db
+      .insert(seasons)
+      .values({ id: crypto.randomUUID(), seriesId: sRow.id, title: "Season Ingest", createdAt: now, updatedAt: now })
+      .returning();
+    const [episode] = await db
+      .insert(episodes)
+      .values({ id: crypto.randomUUID(), seasonId: seaRow.id, title: "Ep Ingest", order: 1, createdAt: now, updatedAt: now })
+      .returning();
+
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      if (url.startsWith("https://remote-host.com/files/")) {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode("provider-specific-chunk"));
+            controller.close();
+          },
+        });
+        return new Response(stream, {
+          status: 200,
+          headers: {
+            "Content-Length": "23",
+            "Content-Type": "video/mp4",
+          },
+        });
+      }
+      return originalFetch(input, init);
+    }) as typeof fetch;
+
+    const response = await app.handle(
+      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
+        method: "POST",
+        headers: {
+          ...authHeaders(accessToken),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: "https://remote-host.com/files/test-movie.mp4",
+          label: "R2 Ingest 1080p",
+          storageProviderId: provider.id,
+        }),
+      })
+    );
+
+    if (response.status !== 200) {
+      console.error("DEBUG FAIL RESPONSE:", await response.text());
+    }
+
+    expect(response.status).toBe(200);
+    const sseText = await response.text();
+    const events = parseSSE(sseText);
+
+    const completeEvent = events.find((e) => e.event === "complete");
+    expect(completeEvent).toBeDefined();
+
+    const [savedSource] = await db
+      .select()
+      .from(videoSourcesTable)
+      .where(eq(videoSourcesTable.episodeId, episode.id));
+
+    expect(savedSource).toBeDefined();
+    expect(savedSource.storageProviderId).toBe(provider.id);
+    expect(savedSource.label).toBe("R2 Ingest 1080p");
   });
 });

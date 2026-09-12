@@ -238,8 +238,8 @@ export function ManageSourcesDialog({
 
   useEffect(() => {
     if (defaultProvider) {
-      if (!uploadProviderId) setUploadProviderId(defaultProvider.id);
-      if (!remoteProviderId) setRemoteProviderId(defaultProvider.id);
+      setUploadProviderId((prev) => prev || defaultProvider.id);
+      setRemoteProviderId((prev) => prev || defaultProvider.id);
     }
   }, [defaultProvider]);
 

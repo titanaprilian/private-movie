@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AlertTriangle, Server } from 'lucide-react';
@@ -16,6 +16,7 @@ import {
   type StorageResource,
   type VideoSourceMetadata,
   type AttachOrphanInput,
+  type StorageProviderItem,
 } from './api';
 import { StorageMetricsGrid } from './StorageMetricsGrid';
 import { StorageResourceTable } from './StorageResourceTable';
@@ -33,7 +34,10 @@ export function StorageView() {
   const { data: rawProviders, refetch: refetchProviders } = useQuery(
     storageProvidersQueryOptions()
   );
-  const providers = Array.isArray(rawProviders) ? rawProviders : [];
+  const providers = useMemo<StorageProviderItem[]>(
+    () => (Array.isArray(rawProviders) ? rawProviders : []),
+    [rawProviders]
+  );
 
   // Selected provider ID state (defaulting to default provider or first provider)
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);

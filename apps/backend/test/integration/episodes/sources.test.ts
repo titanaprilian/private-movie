@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, vi } from "vitest";
 import { videoSources as videoSourcesTable, seasons, series } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
@@ -6,7 +6,7 @@ import { createMockS3 } from "../../utils/s3";
 import { db } from "../../utils/db";
 import { episodes } from "@repo/db";
 import { eq } from "drizzle-orm";
-import type { StreamUploadOptions } from "@repo/media-service";
+import type { StreamUploadOptions, StorageProviderRegistry } from "@repo/media-service";
 import type { Readable } from "node:stream";
 
 async function ensureSeason(id: string): Promise<string> {
@@ -908,6 +908,74 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const createdSource = createBody.data.videoSources.find((s) => s.label === "1080p B2");
       expect(createdSource).toBeDefined();
       expect(createdSource?.storageProviderId).toBe(prov.id);
+    });
+
+    it("accepts storageProviderId in multipart video upload via POST /episodes/:id/sources/upload", async () => {
+      const mockRegistry = {
+        getService: vi.fn().mockImplementation(async (_id: string | null) => {
+          return createMockS3({
+            uploadStream: async () => {},
+          });
+        }),
+        getDefaultProvider: vi.fn().mockResolvedValue(null),
+        invalidateCache: vi.fn(),
+      };
+
+      const customApp = await buildApp({
+        s3StorageService: createMockS3(),
+        storageProviderRegistry: mockRegistry as unknown as StorageProviderRegistry,
+      });
+
+      const { accessToken } = await registerUser(customApp);
+      const episode = await insertTestEpisode();
+
+      const provRes = await request(customApp, {
+        method: "POST",
+        path: "/api/storage/providers",
+        headers: authHeaders(accessToken),
+        body: {
+          name: "Upload Provider",
+          providerType: "cloudflare_r2",
+          endpoint: "https://r2.example.com",
+          region: "auto",
+          bucket: "upload-bucket",
+          accessKeyId: "r2-key",
+          secretAccessKey: "r2-secret",
+        },
+      });
+      expect(provRes.status).toBe(200);
+      const prov = (provRes.body as { data: { id: string } }).data;
+
+      const fileContent = new Uint8Array([0, 1, 2, 3, 4]);
+      const file = new File([fileContent], "video-test.mp4", { type: "video/mp4" });
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("label", "Uploaded R2 Video");
+      formData.append("quality", "1080p");
+      formData.append("storageProviderId", prov.id);
+
+      const uploadRes = await customApp.handle(
+        new Request(`http://localhost/api/episodes/${episode.id}/sources/upload`, {
+          method: "POST",
+          headers: authHeaders(accessToken),
+          body: formData,
+        })
+      );
+
+      expect(uploadRes.status).toBe(200);
+      const uploadBody = (await uploadRes.json()) as {
+        data: { id: string; videoSources: Array<{ id: string; label: string; storageProviderId?: string | null }> };
+      };
+      const createdSource = uploadBody.data.videoSources.find((s) => s.label === "Uploaded R2 Video");
+      expect(createdSource).toBeDefined();
+      expect(createdSource?.storageProviderId).toBe(prov.id);
+
+      const [dbSource] = await db
+        .select()
+        .from(videoSourcesTable)
+        .where(eq(videoSourcesTable.id, createdSource!.id));
+      expect(dbSource).toBeDefined();
+      expect(dbSource.storageProviderId).toBe(prov.id);
     });
   });
 });

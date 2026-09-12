@@ -1,5 +1,5 @@
 import type { createApp } from "@/app";
-import type { FetchFn, BrowserFn, S3StorageService } from "@repo/media-service";
+import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 
 export type App = ReturnType<typeof createApp>;
 
@@ -27,6 +27,7 @@ export async function buildApp(options?: {
   fetchHtml?: FetchFn;
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
 }): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
@@ -57,6 +58,7 @@ export async function buildApp(options?: {
     fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
     browserFn: options?.browserFn ?? defaultBrowserFn,
     s3StorageService: options?.s3StorageService,
+    storageProviderRegistry: options?.storageProviderRegistry,
   });
 }
 
