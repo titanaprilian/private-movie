@@ -64,6 +64,7 @@ export type MediaVideoSource = {
   url: string;
   label: string;
   quality: string | null;
+  storageProviderId?: string | null;
   createdAt: string;
   updatedAt: string;
 };

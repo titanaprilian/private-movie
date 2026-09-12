@@ -11,6 +11,7 @@ export interface VideoSource {
   url: string;
   label: string;
   quality?: string | null;
+  storageProviderId?: string | null;
 }
 
 export interface VideoSourceInput {
@@ -18,6 +19,7 @@ export interface VideoSourceInput {
   url: string;
   label: string;
   quality?: string | null;
+  storageProviderId?: string | null;
 }
 
 export interface Episode {
@@ -526,6 +528,7 @@ export interface AddVideoSourceInput {
   url: string;
   label: string;
   quality?: string | null;
+  storageProviderId?: string | null;
 }
 
 export async function addVideoSource(
@@ -555,6 +558,7 @@ export interface UpdateVideoSourceInput {
   url?: string;
   label?: string;
   quality?: string | null;
+  storageProviderId?: string | null;
 }
 
 export async function updateVideoSource(
@@ -951,6 +955,7 @@ export async function fetchSeriesTmdbSyncPreview(
 export interface PresignUploadSourceParams {
   filename: string;
   contentType?: string;
+  storageProviderId?: string;
 }
 
 export interface PresignUploadSourceResult {
@@ -981,6 +986,7 @@ export interface UploadEpisodeVideoSourceOptions {
   file: File;
   label: string;
   quality?: string;
+  storageProviderId?: string;
   uploadSessionId?: string;
   onProgress?: (progress: {
     percent: number;
@@ -1143,6 +1149,9 @@ export function uploadEpisodeVideoSource(
     if (options.quality) {
       form.append('quality', options.quality);
     }
+    if (options.storageProviderId) {
+      form.append('storageProviderId', options.storageProviderId);
+    }
     if (options.uploadSessionId) {
       form.append('uploadSessionId', options.uploadSessionId);
     }
@@ -1238,6 +1247,7 @@ export interface RemoteIngestEpisodeVideoSourceOptions {
   label: string;
   quality?: string | null;
   referer?: string | null;
+  storageProviderId?: string | null;
   onProgress?: (progress: {
     percent: number;
     loaded: number;
@@ -1269,6 +1279,7 @@ export async function remoteIngestEpisodeVideoSource(
       label: options.label,
       quality: options.quality || undefined,
       referer: options.referer || undefined,
+      storageProviderId: options.storageProviderId || undefined,
     }),
     signal: options.signal,
   });

@@ -47,6 +47,6 @@ export async function truncateAll(): Promise<void> {
     );
   }
   await sql.unsafe(
-    "TRUNCATE TABLE refresh_tokens, users, system, video_sources, episodes, series_to_genres, seasons, series, genres CASCADE"
+    "TRUNCATE TABLE refresh_tokens, users, system, video_sources, storage_providers, episodes, series_to_genres, seasons, series, genres CASCADE"
   );
 }

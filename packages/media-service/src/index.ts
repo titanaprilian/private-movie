@@ -30,6 +30,15 @@ import {
   type BucketStorageUsage,
 } from "./internal/s3/s3-storage-service";
 export { createS3StorageService, S3NotConfiguredError, extractS3Key };
+export {
+  encryptCredential,
+  decryptCredential,
+  maskAccessKeyId,
+} from "./internal/s3/encryption";
+export {
+  createStorageProviderRegistry,
+  type StorageProviderRegistry,
+} from "./internal/s3/registry";
 export type {
   S3StorageService,
   S3StorageServiceOptions,
@@ -58,7 +67,7 @@ export {
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
 import { createSeasonsRepositoryInternal, SeasonNotFoundError } from "./internal/seasons/repository";
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
-import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError } from "./internal/video-sources/repository";
+import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError, type VideoSourceUpsertInput, type UpdateVideoSourceInput, type VideoSourceRepositoryOptions } from "./internal/video-sources/repository";
 import {
   fetchFromTmdb,
   fetchTmdbSeriesData,

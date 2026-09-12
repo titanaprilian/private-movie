@@ -1,11 +1,17 @@
 import { Elysia, t } from "elysia";
-import { UnauthorizedError, type AuthenticationService } from "@repo/contracts";
+import {
+  UnauthorizedError,
+  type AuthenticationService,
+  type StorageProviderType,
+} from "@repo/contracts";
 import { S3NotConfiguredError, type S3StorageService } from "@repo/media-service";
 import { errorResponse, successResponse } from "../../lib/response";
 import {
   createStorageService,
   EpisodeNotFoundError,
   VideoSourceNotFoundError,
+  StorageProviderNotFoundError,
+  StorageProviderInUseError,
 } from "./internal/storage-service";
 
 export interface StorageRoutesOptions {
@@ -44,12 +50,13 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
 
   return new Elysia({ name: "storage-routes" }).group("/storage", (storage) =>
     storage
-      .get("/metrics", async ({ headers, set }) => {
+      // Storage Provider Management Endpoints
+      .get("/providers", async ({ headers, set }) => {
         if (!(await checkAuth(headers, set))) return;
 
         try {
-          const metrics = await storageService.getMetrics();
-          return successResponse(metrics);
+          const providers = await storageService.listProviders();
+          return successResponse(providers);
         } catch (error) {
           if (error instanceof S3NotConfiguredError) {
             return errorResponse(set, 400, error);
@@ -58,37 +65,186 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
         }
       })
       .get(
-        "/resources",
+        "/providers/:id",
+        async ({ params, headers, set }) => {
+          if (!(await checkAuth(headers, set))) return;
+
+          try {
+            const provider = await storageService.getProvider(params.id);
+            return successResponse(provider);
+          } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            throw error;
+          }
+        },
+        {
+          params: t.Object({
+            id: t.String({ minLength: 1 }),
+          }),
+        }
+      )
+      .post(
+        "/providers",
+        async ({ body, headers, set }) => {
+          if (!(await checkAuth(headers, set))) return;
+
+          const provider = await storageService.createProvider({
+            name: body.name,
+            providerType: body.providerType as StorageProviderType,
+            endpoint: body.endpoint,
+            region: body.region,
+            bucket: body.bucket,
+            accessKeyId: body.accessKeyId,
+            secretAccessKey: body.secretAccessKey,
+            publicBaseUrl: body.publicBaseUrl,
+            forcePathStyle: body.forcePathStyle,
+            storageLimitGb: body.storageLimitGb,
+            isDefault: body.isDefault,
+            isEnabled: body.isEnabled,
+          });
+          return successResponse(provider);
+        },
+        {
+          beforeHandle: async ({ headers, set }) => {
+            if (!(await checkAuth(headers, set))) return;
+          },
+          body: t.Object({
+            name: t.String({ minLength: 1 }),
+            providerType: t.String({ minLength: 1 }),
+            endpoint: t.String({ minLength: 1 }),
+            region: t.String({ minLength: 1 }),
+            bucket: t.String({ minLength: 1 }),
+            accessKeyId: t.String({ minLength: 1 }),
+            secretAccessKey: t.String({ minLength: 1 }),
+            publicBaseUrl: t.Optional(t.Nullable(t.String())),
+            forcePathStyle: t.Optional(t.Boolean()),
+            storageLimitGb: t.Optional(t.Number()),
+            isDefault: t.Optional(t.Boolean()),
+            isEnabled: t.Optional(t.Boolean()),
+          }),
+        }
+      )
+      .put(
+        "/providers/:id",
+        async ({ params, body, headers, set }) => {
+          if (!(await checkAuth(headers, set))) return;
+
+          try {
+            const provider = await storageService.updateProvider(params.id, {
+              name: body.name,
+              providerType: body.providerType as StorageProviderType | undefined,
+              endpoint: body.endpoint,
+              region: body.region,
+              bucket: body.bucket,
+              accessKeyId: body.accessKeyId,
+              secretAccessKey: body.secretAccessKey,
+              publicBaseUrl: body.publicBaseUrl,
+              forcePathStyle: body.forcePathStyle,
+              storageLimitGb: body.storageLimitGb,
+              isDefault: body.isDefault,
+              isEnabled: body.isEnabled,
+            });
+            return successResponse(provider);
+          } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            throw error;
+          }
+        },
+        {
+          params: t.Object({
+            id: t.String({ minLength: 1 }),
+          }),
+          body: t.Object({
+            name: t.Optional(t.String({ minLength: 1 })),
+            providerType: t.Optional(t.String({ minLength: 1 })),
+            endpoint: t.Optional(t.String({ minLength: 1 })),
+            region: t.Optional(t.String({ minLength: 1 })),
+            bucket: t.Optional(t.String({ minLength: 1 })),
+            accessKeyId: t.Optional(t.String()),
+            secretAccessKey: t.Optional(t.String()),
+            publicBaseUrl: t.Optional(t.Nullable(t.String())),
+            forcePathStyle: t.Optional(t.Boolean()),
+            storageLimitGb: t.Optional(t.Number()),
+            isDefault: t.Optional(t.Boolean()),
+            isEnabled: t.Optional(t.Boolean()),
+          }),
+        }
+      )
+      .delete(
+        "/providers/:id",
+        async ({ params, headers, set }) => {
+          if (!(await checkAuth(headers, set))) return;
+
+          try {
+            await storageService.deleteProvider(params.id);
+            return successResponse({ success: true, deletedId: params.id });
+          } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            if (error instanceof StorageProviderInUseError) {
+              return errorResponse(set, 409, error);
+            }
+            throw error;
+          }
+        },
+        {
+          params: t.Object({
+            id: t.String({ minLength: 1 }),
+          }),
+        }
+      )
+      .post(
+        "/providers/test",
+        async ({ body, headers, set }) => {
+          if (!(await checkAuth(headers, set))) return;
+
+          try {
+            const result = await storageService.testProvider(body ?? {});
+            return successResponse(result);
+          } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            return errorResponse(
+              set,
+              400,
+              error instanceof Error ? error : new Error(String(error))
+            );
+          }
+        },
+        {
+          body: t.Optional(
+            t.Object({
+              providerId: t.Optional(t.String()),
+              endpoint: t.Optional(t.String()),
+              region: t.Optional(t.String()),
+              bucket: t.Optional(t.String()),
+              accessKeyId: t.Optional(t.String()),
+              secretAccessKey: t.Optional(t.String()),
+              forcePathStyle: t.Optional(t.Boolean()),
+            })
+          ),
+        }
+      )
+
+      // Storage Scoped Operations
+      .get(
+        "/metrics",
         async ({ query, headers, set }) => {
           if (!(await checkAuth(headers, set))) return;
 
           try {
-            const page = query.page ? parseInt(query.page, 10) : undefined;
-            const limit = query.limit ? parseInt(query.limit, 10) : undefined;
-            const status =
-              query.status === "linked" || query.status === "orphaned" || query.status === "all"
-                ? query.status
-                : undefined;
-            const sortBy =
-              query.sortBy === "size" || query.sortBy === "date" || query.sortBy === "name"
-                ? query.sortBy
-                : undefined;
-            const sortOrder =
-              query.sortOrder === "asc" || query.sortOrder === "desc"
-                ? query.sortOrder
-                : undefined;
-
-            const resources = await storageService.getResources({
-              status,
-              search: query.search,
-              sortBy,
-              sortOrder,
-              page: Number.isNaN(page) ? undefined : page,
-              limit: Number.isNaN(limit) ? undefined : limit,
-            });
-
-            return successResponse(resources);
+            const metrics = await storageService.getMetrics(query?.providerId);
+            return successResponse(metrics);
           } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
             if (error instanceof S3NotConfiguredError) {
               return errorResponse(set, 400, error);
             }
@@ -98,6 +254,57 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
         {
           query: t.Optional(
             t.Object({
+              providerId: t.Optional(t.String()),
+            })
+          ),
+        }
+      )
+      .get(
+        "/resources",
+        async ({ query, headers, set }) => {
+          if (!(await checkAuth(headers, set))) return;
+
+          try {
+            const page = query?.page ? parseInt(query.page, 10) : undefined;
+            const limit = query?.limit ? parseInt(query.limit, 10) : undefined;
+            const status =
+              query?.status === "linked" || query?.status === "orphaned" || query?.status === "all"
+                ? query.status
+                : undefined;
+            const sortBy =
+              query?.sortBy === "size" || query?.sortBy === "date" || query?.sortBy === "name"
+                ? query.sortBy
+                : undefined;
+            const sortOrder =
+              query?.sortOrder === "asc" || query?.sortOrder === "desc"
+                ? query.sortOrder
+                : undefined;
+
+            const resources = await storageService.getResources({
+              providerId: query?.providerId,
+              status,
+              search: query?.search,
+              sortBy,
+              sortOrder,
+              page: Number.isNaN(page) ? undefined : page,
+              limit: Number.isNaN(limit) ? undefined : limit,
+            });
+
+            return successResponse(resources);
+          } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            if (error instanceof S3NotConfiguredError) {
+              return errorResponse(set, 400, error);
+            }
+            throw error;
+          }
+        },
+        {
+          query: t.Optional(
+            t.Object({
+              providerId: t.Optional(t.String()),
               status: t.Optional(t.String()),
               search: t.Optional(t.String()),
               sortBy: t.Optional(t.String()),
@@ -108,19 +315,32 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
           ),
         }
       )
-      .post("/scan", async ({ headers, set }) => {
-        if (!(await checkAuth(headers, set))) return;
+      .post(
+        "/scan",
+        async ({ body, headers, set }) => {
+          if (!(await checkAuth(headers, set))) return;
 
-        try {
-          const result = await storageService.scan(true);
-          return successResponse(result);
-        } catch (error) {
-          if (error instanceof S3NotConfiguredError) {
-            return errorResponse(set, 400, error);
+          try {
+            const result = await storageService.scan(true, body?.providerId);
+            return successResponse(result);
+          } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            if (error instanceof S3NotConfiguredError) {
+              return errorResponse(set, 400, error);
+            }
+            throw error;
           }
-          throw error;
+        },
+        {
+          body: t.Optional(
+            t.Object({
+              providerId: t.Optional(t.String()),
+            })
+          ),
         }
-      })
+      )
       .put(
         "/limit",
         async ({ body, headers, set }) => {
@@ -134,12 +354,20 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             );
           }
 
-          const result = await storageService.updateLimit(body.limitGb);
-          return successResponse(result);
+          try {
+            const result = await storageService.updateLimit(body.limitGb, body.providerId);
+            return successResponse(result);
+          } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            throw error;
+          }
         },
         {
           body: t.Object({
             limitGb: t.Number(),
+            providerId: t.Optional(t.String()),
           }),
         }
       )
@@ -182,10 +410,14 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               episodeId: body.episodeId,
               label: body.label,
               quality: body.quality,
+              providerId: body.providerId,
             });
             return successResponse(attached);
           } catch (error) {
             if (error instanceof EpisodeNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            if (error instanceof StorageProviderNotFoundError) {
               return errorResponse(set, 404, error);
             }
             throw error;
@@ -197,6 +429,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             episodeId: t.String({ minLength: 1 }),
             label: t.Optional(t.String()),
             quality: t.Optional(t.Nullable(t.String())),
+            providerId: t.Optional(t.String()),
           }),
         }
       )
@@ -214,9 +447,12 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
           }
 
           try {
-            const result = await storageService.deleteResources(body.keys);
+            const result = await storageService.deleteResources(body.keys, body.providerId);
             return successResponse(result);
           } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
             if (error instanceof S3NotConfiguredError) {
               return errorResponse(set, 400, error);
             }
@@ -226,22 +462,36 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
         {
           body: t.Object({
             keys: t.Array(t.String({ minLength: 1 })),
+            providerId: t.Optional(t.String()),
           }),
         }
       )
-      .post("/resources/purge-orphans", async ({ headers, set }) => {
-        if (!(await checkAuth(headers, set))) return;
+      .post(
+        "/resources/purge-orphans",
+        async ({ body, headers, set }) => {
+          if (!(await checkAuth(headers, set))) return;
 
-        try {
-          const result = await storageService.purgeOrphans();
-          return successResponse(result);
-        } catch (error) {
-          if (error instanceof S3NotConfiguredError) {
-            return errorResponse(set, 400, error);
+          try {
+            const result = await storageService.purgeOrphans(body?.providerId);
+            return successResponse(result);
+          } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
+            if (error instanceof S3NotConfiguredError) {
+              return errorResponse(set, 400, error);
+            }
+            throw error;
           }
-          throw error;
+        },
+        {
+          body: t.Optional(
+            t.Object({
+              providerId: t.Optional(t.String()),
+            })
+          ),
         }
-      })
+      )
       .get(
         "/resources/preview-url",
         async ({ query, headers, set }) => {
@@ -256,9 +506,12 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
           }
 
           try {
-            const result = await storageService.getPreviewUrl(query.key.trim());
+            const result = await storageService.getPreviewUrl(query.key.trim(), query.providerId);
             return successResponse(result);
           } catch (error) {
+            if (error instanceof StorageProviderNotFoundError) {
+              return errorResponse(set, 404, error);
+            }
             if (error instanceof S3NotConfiguredError) {
               return errorResponse(set, 400, error);
             }
@@ -268,6 +521,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
         {
           query: t.Object({
             key: t.String({ minLength: 1 }),
+            providerId: t.Optional(t.String()),
           }),
         }
       )

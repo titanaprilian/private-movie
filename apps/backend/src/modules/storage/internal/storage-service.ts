@@ -7,19 +7,32 @@ import {
   series,
   system,
   videoSources,
+  storageProviders,
   type VideoSourceRow,
+  type StorageProviderRow,
 } from "@repo/db";
 import {
   extractS3Key,
   S3NotConfiguredError,
+  encryptCredential,
+  decryptCredential,
+  maskAccessKeyId,
+  createS3StorageService,
+  createStorageProviderRegistry,
   type S3ObjectSummary,
   type S3StorageService,
+  type StorageProviderRegistry,
 } from "@repo/media-service";
 import type {
   StorageMetrics,
   StorageResourceItem,
   StorageResourcesQuery,
   StorageResourcesResponseData,
+  StorageProviderItem,
+  CreateStorageProviderRequest,
+  UpdateStorageProviderRequest,
+  TestStorageProviderRequest,
+  TestStorageProviderResponseData,
 } from "@repo/contracts";
 
 export class EpisodeNotFoundError extends Error {
@@ -36,16 +49,32 @@ export class VideoSourceNotFoundError extends Error {
   }
 }
 
+export class StorageProviderNotFoundError extends Error {
+  constructor(message = "Storage provider not found") {
+    super(message);
+    this.name = "StorageProviderNotFoundError";
+  }
+}
+
+export class StorageProviderInUseError extends Error {
+  constructor(message = "Cannot delete storage provider with active video sources") {
+    super(message);
+    this.name = "StorageProviderInUseError";
+  }
+}
+
 export interface StorageServiceOptions {
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
   cacheTtlMs?: number;
 }
 
 export interface StorageService {
-  getMetrics(): Promise<StorageMetrics>;
+  // Scoped storage management
+  getMetrics(providerId?: string): Promise<StorageMetrics>;
   getResources(query?: StorageResourcesQuery): Promise<StorageResourcesResponseData>;
-  scan(force?: boolean): Promise<{ count: number; totalBytes: number }>;
-  updateLimit(limitGb: number): Promise<{ limitGb: number; limitBytes: number }>;
+  scan(force?: boolean, providerId?: string): Promise<{ count: number; totalBytes: number }>;
+  updateLimit(limitGb: number, providerId?: string): Promise<{ limitGb: number; limitBytes: number }>;
   updateSourceMetadata(
     videoSourceId: string,
     input: { label?: string; quality?: string | null }
@@ -55,18 +84,30 @@ export interface StorageService {
     episodeId: string;
     label?: string;
     quality?: string | null;
+    providerId?: string;
   }): Promise<VideoSourceRow>;
-  deleteResources(keys: string[]): Promise<{
+  deleteResources(
+    keys: string[],
+    providerId?: string
+  ): Promise<{
     deletedKeys: string[];
     reclaimedBytes: number;
     deletedSourcesCount: number;
   }>;
-  purgeOrphans(): Promise<{
+  purgeOrphans(providerId?: string): Promise<{
     deletedKeys: string[];
     reclaimedBytes: number;
   }>;
-  getPreviewUrl(key: string): Promise<{ previewUrl: string }>;
-  invalidateCache(): void;
+  getPreviewUrl(key: string, providerId?: string): Promise<{ previewUrl: string }>;
+  invalidateCache(providerId?: string): void;
+
+  // Provider CRUD & verification
+  listProviders(): Promise<StorageProviderItem[]>;
+  getProvider(id: string): Promise<StorageProviderItem>;
+  createProvider(input: CreateStorageProviderRequest): Promise<StorageProviderItem>;
+  updateProvider(id: string, input: UpdateStorageProviderRequest): Promise<StorageProviderItem>;
+  deleteProvider(id: string): Promise<void>;
+  testProvider(input: TestStorageProviderRequest): Promise<TestStorageProviderResponseData>;
 }
 
 const DEFAULT_LIMIT_GB = 50;
@@ -79,38 +120,83 @@ export function createStorageService<
   db: PgDatabase<THKT, TSchema>,
   options?: StorageServiceOptions
 ): StorageService {
-  const s3 = options?.s3StorageService;
+  const defaultS3 = options?.s3StorageService;
+  const registry =
+    options?.storageProviderRegistry ??
+    createStorageProviderRegistry(db, defaultS3);
   const cacheTtlMs = options?.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
 
-  let cachedS3Objects: S3ObjectSummary[] | null = null;
-  let cachedAt = 0;
+  // Per-provider cache
+  const cachedS3ObjectsMap = new Map<string, S3ObjectSummary[]>();
+  const cachedAtMap = new Map<string, number>();
 
-  function ensureS3(): S3StorageService {
-    if (!s3 || !s3.isConfigured()) {
-      throw new S3NotConfiguredError();
+  async function resolveTargetProvider(providerId?: string): Promise<{
+    provider: StorageProviderRow | null;
+    service: S3StorageService;
+  }> {
+    if (providerId) {
+      const match = await registry.getProvider(providerId);
+      if (match) {
+        return match;
+      }
+      throw new StorageProviderNotFoundError(`Storage provider with id ${providerId} not found`);
     }
-    return s3;
+
+    try {
+      const defaultMatch = await registry.getDefaultProvider();
+      if (defaultMatch) {
+        return defaultMatch;
+      }
+    } catch {
+      // ignore db errors during resolution (e.g. unit mocks with incomplete select chaining)
+    }
+
+    if (defaultS3 && defaultS3.isConfigured()) {
+      return {
+        provider: null,
+        service: defaultS3,
+      };
+    }
+
+    throw new S3NotConfiguredError();
   }
 
-  function invalidateCache(): void {
-    cachedS3Objects = null;
-    cachedAt = 0;
+  function invalidateCache(providerId?: string): void {
+    if (providerId) {
+      cachedS3ObjectsMap.delete(providerId);
+      cachedAtMap.delete(providerId);
+      registry.invalidateCache(providerId);
+    } else {
+      cachedS3ObjectsMap.clear();
+      cachedAtMap.clear();
+      registry.invalidateCache();
+    }
   }
 
-  async function getS3Objects(force = false): Promise<S3ObjectSummary[]> {
-    const s3Client = ensureS3();
+  async function getS3Objects(
+    service: S3StorageService,
+    cacheKey: string,
+    force = false
+  ): Promise<S3ObjectSummary[]> {
     const now = Date.now();
-    if (!force && cachedS3Objects && now - cachedAt < cacheTtlMs) {
-      return cachedS3Objects;
+    const cached = cachedS3ObjectsMap.get(cacheKey);
+    const cachedAt = cachedAtMap.get(cacheKey) ?? 0;
+
+    if (!force && cached && now - cachedAt < cacheTtlMs) {
+      return cached;
     }
 
-    const objects = await s3Client.listAllObjects();
-    cachedS3Objects = objects;
-    cachedAt = Date.now();
+    const objects = await service.listAllObjects();
+    cachedS3ObjectsMap.set(cacheKey, objects);
+    cachedAtMap.set(cacheKey, Date.now());
     return objects;
   }
 
-  async function getStorageLimitGb(): Promise<number> {
+  async function getStorageLimitGb(provider: StorageProviderRow | null): Promise<number> {
+    if (provider) {
+      return provider.storageLimitGb ?? DEFAULT_LIMIT_GB;
+    }
+
     try {
       const [sysRow] = await db
         .select()
@@ -124,7 +210,7 @@ export function createStorageService<
         }
       }
     } catch {
-      // ignore db read errors and fall through
+      // ignore
     }
 
     const envVal = process.env.S3_STORAGE_LIMIT_GB;
@@ -138,16 +224,22 @@ export function createStorageService<
     return DEFAULT_LIMIT_GB;
   }
 
-  async function getCorrelatedInventory(force = false): Promise<{
+  async function getCorrelatedInventory(
+    providerId?: string,
+    force = false
+  ): Promise<{
     items: StorageResourceItem[];
     totalBytes: number;
     linkedCount: number;
     orphanCount: number;
+    provider: StorageProviderRow | null;
   }> {
-    const s3Objects = await getS3Objects(force);
+    const { provider, service } = await resolveTargetProvider(providerId);
+    const cacheKey = provider?.id ?? "legacy_default";
+    const s3Objects = await getS3Objects(service, cacheKey, force);
 
-    // Fetch all video sources with their episode, season, and series info
-    const dbSources = await db
+    // Fetch video sources belonging to this provider or all S3 sources if no provider exists
+    const queryBuilder = db
       .select({
         id: videoSources.id,
         episodeId: videoSources.episodeId,
@@ -155,6 +247,7 @@ export function createStorageService<
         url: videoSources.url,
         label: videoSources.label,
         quality: videoSources.quality,
+        storageProviderId: videoSources.storageProviderId,
         episodeTitle: episodes.title,
         episodeOrder: episodes.order,
         seasonId: seasons.id,
@@ -168,18 +261,27 @@ export function createStorageService<
       .leftJoin(seasons, eq(episodes.seasonId, seasons.id))
       .leftJoin(series, eq(seasons.seriesId, series.id));
 
-    // Calculate source count per episode to detect lone sources
+    const dbSources = await queryBuilder;
+
+    // Filter to sources matching the current provider (or unlinked sources if default)
+    const matchingDbSources = dbSources.filter((src) => {
+      if (src.type !== "s3") return false;
+      if (provider) {
+        return src.storageProviderId === provider.id;
+      }
+      return !src.storageProviderId;
+    });
+
     const episodeSourceCounts = new Map<string, number>();
-    for (const source of dbSources) {
+    for (const source of matchingDbSources) {
       if (source.episodeId) {
         const count = episodeSourceCounts.get(source.episodeId) ?? 0;
         episodeSourceCounts.set(source.episodeId, count + 1);
       }
     }
 
-    // Map video sources by S3 key
-    const sourceByKey = new Map<string, (typeof dbSources)[0]>();
-    for (const source of dbSources) {
+    const sourceByKey = new Map<string, (typeof matchingDbSources)[0]>();
+    for (const source of matchingDbSources) {
       const extractedKey = extractS3Key(source.url);
       if (extractedKey) {
         sourceByKey.set(extractedKey, source);
@@ -251,17 +353,50 @@ export function createStorageService<
       totalBytes,
       linkedCount,
       orphanCount,
+      provider,
+    };
+  }
+
+  function formatProviderItem(
+    provider: StorageProviderRow,
+    linkedSourcesCount: number
+  ): StorageProviderItem {
+    let accessKeyIdMasked = "••••";
+    try {
+      const decryptedAccessKey = decryptCredential(provider.accessKeyIdEnc);
+      accessKeyIdMasked = maskAccessKeyId(decryptedAccessKey);
+    } catch {
+      // fallback
+    }
+
+    return {
+      id: provider.id,
+      name: provider.name,
+      providerType: provider.providerType as StorageProviderItem["providerType"],
+      endpoint: provider.endpoint,
+      region: provider.region,
+      bucket: provider.bucket,
+      accessKeyIdMasked,
+      publicBaseUrl: provider.publicBaseUrl,
+      forcePathStyle: provider.forcePathStyle,
+      storageLimitGb: provider.storageLimitGb,
+      isDefault: provider.isDefault,
+      isEnabled: provider.isEnabled,
+      linkedSourcesCount,
+      createdAt: provider.createdAt.toISOString(),
+      updatedAt: provider.updatedAt.toISOString(),
     };
   }
 
   return {
     invalidateCache,
 
-    async getMetrics(): Promise<StorageMetrics> {
-      const limitGb = await getStorageLimitGb();
-      const limitBytes = limitGb * 1024 * 1024 * 1024;
-      const { items, totalBytes, linkedCount, orphanCount } = await getCorrelatedInventory();
+    async getMetrics(providerId?: string): Promise<StorageMetrics> {
+      const { items, totalBytes, linkedCount, orphanCount, provider } =
+        await getCorrelatedInventory(providerId);
 
+      const limitGb = await getStorageLimitGb(provider);
+      const limitBytes = limitGb * 1024 * 1024 * 1024;
       const percentUsed = limitBytes > 0 ? Math.min(100, (totalBytes / limitBytes) * 100) : 0;
 
       return {
@@ -275,16 +410,14 @@ export function createStorageService<
     },
 
     async getResources(query?: StorageResourcesQuery): Promise<StorageResourcesResponseData> {
-      const { items } = await getCorrelatedInventory();
+      const { items } = await getCorrelatedInventory(query?.providerId);
 
       let filtered = items;
 
-      // Status filtering
       if (query?.status && query.status !== "all") {
         filtered = filtered.filter((item) => item.status === query.status);
       }
 
-      // Search filtering
       if (query?.search && query.search.trim()) {
         const searchLower = query.search.trim().toLowerCase();
         filtered = filtered.filter((item) => {
@@ -297,7 +430,6 @@ export function createStorageService<
         });
       }
 
-      // Sorting
       const sortBy = query?.sortBy ?? "date";
       const sortOrder = query?.sortOrder ?? "desc";
 
@@ -308,7 +440,6 @@ export function createStorageService<
         } else if (sortBy === "name") {
           comparison = a.filename.localeCompare(b.filename);
         } else {
-          // default: date
           const dateA = new Date(a.lastModified).getTime();
           const dateB = new Date(b.lastModified).getTime();
           comparison = dateA - dateB;
@@ -317,7 +448,6 @@ export function createStorageService<
         return sortOrder === "asc" ? comparison : -comparison;
       });
 
-      // Pagination
       const page = Math.max(1, query?.page ?? 1);
       const limit = Math.min(100, Math.max(1, query?.limit ?? 25));
       const total = filtered.length;
@@ -334,9 +464,11 @@ export function createStorageService<
       };
     },
 
-    async scan(force = true): Promise<{ count: number; totalBytes: number }> {
-      invalidateCache();
-      const objects = await getS3Objects(force);
+    async scan(force = true, providerId?: string): Promise<{ count: number; totalBytes: number }> {
+      invalidateCache(providerId);
+      const { service, provider } = await resolveTargetProvider(providerId);
+      const cacheKey = provider?.id ?? "legacy_default";
+      const objects = await getS3Objects(service, cacheKey, force);
       const totalBytes = objects.reduce((sum, obj) => sum + obj.size, 0);
       return {
         count: objects.length,
@@ -344,7 +476,10 @@ export function createStorageService<
       };
     },
 
-    async updateLimit(limitGb: number): Promise<{ limitGb: number; limitBytes: number }> {
+    async updateLimit(
+      limitGb: number,
+      providerId?: string
+    ): Promise<{ limitGb: number; limitBytes: number }> {
       if (limitGb <= 0 || Number.isNaN(limitGb)) {
         throw new Error("Storage limit must be a positive number");
       }
@@ -352,20 +487,36 @@ export function createStorageService<
       const limitBytes = limitGb * 1024 * 1024 * 1024;
       const now = new Date();
 
-      await db
-        .insert(system)
-        .values({
-          id: randomUUID(),
-          key: "s3_storage_limit_gb",
-          value: String(limitGb),
-          createdAt: now,
-        })
-        .onConflictDoUpdate({
-          target: system.key,
-          set: {
+      if (providerId) {
+        const [updated] = await db
+          .update(storageProviders)
+          .set({
+            storageLimitGb: limitGb,
+            updatedAt: now,
+          })
+          .where(eq(storageProviders.id, providerId))
+          .returning();
+
+        if (!updated) {
+          throw new StorageProviderNotFoundError(`Storage provider with id ${providerId} not found`);
+        }
+      } else {
+        // Legacy system setting update
+        await db
+          .insert(system)
+          .values({
+            id: randomUUID(),
+            key: "s3_storage_limit_gb",
             value: String(limitGb),
-          },
-        });
+            createdAt: now,
+          })
+          .onConflictDoUpdate({
+            target: system.key,
+            set: {
+              value: String(limitGb),
+            },
+          });
+      }
 
       return {
         limitGb,
@@ -411,6 +562,7 @@ export function createStorageService<
       episodeId: string;
       label?: string;
       quality?: string | null;
+      providerId?: string;
     }): Promise<VideoSourceRow> {
       const [existingEp] = await db
         .select()
@@ -420,6 +572,9 @@ export function createStorageService<
       if (!existingEp) {
         throw new EpisodeNotFoundError(`Episode with id ${input.episodeId} not found`);
       }
+
+      const { provider } = await resolveTargetProvider(input.providerId);
+      const targetProviderId = provider ? provider.id : input.providerId ?? null;
 
       const now = new Date();
       const [created] = await db
@@ -431,26 +586,30 @@ export function createStorageService<
           url: input.key,
           label: input.label || "S3 Source",
           quality: input.quality ?? null,
+          storageProviderId: targetProviderId,
           createdAt: now,
           updatedAt: now,
         })
         .returning();
 
-      invalidateCache();
+      invalidateCache(targetProviderId ?? undefined);
       return created!;
     },
 
-    async deleteResources(keys: string[]): Promise<{
+    async deleteResources(
+      keys: string[],
+      providerId?: string
+    ): Promise<{
       deletedKeys: string[];
       reclaimedBytes: number;
       deletedSourcesCount: number;
     }> {
-      const s3Client = ensureS3();
+      const { service, provider } = await resolveTargetProvider(providerId);
       if (!keys || keys.length === 0) {
         return { deletedKeys: [], reclaimedBytes: 0, deletedSourcesCount: 0 };
       }
 
-      const { items } = await getCorrelatedInventory();
+      const { items } = await getCorrelatedInventory(providerId);
       const itemMap = new Map(items.map((i) => [i.key, i]));
 
       let reclaimedBytes = 0;
@@ -468,15 +627,12 @@ export function createStorageService<
         validKeys.push(k);
       }
 
-      // Delete corresponding video sources from DB (preserves episode rows)
       if (sourceIdsToDelete.length > 0) {
         await db.delete(videoSources).where(inArray(videoSources.id, sourceIdsToDelete));
       }
 
-      // Delete from S3
-      await s3Client.deleteObjects(validKeys);
-
-      invalidateCache();
+      await service.deleteObjects(validKeys);
+      invalidateCache(provider?.id);
 
       return {
         deletedKeys: validKeys,
@@ -485,12 +641,12 @@ export function createStorageService<
       };
     },
 
-    async purgeOrphans(): Promise<{
+    async purgeOrphans(providerId?: string): Promise<{
       deletedKeys: string[];
       reclaimedBytes: number;
     }> {
-      const s3Client = ensureS3();
-      const { items } = await getCorrelatedInventory();
+      const { service, provider } = await resolveTargetProvider(providerId);
+      const { items } = await getCorrelatedInventory(providerId);
       const orphanItems = items.filter((item) => item.status === "orphaned");
 
       if (orphanItems.length === 0) {
@@ -500,8 +656,8 @@ export function createStorageService<
       const orphanKeys = orphanItems.map((i) => i.key);
       const reclaimedBytes = orphanItems.reduce((sum, i) => sum + i.sizeBytes, 0);
 
-      await s3Client.deleteObjects(orphanKeys);
-      invalidateCache();
+      await service.deleteObjects(orphanKeys);
+      invalidateCache(provider?.id);
 
       return {
         deletedKeys: orphanKeys,
@@ -509,10 +665,234 @@ export function createStorageService<
       };
     },
 
-    async getPreviewUrl(key: string): Promise<{ previewUrl: string }> {
-      const s3Client = ensureS3();
-      const previewUrl = await s3Client.getPresignedPlaybackUrl(key);
+    async getPreviewUrl(key: string, providerId?: string): Promise<{ previewUrl: string }> {
+      const { service } = await resolveTargetProvider(providerId);
+      const previewUrl = await service.getPresignedPlaybackUrl(key);
       return { previewUrl };
+    },
+
+    // Provider CRUD methods
+    async listProviders(): Promise<StorageProviderItem[]> {
+      const providers = await db
+        .select()
+        .from(storageProviders)
+        .orderBy(storageProviders.createdAt);
+
+      const allSources = await db
+        .select({ storageProviderId: videoSources.storageProviderId })
+        .from(videoSources);
+
+      const countMap = new Map<string, number>();
+      for (const src of allSources) {
+        if (src.storageProviderId) {
+          countMap.set(
+            src.storageProviderId,
+            (countMap.get(src.storageProviderId) ?? 0) + 1
+          );
+        }
+      }
+
+      return providers.map((p) =>
+        formatProviderItem(p, countMap.get(p.id) ?? 0)
+      );
+    },
+
+    async getProvider(id: string): Promise<StorageProviderItem> {
+      const [provider] = await db
+        .select()
+        .from(storageProviders)
+        .where(eq(storageProviders.id, id));
+
+      if (!provider) {
+        throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
+      }
+
+      const sources = await db
+        .select({ id: videoSources.id })
+        .from(videoSources)
+        .where(eq(videoSources.storageProviderId, id));
+
+      return formatProviderItem(provider, sources.length);
+    },
+
+    async createProvider(input: CreateStorageProviderRequest): Promise<StorageProviderItem> {
+      const now = new Date();
+      const id = randomUUID();
+
+      // If marked as default, unset existing default
+      if (input.isDefault) {
+        await db
+          .update(storageProviders)
+          .set({ isDefault: false, updatedAt: now })
+          .where(eq(storageProviders.isDefault, true));
+      }
+
+      const accessKeyIdEnc = encryptCredential(input.accessKeyId);
+      const secretAccessKeyEnc = encryptCredential(input.secretAccessKey);
+
+      const [row] = await db
+        .insert(storageProviders)
+        .values({
+          id,
+          name: input.name,
+          providerType: input.providerType,
+          endpoint: input.endpoint,
+          region: input.region,
+          bucket: input.bucket,
+          accessKeyIdEnc,
+          secretAccessKeyEnc,
+          publicBaseUrl: input.publicBaseUrl ? input.publicBaseUrl.trim() : null,
+          forcePathStyle: input.forcePathStyle ?? false,
+          storageLimitGb: input.storageLimitGb ?? DEFAULT_LIMIT_GB,
+          isDefault: input.isDefault ?? false,
+          isEnabled: input.isEnabled ?? true,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      invalidateCache();
+      return formatProviderItem(row!, 0);
+    },
+
+    async updateProvider(
+      id: string,
+      input: UpdateStorageProviderRequest
+    ): Promise<StorageProviderItem> {
+      const [existing] = await db
+        .select()
+        .from(storageProviders)
+        .where(eq(storageProviders.id, id));
+
+      if (!existing) {
+        throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
+      }
+
+      const now = new Date();
+
+      if (input.isDefault) {
+        await db
+          .update(storageProviders)
+          .set({ isDefault: false, updatedAt: now })
+          .where(eq(storageProviders.isDefault, true));
+      }
+
+      const updateData: Partial<typeof storageProviders.$inferInsert> = {
+        updatedAt: now,
+      };
+
+      if (input.name !== undefined) updateData.name = input.name;
+      if (input.providerType !== undefined) updateData.providerType = input.providerType;
+      if (input.endpoint !== undefined) updateData.endpoint = input.endpoint;
+      if (input.region !== undefined) updateData.region = input.region;
+      if (input.bucket !== undefined) updateData.bucket = input.bucket;
+      if (input.publicBaseUrl !== undefined)
+        updateData.publicBaseUrl = input.publicBaseUrl ? input.publicBaseUrl.trim() : null;
+      if (input.forcePathStyle !== undefined) updateData.forcePathStyle = input.forcePathStyle;
+      if (input.storageLimitGb !== undefined) updateData.storageLimitGb = input.storageLimitGb;
+      if (input.isDefault !== undefined) updateData.isDefault = input.isDefault;
+      if (input.isEnabled !== undefined) updateData.isEnabled = input.isEnabled;
+
+      if (input.accessKeyId) {
+        updateData.accessKeyIdEnc = encryptCredential(input.accessKeyId);
+      }
+      if (input.secretAccessKey) {
+        updateData.secretAccessKeyEnc = encryptCredential(input.secretAccessKey);
+      }
+
+      const [updated] = await db
+        .update(storageProviders)
+        .set(updateData)
+        .where(eq(storageProviders.id, id))
+        .returning();
+
+      invalidateCache(id);
+
+      const sources = await db
+        .select({ id: videoSources.id })
+        .from(videoSources)
+        .where(eq(videoSources.storageProviderId, id));
+
+      return formatProviderItem(updated!, sources.length);
+    },
+
+    async deleteProvider(id: string): Promise<void> {
+      const [existing] = await db
+        .select()
+        .from(storageProviders)
+        .where(eq(storageProviders.id, id));
+
+      if (!existing) {
+        throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
+      }
+
+      const linkedSources = await db
+        .select({ id: videoSources.id })
+        .from(videoSources)
+        .where(eq(videoSources.storageProviderId, id))
+        .limit(1);
+
+      if (linkedSources.length > 0) {
+        throw new StorageProviderInUseError(
+          `Cannot delete storage provider ${id}: linked video sources exist`
+        );
+      }
+
+      await db.delete(storageProviders).where(eq(storageProviders.id, id));
+      invalidateCache(id);
+    },
+
+    async testProvider(
+      input: TestStorageProviderRequest
+    ): Promise<TestStorageProviderResponseData> {
+      let service: S3StorageService;
+
+      if (input.providerId) {
+        const [row] = await db
+          .select()
+          .from(storageProviders)
+          .where(eq(storageProviders.id, input.providerId));
+
+        if (!row) {
+          throw new StorageProviderNotFoundError(
+            `Storage provider with id ${input.providerId} not found`
+          );
+        }
+
+        service = registry.getServiceForProvider(row);
+      } else {
+        if (
+          !input.endpoint ||
+          !input.bucket ||
+          !input.accessKeyId ||
+          !input.secretAccessKey
+        ) {
+          throw new Error("Missing required connection parameters");
+        }
+
+        service = createS3StorageService({
+          endpoint: input.endpoint,
+          region: input.region ?? "auto",
+          bucket: input.bucket,
+          accessKeyId: input.accessKeyId,
+          secretAccessKey: input.secretAccessKey,
+          forcePathStyle: input.forcePathStyle,
+        });
+      }
+
+      try {
+        const result = await service.testConnection();
+        return {
+          success: true,
+          latencyMs: result.latencyMs,
+        };
+      } catch (err) {
+        return {
+          success: false,
+          message: err instanceof Error ? err.message : String(err),
+          latencyMs: (err as { latencyMs?: number })?.latencyMs ?? 0,
+        };
+      }
     },
   };
 }

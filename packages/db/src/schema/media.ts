@@ -7,6 +7,7 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
+import { storageProviders } from "./storage";
 
 export const genres = pgTable("genres", {
   id: text("id").primaryKey(),
@@ -120,6 +121,10 @@ export const videoSources = pgTable(
     url: text("url").notNull(),
     label: text("label").notNull(),
     quality: text("quality"),
+    storageProviderId: text("storage_provider_id").references(
+      () => storageProviders.id,
+      { onDelete: "restrict" }
+    ),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },

@@ -17,6 +17,8 @@ export interface S3StorageServiceOptions {
   accessKeyId?: string;
   secretAccessKey?: string;
   presignedGetExpiresIn?: number;
+  forcePathStyle?: boolean;
+  publicBaseUrl?: string | null;
 }
 
 export interface StreamUploadOptions {
@@ -68,6 +70,8 @@ export interface S3StorageService {
   listObjects(options?: ListObjectsOptions): Promise<ListObjectsResult>;
   listAllObjects(prefix?: string): Promise<S3ObjectSummary[]>;
   getBucketStorageUsage(): Promise<BucketStorageUsage>;
+  testConnection(): Promise<{ success: boolean; latencyMs: number }>;
+  getPublicBaseUrl(): string | null;
 }
 
 export class S3NotConfiguredError extends Error {
@@ -128,6 +132,7 @@ class DefaultS3StorageService implements S3StorageService {
   private readonly bucket: string;
   private readonly defaultExpiresIn: number;
   private readonly configured: boolean;
+  private readonly publicBaseUrl: string | null;
 
   constructor(options?: S3StorageServiceOptions) {
     let endpoint = (options?.endpoint ?? process.env.S3_ENDPOINT ?? "").trim();
@@ -146,12 +151,14 @@ class DefaultS3StorageService implements S3StorageService {
 
     this.bucket = bucket;
     this.defaultExpiresIn = Number.isNaN(defaultGetExpires) ? 21600 : defaultGetExpires;
+    this.publicBaseUrl = options?.publicBaseUrl ? options.publicBaseUrl.trim().replace(/\/+$/, "") : null;
 
     if (endpoint && bucket && accessKeyId && secretAccessKey) {
       this.configured = true;
       this.client = new S3Client({
         endpoint,
         region,
+        forcePathStyle: options?.forcePathStyle ?? false,
         credentials: {
           accessKeyId,
           secretAccessKey,
@@ -164,6 +171,32 @@ class DefaultS3StorageService implements S3StorageService {
     } else {
       this.configured = false;
       this.client = null;
+    }
+  }
+
+  getPublicBaseUrl(): string | null {
+    return this.publicBaseUrl;
+  }
+
+  async testConnection(): Promise<{ success: boolean; latencyMs: number }> {
+    const client = this.ensureConfigured();
+    const startTime = Date.now();
+    try {
+      const command = new ListObjectsV2Command({
+        Bucket: this.bucket,
+        MaxKeys: 1,
+      });
+      await client.send(command);
+      return {
+        success: true,
+        latencyMs: Date.now() - startTime,
+      };
+    } catch (error) {
+      const latencyMs = Date.now() - startTime;
+      throw Object.assign(
+        error instanceof Error ? error : new Error(String(error)),
+        { latencyMs }
+      );
     }
   }
 

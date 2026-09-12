@@ -5,9 +5,11 @@ import { episodes, genres, seasons, series, seriesToGenres, videoSources, type E
 import { normalizeVideoSources } from "../playback/normalization";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
 import type { S3StorageService } from "../s3/s3-storage-service";
+import type { StorageProviderRegistry } from "../s3/registry";
 
 export interface SeriesRepositoryOptions {
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
 }
 
 
@@ -244,6 +246,7 @@ export function createSeriesRepositoryInternal<
 
         const normalizedSources = await normalizeVideoSources(sources, {
           s3StorageService: options?.s3StorageService,
+          storageProviderRegistry: options?.storageProviderRegistry,
         });
 
         const filterSet =

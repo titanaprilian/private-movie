@@ -230,6 +230,8 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         listObjects: async () => { throw new Error("not configured"); },
         listAllObjects: async () => { throw new Error("not configured"); },
         getBucketStorageUsage: async () => { throw new Error("not configured"); },
+        testConnection: async () => { throw new Error("not configured"); },
+        getPublicBaseUrl: () => null,
       };
 
       const app = await buildApp({ s3StorageService: unconfiguredS3 });

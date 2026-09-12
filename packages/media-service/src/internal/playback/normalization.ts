@@ -1,7 +1,9 @@
 import type { S3StorageService } from "../s3/s3-storage-service";
+import type { StorageProviderRegistry } from "../s3/registry";
 
 export interface NormalizationOptions {
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
   expiresInSeconds?: number;
 }
 
@@ -26,24 +28,45 @@ export function normalizePlaybackUrl(url: string): string {
   return url;
 }
 
-export async function normalizeVideoSourceAsync<T extends { url: string; type?: string }>(
+export async function normalizeVideoSourceAsync<
+  T extends { url: string; type?: string; storageProviderId?: string | null },
+>(
   source: T,
   options?: NormalizationOptions
 ): Promise<T> {
   let url = source.url;
 
-  if (source.type === "s3" && options?.s3StorageService) {
-    // Only sign if it's not already a signed or full http(s) URL
-    const isFullUrl = url.startsWith("http://") || url.startsWith("https://");
-    if (!isFullUrl && options.s3StorageService.isConfigured()) {
-      try {
-        const signedUrl = await options.s3StorageService.getPresignedPlaybackUrl(
-          url,
-          options.expiresInSeconds ?? 21600
-        );
-        url = signedUrl;
-      } catch {
-        // Fall back gracefully to original url if presigning fails
+  if (source.type === "s3") {
+    // Determine the service to use: either from registry or options.s3StorageService
+    let service: S3StorageService | undefined = options?.s3StorageService;
+    if (options?.storageProviderRegistry) {
+      const registryService = await options.storageProviderRegistry.getService(
+        source.storageProviderId
+      );
+      if (registryService) {
+        service = registryService;
+      }
+    }
+
+    if (service && service.isConfigured()) {
+      const publicBase = typeof service.getPublicBaseUrl === "function" ? service.getPublicBaseUrl() : null;
+      const isFullUrl = url.startsWith("http://") || url.startsWith("https://");
+
+      if (publicBase) {
+        // Direct CDN playback URL formatting
+        const cleanKey = url.replace(/^\/+/, "");
+        url = `${publicBase}/${cleanKey}`;
+      } else if (!isFullUrl) {
+        // Presigned GET URL
+        try {
+          const signedUrl = await service.getPresignedPlaybackUrl(
+            url,
+            options?.expiresInSeconds ?? 21600
+          );
+          url = signedUrl;
+        } catch {
+          // Fall back gracefully to original url if presigning fails
+        }
       }
     }
   } else {
@@ -82,14 +105,17 @@ export function normalizeVideoSourcesSync<T extends { url: string; type?: string
 
 export const normalizeVideoSource = normalizeVideoSourceAsync;
 
-export async function normalizeVideoSources<T extends { url: string; type?: string }>(
+export async function normalizeVideoSources<
+  T extends { url: string; type?: string; storageProviderId?: string | null },
+>(
   sources: T[],
   options?: NormalizationOptions
 ): Promise<T[]> {
-  if (options?.s3StorageService) {
+  if (options?.s3StorageService || options?.storageProviderRegistry) {
     return Promise.all(sources.map((s) => normalizeVideoSourceAsync(s, options)));
   }
   return sources.map((s) => normalizeVideoSourceSync(s, options));
 }
+
 
 

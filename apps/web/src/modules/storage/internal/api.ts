@@ -8,7 +8,22 @@ import type {
   StorageDeleteResponseData,
   StoragePurgeOrphansResponseData,
   StoragePreviewUrlResponseData,
+  StorageProviderItem,
+  StorageProviderType,
+  CreateStorageProviderRequest,
+  UpdateStorageProviderRequest,
+  TestStorageProviderRequest,
+  TestStorageProviderResponseData,
 } from '@repo/contracts';
+
+export type {
+  StorageProviderItem,
+  StorageProviderType,
+  CreateStorageProviderRequest,
+  UpdateStorageProviderRequest,
+  TestStorageProviderRequest,
+  TestStorageProviderResponseData,
+};
 
 export interface StorageMetrics {
   totalSizeBytes: number;
@@ -55,6 +70,7 @@ export interface StorageResource {
 }
 
 export interface StorageResourceFilterParams {
+  providerId?: string;
   status?: 'all' | 'linked' | 'orphaned';
   search?: string;
   sortBy?: 'size' | 'date' | 'name';
@@ -74,6 +90,7 @@ export interface StorageResourcesResponse {
 }
 
 export interface UpdateStorageLimitInput {
+  providerId?: string;
   limitGb: number;
 }
 
@@ -83,6 +100,7 @@ export interface EditSourceMetadataInput {
 }
 
 export interface AttachOrphanInput {
+  providerId?: string;
   key: string;
   episodeId: string;
   label?: string;
@@ -155,8 +173,12 @@ function mapResourceItem(item: StorageResourceItem): StorageResource {
   };
 }
 
-export async function fetchStorageMetrics(): Promise<StorageMetrics> {
-  const res = await api.storage.metrics.get();
+export async function fetchStorageMetrics(providerId?: string): Promise<StorageMetrics> {
+  const query = providerId ? { providerId } : undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage.metrics as any).get({
+    $query: query,
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = (res.data as any)?.data as BackendStorageMetrics | undefined;
@@ -179,10 +201,10 @@ export async function fetchStorageMetrics(): Promise<StorageMetrics> {
   };
 }
 
-export function storageMetricsQueryOptions() {
+export function storageMetricsQueryOptions(providerId?: string) {
   return queryOptions({
-    queryKey: ['storage', 'metrics'],
-    queryFn: fetchStorageMetrics,
+    queryKey: ['storage', 'metrics', providerId],
+    queryFn: () => fetchStorageMetrics(providerId),
   });
 }
 
@@ -190,6 +212,7 @@ export async function fetchStorageResources(
   params: StorageResourceFilterParams = {}
 ): Promise<StorageResourcesResponse> {
   const query: Record<string, string> = {};
+  if (params.providerId) query.providerId = params.providerId;
   if (params.status) query.status = params.status;
   if (params.search) query.search = params.search;
   if (params.sortBy) query.sortBy = params.sortBy;
@@ -199,6 +222,7 @@ export async function fetchStorageResources(
 
   const res = await api.storage.resources.get({
     $query: query as {
+      providerId?: string;
       status?: string;
       search?: string;
       sortBy?: string;
@@ -232,8 +256,9 @@ export function storageResourcesQueryOptions(params: StorageResourceFilterParams
   });
 }
 
-export async function refreshStorageScan(): Promise<{ count: number; totalBytes: number }> {
-  const res = await api.storage.scan.post();
+export async function refreshStorageScan(providerId?: string): Promise<{ count: number; totalBytes: number }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage.scan as any).post(providerId ? { providerId } : {});
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = (res.data as any)?.data as { count: number; totalBytes: number } | undefined;
@@ -244,8 +269,12 @@ export async function refreshStorageScan(): Promise<{ count: number; totalBytes:
   return data;
 }
 
-export async function updateStorageLimit(limitGb: number): Promise<{ limitGb: number; limitBytes: number }> {
-  const res = await api.storage.limit.put({ limitGb });
+export async function updateStorageLimit(
+  limitGb: number,
+  providerId?: string
+): Promise<{ limitGb: number; limitBytes: number }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage.limit as any).put({ limitGb, providerId });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = (res.data as any)?.data as StorageLimitUpdateResponseData | undefined;
@@ -297,9 +326,11 @@ export async function attachOrphanFile(
 }
 
 export async function deleteStorageResources(
-  keys: string[]
+  keys: string[],
+  providerId?: string
 ): Promise<BatchDeleteResponse> {
-  const res = await api.storage.resources.delete.post({ keys });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage.resources as any).delete.post({ keys, providerId });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = (res.data as any)?.data as StorageDeleteResponseData | undefined;
@@ -313,9 +344,9 @@ export async function deleteStorageResources(
   };
 }
 
-export async function purgeOrphanFiles(): Promise<BatchDeleteResponse> {
+export async function purgeOrphanFiles(providerId?: string): Promise<BatchDeleteResponse> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage.resources as any)['purge-orphans'].post();
+  const res = await (api.storage.resources as any)['purge-orphans'].post(providerId ? { providerId } : {});
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = (res.data as any)?.data as StoragePurgeOrphansResponseData | undefined;
@@ -329,10 +360,10 @@ export async function purgeOrphanFiles(): Promise<BatchDeleteResponse> {
   };
 }
 
-export async function getStoragePreviewUrl(key: string): Promise<string> {
+export async function getStoragePreviewUrl(key: string, providerId?: string): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res = await (api.storage.resources as any)['preview-url'].get({
-    $query: { key },
+    $query: { key, providerId },
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -342,4 +373,83 @@ export async function getStoragePreviewUrl(key: string): Promise<string> {
   }
 
   return data.previewUrl;
+}
+
+// -------------------------------------------------------------
+// Storage Provider Management APIs
+// -------------------------------------------------------------
+
+export async function fetchStorageProviders(): Promise<StorageProviderItem[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage as any).providers.get();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StorageProviderItem[] | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage providers'));
+  }
+
+  return data;
+}
+
+export function storageProvidersQueryOptions() {
+  return queryOptions({
+    queryKey: ['storage', 'providers'],
+    queryFn: fetchStorageProviders,
+  });
+}
+
+export async function createStorageProvider(
+  input: CreateStorageProviderRequest
+): Promise<StorageProviderItem> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage as any).providers.post(input);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StorageProviderItem | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to create storage provider'));
+  }
+
+  return data;
+}
+
+export async function updateStorageProvider(
+  id: string,
+  input: UpdateStorageProviderRequest
+): Promise<StorageProviderItem> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage as any).providers[id].put(input);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StorageProviderItem | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to update storage provider'));
+  }
+
+  return data;
+}
+
+export async function deleteStorageProvider(id: string): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage as any).providers[id].delete();
+
+  if (res.error) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to delete storage provider'));
+  }
+}
+
+export async function testStorageProviderConnection(
+  input: TestStorageProviderRequest
+): Promise<TestStorageProviderResponseData> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage as any).providers.test.post(input);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as TestStorageProviderResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Connection test failed'));
+  }
+
+  return data;
 }

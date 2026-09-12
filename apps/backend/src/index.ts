@@ -3,12 +3,18 @@ import { closeBrowser, createStealthBrowserFn } from "@repo/media-scraper";
 import { createS3StorageService } from "@repo/media-service";
 import { createApp } from "./app";
 import { createAuthenticationService } from "./modules/authentication";
+import { autoSeedDefaultProviderAndBackfill } from "./modules/storage";
 
 const browserFn = createStealthBrowserFn();
 
 const db = createDbClient(process.env.DATABASE_URL);
 const auth = createAuthenticationService(db);
 const s3StorageService = createS3StorageService();
+
+// Run legacy migration & auto-seed if needed
+autoSeedDefaultProviderAndBackfill(db).catch((err) => {
+  console.error("[startup] Failed to auto-seed default storage provider:", err);
+});
 
 const port = Number(process.env.PORT ?? 3000);
 const hostname = process.env.HOST ?? "0.0.0.0";

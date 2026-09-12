@@ -12,6 +12,12 @@ export {
   purgeOrphanFiles,
   getStoragePreviewUrl,
   formatBytes,
+  fetchStorageProviders,
+  storageProvidersQueryOptions,
+  createStorageProvider,
+  updateStorageProvider,
+  deleteStorageProvider,
+  testStorageProviderConnection,
 } from './internal/api';
 export type {
   StorageMetrics,
@@ -24,4 +30,10 @@ export type {
   EditSourceMetadataInput,
   AttachOrphanInput,
   BatchDeleteResponse,
+  StorageProviderItem,
+  StorageProviderType,
+  CreateStorageProviderRequest,
+  UpdateStorageProviderRequest,
+  TestStorageProviderRequest,
+  TestStorageProviderResponseData,
 } from './internal/api';

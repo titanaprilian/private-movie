@@ -4,11 +4,12 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { videoSources, type VideoSourceRow } from "@repo/db";
 import { normalizeVideoSource, normalizeVideoSources } from "../playback/normalization";
 import { extractS3Key, type S3StorageService } from "../s3/s3-storage-service";
+import type { StorageProviderRegistry } from "../s3/registry";
 
 export interface VideoSourceRepositoryOptions {
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
 }
-
 
 export class VideoSourceNotFoundError extends Error {
   constructor(message = "Video source not found") {
@@ -24,6 +25,7 @@ export interface VideoSourceUpsertInput {
   url: string;
   label: string;
   quality?: string | null;
+  storageProviderId?: string | null;
 }
 
 export interface UpdateVideoSourceInput {
@@ -31,6 +33,7 @@ export interface UpdateVideoSourceInput {
   url?: string;
   label?: string;
   quality?: string | null;
+  storageProviderId?: string | null;
 }
 
 export function createVideoSourceRepositoryInternal<
@@ -49,6 +52,7 @@ export function createVideoSourceRepositoryInternal<
           url: input.url,
           label: input.label,
           quality: input.quality ?? null,
+          storageProviderId: input.storageProviderId ?? null,
           createdAt: now,
           updatedAt: now,
         })
@@ -58,11 +62,17 @@ export function createVideoSourceRepositoryInternal<
             type: input.type,
             label: input.label,
             quality: input.quality ?? null,
+            storageProviderId: input.storageProviderId ?? null,
             updatedAt: now,
           },
         })
         .returning();
-      return row ? await normalizeVideoSource(row, { s3StorageService: options?.s3StorageService }) : row;
+      return row
+        ? await normalizeVideoSource(row, {
+            s3StorageService: options?.s3StorageService,
+            storageProviderRegistry: options?.storageProviderRegistry,
+          })
+        : row;
     },
 
     async findById(id: string): Promise<VideoSourceRow | null> {
@@ -70,7 +80,12 @@ export function createVideoSourceRepositoryInternal<
         .select()
         .from(videoSources)
         .where(eq(videoSources.id, id));
-      return row ? await normalizeVideoSource(row, { s3StorageService: options?.s3StorageService }) : null;
+      return row
+        ? await normalizeVideoSource(row, {
+            s3StorageService: options?.s3StorageService,
+            storageProviderRegistry: options?.storageProviderRegistry,
+          })
+        : null;
     },
 
     async findByEpisodeId(episodeId: string): Promise<VideoSourceRow[]> {
@@ -79,7 +94,10 @@ export function createVideoSourceRepositoryInternal<
         .from(videoSources)
         .where(eq(videoSources.episodeId, episodeId))
         .orderBy(asc(videoSources.createdAt));
-      return await normalizeVideoSources(rows, { s3StorageService: options?.s3StorageService });
+      return await normalizeVideoSources(rows, {
+        s3StorageService: options?.s3StorageService,
+        storageProviderRegistry: options?.storageProviderRegistry,
+      });
     },
 
     async update(
@@ -95,6 +113,7 @@ export function createVideoSourceRepositoryInternal<
       if (input.url !== undefined) updateData.url = input.url;
       if (input.label !== undefined) updateData.label = input.label;
       if (input.quality !== undefined) updateData.quality = input.quality;
+      if (input.storageProviderId !== undefined) updateData.storageProviderId = input.storageProviderId;
 
       const [row] = await db
         .update(videoSources)
@@ -106,7 +125,10 @@ export function createVideoSourceRepositoryInternal<
         throw new VideoSourceNotFoundError(`Video source with id ${id} not found`);
       }
 
-      return await normalizeVideoSource(row, { s3StorageService: options?.s3StorageService });
+      return await normalizeVideoSource(row, {
+        s3StorageService: options?.s3StorageService,
+        storageProviderRegistry: options?.storageProviderRegistry,
+      });
     },
 
     async delete(id: string): Promise<VideoSourceRow> {
@@ -122,7 +144,12 @@ export function createVideoSourceRepositoryInternal<
       // Best-effort S3 object cleanup: DB deletion must succeed even if the
       // remote delete fails (logged as a warning instead).
       if (row.type === "s3") {
-        const s3 = options?.s3StorageService;
+        let s3 = options?.s3StorageService;
+        if (options?.storageProviderRegistry) {
+          const regS3 = await options.storageProviderRegistry.getService(row.storageProviderId);
+          if (regS3) s3 = regS3;
+        }
+
         if (s3?.isConfigured()) {
           const key = extractS3Key(row.url);
           if (key) {

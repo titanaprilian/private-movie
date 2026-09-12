@@ -25,6 +25,8 @@ export function createMockS3(
       totalSizeBytes: 0,
       objectCount: 0,
     }),
+    testConnection: async () => ({ success: true, latencyMs: 10 }),
+    getPublicBaseUrl: () => null,
     ...overrides,
   };
 }

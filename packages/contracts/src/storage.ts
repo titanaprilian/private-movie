@@ -46,6 +46,7 @@ export interface StorageResourceItem {
 }
 
 export interface StorageResourcesQuery {
+  providerId?: string;
   status?: "all" | "linked" | "orphaned";
   search?: string;
   sortBy?: "size" | "date" | "name";
@@ -63,6 +64,7 @@ export interface StorageResourcesResponseData {
 }
 
 export interface StorageLimitUpdateRequest {
+  providerId?: string;
   limitGb: number;
 }
 
@@ -77,6 +79,7 @@ export interface StorageUpdateSourceMetadataRequest {
 }
 
 export interface StorageAttachRequest {
+  providerId?: string;
   key: string;
   episodeId: string;
   label?: string;
@@ -84,6 +87,7 @@ export interface StorageAttachRequest {
 }
 
 export interface StorageDeleteRequest {
+  providerId?: string;
   keys: string[];
 }
 
@@ -93,13 +97,93 @@ export interface StorageDeleteResponseData {
   deletedSourcesCount: number;
 }
 
+export interface StoragePurgeOrphansRequest {
+  providerId?: string;
+}
+
 export interface StoragePurgeOrphansResponseData {
   deletedKeys: string[];
   reclaimedBytes: number;
 }
 
+export interface StorageScanRequest {
+  providerId?: string;
+}
+
 export interface StoragePreviewUrlResponseData {
   previewUrl: string;
+}
+
+export type StorageProviderType =
+  | "backblaze"
+  | "cloudflare_r2"
+  | "aws_s3"
+  | "minio"
+  | "wasabi"
+  | "custom";
+
+export interface StorageProviderItem {
+  id: string;
+  name: string;
+  providerType: StorageProviderType;
+  endpoint: string;
+  region: string;
+  bucket: string;
+  accessKeyIdMasked: string;
+  publicBaseUrl: string | null;
+  forcePathStyle: boolean;
+  storageLimitGb: number;
+  isDefault: boolean;
+  isEnabled: boolean;
+  linkedSourcesCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateStorageProviderRequest {
+  name: string;
+  providerType: StorageProviderType;
+  endpoint: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicBaseUrl?: string | null;
+  forcePathStyle?: boolean;
+  storageLimitGb?: number;
+  isDefault?: boolean;
+  isEnabled?: boolean;
+}
+
+export interface UpdateStorageProviderRequest {
+  name?: string;
+  providerType?: StorageProviderType;
+  endpoint?: string;
+  region?: string;
+  bucket?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  publicBaseUrl?: string | null;
+  forcePathStyle?: boolean;
+  storageLimitGb?: number;
+  isDefault?: boolean;
+  isEnabled?: boolean;
+}
+
+export interface TestStorageProviderRequest {
+  providerId?: string;
+  endpoint?: string;
+  region?: string;
+  bucket?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  forcePathStyle?: boolean;
+}
+
+export interface TestStorageProviderResponseData {
+  success: boolean;
+  message?: string;
+  latencyMs?: number;
 }
 
 export type StorageMetricsResponse = StorageSuccessEnvelope<StorageMetrics>;
@@ -108,3 +192,6 @@ export type StorageLimitUpdateResponse = StorageSuccessEnvelope<StorageLimitUpda
 export type StorageDeleteResponse = StorageSuccessEnvelope<StorageDeleteResponseData>;
 export type StoragePurgeOrphansResponse = StorageSuccessEnvelope<StoragePurgeOrphansResponseData>;
 export type StoragePreviewUrlResponse = StorageSuccessEnvelope<StoragePreviewUrlResponseData>;
+export type StorageProvidersResponse = StorageSuccessEnvelope<StorageProviderItem[]>;
+export type StorageProviderResponse = StorageSuccessEnvelope<StorageProviderItem>;
+export type TestStorageProviderResponse = StorageSuccessEnvelope<TestStorageProviderResponseData>;

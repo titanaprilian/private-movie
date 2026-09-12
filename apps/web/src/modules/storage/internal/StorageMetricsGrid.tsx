@@ -6,12 +6,14 @@ export interface StorageMetricsGridProps {
   metrics?: StorageMetrics | null;
   isLoading?: boolean;
   onOpenLimitDialog: () => void;
+  providerName?: string;
 }
 
 export function StorageMetricsGrid({
   metrics,
   isLoading = false,
   onOpenLimitDialog,
+  providerName,
 }: StorageMetricsGridProps) {
   if (isLoading || !metrics) {
     return (
@@ -34,12 +36,12 @@ export function StorageMetricsGrid({
   }
 
   const {
-    totalSizeBytes,
-    limitSizeBytes,
-    percentUsed,
-    totalFiles,
-    linkedFiles,
-    orphanedFiles,
+    totalSizeBytes = 0,
+    limitSizeBytes = 0,
+    percentUsed = 0,
+    totalFiles = 0,
+    linkedFiles = 0,
+    orphanedFiles = 0,
   } = metrics;
 
   const usedGb = (totalSizeBytes / (1024 * 1024 * 1024)).toFixed(1);
@@ -64,6 +66,14 @@ export function StorageMetricsGrid({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-medium text-sm text-fg">Storage Capacity</h3>
+              {providerName && (
+                <span
+                  data-testid="provider-scope-badge"
+                  className="text-[10px] mono text-muted px-1.5 py-0.2 rounded border border-c bg-sidebar"
+                >
+                  {providerName}
+                </span>
+              )}
               <span className={`text-[11px] mono font-semibold px-2 py-0.5 rounded ${badgeColor}`} data-testid="threshold-badge">
                 {percentUsed.toFixed(1)}% Used
               </span>

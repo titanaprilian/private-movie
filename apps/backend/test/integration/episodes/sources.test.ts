@@ -849,5 +849,65 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       expect(body.data.videoSources).toHaveLength(1);
       expect(body.data.videoSources[0].id).toBe(s2.id);
     });
+
+    it("persists and returns storageProviderId when creating video sources with a provider", async () => {
+      const { accessToken } = await registerUser(app);
+      const episode = await insertTestEpisode();
+
+      // Create a storage provider
+      const provRes = await request(app, {
+        method: "POST",
+        path: "/api/storage/providers",
+        headers: authHeaders(accessToken),
+        body: {
+          name: "Test B2",
+          providerType: "backblaze",
+          endpoint: "https://s3.example.com",
+          region: "us-east-1",
+          bucket: "b2-bucket",
+          accessKeyId: "key1",
+          secretAccessKey: "sec1",
+        },
+      });
+      expect(provRes.status).toBe(200);
+      const prov = (provRes.body as { data: { id: string } }).data;
+
+      // Presign upload specifying storageProviderId
+      const presignRes = await request(app, {
+        method: "POST",
+        path: `/episodes/${episode.id}/sources/presign-upload`,
+        headers: authHeaders(accessToken),
+        body: {
+          filename: "sample.mp4",
+          storageProviderId: prov.id,
+        },
+      });
+      expect(presignRes.status).toBe(200);
+
+      // Create source with storageProviderId via POST /episodes/:id/sources
+      const createSourceRes = await request(app, {
+        method: "POST",
+        path: `/episodes/${episode.id}/sources`,
+        headers: authHeaders(accessToken),
+        body: {
+          videoSources: [
+            {
+              type: "s3",
+              url: "episodes/ep1/sample.mp4",
+              label: "1080p B2",
+              storageProviderId: prov.id,
+            },
+          ],
+        },
+      });
+
+      expect(createSourceRes.status).toBe(200);
+      const createBody = createSourceRes.body as {
+        data: { videoSources: Array<{ label: string; storageProviderId?: string | null }> };
+      };
+      const createdSource = createBody.data.videoSources.find((s) => s.label === "1080p B2");
+      expect(createdSource).toBeDefined();
+      expect(createdSource?.storageProviderId).toBe(prov.id);
+    });
   });
 });

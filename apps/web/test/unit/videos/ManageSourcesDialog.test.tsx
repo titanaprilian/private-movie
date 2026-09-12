@@ -659,4 +659,124 @@ describe('ManageSourcesDialog component', () => {
 
     expect(await screen.findByText(/45\.0 MB \/ 100\.0 MB \(45%\)/)).toBeInTheDocument();
   });
+
+  describe('Multi-Provider selection & Badges in ManageSourcesDialog', () => {
+    const mockProviders = [
+      {
+        id: 'prov-b2',
+        name: 'Backblaze B2 Main',
+        providerType: 'backblaze' as const,
+        endpoint: 'https://s3.us-west-002.backblazeb2.com',
+        region: 'us-west-002',
+        bucket: 'b2-bucket',
+        accessKeyIdMasked: '••••1234',
+        publicBaseUrl: null,
+        forcePathStyle: false,
+        storageLimitGb: 50,
+        isDefault: true,
+        isEnabled: true,
+        linkedSourcesCount: 2,
+        createdAt: '2026-09-01T00:00:00.000Z',
+        updatedAt: '2026-09-01T00:00:00.000Z',
+      },
+      {
+        id: 'prov-r2',
+        name: 'Cloudflare R2 Primary',
+        providerType: 'cloudflare_r2' as const,
+        endpoint: 'https://account.r2.cloudflarestorage.com',
+        region: 'auto',
+        bucket: 'r2-bucket',
+        accessKeyIdMasked: '••••5678',
+        publicBaseUrl: 'https://cdn.example.com',
+        forcePathStyle: false,
+        storageLimitGb: 100,
+        isDefault: false,
+        isEnabled: true,
+        linkedSourcesCount: 1,
+        createdAt: '2026-09-02T00:00:00.000Z',
+        updatedAt: '2026-09-02T00:00:00.000Z',
+      },
+    ];
+
+    beforeEach(() => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes('/api/storage/providers')) {
+          return new Response(JSON.stringify({ data: mockProviders }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ data: { success: true } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      });
+    });
+
+    it('renders provider selector dropdown pre-selected to default provider in Upload Video tab', async () => {
+      const { user } = renderWithProviders(
+        <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      );
+
+      await user.click(screen.getByRole('tab', { name: /upload video/i }));
+
+      const select = await screen.findByTestId('upload-provider-select');
+      expect(select).toBeInTheDocument();
+      expect((select as HTMLSelectElement).value).toBe('prov-b2');
+
+      // Change provider to R2
+      await user.selectOptions(select, 'prov-r2');
+      expect((select as HTMLSelectElement).value).toBe('prov-r2');
+    });
+
+    it('renders provider selector dropdown pre-selected to default provider in Remote Ingest tab', async () => {
+      const { user } = renderWithProviders(
+        <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      );
+
+      await user.click(screen.getByRole('tab', { name: /remote ingest/i }));
+
+      const select = await screen.findByTestId('remote-provider-select');
+      expect(select).toBeInTheDocument();
+      expect((select as HTMLSelectElement).value).toBe('prov-b2');
+
+      // Change provider to R2
+      await user.selectOptions(select, 'prov-r2');
+      expect((select as HTMLSelectElement).value).toBe('prov-r2');
+    });
+
+    it('renders provider badge with friendly provider name on S3 sources in Existing Sources tab', async () => {
+      const s3MultiEpisode: apiModule.Episode = {
+        ...mockEpisode,
+        videoSources: [
+          {
+            id: 'src-s3-b2',
+            type: 's3',
+            url: 'episodes/ep-123/b2-video.mp4',
+            label: 'Backblaze Mirror',
+            quality: '1080p',
+            storageProviderId: 'prov-b2',
+          },
+          {
+            id: 'src-s3-r2',
+            type: 's3',
+            url: 'episodes/ep-123/r2-video.mp4',
+            label: 'Cloudflare Mirror',
+            quality: '720p',
+            storageProviderId: 'prov-r2',
+          },
+        ],
+      };
+
+      const { user } = renderWithProviders(
+        <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={s3MultiEpisode} seriesId="series-1" />
+      );
+
+      await user.click(screen.getByRole('tab', { name: /edit existing/i }));
+
+      expect(await screen.findByText('S3: Backblaze B2 Main')).toBeInTheDocument();
+      expect(screen.getByText('S3: Cloudflare R2 Primary')).toBeInTheDocument();
+    });
+  });
 });

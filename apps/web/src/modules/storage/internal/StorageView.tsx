@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Server } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   storageMetricsQueryOptions,
   storageResourcesQueryOptions,
+  storageProvidersQueryOptions,
   updateStorageLimit,
   refreshStorageScan,
   updateSourceMetadata,
@@ -22,28 +24,55 @@ import { EditSourceModal } from './EditSourceModal';
 import { AttachOrphanDialog } from './AttachOrphanDialog';
 import { DeleteConfirmDialog, type DeleteTargetType } from './DeleteConfirmDialog';
 import { VideoPreviewModal } from './VideoPreviewModal';
+import { ManageProvidersDrawer } from './ManageProvidersDrawer';
 
 export function StorageView() {
   const queryClient = useQueryClient();
 
-  // Queries
+  // Provider list query
+  const { data: rawProviders, refetch: refetchProviders } = useQuery(
+    storageProvidersQueryOptions()
+  );
+  const providers = Array.isArray(rawProviders) ? rawProviders : [];
+
+  // Selected provider ID state (defaulting to default provider or first provider)
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (providers.length > 0 && !selectedProviderId) {
+      const defaultProvider = providers.find((p) => p.isDefault) || providers[0];
+      if (defaultProvider) {
+        setSelectedProviderId(defaultProvider.id);
+      }
+    }
+  }, [providers, selectedProviderId]);
+
+  // Find active provider object
+  const activeProvider = providers.find((p) => p.id === selectedProviderId) || null;
+
+  // Scoped Queries based on selectedProviderId
   const {
     data: metrics,
     isLoading: isLoadingMetrics,
     error: metricsError,
-  } = useQuery(storageMetricsQueryOptions());
+  } = useQuery(storageMetricsQueryOptions(selectedProviderId || undefined));
 
   const {
     data: resourcesData,
     isLoading: isLoadingResources,
     error: resourcesError,
-  } = useQuery(storageResourcesQueryOptions());
+  } = useQuery(
+    storageResourcesQueryOptions(
+      selectedProviderId ? { providerId: selectedProviderId } : {}
+    )
+  );
 
   const resources = resourcesData?.data ?? [];
   const activeError = metricsError || resourcesError;
 
-  // Dialog States
+  // Dialog & Drawer States
   const [isLimitDialogOpen, setIsLimitDialogOpen] = useState(false);
+  const [isProvidersDrawerOpen, setIsProvidersDrawerOpen] = useState(false);
   const [previewResource, setPreviewResource] = useState<StorageResource | null>(null);
   const [editingSource, setEditingSource] = useState<(VideoSourceMetadata & { key?: string }) | null>(null);
   const [attachingResource, setAttachingResource] = useState<StorageResource | null>(null);
@@ -55,7 +84,7 @@ export function StorageView() {
 
   // Refresh Scan Mutation
   const refreshScanMutation = useMutation({
-    mutationFn: refreshStorageScan,
+    mutationFn: () => refreshStorageScan(selectedProviderId || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['storage'] });
       toast.success('S3 bucket scan refreshed successfully');
@@ -68,7 +97,7 @@ export function StorageView() {
 
   // Save Limit Mutation
   const handleSaveLimit = async (limitGb: number) => {
-    await updateStorageLimit(limitGb);
+    await updateStorageLimit(limitGb, selectedProviderId || undefined);
     queryClient.invalidateQueries({ queryKey: ['storage'] });
     toast.success(`Storage limit updated to ${limitGb} GB`);
   };
@@ -85,22 +114,26 @@ export function StorageView() {
 
   // Attach Orphan Mutation
   const handleAttachOrphan = async (input: AttachOrphanInput) => {
-    await attachOrphanFile(input);
+    await attachOrphanFile({
+      ...input,
+      providerId: selectedProviderId || undefined,
+    });
     queryClient.invalidateQueries({ queryKey: ['storage'] });
     toast.success('Orphaned file attached to episode successfully');
   };
 
   // Confirm Deletion Handler
   const handleConfirmDelete = async () => {
+    const provId = selectedProviderId || undefined;
     if (deleteTargetType === 'single' && deleteSingleResource) {
-      await deleteStorageResources([deleteSingleResource.key]);
+      await deleteStorageResources([deleteSingleResource.key], provId);
       toast.success(`Deleted file: ${deleteSingleResource.filename}`);
     } else if (deleteTargetType === 'batch' && deleteBatchResources.length > 0) {
       const keys = deleteBatchResources.map((r) => r.key);
-      const res = await deleteStorageResources(keys);
+      const res = await deleteStorageResources(keys, provId);
       toast.success(`Deleted ${res.deletedKeys?.length ?? keys.length} files`);
     } else if (deleteTargetType === 'purge') {
-      const res = await purgeOrphanFiles();
+      const res = await purgeOrphanFiles(provId);
       toast.success(`Purged ${res.deletedKeys?.length ?? 'all'} orphaned files`);
     }
     queryClient.invalidateQueries({ queryKey: ['storage'] });
@@ -108,13 +141,75 @@ export function StorageView() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-c">
+      {/* Header Title and Provider Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-c">
         <div>
           <h1 className="text-xl font-semibold text-fg">Storage Management</h1>
           <p className="text-xs text-muted mt-0.5">
             Monitor S3 capacity, inspect bucket object inventory, link orphans, and manage video files.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Provider Tabs / Dropdown Selector */}
+          {providers.length > 0 && (
+            <div className="flex items-center gap-1 bg-card border border-c rounded p-0.5" data-testid="provider-selector-container">
+              {/* Desktop/Tablet Quick Tabs if <= 3 providers */}
+              <div className="hidden md:flex items-center gap-0.5" data-testid="provider-tabs">
+                {providers.map((p) => {
+                  const isSelected = p.id === selectedProviderId;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedProviderId(p.id)}
+                      data-testid={`provider-tab-${p.id}`}
+                      className={`px-2.5 py-1 text-xs mono rounded transition-colors flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-primary text-primary-fg font-medium'
+                          : 'text-muted hover:text-fg hover-bg'
+                      }`}
+                    >
+                      <span>{p.name}</span>
+                      {p.isDefault && (
+                        <span className={`text-[9px] px-1 py-0.2 rounded uppercase ${
+                          isSelected ? 'bg-primary-fg/20 text-primary-fg' : 'bg-sidebar text-muted border border-c'
+                        }`}>
+                          Def
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Mobile / Compact Selector Dropdown */}
+              <select
+                data-testid="provider-selector-dropdown"
+                value={selectedProviderId || ''}
+                onChange={(e) => setSelectedProviderId(e.target.value)}
+                className="md:hidden h-7 px-2 rounded bg-card text-xs mono text-fg border-none focus:outline-none"
+              >
+                {providers.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.isDefault ? '(Default)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Manage Providers Action Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsProvidersDrawerOpen(true)}
+            data-testid="manage-providers-btn"
+            className="text-xs h-8 gap-1.5 mono"
+          >
+            <Server className="w-3.5 h-3.5" />
+            Manage Providers
+          </Button>
         </div>
       </div>
 
@@ -141,6 +236,7 @@ export function StorageView() {
         metrics={metrics}
         isLoading={isLoadingMetrics}
         onOpenLimitDialog={() => setIsLimitDialogOpen(true)}
+        providerName={activeProvider?.name}
       />
 
       {/* Resources Table Section */}
@@ -170,12 +266,27 @@ export function StorageView() {
         }}
       />
 
-      {/* Dialogs */}
+      {/* Dialogs & Drawer */}
+      <ManageProvidersDrawer
+        open={isProvidersDrawerOpen}
+        onOpenChange={setIsProvidersDrawerOpen}
+        providers={providers}
+        selectedProviderId={selectedProviderId}
+        onSelectProvider={(id) => {
+          setSelectedProviderId(id);
+          setIsProvidersDrawerOpen(false);
+        }}
+        onProvidersUpdated={() => {
+          refetchProviders();
+          queryClient.invalidateQueries({ queryKey: ['storage'] });
+        }}
+      />
+
       <StorageLimitDialog
         open={isLimitDialogOpen}
         onOpenChange={setIsLimitDialogOpen}
         currentLimitGb={
-          metrics ? Math.round(metrics.limitSizeBytes / (1024 * 1024 * 1024)) : 50
+          metrics ? Math.round(metrics.limitSizeBytes / (1024 * 1024 * 1024)) : (activeProvider?.storageLimitGb ?? 50)
         }
         onSave={handleSaveLimit}
       />

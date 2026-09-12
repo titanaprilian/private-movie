@@ -13,6 +13,7 @@ import {
   createSeriesRepositoryInternal,
   createSeasonsRepositoryInternal,
   createVideoSourceRepositoryInternal,
+  createStorageProviderRegistry,
   EpisodeFetchError,
   EpisodeNotFoundError,
   SeasonNotFoundError,
@@ -25,6 +26,7 @@ import {
   type BrowserFn,
   S3NotConfiguredError,
   type S3StorageService,
+  type StorageProviderRegistry,
 } from "@repo/media-service";
 import { EpisodeMissingFieldsError, EpisodeParseError, SeriesParseError, MirrorResolveError } from "@repo/media-scraper";
 
@@ -34,6 +36,7 @@ export interface MediaRoutesOptions {
   fetchHtml?: FetchFn;
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
 }
 
 /**
@@ -179,6 +182,10 @@ export const embedRoutes = () => {
 };
 
 export const mediaRoutes = (options: MediaRoutesOptions) => {
+  const storageRegistry =
+    options.storageProviderRegistry ??
+    createStorageProviderRegistry(options.db, options.s3StorageService);
+
   const mediaService = createSaveEpisodeService(options.db, {
     fetchHtml: options.fetchHtml,
     browserFn: options.browserFn,
@@ -186,13 +193,16 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
   });
   const episodeRepository = createEpisodeRepositoryInternal(options.db, {
     s3StorageService: options.s3StorageService,
+    storageProviderRegistry: storageRegistry,
   });
   const seriesRepository = createSeriesRepositoryInternal(options.db, {
     s3StorageService: options.s3StorageService,
+    storageProviderRegistry: storageRegistry,
   });
   const seasonsRepository = createSeasonsRepositoryInternal(options.db);
   const videoSourceRepository = createVideoSourceRepositoryInternal(options.db, {
     s3StorageService: options.s3StorageService,
+    storageProviderRegistry: storageRegistry,
   });
 
   const uploadProgressCache = new Map<string, { loaded: number; total: number; percent: number }>();
@@ -558,12 +568,29 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           );
         }
 
-        if (!options.s3StorageService || !options.s3StorageService.isConfigured()) {
+        let targetProviderId: string | null = body.storageProviderId ?? null;
+        let s3 = await storageRegistry.getService(targetProviderId);
+        if (!s3 && targetProviderId) {
+          return errorResponse(set, 404, new Error("Specified storage provider not found"));
+        }
+        if (!s3) {
+          s3 = options.s3StorageService ?? null;
+        }
+
+        if (!s3 || !s3.isConfigured()) {
           return errorResponse(
             set,
             503,
             new S3NotConfiguredError("S3 storage service is not configured")
           );
+        }
+
+        // If targetProviderId was omitted, resolve the default provider ID for DB tracking
+        if (!targetProviderId) {
+          const defaultProv = await storageRegistry.getDefaultProvider();
+          if (defaultProv) {
+            targetProviderId = defaultProv.provider.id;
+          }
         }
 
         let targetUrl: URL;
@@ -577,7 +604,6 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           );
         }
 
-        const s3 = options.s3StorageService;
         let filename = "video.mp4";
         const pathnameSegments = targetUrl.pathname.split("/").filter(Boolean);
         if (pathnameSegments.length > 0) {
@@ -691,6 +717,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
                 url: key,
                 label: body.label,
                 quality: body.quality ?? null,
+                storageProviderId: targetProviderId,
               });
 
               const updatedEpisode = await episodeRepository.findById(params.id);
@@ -742,6 +769,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           label: t.String(),
           quality: t.Optional(t.Nullable(t.String())),
           referer: t.Optional(t.String()),
+          storageProviderId: t.Optional(t.String()),
         }),
       }
     )
@@ -772,7 +800,16 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           );
         }
 
-        if (!options.s3StorageService || !options.s3StorageService.isConfigured()) {
+        const targetProviderId: string | null = body.storageProviderId ?? null;
+        let s3 = await storageRegistry.getService(targetProviderId);
+        if (!s3 && targetProviderId) {
+          return errorResponse(set, 404, new Error("Specified storage provider not found"));
+        }
+        if (!s3) {
+          s3 = options.s3StorageService ?? null;
+        }
+
+        if (!s3 || !s3.isConfigured()) {
           return errorResponse(
             set,
             503,
@@ -782,7 +819,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
 
         try {
           const key = `episodes/${params.id}/${randomUUID()}-${body.filename}`;
-          const res = await options.s3StorageService.getPresignedUploadUrl(
+          const res = await s3.getPresignedUploadUrl(
             key,
             body.contentType ?? undefined
           );
@@ -801,6 +838,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         body: t.Object({
           filename: t.String(),
           contentType: t.Optional(t.Nullable(t.String())),
+          storageProviderId: t.Optional(t.String()),
         }),
       }
     )
@@ -847,12 +885,28 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           );
         }
 
-        if (!options.s3StorageService || !options.s3StorageService.isConfigured()) {
+        let targetProviderId: string | null = body.storageProviderId ?? null;
+        let s3 = await storageRegistry.getService(targetProviderId);
+        if (!s3 && targetProviderId) {
+          return errorResponse(set, 404, new Error("Specified storage provider not found"));
+        }
+        if (!s3) {
+          s3 = options.s3StorageService ?? null;
+        }
+
+        if (!s3 || !s3.isConfigured()) {
           return errorResponse(
             set,
             503,
             new S3NotConfiguredError("S3 storage service is not configured")
           );
+        }
+
+        if (!targetProviderId) {
+          const defaultProv = await storageRegistry.getDefaultProvider();
+          if (defaultProv) {
+            targetProviderId = defaultProv.provider.id;
+          }
         }
 
         const filename = file.name || "video.mp4";
@@ -869,7 +923,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             });
           }
 
-          await options.s3StorageService.uploadStream(key, file.stream(), {
+          await s3.uploadStream(key, file.stream(), {
             contentType,
             signal: request.signal,
             onProgress: ({ loaded, total }) => {
@@ -893,6 +947,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             url: key,
             label: body.label,
             quality: body.quality ?? null,
+            storageProviderId: targetProviderId,
           });
 
           const updated = await episodeRepository.findById(params.id);
@@ -920,6 +975,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           label: t.String(),
           quality: t.Optional(t.Nullable(t.String())),
           uploadSessionId: t.Optional(t.Nullable(t.String())),
+          storageProviderId: t.Optional(t.String()),
         }),
       }
     )
@@ -957,9 +1013,10 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             url: source.url,
             label: source.label,
             quality: source.quality ?? null,
+            storageProviderId: source.storageProviderId ?? null,
           });
         }
-
+ 
         const updated = await episodeRepository.findById(params.id);
         return successResponse(updated);
       },
@@ -974,6 +1031,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
               url: t.String(),
               label: t.String(),
               quality: t.Optional(t.Nullable(t.String())),
+              storageProviderId: t.Optional(t.Nullable(t.String())),
             })
           ),
         }),
@@ -1079,6 +1137,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           url: t.Optional(t.String()),
           label: t.Optional(t.String()),
           quality: t.Optional(t.Nullable(t.String())),
+          storageProviderId: t.Optional(t.Nullable(t.String())),
         }),
       }
     )

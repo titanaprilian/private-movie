@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   type SeriesDetails,
@@ -16,6 +16,10 @@ import {
   type VideoSource,
   type VideoSourceInput,
 } from './api';
+import {
+  storageProvidersQueryOptions,
+  type StorageProviderItem,
+} from '@/modules/storage';
 import {
   Dialog,
   DialogContent,
@@ -40,13 +44,21 @@ interface ManageSourcesDialogProps {
 
 function EditSourceRow({
   source,
+  providers,
   onUpdate,
   onDelete,
   onIngestToS3,
   isPending,
 }: {
   source: VideoSource;
-  onUpdate: (updates: { type: 'direct' | 'embed' | 's3'; label: string; url: string; quality?: string | null }) => void;
+  providers?: StorageProviderItem[];
+  onUpdate: (updates: {
+    type: 'direct' | 'embed' | 's3';
+    label: string;
+    url: string;
+    quality?: string | null;
+    storageProviderId?: string | null;
+  }) => void;
   onDelete: () => void;
   onIngestToS3?: () => void;
   isPending: boolean;
@@ -55,18 +67,29 @@ function EditSourceRow({
   const [url, setUrl] = useState(source.url);
   const [type, setType] = useState<'direct' | 'embed' | 's3'>(source.type);
   const [quality, setQuality] = useState(source.quality ?? '');
+  const [storageProviderId, setStorageProviderId] = useState<string | null | undefined>(
+    source.storageProviderId
+  );
 
   useEffect(() => {
     setLabel(source.label);
     setUrl(source.url);
     setType(source.type);
     setQuality(source.quality ?? '');
+    setStorageProviderId(source.storageProviderId);
   }, [source]);
 
+  // Find provider friendly name if type is s3
+  const linkedProvider = providers?.find((p) => p.id === source.storageProviderId);
+  const providerBadgeText = linkedProvider
+    ? `S3: ${linkedProvider.name}`
+    : source.type;
+
   return (
-    <div className="p-3 border border-c rounded bg-card space-y-2 text-xs">
+    <div className="p-3 border border-c rounded bg-card space-y-2 text-xs" data-testid={`source-row-${source.id}`}>
       <div className="flex items-center justify-between">
         <span
+          data-testid={`source-type-badge-${source.id}`}
           className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium ${
             source.type === 's3'
               ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-300 dark:border-purple-800'
@@ -75,7 +98,7 @@ function EditSourceRow({
               : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
           }`}
         >
-          {source.type}
+          {providerBadgeText}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -119,6 +142,23 @@ function EditSourceRow({
           />
         </div>
       </div>
+      {type === 's3' && providers && providers.length > 0 && (
+        <div>
+          <Label className="text-[10px] text-muted">S3 Storage Provider</Label>
+          <select
+            value={storageProviderId || ''}
+            onChange={(e) => setStorageProviderId(e.target.value || null)}
+            className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
+          >
+            <option value="">Default Provider</option>
+            {providers.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} {p.isDefault ? '(Default)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex items-center justify-between pt-1 gap-2">
         <Button
           type="button"
@@ -149,14 +189,24 @@ function EditSourceRow({
             variant="secondary"
             className="text-xs h-7"
             disabled={isPending}
-            onClick={() =>
-              onUpdate({
+            onClick={() => {
+              const updates: {
+                type: 'direct' | 'embed' | 's3';
+                label: string;
+                url: string;
+                quality?: string | null;
+                storageProviderId?: string | null;
+              } = {
                 type,
                 label,
                 url,
                 quality: quality || null,
-              })
-            }
+              };
+              if (storageProviderId !== undefined) {
+                updates.storageProviderId = storageProviderId;
+              }
+              onUpdate(updates);
+            }}
           >
             Update Source
           </Button>
@@ -176,6 +226,22 @@ export function ManageSourcesDialog({
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing'>('add-url');
+
+  // Storage Providers Query
+  const { data: rawProviders } = useQuery(storageProvidersQueryOptions());
+  const providers = Array.isArray(rawProviders) ? rawProviders : [];
+  const defaultProvider = providers.find((p) => p.isDefault) || providers[0] || null;
+
+  // Selected Target Providers
+  const [uploadProviderId, setUploadProviderId] = useState<string>('');
+  const [remoteProviderId, setRemoteProviderId] = useState<string>('');
+
+  useEffect(() => {
+    if (defaultProvider) {
+      if (!uploadProviderId) setUploadProviderId(defaultProvider.id);
+      if (!remoteProviderId) setRemoteProviderId(defaultProvider.id);
+    }
+  }, [defaultProvider]);
 
   useEffect(() => {
     if (open && initialTab) {
@@ -245,6 +311,7 @@ export function ManageSourcesDialog({
         label: remoteLabel.trim(),
         quality: remoteQuality.trim() || undefined,
         referer: remoteReferer.trim() || undefined,
+        storageProviderId: remoteProviderId || undefined,
         signal: controller.signal,
         onProgress: (progress) => {
           setRemoteProgress(progress);
@@ -400,6 +467,7 @@ export function ManageSourcesDialog({
         file: selectedFile,
         label: uploadLabel.trim(),
         quality: uploadQuality.trim() || undefined,
+        storageProviderId: uploadProviderId || undefined,
         uploadSessionId: sessionId,
         signal: controller.signal,
         onProgress: (progress) => {
@@ -802,6 +870,29 @@ export function ManageSourcesDialog({
                 </div>
               </div>
 
+              {/* Target S3 Provider Selector for Remote Ingest */}
+              {providers.length > 0 && (
+                <div>
+                  <Label htmlFor="remote-provider-select" className="text-[10px] text-muted">
+                    Target S3 Storage Provider
+                  </Label>
+                  <select
+                    id="remote-provider-select"
+                    data-testid="remote-provider-select"
+                    value={remoteProviderId || defaultProvider?.id || ''}
+                    onChange={(e) => setRemoteProviderId(e.target.value)}
+                    disabled={isIngesting}
+                    className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
+                  >
+                    {providers.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} {p.isDefault ? '(Default)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Collapsible Advanced Headers */}
               <div className="pt-1">
                 <button
@@ -974,6 +1065,29 @@ export function ManageSourcesDialog({
                 </div>
               </div>
 
+              {/* Target S3 Provider Selector for Upload */}
+              {providers.length > 0 && (
+                <div>
+                  <Label htmlFor="upload-provider-select" className="text-[10px] text-muted">
+                    Target S3 Storage Provider
+                  </Label>
+                  <select
+                    id="upload-provider-select"
+                    data-testid="upload-provider-select"
+                    value={uploadProviderId || defaultProvider?.id || ''}
+                    onChange={(e) => setUploadProviderId(e.target.value)}
+                    disabled={isUploading}
+                    className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
+                  >
+                    {providers.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} {p.isDefault ? '(Default)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Upload Progress Display */}
               {isUploading && (
                 <div className="p-2.5 border border-c rounded bg-sidebar space-y-2 text-xs">
@@ -1039,6 +1153,7 @@ export function ManageSourcesDialog({
                   <EditSourceRow
                     key={source.id}
                     source={source}
+                    providers={providers}
                     onUpdate={(updates) => {
                       updateSourceMutation.mutate({
                         episodeId: episode.id,

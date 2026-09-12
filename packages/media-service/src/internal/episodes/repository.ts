@@ -5,9 +5,11 @@ import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@r
 import { normalizeVideoSourceSync, normalizeVideoSources } from "../playback/normalization";
 import type { ParsedMetadata } from "@repo/media-scraper";
 import { extractS3Key, type S3StorageService } from "../s3/s3-storage-service";
+import type { StorageProviderRegistry } from "../s3/registry";
 
 export interface EpisodeRepositoryOptions {
   s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
 }
 
 
@@ -179,9 +181,10 @@ export function createEpisodeRepositoryInternal<
           .where(inArray(videoSources.episodeId, episodeIds))
           .orderBy(asc(videoSources.createdAt));
 
-        const normalizedSources = await normalizeVideoSources(sources, {
-          s3StorageService: options?.s3StorageService,
-        });
+      const normalizedSources = await normalizeVideoSources(sources, {
+        s3StorageService: options?.s3StorageService,
+        storageProviderRegistry: options?.storageProviderRegistry,
+      });
 
         for (const s of normalizedSources) {
           const list = sourcesMap.get(s.episodeId) ?? [];
@@ -290,25 +293,25 @@ export function createEpisodeRepositoryInternal<
     },
 
     async deleteEpisode(id: string): Promise<EpisodeRow> {
-      // Collect raw S3 keys before the DB delete cascades video_sources rows.
+      // Collect raw S3 sources before the DB delete cascades video_sources rows.
       // Must read the raw table (not findById) so presigned-URL normalization
       // does not rewrite the stored object keys.
-      let s3Keys: string[] = [];
-      const s3 = options?.s3StorageService;
-      if (s3?.isConfigured()) {
-        try {
-          const existing = await db
-            .select()
-            .from(videoSources)
-            .where(eq(videoSources.episodeId, id));
-          s3Keys = existing
-            .filter((src) => src.type === "s3")
-            .map((src) => extractS3Key(src.url))
-            .filter((key): key is string => Boolean(key));
-        } catch {
-          // If the pre-fetch fails, still attempt the DB delete below.
-          s3Keys = [];
-        }
+      type S3DeleteTarget = { key: string; storageProviderId: string | null };
+      let s3Targets: S3DeleteTarget[] = [];
+      try {
+        const existing = await db
+          .select()
+          .from(videoSources)
+          .where(eq(videoSources.episodeId, id));
+        s3Targets = existing
+          .filter((src) => src.type === "s3")
+          .map((src) => ({
+            key: extractS3Key(src.url),
+            storageProviderId: src.storageProviderId ?? null,
+          }))
+          .filter((t) => Boolean(t.key));
+      } catch {
+        s3Targets = [];
       }
 
       const [row] = await db
@@ -320,16 +323,34 @@ export function createEpisodeRepositoryInternal<
         throw new EpisodeNotFoundError(`Episode with id ${id} not found`);
       }
 
-      // Best-effort S3 object cleanup: DB deletion must succeed even if the
-      // remote delete fails (logged as a warning instead).
-      if (s3Keys.length > 0 && s3?.isConfigured()) {
-        try {
-          await s3.deleteObjects(s3Keys);
-        } catch (err) {
-          console.warn(
-            `[media-service] Failed to delete ${s3Keys.length} S3 object(s) for episode ${id}:`,
-            err instanceof Error ? err.message : err
-          );
+      // Best-effort S3 object cleanup per provider: DB deletion must succeed even if
+      // remote deletes fail (logged as a warning instead).
+      if (s3Targets.length > 0) {
+        // Group keys by storageProviderId
+        const targetsByProvider = new Map<string | null, string[]>();
+        for (const target of s3Targets) {
+          const list = targetsByProvider.get(target.storageProviderId) ?? [];
+          list.push(target.key);
+          targetsByProvider.set(target.storageProviderId, list);
+        }
+
+        for (const [providerId, keys] of targetsByProvider) {
+          let s3 = options?.s3StorageService;
+          if (options?.storageProviderRegistry) {
+            const regS3 = await options.storageProviderRegistry.getService(providerId);
+            if (regS3) s3 = regS3;
+          }
+
+          if (s3?.isConfigured()) {
+            try {
+              await s3.deleteObjects(keys);
+            } catch (err) {
+              console.warn(
+                `[media-service] Failed to delete ${keys.length} S3 object(s) for episode ${id} (provider: ${providerId}):`,
+                err instanceof Error ? err.message : err
+              );
+            }
+          }
         }
       }
 

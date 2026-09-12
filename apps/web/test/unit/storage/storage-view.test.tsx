@@ -183,6 +183,55 @@ describe('Storage Management Console UI', () => {
     setAccessToken('test-access-token');
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/api/storage/providers/test')) {
+        return new Response(
+          JSON.stringify({ data: { success: true, message: 'Bucket connected successfully', latencyMs: 42 } }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (url.includes('/api/storage/providers')) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: 'prov-1',
+                name: 'Backblaze B2 Main',
+                providerType: 'backblaze',
+                endpoint: 'https://s3.us-west-002.backblazeb2.com',
+                region: 'us-west-002',
+                bucket: 'main-bucket',
+                accessKeyIdMasked: '••••1234',
+                publicBaseUrl: 'https://cdn.private-movie.com',
+                forcePathStyle: false,
+                storageLimitGb: 50,
+                isDefault: true,
+                isEnabled: true,
+                linkedSourcesCount: 2,
+                createdAt: '2026-09-01T00:00:00.000Z',
+                updatedAt: '2026-09-01T00:00:00.000Z',
+              },
+              {
+                id: 'prov-2',
+                name: 'Cloudflare R2 Secondary',
+                providerType: 'cloudflare_r2',
+                endpoint: 'https://account.r2.cloudflarestorage.com',
+                region: 'auto',
+                bucket: 'r2-bucket',
+                accessKeyIdMasked: '••••5678',
+                publicBaseUrl: null,
+                forcePathStyle: false,
+                storageLimitGb: 100,
+                isDefault: false,
+                isEnabled: true,
+                linkedSourcesCount: 0,
+                createdAt: '2026-09-02T00:00:00.000Z',
+                updatedAt: '2026-09-02T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
       if (url.includes('/api/storage/metrics')) {
         return new Response(
           JSON.stringify({
@@ -329,11 +378,13 @@ describe('Storage Management Console UI', () => {
         expect(screen.getByText('big_buck_bunny.mp4')).toBeInTheDocument();
       });
 
-      // 5GB should appear before 3GB, 1GB
-      const rows = screen.getAllByTestId(/^row-/);
-      expect(rows.length).toBe(4);
-      expect(rows[0]).toHaveTextContent('big_buck_bunny.mp4'); // 5 GB
-      expect(rows[1]).toHaveTextContent('unlinked_trailer.mp4'); // 3 GB
+      // Wait until loading finishes and table renders rows
+      await waitFor(() => {
+        const rows = screen.getAllByTestId(/^row-/);
+        expect(rows.length).toBe(4);
+        expect(rows[0]).toHaveTextContent('big_buck_bunny.mp4'); // 5 GB
+        expect(rows[1]).toHaveTextContent('unlinked_trailer.mp4'); // 3 GB
+      });
     });
 
     it('filters resources by status tabs (All, Linked, Orphaned)', async () => {
@@ -527,6 +578,181 @@ describe('Storage Management Console UI', () => {
       });
 
       expect(screen.getByText(/S3 storage service is not configured/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Multi-Provider Storage Console Features', () => {
+    it('renders provider tabs and switches active provider view', async () => {
+      const { user } = renderWithProviders(<StorageView />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('provider-tab-prov-1')).toBeInTheDocument();
+        expect(screen.getByTestId('provider-tab-prov-2')).toBeInTheDocument();
+      });
+
+      // Default provider is selected initially
+      expect(screen.getByTestId('provider-tab-prov-1')).toHaveTextContent('Backblaze B2 Main');
+      expect(screen.getByTestId('provider-tab-prov-1')).toHaveTextContent('Def');
+
+      // Click second provider tab
+      await user.click(screen.getByTestId('provider-tab-prov-2'));
+
+      // Check fetch called with providerId=prov-2 for metrics & resources
+      await waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('providerId=prov-2'),
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('opens Manage Providers drawer displaying providers with status badges', async () => {
+      const { user } = renderWithProviders(<StorageView />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('manage-providers-btn')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('manage-providers-btn'));
+
+      expect(await screen.findByTestId('manage-providers-drawer')).toBeInTheDocument();
+      expect(screen.getByTestId('provider-card-prov-1')).toBeInTheDocument();
+      expect(screen.getByTestId('provider-card-prov-2')).toBeInTheDocument();
+
+      // Check badges
+      expect(screen.getByTestId('badge-default')).toHaveTextContent('Default');
+      expect(screen.getByText('backblaze')).toBeInTheDocument();
+      expect(screen.getByText('cloudflare_r2')).toBeInTheDocument();
+    });
+
+    it('supports testing connection from provider form', async () => {
+      const { user } = renderWithProviders(<StorageView />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('manage-providers-btn')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('manage-providers-btn'));
+
+      expect(await screen.findByTestId('add-provider-btn')).toBeInTheDocument();
+      await user.click(screen.getByTestId('add-provider-btn'));
+
+      expect(screen.getByTestId('provider-form')).toBeInTheDocument();
+
+      // Preset change autofills endpoint & region
+      const presetSelect = screen.getByTestId('provider-preset-select');
+      await user.selectOptions(presetSelect, 'wasabi');
+
+      const endpointInput = screen.getByTestId('provider-endpoint-input');
+      expect(endpointInput).toHaveValue('https://s3.wasabisys.com');
+
+      // Click Test Connection
+      const testBtn = screen.getByTestId('test-connection-btn');
+      await user.click(testBtn);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('connection-test-result')).toBeInTheDocument();
+        expect(screen.getByText('Connection Successful')).toBeInTheDocument();
+      });
+    });
+
+    it('shows 409 Conflict reason dialog warning when deleting a provider with linked sources fails', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const method = init?.method || (input instanceof Request ? input.method : 'GET');
+        if (url.includes('/api/storage/providers/prov-1') && method === 'DELETE') {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: 'STORAGE_PROVIDER_IN_USE',
+                message: 'Cannot delete storage provider: 2 video source(s) are currently stored in this provider',
+              },
+            }),
+            { status: 409, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        if (url.includes('/api/storage/metrics')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                totalBytes: 10737418240,
+                limitBytes: 53687091200,
+                percentUsed: 20.0,
+                totalCount: 4,
+                linkedCount: 2,
+                orphanCount: 2,
+              },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        if (url.includes('/api/storage/resources')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                items: mockBackendItems,
+                total: 4,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+              },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        if (url.includes('/api/storage/providers')) {
+          return new Response(
+            JSON.stringify({
+              data: [
+                {
+                  id: 'prov-1',
+                  name: 'Backblaze B2 Main',
+                  providerType: 'backblaze',
+                  endpoint: 'https://s3.us-west-002.backblazeb2.com',
+                  region: 'us-west-002',
+                  bucket: 'main-bucket',
+                  accessKeyIdMasked: '••••1234',
+                  publicBaseUrl: null,
+                  forcePathStyle: false,
+                  storageLimitGb: 50,
+                  isDefault: true,
+                  isEnabled: true,
+                  linkedSourcesCount: 2,
+                  createdAt: '2026-09-01T00:00:00.000Z',
+                  updatedAt: '2026-09-01T00:00:00.000Z',
+                },
+              ],
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        return new Response(JSON.stringify({ data: { success: true } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      });
+
+      const { user } = renderWithProviders(<StorageView />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('manage-providers-btn')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('manage-providers-btn'));
+
+      const deleteBtn = await screen.findByTestId('delete-provider-btn-prov-1');
+      await user.click(deleteBtn);
+
+      expect(screen.getByTestId('delete-provider-alert')).toBeInTheDocument();
+
+      // Click Confirm Delete
+      await user.click(screen.getByTestId('confirm-delete-provider-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-error-message')).toHaveTextContent(
+          /Cannot delete storage provider: 2 video source\(s\) are currently stored in this provider/i
+        );
+      });
     });
   });
 });
