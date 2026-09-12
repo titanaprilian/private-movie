@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -106,6 +106,11 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     seriesMockMap.clear();
+    localStorage.setItem('adblock_warning_dismissed', 'true');
+  });
+
+  afterEach(() => {
+    localStorage.removeItem('adblock_warning_dismissed');
   });
 
   it('renders skeleton loading state while fetching series details', () => {
