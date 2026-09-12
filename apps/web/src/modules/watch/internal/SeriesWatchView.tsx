@@ -11,9 +11,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   AlertCircle,
   ArrowLeft,
-  ChevronDown,
   ExternalLink,
   ListVideo,
   Play,
@@ -23,7 +29,10 @@ import {
   SkipForward,
 } from 'lucide-react';
 import { useWatchState } from './useWatchState';
-import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from './api';
+import {
+  getSeriesWithEpisodesQueryOptions,
+  type WatchSeriesDetails,
+} from './api';
 import { formatEmbedUrl } from '../../videos/internal/embedUrl';
 import { useInputMode } from '@/hooks/useInputMode';
 import { useWatchNav } from './useWatchNav';
@@ -39,7 +48,10 @@ export interface SeriesWatchViewProps {
 
 export function WatchViewSkeleton() {
   return (
-    <div className="min-h-screen bg-bg text-fg font-sans animate-pulse" data-testid="watch-skeleton">
+    <div
+      className="min-h-screen bg-bg text-fg font-sans animate-pulse"
+      data-testid="watch-skeleton"
+    >
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-8 lg:flex-row">
           {/* Left column: player + metadata skeleton */}
@@ -138,16 +150,21 @@ export function SeriesWatchView({
   });
 
   const { isSpatialMode } = useInputMode();
-  const { isLoading: isDetectingAdblock, isBlocked: hasAdblock } = useAdblockDetector();
+  const { isLoading: isDetectingAdblock, isBlocked: hasAdblock } =
+    useAdblockDetector();
   const [isWarningDismissed, setIsWarningDismissed] = useState<boolean>(() => {
     try {
-      return typeof localStorage !== 'undefined' && localStorage.getItem('adblock_warning_dismissed') === 'true';
+      return (
+        typeof localStorage !== 'undefined' &&
+        localStorage.getItem('adblock_warning_dismissed') === 'true'
+      );
     } catch {
       return false;
     }
   });
 
-  const showAdblockModal = !isDetectingAdblock && !hasAdblock && !isWarningDismissed;
+  const showAdblockModal =
+    !isDetectingAdblock && !hasAdblock && !isWarningDismissed;
 
   const handleDismissWarning = () => {
     try {
@@ -202,7 +219,11 @@ export function SeriesWatchView({
       }
       try {
         if (typeof el.scrollIntoView === 'function') {
-          el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+          el.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest',
+          });
         }
       } catch {
         // ignore
@@ -218,7 +239,11 @@ export function SeriesWatchView({
     const t = setTimeout(() => {
       try {
         controlsRefs.current[0]?.focus();
-        controlsRefs.current[0]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        controlsRefs.current[0]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest',
+        });
       } catch {
         // ignore
       }
@@ -296,11 +321,12 @@ export function SeriesWatchView({
 
   return (
     <div className="min-h-screen bg-bg text-fg font-sans">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+        <div className="flex flex-col gap-6 lg:gap-8 lg:flex-row">
           {/* Left column: player + metadata */}
           <div className="flex min-w-0 flex-1 flex-col lg:w-[70%]">
-            <div className="mb-4">
+            {/* Desktop standalone back button */}
+            <div className="hidden mb-4 lg:block">
               <Button
                 variant="ghost"
                 size="sm"
@@ -318,31 +344,59 @@ export function SeriesWatchView({
               </Button>
             </div>
 
-            {activeSource ? (
-              <div
-                className={`aspect-video w-full overflow-hidden rounded-md border border-c bg-black ${playerFocused ? 'ring-2 ring-white' : ''}`}
-              >
-                <iframe
-                  ref={iframeRef}
-                  data-testid="watch-player"
-                  src={formatEmbedUrl(activeSource.url)}
-                  title={activeEpisode?.title ?? 'Video player'}
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowFullScreen
-                  referrerPolicy="no-referrer"
-                />
+            {/* Video player container: sticky top-0 full-bleed on mobile, standard on desktop */}
+            <div
+              data-testid="watch-player-container"
+              className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-black"
+            >
+              {/* Mobile overlay back button */}
+              <div className="absolute left-3 top-3 z-30 lg:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className={`h-9 w-9 rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-sm hover:bg-black/80 hover:text-white ${
+                    backFocused ? 'ring-2 ring-white' : ''
+                  }`}
+                >
+                  <Link
+                    to="/"
+                    aria-label="Back to home catalogue"
+                    ref={backRef as unknown as React.Ref<HTMLAnchorElement>}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
-            ) : (
-              <div className="flex aspect-video w-full items-center justify-center rounded-md border border-c bg-card text-muted">
-                No video source available
-              </div>
-            )}
+
+              {activeSource ? (
+                <div
+                  className={`aspect-video w-full overflow-hidden rounded-none sm:rounded-md border-y sm:border border-c bg-black ${
+                    playerFocused ? 'ring-2 ring-white' : ''
+                  }`}
+                >
+                  <iframe
+                    ref={iframeRef}
+                    data-testid="watch-player"
+                    src={formatEmbedUrl(activeSource.url)}
+                    title={activeEpisode?.title ?? 'Video player'}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                    allowFullScreen
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              ) : (
+                <div className="flex aspect-video w-full items-center justify-center rounded-none sm:rounded-md border-y sm:border border-c bg-card text-muted">
+                  No video source available
+                </div>
+              )}
+            </div>
 
             {/* Player controls */}
             <div
               data-testid="watch-controls"
-              className="mt-4 flex flex-wrap items-center gap-2 border border-c bg-card p-3"
+              className="mt-2 sm:mt-4 flex flex-wrap items-center gap-2 border border-c bg-card p-3 rounded-none sm:rounded-md"
             >
               <Button
                 ref={(el) => {
@@ -353,7 +407,11 @@ export function SeriesWatchView({
                 onClick={goToPrevEpisode}
                 disabled={!hasPrevEpisode}
                 aria-label="Prev episode"
-                className={isSpatialMode && activeZone === 'controls' && focusIndex === 0 ? 'ring-2 ring-white' : ''}
+                className={
+                  isSpatialMode && activeZone === 'controls' && focusIndex === 0
+                    ? 'ring-2 ring-white'
+                    : ''
+                }
               >
                 <SkipBack className="h-4 w-4" />
                 Prev
@@ -367,7 +425,11 @@ export function SeriesWatchView({
                 onClick={goToNextEpisode}
                 disabled={!hasNextEpisode}
                 aria-label="Next episode"
-                className={isSpatialMode && activeZone === 'controls' && focusIndex === 1 ? 'ring-2 ring-white' : ''}
+                className={
+                  isSpatialMode && activeZone === 'controls' && focusIndex === 1
+                    ? 'ring-2 ring-white'
+                    : ''
+                }
               >
                 Next
                 <SkipForward className="h-4 w-4" />
@@ -377,14 +439,20 @@ export function SeriesWatchView({
                 {sources.map((source, index) => {
                   const sourceFocusIndex = 2 + index;
                   const isSourceFocused =
-                    isSpatialMode && activeZone === 'controls' && focusIndex === sourceFocusIndex;
+                    isSpatialMode &&
+                    activeZone === 'controls' &&
+                    focusIndex === sourceFocusIndex;
                   return (
                     <Button
                       key={source.id}
                       ref={(el) => {
                         controlsRefs.current[sourceFocusIndex] = el;
                       }}
-                      variant={state.activeSourceIndex === index ? 'default' : 'secondary'}
+                      variant={
+                        state.activeSourceIndex === index
+                          ? 'default'
+                          : 'secondary'
+                      }
                       size="sm"
                       onClick={() => selectSource(index)}
                       aria-label={source.label}
@@ -399,9 +467,9 @@ export function SeriesWatchView({
 
             {/* Metadata / description */}
             <div className="mt-6">
-              <h1 className="text-3xl font-bold">{series.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">{series.title}</h1>
               {activeEpisode && (
-                <h2 className="mono mt-2 text-lg text-muted">
+                <h2 className="mono mt-2 text-base sm:text-lg text-muted">
                   {activeSeason
                     ? `${activeSeason.title} — Episode ${activeEpisode.order ?? ''}`
                     : `Episode ${activeEpisode.order ?? ''}`}
@@ -413,7 +481,9 @@ export function SeriesWatchView({
                 </p>
               )}
               {!activeEpisode?.description && series.description && (
-                <p className="mt-4 leading-relaxed text-muted">{series.description}</p>
+                <p className="mt-4 leading-relaxed text-muted">
+                  {series.description}
+                </p>
               )}
             </div>
           </div>
@@ -428,22 +498,21 @@ export function SeriesWatchView({
                 </div>
 
                 {seasons.length > 1 && (
-                  <label className="relative block">
-                    <span className="sr-only">Season</span>
-                    <select
-                      aria-label="Season"
-                      value={activeSeasonId ?? ''}
-                      onChange={(e) => selectSeason(e.target.value)}
-                      className="w-full appearance-none rounded-md border border-c bg-bg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
+                  <Select
+                    value={activeSeasonId ?? ''}
+                    onValueChange={(val) => selectSeason(val)}
+                  >
+                    <SelectTrigger aria-label="Season">
+                      <SelectValue placeholder="Select Season" />
+                    </SelectTrigger>
+                    <SelectContent>
                       {seasons.map((season) => (
-                        <option key={season.id} value={season.id}>
+                        <SelectItem key={season.id} value={season.id}>
                           {season.title}
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                  </label>
+                    </SelectContent>
+                  </Select>
                 )}
               </div>
 
@@ -451,7 +520,9 @@ export function SeriesWatchView({
                 {availableEpisodes.map((episode, idx) => {
                   const isActive = episode.id === state.activeEpisodeId;
                   const isEpisodeFocused =
-                    isSpatialMode && activeZone === 'episodes' && focusIndex === idx;
+                    isSpatialMode &&
+                    activeZone === 'episodes' &&
+                    focusIndex === idx;
                   return (
                     <button
                       key={episode.id}
@@ -490,26 +561,43 @@ export function SeriesWatchView({
         </div>
       </div>
 
-      <Dialog open={showAdblockModal} onOpenChange={(open) => !open && handleDismissWarning()}>
+      <Dialog
+        open={showAdblockModal}
+        onOpenChange={(open) => !open && handleDismissWarning()}
+      >
         <DialogContent className="sm:max-w-md border border-c bg-card text-fg">
           <DialogHeader className="gap-2 text-left">
             <div className="flex items-center gap-2 text-amber-500">
               <ShieldAlert className="h-5 w-5 shrink-0" />
-              <DialogTitle className="text-base font-semibold">Ad Blocker Recommended</DialogTitle>
+              <DialogTitle className="text-base font-semibold">
+                Ad Blocker Recommended
+              </DialogTitle>
             </div>
             <DialogDescription className="text-xs leading-relaxed text-muted space-y-2 pt-1">
               <span>
-                Third-party video mirrors may serve popups and unexpected redirects during playback. We strongly recommend using an ad blocker (such as uBlock Origin or Brave Shields) for an uninterrupted experience.
+                Third-party video mirrors may serve popups and unexpected
+                redirects during playback. We strongly recommend using an ad
+                blocker (such as uBlock Origin or Brave Shields) for an
+                uninterrupted experience.
               </span>
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="secondary" size="sm" onClick={handleDismissWarning}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDismissWarning}
+            >
               Continue anyway
             </Button>
             <Button size="sm" asChild>
-              <Link to="/guide/adblock" target="_blank" rel="noreferrer noopener" className="gap-1.5">
+              <Link
+                to="/guide/adblock"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="gap-1.5"
+              >
                 <span>View Adblock Guide</span>
                 <ExternalLink className="h-3.5 w-3.5" />
               </Link>

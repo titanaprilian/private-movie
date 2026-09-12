@@ -16,6 +16,18 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
 
+if (typeof Element !== 'undefined') {
+  if (!Element.prototype.hasPointerCapture) {
+    Element.prototype.hasPointerCapture = () => false;
+  }
+  if (!Element.prototype.setPointerCapture) {
+    Element.prototype.setPointerCapture = () => {};
+  }
+  if (!Element.prototype.releasePointerCapture) {
+    Element.prototype.releasePointerCapture = () => {};
+  }
+}
+
 export function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: {
@@ -30,7 +42,10 @@ export function createTestQueryClient() {
   });
 }
 
-export interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
+export interface RenderWithProvidersOptions extends Omit<
+  RenderOptions,
+  'wrapper'
+> {
   queryClient?: QueryClient;
 }
 

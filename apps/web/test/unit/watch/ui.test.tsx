@@ -39,8 +39,18 @@ const mockSeries: WatchSeriesDetails = {
           seasonId: 'season-1',
           description: 'First episode description',
           videoSources: [
-            { id: 'src-1', type: 'embed', url: 'https://embed.com/1', label: 'Server A' },
-            { id: 'src-2', type: 'embed', url: 'https://embed.com/2', label: 'Server B' },
+            {
+              id: 'src-1',
+              type: 'embed',
+              url: 'https://embed.com/1',
+              label: 'Server A',
+            },
+            {
+              id: 'src-2',
+              type: 'embed',
+              url: 'https://embed.com/2',
+              label: 'Server B',
+            },
           ],
         },
         {
@@ -50,7 +60,12 @@ const mockSeries: WatchSeriesDetails = {
           seasonId: 'season-1',
           description: 'Second episode description',
           videoSources: [
-            { id: 'src-3', type: 'embed', url: 'https://embed.com/3', label: 'Server A' },
+            {
+              id: 'src-3',
+              type: 'embed',
+              url: 'https://embed.com/3',
+              label: 'Server A',
+            },
           ],
         },
       ],
@@ -67,7 +82,12 @@ const mockSeries: WatchSeriesDetails = {
           seasonId: 'season-2',
           description: 'Third episode description',
           videoSources: [
-            { id: 'src-4', type: 'embed', url: 'https://embed.com/4', label: 'Server A' },
+            {
+              id: 'src-4',
+              type: 'embed',
+              url: 'https://embed.com/4',
+              label: 'Server A',
+            },
           ],
         },
       ],
@@ -90,7 +110,9 @@ describe('SeriesWatchView', () => {
   });
 
   it('updates the iframe source when selecting an episode card', async () => {
-    const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView series={mockSeries} />
+    );
 
     await user.click(screen.getByRole('button', { name: /Episode Two/i }));
 
@@ -99,7 +121,9 @@ describe('SeriesWatchView', () => {
   });
 
   it('switches source without changing the active episode', async () => {
-    const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView series={mockSeries} />
+    );
 
     await user.click(screen.getByRole('button', { name: /Server B/i }));
 
@@ -108,16 +132,39 @@ describe('SeriesWatchView', () => {
   });
 
   it('changes the episode list when selecting a different season', async () => {
-    const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView series={mockSeries} />
+    );
 
-    await user.selectOptions(screen.getByLabelText(/season/i), 'season-2');
+    const seasonSelect = screen.getByRole('combobox', { name: /season/i });
+    await user.click(seasonSelect);
+
+    const season2Option = await screen.findByRole('option', {
+      name: 'Season 2',
+    });
+    await user.click(season2Option);
 
     expect(getPlayer().src).toBe('https://embed.com/4');
     expect(screen.getByText('Episode Three')).toBeInTheDocument();
   });
 
+  it('hides season dropdown when series has only 1 season', () => {
+    const singleSeasonSeries: WatchSeriesDetails = {
+      ...mockSeries,
+      seasons: mockSeries.seasons ? [mockSeries.seasons[0]!] : [],
+    };
+
+    renderWithProviders(<SeriesWatchView series={singleSeasonSeries} />);
+
+    expect(
+      screen.queryByRole('combobox', { name: /season/i })
+    ).not.toBeInTheDocument();
+  });
+
   it('disables navigation buttons at the bounds of the episode list', async () => {
-    const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView series={mockSeries} />
+    );
 
     const prevButton = screen.getByRole('button', { name: /prev/i });
     const nextButton = screen.getByRole('button', { name: /next/i });
@@ -134,9 +181,27 @@ describe('SeriesWatchView', () => {
   it('renders a top-left back button that links to the home page catalogue', () => {
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
-    const backBtn = screen.getByRole('link', { name: /back/i });
-    expect(backBtn).toBeInTheDocument();
-    expect(backBtn).toHaveAttribute('href', '/');
+    const backBtns = screen.getAllByRole('link', { name: /back/i });
+    expect(backBtns.length).toBeGreaterThanOrEqual(1);
+    for (const btn of backBtns) {
+      expect(btn).toHaveAttribute('href', '/');
+    }
+  });
+
+  it('renders sticky edge-to-edge player container and playback controls directly below player', () => {
+    renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+    const playerContainer = screen.getByTestId('watch-player-container');
+    expect(playerContainer).toHaveClass(
+      'sticky',
+      'top-0',
+      'z-20',
+      '-mx-4',
+      'sm:mx-0'
+    );
+
+    const controls = screen.getByTestId('watch-controls');
+    expect(controls).toBeInTheDocument();
   });
 
   it('renders player iframe without sandbox and with media allow attributes', () => {
@@ -157,25 +222,34 @@ describe('SeriesWatchView', () => {
 
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
-    expect(await screen.findByRole('heading', { name: /ad blocker recommended/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /view adblock guide/i })).toHaveAttribute(
-      'href',
-      '/guide/adblock'
-    );
-    expect(screen.getByRole('button', { name: /continue anyway/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /ad blocker recommended/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /view adblock guide/i })
+    ).toHaveAttribute('href', '/guide/adblock');
+    expect(
+      screen.getByRole('button', { name: /continue anyway/i })
+    ).toBeInTheDocument();
   });
 
   it('dismisses advisory modal and sets localStorage when clicking "Continue anyway"', async () => {
     localStorage.removeItem('adblock_warning_dismissed');
     vi.spyOn(window, 'fetch').mockResolvedValue(new Response(''));
 
-    const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+    const { user } = renderWithProviders(
+      <SeriesWatchView series={mockSeries} />
+    );
 
-    const continueBtn = await screen.findByRole('button', { name: /continue anyway/i });
+    const continueBtn = await screen.findByRole('button', {
+      name: /continue anyway/i,
+    });
     await user.click(continueBtn);
 
     expect(localStorage.getItem('adblock_warning_dismissed')).toBe('true');
-    expect(screen.queryByRole('heading', { name: /ad blocker recommended/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /ad blocker recommended/i })
+    ).not.toBeInTheDocument();
   });
 
   it('does not render advisory modal when adblock_warning_dismissed is "true" in localStorage', () => {
@@ -184,15 +258,21 @@ describe('SeriesWatchView', () => {
 
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
-    expect(screen.queryByRole('heading', { name: /ad blocker recommended/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /ad blocker recommended/i })
+    ).not.toBeInTheDocument();
   });
 
   it('does not render advisory modal when adblocker is detected', () => {
     localStorage.removeItem('adblock_warning_dismissed');
-    vi.spyOn(window, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+    vi.spyOn(window, 'fetch').mockRejectedValue(
+      new TypeError('Failed to fetch')
+    );
 
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
-    expect(screen.queryByRole('heading', { name: /ad blocker recommended/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /ad blocker recommended/i })
+    ).not.toBeInTheDocument();
   });
 });
