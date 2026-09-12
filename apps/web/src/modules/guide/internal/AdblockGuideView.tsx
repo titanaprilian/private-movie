@@ -132,9 +132,9 @@ const GUIDES: PlatformGuide[] = [
 
 export function AdblockGuideView() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
-    desktop: true,
-    android: true,
-    ios: true,
+    desktop: false,
+    android: false,
+    ios: false,
   });
 
   const toggleSection = (id: string) => {

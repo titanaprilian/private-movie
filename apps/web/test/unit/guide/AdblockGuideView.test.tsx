@@ -12,35 +12,40 @@ describe('AdblockGuideView', () => {
     expect(screen.getByRole('heading', { level: 2, name: /^iOS & iPadOS$/i })).toBeInTheDocument();
   });
 
-  it('renders instructions for Desktop, Android, and iOS', () => {
-    renderWithProviders(<AdblockGuideView />);
-
-    // Desktop mentions uBlock Origin, Brave Browser, etc.
-    expect(screen.getByRole('heading', { level: 3, name: /^uBlock Origin \(Recommended\)$/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3, name: /^Brave Browser$/i })).toBeInTheDocument();
-    expect(screen.getByText(/Chrome Web Store/i)).toBeInTheDocument();
-
-    // Android mentions AdGuard DNS and Brave Browser for Android
-    expect(screen.getByRole('heading', { level: 3, name: /^AdGuard Private DNS \(System-wide\)$/i })).toBeInTheDocument();
-    expect(screen.getByText(/dns\.adguard-dns\.com/i)).toBeInTheDocument();
-
-    // iOS mentions Safari Content Blockers
-    expect(screen.getByRole('heading', { level: 3, name: /^Safari Content Blockers \(AdGuard \/ 1Blocker\)$/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3, name: /^Brave Browser for iOS$/i })).toBeInTheDocument();
-  });
-
-  it('allows expanding and collapsing platform sections on click', async () => {
+  it('keeps platform sections collapsed by default and reveals instructions on click', async () => {
     const { user } = renderWithProviders(<AdblockGuideView />);
 
-    const desktopHeader = screen.getByRole('button', { name: /desktop/i });
-    expect(screen.getByRole('heading', { level: 3, name: /^uBlock Origin \(Recommended\)$/i })).toBeVisible();
+    // Initially collapsed
+    expect(screen.queryByRole('heading', { level: 3, name: /^uBlock Origin \(Recommended\)$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 3, name: /^AdGuard Private DNS \(System-wide\)$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 3, name: /^Safari Content Blockers \(AdGuard \/ 1Blocker\)$/i })).not.toBeInTheDocument();
 
-    // Click desktop header to collapse
+    // Expand desktop
+    const desktopHeader = screen.getByRole('button', { name: /desktop/i });
+    await user.click(desktopHeader);
+
+    expect(screen.getByRole('heading', { level: 3, name: /^uBlock Origin \(Recommended\)$/i })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 3, name: /^Brave Browser$/i })).toBeVisible();
+    expect(screen.getByText(/Chrome Web Store/i)).toBeInTheDocument();
+
+    // Collapse desktop again
     await user.click(desktopHeader);
     expect(screen.queryByRole('heading', { level: 3, name: /^uBlock Origin \(Recommended\)$/i })).not.toBeInTheDocument();
+  });
 
-    // Click desktop header again to expand
-    await user.click(desktopHeader);
-    expect(screen.getByRole('heading', { level: 3, name: /^uBlock Origin \(Recommended\)$/i })).toBeVisible();
+  it('allows expanding Android and iOS sections to view instructions', async () => {
+    const { user } = renderWithProviders(<AdblockGuideView />);
+
+    // Expand Android
+    const androidHeader = screen.getByRole('button', { name: /android/i });
+    await user.click(androidHeader);
+    expect(screen.getByRole('heading', { level: 3, name: /^AdGuard Private DNS \(System-wide\)$/i })).toBeVisible();
+    expect(screen.getByText(/dns\.adguard-dns\.com/i)).toBeInTheDocument();
+
+    // Expand iOS
+    const iosHeader = screen.getByRole('button', { name: /ios/i });
+    await user.click(iosHeader);
+    expect(screen.getByRole('heading', { level: 3, name: /^Safari Content Blockers \(AdGuard \/ 1Blocker\)$/i })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 3, name: /^Brave Browser for iOS$/i })).toBeVisible();
   });
 });
