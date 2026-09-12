@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../../utils';
 
@@ -101,6 +101,16 @@ function getPlayer(): HTMLIFrameElement {
 }
 
 describe('SeriesWatchView', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.setItem('adblock_warning_dismissed', 'true');
+  });
+
+  afterEach(() => {
+    localStorage.removeItem('adblock_warning_dismissed');
+    vi.restoreAllMocks();
+  });
+
   it('mounts the default episode and its default source', () => {
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
