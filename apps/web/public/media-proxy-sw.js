@@ -1,10 +1,10 @@
 /**
  * Service Worker for Media Relay Sandbox
- * 
+ *
  * This Service Worker intercepts requests to videobello.net, skylayer64.online,
  * cloudremux.online, cloudflow, streamflow, and medialayer domains and routes them through
  * our backend relay to apply the required Referer header.
- * 
+ *
  * This allows BelloCloud video streams to bypass CDN restrictions and play
  * seamlessly in the local environment.
  */
@@ -36,7 +36,7 @@ self.addEventListener('message', (event) => {
 // Fetch event - intercept and relay targeted requests
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  
+
   // Check if this request should be intercepted
   const shouldIntercept =
     url.hostname.includes('videobello.net') ||
@@ -44,7 +44,10 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('cloudremux.online') ||
     url.hostname.includes('cloudflow') ||
     url.hostname.includes('streamflow') ||
-    url.hostname.includes('medialayer');
+    url.hostname.includes('medialayer') ||
+    url.hostname.includes('desustream.net') ||
+    url.hostname.includes('onenesuhd.com') ||
+    url.hostname.includes('odstream.net');
 
   if (!shouldIntercept) {
     // If not targeted, return immediately and do NOT call event.respondWith()
@@ -53,17 +56,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   console.log('[Service Worker] Intercepting:', url.href);
-  
+
   // Route through our backend relay
   event.respondWith(
     (async () => {
       try {
         // Construct relay URL
         const relayUrl = `/api/media/relay?url=${encodeURIComponent(url.href)}`;
-        
+
         // Build headers to forward
         const headers = new Headers();
-        
+
         // Forward all headers from the original request except unsafe ones
         for (const [key, value] of event.request.headers.entries()) {
           const lowerKey = key.toLowerCase();
@@ -72,7 +75,7 @@ self.addEventListener('fetch', (event) => {
             headers.set(key, value);
           }
         }
-        
+
         // Build fetch options
         const fetchOptions = {
           method: event.request.method,
@@ -81,28 +84,30 @@ self.addEventListener('fetch', (event) => {
         };
 
         // If the request has a body (POST, PUT, PATCH), we must forward it
-        if (['POST', 'PUT', 'PATCH'].includes(event.request.method.toUpperCase())) {
-           // Use arrayBuffer to safely copy the data, some browsers struggle to pipe ReadableStreams
-           fetchOptions.body = await event.request.clone().arrayBuffer();
+        if (
+          ['POST', 'PUT', 'PATCH'].includes(event.request.method.toUpperCase())
+        ) {
+          // Use arrayBuffer to safely copy the data, some browsers struggle to pipe ReadableStreams
+          fetchOptions.body = await event.request.clone().arrayBuffer();
         }
 
         // Make the relay request
         const response = await fetch(relayUrl, fetchOptions);
-        
+
         console.log(
           '[Service Worker] Relay response:',
           response.status,
           response.statusText
         );
-        
-        // We must return a synthetically constructed Response. 
-        // If we return the raw fetch() response, the browser updates the 
+
+        // We must return a synthetically constructed Response.
+        // If we return the raw fetch() response, the browser updates the
         // resolved URL of the script module to the backend relay URL.
         // That breaks relative ES imports (Dynamic chunks like ./chunks/...).
         return new Response(response.body, {
           status: response.status,
           statusText: response.statusText,
-          headers: response.headers
+          headers: response.headers,
         });
       } catch (error) {
         console.error('[Service Worker] Relay failed:', error);

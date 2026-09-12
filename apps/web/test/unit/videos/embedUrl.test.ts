@@ -30,7 +30,9 @@ describe('formatEmbedUrl', () => {
     it('should fallback to old proxy behavior if hash extraction fails', () => {
       const url = 'https://videobello.net/some-other-path';
       const result = formatEmbedUrl(url);
-      expect(result).toBe('/api/media/proxy-embed?url=' + encodeURIComponent(url));
+      expect(result).toBe(
+        '/api/media/proxy-embed?url=' + encodeURIComponent(url)
+      );
     });
 
     it('should handle videobello URLs without protocol', () => {
@@ -57,6 +59,32 @@ describe('formatEmbedUrl', () => {
       const url = 'https://player.vimeo.com/video/123456';
       const result = formatEmbedUrl(url);
       expect(result).toBe(url);
+    });
+  });
+
+  describe('problematic provider domains requiring proxying', () => {
+    it('should proxy desustream.net URLs via /api/media/relay', () => {
+      const url = 'https://desustream.net/dstream/arcg/?id=abc123xyz';
+      const result = formatEmbedUrl(url);
+      expect(result).toBe(`/api/media/relay?url=${encodeURIComponent(url)}`);
+    });
+
+    it('should proxy onenesuhd.com URLs via /api/media/relay', () => {
+      const url = 'https://onenesuhd.com/embed/xyz789';
+      const result = formatEmbedUrl(url);
+      expect(result).toBe(`/api/media/relay?url=${encodeURIComponent(url)}`);
+    });
+
+    it('should proxy odstream.net URLs via /api/media/relay', () => {
+      const url = 'https://odstream.net/v/sample-video-id';
+      const result = formatEmbedUrl(url);
+      expect(result).toBe(`/api/media/relay?url=${encodeURIComponent(url)}`);
+    });
+
+    it('should handle provider domain without protocol', () => {
+      const url = 'desustream.net/stream/sample.mp4';
+      const result = formatEmbedUrl(url);
+      expect(result).toBe(`/api/media/relay?url=${encodeURIComponent(url)}`);
     });
   });
 });

@@ -18,9 +18,14 @@ describe('media-proxy-sw.js', () => {
     expect(swContent).toContain("url.hostname.includes('cloudremux.online')");
   });
 
+  it('should intercept problematic provider domains desustream.net, onenesuhd.com, and odstream.net', () => {
+    expect(swContent).toContain("url.hostname.includes('desustream.net')");
+    expect(swContent).toContain("url.hostname.includes('onenesuhd.com')");
+    expect(swContent).toContain("url.hostname.includes('odstream.net')");
+  });
+
   it('should not call respondWith on non-targeted requests and return early', () => {
     expect(swContent).not.toContain('event.respondWith(fetch(event.request))');
     expect(swContent).toContain('if (!shouldIntercept)');
   });
 });
-
