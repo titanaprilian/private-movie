@@ -17,6 +17,8 @@
     "dev:backend": "turbo run dev --filter=@repo/backend",
     "dev:web": "turbo run dev --filter=@repo/web",
     "test": "turbo run test",
+    "test:web": "turbo run test --filter=@repo/web",
+    "test:backend": "turbo run test --filter=@repo/backend",
     "test:android-tv": "turbo run test --filter=@repo/android-tv",
     "test:integration": "turbo run test:integration",
     "db:generate": "cd packages/db && bun run db:generate",

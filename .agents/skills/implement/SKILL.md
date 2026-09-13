@@ -28,6 +28,12 @@ Use /tdd where possible, at pre-agreed seams.
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
 
+**Running Package Tests (Mandatory Rule):**
+- When testing a single package, **ALWAYS** use the `run` keyword:
+  - `bun --filter=@repo/web run test` (or `bun run test:web`)
+  - `bun --filter=@repo/backend run test` (or `bun run test:backend`)
+- **NEVER** run bare `bun --filter=<pkg> test` or `bun test` — in Bun, `test` is a built-in top-level command that ignores `--filter` and runs all monorepo tests natively without the required Vitest/Node environment.
+
 If the ticket touches backend HTTP endpoints (e.g., routes, middleware, CORS, auth guards), also write and run integration tests under `test/integration/` — not just unit tests. Run `bun run test:integration` from the monorepo root to verify before handing back.
 
 ## 2. Safe Schema Changes
