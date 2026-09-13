@@ -1,11 +1,94 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
+import { Film, User } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useAuth, LogoutButton } from '@/modules/auth';
 
 export interface ShellProps {
   children: ReactNode;
 }
+
+const navItems = [
+  {
+    to: '/admin' as const,
+    label: 'Dashboard',
+    activeOptions: { exact: true },
+    icon: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        className="shrink-0"
+      >
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/videos' as const,
+    label: 'Series',
+    activeOptions: { exact: false },
+    icon: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        className="shrink-0"
+      >
+        <polygon points="23 7 16 12 23 17 23 7" />
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/genres' as const,
+    label: 'Genres',
+    activeOptions: { exact: false },
+    icon: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        className="shrink-0"
+      >
+        <path d="M4 6h16M4 12h16M4 18h7" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/storage' as const,
+    label: 'Storage',
+    activeOptions: { exact: false },
+    icon: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        className="shrink-0"
+      >
+        <rect x="2" y="2" width="20" height="8" rx="2" />
+        <rect x="2" y="14" width="20" height="8" rx="2" />
+        <line x1="6" y1="6" x2="6.01" y2="6" strokeWidth="3" />
+        <line x1="6" y1="18" x2="6.01" y2="18" strokeWidth="3" />
+      </svg>
+    ),
+  },
+];
 
 export function Shell({ children }: ShellProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -23,17 +106,11 @@ export function Shell({ children }: ShellProps) {
         {/* Sidebar Header / Logo */}
         <div className="h-14 flex items-center gap-2 px-4 border-b border-c">
           <div className="w-6 h-6 rounded border border-c bg-primary flex items-center justify-center shrink-0">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M4 4h16v6H4zM4 14h10v6H4z"
-                fill="currentColor"
-                className="text-primary-fg"
-              />
-            </svg>
+            <Film className="w-3.5 h-3.5 text-primary-fg" />
           </div>
           {!sidebarCollapsed && (
             <span className="font-semibold text-sm mono whitespace-nowrap">
-              monoRepo
+              Private Movie
             </span>
           )}
           <button
@@ -58,90 +135,26 @@ export function Shell({ children }: ShellProps) {
           </button>
         </div>
 
-        {/* Workspace Breadcrumb */}
-        {!sidebarCollapsed && (
-          <div className="px-4 py-2 text-xs mono text-muted border-b border-c">
-            workspace / <span className="text-current">default</span>
-          </div>
-        )}
-
         {/* Navigation links */}
         <nav className="flex-1 px-2 py-3 space-y-0.5">
-          <Link
-            to="/admin"
-            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 active-bg font-medium text-sm rounded-sm"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="shrink-0"
+          {navItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              activeOptions={item.activeOptions}
+              activeProps={{
+                className:
+                  'flex items-center gap-2.5 pl-3 pr-2 py-1.5 active-bg font-medium text-primary text-sm rounded-sm',
+              }}
+              inactiveProps={{
+                className:
+                  'flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current',
+              }}
             >
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-            </svg>
-            {!sidebarCollapsed && <span>Dashboard</span>}
-          </Link>
-          <Link
-            to="/admin/videos"
-            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="shrink-0"
-            >
-              <polygon points="23 7 16 12 23 17 23 7" />
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-            </svg>
-            {!sidebarCollapsed && <span>Series</span>}
-          </Link>
-          <Link
-            to="/admin/genres"
-            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="shrink-0"
-            >
-              <path d="M4 6h16M4 12h16M4 18h7" />
-            </svg>
-            {!sidebarCollapsed && <span>Genres</span>}
-          </Link>
-          <Link
-            to="/admin/storage"
-            className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="shrink-0"
-            >
-              <rect x="2" y="2" width="20" height="8" rx="2" />
-              <rect x="2" y="14" width="20" height="8" rx="2" />
-              <line x1="6" y1="6" x2="6.01" y2="6" strokeWidth="3" />
-              <line x1="6" y1="18" x2="6.01" y2="18" strokeWidth="3" />
-            </svg>
-            {!sidebarCollapsed && <span>Storage</span>}
-          </Link>
+              {item.icon}
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </Link>
+          ))}
         </nav>
 
         {/* User Profile at bottom */}
@@ -150,11 +163,9 @@ export function Shell({ children }: ShellProps) {
             to="/admin/profile"
             className="flex items-center gap-3 px-2 py-2 rounded-sm hover-bg transition-colors"
           >
-            <img
-              src="https://i.pravatar.cc/32?img=12"
-              alt="User avatar"
-              className="w-8 h-8 rounded-full shrink-0"
-            />
+            <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 border border-c flex items-center justify-center shrink-0">
+              <User className="w-4 h-4 text-muted" aria-label="User avatar" />
+            </div>
             {!sidebarCollapsed && (
               <div className="leading-tight overflow-hidden">
                 <div className="text-sm font-medium truncate">
@@ -186,7 +197,10 @@ export function Shell({ children }: ShellProps) {
         }`}
       >
         <div className="h-14 flex items-center gap-2 px-4 border-b border-c">
-          <span className="font-semibold text-sm mono">monoRepo</span>
+          <div className="w-6 h-6 rounded border border-c bg-primary flex items-center justify-center shrink-0">
+            <Film className="w-3.5 h-3.5 text-primary-fg" />
+          </div>
+          <span className="font-semibold text-sm mono">Private Movie</span>
           <button
             onClick={() => setIsMobileOpen(false)}
             type="button"
@@ -206,34 +220,24 @@ export function Shell({ children }: ShellProps) {
           </button>
         </div>
         <nav className="flex-1 px-2 py-3 space-y-0.5 text-sm">
-          <Link
-            to="/admin"
-            onClick={() => setIsMobileOpen(false)}
-            className="block pl-3 pr-2 py-1.5 active-bg font-medium rounded-sm"
-          >
-            Dashboard
-          </Link>
-          <Link
-            to="/admin/videos"
-            onClick={() => setIsMobileOpen(false)}
-            className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
-          >
-            Series
-          </Link>
-          <Link
-            to="/admin/genres"
-            onClick={() => setIsMobileOpen(false)}
-            className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
-          >
-            Genres
-          </Link>
-          <Link
-            to="/admin/storage"
-            onClick={() => setIsMobileOpen(false)}
-            className="block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current"
-          >
-            Storage
-          </Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              activeOptions={item.activeOptions}
+              onClick={() => setIsMobileOpen(false)}
+              activeProps={{
+                className:
+                  'block pl-3 pr-2 py-1.5 active-bg font-medium text-primary rounded-sm',
+              }}
+              inactiveProps={{
+                className:
+                  'block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current',
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
         <div className="p-3 border-t border-c">
           <Link
@@ -241,11 +245,9 @@ export function Shell({ children }: ShellProps) {
             onClick={() => setIsMobileOpen(false)}
             className="flex items-center gap-3 px-2 py-2 rounded-sm hover-bg transition-colors"
           >
-            <img
-              src="https://i.pravatar.cc/32?img=12"
-              alt="User avatar"
-              className="w-8 h-8 rounded-full shrink-0"
-            />
+            <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 border border-c flex items-center justify-center shrink-0">
+              <User className="w-4 h-4 text-muted" aria-label="User avatar" />
+            </div>
             <div className="leading-tight overflow-hidden">
               <div className="text-sm font-medium truncate">
                 {user?.name ?? user?.email?.split('@')[0] ?? 'User Name'}
@@ -279,10 +281,6 @@ export function Shell({ children }: ShellProps) {
               <path d="M3 12h18M3 6h18M3 18h18" />
             </svg>
           </button>
-
-          <div className="text-xs mono text-muted hidden sm:block">
-            workspace / <span className="text-current">dashboard</span>
-          </div>
 
           <div className="relative ml-2 hidden sm:block max-w-xs w-full">
             <input

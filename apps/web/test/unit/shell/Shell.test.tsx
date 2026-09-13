@@ -3,31 +3,51 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { Shell } from '@/modules/shell';
 import { useUIStore } from '@/store/uiStore';
 
+let mockCurrentPath = '/admin';
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
     to,
     className,
+    activeProps,
+    inactiveProps,
+    activeOptions,
     onClick,
   }: {
     children: React.ReactNode;
     to: string;
     className?: string;
+    activeProps?: { className?: string };
+    inactiveProps?: { className?: string };
+    activeOptions?: { exact?: boolean };
     onClick?: () => void;
-  }) => (
-    <a href={to} className={className} onClick={onClick}>
-      {children}
-    </a>
-  ),
+  }) => {
+    const isExact = activeOptions?.exact ?? false;
+    const isActive = isExact
+      ? mockCurrentPath === to
+      : mockCurrentPath === to || mockCurrentPath.startsWith(to + '/');
+
+    const dynamicClass = isActive
+      ? activeProps?.className ?? className
+      : inactiveProps?.className ?? className;
+
+    return (
+      <a href={to} className={dynamicClass} onClick={onClick}>
+        {children}
+      </a>
+    );
+  },
   useNavigate: () => vi.fn(),
 }));
 
 describe('Shell layout component', () => {
   beforeEach(() => {
+    mockCurrentPath = '/admin';
     useUIStore.setState({ theme: 'light', sidebarCollapsed: false });
   });
 
-  it('renders children content within Shell layout', () => {
+  it('renders children content within Shell layout and displays Private Movie branding', () => {
     renderWithProviders(
       <Shell>
         <div data-testid="test-child">Hello Dashboard</div>
@@ -36,7 +56,9 @@ describe('Shell layout component', () => {
 
     expect(screen.getByTestId('test-child')).toBeInTheDocument();
     expect(screen.getByText('Hello Dashboard')).toBeInTheDocument();
-    expect(screen.getAllByText('monoRepo').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Private Movie').length).toBeGreaterThan(0);
+    expect(screen.queryByText('monoRepo')).not.toBeInTheDocument();
+    expect(screen.queryByText(/workspace/i)).not.toBeInTheDocument();
     expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
   });
 
@@ -51,6 +73,10 @@ describe('Shell layout component', () => {
     expect(seriesLinks.length).toBeGreaterThan(0);
     expect(seriesLinks[0]).toHaveAttribute('href', '/admin/videos');
 
+    const genresLinks = screen.getAllByRole('link', { name: /genres/i });
+    expect(genresLinks.length).toBeGreaterThan(0);
+    expect(genresLinks[0]).toHaveAttribute('href', '/admin/genres');
+
     const storageLinks = screen.getAllByRole('link', { name: /storage/i });
     expect(storageLinks.length).toBeGreaterThan(0);
     expect(storageLinks[0]).toHaveAttribute('href', '/admin/storage');
@@ -59,6 +85,53 @@ describe('Shell layout component', () => {
     expect(screen.queryByText('Customers')).not.toBeInTheDocument();
     expect(screen.queryByText('Orders')).not.toBeInTheDocument();
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+  });
+
+  it('dynamically applies active link styling based on exact and prefix route matches', () => {
+    // 1. Root admin dashboard route
+    mockCurrentPath = '/admin';
+    const { unmount } = renderWithProviders(
+      <Shell>
+        <div>Content</div>
+      </Shell>
+    );
+
+    const desktopDashboardLink = screen.getAllByRole('link', {
+      name: /dashboard/i,
+    })[0];
+    const desktopSeriesLink = screen.getAllByRole('link', {
+      name: /series/i,
+    })[0];
+
+    expect(desktopDashboardLink.className).toContain('active-bg');
+    expect(desktopDashboardLink.className).toContain('text-primary');
+    expect(desktopSeriesLink.className).not.toContain('active-bg');
+    expect(desktopSeriesLink.className).toContain('text-muted');
+
+    unmount();
+
+    // 2. Nested route under series (/admin/videos/series-123)
+    mockCurrentPath = '/admin/videos/series-123';
+    renderWithProviders(
+      <Shell>
+        <div>Content</div>
+      </Shell>
+    );
+
+    const nestedDashboardLink = screen.getAllByRole('link', {
+      name: /dashboard/i,
+    })[0];
+    const nestedSeriesLink = screen.getAllByRole('link', {
+      name: /series/i,
+    })[0];
+
+    // Dashboard should not be active since it requires exact match
+    expect(nestedDashboardLink.className).not.toContain('active-bg');
+    expect(nestedDashboardLink.className).toContain('text-muted');
+
+    // Series should be active due to prefix matching
+    expect(nestedSeriesLink.className).toContain('active-bg');
+    expect(nestedSeriesLink.className).toContain('text-primary');
   });
 
   it('toggles sidebar collapse state and updates desktop sidebar width and label visibility', async () => {
@@ -70,26 +143,27 @@ describe('Shell layout component', () => {
 
     const toggleBtn = screen.getByRole('button', { name: /toggle sidebar/i });
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
-    expect(screen.getByText('default')).toBeInTheDocument();
+    expect(screen.getAllByText('Private Movie').length).toBe(2);
 
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(true);
-    expect(screen.queryByText('default')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Private Movie').length).toBe(1);
 
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
-    expect(screen.getByText('default')).toBeInTheDocument();
+    expect(screen.getAllByText('Private Movie').length).toBe(2);
   });
 
-  it('renders user profile stub in the sidebar', () => {
+  it('renders anonymous user profile avatar in the sidebar and omits external pravatar placeholder', () => {
     renderWithProviders(
       <Shell>
         <div>Content</div>
       </Shell>
     );
 
-    const avatars = screen.getAllByAltText('User avatar');
+    const avatars = screen.getAllByLabelText('User avatar');
     expect(avatars.length).toBeGreaterThan(0);
+    expect(screen.queryByRole('img', { name: /user avatar/i })).not.toBeInTheDocument();
     expect(
       screen.getAllByText(/user@email.com|User Name/).length
     ).toBeGreaterThan(0);
