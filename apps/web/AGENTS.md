@@ -43,3 +43,5 @@ All UI work must adhere strictly to the "Structured Console" design direction de
 - Read `DESIGN.md` before generating or modifying UI components.
 - Rely on Tailwind utility classes and CSS custom properties defined in `src/index.css`.
 - Utilize the unstyled, copy-paste headless architecture (shadcn/ui pattern) located in `src/components/ui/`.
+- **Form Selects**: Always use Radix UI Select (`@/components/ui/select`). Never use native HTML `<select>` elements. Use explicit non-empty sentinel values (e.g. `"all"`, `"none"`, `"default"`) and `SelectValue` `placeholder` for unselected/optional states.
+- **Row & Contextual Actions**: Always use portaled Popovers (`@/components/ui/popover`) for table row actions (`⋯`) and contextual action menus. Do not use inline `absolute` positioning or manual `fixed inset-0` dismissal overlays.

@@ -159,7 +159,7 @@ Do not build a bottom tab bar or a right-side drawer for mobile nav — left sli
 - Wrapped in a card. Header row: `text-left text-muted border-b border-c uppercase tracking-wide text-xs` (or `text-[10px]`).
 - Sortable columns get a `↕` suffix in the header label — this is a static visual affordance in the template; wire up real sort handlers when integrating.
 - Row: `border-b border-c hover-bg`, last row has no bottom border.
-- Row actions: single `⋯` button, right-aligned, opens an absolutely-positioned dropdown (`hidden` by default, toggled via `toggleMenu()`), closed by clicking anywhere outside a `<td>`.
+- Row actions: single `⋯` button, right-aligned, must use the design system's portaled Popover component (`@/components/ui/popover`). Inline absolutely-positioned dropdowns (`absolute right-0 ...`) and manual fixed-overlay dismissal backdrops (`fixed inset-0`) are strictly forbidden, as they clip inside scrollable table containers (`overflow-x-auto`, `overflow-y-auto`). The popover renders via Radix Portal into document root with automatic collision detection and flip behavior.
 - Status is always a pill badge (see status colors above), never plain colored text.
 - Footer: `px-4 py-2.5 border-t border-c flex items-center justify-between text-xs text-muted` with page indicator + Previous/Next buttons (`border border-c rounded`).
 - Tables must be horizontally scrollable on mobile: wrap in a `div.overflow-x-auto`, never let the table force page-level horizontal scroll.
@@ -169,12 +169,15 @@ Do not build a bottom tab bar or a right-side drawer for mobile nav — left sli
 - Stacked layout: `label` above `input`, always.
 - `label`: `text-sm font-medium mb-1.5` (or `text-xs mono uppercase tracking-wide` for the console/mono variant).
 - `input`: `w-full px-3 py-2 rounded border border-c bg-transparent text-sm`.
+- Dropdowns / single-selection inputs: all dropdown inputs across the application must use the design system's Radix UI Select component (`@/components/ui/select`). Native HTML `<select>` elements are strictly forbidden.
+  - **Placeholder / Sentinel values**: Radix UI Select does not permit empty string `value=""` attributes on `SelectItem`. For unselected or optional states (such as "Select option..." or "All"), use an explicit sentinel value (e.g., `"all"`, `"none"`, or `"default"`) and map back to empty string, `undefined`, or `null` in form/filter state handlers. Initial empty states without a selection should use the `placeholder` prop on `SelectValue`.
 - Inline validation errors render directly below the relevant input (not implemented in the static template — reserve space below the input when wiring real forms).
 
 ### Overlays
 
 - **Sheets (slide-overs)**: right-aligned, for create/edit forms. Not yet built in the reference files — when built, mirror the mobile-nav slide-over mechanics but anchored right and triggered from row/page actions.
 - **Dialogs (modals)**: centered, reserved strictly for destructive/high-stakes confirmations. Do not use a modal for a create/edit form — that's a sheet's job.
+- **Popovers & Contextual Action Menus**: all table row actions (`⋯`), card action menus, and contextual popups must use `@/components/ui/popover` (`Popover`, `PopoverTrigger`, `PopoverContent`). The popover renders inside a top-level React portal with collision detection and auto-flip mechanics, ensuring menus never clip outside viewport or scrollable containers. Manual `fixed inset-0` click overlays and bespoke toggle wrappers are deprecated in favor of Radix's managed open state and outside-click dismissal.
 
 ### Feedback & states
 
