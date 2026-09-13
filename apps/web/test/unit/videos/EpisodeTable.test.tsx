@@ -232,18 +232,21 @@ describe('EpisodeTable Component', () => {
     const editBtn = screen.getByRole('button', { name: /^edit$/i });
     await user.click(editBtn);
     expect(onEditEpisode).toHaveBeenCalledWith(mockEpisodes[0]);
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
 
     // Manage Sources
     await user.click(menuBtn);
     const sourcesBtn = screen.getByRole('button', { name: /^sources$/i });
     await user.click(sourcesBtn);
     expect(onManageSources).toHaveBeenCalledWith(mockEpisodes[0]);
+    expect(screen.queryByRole('button', { name: /^sources$/i })).not.toBeInTheDocument();
 
     // Delete
     await user.click(menuBtn);
     const deleteBtn = screen.getByRole('button', { name: /^delete$/i });
     await user.click(deleteBtn);
     expect(onDeleteEpisode).toHaveBeenCalledWith(mockEpisodes[0]);
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
   it('supports selecting individual rows and displays the batch toolbar with selection count', async () => {

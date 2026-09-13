@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import type { DummyVideo } from './types';
 
 function formatDate(date: Date): string {
@@ -68,49 +69,46 @@ export function VideoCard({ video }: VideoCardProps) {
             </div>
           </div>
 
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((prev) => !prev)}
-              aria-label="More actions"
-              className="p-1 rounded text-muted hover:text-current hover-bg cursor-pointer transition-colors"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
+          <div className="shrink-0">
+            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="More actions"
+                  className="p-1 rounded text-muted hover:text-current hover-bg cursor-pointer transition-colors"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <circle cx="12" cy="5" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="19" r="2" />
+                  </svg>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-32 p-0 py-1 border border-c rounded shadow-sm"
               >
-                <circle cx="12" cy="5" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="12" cy="19" r="2" />
-              </svg>
-            </button>
-
-            {menuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
+                <button
+                  type="button"
                   onClick={() => setMenuOpen(false)}
-                />
-                <div className="absolute right-0 top-full mt-1 z-20 w-32 bg-card border border-c rounded shadow-sm py-1">
-                  <button
-                    type="button"
-                    onClick={() => setMenuOpen(false)}
-                    className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMenuOpen(false)}
-                    className="w-full text-left px-3 py-1.5 text-xs hover-bg text-red-600 dark:text-red-400 transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </>
-            )}
+                  className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(false)}
+                  className="w-full text-left px-3 py-1.5 text-xs hover-bg text-red-600 dark:text-red-400 transition-colors"
+                >
+                  Delete
+                </button>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>

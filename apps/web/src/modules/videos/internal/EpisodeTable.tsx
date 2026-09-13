@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { EpisodeBatchToolbar } from './EpisodeBatchToolbar';
 import type { SeriesDetails } from './api';
 
@@ -507,43 +508,65 @@ export function EpisodeTable({
 
                             {/* Row Actions */}
                             <td
-                              className="w-14 px-3 py-2 text-right relative"
+                              className="w-14 px-3 py-2 text-right"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setOpenMenuEpisodeId(
-                                    isMenuOpen ? null : episode.id
-                                  )}
-                                aria-label={`Actions for ${episode.title}`}
-                                className="p-1 rounded border border-c hover-bg text-muted hover:text-current transition-colors cursor-pointer"
+                              <Popover
+                                open={isMenuOpen}
+                                onOpenChange={(open) =>
+                                  setOpenMenuEpisodeId(open ? episode.id : null)
+                                }
                               >
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="currentColor"
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={`Actions for ${episode.title}`}
+                                    className="p-1 rounded border border-c hover-bg text-muted hover:text-current transition-colors cursor-pointer"
+                                  >
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                    >
+                                      <circle cx="12" cy="5" r="2" />
+                                      <circle cx="12" cy="12" r="2" />
+                                      <circle cx="12" cy="19" r="2" />
+                                    </svg>
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  align="end"
+                                  className="w-36 p-0 divide-y divide-[var(--border)] text-xs text-left"
                                 >
-                                  <circle cx="12" cy="5" r="2" />
-                                  <circle cx="12" cy="12" r="2" />
-                                  <circle cx="12" cy="19" r="2" />
-                                </svg>
-                              </button>
-
-                              {isMenuOpen && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 z-20"
-                                    onClick={() => setOpenMenuEpisodeId(null)}
-                                  />
-                                  <div className="absolute right-3 top-full mt-1 z-30 w-36 bg-card border border-c rounded shadow-md py-1 divide-y divide-[var(--border)] text-xs text-left">
-                                    <div className="py-0.5">
+                                  <div className="py-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenMenuEpisodeId(null);
+                                        onEditEpisode?.(episode);
+                                      }}
+                                      className="w-full text-left px-3 py-1.5 hover-bg flex items-center gap-2 cursor-pointer text-fg"
+                                    >
+                                      <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                      >
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                      </svg>
+                                      Edit
+                                    </button>
+                                    {onManageSources && (
                                       <button
                                         type="button"
                                         onClick={() => {
                                           setOpenMenuEpisodeId(null);
-                                          onEditEpisode?.(episode);
+                                          onManageSources(episode);
                                         }}
                                         className="w-full text-left px-3 py-1.5 hover-bg flex items-center gap-2 cursor-pointer text-fg"
                                       >
@@ -555,60 +578,37 @@ export function EpisodeTable({
                                           stroke="currentColor"
                                           strokeWidth="2"
                                         >
-                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                                         </svg>
-                                        Edit
+                                        Sources
                                       </button>
-                                      {onManageSources && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setOpenMenuEpisodeId(null);
-                                            onManageSources(episode);
-                                          }}
-                                          className="w-full text-left px-3 py-1.5 hover-bg flex items-center gap-2 cursor-pointer text-fg"
-                                        >
-                                          <svg
-                                            width="12"
-                                            height="12"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                          >
-                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                                          </svg>
-                                          Sources
-                                        </button>
-                                      )}
-                                    </div>
-                                    <div className="py-0.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setOpenMenuEpisodeId(null);
-                                          onDeleteEpisode?.(episode);
-                                        }}
-                                        className="w-full text-left px-3 py-1.5 hover-bg text-red-600 dark:text-red-400 flex items-center gap-2 cursor-pointer"
-                                      >
-                                        <svg
-                                          width="12"
-                                          height="12"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                        >
-                                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                                        </svg>
-                                        Delete
-                                      </button>
-                                    </div>
+                                    )}
                                   </div>
-                                </>
-                              )}
+                                  <div className="py-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenMenuEpisodeId(null);
+                                        onDeleteEpisode?.(episode);
+                                      }}
+                                      className="w-full text-left px-3 py-1.5 hover-bg text-red-600 dark:text-red-400 flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                      >
+                                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                      </svg>
+                                      Delete
+                                    </button>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             </td>
                           </tr>
                         )}

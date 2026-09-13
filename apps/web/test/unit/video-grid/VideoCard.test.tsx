@@ -54,13 +54,18 @@ describe('VideoCard component', () => {
     expect(kebab).toBeInTheDocument();
   });
 
-  it('shows dropdown items when kebab is clicked', async () => {
+  it('shows dropdown items when kebab is clicked and dismisses when clicking an option', async () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoCard video={mockVideo} />);
     const kebab = screen.getByRole('button', { name: /more/i });
     await user.click(kebab);
-    expect(screen.getByText('Edit')).toBeInTheDocument();
-    expect(screen.getByText('Delete')).toBeInTheDocument();
+    const editBtn = screen.getByRole('button', { name: 'Edit' });
+    const deleteBtn = screen.getByRole('button', { name: 'Delete' });
+    expect(editBtn).toBeInTheDocument();
+    expect(deleteBtn).toBeInTheDocument();
+
+    await user.click(editBtn);
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 
   it('renders a play overlay on hover', () => {

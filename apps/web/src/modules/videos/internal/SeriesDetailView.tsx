@@ -35,6 +35,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -657,116 +658,113 @@ export function SeriesDetailView({
           </div>
 
           {activeSeason && (
-            <div className="relative ml-auto">
-              <button
-                type="button"
-                onClick={() => setIsSeasonMenuOpen((prev) => !prev)}
-                aria-label="Season actions"
-                className="p-1.5 rounded border border-c bg-card text-muted hover:text-current hover-bg cursor-pointer transition-colors flex items-center justify-center"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
+            <div className="ml-auto">
+              <Popover open={isSeasonMenuOpen} onOpenChange={setIsSeasonMenuOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Season actions"
+                    className="p-1.5 rounded border border-c bg-card text-muted hover:text-current hover-bg cursor-pointer transition-colors flex items-center justify-center"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <circle cx="12" cy="5" r="2" />
+                      <circle cx="12" cy="12" r="2" />
+                      <circle cx="12" cy="19" r="2" />
+                    </svg>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="w-44 p-0 divide-y divide-[var(--border)] shadow-sm"
                 >
-                  <circle cx="12" cy="5" r="2" />
-                  <circle cx="12" cy="12" r="2" />
-                  <circle cx="12" cy="19" r="2" />
-                </svg>
-              </button>
-
-              {isSeasonMenuOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setIsSeasonMenuOpen(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-1 z-20 w-44 bg-card border border-c rounded shadow-sm py-1 divide-y divide-[var(--border)]">
-                    <div className="py-0.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsSeasonMenuOpen(false);
-                          setIsEditSeasonOpen(true);
-                        }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors flex items-center gap-2 cursor-pointer"
+                  <div className="py-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSeasonMenuOpen(false);
+                        setIsEditSeasonOpen(true);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors flex items-center gap-2 cursor-pointer"
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
                       >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                        </svg>
-                        Edit Season
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsSeasonMenuOpen(false);
-                          if (activeSeason) {
-                            if (navigator.clipboard?.writeText) {
-                              navigator.clipboard.writeText(activeSeason.id);
-                            }
-                            toast.success('Season ID copied to clipboard');
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      </svg>
+                      Edit Season
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSeasonMenuOpen(false);
+                        if (activeSeason) {
+                          if (navigator.clipboard?.writeText) {
+                            navigator.clipboard.writeText(activeSeason.id);
                           }
-                        }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors flex items-center gap-2 cursor-pointer"
-                      >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                        </svg>
-                        Copy Season ID
-                      </button>
-                    </div>
-                    <div className="py-0.5">
-                      <button
-                        type="button"
-                        disabled={series.seasons.length <= 1}
-                        title={
-                          series.seasons.length <= 1
-                            ? 'Cannot delete the only season in a series'
-                            : undefined
+                          toast.success('Season ID copied to clipboard');
                         }
-                        onClick={() => {
-                          if (series.seasons && series.seasons.length <= 1) return;
-                          setIsSeasonMenuOpen(false);
-                          setIsDeleteSeasonOpen(true);
-                        }}
-                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
-                          series.seasons.length <= 1
-                            ? 'opacity-50 cursor-not-allowed text-muted'
-                            : 'hover-bg text-red-600 dark:text-red-400 cursor-pointer'
-                        }`}
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors flex items-center gap-2 cursor-pointer"
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
                       >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                        </svg>
-                        Delete Season
-                      </button>
-                    </div>
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                      </svg>
+                      Copy Season ID
+                    </button>
                   </div>
-                </>
-              )}
+                  <div className="py-0.5">
+                    <button
+                      type="button"
+                      disabled={series.seasons.length <= 1}
+                      title={
+                        series.seasons.length <= 1
+                          ? 'Cannot delete the only season in a series'
+                          : undefined
+                      }
+                      onClick={() => {
+                        if (series.seasons && series.seasons.length <= 1) return;
+                        setIsSeasonMenuOpen(false);
+                        setIsDeleteSeasonOpen(true);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
+                        series.seasons.length <= 1
+                          ? 'opacity-50 cursor-not-allowed text-muted'
+                          : 'hover-bg text-red-600 dark:text-red-400 cursor-pointer'
+                      }`}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                      </svg>
+                      Delete Season
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
         </div>
