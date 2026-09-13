@@ -6,6 +6,11 @@ import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
   ListObjectsV2Command,
+  ListObjectVersionsCommand,
+  ListMultipartUploadsCommand,
+  AbortMultipartUploadCommand,
+  type ListObjectVersionsCommandOutput,
+  type ListMultipartUploadsCommandOutput,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Upload } from "@aws-sdk/lib-storage";
@@ -51,6 +56,20 @@ export interface BucketStorageUsage {
   objectCount: number;
 }
 
+export interface PurgeDanglingResult {
+  purgedVersionsCount: number;
+  purgedDeleteMarkersCount: number;
+}
+
+export interface AbortStaleMultipartUploadsOptions {
+  prefix?: string;
+  maxAgeSeconds?: number;
+}
+
+export interface AbortStaleMultipartUploadsResult {
+  abortedUploadsCount: number;
+}
+
 export interface S3StorageService {
   isConfigured(): boolean;
   getPresignedUploadUrl(key: string, contentType?: string): Promise<{ uploadUrl: string; key: string }>;
@@ -70,6 +89,8 @@ export interface S3StorageService {
   listObjects(options?: ListObjectsOptions): Promise<ListObjectsResult>;
   listAllObjects(prefix?: string): Promise<S3ObjectSummary[]>;
   getBucketStorageUsage(): Promise<BucketStorageUsage>;
+  purgeDanglingVersions(prefix?: string): Promise<PurgeDanglingResult>;
+  abortStaleMultipartUploads(options?: AbortStaleMultipartUploadsOptions): Promise<AbortStaleMultipartUploadsResult>;
   testConnection(): Promise<{ success: boolean; latencyMs: number }>;
   getPublicBaseUrl(): string | null;
 }
@@ -338,6 +359,61 @@ class DefaultS3StorageService implements S3StorageService {
     const client = this.ensureConfigured();
     if (!key) return;
 
+    // Hard delete: remove all versions and delete markers for this key
+    try {
+      let keyMarker: string | undefined = undefined;
+      let versionIdMarker: string | undefined = undefined;
+      do {
+        const versionsRes: ListObjectVersionsCommandOutput = await client.send(
+          new ListObjectVersionsCommand({
+            Bucket: this.bucket,
+            Prefix: key,
+            KeyMarker: keyMarker,
+            VersionIdMarker: versionIdMarker,
+          })
+        );
+
+        const toDelete: Array<{ Key: string; VersionId?: string }> = [];
+        for (const v of versionsRes.Versions ?? []) {
+          if (v.Key === key) {
+            toDelete.push({ Key: v.Key, VersionId: v.VersionId });
+          }
+        }
+        for (const dm of versionsRes.DeleteMarkers ?? []) {
+          if (dm.Key === key) {
+            toDelete.push({ Key: dm.Key, VersionId: dm.VersionId });
+          }
+        }
+
+        if (toDelete.length > 0) {
+          // Delete up to 1000 items per request
+          for (let i = 0; i < toDelete.length; i += 1000) {
+            const batch = toDelete.slice(i, i + 1000);
+            await client.send(
+              new DeleteObjectsCommand({
+                Bucket: this.bucket,
+                Delete: {
+                  Objects: batch,
+                  Quiet: true,
+                },
+              })
+            );
+          }
+        }
+
+        if (versionsRes.IsTruncated) {
+          keyMarker = versionsRes.NextKeyMarker;
+          versionIdMarker = versionsRes.NextVersionIdMarker;
+        } else {
+          keyMarker = undefined;
+          versionIdMarker = undefined;
+        }
+      } while (keyMarker || versionIdMarker);
+    } catch {
+      // Best-effort if bucket does not support or error occurred listing versions
+    }
+
+    // Always attempt DeleteObjectCommand as base / fallback deletion
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,
       Key: key,
@@ -350,14 +426,76 @@ class DefaultS3StorageService implements S3StorageService {
     const client = this.ensureConfigured();
     if (!keys || keys.length === 0) return;
 
-    const command = new DeleteObjectsCommand({
-      Bucket: this.bucket,
-      Delete: {
-        Objects: keys.map((key) => ({ Key: key })),
-      },
-    });
+    const uniqueKeys = Array.from(new Set(keys.filter(Boolean)));
+    if (uniqueKeys.length === 0) return;
 
-    await client.send(command);
+    // Hard delete: remove all versions and delete markers for all keys
+    try {
+      const allToDelete: Array<{ Key: string; VersionId?: string }> = [];
+      for (const key of uniqueKeys) {
+        let keyMarker: string | undefined = undefined;
+        let versionIdMarker: string | undefined = undefined;
+        do {
+          const versionsRes: ListObjectVersionsCommandOutput = await client.send(
+            new ListObjectVersionsCommand({
+              Bucket: this.bucket,
+              Prefix: key,
+              KeyMarker: keyMarker,
+              VersionIdMarker: versionIdMarker,
+            })
+          );
+
+          for (const v of versionsRes.Versions ?? []) {
+            if (v.Key === key) {
+              allToDelete.push({ Key: v.Key, VersionId: v.VersionId });
+            }
+          }
+          for (const dm of versionsRes.DeleteMarkers ?? []) {
+            if (dm.Key === key) {
+              allToDelete.push({ Key: dm.Key, VersionId: dm.VersionId });
+            }
+          }
+
+          if (versionsRes.IsTruncated) {
+            keyMarker = versionsRes.NextKeyMarker;
+            versionIdMarker = versionsRes.NextVersionIdMarker;
+          } else {
+            keyMarker = undefined;
+            versionIdMarker = undefined;
+          }
+        } while (keyMarker || versionIdMarker);
+      }
+
+      if (allToDelete.length > 0) {
+        for (let i = 0; i < allToDelete.length; i += 1000) {
+          const batch = allToDelete.slice(i, i + 1000);
+          await client.send(
+            new DeleteObjectsCommand({
+              Bucket: this.bucket,
+              Delete: {
+                Objects: batch,
+                Quiet: true,
+              },
+            })
+          );
+        }
+      }
+    } catch {
+      // Best effort version deletion
+    }
+
+    // Fallback/standard delete for all keys
+    for (let i = 0; i < uniqueKeys.length; i += 1000) {
+      const batch = uniqueKeys.slice(i, i + 1000);
+      const command = new DeleteObjectsCommand({
+        Bucket: this.bucket,
+        Delete: {
+          Objects: batch.map((key) => ({ Key: key })),
+        },
+      });
+
+      await client.send(command);
+    }
   }
 
   async listObjects(options?: ListObjectsOptions): Promise<ListObjectsResult> {
@@ -400,6 +538,129 @@ class DefaultS3StorageService implements S3StorageService {
     } while (continuationToken);
 
     return allObjects;
+  }
+
+  async purgeDanglingVersions(prefix?: string): Promise<PurgeDanglingResult> {
+    const client = this.ensureConfigured();
+
+    // 1. Get all active/live object keys in the bucket (or under prefix)
+    const activeObjects = await this.listAllObjects(prefix);
+    const activeKeys = new Set(activeObjects.map((o) => o.key));
+
+    // 2. Paginate over all object versions and delete markers
+    let keyMarker: string | undefined = undefined;
+    let versionIdMarker: string | undefined = undefined;
+    const toDelete: Array<{ Key: string; VersionId?: string }> = [];
+    let purgedVersionsCount = 0;
+    let purgedDeleteMarkersCount = 0;
+
+    do {
+      const versionsRes: ListObjectVersionsCommandOutput = await client.send(
+        new ListObjectVersionsCommand({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          KeyMarker: keyMarker,
+          VersionIdMarker: versionIdMarker,
+        })
+      );
+
+      for (const v of versionsRes.Versions ?? []) {
+        if (v.Key && !activeKeys.has(v.Key)) {
+          toDelete.push({ Key: v.Key, VersionId: v.VersionId });
+          purgedVersionsCount++;
+        }
+      }
+
+      for (const dm of versionsRes.DeleteMarkers ?? []) {
+        if (dm.Key && !activeKeys.has(dm.Key)) {
+          toDelete.push({ Key: dm.Key, VersionId: dm.VersionId });
+          purgedDeleteMarkersCount++;
+        }
+      }
+
+      if (versionsRes.IsTruncated) {
+        keyMarker = versionsRes.NextKeyMarker;
+        versionIdMarker = versionsRes.NextVersionIdMarker;
+      } else {
+        keyMarker = undefined;
+        versionIdMarker = undefined;
+      }
+    } while (keyMarker || versionIdMarker);
+
+    // 3. Batch delete dangling versions and markers
+    if (toDelete.length > 0) {
+      for (let i = 0; i < toDelete.length; i += 1000) {
+        const batch = toDelete.slice(i, i + 1000);
+        await client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: {
+              Objects: batch,
+              Quiet: true,
+            },
+          })
+        );
+      }
+    }
+
+    return {
+      purgedVersionsCount,
+      purgedDeleteMarkersCount,
+    };
+  }
+
+  async abortStaleMultipartUploads(
+    options?: AbortStaleMultipartUploadsOptions
+  ): Promise<AbortStaleMultipartUploadsResult> {
+    const client = this.ensureConfigured();
+    const maxAgeSeconds = options?.maxAgeSeconds ?? 86400; // default 24 hours
+    const cutoffTime = Date.now() - maxAgeSeconds * 1000;
+
+    let keyMarker: string | undefined = undefined;
+    let uploadIdMarker: string | undefined = undefined;
+    let abortedUploadsCount = 0;
+
+    do {
+      const response: ListMultipartUploadsCommandOutput = await client.send(
+        new ListMultipartUploadsCommand({
+          Bucket: this.bucket,
+          Prefix: options?.prefix,
+          KeyMarker: keyMarker,
+          UploadIdMarker: uploadIdMarker,
+        })
+      );
+
+      for (const upload of response.Uploads ?? []) {
+        if (!upload.Key || !upload.UploadId) continue;
+        const initiatedTime = upload.Initiated ? new Date(upload.Initiated).getTime() : 0;
+        if (initiatedTime <= cutoffTime) {
+          try {
+            await client.send(
+              new AbortMultipartUploadCommand({
+                Bucket: this.bucket,
+                Key: upload.Key,
+                UploadId: upload.UploadId,
+              })
+            );
+            abortedUploadsCount++;
+          } catch {
+            // Best effort abort per upload
+          }
+        }
+      }
+
+      if (response.IsTruncated) {
+        keyMarker = response.NextKeyMarker;
+        uploadIdMarker = response.NextUploadIdMarker;
+      } else {
+        keyMarker = undefined;
+        uploadIdMarker = undefined;
+      }
+    } while (keyMarker || uploadIdMarker);
+
+    return {
+      abortedUploadsCount,
+    };
   }
 
   async getBucketStorageUsage(): Promise<BucketStorageUsage> {

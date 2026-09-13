@@ -467,6 +467,17 @@ export function createStorageService<
     async scan(force = true, providerId?: string): Promise<{ count: number; totalBytes: number }> {
       invalidateCache(providerId);
       const { service, provider } = await resolveTargetProvider(providerId);
+
+      // Sweep dangling versions, delete markers, and stale incomplete multipart uploads
+      try {
+        await Promise.all([
+          service.purgeDanglingVersions(),
+          service.abortStaleMultipartUploads(),
+        ]);
+      } catch {
+        // Best-effort sweep during scan
+      }
+
       const cacheKey = provider?.id ?? "legacy_default";
       const objects = await getS3Objects(service, cacheKey, force);
       const totalBytes = objects.reduce((sum, obj) => sum + obj.size, 0);
@@ -646,6 +657,17 @@ export function createStorageService<
       reclaimedBytes: number;
     }> {
       const { service, provider } = await resolveTargetProvider(providerId);
+
+      // Sweep dangling versions, delete markers, and stale incomplete multipart uploads
+      try {
+        await Promise.all([
+          service.purgeDanglingVersions(),
+          service.abortStaleMultipartUploads(),
+        ]);
+      } catch {
+        // Best-effort sweep during purge
+      }
+
       const { items } = await getCorrelatedInventory(providerId);
       const orphanItems = items.filter((item) => item.status === "orphaned");
 

@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import type { S3StorageService, S3ObjectSummary } from "@repo/media-service";
 
 export function createMockS3(
@@ -24,6 +25,13 @@ export function createMockS3(
     getBucketStorageUsage: async () => ({
       totalSizeBytes: 0,
       objectCount: 0,
+    }),
+    purgeDanglingVersions: vi.fn().mockResolvedValue({
+      purgedVersionsCount: 0,
+      purgedDeleteMarkersCount: 0,
+    }),
+    abortStaleMultipartUploads: vi.fn().mockResolvedValue({
+      abortedUploadsCount: 0,
     }),
     testConnection: async () => ({ success: true, latencyMs: 10 }),
     getPublicBaseUrl: () => null,

@@ -16,6 +16,9 @@ vi.mock("@aws-sdk/client-s3", () => {
     DeleteObjectCommand: vi.fn().mockImplementation((input) => ({ type: "DeleteObjectCommand", input })),
     DeleteObjectsCommand: vi.fn().mockImplementation((input) => ({ type: "DeleteObjectsCommand", input })),
     ListObjectsV2Command: vi.fn().mockImplementation((input) => ({ type: "ListObjectsV2Command", input })),
+    ListObjectVersionsCommand: vi.fn().mockImplementation((input) => ({ type: "ListObjectVersionsCommand", input })),
+    ListMultipartUploadsCommand: vi.fn().mockImplementation((input) => ({ type: "ListMultipartUploadsCommand", input })),
+    AbortMultipartUploadCommand: vi.fn().mockImplementation((input) => ({ type: "AbortMultipartUploadCommand", input })),
   };
 });
 
@@ -152,6 +155,16 @@ describe("S3StorageService", () => {
       await expect(service.listAllObjects()).rejects.toThrow(S3NotConfiguredError);
     });
 
+    it("throws S3NotConfiguredError on purgeDanglingVersions", async () => {
+      const service = createS3StorageService();
+      await expect(service.purgeDanglingVersions()).rejects.toThrow(S3NotConfiguredError);
+    });
+
+    it("throws S3NotConfiguredError on abortStaleMultipartUploads", async () => {
+      const service = createS3StorageService();
+      await expect(service.abortStaleMultipartUploads()).rejects.toThrow(S3NotConfiguredError);
+    });
+
     it("throws S3NotConfiguredError on getBucketStorageUsage", async () => {
       const service = createS3StorageService();
       await expect(service.getBucketStorageUsage()).rejects.toThrow(S3NotConfiguredError);
@@ -225,7 +238,21 @@ describe("S3StorageService", () => {
       );
     });
 
-    it("deletes a single object", async () => {
+    it("permanently deletes an object and all its versions and delete markers", async () => {
+      // 1. ListObjectVersionsCommand returns versions and delete markers
+      mockSend.mockResolvedValueOnce({
+        Versions: [
+          { Key: "episodes/123/video.mp4", VersionId: "v1" },
+          { Key: "episodes/123/video.mp4", VersionId: "v2" },
+        ],
+        DeleteMarkers: [
+          { Key: "episodes/123/video.mp4", VersionId: "dm1" },
+        ],
+        IsTruncated: false,
+      });
+      // 2. DeleteObjectsCommand deletes versions
+      mockSend.mockResolvedValueOnce({});
+      // 3. Fallback/normal DeleteObjectCommand to ensure key is deleted
       mockSend.mockResolvedValueOnce({});
 
       const service = createS3StorageService(validConfig);
@@ -233,16 +260,47 @@ describe("S3StorageService", () => {
 
       expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "DeleteObjectCommand",
+          type: "ListObjectVersionsCommand",
           input: {
             Bucket: "my-bucket",
-            Key: "episodes/123/video.mp4",
+            Prefix: "episodes/123/video.mp4",
+          },
+        })
+      );
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "DeleteObjectsCommand",
+          input: {
+            Bucket: "my-bucket",
+            Delete: {
+              Objects: [
+                { Key: "episodes/123/video.mp4", VersionId: "v1" },
+                { Key: "episodes/123/video.mp4", VersionId: "v2" },
+                { Key: "episodes/123/video.mp4", VersionId: "dm1" },
+              ],
+              Quiet: true,
+            },
           },
         })
       );
     });
 
-    it("deletes multiple objects", async () => {
+    it("permanently deletes multiple objects and all their versions and delete markers", async () => {
+      // For obj1:
+      mockSend.mockResolvedValueOnce({
+        Versions: [{ Key: "episodes/123/v1.mp4", VersionId: "ver-1" }],
+        DeleteMarkers: [],
+        IsTruncated: false,
+      });
+      // For obj2:
+      mockSend.mockResolvedValueOnce({
+        Versions: [],
+        DeleteMarkers: [{ Key: "episodes/123/v2.mp4", VersionId: "marker-2" }],
+        IsTruncated: false,
+      });
+      // DeleteObjectsCommand for all versions
+      mockSend.mockResolvedValueOnce({});
+      // DeleteObjectsCommand for base keys fallback
       mockSend.mockResolvedValueOnce({});
 
       const service = createS3StorageService(validConfig);
@@ -254,7 +312,11 @@ describe("S3StorageService", () => {
           input: {
             Bucket: "my-bucket",
             Delete: {
-              Objects: [{ Key: "episodes/123/v1.mp4" }, { Key: "episodes/123/v2.mp4" }],
+              Objects: [
+                { Key: "episodes/123/v1.mp4", VersionId: "ver-1" },
+                { Key: "episodes/123/v2.mp4", VersionId: "marker-2" },
+              ],
+              Quiet: true,
             },
           },
         })
@@ -435,6 +497,154 @@ describe("S3StorageService", () => {
       expect(usage).toEqual({
         totalSizeBytes: 2000,
         objectCount: 2,
+      });
+    });
+
+    describe("purgeDanglingVersions", () => {
+      it("purges non-current versions and delete markers when active object does not exist", async () => {
+        // Mock ListObjectsV2 to return active live keys: only "episodes/1/active.mp4"
+        mockSend.mockResolvedValueOnce({
+          Contents: [{ Key: "episodes/1/active.mp4", Size: 100 }],
+          IsTruncated: false,
+        });
+
+        // Mock ListObjectVersionsCommand to return:
+        // - "episodes/1/active.mp4" version 1 (isLatest: true) -> KEEP
+        // - "episodes/1/active.mp4" version 0 (isLatest: false) -> keep or dangling? (Active object exists!)
+        // - "episodes/2/deleted.mp4" version old (isLatest: false) -> PURGE (no live object!)
+        // - "episodes/2/deleted.mp4" delete marker (isLatest: true) -> PURGE (no live object!)
+        // - "episodes/3/stale-marker.mp4" delete marker (isLatest: true) -> PURGE
+        mockSend.mockResolvedValueOnce({
+          Versions: [
+            { Key: "episodes/1/active.mp4", VersionId: "v-active", IsLatest: true },
+            { Key: "episodes/2/deleted.mp4", VersionId: "v-deleted", IsLatest: false },
+          ],
+          DeleteMarkers: [
+            { Key: "episodes/2/deleted.mp4", VersionId: "dm-deleted", IsLatest: true },
+            { Key: "episodes/3/stale-marker.mp4", VersionId: "dm-stale", IsLatest: true },
+          ],
+          IsTruncated: false,
+        });
+
+        // Mock DeleteObjectsCommand
+        mockSend.mockResolvedValueOnce({});
+
+        const service = createS3StorageService(validConfig);
+        const result = await service.purgeDanglingVersions();
+
+        expect(result).toEqual({
+          purgedVersionsCount: 1,
+          purgedDeleteMarkersCount: 2,
+        });
+
+        expect(mockSend).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: "DeleteObjectsCommand",
+            input: {
+              Bucket: "my-bucket",
+              Delete: {
+                Objects: [
+                  { Key: "episodes/2/deleted.mp4", VersionId: "v-deleted" },
+                  { Key: "episodes/2/deleted.mp4", VersionId: "dm-deleted" },
+                  { Key: "episodes/3/stale-marker.mp4", VersionId: "dm-stale" },
+                ],
+                Quiet: true,
+              },
+            },
+          })
+        );
+      });
+
+      it("handles empty bucket or no dangling versions gracefully", async () => {
+        mockSend.mockResolvedValueOnce({
+          Contents: [{ Key: "episodes/1/active.mp4" }],
+          IsTruncated: false,
+        });
+
+        mockSend.mockResolvedValueOnce({
+          Versions: [{ Key: "episodes/1/active.mp4", VersionId: "v1", IsLatest: true }],
+          DeleteMarkers: [],
+          IsTruncated: false,
+        });
+
+        const service = createS3StorageService(validConfig);
+        const result = await service.purgeDanglingVersions();
+
+        expect(result).toEqual({
+          purgedVersionsCount: 0,
+          purgedDeleteMarkersCount: 0,
+        });
+      });
+    });
+
+    describe("abortStaleMultipartUploads", () => {
+      it("lists and aborts multipart uploads older than specified threshold", async () => {
+        const now = Date.now();
+        const twoDaysAgo = new Date(now - 2 * 24 * 60 * 60 * 1000);
+        const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000);
+
+        mockSend.mockResolvedValueOnce({
+          Uploads: [
+            {
+              Key: "episodes/1/stale.mp4",
+              UploadId: "upload-stale-1",
+              Initiated: twoDaysAgo,
+            },
+            {
+              Key: "episodes/1/recent.mp4",
+              UploadId: "upload-recent-2",
+              Initiated: twoHoursAgo,
+            },
+          ],
+          IsTruncated: false,
+        });
+
+        mockSend.mockResolvedValueOnce({}); // AbortMultipartUploadCommand response
+
+        const service = createS3StorageService(validConfig);
+        // Default threshold 24 hours (86400s)
+        const result = await service.abortStaleMultipartUploads({ maxAgeSeconds: 86400 });
+
+        expect(result).toEqual({
+          abortedUploadsCount: 1,
+        });
+
+        expect(mockSend).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: "ListMultipartUploadsCommand",
+            input: {
+              Bucket: "my-bucket",
+              Prefix: undefined,
+              KeyMarker: undefined,
+              UploadIdMarker: undefined,
+            },
+          })
+        );
+
+        expect(mockSend).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: "AbortMultipartUploadCommand",
+            input: {
+              Bucket: "my-bucket",
+              Key: "episodes/1/stale.mp4",
+              UploadId: "upload-stale-1",
+            },
+          })
+        );
+      });
+
+      it("handles empty uploads list gracefully", async () => {
+        mockSend.mockResolvedValueOnce({
+          Uploads: [],
+          IsTruncated: false,
+        });
+
+        const service = createS3StorageService(validConfig);
+        const result = await service.abortStaleMultipartUploads();
+
+        expect(result).toEqual({
+          abortedUploadsCount: 0,
+        });
       });
     });
   });

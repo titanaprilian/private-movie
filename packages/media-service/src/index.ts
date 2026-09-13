@@ -28,6 +28,9 @@ import {
   type ListObjectsOptions,
   type ListObjectsResult,
   type BucketStorageUsage,
+  type PurgeDanglingResult,
+  type AbortStaleMultipartUploadsOptions,
+  type AbortStaleMultipartUploadsResult,
 } from "./internal/s3/s3-storage-service";
 export { createS3StorageService, S3NotConfiguredError, extractS3Key };
 export {
@@ -47,6 +50,9 @@ export type {
   ListObjectsOptions,
   ListObjectsResult,
   BucketStorageUsage,
+  PurgeDanglingResult,
+  AbortStaleMultipartUploadsOptions,
+  AbortStaleMultipartUploadsResult,
 };
 
 export type { BrowserFn, CreateStealthBrowserFnOptions };

@@ -32,6 +32,8 @@ function createMockS3(
   deleteObject: ReturnType<typeof vi.fn>;
   deleteObjects: ReturnType<typeof vi.fn>;
   listAllObjects: ReturnType<typeof vi.fn>;
+  purgeDanglingVersions: ReturnType<typeof vi.fn>;
+  abortStaleMultipartUploads: ReturnType<typeof vi.fn>;
 } {
   let internalObjects = [...objects];
   return {
@@ -58,6 +60,13 @@ function createMockS3(
       totalSizeBytes: internalObjects.reduce((acc, o) => acc + o.size, 0),
       objectCount: internalObjects.length,
     })),
+    purgeDanglingVersions: vi.fn(async () => ({
+      purgedVersionsCount: 0,
+      purgedDeleteMarkersCount: 0,
+    })),
+    abortStaleMultipartUploads: vi.fn(async () => ({
+      abortedUploadsCount: 0,
+    })),
     uploadObject: vi.fn(async () => {}),
     uploadStream: vi.fn(async () => {}),
     ...overrides,
@@ -65,6 +74,8 @@ function createMockS3(
     deleteObject: ReturnType<typeof vi.fn>;
     deleteObjects: ReturnType<typeof vi.fn>;
     listAllObjects: ReturnType<typeof vi.fn>;
+    purgeDanglingVersions: ReturnType<typeof vi.fn>;
+    abortStaleMultipartUploads: ReturnType<typeof vi.fn>;
   };
 }
 
@@ -230,6 +241,8 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         listObjects: async () => { throw new Error("not configured"); },
         listAllObjects: async () => { throw new Error("not configured"); },
         getBucketStorageUsage: async () => { throw new Error("not configured"); },
+        purgeDanglingVersions: async () => { throw new Error("not configured"); },
+        abortStaleMultipartUploads: async () => { throw new Error("not configured"); },
         testConnection: async () => { throw new Error("not configured"); },
         getPublicBaseUrl: () => null,
       };
@@ -469,7 +482,7 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
   });
 
   describe("POST /api/storage/scan", () => {
-    it("invalidates cache and returns fresh scan metrics", async () => {
+    it("invalidates cache, sweeps dangling versions & multipart uploads, and returns fresh scan metrics", async () => {
       const mockObjects: S3ObjectSummary[] = [
         { key: "f1.mp4", size: 1000, lastModified: new Date() },
         { key: "f2.mp4", size: 2000, lastModified: new Date() },
@@ -489,6 +502,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         count: 2,
         totalBytes: 3000,
       });
+
+      expect(mockS3.purgeDanglingVersions).toHaveBeenCalled();
+      expect(mockS3.abortStaleMultipartUploads).toHaveBeenCalled();
     });
   });
 
@@ -753,6 +769,8 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(mockS3.deleteObjects).toHaveBeenCalledWith([orphan1, orphan2]);
+      expect(mockS3.purgeDanglingVersions).toHaveBeenCalled();
+      expect(mockS3.abortStaleMultipartUploads).toHaveBeenCalled();
     });
 
     it("handles case where no orphans exist gracefully", async () => {
