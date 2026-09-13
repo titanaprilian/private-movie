@@ -7,6 +7,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -137,44 +144,58 @@ export function BulkIngestModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="bulk-ingest-target-season">Target Season</Label>
-                <select
-                  id="bulk-ingest-target-season"
-                  aria-label="Target Season"
-                  value={selectedSeasonId}
-                  onChange={(e) => setSelectedSeasonId(e.target.value)}
+                <Select
+                  value={selectedSeasonId || (seasonOptions.length === 0 ? 'empty' : undefined)}
+                  onValueChange={(val) => {
+                    if (val !== 'empty') {
+                      setSelectedSeasonId(val);
+                    }
+                  }}
                   disabled={seasonOptions.length === 0}
-                  className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
                 >
-                  {seasonOptions.length > 0 ? (
-                    seasonOptions.map((season) => (
-                      <option key={season.id} value={season.id}>
-                        {season.label}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">-- Default Season --</option>
-                  )}
-                </select>
+                  <SelectTrigger
+                    id="bulk-ingest-target-season"
+                    aria-label="Target Season"
+                  >
+                    <SelectValue placeholder="Select target season" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasonOptions.length > 0 ? (
+                      seasonOptions.map((season) => (
+                        <SelectItem key={season.id} value={season.id}>
+                          {season.label}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="empty">-- Default Season --</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="bulk-ingest-default-quality">
                   Default Quality
                 </Label>
-                <select
-                  id="bulk-ingest-default-quality"
-                  aria-label="Default Quality"
-                  value={defaultQuality}
-                  onChange={(e) => setDefaultQuality(e.target.value)}
-                  className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary"
+                <Select
+                  value={defaultQuality || 'auto'}
+                  onValueChange={(val) => setDefaultQuality(val === 'auto' ? '' : val)}
                 >
-                  <option value="">Auto / Extracted</option>
-                  <option value="2160p">2160p (4K)</option>
-                  <option value="1080p">1080p</option>
-                  <option value="720p">720p</option>
-                  <option value="480p">480p</option>
-                  <option value="360p">360p</option>
-                </select>
+                  <SelectTrigger
+                    id="bulk-ingest-default-quality"
+                    aria-label="Default Quality"
+                  >
+                    <SelectValue placeholder="Select default quality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Auto / Extracted</SelectItem>
+                    <SelectItem value="2160p">2160p (4K)</SelectItem>
+                    <SelectItem value="1080p">1080p</SelectItem>
+                    <SelectItem value="720p">720p</SelectItem>
+                    <SelectItem value="480p">480p</SelectItem>
+                    <SelectItem value="360p">360p</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -184,22 +205,27 @@ export function BulkIngestModal({
                 <Label htmlFor="bulk-ingest-storage-provider">
                   Target S3 Storage Provider
                 </Label>
-                <select
-                  id="bulk-ingest-storage-provider"
-                  data-testid="bulk-ingest-storage-provider-select"
-                  aria-label="Target S3 Storage Provider"
+                <Select
                   value={selectedStorageProviderId}
-                  onChange={(e) => setSelectedStorageProviderId(e.target.value)}
+                  onValueChange={(val) => setSelectedStorageProviderId(val)}
                   disabled={isProcessing}
-                  className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
                 >
-                  {storageProviders.map((provider) => (
-                    <option key={provider.id} value={provider.id}>
-                      {provider.name}
-                      {provider.isDefault ? ' (Default)' : ''}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    id="bulk-ingest-storage-provider"
+                    data-testid="bulk-ingest-storage-provider-select"
+                    aria-label="Target S3 Storage Provider"
+                  >
+                    <SelectValue placeholder="Select storage provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {storageProviders.map((provider) => (
+                      <SelectItem key={provider.id} value={provider.id}>
+                        {provider.name}
+                        {provider.isDefault ? ' (Default)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

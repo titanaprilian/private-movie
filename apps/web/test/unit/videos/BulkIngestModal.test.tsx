@@ -95,6 +95,12 @@ describe('BulkIngestModal component', () => {
             : input instanceof URL
               ? input.toString()
               : input.url;
+        if (url.includes('/api/auth/refresh')) {
+          return new Response(JSON.stringify({ data: { accessToken: 'mock-token' } }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
         if (url.includes('/api/storage/providers')) {
           return new Response(JSON.stringify({ data: mockProviders }), {
             status: 200,
@@ -135,8 +141,8 @@ describe('BulkIngestModal component', () => {
 
     expect(screen.getByText('Bulk Remote Video Ingest')).toBeInTheDocument();
     expect(screen.getByTestId('bulk-ingest-urls-textarea')).toBeInTheDocument();
-    expect(screen.getByLabelText(/Target Season/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Default Quality/i)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Target Season/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Default Quality/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Default Source Label/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Shared HTTP Referer/i)).toBeInTheDocument();
     expect(screen.getByTestId('bulk-ingest-parse-btn')).toBeInTheDocument();
@@ -252,7 +258,7 @@ describe('BulkIngestModal component', () => {
   });
 
   it('renders target storage provider selector in Step 1 and defaults to default provider', async () => {
-    renderWithProviders(
+    const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
         onOpenChange={vi.fn()}
@@ -262,13 +268,23 @@ describe('BulkIngestModal component', () => {
       />
     );
 
-    const providerSelect = await screen.findByTestId(
-      'bulk-ingest-storage-provider-select'
-    );
-    expect(providerSelect).toBeInTheDocument();
-    expect((providerSelect as HTMLSelectElement).value).toBe('prov-b2');
-    expect(screen.getByText('Backblaze B2 Main (Default)')).toBeInTheDocument();
-    expect(screen.getByText('Cloudflare R2 Secondary')).toBeInTheDocument();
+    const providerSelectTrigger = await screen.findByRole('combobox', {
+      name: /Target S3 Storage Provider/i,
+    });
+    expect(providerSelectTrigger).toBeInTheDocument();
+    await waitFor(() => {
+      expect(providerSelectTrigger).toHaveTextContent(/Backblaze B2 Main/i);
+    });
+
+    await user.click(providerSelectTrigger);
+    expect(
+      await screen.findByRole('option', {
+        name: 'Backblaze B2 Main (Default)',
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: 'Cloudflare R2 Secondary' })
+    ).toBeInTheDocument();
   });
 
   it('allows changing target storage provider in Step 1, displaying provider badge in Step 2 review and Step 3 progress', async () => {
@@ -282,11 +298,20 @@ describe('BulkIngestModal component', () => {
       />
     );
 
-    const providerSelect = await screen.findByTestId(
-      'bulk-ingest-storage-provider-select'
-    );
-    await user.selectOptions(providerSelect, 'prov-r2');
-    expect((providerSelect as HTMLSelectElement).value).toBe('prov-r2');
+    const providerSelectTrigger = await screen.findByRole('combobox', {
+      name: /Target S3 Storage Provider/i,
+    });
+    await waitFor(() => {
+      expect(providerSelectTrigger).toHaveTextContent(/Backblaze B2 Main/i);
+    });
+
+    await user.click(providerSelectTrigger);
+    const r2Option = await screen.findByRole('option', {
+      name: 'Cloudflare R2 Secondary',
+    });
+    await user.click(r2Option);
+
+    expect(providerSelectTrigger).toHaveTextContent('Cloudflare R2 Secondary');
 
     const textarea = screen.getByTestId('bulk-ingest-urls-textarea');
     await user.type(

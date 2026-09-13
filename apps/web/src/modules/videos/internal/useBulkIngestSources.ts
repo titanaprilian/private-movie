@@ -67,13 +67,13 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
     [storageProviders]
   );
   const [selectedStorageProviderId, setSelectedStorageProviderId] =
-    useState<string>('');
+    useState<string>(() => defaultProvider?.id ?? '');
 
   useEffect(() => {
-    if (defaultProvider) {
-      setSelectedStorageProviderId((prev) => prev || defaultProvider.id);
+    if (defaultProvider && !selectedStorageProviderId) {
+      setSelectedStorageProviderId(defaultProvider.id);
     }
-  }, [defaultProvider]);
+  }, [defaultProvider, selectedStorageProviderId]);
 
   const seasonOptions = useMemo(
     () => getSeasonOptions(options?.seasons, options?.localEpisodes),

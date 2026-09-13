@@ -120,14 +120,18 @@ describe('BulkScrapeModal component', () => {
 
     expect(screen.getByText('Bulk Add Sources')).toBeInTheDocument();
     expect(screen.getByLabelText(/Season \/ Scraper URL/i)).toBeInTheDocument();
-    const sourceTypeSelect = screen.getByLabelText(/Source Type/i);
-    expect(sourceTypeSelect).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Dramula' })).toBeInTheDocument();
+    const sourceTypeTrigger = screen.getByRole('combobox', { name: /Source Type/i });
+    expect(sourceTypeTrigger).toBeInTheDocument();
+    expect(sourceTypeTrigger).toHaveTextContent('Otakudesu');
 
-    await user.selectOptions(sourceTypeSelect, 'dramula');
-    expect(sourceTypeSelect).toHaveValue('dramula');
+    await user.click(sourceTypeTrigger);
+    const dramulaOption = await screen.findByRole('option', { name: 'Dramula' });
+    expect(dramulaOption).toBeInTheDocument();
 
-    expect(screen.getByLabelText(/Target Season/i)).toBeInTheDocument();
+    await user.click(dramulaOption);
+    expect(sourceTypeTrigger).toHaveTextContent('Dramula');
+
+    expect(screen.getByRole('combobox', { name: /Target Season/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Episode Offset/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Preview/i })).toBeInTheDocument();
   });
@@ -157,16 +161,19 @@ describe('BulkScrapeModal component', () => {
       />
     );
 
-    const targetSeasonSelect = screen.getByLabelText(/Target Season/i);
+    const targetSeasonTrigger = screen.getByRole('combobox', { name: /Target Season/i });
     const offsetInput = screen.getByLabelText(/Episode Offset/i);
 
     // Default first season is Season 1, offset is 0
-    expect(targetSeasonSelect).toHaveValue('s1');
+    expect(targetSeasonTrigger).toHaveTextContent('Season 1');
     expect(offsetInput).toHaveValue(0);
 
     // Select Season 2 (first ep order 13) -> offset should update to 12
-    await user.selectOptions(targetSeasonSelect, 's2');
-    expect(targetSeasonSelect).toHaveValue('s2');
+    await user.click(targetSeasonTrigger);
+    const season2Option = await screen.findByRole('option', { name: 'Season 2' });
+    await user.click(season2Option);
+
+    expect(targetSeasonTrigger).toHaveTextContent('Season 2');
     expect(offsetInput).toHaveValue(12);
 
     // User can manually edit Episode Offset after auto-calculation

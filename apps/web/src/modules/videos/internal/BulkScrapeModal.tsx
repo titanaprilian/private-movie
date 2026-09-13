@@ -8,6 +8,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -150,41 +157,55 @@ export function BulkScrapeModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="bulk-scrape-source-type">Source Type</Label>
-                  <select
-                    id="bulk-scrape-source-type"
-                    aria-label="Source Type"
+                  <Select
                     value={sourceType}
-                    onChange={(e) => setSourceType(e.target.value)}
+                    onValueChange={(val) => setSourceType(val)}
                     disabled={isFetchingPreview}
-                    className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
                   >
-                    <option value="otakudesu">Otakudesu</option>
-                    <option value="dramula">Dramula</option>
-                    <option value="direct">Direct Link</option>
-                    <option value="embed">Embed</option>
-                  </select>
+                    <SelectTrigger
+                      id="bulk-scrape-source-type"
+                      aria-label="Source Type"
+                    >
+                      <SelectValue placeholder="Select source type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="otakudesu">Otakudesu</SelectItem>
+                      <SelectItem value="dramula">Dramula</SelectItem>
+                      <SelectItem value="direct">Direct Link</SelectItem>
+                      <SelectItem value="embed">Embed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="bulk-scrape-target-season">Target Season</Label>
-                  <select
-                    id="bulk-scrape-target-season"
-                    aria-label="Target Season"
-                    value={selectedSeasonId}
-                    onChange={(e) => selectSeason(e.target.value)}
+                  <Select
+                    value={selectedSeasonId || (seasonOptions.length === 0 ? 'empty' : undefined)}
+                    onValueChange={(val) => {
+                      if (val !== 'empty') {
+                        selectSeason(val);
+                      }
+                    }}
                     disabled={isFetchingPreview || seasonOptions.length === 0}
-                    className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
                   >
-                    {seasonOptions.length > 0 ? (
-                      seasonOptions.map((season) => (
-                        <option key={season.id} value={season.id}>
-                          {season.label}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">-- No Seasons --</option>
-                    )}
-                  </select>
+                    <SelectTrigger
+                      id="bulk-scrape-target-season"
+                      aria-label="Target Season"
+                    >
+                      <SelectValue placeholder="Select target season" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {seasonOptions.length > 0 ? (
+                        seasonOptions.map((season) => (
+                          <SelectItem key={season.id} value={season.id}>
+                            {season.label}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="empty">-- No Seasons --</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                   {seasonOffsetHelperText && (
                     <p
                       className="text-xs text-muted"
