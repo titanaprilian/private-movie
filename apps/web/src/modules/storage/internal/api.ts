@@ -112,13 +112,49 @@ export interface BatchDeleteResponse {
   reclaimedBytes: number;
 }
 
-export function formatBytes(bytes: number, decimals = 1): string {
+export interface FormatBytesOptions {
+  decimals?: number;
+  standard?: 'binary' | 'decimal';
+}
+
+export function formatBytes(
+  bytes: number,
+  optionsOrDecimals: number | FormatBytesOptions = 1
+): string {
   if (bytes === 0) return '0 B';
-  const k = 1024;
+
+  let decimals = 1;
+  let standard: 'binary' | 'decimal' = 'binary';
+
+  if (typeof optionsOrDecimals === 'number') {
+    decimals = optionsOrDecimals;
+  } else if (typeof optionsOrDecimals === 'object' && optionsOrDecimals !== null) {
+    if (optionsOrDecimals.decimals !== undefined) decimals = optionsOrDecimals.decimals;
+    if (optionsOrDecimals.standard !== undefined) standard = optionsOrDecimals.standard;
+  }
+
   const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+  if (standard === 'decimal') {
+    const k = 1000;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const unitIndex = Math.min(i, sizes.length - 1);
+    return `${parseFloat((bytes / Math.pow(k, unitIndex)).toFixed(dm))} ${sizes[unitIndex]}`;
+  }
+
+  const k = 1024;
+  const sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  const unitIndex = Math.min(i, sizes.length - 1);
+  return `${parseFloat((bytes / Math.pow(k, unitIndex)).toFixed(dm))} ${sizes[unitIndex]}`;
+}
+
+export function formatDualBytes(bytes: number, decimals = 2): string {
+  if (bytes === 0) return '0 B (0 B)';
+  const binary = formatBytes(bytes, { decimals, standard: 'binary' });
+  const decimal = formatBytes(bytes, { decimals, standard: 'decimal' });
+  return `${binary} (${decimal})`;
 }
 
 function extractErrorMessage(error: unknown, fallback: string): string {

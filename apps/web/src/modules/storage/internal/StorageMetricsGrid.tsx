@@ -1,4 +1,4 @@
-import { formatBytes, type StorageMetrics } from './api';
+import { formatBytes, formatDualBytes, type StorageMetrics } from './api';
 import { Button } from '@/components/ui/button';
 import { HardDrive, Files, Link as LinkIcon, AlertTriangle, Settings } from 'lucide-react';
 
@@ -44,8 +44,9 @@ export function StorageMetricsGrid({
     orphanedFiles = 0,
   } = metrics;
 
-  const usedGb = (totalSizeBytes / (1024 * 1024 * 1024)).toFixed(1);
   const limitGb = (limitSizeBytes / (1024 * 1024 * 1024)).toFixed(0);
+  const decimalUsed = formatBytes(totalSizeBytes, { decimals: 2, standard: 'decimal' });
+  const binaryUsed = formatBytes(totalSizeBytes, { decimals: 2, standard: 'binary' });
 
   // Dynamic threshold color shifts: neutral/blue -> amber at >= 80% -> red at >= 90%
   let capacityBarColor = 'bg-primary';
@@ -78,8 +79,8 @@ export function StorageMetricsGrid({
                 {percentUsed.toFixed(1)}% Used
               </span>
             </div>
-            <p className="text-xs text-muted mt-0.5">
-              {formatBytes(totalSizeBytes)} used of {limitGb} GB limit
+            <p className="text-xs text-muted mt-0.5" data-testid="capacity-details">
+              {formatDualBytes(totalSizeBytes)} used of {limitGb} GB limit
             </p>
           </div>
           <Button
@@ -111,9 +112,11 @@ export function StorageMetricsGrid({
           <div>
             <div className="text-xs text-muted uppercase tracking-wide mono">Storage Used</div>
             <div className="text-xl font-semibold mono text-fg mt-1" data-testid="metric-total-size">
-              {formatBytes(totalSizeBytes)}
+              {binaryUsed}
             </div>
-            <div className="text-[11px] text-muted mt-0.5 mono">{usedGb} GB</div>
+            <div className="text-[11px] text-muted mt-0.5 mono" data-testid="metric-total-size-decimal">
+              {decimalUsed} decimal / provider
+            </div>
           </div>
           <div className="w-9 h-9 rounded bg-indigo-50 dark:bg-indigo-950/40 text-primary border border-indigo-200 dark:border-indigo-800 flex items-center justify-center">
             <HardDrive className="w-4 h-4" />

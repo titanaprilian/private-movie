@@ -370,6 +370,9 @@ export function StorageResourceTable({
                     {/* Formatted Size */}
                     <td className="p-3 mono text-xs text-fg font-medium">
                       {formatBytes(resource.sizeBytes)}
+                      <span className="text-[10px] text-muted block font-normal">
+                        {formatBytes(resource.sizeBytes, { decimals: 2, standard: 'decimal' })}
+                      </span>
                     </td>
 
                     {/* Last Modified Date */}

@@ -279,7 +279,7 @@ describe('Storage Management Console UI', () => {
   });
 
   describe('StorageMetricsGrid component', () => {
-    it('renders storage capacity bar and metric summary cards', () => {
+    it('renders storage capacity bar and metric summary cards with dual units', () => {
       renderWithProviders(
         <StorageMetricsGrid
           metrics={mockMetrics}
@@ -291,7 +291,13 @@ describe('Storage Management Console UI', () => {
       expect(screen.getByTestId('threshold-badge')).toHaveTextContent('20.0% Used');
       expect(screen.getByTestId('capacity-progress-bar')).toHaveStyle({ width: '20%' });
 
-      expect(screen.getByTestId('metric-total-size')).toHaveTextContent('10 GB');
+      // Capacity bar dual units (e.g. 10 GiB (10.74 GB) used of 50 GB limit)
+      expect(screen.getByTestId('capacity-details')).toHaveTextContent('10 GiB (10.74 GB) used of 50 GB limit');
+
+      // Metric total size card with binary and decimal units
+      expect(screen.getByTestId('metric-total-size')).toHaveTextContent('10 GiB');
+      expect(screen.getByTestId('metric-total-size-decimal')).toHaveTextContent('10.74 GB decimal / provider');
+
       expect(screen.getByTestId('metric-total-files')).toHaveTextContent('4');
       expect(screen.getByTestId('metric-linked-files')).toHaveTextContent('2');
       expect(screen.getByTestId('metric-orphaned-files')).toHaveTextContent('2');
@@ -382,8 +388,12 @@ describe('Storage Management Console UI', () => {
       await waitFor(() => {
         const rows = screen.getAllByTestId(/^row-/);
         expect(rows.length).toBe(4);
-        expect(rows[0]).toHaveTextContent('big_buck_bunny.mp4'); // 5 GB
-        expect(rows[1]).toHaveTextContent('unlinked_trailer.mp4'); // 3 GB
+        expect(rows[0]).toHaveTextContent('big_buck_bunny.mp4'); // 5 GiB
+        expect(rows[0]).toHaveTextContent('5 GiB');
+        expect(rows[0]).toHaveTextContent('5.37 GB');
+        expect(rows[1]).toHaveTextContent('unlinked_trailer.mp4'); // 3 GiB
+        expect(rows[1]).toHaveTextContent('3 GiB');
+        expect(rows[1]).toHaveTextContent('3.22 GB');
       });
     });
 
@@ -492,7 +502,7 @@ describe('Storage Management Console UI', () => {
       );
 
       expect(screen.getByTestId('delete-file-count')).toHaveTextContent('1');
-      expect(screen.getByTestId('reclaimed-space')).toHaveTextContent('5 GB');
+      expect(screen.getByTestId('reclaimed-space')).toHaveTextContent('5 GiB (5.37 GB)');
 
       // Warning badge MUST appear
       const warning = screen.getByTestId('sole-source-warning');

@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Trash2 } from 'lucide-react';
-import { formatBytes, type StorageResource } from './api';
+import { formatDualBytes, type StorageResource } from './api';
 
 export type DeleteTargetType = 'single' | 'batch' | 'purge';
 
@@ -123,7 +123,7 @@ export function DeleteConfirmDialog({
             <div className="flex justify-between">
               <span className="text-muted">Reclaimed space:</span>
               <span className="font-semibold text-green-600 dark:text-green-400" data-testid="reclaimed-space">
-                {formatBytes(reclaimedSizeBytes)}
+                {formatDualBytes(reclaimedSizeBytes)}
               </span>
             </div>
           </div>

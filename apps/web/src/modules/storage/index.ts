@@ -12,6 +12,7 @@ export {
   purgeOrphanFiles,
   getStoragePreviewUrl,
   formatBytes,
+  formatDualBytes,
   fetchStorageProviders,
   storageProvidersQueryOptions,
   createStorageProvider,
@@ -36,4 +37,5 @@ export type {
   UpdateStorageProviderRequest,
   TestStorageProviderRequest,
   TestStorageProviderResponseData,
+  FormatBytesOptions,
 } from './internal/api';

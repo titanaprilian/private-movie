@@ -10,6 +10,7 @@ import {
   purgeOrphanFiles,
   getStoragePreviewUrl,
   formatBytes,
+  formatDualBytes,
 } from '@/modules/storage/internal/api';
 import { setAccessToken } from '@/lib/api';
 
@@ -20,12 +21,30 @@ describe('Storage API Client Utilities', () => {
   });
 
   describe('formatBytes helper', () => {
-    it('formats bytes correctly into human readable units', () => {
+    it('formats binary bytes (GiB / MiB / KiB, base-1024) by default', () => {
       expect(formatBytes(0)).toBe('0 B');
-      expect(formatBytes(1024)).toBe('1 KB');
-      expect(formatBytes(1048576)).toBe('1 MB');
-      expect(formatBytes(1073741824)).toBe('1 GB');
-      expect(formatBytes(53687091200)).toBe('50 GB');
+      expect(formatBytes(1024)).toBe('1 KiB');
+      expect(formatBytes(1048576)).toBe('1 MiB');
+      expect(formatBytes(1073741824)).toBe('1 GiB');
+      expect(formatBytes(53687091200)).toBe('50 GiB');
+    });
+
+    it('formats decimal bytes (GB / MB / KB, base-1000) when unit standard is decimal', () => {
+      expect(formatBytes(0, { standard: 'decimal' })).toBe('0 B');
+      expect(formatBytes(1000, { standard: 'decimal' })).toBe('1 KB');
+      expect(formatBytes(1000000, { standard: 'decimal' })).toBe('1 MB');
+      expect(formatBytes(1000000000, { standard: 'decimal' })).toBe('1 GB');
+      expect(formatBytes(50000000000, { standard: 'decimal' })).toBe('50 GB');
+    });
+  });
+
+  describe('formatDualBytes helper', () => {
+    it('formats combined binary and decimal units together', () => {
+      expect(formatDualBytes(0)).toBe('0 B (0 B)');
+      // 1 GiB = 1073741824 bytes ≈ 1.07 GB
+      expect(formatDualBytes(1073741824)).toBe('1 GiB (1.07 GB)');
+      // 6.94 GiB approx 7451806924 bytes = 7.45 GB
+      expect(formatDualBytes(7451806924, 2)).toBe('6.94 GiB (7.45 GB)');
     });
   });
 
