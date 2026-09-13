@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Play, Download, ChevronDown, ListFilter } from 'lucide-react';
+import { Play, Download, ListFilter } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const MOCK_EPISODES = Array.from({ length: 8 }).map((_, i) => ({
   id: `ep-${i + 1}`,
@@ -11,6 +18,7 @@ const MOCK_EPISODES = Array.from({ length: 8 }).map((_, i) => ({
 
 export function WatchOption3() {
   const [activeEp, setActiveEp] = useState(1);
+  const [season, setSeason] = useState('s3');
 
   return (
     <div className="min-h-screen bg-bg text-fg font-sans relative overflow-x-hidden">
@@ -57,14 +65,16 @@ export function WatchOption3() {
             <div className="flex items-center gap-4 w-full md:w-auto">
               <span className="text-sm font-semibold">Episodes</span>
               <div className="relative inline-block w-full md:w-64">
-                <select className="w-full appearance-none bg-card border border-c rounded-lg py-2 pl-3 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
-                  <option>Season 3 (Priestella Arc)</option>
-                  <option>Season 2</option>
-                  <option>Season 1</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-muted">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
+                <Select value={season} onValueChange={setSeason}>
+                  <SelectTrigger aria-label="Select season" className="w-full bg-card border-c rounded-lg h-9 px-3 text-sm font-medium">
+                    <SelectValue placeholder="Select season" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="s3">Season 3 (Priestella Arc)</SelectItem>
+                    <SelectItem value="s2">Season 2</SelectItem>
+                    <SelectItem value="s1">Season 1</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             

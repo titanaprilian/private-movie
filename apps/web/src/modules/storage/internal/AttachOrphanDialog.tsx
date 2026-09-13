@@ -10,6 +10,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SeriesCombobox, seriesDetailQueryOptions } from '@/modules/videos';
 import type { AttachOrphanInput } from './api';
 
@@ -126,23 +133,26 @@ export function AttachOrphanDialog({
                 No episodes found for this series.
               </p>
             ) : (
-              <select
-                id="attach-episode-select"
-                aria-label="Select target episode"
+              <Select
                 value={selectedEpisodeId}
-                onChange={(e) => setSelectedEpisodeId(e.target.value)}
-                className="w-full h-9 px-3 py-1 rounded border border-c bg-transparent text-xs text-fg focus:outline-none focus:border-primary"
-                data-testid="attach-episode-select"
+                onValueChange={(val) => setSelectedEpisodeId(val)}
               >
-                <option value="" disabled className="bg-card text-muted">
-                  -- Choose an episode --
-                </option>
-                {episodes.map((ep) => (
-                  <option key={ep.id} value={ep.id} className="bg-card text-fg">
-                    Ep {ep.order ?? '?'}: {ep.title}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id="attach-episode-select"
+                  aria-label="Select target episode"
+                  className="w-full h-9 px-3 py-1 bg-transparent text-xs text-fg"
+                  data-testid="attach-episode-select"
+                >
+                  <SelectValue placeholder="-- Choose an episode --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {episodes.map((ep) => (
+                    <SelectItem key={ep.id} value={ep.id} className="text-xs">
+                      Ep {ep.order ?? '?'}: {ep.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
 

@@ -651,7 +651,9 @@ describe('Storage Management Console UI', () => {
 
       // Preset change autofills endpoint & region
       const presetSelect = screen.getByTestId('provider-preset-select');
-      await user.selectOptions(presetSelect, 'wasabi');
+      await user.click(presetSelect);
+      const wasabiOption = await screen.findByRole('option', { name: 'Wasabi' });
+      await user.click(wasabiOption);
 
       const endpointInput = screen.getByTestId('provider-endpoint-input');
       expect(endpointInput).toHaveValue('https://s3.wasabisys.com');

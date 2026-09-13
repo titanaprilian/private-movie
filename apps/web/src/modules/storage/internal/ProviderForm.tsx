@@ -4,6 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   type StorageProviderItem,
   type StorageProviderType,
   type CreateStorageProviderRequest,
@@ -206,20 +213,26 @@ export function ProviderForm({
         <Label htmlFor="provider-preset" className="text-[11px] font-medium text-fg">
           Provider Preset
         </Label>
-        <select
-          id="provider-preset"
-          data-testid="provider-preset-select"
+        <Select
           value={providerType}
-          onChange={(e) => handlePresetChange(e.target.value as StorageProviderType)}
-          className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
+          onValueChange={(val) => handlePresetChange(val as StorageProviderType)}
         >
-          <option value="backblaze">Backblaze B2</option>
-          <option value="cloudflare_r2">Cloudflare R2</option>
-          <option value="aws_s3">AWS S3</option>
-          <option value="wasabi">Wasabi</option>
-          <option value="minio">MinIO</option>
-          <option value="custom">Custom S3</option>
-        </select>
+          <SelectTrigger
+            id="provider-preset"
+            data-testid="provider-preset-select"
+            className="w-full h-8 px-2 bg-card text-xs mono"
+          >
+            <SelectValue placeholder="Select preset" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="backblaze" className="text-xs mono">Backblaze B2</SelectItem>
+            <SelectItem value="cloudflare_r2" className="text-xs mono">Cloudflare R2</SelectItem>
+            <SelectItem value="aws_s3" className="text-xs mono">AWS S3</SelectItem>
+            <SelectItem value="wasabi" className="text-xs mono">Wasabi</SelectItem>
+            <SelectItem value="minio" className="text-xs mono">MinIO</SelectItem>
+            <SelectItem value="custom" className="text-xs mono">Custom S3</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Provider Name */}

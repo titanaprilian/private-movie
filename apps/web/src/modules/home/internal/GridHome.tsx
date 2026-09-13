@@ -1,7 +1,18 @@
+import { useState } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 const GENRES = ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mecha", "Mystery", "Romance", "Sci-Fi", "Slice of Life", "Sports"];
 const SEASONS = ["Spring 2026", "Winter 2026", "Fall 2025", "Summer 2025"];
 
 export function GridHome() {
+  const [sortBy, setSortBy] = useState('popularity');
+
   return (
     <div className="min-h-screen bg-bg text-fg flex overflow-hidden">
       
@@ -43,12 +54,19 @@ export function GridHome() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">All Anime</h1>
           
-          <select className="bg-card border border-c inset-y-0 rounded text-sm p-2 outline-none focus:border-primary">
-            <option>Sort by: Popularity</option>
-            <option>Sort by: Rating</option>
-            <option>Sort by: Newest</option>
-            <option>Sort by: A-Z</option>
-          </select>
+          <div className="w-48">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger aria-label="Sort by" className="bg-card border-c text-sm">
+                <SelectValue placeholder="Sort by: Popularity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="popularity" className="text-sm">Sort by: Popularity</SelectItem>
+                <SelectItem value="rating" className="text-sm">Sort by: Rating</SelectItem>
+                <SelectItem value="newest" className="text-sm">Sort by: Newest</SelectItem>
+                <SelectItem value="a-z" className="text-sm">Sort by: A-Z</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

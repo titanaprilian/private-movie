@@ -4,6 +4,13 @@ import { toast } from 'sonner';
 import { AlertTriangle, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   storageMetricsQueryOptions,
   storageResourcesQueryOptions,
   storageProvidersQueryOptions,
@@ -188,18 +195,26 @@ export function StorageView() {
               </div>
 
               {/* Mobile / Compact Selector Dropdown */}
-              <select
-                data-testid="provider-selector-dropdown"
-                value={selectedProviderId || ''}
-                onChange={(e) => setSelectedProviderId(e.target.value)}
-                className="md:hidden h-7 px-2 rounded bg-card text-xs mono text-fg border-none focus:outline-none"
-              >
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.isDefault ? '(Default)' : ''}
-                  </option>
-                ))}
-              </select>
+              <div className="md:hidden">
+                <Select
+                  value={selectedProviderId || undefined}
+                  onValueChange={(val) => setSelectedProviderId(val)}
+                >
+                  <SelectTrigger
+                    data-testid="provider-selector-dropdown"
+                    className="h-7 px-2 border-none bg-card text-xs mono text-fg w-[140px]"
+                  >
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providers.map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-xs mono">
+                        {p.name} {p.isDefault ? '(Default)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
 
