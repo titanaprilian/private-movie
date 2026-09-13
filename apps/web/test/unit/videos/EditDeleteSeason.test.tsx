@@ -160,10 +160,11 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Title')).toHaveValue('Season 1');
 
-    const statusSelect = screen.getByLabelText('Status') as HTMLSelectElement;
-    expect(statusSelect).toBeInTheDocument();
-    expect(statusSelect.value).toBe('completed');
-    await user.selectOptions(statusSelect, 'ongoing');
+    const statusCombobox = screen.getByRole('combobox');
+    expect(statusCombobox).toBeInTheDocument();
+    expect(statusCombobox).toHaveTextContent(/completed/i);
+    await user.click(statusCombobox);
+    await user.click(await screen.findByRole('option', { name: 'Ongoing' }));
 
     const titleInput = screen.getByLabelText('Title');
     await user.clear(titleInput);
@@ -357,8 +358,9 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     await user.clear(titleInput);
     await user.type(titleInput, 'Season 1 Updated');
 
-    const statusSelect = screen.getByLabelText('Status') as HTMLSelectElement;
-    await user.selectOptions(statusSelect, 'ongoing');
+    const statusCombobox = screen.getByRole('combobox');
+    await user.click(statusCombobox);
+    await user.click(await screen.findByRole('option', { name: 'Ongoing' }));
 
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 

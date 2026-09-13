@@ -382,9 +382,8 @@ describe('ManageSourcesDialog component', () => {
     expect(s3Badge.className).toContain('text-purple-700');
 
     // Verify S3 option in Type selector
-    const typeSelect = screen.getByRole('combobox') as HTMLSelectElement;
-    expect(typeSelect.value).toBe('s3');
-    expect(screen.getByRole('option', { name: 'S3 Storage' })).toBeInTheDocument();
+    const typeSelect = screen.getByRole('combobox');
+    expect(typeSelect).toHaveTextContent(/s3 storage/i);
 
     // Edit fields
     const labelInput = screen.getByDisplayValue('Backblaze B2 Mirror');
@@ -723,11 +722,12 @@ describe('ManageSourcesDialog component', () => {
 
       const select = await screen.findByTestId('upload-provider-select');
       expect(select).toBeInTheDocument();
-      expect((select as HTMLSelectElement).value).toBe('prov-b2');
+      expect(select).toHaveTextContent(/backblaze b2 main/i);
 
       // Change provider to R2
-      await user.selectOptions(select, 'prov-r2');
-      expect((select as HTMLSelectElement).value).toBe('prov-r2');
+      await user.click(select);
+      await user.click(await screen.findByRole('option', { name: /cloudflare r2 primary/i }));
+      expect(select).toHaveTextContent(/cloudflare r2 primary/i);
     });
 
     it('renders provider selector dropdown pre-selected to default provider in Remote Ingest tab', async () => {
@@ -739,11 +739,12 @@ describe('ManageSourcesDialog component', () => {
 
       const select = await screen.findByTestId('remote-provider-select');
       expect(select).toBeInTheDocument();
-      expect((select as HTMLSelectElement).value).toBe('prov-b2');
+      expect(select).toHaveTextContent(/backblaze b2 main/i);
 
       // Change provider to R2
-      await user.selectOptions(select, 'prov-r2');
-      expect((select as HTMLSelectElement).value).toBe('prov-r2');
+      await user.click(select);
+      await user.click(await screen.findByRole('option', { name: /cloudflare r2 primary/i }));
+      expect(select).toHaveTextContent(/cloudflare r2 primary/i);
     });
 
     it('renders provider badge with friendly provider name on S3 sources in Existing Sources tab', async () => {

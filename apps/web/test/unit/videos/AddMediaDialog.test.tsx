@@ -100,7 +100,8 @@ describe('AddMediaDialog component', () => {
     useScrapeWorkerStore.getState().openDialog();
     const { user } = renderWithProviders(<AddMediaDialog />);
 
-    await user.selectOptions(screen.getByLabelText(/Media Type/i), 'tv');
+    await user.click(screen.getByRole('combobox', { name: /media type/i }));
+    await user.click(await screen.findByRole('option', { name: 'TV' }));
     await user.type(screen.getByLabelText(/TMDB ID/i), '1399');
     await user.click(screen.getByLabelText(/Include Specials/i));
 
@@ -159,7 +160,8 @@ describe('AddMediaDialog component', () => {
     useScrapeWorkerStore.getState().openDialog();
     const { user } = renderWithProviders(<AddMediaDialog />);
 
-    await user.selectOptions(screen.getByLabelText(/Media Type/i), 'movie');
+    await user.click(screen.getByRole('combobox', { name: /media type/i }));
+    await user.click(await screen.findByRole('option', { name: 'Movie' }));
     await user.type(screen.getByLabelText(/TMDB ID/i), '550');
     await user.click(screen.getByRole('button', { name: /^Next$/i }));
 
@@ -229,7 +231,8 @@ describe('AddMediaDialog component', () => {
     const { user, queryClient } = renderWithProviders(<AddMediaDialog />);
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    await user.selectOptions(screen.getByLabelText(/Media Type/i), 'tv');
+    await user.click(screen.getByRole('combobox', { name: /media type/i }));
+    await user.click(await screen.findByRole('option', { name: 'TV' }));
     await user.type(screen.getByLabelText(/TMDB ID/i), '1399');
     await user.click(screen.getByLabelText(/Include Specials/i));
 
@@ -272,7 +275,8 @@ describe('AddMediaDialog component', () => {
     useScrapeWorkerStore.getState().openDialog();
     const { user } = renderWithProviders(<AddMediaDialog />);
 
-    await user.selectOptions(screen.getByLabelText(/Media Type/i), 'movie');
+    await user.click(screen.getByRole('combobox', { name: /media type/i }));
+    await user.click(await screen.findByRole('option', { name: 'Movie' }));
     await user.type(screen.getByLabelText(/TMDB ID/i), '550');
     await user.click(screen.getByRole('button', { name: /^Next$/i }));
 

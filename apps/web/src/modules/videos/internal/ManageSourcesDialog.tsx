@@ -31,6 +31,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type Episode = SeriesDetails['episodes'][number];
 
@@ -112,15 +119,19 @@ function EditSourceRow({
         </div>
         <div>
           <Label className="text-[10px] text-muted">Type</Label>
-          <select
+          <Select
             value={type}
-            onChange={(e) => setType(e.target.value as 'direct' | 'embed' | 's3')}
-            className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
+            onValueChange={(val) => setType(val as 'direct' | 'embed' | 's3')}
           >
-            <option value="direct">Direct</option>
-            <option value="embed">Embed</option>
-            <option value="s3">S3 Storage</option>
-          </select>
+            <SelectTrigger className="w-full h-8 px-2 text-xs mono">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="direct">Direct</SelectItem>
+              <SelectItem value="embed">Embed</SelectItem>
+              <SelectItem value="s3">S3 Storage</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -145,18 +156,22 @@ function EditSourceRow({
       {type === 's3' && providers && providers.length > 0 && (
         <div>
           <Label className="text-[10px] text-muted">S3 Storage Provider</Label>
-          <select
-            value={storageProviderId || ''}
-            onChange={(e) => setStorageProviderId(e.target.value || null)}
-            className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
+          <Select
+            value={storageProviderId || 'default'}
+            onValueChange={(val) => setStorageProviderId(val === 'default' ? null : val)}
           >
-            <option value="">Default Provider</option>
-            {providers.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} {p.isDefault ? '(Default)' : ''}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full h-8 px-2 text-xs mono">
+              <SelectValue placeholder="Default Provider" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default Provider</SelectItem>
+              {providers.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name} {p.isDefault ? '(Default)' : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
       <div className="flex items-center justify-between pt-1 gap-2">
@@ -876,20 +891,26 @@ export function ManageSourcesDialog({
                   <Label htmlFor="remote-provider-select" className="text-[10px] text-muted">
                     Target S3 Storage Provider
                   </Label>
-                  <select
-                    id="remote-provider-select"
-                    data-testid="remote-provider-select"
+                  <Select
                     value={remoteProviderId || defaultProvider?.id || ''}
-                    onChange={(e) => setRemoteProviderId(e.target.value)}
+                    onValueChange={(val) => setRemoteProviderId(val)}
                     disabled={isIngesting}
-                    className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
                   >
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} {p.isDefault ? '(Default)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="remote-provider-select"
+                      data-testid="remote-provider-select"
+                      className="w-full h-8 px-2 text-xs mono"
+                    >
+                      <SelectValue placeholder="Select storage provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {providers.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} {p.isDefault ? '(Default)' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
@@ -1071,20 +1092,26 @@ export function ManageSourcesDialog({
                   <Label htmlFor="upload-provider-select" className="text-[10px] text-muted">
                     Target S3 Storage Provider
                   </Label>
-                  <select
-                    id="upload-provider-select"
-                    data-testid="upload-provider-select"
+                  <Select
                     value={uploadProviderId || defaultProvider?.id || ''}
-                    onChange={(e) => setUploadProviderId(e.target.value)}
+                    onValueChange={(val) => setUploadProviderId(val)}
                     disabled={isUploading}
-                    className="w-full h-8 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
                   >
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} {p.isDefault ? '(Default)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="upload-provider-select"
+                      data-testid="upload-provider-select"
+                      className="w-full h-8 px-2 text-xs mono"
+                    >
+                      <SelectValue placeholder="Select storage provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {providers.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} {p.isDefault ? '(Default)' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 

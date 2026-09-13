@@ -2,6 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import { importTmdb, type ImportTmdbParams } from './api';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export function AddMediaDialog() {
   const queryClient = useQueryClient();
@@ -85,15 +92,18 @@ export function AddMediaDialog() {
                 >
                   Media Type
                 </label>
-                <select
-                  id="media-tmdb-type"
+                <Select
                   value={tmdbType}
-                  onChange={(e) => setTmdbType(e.target.value as 'tv' | 'movie')}
-                  className="w-full px-3 py-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
+                  onValueChange={(val) => setTmdbType(val as 'tv' | 'movie')}
                 >
-                  <option value="tv">TV</option>
-                  <option value="movie">Movie</option>
-                </select>
+                  <SelectTrigger id="media-tmdb-type" className="w-full text-xs mono">
+                    <SelectValue placeholder="Select media type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tv">TV</SelectItem>
+                    <SelectItem value="movie">Movie</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

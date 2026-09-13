@@ -9,6 +9,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { SeriesDetails } from './api';
 
 export type Season = NonNullable<SeriesDetails['seasons']>[number];
@@ -59,19 +66,25 @@ export function BatchMoveSeasonDialog({
         <div className="space-y-3 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="target-season-select">Destination Season</Label>
-            <select
-              id="target-season-select"
+            <Select
               value={effectiveTargetSeasonId}
-              onChange={(e) => setSelectedTargetSeasonId(e.target.value)}
-              className="flex w-full rounded border border-c bg-card px-3 py-2 text-xs mono focus:outline-none focus:border-primary"
-              aria-label="Select destination season"
+              onValueChange={(val) => setSelectedTargetSeasonId(val)}
             >
-              {availableSeasons.map((season, idx) => (
-                <option key={season.id} value={season.id}>
-                  {season.title || `Season ${season.tmdbSeason ?? idx + 1}`}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                id="target-season-select"
+                className="w-full text-xs mono"
+                aria-label="Select destination season"
+              >
+                <SelectValue placeholder="Select destination season" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSeasons.map((season, idx) => (
+                  <SelectItem key={season.id} value={season.id}>
+                    {season.title || `Season ${season.tmdbSeason ?? idx + 1}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

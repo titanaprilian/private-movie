@@ -20,6 +20,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   type Episode,
   type VideoSource,
   type VideoSourceInput,
@@ -247,17 +254,21 @@ export function SourceManagementTable({
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="space-y-1">
               <Label className="text-[10px] text-muted">Type</Label>
-              <select
+              <Select
                 value={newType}
-                onChange={(e) =>
-                  setNewType(e.target.value as 'direct' | 'embed' | 's3')
+                onValueChange={(val) =>
+                  setNewType(val as 'direct' | 'embed' | 's3')
                 }
-                className="w-full h-7 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
               >
-                <option value="direct">Direct</option>
-                <option value="embed">Embed</option>
-                <option value="s3">S3 Storage</option>
-              </select>
+                <SelectTrigger className="w-full h-7 px-2 text-xs mono">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="direct">Direct</SelectItem>
+                  <SelectItem value="embed">Embed</SelectItem>
+                  <SelectItem value="s3">S3 Storage</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">
@@ -483,19 +494,23 @@ function SourceRowItem({
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label className="text-[10px] text-muted">Type</Label>
-            <select
+            <Select
               value={editState.type}
-              onChange={(e) =>
+              onValueChange={(val) =>
                 onEditStateChange.setType(
-                  e.target.value as 'direct' | 'embed' | 's3'
+                  val as 'direct' | 'embed' | 's3'
                 )
               }
-              className="w-full h-7 px-2 rounded border border-c bg-card text-xs mono focus:outline-none focus:border-primary"
             >
-              <option value="direct">Direct</option>
-              <option value="embed">Embed</option>
-              <option value="s3">S3 Storage</option>
-            </select>
+              <SelectTrigger className="w-full h-7 px-2 text-xs mono">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="direct">Direct</SelectItem>
+                <SelectItem value="embed">Embed</SelectItem>
+                <SelectItem value="s3">S3 Storage</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1">

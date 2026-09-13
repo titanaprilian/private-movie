@@ -13,6 +13,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export interface EditSeasonDialogProps {
   open: boolean;
@@ -101,16 +108,19 @@ export function EditSeasonDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="edit-season-status">Status</Label>
-            <select
-              id="edit-season-status"
+            <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value as 'completed' | 'ongoing' | 'pending')}
-              className="flex h-9 w-full rounded border border-c bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onValueChange={(val) => setStatus(val as 'completed' | 'ongoing' | 'pending')}
             >
-              <option value="completed" className="bg-card text-foreground">Completed</option>
-              <option value="ongoing" className="bg-card text-foreground">Ongoing</option>
-              <option value="pending" className="bg-card text-foreground">Pending</option>
-            </select>
+              <SelectTrigger id="edit-season-status">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="ongoing">Ongoing</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter className="pt-2">
             <Button
