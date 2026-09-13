@@ -1,8 +1,12 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { parseIngestUrl } from './parseIngestUrl';
 import { remoteIngestEpisodeVideoSource } from './api';
+import {
+  storageProvidersQueryOptions,
+  type StorageProviderItem,
+} from '@/modules/storage';
 import {
   getSeasonOptions,
   type LocalEpisodeItem,
@@ -48,6 +52,29 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
   const [defaultQuality, setDefaultQuality] = useState('');
   const [sharedReferer, setSharedReferer] = useState('');
 
+  // Storage Providers Query & Selected Provider
+  const { data: rawProviders } = useQuery(storageProvidersQueryOptions());
+  const storageProviders = useMemo(
+    () =>
+      Array.isArray(rawProviders)
+        ? (rawProviders as StorageProviderItem[])
+        : [],
+    [rawProviders]
+  );
+  const defaultProvider = useMemo(
+    () =>
+      storageProviders.find((p) => p.isDefault) || storageProviders[0] || null,
+    [storageProviders]
+  );
+  const [selectedStorageProviderId, setSelectedStorageProviderId] =
+    useState<string>('');
+
+  useEffect(() => {
+    if (defaultProvider) {
+      setSelectedStorageProviderId((prev) => prev || defaultProvider.id);
+    }
+  }, [defaultProvider]);
+
   const seasonOptions = useMemo(
     () => getSeasonOptions(options?.seasons, options?.localEpisodes),
     [options?.seasons, options?.localEpisodes]
@@ -59,7 +86,10 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
 
   useEffect(() => {
     if (seasonOptions.length > 0) {
-      if (!selectedSeasonId || !seasonOptions.some((s) => s.id === selectedSeasonId)) {
+      if (
+        !selectedSeasonId ||
+        !seasonOptions.some((s) => s.id === selectedSeasonId)
+      ) {
         setSelectedSeasonId(seasonOptions[0].id);
       }
     }
@@ -76,7 +106,9 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
     let result: LocalEpisodeItem[] = [];
 
     if (options?.seasons && options.seasons.length > 0) {
-      const targetSeason = options.seasons.find((s) => s.id === selectedSeasonId) ?? options.seasons[0];
+      const targetSeason =
+        options.seasons.find((s) => s.id === selectedSeasonId) ??
+        options.seasons[0];
       if (targetSeason?.episodes) {
         result = targetSeason.episodes.map((ep) => ({
           id: ep.id,
@@ -89,9 +121,15 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
       }
     }
 
-    if (result.length === 0 && options?.localEpisodes && options.localEpisodes.length > 0) {
+    if (
+      result.length === 0 &&
+      options?.localEpisodes &&
+      options.localEpisodes.length > 0
+    ) {
       if (selectedSeasonId) {
-        result = options.localEpisodes.filter((ep) => ep.seasonId === selectedSeasonId);
+        result = options.localEpisodes.filter(
+          (ep) => ep.seasonId === selectedSeasonId
+        );
       }
       if (result.length === 0) {
         result = options.localEpisodes;
@@ -102,71 +140,82 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
   }, [selectedSeasonId, options?.seasons, options?.localEpisodes]);
 
   // Step 1 -> Step 2: Parse raw text into structured items
-  const parseUrls = useCallback((textInput?: string) => {
-    const textToParse = textInput !== undefined ? textInput : rawUrlsText;
-    if (textInput !== undefined) {
-      setRawUrlsText(textInput);
-    }
-    const lines = textToParse
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+  const parseUrls = useCallback(
+    (textInput?: string) => {
+      const textToParse = textInput !== undefined ? textInput : rawUrlsText;
+      if (textInput !== undefined) {
+        setRawUrlsText(textInput);
+      }
+      const lines = textToParse
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
 
-    if (lines.length === 0) {
-      toast.error('No URLs provided', {
-        description: 'Please paste at least one direct video URL.',
-      });
-      return false;
-    }
-
-    const parsedItems: BulkIngestItem[] = lines.map((url, idx) => {
-      const parsed = parseIngestUrl(url);
-      const quality = defaultQuality || parsed.quality || null;
-      const label = defaultLabel && defaultLabel !== 'S3 Video' ? defaultLabel : parsed.label;
-
-      let matchedLocalEpisodeId: string | null = null;
-      let needsReview = true;
-
-      if (parsed.detectedEpisodeNumber !== null) {
-        const match = availableLocalEpisodes.find((ep) => ep.order === parsed.detectedEpisodeNumber);
-        if (match) {
-          matchedLocalEpisodeId = match.id;
-          needsReview = false;
-        }
+      if (lines.length === 0) {
+        toast.error('No URLs provided', {
+          description: 'Please paste at least one direct video URL.',
+        });
+        return false;
       }
 
-      return {
-        id: `ingest-item-${idx}-${Date.now()}`,
-        url,
-        filename: parsed.filename,
-        detectedEpisodeNumber: parsed.detectedEpisodeNumber,
-        matchedLocalEpisodeId,
-        label,
-        quality,
-        isIgnored: false,
-        needsReview,
-        status: 'pending',
-      };
-    });
+      const parsedItems: BulkIngestItem[] = lines.map((url, idx) => {
+        const parsed = parseIngestUrl(url);
+        const quality = defaultQuality || parsed.quality || null;
+        const label =
+          defaultLabel && defaultLabel !== 'S3 Video'
+            ? defaultLabel
+            : parsed.label;
 
-    setItems(parsedItems);
-    setStep(2);
-    return true;
-  }, [rawUrlsText, defaultQuality, defaultLabel, availableLocalEpisodes]);
+        let matchedLocalEpisodeId: string | null = null;
+        let needsReview = true;
+
+        if (parsed.detectedEpisodeNumber !== null) {
+          const match = availableLocalEpisodes.find(
+            (ep) => ep.order === parsed.detectedEpisodeNumber
+          );
+          if (match) {
+            matchedLocalEpisodeId = match.id;
+            needsReview = false;
+          }
+        }
+
+        return {
+          id: `ingest-item-${idx}-${Date.now()}`,
+          url,
+          filename: parsed.filename,
+          detectedEpisodeNumber: parsed.detectedEpisodeNumber,
+          matchedLocalEpisodeId,
+          label,
+          quality,
+          isIgnored: false,
+          needsReview,
+          status: 'pending',
+        };
+      });
+
+      setItems(parsedItems);
+      setStep(2);
+      return true;
+    },
+    [rawUrlsText, defaultQuality, defaultLabel, availableLocalEpisodes]
+  );
 
   // Update target local episode mapping
-  const updateMapping = useCallback((index: number, localEpisodeId: string | null) => {
-    setItems((prev) =>
-      prev.map((item, i) => {
-        if (i !== index) return item;
-        return {
-          ...item,
-          matchedLocalEpisodeId: localEpisodeId,
-          needsReview: localEpisodeId === null,
-        };
-      })
-    );
-  }, []);
+  const updateMapping = useCallback(
+    (index: number, localEpisodeId: string | null) => {
+      setItems((prev) =>
+        prev.map((item, i) => {
+          if (i !== index) return item;
+          return {
+            ...item,
+            matchedLocalEpisodeId: localEpisodeId,
+            needsReview: localEpisodeId === null,
+          };
+        })
+      );
+    },
+    []
+  );
 
   // Editable label
   const updateLabel = useCallback((index: number, label: string) => {
@@ -178,25 +227,35 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
   // Editable quality
   const updateQuality = useCallback((index: number, quality: string) => {
     setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, quality: quality || null } : item))
+      prev.map((item, i) =>
+        i === index ? { ...item, quality: quality || null } : item
+      )
     );
   }, []);
 
   // Toggle Include / Ignore
   const toggleIgnore = useCallback((index: number) => {
     setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, isIgnored: !item.isIgnored } : item))
+      prev.map((item, i) =>
+        i === index ? { ...item, isIgnored: !item.isIgnored } : item
+      )
     );
   }, []);
 
   // Summary counts
   const totalCount = items.length;
   const matchedCount = useMemo(
-    () => items.filter((i) => !i.isIgnored && i.matchedLocalEpisodeId !== null).length,
+    () =>
+      items.filter((i) => !i.isIgnored && i.matchedLocalEpisodeId !== null)
+        .length,
     [items]
   );
   const needsReviewCount = useMemo(
-    () => items.filter((i) => !i.isIgnored && (i.needsReview || i.matchedLocalEpisodeId === null)).length,
+    () =>
+      items.filter(
+        (i) =>
+          !i.isIgnored && (i.needsReview || i.matchedLocalEpisodeId === null)
+      ).length,
     [items]
   );
 
@@ -246,26 +305,34 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
       setItems((prev) =>
         prev.map((item, idx) =>
           idx === i
-            ? { ...item, status: 'ingesting', progress: { percent: 0, loaded: 0, total: 0 } }
+            ? {
+                ...item,
+                status: 'ingesting',
+                progress: { percent: 0, loaded: 0, total: 0 },
+              }
             : item
         )
       );
 
       try {
-        await remoteIngestEpisodeVideoSource(currentItem.matchedLocalEpisodeId, {
-          url: currentItem.url,
-          label: currentItem.label,
-          quality: currentItem.quality,
-          referer: sharedReferer || undefined,
-          signal: controller.signal,
-          onProgress: (p) => {
-            setItems((prev) =>
-              prev.map((item, idx) =>
-                idx === i ? { ...item, progress: p } : item
-              )
-            );
-          },
-        });
+        await remoteIngestEpisodeVideoSource(
+          currentItem.matchedLocalEpisodeId,
+          {
+            url: currentItem.url,
+            label: currentItem.label,
+            quality: currentItem.quality,
+            referer: sharedReferer || undefined,
+            storageProviderId: selectedStorageProviderId || undefined,
+            signal: controller.signal,
+            onProgress: (p) => {
+              setItems((prev) =>
+                prev.map((item, idx) =>
+                  idx === i ? { ...item, progress: p } : item
+                )
+              );
+            },
+          }
+        );
 
         if (controller.signal.aborted) break;
 
@@ -282,14 +349,22 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
         if (isAbort) {
           setItems((prev) =>
             prev.map((item, idx) =>
-              idx === i ? { ...item, status: 'failed', errorMessage: 'Cancelled' } : item
+              idx === i
+                ? { ...item, status: 'failed', errorMessage: 'Cancelled' }
+                : item
             )
           );
           break;
         }
 
         const errorMessage =
-          err instanceof Error ? err.message || 'Ingest failed' : 'Ingest failed';
+          err instanceof Error
+            ? err.message || 'Ingest failed'
+            : 'Ingest failed';
+        const errorCode =
+          err && typeof err === 'object' && 'code' in err
+            ? String((err as { code: unknown }).code)
+            : undefined;
 
         setItems((prev) =>
           prev.map((item, idx) =>
@@ -303,6 +378,34 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
           )
         );
         errorCount++;
+
+        // Fatal storage configuration check
+        const isFatalStorageError =
+          errorCode === 'S3_NOT_CONFIGURED' ||
+          errorCode === 'S3NotConfiguredError' ||
+          errorMessage.includes('S3_NOT_CONFIGURED') ||
+          errorMessage.includes('S3NotConfiguredError') ||
+          errorMessage.includes('Storage provider not found') ||
+          errorMessage.includes('storage provider not found');
+
+        if (isFatalStorageError) {
+          // Cancel/fail remaining pending items and abort queue
+          setItems((prev) =>
+            prev.map((item, idx) => {
+              if (idx > i && item.status === 'pending') {
+                return {
+                  ...item,
+                  status: 'failed',
+                  errorMessage: 'Cancelled',
+                };
+              }
+              return item;
+            })
+          );
+          currentCompleted = initialItems.length;
+          setCompletedCount(currentCompleted);
+          break;
+        }
       }
 
       currentCompleted++;
@@ -332,7 +435,7 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
       }
       options?.onSuccess?.();
     }
-  }, [items, sharedReferer, options, queryClient]);
+  }, [items, sharedReferer, selectedStorageProviderId, options, queryClient]);
 
   // Cancel ongoing queue execution
   const cancelQueue = useCallback(() => {
@@ -376,7 +479,8 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
     );
     const defaultSeasonId = currentSeasonOptions[0]?.id ?? '';
     setSelectedSeasonId(defaultSeasonId);
-  }, []);
+    setSelectedStorageProviderId(defaultProvider?.id ?? '');
+  }, [defaultProvider]);
 
   const progressPercentage =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -417,6 +521,9 @@ export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
     completedCount,
     progressPercentage,
     activeItem,
+    storageProviders,
+    selectedStorageProviderId,
+    setSelectedStorageProviderId,
     reset,
   };
 }

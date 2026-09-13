@@ -10,12 +10,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  useBulkIngestSources,
-} from './useBulkIngestSources';
+import { useBulkIngestSources } from './useBulkIngestSources';
 import { TargetEpisodeCombobox } from './TargetEpisodeCombobox';
 import { formatBytes } from './parseIngestUrl';
-import type { LocalEpisodeItem, SeasonGroupOption } from './useBulkScrapeSources';
+import type {
+  LocalEpisodeItem,
+  SeasonGroupOption,
+} from './useBulkScrapeSources';
 
 export interface BulkIngestModalProps {
   open: boolean;
@@ -63,8 +64,15 @@ export function BulkIngestModal({
     completedCount,
     progressPercentage,
     activeItem,
+    storageProviders,
+    selectedStorageProviderId,
+    setSelectedStorageProviderId,
     reset,
   } = useBulkIngestSources({ seriesId, seasons, localEpisodes, onSuccess });
+
+  const selectedProviderName =
+    storageProviders.find((p) => p.id === selectedStorageProviderId)?.name ??
+    null;
 
   useEffect(() => {
     if (!open) {
@@ -99,16 +107,21 @@ export function BulkIngestModal({
             {step === 1
               ? 'Paste multi-line video stream URLs for season ingestion to Backblaze B2/S3 storage.'
               : step === 2
-              ? 'Review matched episodes, manually assign unmatched URLs, and customize labels/qualities.'
-              : 'Sequential ingestion progress and transfer status log.'}
+                ? 'Review matched episodes, manually assign unmatched URLs, and customize labels/qualities.'
+                : 'Sequential ingestion progress and transfer status log.'}
           </DialogDescription>
         </DialogHeader>
 
         {/* STEP 1: Input URLs & Defaults */}
         {step === 1 && (
-          <form onSubmit={handleStep1Submit} className="space-y-4 py-2 flex-1 overflow-y-auto pr-1">
+          <form
+            onSubmit={handleStep1Submit}
+            className="space-y-4 py-2 flex-1 overflow-y-auto pr-1"
+          >
             <div className="space-y-2">
-              <Label htmlFor="bulk-ingest-urls">Video URLs (One per line)</Label>
+              <Label htmlFor="bulk-ingest-urls">
+                Video URLs (One per line)
+              </Label>
               <textarea
                 id="bulk-ingest-urls"
                 data-testid="bulk-ingest-urls-textarea"
@@ -145,7 +158,9 @@ export function BulkIngestModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bulk-ingest-default-quality">Default Quality</Label>
+                <Label htmlFor="bulk-ingest-default-quality">
+                  Default Quality
+                </Label>
                 <select
                   id="bulk-ingest-default-quality"
                   aria-label="Default Quality"
@@ -163,9 +178,36 @@ export function BulkIngestModal({
               </div>
             </div>
 
+            {/* Target S3 Storage Provider (Conditional) */}
+            {storageProviders.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="bulk-ingest-storage-provider">
+                  Target S3 Storage Provider
+                </Label>
+                <select
+                  id="bulk-ingest-storage-provider"
+                  data-testid="bulk-ingest-storage-provider-select"
+                  aria-label="Target S3 Storage Provider"
+                  value={selectedStorageProviderId}
+                  onChange={(e) => setSelectedStorageProviderId(e.target.value)}
+                  disabled={isProcessing}
+                  className="w-full px-3 py-2 rounded border border-c bg-card text-fg text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+                >
+                  {storageProviders.map((provider) => (
+                    <option key={provider.id} value={provider.id}>
+                      {provider.name}
+                      {provider.isDefault ? ' (Default)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="bulk-ingest-default-label">Default Source Label</Label>
+                <Label htmlFor="bulk-ingest-default-label">
+                  Default Source Label
+                </Label>
                 <Input
                   id="bulk-ingest-default-label"
                   type="text"
@@ -177,7 +219,8 @@ export function BulkIngestModal({
 
               <div className="space-y-2">
                 <Label htmlFor="bulk-ingest-referer">
-                  Shared HTTP Referer <span className="text-muted font-normal">(Optional)</span>
+                  Shared HTTP Referer{' '}
+                  <span className="text-muted font-normal">(Optional)</span>
                 </Label>
                 <Input
                   id="bulk-ingest-referer"
@@ -208,22 +251,32 @@ export function BulkIngestModal({
         {step === 2 && (
           <div className="space-y-4 py-2 overflow-y-auto flex-1 pr-1">
             {/* Header counters */}
-            <div className="flex items-center justify-between text-xs mono p-2.5 rounded border border-c bg-sidebar">
-              <span>
-                Total URLs: <strong>{totalCount}</strong>
-              </span>
-              <span>
-                Matched:{' '}
-                <strong className="text-green-600 dark:text-green-400">
-                  {matchedCount}
-                </strong>
-              </span>
-              <span>
-                Needs Review:{' '}
-                <strong className="text-amber-600 dark:text-amber-400">
-                  {needsReviewCount}
-                </strong>
-              </span>
+            <div className="flex items-center justify-between gap-2 flex-wrap text-xs mono p-2.5 rounded border border-c bg-sidebar">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span>
+                  Total URLs: <strong>{totalCount}</strong>
+                </span>
+                <span>
+                  Matched:{' '}
+                  <strong className="text-green-600 dark:text-green-400">
+                    {matchedCount}
+                  </strong>
+                </span>
+                <span>
+                  Needs Review:{' '}
+                  <strong className="text-amber-600 dark:text-amber-400">
+                    {needsReviewCount}
+                  </strong>
+                </span>
+              </div>
+              {selectedProviderName && (
+                <span
+                  data-testid="bulk-ingest-target-provider-badge"
+                  className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-300 dark:border-purple-800"
+                >
+                  Target: {selectedProviderName}
+                </span>
+              )}
             </div>
 
             {/* List of URLs for matching & editing */}
@@ -239,7 +292,10 @@ export function BulkIngestModal({
                   {/* Top line: Filename & Status Badges */}
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
-                      <span className="font-medium text-current truncate max-w-sm" title={item.url}>
+                      <span
+                        className="font-medium text-current truncate max-w-sm"
+                        title={item.url}
+                      >
                         {item.filename}
                       </span>
                       {item.detectedEpisodeNumber !== null && (
@@ -337,9 +393,12 @@ export function BulkIngestModal({
             <div className="space-y-2 p-3 rounded border border-c bg-sidebar">
               <div className="flex items-center justify-between text-xs mono">
                 <span>
-                  Processing: Item <strong>{completedCount}</strong> of {totalCount} ({progressPercentage}%)
+                  Processing: Item <strong>{completedCount}</strong> of{' '}
+                  {totalCount} ({progressPercentage}%)
                 </span>
-                <span className="font-semibold text-primary">{progressPercentage}%</span>
+                <span className="font-semibold text-primary">
+                  {progressPercentage}%
+                </span>
               </div>
               <div
                 className="w-full bg-card border border-c rounded-full h-3 overflow-hidden p-0.5"
@@ -354,14 +413,29 @@ export function BulkIngestModal({
                 />
               </div>
 
-              {/* Active Transfer Details */}
-              {activeItem?.progress && (
-                <div className="text-[11px] mono text-muted flex items-center justify-between pt-1">
-                  <span className="truncate max-w-md">Ingesting: {activeItem.filename}</span>
-                  <span>
-                    {activeItem.progress.percent}% - {formatBytes(activeItem.progress.loaded)}{' '}
-                    {activeItem.progress.total > 0 ? `/ ${formatBytes(activeItem.progress.total)}` : ''}
+              {/* Target Provider & Active Transfer Details */}
+              <div className="flex items-center justify-between gap-2 flex-wrap pt-1 text-[11px] mono text-muted">
+                {selectedProviderName && (
+                  <span data-testid="bulk-ingest-progress-provider">
+                    Target Provider:{' '}
+                    <strong className="text-current font-medium">
+                      {selectedProviderName}
+                    </strong>
                   </span>
+                )}
+                {activeItem?.progress && (
+                  <span className="ml-auto">
+                    {activeItem.progress.percent}% -{' '}
+                    {formatBytes(activeItem.progress.loaded)}{' '}
+                    {activeItem.progress.total > 0
+                      ? `/ ${formatBytes(activeItem.progress.total)}`
+                      : ''}
+                  </span>
+                )}
+              </div>
+              {activeItem?.progress && (
+                <div className="text-[11px] mono text-muted truncate max-w-md">
+                  Ingesting: {activeItem.filename}
                 </div>
               )}
             </div>
@@ -397,10 +471,10 @@ export function BulkIngestModal({
                           item.status === 'completed'
                             ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                             : item.status === 'ingesting'
-                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 animate-pulse'
-                            : item.status === 'failed'
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 animate-pulse'
+                              : item.status === 'failed'
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
                         }`}
                       >
                         {item.status}
