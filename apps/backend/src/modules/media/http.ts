@@ -93,6 +93,36 @@ const AD_SUPPRESSION_SHIM = `<script>
     }
 
     try {
+      if (typeof HTMLIFrameElement !== 'undefined' && HTMLIFrameElement.prototype) {
+        var originalContentWindowGetter = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'contentWindow')?.get;
+        Object.defineProperty(HTMLIFrameElement.prototype, 'contentWindow', {
+          get: function() {
+            var cw = originalContentWindowGetter ? originalContentWindowGetter.apply(this) : null;
+            if (cw) {
+              try {
+                cw.open = function() { return mockWindow; };
+              } catch (e) {}
+            }
+            return cw;
+          },
+          configurable: true
+        });
+      }
+    } catch (e) {}
+
+    try {
+      if (typeof HTMLFormElement !== 'undefined' && HTMLFormElement.prototype) {
+        var originalSubmit = HTMLFormElement.prototype.submit;
+        HTMLFormElement.prototype.submit = function() {
+          if (this.getAttribute('target') === '_blank' || this.target === '_blank') {
+            return;
+          }
+          return originalSubmit.apply(this, arguments);
+        };
+      }
+    } catch (e) {}
+
+    try {
       var originalClick = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function() {
         if (this.getAttribute('target') === '_blank' || this.target === '_blank') {
@@ -130,6 +160,100 @@ const AD_SUPPRESSION_SHIM = `<script>
     } catch (e) {}
   })();
 </script>`;
+
+const KNOWN_AD_SCRIPT_PATTERNS = [
+  /css\.js/i,
+  /tag\.min\.js/i,
+  /code\.min\.js/i,
+  /daly2024/i,
+  /effectivecpmnetwork/i,
+  /bvtpk/i,
+  /humeraldurezza/i,
+  /clarity/i,
+  /yandex/i,
+  /googletagmanager/i,
+];
+
+const VIDHIDE_ANTI_CLICKJACK_CSS = `<style id="pm-anti-clickjack">
+  #adbd, .overdiv, div[style*="2147483647"], div[style*="opacity: 0.01"], div[style*="opacity:0.01"] {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    z-index: -9999 !important;
+  }
+</style>`;
+
+function sanitizeHtmlContent(html: string, domain: string): string {
+  let processed = html;
+
+  // 1. Strip known ad script tags
+  // Replace <script ...>...</script> or <script .../> matching known ad patterns
+  processed = processed.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (match, scriptBody) => {
+    for (const pattern of KNOWN_AD_SCRIPT_PATTERNS) {
+      if (pattern.test(match) || pattern.test(scriptBody)) {
+        return "";
+      }
+    }
+    return match;
+  });
+
+  // 2. Filedon embed sanitization: sanitize data-page attribute
+  processed = processed.replace(/data-page=(['"])([\s\S]*?)\1/gi, (match, quote, jsonStr) => {
+    try {
+      // Decode HTML entities if any (e.g. &quot;)
+      const decoded = jsonStr
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&");
+      const parsed = JSON.parse(decoded);
+      if (typeof parsed === "object" && parsed !== null) {
+        parsed.ads_enabled = false;
+        parsed.ad_slots = {};
+        parsed.footer_script = "";
+        parsed.ads_on_embed = false;
+        const newJson = JSON.stringify(parsed);
+        // If the original used single quotes, double quotes inside are safe; if double quotes, escape them
+        if (quote === "'") {
+          return `data-page='${newJson}'`;
+        } else {
+          return `data-page="${newJson.replace(/"/g, '&quot;')}"`;
+        }
+      }
+    } catch {
+      // If parsing fails, fall back to string replacements
+      const fallback = jsonStr
+        .replace(/"ads_enabled"\s*:\s*true/g, '"ads_enabled":false')
+        .replace(/"ads_on_embed"\s*:\s*true/g, '"ads_on_embed":false')
+        .replace(/"ad_slots"\s*:\s*\{[^}]*\}/g, '"ad_slots":{}')
+        .replace(/"footer_script"\s*:\s*"[^"]*"/g, '"footer_script":""');
+      return `data-page=${quote}${fallback}${quote}`;
+    }
+    return match;
+  });
+
+  // 3. Rewrite absolute links matching target domain
+  // https://domain/ -> /api/media/proxy/domain/
+  const domainEscaped = domain.replace(/\./g, "\\.");
+  const domainRegex = new RegExp(`https?://${domainEscaped}/`, "gi");
+  processed = processed.replace(domainRegex, `/api/media/proxy/${domain}/`);
+
+  // 4. Inject base tag, hardened shim, and anti-clickjack CSS into <head>
+  const injections = `<base href="/api/media/proxy/${domain}/">\n  ${VIDHIDE_ANTI_CLICKJACK_CSS}\n  ${AD_SUPPRESSION_SHIM}`;
+
+  if (/(<head[^>]*>)/i.test(processed)) {
+    processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);
+  } else if (/(<html[^>]*>)/i.test(processed)) {
+    processed = processed.replace(/(<html[^>]*>)/i, `$1\n<head>\n  ${injections}\n</head>`);
+  } else {
+    processed = `<head>\n  ${injections}\n</head>\n${processed}`;
+  }
+
+  return processed;
+}
 
 /**
  * Root-level route for the embed sandbox bootstrap.
@@ -302,6 +426,100 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         query: t.Object({
           url: t.String(),
         }),
+      }
+    )
+    .all(
+      "/media/proxy/:domain/*",
+      async ({ params, request, set }) => {
+        try {
+          const domain = params.domain;
+          const wildcard = params["*"] || "";
+          const requestUrl = new URL(request.url);
+          const searchParams = requestUrl.search;
+          const targetUrl = `https://${domain}/${wildcard}${searchParams}`;
+
+          // Build headers for outbound request
+          const outboundHeaders: Record<string, string> = {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            Referer: `https://${domain}`,
+          };
+
+          // Forward safe inbound request headers
+          request.headers.forEach((value, key) => {
+            const lowerKey = key.toLowerCase();
+            const unsafeHeaders = ["host", "origin", "referer", "cookie", "connection", "accept-encoding"];
+            if (!unsafeHeaders.includes(lowerKey)) {
+              outboundHeaders[key] = value;
+            }
+          });
+
+          const isGetOrHead = ["GET", "HEAD"].includes(request.method.toUpperCase());
+          const targetResponse = await fetch(targetUrl, {
+            method: request.method,
+            headers: outboundHeaders,
+            body: isGetOrHead ? undefined : await request.clone().arrayBuffer(),
+          });
+
+          if (!targetResponse.ok) {
+            return errorResponse(
+              set,
+              targetResponse.status,
+              new Error(`Target server returned ${targetResponse.status}: ${targetResponse.statusText}`)
+            );
+          }
+
+          const rawContentType = targetResponse.headers.get("Content-Type") || "";
+          const isHtml = rawContentType.toLowerCase().includes("text/html");
+
+          if (isHtml) {
+            const html = await targetResponse.text();
+            const sanitizedHtml = sanitizeHtmlContent(html, domain);
+            return new Response(sanitizedHtml, {
+              status: 200,
+              headers: {
+                "Content-Type": rawContentType || "text/html; charset=utf-8",
+                "Access-Control-Allow-Origin": "*",
+              },
+            });
+          }
+
+          // Sub-resources & streams: stream response directly with CORS
+          const responseHeaders: HeadersInit = {
+            "Access-Control-Allow-Origin": "*",
+          };
+
+          const contentType = targetResponse.headers.get("Content-Type");
+          if (contentType) {
+            responseHeaders["Content-Type"] = contentType;
+          }
+
+          const contentLength = targetResponse.headers.get("Content-Length");
+          if (contentLength) {
+            responseHeaders["Content-Length"] = contentLength;
+          }
+
+          const contentRange = targetResponse.headers.get("Content-Range");
+          if (contentRange) {
+            responseHeaders["Content-Range"] = contentRange;
+          }
+
+          const acceptRanges = targetResponse.headers.get("Accept-Ranges");
+          if (acceptRanges) {
+            responseHeaders["Accept-Ranges"] = acceptRanges;
+          }
+
+          return new Response(targetResponse.body, {
+            status: targetResponse.status,
+            headers: responseHeaders,
+          });
+        } catch (error) {
+          return errorResponse(
+            set,
+            500,
+            error instanceof Error ? error : new Error("Proxy request failed")
+          );
+        }
       }
     )
     .all(
