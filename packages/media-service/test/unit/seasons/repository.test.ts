@@ -47,4 +47,63 @@ describe("seasons repository updateSeason status", () => {
     expect(setPayload.status).toBe("ongoing");
     expect(result.status).toBe("ongoing");
   });
+
+  it("updates scraperUrl, source, episodeOffset, lastScrapedAt, lastScrapeError", async () => {
+    const seasonId = "season-123";
+    const now = new Date("2026-03-01T12:00:00Z");
+    const mockUpdatedSeason = {
+      id: seasonId,
+      seriesId: "series-123",
+      title: "Season 1",
+      description: null,
+      posterUrl: null,
+      seasonNumber: 1,
+      status: "ongoing",
+      scraperUrl: "https://otakudesu.cloud/anime/example",
+      source: "otakudesu",
+      episodeOffset: 12,
+      lastScrapedAt: now,
+      lastScrapeError: "Network timeout",
+      tmdbSyncStatus: "PENDING",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
+
+    let setPayload: any = null;
+
+    const mockDb = {
+      update: vi.fn().mockImplementation((table) => {
+        if (table === seasons) {
+          return {
+            set: vi.fn().mockImplementation((data) => {
+              setPayload = data;
+              return {
+                where: vi.fn().mockReturnValue({
+                  returning: vi.fn().mockResolvedValue([mockUpdatedSeason]),
+                }),
+              };
+            }),
+          };
+        }
+        return {};
+      }),
+    };
+
+    const repository = createSeasonsRepositoryInternal(mockDb as any);
+    const result = await repository.updateSeason(seasonId, {
+      scraperUrl: "https://otakudesu.cloud/anime/example",
+      source: "otakudesu",
+      episodeOffset: 12,
+      lastScrapedAt: now,
+      lastScrapeError: "Network timeout",
+    });
+
+    expect(setPayload).toBeDefined();
+    expect(setPayload.scraperUrl).toBe("https://otakudesu.cloud/anime/example");
+    expect(setPayload.source).toBe("otakudesu");
+    expect(setPayload.episodeOffset).toBe(12);
+    expect(setPayload.lastScrapedAt).toEqual(now);
+    expect(setPayload.lastScrapeError).toBe("Network timeout");
+    expect(result.scraperUrl).toBe("https://otakudesu.cloud/anime/example");
+  });
 });

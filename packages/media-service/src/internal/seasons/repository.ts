@@ -26,6 +26,11 @@ export interface SeasonUpsertInput {
   posterUrl?: string | null;
   seasonNumber?: number | null;
   status?: "ongoing" | "completed" | "pending" | string;
+  scraperUrl?: string | null;
+  source?: string | null;
+  episodeOffset?: number;
+  lastScrapedAt?: Date | null;
+  lastScrapeError?: string | null;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
 
@@ -36,6 +41,9 @@ export interface CreateSeasonInput {
   posterUrl?: string | null;
   seasonNumber?: number | null;
   status?: "ongoing" | "completed" | "pending" | string;
+  scraperUrl?: string | null;
+  source?: string | null;
+  episodeOffset?: number;
 }
 
 export interface UpdateSeasonInput {
@@ -44,6 +52,11 @@ export interface UpdateSeasonInput {
   posterUrl?: string | null;
   seasonNumber?: number | null;
   status?: "ongoing" | "completed" | "pending" | string;
+  scraperUrl?: string | null;
+  source?: string | null;
+  episodeOffset?: number;
+  lastScrapedAt?: Date | null;
+  lastScrapeError?: string | null;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
 
@@ -64,6 +77,11 @@ export function createSeasonsRepositoryInternal<
           posterUrl: input.posterUrl ?? null,
           seasonNumber: input.seasonNumber ?? null,
           ...(input.status !== undefined ? { status: input.status } : {}),
+          ...(input.scraperUrl !== undefined ? { scraperUrl: input.scraperUrl } : {}),
+          ...(input.source !== undefined ? { source: input.source } : {}),
+          ...(input.episodeOffset !== undefined ? { episodeOffset: input.episodeOffset } : {}),
+          ...(input.lastScrapedAt !== undefined ? { lastScrapedAt: input.lastScrapedAt } : {}),
+          ...(input.lastScrapeError !== undefined ? { lastScrapeError: input.lastScrapeError } : {}),
           tmdbSyncStatus: input.tmdbSyncStatus ?? "PENDING",
           createdAt: now,
           updatedAt: now,
@@ -77,6 +95,11 @@ export function createSeasonsRepositoryInternal<
             posterUrl: input.posterUrl ?? null,
             ...(input.seasonNumber !== undefined ? { seasonNumber: input.seasonNumber } : {}),
             ...(input.status !== undefined ? { status: input.status } : {}),
+            ...(input.scraperUrl !== undefined ? { scraperUrl: input.scraperUrl } : {}),
+            ...(input.source !== undefined ? { source: input.source } : {}),
+            ...(input.episodeOffset !== undefined ? { episodeOffset: input.episodeOffset } : {}),
+            ...(input.lastScrapedAt !== undefined ? { lastScrapedAt: input.lastScrapedAt } : {}),
+            ...(input.lastScrapeError !== undefined ? { lastScrapeError: input.lastScrapeError } : {}),
             ...(input.tmdbSyncStatus !== undefined ? { tmdbSyncStatus: input.tmdbSyncStatus } : {}),
             updatedAt: now,
           },
@@ -117,6 +140,11 @@ export function createSeasonsRepositoryInternal<
       if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
       if (input.seasonNumber !== undefined) updateData.seasonNumber = input.seasonNumber;
       if (input.status !== undefined) updateData.status = input.status;
+      if (input.scraperUrl !== undefined) updateData.scraperUrl = input.scraperUrl;
+      if (input.source !== undefined) updateData.source = input.source;
+      if (input.episodeOffset !== undefined) updateData.episodeOffset = input.episodeOffset;
+      if (input.lastScrapedAt !== undefined) updateData.lastScrapedAt = input.lastScrapedAt;
+      if (input.lastScrapeError !== undefined) updateData.lastScrapeError = input.lastScrapeError;
       if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
 
       const [row] = await db
@@ -168,6 +196,9 @@ export function createSeasonsRepositoryInternal<
           posterUrl: input.posterUrl ?? null,
           seasonNumber: input.seasonNumber ?? null,
           ...(input.status !== undefined ? { status: input.status } : {}),
+          ...(input.scraperUrl !== undefined ? { scraperUrl: input.scraperUrl } : {}),
+          ...(input.source !== undefined ? { source: input.source } : {}),
+          ...(input.episodeOffset !== undefined ? { episodeOffset: input.episodeOffset } : {}),
           tmdbSyncStatus: "PENDING",
           createdAt: now,
           updatedAt: now,

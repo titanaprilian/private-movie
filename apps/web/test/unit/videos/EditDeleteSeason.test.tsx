@@ -160,7 +160,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Title')).toHaveValue('Season 1');
 
-    const statusCombobox = screen.getByRole('combobox');
+    const statusCombobox = screen.getByLabelText('Status');
     expect(statusCombobox).toBeInTheDocument();
     expect(statusCombobox).toHaveTextContent(/completed/i);
     await user.click(statusCombobox);
@@ -177,6 +177,9 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
       title: 'Renamed Season',
       description: 'Custom context',
       status: 'ongoing',
+      scraperUrl: null,
+      source: 'otakudesu',
+      episodeOffset: 0,
     });
 
     expect(await screen.findByText('Season updated successfully')).toBeInTheDocument();
@@ -358,7 +361,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     await user.clear(titleInput);
     await user.type(titleInput, 'Season 1 Updated');
 
-    const statusCombobox = screen.getByRole('combobox');
+    const statusCombobox = screen.getByLabelText('Status');
     await user.click(statusCombobox);
     await user.click(await screen.findByRole('option', { name: 'Ongoing' }));
 
@@ -368,6 +371,9 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
       title: 'Season 1 Updated',
       description: 'Single season description',
       status: 'ongoing',
+      scraperUrl: null,
+      source: 'otakudesu',
+      episodeOffset: 0,
     });
 
     expect((await screen.findAllByText('Season updated successfully')).length).toBeGreaterThan(0);

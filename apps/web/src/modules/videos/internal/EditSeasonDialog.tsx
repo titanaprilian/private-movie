@@ -27,6 +27,14 @@ export interface EditSeasonDialogProps {
   season: SeasonDetails;
 }
 
+function detectProviderFromUrl(url: string): 'otakudesu' | 'dramula' | null {
+  if (!url) return null;
+  const lower = url.toLowerCase();
+  if (lower.includes('otakudesu')) return 'otakudesu';
+  if (lower.includes('dramula')) return 'dramula';
+  return null;
+}
+
 export function EditSeasonDialog({
   open,
   onOpenChange,
@@ -36,6 +44,9 @@ export function EditSeasonDialog({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'completed' | 'ongoing' | 'pending'>('completed');
+  const [scraperUrl, setScraperUrl] = useState('');
+  const [source, setSource] = useState<string>('none');
+  const [episodeOffset, setEpisodeOffset] = useState<number>(0);
 
   useEffect(() => {
     if (open) {
@@ -46,12 +57,29 @@ export function EditSeasonDialog({
           ? season.status
           : 'completed'
       );
+      setScraperUrl(season.scraperUrl ?? '');
+      setSource(season.source ?? (season.scraperUrl ? detectProviderFromUrl(season.scraperUrl) ?? 'none' : 'none'));
+      setEpisodeOffset(season.episodeOffset ?? 0);
     }
   }, [open, season]);
 
+  const handleScraperUrlChange = (value: string) => {
+    setScraperUrl(value);
+    const detected = detectProviderFromUrl(value);
+    if (detected) {
+      setSource(detected);
+    }
+  };
+
   const updateMutation = useMutation({
-    mutationFn: (params: { title: string; description: string | null; status: 'completed' | 'ongoing' | 'pending' }) =>
-      updateSeason(season.id, params),
+    mutationFn: (params: {
+      title: string;
+      description: string | null;
+      status: 'completed' | 'ongoing' | 'pending';
+      scraperUrl: string | null;
+      source: string | null;
+      episodeOffset: number;
+    }) => updateSeason(season.id, params),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['series', season.seriesId] });
       toast.success('Season updated successfully', {
@@ -71,6 +99,9 @@ export function EditSeasonDialog({
       title: title.trim(),
       description: description.trim() || null,
       status,
+      scraperUrl: scraperUrl.trim() || null,
+      source: source === 'none' ? null : source,
+      episodeOffset: Number.isFinite(Number(episodeOffset)) ? Number(episodeOffset) : 0,
     });
   };
 
@@ -80,8 +111,7 @@ export function EditSeasonDialog({
         <DialogHeader>
           <DialogTitle>Edit Season</DialogTitle>
           <DialogDescription>
-            Update this season&apos;s metadata to correct scraped data or add
-            your own context.
+            Update this season&apos;s metadata to correct scraped data or configure ongoing automated scraping.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -122,6 +152,65 @@ export function EditSeasonDialog({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="pt-2 border-t border-c space-y-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">Scraper Configuration</h4>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-season-scraper-url">Scraper URL</Label>
+              <Input
+                id="edit-season-scraper-url"
+                type="url"
+                value={scraperUrl}
+                onChange={(e) => handleScraperUrlChange(e.target.value)}
+                placeholder="https://otakudesu.cloud/anime/... or https://dramula.com/watch/..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-season-source">Provider Source</Label>
+                <Select
+                  value={source}
+                  onValueChange={(val) => setSource(val)}
+                >
+                  <SelectTrigger id="edit-season-source">
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="otakudesu">Otakudesu</SelectItem>
+                    <SelectItem value="dramula">Dramula</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-season-episode-offset">Episode Offset</Label>
+                <Input
+                  id="edit-season-episode-offset"
+                  type="number"
+                  value={episodeOffset}
+                  onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            {(season.lastScrapedAt || season.lastScrapeError) && (
+              <div className="rounded border border-c bg-muted/20 p-2.5 space-y-1 text-xs">
+                {season.lastScrapedAt && (
+                  <div className="text-muted">
+                    <span className="font-medium text-foreground">Last Scraped:</span>{' '}
+                    {new Date(season.lastScrapedAt).toLocaleString()}
+                  </div>
+                )}
+                {season.lastScrapeError && (
+                  <div className="text-destructive font-mono text-[11px] break-words">
+                    <span className="font-semibold">Last Error:</span> {season.lastScrapeError}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <DialogFooter className="pt-2">
             <Button
               type="button"

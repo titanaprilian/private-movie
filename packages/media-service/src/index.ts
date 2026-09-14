@@ -137,7 +137,7 @@ export type {
 } from "./internal/series/repository";
 export { EpisodeNotFoundError, createEpisodeRepositoryInternal } from "./internal/episodes/repository";
 export { SeasonNotFoundError, SeasonNotEmptyError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
-export type { SeasonUpsertInput, CreateSeasonInput } from "./internal/seasons/repository";
+export type { SeasonUpsertInput, CreateSeasonInput, UpdateSeasonInput } from "./internal/seasons/repository";
 export { SeriesNotFoundError, createSeriesRepositoryInternal } from "./internal/series/repository";
 export { VideoSourceNotFoundError, createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
 export type {

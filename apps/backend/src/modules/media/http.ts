@@ -1745,6 +1745,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             ...(body.description !== undefined ? { description: body.description } : {}),
             ...(body.posterUrl !== undefined ? { posterUrl: body.posterUrl } : {}),
             ...(body.status !== undefined ? { status: body.status } : {}),
+            ...(body.scraperUrl !== undefined ? { scraperUrl: body.scraperUrl } : {}),
+            ...(body.source !== undefined ? { source: body.source } : {}),
+            ...(body.episodeOffset !== undefined ? { episodeOffset: body.episodeOffset } : {}),
           });
           return successResponse(updated);
         } catch (error: unknown) {
@@ -1761,6 +1764,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
           status: t.Optional(t.String()),
+          scraperUrl: t.Optional(t.Nullable(t.String())),
+          source: t.Optional(t.Nullable(t.String())),
+          episodeOffset: t.Optional(t.Integer()),
         }),
       }
     )

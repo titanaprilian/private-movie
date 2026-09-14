@@ -148,6 +148,34 @@ describe("PATCH /seasons/:id", () => {
     expect(dbRow.description).toBeNull();
   });
 
+  it("updates scraperUrl, source, and episodeOffset and persists them", async () => {
+    const seriesRow = await createSeries("Patch Scraper Season Series");
+    const seasonRow = await createSeason(seriesRow.id, "Scraper Season");
+
+    const result = await request(app, {
+      method: "PATCH",
+      path: `/seasons/${seasonRow.id}`,
+      headers,
+      body: {
+        scraperUrl: "https://otakudesu.cloud/anime/ongoing-show",
+        source: "otakudesu",
+        episodeOffset: 24,
+      },
+    });
+
+    expect(result.status).toBe(200);
+    const data = (result.body as { data: SeasonPayload & { scraperUrl?: string; source?: string; episodeOffset?: number } }).data;
+    expect(data.id).toBe(seasonRow.id);
+    expect(data.scraperUrl).toBe("https://otakudesu.cloud/anime/ongoing-show");
+    expect(data.source).toBe("otakudesu");
+    expect(data.episodeOffset).toBe(24);
+
+    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    expect(dbRow.scraperUrl).toBe("https://otakudesu.cloud/anime/ongoing-show");
+    expect(dbRow.source).toBe("otakudesu");
+    expect(dbRow.episodeOffset).toBe(24);
+  });
+
   it("rejects an empty title", async () => {
     const seriesRow = await createSeries("Patch Invalid Season");
     const seasonRow = await createSeason(seriesRow.id, "Valid");

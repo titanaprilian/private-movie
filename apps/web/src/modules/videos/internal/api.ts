@@ -99,13 +99,17 @@ export interface SeriesListResponse {
 export interface SeasonDetails {
   id: string;
   seriesId: string;
-  sourceUrl: string;
-  source: string;
+  sourceUrl?: string | null;
+  source?: string | null;
   title: string;
   description?: string | null;
   posterUrl?: string | null;
   backdropUrl?: string | null;
   status?: 'completed' | 'ongoing' | 'pending' | string | null;
+  scraperUrl?: string | null;
+  episodeOffset?: number;
+  lastScrapedAt?: Date | string | null;
+  lastScrapeError?: string | null;
   rating?: string | null;
   tmdbId?: number | null;
   tmdbSeason?: number | null;
@@ -663,6 +667,9 @@ export interface UpdateSeasonParams {
   title?: string;
   description?: string | null;
   status?: 'completed' | 'ongoing' | 'pending';
+  scraperUrl?: string | null;
+  source?: string | null;
+  episodeOffset?: number;
 }
 
 export async function updateSeason(

@@ -18,6 +18,11 @@ describe("db schema exports", () => {
     expect(schema.seasons.seasonNumber).toBeDefined();
     expect(schema.seasons.seriesId).toBeDefined();
     expect(schema.seasons.status).toBeDefined();
+    expect(schema.seasons.scraperUrl).toBeDefined();
+    expect(schema.seasons.source).toBeDefined();
+    expect(schema.seasons.episodeOffset).toBeDefined();
+    expect(schema.seasons.lastScrapedAt).toBeDefined();
+    expect(schema.seasons.lastScrapeError).toBeDefined();
   });
 
   it("ensures legacy columns are dropped from series table", () => {
@@ -29,7 +34,6 @@ describe("db schema exports", () => {
     expect((schema.seasons as any).rating).toBeUndefined();
     expect((schema.seasons as any).tmdbId).toBeUndefined();
     expect((schema.seasons as any).sourceUrl).toBeUndefined();
-    expect((schema.seasons as any).source).toBeUndefined();
     expect((schema.seasons as any).tmdbSeason).toBeUndefined();
   });
 
