@@ -51,8 +51,14 @@ Tests use a conventional folder-based structure with Vitest as the test runner v
 **TDD-first workflow:**
 
 - Write tests before implementing features
-- Run `bun run test:web` or `bun run test:backend` (or `bunx turbo run test --filter=<pkg>`) for fast feedback with Turbo caching enabled
-- Run `bun run test` (or `turbo run test`) from the monorepo root to execute all unit tests (uses Turbo cache)
+- **During the red → green loop, always use targeted test runs for fast feedback.** Pass the specific test file through the double `--` separator so it reaches Vitest:
+  - `bun run test:web -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:backend -- -- test/unit/<feature>/<name>.test.ts`
+  - Equivalently: `bunx turbo run test --filter=@repo/web -- test/unit/<feature>/<name>.test.ts`
+  - This completes in ~2–5 seconds. Never run the full suite in a tight TDD loop.
+- **Before handing back**, run the full suite once so Turbo caches results for the orchestrator:
+  - `bun run test:web` or `bun run test:backend` (or `bunx turbo run test --filter=<pkg>`)
+  - `bun run test` (or `turbo run test`) from the monorepo root executes all unit tests
 - Run `bun run test:integration` (or `turbo run test:integration`) to execute integration tests (requires a running Postgres database)
 
 **⚠️ Bun CLI Test Constraint (Mandatory):**

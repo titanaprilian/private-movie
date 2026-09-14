@@ -29,12 +29,22 @@ Use /tdd where possible, at pre-agreed seams.
 Run typechecking regularly, single test files regularly during development, and the test suite via Turbo before handing back so results are cached.
 
 **Running Package Tests (Mandatory Rule):**
-- When running tests, **ALWAYS** use Turbo-cached scripts so results are cached for the orchestrator review:
-  - `bun run test:web` (or `bunx turbo run test --filter=@repo/web`)
-  - `bun run test:backend` (or `bunx turbo run test --filter=@repo/backend`)
-  - `bun run test` (runs all unit tests via Turbo)
 - **NEVER** run bare `bun test` or `bun --filter=<pkg> test` — in Bun, `test` is a built-in top-level command that ignores `--filter` and runs all monorepo tests natively without the required Vitest/Node environment.
-- Avoid raw `bun --filter=@repo/web run test` as it bypasses Turbo's cache and forces an uncached 2-3 minute full re-run. Prefer `bun run test:web` or `bun run test`.
+- Avoid raw `bun --filter=@repo/web run test` as it bypasses Turbo's cache and forces an uncached 2-3 minute full re-run.
+
+**During the TDD red → green loop — use targeted test runs (fast feedback):**
+- Pass the specific test file path through the double `--` separator so it reaches Vitest:
+  - `bun run test:web -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:backend -- -- test/unit/<feature>/<name>.test.ts`
+- Equivalently with Turbo directly:
+  - `bunx turbo run test --filter=@repo/web -- test/unit/<feature>/<name>.test.ts`
+- This runs in ~2–5 seconds instead of the full suite (which can take 1–3 minutes).
+- Example: `bun run test:web -- -- test/unit/auth/LoginForm.test.tsx`
+
+**Before handing back — run the full suite once so results are cached for the orchestrator:**
+- `bun run test:web` (or `bunx turbo run test --filter=@repo/web`)
+- `bun run test:backend` (or `bunx turbo run test --filter=@repo/backend`)
+- `bun run test` (runs all unit tests via Turbo)
 
 If the ticket touches backend HTTP endpoints (e.g., routes, middleware, CORS, auth guards), also write and run integration tests under `test/integration/` — not just unit tests.
 - **Fast Feedback (Targeted Integration Testing):** Run ONLY the integration test file(s) relevant to your change:
