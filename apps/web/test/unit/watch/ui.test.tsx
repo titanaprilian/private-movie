@@ -120,11 +120,13 @@ describe('SeriesWatchView', () => {
   });
 
   describe('Series Overview Mode (default when ep is not selected)', () => {
-    it('renders hero banner with title, backdrop, rating, genres, synopsis and Play Episode 1 CTA', () => {
+    it('renders hero banner with backdrop image, omits text series title when image is present, and renders rating, genres, synopsis and Play Episode 1 CTA', () => {
       renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
+      // Hero image is present (backdropUrl), so text series title heading is omitted in hero
+      expect(screen.queryByRole('heading', { level: 1, name: 'Test Series' })).not.toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Test Series' })).toBeInTheDocument();
       expect(screen.getByText('★ 8.8')).toBeInTheDocument();
       expect(screen.getByText('Action')).toBeInTheDocument();
       expect(screen.getByText('Fantasy')).toBeInTheDocument();
@@ -132,6 +134,20 @@ describe('SeriesWatchView', () => {
 
       const playBtn = screen.getByRole('button', { name: /^play episode 1$/i });
       expect(playBtn).toBeInTheDocument();
+    });
+
+    it('gracefully renders text series title as fallback only when hero artwork is missing', () => {
+      const seriesWithoutArtwork: WatchSeriesDetails = {
+        ...mockSeries,
+        backdropUrl: null,
+        posterUrl: null,
+      };
+
+      renderWithProviders(<SeriesWatchView series={seriesWithoutArtwork} />);
+
+      expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
+      expect(screen.queryByRole('img', { name: 'Test Series' })).not.toBeInTheDocument();
     });
 
     it('renders episode explorer grid with cards showing 16:9 thumbnail, duration, order, and title', () => {

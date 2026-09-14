@@ -184,7 +184,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     await user.click(retryBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
+      expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
     });
   });
 
@@ -198,10 +198,10 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     renderWithProviders(<SeriesWatchView seriesId="series-real-1" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
+      expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Real DB Series Title' })).toBeInTheDocument();
     expect(screen.getByText('Real DB Series Description')).toBeInTheDocument();
     expect(screen.getByText('★ 9.0')).toBeInTheDocument();
     expect(screen.getByText('Database Episode One')).toBeInTheDocument();
@@ -221,7 +221,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
+      expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
     });
 
     const ep2Card = screen.getByRole('button', {
@@ -304,7 +304,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
+      expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
     });
 
     // Top back button in overview mode navigates to /

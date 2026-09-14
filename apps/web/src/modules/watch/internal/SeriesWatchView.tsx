@@ -48,8 +48,13 @@ export function WatchViewSkeleton() {
       className="min-h-screen bg-bg text-fg font-sans animate-pulse"
       data-testid="watch-skeleton"
     >
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-8">
-        <div className="h-96 w-full rounded-lg bg-card/60" />
+      <div className="w-full h-[50vh] sm:h-[60vh] bg-card/60" />
+      <div className="px-4 sm:px-8 md:px-12 lg:px-16 py-6 space-y-8">
+        <div className="space-y-4 max-w-4xl">
+          <div className="h-6 w-36 rounded bg-card/60" />
+          <div className="h-10 w-44 rounded bg-card/60" />
+          <div className="h-16 w-full rounded bg-card/40" />
+        </div>
         <div className="space-y-4">
           <div className="h-8 w-48 rounded bg-card/60" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -410,29 +415,29 @@ export function SeriesWatchView({
 
   return (
     <div className="min-h-screen bg-bg text-fg font-sans pb-16">
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 lg:py-6 space-y-8">
-        {!selectedEpisodeId ? (
-          /* ================= SERIES OVERVIEW MODE ================= */
-          <>
-            {/* Container A: Hero Banner */}
-            <SeriesHeroBanner
-              series={series}
-              onPlay={handlePlayFirstEpisode}
-              onBack={() => {
-                if (navigate) {
-                  navigate({ to: '/' });
-                } else if (typeof window !== 'undefined') {
-                  window.location.href = '/';
-                }
-              }}
-              isSpatialMode={isSpatialMode}
-              isPlayFocused={isSpatialMode && activeZone === 'controls' && focusIndex === 0}
-              isBackFocused={backFocused}
-              backRef={backRef}
-              playRef={playRef}
-            />
+      {!selectedEpisodeId ? (
+        /* ================= SERIES OVERVIEW MODE ================= */
+        <div className="space-y-8">
+          {/* Container A: Hero Banner (Full width edge-to-edge) */}
+          <SeriesHeroBanner
+            series={series}
+            onPlay={handlePlayFirstEpisode}
+            onBack={() => {
+              if (navigate) {
+                navigate({ to: '/' });
+              } else if (typeof window !== 'undefined') {
+                window.location.href = '/';
+              }
+            }}
+            isSpatialMode={isSpatialMode}
+            isPlayFocused={isSpatialMode && activeZone === 'controls' && focusIndex === 0}
+            isBackFocused={backFocused}
+            backRef={backRef}
+            playRef={playRef}
+          />
 
-            {/* Container B: Episode Explorer */}
+          {/* Container B: Episode Explorer (Home-aligned padding) */}
+          <div className="px-4 sm:px-8 md:px-12 lg:px-16">
             <EpisodeExplorer
               seasons={seasons}
               activeSeasonId={activeSeasonId}
@@ -446,234 +451,234 @@ export function SeriesWatchView({
               activeZone={activeZone}
               focusIndex={focusIndex}
             />
-          </>
-        ) : (
-          /* ================= PLAYER MODE ================= */
-          <div className="space-y-6">
-            {/* Contextual navigation top bar */}
-            <div className="flex items-center justify-between">
-              <Button
-                ref={backRef as unknown as React.Ref<HTMLButtonElement>}
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToOverview}
-                className={`gap-2 text-muted hover:text-fg ${
-                  backFocused ? 'ring-2 ring-white' : ''
-                }`}
-                aria-label="Back to series overview"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Overview</span>
-              </Button>
-            </div>
-
-            {/* Video Player Container */}
-            <div
-              data-testid="watch-player-container"
-              className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-black"
+          </div>
+        </div>
+      ) : (
+        /* ================= PLAYER MODE ================= */
+        <div className="px-4 sm:px-8 md:px-12 lg:px-16 py-4 lg:py-6 space-y-6">
+          {/* Contextual navigation top bar */}
+          <div className="flex items-center justify-between">
+            <Button
+              ref={backRef as unknown as React.Ref<HTMLButtonElement>}
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToOverview}
+              className={`gap-2 text-muted hover:text-fg ${
+                backFocused ? 'ring-2 ring-white' : ''
+              }`}
+              aria-label="Back to series overview"
             >
-              {activeSource ? (
-                <div
-                  className={`relative aspect-video w-full overflow-hidden rounded-none sm:rounded-md border-y sm:border border-c bg-black ${
-                    playerFocused ? 'ring-2 ring-white' : ''
-                  }`}
-                  style={{
-                    backgroundImage: activeEpisode?.thumbnailUrl
-                      ? `url(${activeEpisode.thumbnailUrl})`
-                      : series.backdropUrl
-                        ? `url(${series.backdropUrl})`
-                        : undefined,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                >
-                  <iframe
-                    ref={iframeRef}
-                    data-testid="watch-player"
-                    src={formatEmbedUrl(activeSource.url)}
-                    title={activeEpisode?.title ?? 'Video player'}
-                    className="relative z-10 h-full w-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                    allowFullScreen
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-              ) : (
-                <div className="flex aspect-video w-full items-center justify-center rounded-none sm:rounded-md border-y sm:border border-c bg-card text-muted">
-                  No video source available
-                </div>
-              )}
-            </div>
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Overview</span>
+            </Button>
+          </div>
 
-            {/* Docked Player Toolbar */}
-            <div
-              data-testid="watch-controls"
-              className="flex flex-wrap items-center gap-2 border border-c bg-card p-3 rounded-none sm:rounded-md"
-            >
-              <Button
-                ref={(el) => {
-                  controlsRefs.current[0] = el;
-                }}
-                variant="secondary"
-                size="sm"
-                onClick={handleGoToPrevEpisode}
-                disabled={!hasPrevEpisode}
-                aria-label="Prev episode"
-                className={
-                  isSpatialMode && activeZone === 'controls' && focusIndex === 0
-                    ? 'ring-2 ring-white'
-                    : ''
-                }
-              >
-                <SkipBack className="h-4 w-4" />
-                Prev
-              </Button>
-
-              <Button
-                ref={(el) => {
-                  controlsRefs.current[1] = el;
-                }}
-                variant="secondary"
-                size="sm"
-                onClick={handleGoToNextEpisode}
-                disabled={!hasNextEpisode}
-                aria-label="Next episode"
-                className={
-                  isSpatialMode && activeZone === 'controls' && focusIndex === 1
-                    ? 'ring-2 ring-white'
-                    : ''
-                }
-              >
-                Next
-                <SkipForward className="h-4 w-4" />
-              </Button>
-
-              <Button
-                ref={(el) => {
-                  controlsRefs.current[2] = el;
-                }}
-                variant="ghost"
-                size="sm"
-                onClick={handleReloadIframe}
-                aria-label="Reload player"
-                title="Reload video player"
-                className={
-                  isSpatialMode && activeZone === 'controls' && focusIndex === 2
-                    ? 'ring-2 ring-white'
-                    : ''
-                }
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-
-              <Button
-                ref={(el) => {
-                  controlsRefs.current[3] = el;
-                }}
-                variant="ghost"
-                size="sm"
-                onClick={handleOpenNewTab}
-                aria-label="Open in new tab"
-                title="Open stream in new tab"
-                className={
-                  isSpatialMode && activeZone === 'controls' && focusIndex === 3
-                    ? 'ring-2 ring-white'
-                    : ''
-                }
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-
-              <div className="ml-auto flex flex-wrap items-center gap-2">
-                {sources.map((source, index) => {
-                  const sourceFocusIndex = 4 + index;
-                  const isSourceFocused =
-                    isSpatialMode &&
-                    activeZone === 'controls' &&
-                    focusIndex === sourceFocusIndex;
-                  return (
-                    <Button
-                      key={source.id}
-                      ref={(el) => {
-                        controlsRefs.current[sourceFocusIndex] = el;
-                      }}
-                      variant={
-                        state.activeSourceIndex === index
-                          ? 'default'
-                          : 'secondary'
-                      }
-                      size="sm"
-                      onClick={() => selectSource(index)}
-                      aria-label={source.label}
-                      className={isSourceFocused ? 'ring-2 ring-white' : ''}
-                    >
-                      {source.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Active Episode Overview Details */}
-            {activeEpisode && (
+          {/* Video Player Container */}
+          <div
+            data-testid="watch-player-container"
+            className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-black"
+          >
+            {activeSource ? (
               <div
-                data-testid="active-episode-overview"
-                className="space-y-3 rounded-lg border border-c bg-card p-4 sm:p-6"
+                className={`relative aspect-video w-full overflow-hidden rounded-none sm:rounded-md border-y sm:border border-c bg-black ${
+                  playerFocused ? 'ring-2 ring-white' : ''
+                }`}
+                style={{
+                  backgroundImage: activeEpisode?.thumbnailUrl
+                    ? `url(${activeEpisode.thumbnailUrl})`
+                    : series.backdropUrl
+                      ? `url(${series.backdropUrl})`
+                      : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
               >
-                <button
-                  type="button"
-                  onClick={handleBackToOverview}
-                  className="mono text-xs text-primary hover:underline cursor-pointer block text-left"
-                >
-                  {series.title}
-                </button>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-fg">
-                    {activeEpisode.order !== undefined && activeEpisode.order !== null
-                      ? `EP ${activeEpisode.order} — ${activeEpisode.title}`
-                      : activeEpisode.title}
-                  </h2>
-
-                  <div className="flex items-center gap-2 text-xs text-muted mono">
-                    {activeSeason && <span>{activeSeason.title}</span>}
-                    {formattedEpisodeDuration && (
-                      <span className="rounded bg-bg px-2 py-0.5 border border-c">
-                        {formattedEpisodeDuration}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {activeEpisode.description ? (
-                  <p className="text-sm leading-relaxed text-muted max-w-4xl">
-                    {activeEpisode.description}
-                  </p>
-                ) : (
-                  <p className="text-sm italic text-muted/60">
-                    No description available for this episode.
-                  </p>
-                )}
+                <iframe
+                  ref={iframeRef}
+                  data-testid="watch-player"
+                  src={formatEmbedUrl(activeSource.url)}
+                  title={activeEpisode?.title ?? 'Video player'}
+                  className="relative z-10 h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowFullScreen
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            ) : (
+              <div className="flex aspect-video w-full items-center justify-center rounded-none sm:rounded-md border-y sm:border border-c bg-card text-muted">
+                No video source available
               </div>
             )}
-
-            {/* Episode Explorer Grid below active episode */}
-            <EpisodeExplorer
-              seasons={seasons}
-              activeSeasonId={activeSeasonId}
-              onSelectSeason={selectSeason}
-              episodes={availableEpisodes}
-              series={series}
-              activeEpisodeId={selectedEpisodeId}
-              onSelectEpisode={handleSelectEpisode}
-              episodeRefs={episodeRefs}
-              isSpatialMode={isSpatialMode}
-              activeZone={activeZone}
-              focusIndex={focusIndex}
-            />
           </div>
-        )}
-      </div>
+
+          {/* Docked Player Toolbar */}
+          <div
+            data-testid="watch-controls"
+            className="flex flex-wrap items-center gap-2 border border-c bg-card p-3 rounded-none sm:rounded-md"
+          >
+            <Button
+              ref={(el) => {
+                controlsRefs.current[0] = el;
+              }}
+              variant="secondary"
+              size="sm"
+              onClick={handleGoToPrevEpisode}
+              disabled={!hasPrevEpisode}
+              aria-label="Prev episode"
+              className={
+                isSpatialMode && activeZone === 'controls' && focusIndex === 0
+                  ? 'ring-2 ring-white'
+                  : ''
+              }
+            >
+              <SkipBack className="h-4 w-4" />
+              Prev
+            </Button>
+
+            <Button
+              ref={(el) => {
+                controlsRefs.current[1] = el;
+              }}
+              variant="secondary"
+              size="sm"
+              onClick={handleGoToNextEpisode}
+              disabled={!hasNextEpisode}
+              aria-label="Next episode"
+              className={
+                isSpatialMode && activeZone === 'controls' && focusIndex === 1
+                  ? 'ring-2 ring-white'
+                  : ''
+              }
+            >
+              Next
+              <SkipForward className="h-4 w-4" />
+            </Button>
+
+            <Button
+              ref={(el) => {
+                controlsRefs.current[2] = el;
+              }}
+              variant="ghost"
+              size="sm"
+              onClick={handleReloadIframe}
+              aria-label="Reload player"
+              title="Reload video player"
+              className={
+                isSpatialMode && activeZone === 'controls' && focusIndex === 2
+                  ? 'ring-2 ring-white'
+                  : ''
+              }
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+
+            <Button
+              ref={(el) => {
+                controlsRefs.current[3] = el;
+              }}
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenNewTab}
+              aria-label="Open in new tab"
+              title="Open stream in new tab"
+              className={
+                isSpatialMode && activeZone === 'controls' && focusIndex === 3
+                  ? 'ring-2 ring-white'
+                  : ''
+              }
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {sources.map((source, index) => {
+                const sourceFocusIndex = 4 + index;
+                const isSourceFocused =
+                  isSpatialMode &&
+                  activeZone === 'controls' &&
+                  focusIndex === sourceFocusIndex;
+                return (
+                  <Button
+                    key={source.id}
+                    ref={(el) => {
+                      controlsRefs.current[sourceFocusIndex] = el;
+                    }}
+                    variant={
+                      state.activeSourceIndex === index
+                        ? 'default'
+                        : 'secondary'
+                    }
+                    size="sm"
+                    onClick={() => selectSource(index)}
+                    aria-label={source.label}
+                    className={isSourceFocused ? 'ring-2 ring-white' : ''}
+                  >
+                    {source.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Episode Overview Details */}
+          {activeEpisode && (
+            <div
+              data-testid="active-episode-overview"
+              className="space-y-3 rounded-lg border border-c bg-card p-4 sm:p-6"
+            >
+              <button
+                type="button"
+                onClick={handleBackToOverview}
+                className="mono text-xs text-primary hover:underline cursor-pointer block text-left"
+              >
+                {series.title}
+              </button>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-fg">
+                  {activeEpisode.order !== undefined && activeEpisode.order !== null
+                    ? `EP ${activeEpisode.order} — ${activeEpisode.title}`
+                    : activeEpisode.title}
+                </h2>
+
+                <div className="flex items-center gap-2 text-xs text-muted mono">
+                  {activeSeason && <span>{activeSeason.title}</span>}
+                  {formattedEpisodeDuration && (
+                    <span className="rounded bg-bg px-2 py-0.5 border border-c">
+                      {formattedEpisodeDuration}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {activeEpisode.description ? (
+                <p className="text-sm leading-relaxed text-muted max-w-4xl">
+                  {activeEpisode.description}
+                </p>
+              ) : (
+                <p className="text-sm italic text-muted/60">
+                  No description available for this episode.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Episode Explorer Grid below active episode */}
+          <EpisodeExplorer
+            seasons={seasons}
+            activeSeasonId={activeSeasonId}
+            onSelectSeason={selectSeason}
+            episodes={availableEpisodes}
+            series={series}
+            activeEpisodeId={selectedEpisodeId}
+            onSelectEpisode={handleSelectEpisode}
+            episodeRefs={episodeRefs}
+            isSpatialMode={isSpatialMode}
+            activeZone={activeZone}
+            focusIndex={focusIndex}
+          />
+        </div>
+      )}
 
       <Dialog
         open={showAdblockModal}

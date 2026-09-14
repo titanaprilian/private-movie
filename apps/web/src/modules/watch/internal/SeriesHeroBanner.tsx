@@ -44,39 +44,17 @@ export function SeriesHeroBanner({
   return (
     <div
       data-testid="series-hero-banner"
-      className="relative w-full rounded-lg border border-c bg-card overflow-hidden"
+      className="relative w-full overflow-hidden"
     >
-      {/* Cinematic Background with gradient overlays */}
-      {heroImage ? (
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <img
-            src={heroImage}
-            alt={series.title}
-            onError={() => {
-              if (!backdropFailed && series.backdropUrl) {
-                setBackdropFailed(true);
-              } else {
-                setPosterFailed(true);
-              }
-            }}
-            className="h-full w-full object-cover object-center opacity-40 filter brightness-90 contrast-105 transform scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/80 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/70 to-transparent" />
-        </div>
-      ) : (
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-card via-zinc-900/50 to-bg opacity-70" />
-      )}
-
       {/* Top action bar: Back button */}
-      <div className="relative z-10 p-4 sm:p-6 pb-0">
+      <div className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-8 md:px-12 lg:px-16 pt-4 sm:pt-6 pointer-events-none">
         {onBack && (
           <Button
             ref={backRef as unknown as React.Ref<HTMLButtonElement>}
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className={`gap-2 text-muted hover:text-fg bg-card/60 backdrop-blur-md border border-c ${
+            className={`pointer-events-auto gap-2 text-muted hover:text-fg bg-card/60 backdrop-blur-md border border-c ${
               isSpatialMode && isBackFocused ? 'ring-2 ring-white' : ''
             }`}
             aria-label="Back to home catalogue"
@@ -87,13 +65,37 @@ export function SeriesHeroBanner({
         )}
       </div>
 
-      {/* Hero Content Section */}
-      <div className="relative z-10 p-4 sm:p-6 md:p-8 pt-2 sm:pt-4 max-w-4xl space-y-4">
-        {/* Title */}
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-fg leading-tight">
-          {series.title}
-        </h1>
+      {/* Cinematic Hero Artwork Container (Full-bleed edge-to-edge) */}
+      <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] min-h-[350px] max-h-[750px] w-full bg-zinc-950 overflow-hidden">
+        {heroImage ? (
+          <>
+            <img
+              src={heroImage}
+              alt={series.title}
+              onError={() => {
+                if (!backdropFailed && series.backdropUrl) {
+                  setBackdropFailed(true);
+                } else {
+                  setPosterFailed(true);
+                }
+              }}
+              className="h-full w-full object-cover object-center opacity-70 filter brightness-95 contrast-105"
+            />
+            {/* Seamless bottom fade gradient into page bg */}
+            <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent z-10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-bg/60 via-transparent to-transparent z-10" />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col justify-end px-4 sm:px-8 md:px-12 lg:px-16 pb-8 bg-gradient-to-br from-card via-zinc-900/60 to-bg">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-fg leading-tight">
+              {series.title}
+            </h1>
+          </div>
+        )}
+      </div>
 
+      {/* Metadata & Actions Section (Rendered below artwork with home-aligned padding) */}
+      <div className="relative z-20 px-4 sm:px-8 md:px-12 lg:px-16 pt-6 pb-2 space-y-4">
         {/* Metadata badges row */}
         <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
           {series.rating && (
@@ -119,19 +121,8 @@ export function SeriesHeroBanner({
           ))}
         </div>
 
-        {/* Series Description */}
-        {series.description ? (
-          <p className="text-sm sm:text-base leading-relaxed text-muted max-w-3xl">
-            {series.description}
-          </p>
-        ) : (
-          <p className="text-sm italic text-muted/60">
-            No synopsis available for this series.
-          </p>
-        )}
-
         {/* Primary Call To Action Button */}
-        <div className="pt-2">
+        <div className="pt-1">
           <Button
             ref={playRef}
             size="lg"
@@ -145,6 +136,17 @@ export function SeriesHeroBanner({
             <span>Play Episode 1</span>
           </Button>
         </div>
+
+        {/* Series Description (Readable max-w-4xl width) */}
+        {series.description ? (
+          <p className="text-sm sm:text-base leading-relaxed text-muted max-w-4xl pt-1">
+            {series.description}
+          </p>
+        ) : (
+          <p className="text-sm italic text-muted/60 max-w-4xl pt-1">
+            No synopsis available for this series.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -51,5 +51,6 @@ describe('watch/$seriesId route search params validation & component', () => {
 
     expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
     expect(screen.getByText('Route Test Series')).toBeInTheDocument();
+    expect(screen.getByText('Overview description')).toBeInTheDocument();
   });
 });
