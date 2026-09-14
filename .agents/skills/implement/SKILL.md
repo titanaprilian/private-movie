@@ -36,7 +36,10 @@ Run typechecking regularly, single test files regularly during development, and 
 - **NEVER** run bare `bun test` or `bun --filter=<pkg> test` — in Bun, `test` is a built-in top-level command that ignores `--filter` and runs all monorepo tests natively without the required Vitest/Node environment.
 - Avoid raw `bun --filter=@repo/web run test` as it bypasses Turbo's cache and forces an uncached 2-3 minute full re-run. Prefer `bun run test:web` or `bun run test`.
 
-If the ticket touches backend HTTP endpoints (e.g., routes, middleware, CORS, auth guards), also write and run integration tests under `test/integration/` — not just unit tests. Run `bun run test:integration` from the monorepo root to verify before handing back.
+If the ticket touches backend HTTP endpoints (e.g., routes, middleware, CORS, auth guards), also write and run integration tests under `test/integration/` — not just unit tests.
+- **Fast Feedback (Targeted Integration Testing):** Run ONLY the integration test file(s) relevant to your change:
+  `bun --filter=@repo/backend run test:integration test/integration/<feature>/<name>.test.ts`
+  This executes against the live test database in ~2–3 seconds instead of running the entire 54-file suite. Verify your targeted integration test passes before handing back.
 
 ## 2. Safe Schema Changes
 

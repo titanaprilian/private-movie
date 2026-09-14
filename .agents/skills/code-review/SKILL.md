@@ -23,7 +23,9 @@ You need three things before you can judge anything:
   1. `bun run typecheck`
   2. `bun run lint`
   3. `bun run test` (uses Turbo caching — if the implementing agent ran tests, unchanged/already passing packages hit Turbo cache immediately in seconds instead of re-running for minutes).
-  4. Only if the ticket touches backend HTTP endpoints, also run `bun run test:integration` from the monorepo root as part of the review gate (integration tests bypass cache by design).
+  4. Only if the ticket touches backend HTTP endpoints, run the targeted integration test(s) touched by the change:
+     `bun --filter=@repo/backend run test:integration test/integration/<feature>/<name>.test.ts`
+     (Takes ~2–3 seconds against the real test DB instead of running all 54 files).
 - Never run uncached package test commands (like bare `bun --filter=@repo/web run test`) during review; always rely on `bun run test` to utilize Turbo's build cache.
 - Flag anything that's technically working but inconsistent with how the rest of the codebase does it — new patterns should be a deliberate decision, not an accident of which agent happened to write the code.
 
