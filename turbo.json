@@ -30,8 +30,7 @@
     },
     "@repo/backend#test:integration": {
       "dependsOn": ["^build", "test"],
-      "env": ["DATABASE_URL", "JWT_SECRET"],
-      "cache": false
+      "env": ["DATABASE_URL", "JWT_SECRET"]
     },
     "lint": {},
     "typecheck": {
