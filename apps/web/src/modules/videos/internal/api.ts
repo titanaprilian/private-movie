@@ -708,6 +708,37 @@ export async function deleteSeason(seasonId: string): Promise<void> {
   }
 }
 
+export interface ScrapeOngoingSeasonResult {
+  seasonId: string;
+  seriesId: string;
+  success: boolean;
+  tmdbSynced: boolean;
+  episodesScraped: number;
+  sourcesSaved: number;
+  seasonCompleted: boolean;
+  error?: string | null;
+}
+
+export async function scrapeOngoingSeason(
+  seasonId: string
+): Promise<ScrapeOngoingSeasonResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.seasons as any)[seasonId]['scrape-ongoing'].post();
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    const errorValue = res.error?.value as
+      | { code?: string; message?: string; error?: { code?: string; message?: string } }
+      | undefined;
+    const message =
+      errorValue?.error?.message ||
+      errorValue?.message ||
+      'Failed to auto-scrape ongoing season';
+    throw new Error(message);
+  }
+
+  return res.data.data as ScrapeOngoingSeasonResult;
+}
+
 export interface PreviewBulkSourcesParams {
   seriesId: string;
   sourceUrl: string;

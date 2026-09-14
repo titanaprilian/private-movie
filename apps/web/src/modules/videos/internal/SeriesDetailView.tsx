@@ -14,6 +14,7 @@ import {
   deleteEpisode,
   updateEpisodeOrders,
   deleteSeason,
+  scrapeOngoingSeason,
   type UpdateEpisodeData,
 } from './api';
 import { EditSeasonDialog } from './EditSeasonDialog';
@@ -141,6 +142,24 @@ export function SeriesDetailView({
         });
       }
       setIsDeleteSeasonOpen(false);
+    },
+  });
+
+  const scrapeOngoingMutation = useMutation({
+    mutationFn: (seasonId: string) => scrapeOngoingSeason(seasonId),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+      queryClient.invalidateQueries({ queryKey: ['episodes'] });
+      if (result.sourcesSaved > 0) {
+        toast.success(
+          `Auto-scrape completed: ${result.sourcesSaved} source${result.sourcesSaved === 1 ? '' : 's'} saved across ${result.episodesScraped} episode${result.episodesScraped === 1 ? '' : 's'}`
+        );
+      } else {
+        toast.success('Auto-scrape completed: no new sources found');
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to auto-scrape ongoing season');
     },
   });
 
@@ -680,8 +699,37 @@ export function SeriesDetailView({
                 </PopoverTrigger>
                 <PopoverContent
                   align="end"
-                  className="w-44 p-0 divide-y divide-[var(--border)] shadow-sm"
+                  className="w-48 p-0 divide-y divide-[var(--border)] shadow-sm"
                 >
+                  {activeSeason.status === 'ongoing' && activeSeason.scraperUrl && (
+                    <div className="py-0.5">
+                      <button
+                        type="button"
+                        disabled={scrapeOngoingMutation.isPending}
+                        onClick={() => {
+                          scrapeOngoingMutation.mutate(activeSeason.id);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
+                          scrapeOngoingMutation.isPending
+                            ? 'opacity-50 cursor-not-allowed text-muted'
+                            : 'hover-bg text-amber-600 dark:text-amber-400 cursor-pointer'
+                        }`}
+                      >
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className={scrapeOngoingMutation.isPending ? 'animate-spin' : ''}
+                        >
+                          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                        </svg>
+                        {scrapeOngoingMutation.isPending ? 'Scraping...' : 'Run Auto-Scrape Now'}
+                      </button>
+                    </div>
+                  )}
                   <div className="py-0.5">
                     <button
                       type="button"

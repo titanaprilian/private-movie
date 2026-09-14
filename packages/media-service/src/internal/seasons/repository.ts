@@ -10,6 +10,20 @@ export class SeasonNotFoundError extends Error {
   }
 }
 
+export class SeasonNotOngoingError extends Error {
+  constructor(message = "Season is not in ongoing status") {
+    super(message);
+    this.name = "SeasonNotOngoingError";
+  }
+}
+
+export class SeasonMissingScraperUrlError extends Error {
+  constructor(message = "Season is missing scraperUrl or source") {
+    super(message);
+    this.name = "SeasonMissingScraperUrlError";
+  }
+}
+
 export class SeasonNotEmptyError extends Error {
   readonly episodeCount: number;
   constructor(episodeCount: number) {

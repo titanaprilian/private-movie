@@ -18,6 +18,8 @@ import {
   EpisodeNotFoundError,
   SeasonNotFoundError,
   SeasonNotEmptyError,
+  SeasonNotOngoingError,
+  SeasonMissingScraperUrlError,
   SeriesFetchError,
   SeriesNotFoundError,
   VideoSourceNotFoundError,
@@ -1799,6 +1801,60 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             return errorResponse(set, 409, error);
           }
           throw error;
+        }
+      },
+      {
+        params: t.Object({ id: t.String({ format: "uuid" }) }),
+      }
+    )
+    .post(
+      "/seasons/:id/scrape-ongoing",
+      async ({ params, headers, set }) => {
+        const authHeader = headers["authorization"];
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return errorResponse(
+            set,
+            401,
+            new UnauthorizedError("missing or invalid authorization header")
+          );
+        }
+        const token = authHeader.substring(7);
+        try {
+          await options.authService.verifyAccessToken(token);
+        } catch {
+          return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
+        }
+
+        try {
+          const result = await mediaService.syncAndScrapeOngoingSeason(params.id);
+          if (!result.success) {
+            if (result.error?.includes("ongoing status")) {
+              return errorResponse(set, 400, new SeasonNotOngoingError(result.error));
+            }
+            if (result.error?.includes("missing scraperUrl")) {
+              return errorResponse(set, 400, new SeasonMissingScraperUrlError(result.error));
+            }
+            return errorResponse(
+              set,
+              400,
+              new Error(result.error ?? "Failed to scrape ongoing season")
+            );
+          }
+          return successResponse(result);
+        } catch (error: unknown) {
+          if (error instanceof SeasonNotFoundError) {
+            return errorResponse(set, 404, error);
+          }
+          if (
+            error instanceof SeasonNotOngoingError ||
+            error instanceof SeasonMissingScraperUrlError
+          ) {
+            return errorResponse(set, 400, error);
+          }
+          if (error instanceof Error) {
+            return errorResponse(set, 400, error);
+          }
+          return errorResponse(set, 500, new InternalServerError());
         }
       },
       {
