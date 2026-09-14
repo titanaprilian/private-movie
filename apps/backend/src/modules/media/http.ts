@@ -204,11 +204,8 @@ function buildProxyShim(domain: string): string {
       if (url.startsWith('http://') || url.startsWith('https://')) {
         try {
           var u = new URL(url);
-          if (u.origin !== window.location.origin) {
-            if (u.host === domain) {
-              return proxyPrefix + u.pathname + u.search + u.hash;
-            }
-            return '/api/media/relay?url=' + encodeURIComponent(url);
+          if (u.host === domain) {
+            return proxyPrefix + u.pathname + u.search + u.hash;
           }
         } catch (e) {}
       }
