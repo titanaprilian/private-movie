@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,23 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   AlertCircle,
   ArrowLeft,
   ExternalLink,
-  Info,
-  ListVideo,
-  Play,
   RefreshCw,
+  RotateCcw,
   ShieldAlert,
   SkipBack,
   SkipForward,
@@ -40,6 +30,9 @@ import { formatEmbedUrl } from '../../videos/internal/embedUrl';
 import { useInputMode } from '@/hooks/useInputMode';
 import { useWatchNav } from './useWatchNav';
 import { useAdblockDetector } from './useAdblockDetector';
+import { SeriesHeroBanner } from './SeriesHeroBanner';
+import { EpisodeExplorer } from './EpisodeExplorer';
+import { formatDuration } from './formatDuration';
 
 export interface SeriesWatchViewProps {
   seriesId?: string;
@@ -55,39 +48,15 @@ export function WatchViewSkeleton() {
       className="min-h-screen bg-bg text-fg font-sans animate-pulse"
       data-testid="watch-skeleton"
     >
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          {/* Left column: player + metadata skeleton */}
-          <div className="flex min-w-0 flex-1 flex-col lg:w-[70%]">
-            <div className="mb-4 h-8 w-20 rounded bg-card/60" />
-            <div className="aspect-video w-full rounded-md border border-c bg-card/60" />
-            <div className="mt-4 flex flex-wrap items-center gap-2 border border-c bg-card p-3">
-              <div className="h-9 w-20 rounded border border-c bg-bg/50" />
-              <div className="h-9 w-20 rounded border border-c bg-bg/50" />
-              <div className="ml-auto flex gap-2">
-                <div className="h-9 w-24 rounded border border-c bg-bg/50" />
-                <div className="h-9 w-24 rounded border border-c bg-bg/50" />
-              </div>
-            </div>
-            <div className="mt-6 space-y-3">
-              <div className="h-8 w-1/3 rounded bg-card/60" />
-              <div className="h-5 w-1/4 rounded bg-card/40" />
-              <div className="h-16 w-full rounded bg-card/30" />
-            </div>
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-8">
+        <div className="h-96 w-full rounded-lg bg-card/60" />
+        <div className="space-y-4">
+          <div className="h-8 w-48 rounded bg-card/60" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="aspect-video w-full rounded-md bg-card/40" />
+            ))}
           </div>
-
-          {/* Right column: sticky sidebar skeleton */}
-          <aside className="w-full lg:w-[30%]">
-            <div className="flex h-[500px] flex-col rounded-md border border-c bg-card p-4 space-y-4">
-              <div className="h-6 w-1/2 rounded bg-bg/60" />
-              <div className="h-10 w-full rounded bg-bg/40" />
-              <div className="flex-1 space-y-2 pt-2">
-                <div className="h-14 w-full rounded bg-bg/40" />
-                <div className="h-14 w-full rounded bg-bg/40" />
-                <div className="h-14 w-full rounded bg-bg/40" />
-              </div>
-            </div>
-          </aside>
         </div>
       </div>
     </div>
@@ -133,6 +102,8 @@ export function SeriesWatchView({
   initialEpisodeId,
   initialSourceIndex,
 }: SeriesWatchViewProps) {
+  const navigate = useNavigate();
+
   const {
     data: querySeries,
     isLoading,
@@ -146,9 +117,19 @@ export function SeriesWatchView({
 
   const series = propSeries ?? querySeries;
 
+  // Track whether we are in overview mode or player mode
+  // If initialEpisodeId is provided, we start in player mode
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(
+    initialEpisodeId ?? null
+  );
+
+  useEffect(() => {
+    setSelectedEpisodeId(initialEpisodeId ?? null);
+  }, [initialEpisodeId]);
+
   const state = useWatchState(series, {
     initialSeasonId,
-    initialEpisodeId,
+    initialEpisodeId: selectedEpisodeId ?? undefined,
     initialSourceIndex,
   });
 
@@ -181,7 +162,8 @@ export function SeriesWatchView({
   };
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const backRef = useRef<HTMLAnchorElement | null>(null);
+  const backRef = useRef<HTMLAnchorElement | HTMLButtonElement | null>(null);
+  const playRef = useRef<HTMLButtonElement | null>(null);
   const controlsRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const episodeRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -195,7 +177,7 @@ export function SeriesWatchView({
     () => state.activeEpisode?.videoSources ?? [],
     [state.activeEpisode?.videoSources]
   );
-  const controlsCount = 2 + sourcesForNav.length;
+  const controlsCount = 4 + sourcesForNav.length;
   const episodesCount = availableEpisodesForNav.length || 1;
 
   const { activeZone, focusIndex } = useWatchNav({
@@ -240,25 +222,24 @@ export function SeriesWatchView({
     }
   }, [activeZone, focusIndex, isSpatialMode, hasSeries]);
 
-  // Initial focus on controls bar Prev button when page loads in spatial mode
+  // Initial focus on controls bar Prev button or hero play button when page loads in spatial mode
   useEffect(() => {
     if (!hasSeries) return;
     if (!isSpatialMode) return;
     if (activeZone !== 'controls' || focusIndex !== 0) return;
     const t = setTimeout(() => {
       try {
-        controlsRefs.current[0]?.focus();
-        controlsRefs.current[0]?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest',
-        });
+        if (selectedEpisodeId) {
+          controlsRefs.current[0]?.focus();
+        } else {
+          playRef.current?.focus();
+        }
       } catch {
         // ignore
       }
     }, 0);
     return () => clearTimeout(t);
-  }, [hasSeries, isSpatialMode, activeZone, focusIndex]);
+  }, [hasSeries, isSpatialMode, activeZone, focusIndex, selectedEpisodeId]);
 
   // Handle Enter for non-player zones: click the focused element
   useEffect(() => {
@@ -267,7 +248,6 @@ export function SeriesWatchView({
 
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Enter') return;
-      // player zone is handled by useWatchNav (dispatch Space), don't interfere
       if (activeZone === 'player') return;
       if (activeZone === 'back') {
         e.preventDefault();
@@ -284,30 +264,6 @@ export function SeriesWatchView({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [activeZone, focusIndex, isSpatialMode, hasSeries]);
-
-  // Auto-scroll active episode card into view in episode playlist
-  useEffect(() => {
-    if (!hasSeries || !state.activeEpisodeId) return;
-    const activeIndex = availableEpisodesForNav.findIndex(
-      (e) => e.id === state.activeEpisodeId
-    );
-    if (activeIndex !== -1 && episodeRefs.current[activeIndex]) {
-      try {
-        episodeRefs.current[activeIndex]?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest',
-        });
-      } catch {
-        // ignore
-      }
-    }
-  }, [
-    hasSeries,
-    state.activeEpisodeId,
-    state.activeSeasonId,
-    availableEpisodesForNav,
-  ]);
 
   if (isLoading && !series) {
     return <WatchViewSkeleton />;
@@ -352,145 +308,134 @@ export function SeriesWatchView({
   const backFocused = isSpatialMode && activeZone === 'back';
   const playerFocused = isSpatialMode && activeZone === 'player';
 
+  // Find first available episode to play for Episode 1 CTA
+  const firstEpisode =
+    series.seasons?.find((s) => s.episodes && s.episodes.length > 0)
+      ?.episodes[0] ??
+    series.episodes?.[0] ??
+    null;
+
   const handleSelectEpisode = (episodeId: string) => {
+    setSelectedEpisodeId(episodeId);
     selectEpisode(episodeId);
     const ep = availableEpisodes.find((e) => e.id === episodeId);
     if (ep) {
       toast.info(`Switched to ${ep.title}`);
     }
+
+    if (navigate && series.id) {
+      navigate({
+        to: '/watch/$seriesId',
+        params: { seriesId: series.id },
+        search: { ep: episodeId },
+      });
+    }
+
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // ignore
+    }
   };
 
-  const renderEpisodeList = () => (
-    <div className="flex-1 space-y-2 overflow-y-auto p-3">
-      {availableEpisodes.map((episode, idx) => {
-        const isActive = episode.id === state.activeEpisodeId;
-        const isEpisodeFocused =
-          isSpatialMode && activeZone === 'episodes' && focusIndex === idx;
-        return (
-          <button
-            key={episode.id}
-            ref={(el) => {
-              episodeRefs.current[idx] = el;
-            }}
-            type="button"
-            onClick={() => handleSelectEpisode(episode.id)}
-            className={`w-full rounded-md border p-3 text-left transition-colors ${
-              isActive
-                ? 'border-primary bg-active'
-                : 'border-c bg-transparent hover:bg-hover'
-            } ${isEpisodeFocused ? 'ring-2 ring-white' : ''}`}
-          >
-            <span className="mono text-xs text-muted">
-              EP {episode.order ?? ''}
-            </span>
-            <span
-              className={`mt-1 block text-sm font-medium ${
-                isActive ? 'text-primary' : 'text-fg'
-              }`}
-            >
-              {episode.title}
-            </span>
-            {isActive && (
-              <span className="mt-2 inline-flex items-center gap-1 text-xs text-primary">
-                <Play className="h-3 w-3 fill-primary" /> Now playing
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
+  const handlePlayFirstEpisode = () => {
+    if (firstEpisode) {
+      handleSelectEpisode(firstEpisode.id);
+    }
+  };
 
-  const renderSeasonSelector = () =>
-    seasons.length > 1 ? (
-      <Select
-        value={activeSeasonId ?? ''}
-        onValueChange={(val) => selectSeason(val)}
-      >
-        <SelectTrigger aria-label="Season">
-          <SelectValue placeholder="Select Season" />
-        </SelectTrigger>
-        <SelectContent>
-          {seasons.map((season) => (
-            <SelectItem key={season.id} value={season.id}>
-              {season.title}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    ) : null;
+  const handleBackToOverview = () => {
+    setSelectedEpisodeId(null);
+    if (navigate && series.id) {
+      navigate({
+        to: '/watch/$seriesId',
+        params: { seriesId: series.id },
+        search: {},
+      });
+    }
+  };
 
-  const renderMetadata = () => (
-    <div>
-      <h1 className="text-2xl sm:text-3xl font-bold">{series.title}</h1>
-      {activeEpisode && (
-        <h2 className="mono mt-2 text-base sm:text-lg text-muted">
-          {activeSeason
-            ? `${activeSeason.title} — Episode ${activeEpisode.order ?? ''}`
-            : `Episode ${activeEpisode.order ?? ''}`}
-        </h2>
-      )}
-      {activeEpisode?.description && (
-        <p className="mt-4 leading-relaxed text-muted">
-          {activeEpisode.description}
-        </p>
-      )}
-      {!activeEpisode?.description && series.description && (
-        <p className="mt-4 leading-relaxed text-muted">{series.description}</p>
-      )}
-    </div>
-  );
+  const handleReloadIframe = () => {
+    if (iframeRef.current && activeSource) {
+      iframeRef.current.src = formatEmbedUrl(activeSource.url);
+      toast.info('Reloaded video player');
+    }
+  };
+
+  const handleOpenNewTab = () => {
+    if (activeSource?.url) {
+      window.open(activeSource.url, '_blank', 'noreferrer noopener');
+    }
+  };
+
+  const formattedEpisodeDuration = activeEpisode
+    ? formatDuration(activeEpisode.duration)
+    : null;
 
   return (
-    <div className="min-h-screen bg-bg text-fg font-sans">
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
-        <div className="flex flex-col gap-6 lg:gap-8 lg:flex-row">
-          {/* Left column: player + metadata */}
-          <div className="flex min-w-0 flex-1 flex-col lg:w-[70%]">
-            {/* Desktop standalone back button */}
-            <div className="hidden mb-4 lg:block">
+    <div className="min-h-screen bg-bg text-fg font-sans pb-16">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 lg:py-6 space-y-8">
+        {!selectedEpisodeId ? (
+          /* ================= SERIES OVERVIEW MODE ================= */
+          <>
+            {/* Container A: Hero Banner */}
+            <SeriesHeroBanner
+              series={series}
+              onPlay={handlePlayFirstEpisode}
+              onBack={() => {
+                if (navigate) {
+                  navigate({ to: '/' });
+                } else if (typeof window !== 'undefined') {
+                  window.location.href = '/';
+                }
+              }}
+              isSpatialMode={isSpatialMode}
+              isPlayFocused={isSpatialMode && activeZone === 'controls' && focusIndex === 0}
+              isBackFocused={backFocused}
+              backRef={backRef}
+              playRef={playRef}
+            />
+
+            {/* Container B: Episode Explorer */}
+            <EpisodeExplorer
+              seasons={seasons}
+              activeSeasonId={activeSeasonId}
+              onSelectSeason={selectSeason}
+              episodes={availableEpisodes}
+              series={series}
+              activeEpisodeId={null}
+              onSelectEpisode={handleSelectEpisode}
+              episodeRefs={episodeRefs}
+              isSpatialMode={isSpatialMode}
+              activeZone={activeZone}
+              focusIndex={focusIndex}
+            />
+          </>
+        ) : (
+          /* ================= PLAYER MODE ================= */
+          <div className="space-y-6">
+            {/* Contextual navigation top bar */}
+            <div className="flex items-center justify-between">
               <Button
+                ref={backRef as unknown as React.Ref<HTMLButtonElement>}
                 variant="ghost"
                 size="sm"
-                asChild
-                className={`gap-2 text-muted hover:text-fg ${backFocused ? 'ring-2 ring-white' : ''}`}
+                onClick={handleBackToOverview}
+                className={`gap-2 text-muted hover:text-fg ${
+                  backFocused ? 'ring-2 ring-white' : ''
+                }`}
+                aria-label="Back to series overview"
               >
-                <Link
-                  to="/"
-                  aria-label="Back to home catalogue"
-                  ref={backRef as unknown as React.Ref<HTMLAnchorElement>}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Back</span>
-                </Link>
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Overview</span>
               </Button>
             </div>
 
-            {/* Video player container: sticky top-0 full-bleed on mobile, standard on desktop */}
+            {/* Video Player Container */}
             <div
               data-testid="watch-player-container"
               className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-black"
             >
-              {/* Mobile overlay back button */}
-              <div className="absolute left-3 top-3 z-30 lg:hidden">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  asChild
-                  className={`h-9 w-9 rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-sm hover:bg-black/80 hover:text-white ${
-                    backFocused ? 'ring-2 ring-white' : ''
-                  }`}
-                >
-                  <Link
-                    to="/"
-                    aria-label="Back to home catalogue"
-                    ref={backRef as unknown as React.Ref<HTMLAnchorElement>}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-
               {activeSource ? (
                 <div
                   className={`aspect-video w-full overflow-hidden rounded-none sm:rounded-md border-y sm:border border-c bg-black ${
@@ -515,10 +460,10 @@ export function SeriesWatchView({
               )}
             </div>
 
-            {/* Player controls */}
+            {/* Docked Player Toolbar */}
             <div
               data-testid="watch-controls"
-              className="mt-2 sm:mt-4 flex flex-wrap items-center gap-2 border border-c bg-card p-3 rounded-none sm:rounded-md"
+              className="flex flex-wrap items-center gap-2 border border-c bg-card p-3 rounded-none sm:rounded-md"
             >
               <Button
                 ref={(el) => {
@@ -538,6 +483,7 @@ export function SeriesWatchView({
                 <SkipBack className="h-4 w-4" />
                 Prev
               </Button>
+
               <Button
                 ref={(el) => {
                   controlsRefs.current[1] = el;
@@ -557,9 +503,45 @@ export function SeriesWatchView({
                 <SkipForward className="h-4 w-4" />
               </Button>
 
+              <Button
+                ref={(el) => {
+                  controlsRefs.current[2] = el;
+                }}
+                variant="ghost"
+                size="sm"
+                onClick={handleReloadIframe}
+                aria-label="Reload player"
+                title="Reload video player"
+                className={
+                  isSpatialMode && activeZone === 'controls' && focusIndex === 2
+                    ? 'ring-2 ring-white'
+                    : ''
+                }
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+
+              <Button
+                ref={(el) => {
+                  controlsRefs.current[3] = el;
+                }}
+                variant="ghost"
+                size="sm"
+                onClick={handleOpenNewTab}
+                aria-label="Open in new tab"
+                title="Open stream in new tab"
+                className={
+                  isSpatialMode && activeZone === 'controls' && focusIndex === 3
+                    ? 'ring-2 ring-white'
+                    : ''
+                }
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+
               <div className="ml-auto flex flex-wrap items-center gap-2">
                 {sources.map((source, index) => {
-                  const sourceFocusIndex = 2 + index;
+                  const sourceFocusIndex = 4 + index;
                   const isSourceFocused =
                     isSpatialMode &&
                     activeZone === 'controls' &&
@@ -587,67 +569,65 @@ export function SeriesWatchView({
               </div>
             </div>
 
-            {/* Mobile Tabbed View (< lg) */}
-            <div
-              className="mt-4 block lg:hidden"
-              data-testid="watch-mobile-tabs"
-            >
-              <Tabs defaultValue="episodes" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="episodes" className="gap-1.5">
-                    <ListVideo className="h-3.5 w-3.5" />
-                    <span>Episodes</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="details" className="gap-1.5">
-                    <Info className="h-3.5 w-3.5" />
-                    <span>Details</span>
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="episodes" className="mt-3 space-y-3">
-                  {renderSeasonSelector()}
-                  <div className="rounded-md border border-c bg-card">
-                    {renderEpisodeList()}
-                  </div>
-                </TabsContent>
-
-                <TabsContent
-                  value="details"
-                  className="mt-3 rounded-md border border-c bg-card p-4"
+            {/* Active Episode Overview Details */}
+            {activeEpisode && (
+              <div
+                data-testid="active-episode-overview"
+                className="space-y-3 rounded-lg border border-c bg-card p-4 sm:p-6"
+              >
+                <button
+                  type="button"
+                  onClick={handleBackToOverview}
+                  className="mono text-xs text-primary hover:underline cursor-pointer block text-left"
                 >
-                  {renderMetadata()}
-                </TabsContent>
-              </Tabs>
-            </div>
+                  {series.title}
+                </button>
 
-            {/* Desktop Metadata / description (lg+) */}
-            <div
-              className="mt-6 hidden lg:block"
-              data-testid="watch-desktop-metadata"
-            >
-              {renderMetadata()}
-            </div>
-          </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-fg">
+                    {activeEpisode.order !== undefined && activeEpisode.order !== null
+                      ? `EP ${activeEpisode.order} — ${activeEpisode.title}`
+                      : activeEpisode.title}
+                  </h2>
 
-          {/* Desktop Right column: sticky sidebar (lg+) */}
-          <aside
-            className="hidden w-full lg:block lg:w-[30%]"
-            data-testid="watch-desktop-sidebar"
-          >
-            <div className="flex max-h-[80vh] flex-col overflow-hidden rounded-md border border-c bg-card lg:sticky lg:top-6">
-              <div className="border-b border-c p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <ListVideo className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-semibold">Episodes</h3>
+                  <div className="flex items-center gap-2 text-xs text-muted mono">
+                    {activeSeason && <span>{activeSeason.title}</span>}
+                    {formattedEpisodeDuration && (
+                      <span className="rounded bg-bg px-2 py-0.5 border border-c">
+                        {formattedEpisodeDuration}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {renderSeasonSelector()}
+                {activeEpisode.description ? (
+                  <p className="text-sm leading-relaxed text-muted max-w-4xl">
+                    {activeEpisode.description}
+                  </p>
+                ) : (
+                  <p className="text-sm italic text-muted/60">
+                    No description available for this episode.
+                  </p>
+                )}
               </div>
+            )}
 
-              {renderEpisodeList()}
-            </div>
-          </aside>
-        </div>
+            {/* Episode Explorer Grid below active episode */}
+            <EpisodeExplorer
+              seasons={seasons}
+              activeSeasonId={activeSeasonId}
+              onSelectSeason={selectSeason}
+              episodes={availableEpisodes}
+              series={series}
+              activeEpisodeId={selectedEpisodeId}
+              onSelectEpisode={handleSelectEpisode}
+              episodeRefs={episodeRefs}
+              isSpatialMode={isSpatialMode}
+              activeZone={activeZone}
+              focusIndex={focusIndex}
+            />
+          </div>
+        )}
       </div>
 
       <Dialog

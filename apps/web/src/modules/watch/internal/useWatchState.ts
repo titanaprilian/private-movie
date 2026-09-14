@@ -37,8 +37,12 @@ export function useWatchState(
   options?: UseWatchStateOptions
 ): UseWatchStateReturn {
   const [activeSeasonId, setActiveSeasonIdState] = useState<string | null>(null);
-  const [activeEpisodeId, setActiveEpisodeIdState] = useState<string | null>(null);
-  const [activeSourceIndex, setActiveSourceIndexState] = useState<number>(0);
+  const [activeEpisodeId, setActiveEpisodeIdState] = useState<string | null>(
+    options?.initialEpisodeId ?? null
+  );
+  const [activeSourceIndex, setActiveSourceIndexState] = useState<number>(
+    options?.initialSourceIndex ?? 0
+  );
 
   // Helper to find all episodes across seasons or root episodes list
   const allEpisodes = useMemo(() => {
@@ -64,15 +68,7 @@ export function useWatchState(
     const initialEpId = options?.initialEpisodeId;
     const initialSourceIdx = options?.initialSourceIndex ?? 0;
 
-    // Check if current activeEpisodeId is valid for this series
-    const isCurrentEpValid =
-      activeEpisodeId && allEpisodes.some((ep) => ep.id === activeEpisodeId);
-
-    if (isCurrentEpValid) {
-      return;
-    }
-
-    // 1. Initial episode override
+    // Check if initialEpisodeId exists and matches an episode
     if (initialEpId && allEpisodes.some((ep) => ep.id === initialEpId)) {
       const targetSeason = series.seasons?.find((s) =>
         s.episodes?.some((ep) => ep.id === initialEpId)
@@ -83,7 +79,7 @@ export function useWatchState(
       return;
     }
 
-    // 2. Default to first season with episodes
+    // Default to first season with episodes
     if (series.seasons && series.seasons.length > 0) {
       const firstSeasonWithEp =
         series.seasons.find((s) => s.episodes && s.episodes.length > 0) ??
@@ -94,7 +90,7 @@ export function useWatchState(
       return;
     }
 
-    // 3. Default to root episodes if no seasons
+    // Default to root episodes if no seasons
     if (series.episodes && series.episodes.length > 0) {
       setActiveSeasonIdState(null);
       setActiveEpisodeIdState(series.episodes[0].id);
@@ -105,7 +101,7 @@ export function useWatchState(
     setActiveSeasonIdState(null);
     setActiveEpisodeIdState(null);
     setActiveSourceIndexState(0);
-  }, [series, options?.initialEpisodeId, options?.initialSourceIndex, allEpisodes, activeEpisodeId]);
+  }, [series, options?.initialEpisodeId, options?.initialSourceIndex, allEpisodes]);
 
   const activeSeason = useMemo(() => {
     if (!series?.seasons || !activeSeasonId) return null;

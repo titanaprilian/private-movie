@@ -17,6 +17,9 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
+  useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
+  useParams: () => ({ seriesId: 'series-real-1' }),
 }));
 
 import { SeriesWatchView, type WatchSeriesDetails } from '@/modules/watch';
@@ -50,6 +53,9 @@ const mockSeriesPayload: WatchSeriesDetails = {
   id: 'series-real-1',
   title: 'Real DB Series Title',
   description: 'Real DB Series Description',
+  backdropUrl: 'https://images.unsplash.com/real-backdrop.jpg',
+  rating: '9.0',
+  genres: ['Action', 'Fantasy'],
   seasons: [
     {
       id: 'season-1',
@@ -62,6 +68,8 @@ const mockSeriesPayload: WatchSeriesDetails = {
           order: 1,
           seasonId: 'season-1',
           description: 'Database Episode One Description',
+          thumbnailUrl: 'https://images.unsplash.com/ep1.jpg',
+          duration: '24m',
           videoSources: [
             {
               id: 'src-1',
@@ -83,6 +91,8 @@ const mockSeriesPayload: WatchSeriesDetails = {
           order: 2,
           seasonId: 'season-1',
           description: 'Database Episode Two Description',
+          thumbnailUrl: 'https://images.unsplash.com/ep2.jpg',
+          duration: '25m',
           videoSources: [
             {
               id: 'src-3',
@@ -105,6 +115,8 @@ const mockSeriesPayload: WatchSeriesDetails = {
           order: 1,
           seasonId: 'season-2',
           description: 'Database Episode Three Description',
+          thumbnailUrl: 'https://images.unsplash.com/ep3.jpg',
+          duration: '26m',
           videoSources: [
             {
               id: 'src-4',
@@ -176,7 +188,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     });
   });
 
-  it('fetches real data via seriesId, populates player, metadata, dropdown, and sidebar', async () => {
+  it('fetches real data via seriesId and renders series overview with hero, metadata, and episode cards', async () => {
     const mockGet = vi.fn().mockResolvedValue({
       data: { data: mockSeriesPayload },
     });
@@ -189,22 +201,15 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
       expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
     });
 
-    expect(getPlayer().src).toBe('https://mirror-a.com/embed1');
-    expect(
-      screen.getAllByText('Database Episode One Description').length
-    ).toBeGreaterThan(0);
-    expect(screen.getAllByText('Database Episode One').length).toBeGreaterThan(
-      0
-    );
-    expect(screen.getAllByText('Database Episode Two').length).toBeGreaterThan(
-      0
-    );
-    expect(
-      screen.getAllByRole('combobox', { name: /season/i }).length
-    ).toBeGreaterThan(0);
+    expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+    expect(screen.getByText('Real DB Series Description')).toBeInTheDocument();
+    expect(screen.getByText('★ 9.0')).toBeInTheDocument();
+    expect(screen.getByText('Database Episode One')).toBeInTheDocument();
+    expect(screen.getByText('Database Episode Two')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Season 1' })).toBeInTheDocument();
   });
 
-  it('updates activeEpisodeId, iframe src, and description when sidebar episode card is clicked', async () => {
+  it('transitions to player mode and updates active episode when episode card is clicked', async () => {
     const mockGet = vi.fn().mockResolvedValue({
       data: { data: mockSeriesPayload },
     });
@@ -219,10 +224,10 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
       expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
     });
 
-    const ep2Buttons = screen.getAllByRole('button', {
-      name: /Database Episode Two/i,
+    const ep2Card = screen.getByRole('button', {
+      name: /play episode 2: database episode two/i,
     });
-    await user.click(ep2Buttons[0]!);
+    await user.click(ep2Card);
 
     expect(getPlayer().src).toBe('https://mirror-a.com/embed2');
     expect(
@@ -230,7 +235,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('switches server mirror source when server button is clicked', async () => {
+  it('switches server mirror source when server button is clicked in player mode', async () => {
     const mockGet = vi.fn().mockResolvedValue({
       data: { data: mockSeriesPayload },
     });
@@ -238,7 +243,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     seriesMockMap.set('series-real-1', { get: mockGet });
 
     const { user } = renderWithProviders(
-      <SeriesWatchView seriesId="series-real-1" />
+      <SeriesWatchView seriesId="series-real-1" initialEpisodeId="ep-1" />
     );
 
     await waitFor(() => {
@@ -255,7 +260,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('increments active episode tracking state and handles edge bounds via Next/Prev buttons', async () => {
+  it('increments active episode tracking state and handles edge bounds via Next/Prev buttons in player mode', async () => {
     const mockGet = vi.fn().mockResolvedValue({
       data: { data: mockSeriesPayload },
     });
@@ -263,7 +268,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     seriesMockMap.set('series-real-1', { get: mockGet });
 
     const { user } = renderWithProviders(
-      <SeriesWatchView seriesId="series-real-1" />
+      <SeriesWatchView seriesId="series-real-1" initialEpisodeId="ep-1" />
     );
 
     await waitFor(() => {
