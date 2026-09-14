@@ -264,6 +264,71 @@ function buildProxyShim(domain: string): string {
           });
         }
       }
+      if (typeof HTMLMediaElement !== 'undefined') {
+        var origMediaSrc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
+        if (origMediaSrc && origMediaSrc.set) {
+          Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+            set: function(val) {
+              return origMediaSrc.set.call(this, redirectUrl(val));
+            },
+            get: origMediaSrc.get,
+            configurable: true
+          });
+        }
+      }
+      if (typeof HTMLSourceElement !== 'undefined') {
+        var origSourceSrc = Object.getOwnPropertyDescriptor(HTMLSourceElement.prototype, 'src');
+        if (origSourceSrc && origSourceSrc.set) {
+          Object.defineProperty(HTMLSourceElement.prototype, 'src', {
+            set: function(val) {
+              return origSourceSrc.set.call(this, redirectUrl(val));
+            },
+            get: origSourceSrc.get,
+            configurable: true
+          });
+        }
+      }
+    } catch (e) {}
+
+    try {
+      var _jwplayer;
+      Object.defineProperty(window, 'jwplayer', {
+        get: function() {
+          return _jwplayer;
+        },
+        set: function(fn) {
+          if (typeof fn === 'function') {
+            var wrapper = function(id) {
+              var player = fn.apply(this, arguments);
+              if (player && typeof player.setup === 'function' && !player.__setupWrapped) {
+                player.__setupWrapped = true;
+                var origSetup = player.setup;
+                player.setup = function(config) {
+                  if (config && Array.isArray(config.sources)) {
+                    config.sources.forEach(function(s) {
+                      if (s && typeof s.file === 'string') {
+                        s.file = redirectUrl(s.file);
+                      }
+                    });
+                  }
+                  if (config && typeof config.file === 'string') {
+                    config.file = redirectUrl(config.file);
+                  }
+                  return origSetup.call(this, config);
+                };
+              }
+              return player;
+            };
+            for (var k in fn) {
+              try { wrapper[k] = fn[k]; } catch(e) {}
+            }
+            _jwplayer = wrapper;
+          } else {
+            _jwplayer = fn;
+          }
+        },
+        configurable: true
+      });
     } catch (e) {}
 
     var mockWindow = {
