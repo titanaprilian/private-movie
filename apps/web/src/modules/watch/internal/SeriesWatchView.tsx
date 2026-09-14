@@ -338,6 +338,42 @@ export function SeriesWatchView({
     }
   };
 
+  const handleGoToPrevEpisode = () => {
+    goToPrevEpisode();
+    const currentIndex = availableEpisodes.findIndex((e) => e.id === activeEpisode?.id);
+    if (currentIndex > 0) {
+      const prevEp = availableEpisodes[currentIndex - 1];
+      if (prevEp) {
+        setSelectedEpisodeId(prevEp.id);
+        if (navigate && series.id) {
+          navigate({
+            to: '/watch/$seriesId',
+            params: { seriesId: series.id },
+            search: { ep: prevEp.id },
+          });
+        }
+      }
+    }
+  };
+
+  const handleGoToNextEpisode = () => {
+    goToNextEpisode();
+    const currentIndex = availableEpisodes.findIndex((e) => e.id === activeEpisode?.id);
+    if (currentIndex >= 0 && currentIndex < availableEpisodes.length - 1) {
+      const nextEp = availableEpisodes[currentIndex + 1];
+      if (nextEp) {
+        setSelectedEpisodeId(nextEp.id);
+        if (navigate && series.id) {
+          navigate({
+            to: '/watch/$seriesId',
+            params: { seriesId: series.id },
+            search: { ep: nextEp.id },
+          });
+        }
+      }
+    }
+  };
+
   const handlePlayFirstEpisode = () => {
     if (firstEpisode) {
       handleSelectEpisode(firstEpisode.id);
@@ -438,16 +474,25 @@ export function SeriesWatchView({
             >
               {activeSource ? (
                 <div
-                  className={`aspect-video w-full overflow-hidden rounded-none sm:rounded-md border-y sm:border border-c bg-black ${
+                  className={`relative aspect-video w-full overflow-hidden rounded-none sm:rounded-md border-y sm:border border-c bg-black ${
                     playerFocused ? 'ring-2 ring-white' : ''
                   }`}
+                  style={{
+                    backgroundImage: activeEpisode?.thumbnailUrl
+                      ? `url(${activeEpisode.thumbnailUrl})`
+                      : series.backdropUrl
+                        ? `url(${series.backdropUrl})`
+                        : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
                 >
                   <iframe
                     ref={iframeRef}
                     data-testid="watch-player"
                     src={formatEmbedUrl(activeSource.url)}
                     title={activeEpisode?.title ?? 'Video player'}
-                    className="h-full w-full"
+                    className="relative z-10 h-full w-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                     allowFullScreen
                     referrerPolicy="no-referrer"
@@ -471,7 +516,7 @@ export function SeriesWatchView({
                 }}
                 variant="secondary"
                 size="sm"
-                onClick={goToPrevEpisode}
+                onClick={handleGoToPrevEpisode}
                 disabled={!hasPrevEpisode}
                 aria-label="Prev episode"
                 className={
@@ -490,7 +535,7 @@ export function SeriesWatchView({
                 }}
                 variant="secondary"
                 size="sm"
-                onClick={goToNextEpisode}
+                onClick={handleGoToNextEpisode}
                 disabled={!hasNextEpisode}
                 aria-label="Next episode"
                 className={

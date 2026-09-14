@@ -291,4 +291,64 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     expect(screen.getByRole('button', { name: /prev/i })).toBeEnabled();
     expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
   });
+
+  it('handles navigation lifecycle between series overview, player mode, back buttons, breadcrumbs, and browser history changes', async () => {
+    const mockGet = vi.fn().mockResolvedValue({
+      data: { data: mockSeriesPayload },
+    });
+    seriesMockMap.set('series-real-1', { get: mockGet });
+
+    // Step 1: Render in Series Overview mode (no initialEpisodeId)
+    const { user, rerender } = renderWithProviders(
+      <SeriesWatchView seriesId="series-real-1" />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Real DB Series Title')).toBeInTheDocument();
+    });
+
+    // Top back button in overview mode navigates to /
+    const overviewBackBtn = screen.getByRole('button', { name: /back to home catalogue/i });
+    await user.click(overviewBackBtn);
+
+    // Step 2: Transition into player mode via episode card click
+    const ep1Card = screen.getByRole('button', {
+      name: /play episode 1: database episode one/i,
+    });
+    await user.click(ep1Card);
+
+    expect(screen.getByTestId('watch-player')).toBeInTheDocument();
+    expect(screen.getByTestId('active-episode-overview')).toBeInTheDocument();
+
+    // Step 3: Click series title breadcrumb in player mode to return to overview
+    const breadcrumbBtn = screen.getByRole('button', { name: 'Real DB Series Title' });
+    await user.click(breadcrumbBtn);
+
+    expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
+    expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+
+    // Step 4: Re-enter player mode
+    const ep2Card = screen.getByRole('button', {
+      name: /play episode 2: database episode two/i,
+    });
+    await user.click(ep2Card);
+    expect(screen.getByTestId('watch-player')).toBeInTheDocument();
+
+    // Step 5: Click top "Back to Overview" button in player mode
+    const playerBackBtn = screen.getByRole('button', { name: /back to series overview/i });
+    await user.click(playerBackBtn);
+    expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
+    expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+
+    // Step 6: Browser history simulation (back / forward via rerendering with updated initialEpisodeId prop)
+    // Simulating user clicking Browser Forward (URL gets ?ep=ep-1)
+    rerender(<SeriesWatchView seriesId="series-real-1" initialEpisodeId="ep-1" />);
+    expect(screen.getByTestId('watch-player')).toBeInTheDocument();
+    expect(screen.getByText('EP 1 — Database Episode One')).toBeInTheDocument();
+
+    // Simulating user clicking Browser Back (URL removes ?ep=)
+    rerender(<SeriesWatchView seriesId="series-real-1" initialEpisodeId={undefined} />);
+    expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
+    expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+  });
 });

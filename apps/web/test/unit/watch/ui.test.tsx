@@ -315,6 +315,25 @@ describe('SeriesWatchView', () => {
       expect(screen.getByText('EP 2 — Episode Two')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /prev/i })).toBeEnabled();
       expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
+
+      // Click Prev to return to Episode One
+      await user.click(screen.getByRole('button', { name: /prev/i }));
+      expect(screen.getByText('EP 1 — Episode One')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /prev/i })).toBeDisabled();
+    });
+
+    it('highlights active episode with "Now Playing" badge and sets poster background', () => {
+      renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      expect(screen.getByText(/now playing/i)).toBeInTheDocument();
+
+      const playerContainer = screen.getByTestId('watch-player-container');
+      const playerFrame = playerContainer.firstElementChild;
+      expect(playerFrame).toHaveStyle({
+        backgroundImage: 'url(https://images.unsplash.com/thumb-1)',
+      });
     });
 
     it('returns to overview when clicking "Back to Overview"', async () => {
