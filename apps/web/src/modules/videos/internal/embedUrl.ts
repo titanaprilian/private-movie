@@ -4,12 +4,20 @@ const PROXIED_PROVIDER_DOMAINS = [
   'odstream.net',
 ];
 
+const AD_SUPPRESSED_PROVIDER_KEYWORDS = [
+  'vidhide',
+  'filedon',
+];
+
 /**
  * Formats embed URLs for video sources.
  *
  * For videobello.net sources:
  * - Extracts the hash from the URL (e.g., /embed/ZXBpc...)
  * - Returns `/embed/{hash}` to load via the sandbox bootstrap
+ *
+ * For known popup/ad-heavy provider domains (e.g., vidhide, filedon and their mirrors):
+ * - Returns `/api/media/proxy-embed?url={encodedUrl}` to inject the hardened ad-suppression shim
  *
  * For known problematic provider domains (e.g., desustream.net, onenesuhd.com, odstream.net):
  * - Returns `/api/media/relay?url={encodedUrl}` to bypass CSP frame-ancestors restrictions
@@ -35,7 +43,15 @@ export function formatEmbedUrl(url: string): string {
       }
     }
 
-    // Fallback to old behavior if hash extraction fails
+    // Fallback to old proxy behavior if hash extraction fails
+    return `/api/media/proxy-embed?url=${encodeURIComponent(url)}`;
+  }
+
+  const lowerUrl = url.toLowerCase();
+  const isAdSuppressedProvider = AD_SUPPRESSED_PROVIDER_KEYWORDS.some((keyword) =>
+    lowerUrl.includes(keyword)
+  );
+  if (isAdSuppressedProvider) {
     return `/api/media/proxy-embed?url=${encodeURIComponent(url)}`;
   }
 

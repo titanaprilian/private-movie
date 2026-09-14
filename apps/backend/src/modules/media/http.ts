@@ -69,27 +69,65 @@ function parseSourceTypesParam(input: unknown): string[] | undefined {
 
 const AD_SUPPRESSION_SHIM = `<script>
   (function() {
-    window.open = function() {
-      return {
-        focus: function() {},
-        blur: function() {},
-        close: function() {},
-        closed: true
-      };
+    var mockWindow = {
+      focus: function() {},
+      blur: function() {},
+      close: function() {},
+      closed: true,
+      document: {},
+      location: { href: '' }
     };
-    document.addEventListener('click', function(e) {
+
+    try {
+      Object.defineProperty(window, 'open', {
+        value: function() {
+          return mockWindow;
+        },
+        writable: false,
+        configurable: false
+      });
+    } catch (e) {
+      window.open = function() {
+        return mockWindow;
+      };
+    }
+
+    try {
+      var originalClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function() {
+        if (this.getAttribute('target') === '_blank' || this.target === '_blank') {
+          return;
+        }
+        return originalClick.apply(this, arguments);
+      };
+    } catch (e) {}
+
+    function handleBlankLink(e) {
       var target = e.target;
       while (target && target !== document) {
         if (target.tagName === 'A') {
           if (target.getAttribute('target') === '_blank' || target.target === '_blank') {
             e.preventDefault();
             e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') {
+              e.stopImmediatePropagation();
+            }
             return;
           }
         }
         target = target.parentNode;
       }
-    }, true);
+    }
+
+    ['click', 'auxclick', 'touchend'].forEach(function(eventType) {
+      document.addEventListener(eventType, handleBlankLink, true);
+    });
+
+    try {
+      if (window.top !== window.self) {
+        window.onbeforeunload = function() {};
+      }
+    } catch (e) {}
   })();
 </script>`;
 
@@ -219,6 +257,8 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           const origin = parsedUrl.origin;
           const res = await fetch(query.url, {
             headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
               Referer: "https://dramula.com",
             },
           });

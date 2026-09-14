@@ -97,6 +97,36 @@ describe('VideoPreviewModal Component', () => {
     expect(iframe.hasAttribute('allowfullscreen')).toBe(true);
   });
 
+  it('renders iframe with proxied embed URL for vidhide and filedon sources', () => {
+    const vidhideSource: VideoSource = {
+      id: 'src-vidhide',
+      type: 'embed',
+      url: 'https://odvidhide.com/v/abcd1234',
+      label: 'Vidhide Mirror',
+    };
+
+    renderWithProviders(
+      <VideoPreviewModal
+        open={true}
+        onOpenChange={vi.fn()}
+        source={vidhideSource}
+      />
+    );
+
+    const iframe = screen.getByTitle('Vidhide Mirror');
+    expect(iframe).toBeInTheDocument();
+    expect(iframe).toHaveAttribute(
+      'src',
+      `/api/media/proxy-embed?url=${encodeURIComponent('https://odvidhide.com/v/abcd1234')}`
+    );
+    expect(iframe).not.toHaveAttribute('sandbox');
+    expect(iframe).toHaveAttribute(
+      'allow',
+      'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen'
+    );
+    expect(iframe.hasAttribute('allowfullscreen')).toBe(true);
+  });
+
   it('invokes onOpenChange when closed via close button', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();

@@ -296,6 +296,12 @@ describe('SeriesWatchView', () => {
 
       const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
       expect(iframe.src).toBe('https://embed.com/3');
+      expect(iframe).not.toHaveAttribute('sandbox');
+      expect(iframe).toHaveAttribute(
+        'allow',
+        'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen'
+      );
+      expect(iframe).toHaveAttribute('allowFullScreen');
 
       expect(screen.getByTestId('watch-controls')).toBeInTheDocument();
       expect(screen.getByTestId('active-episode-overview')).toBeInTheDocument();

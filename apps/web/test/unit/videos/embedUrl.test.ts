@@ -87,4 +87,37 @@ describe('formatEmbedUrl', () => {
       expect(result).toBe(`/api/media/relay?url=${encodeURIComponent(url)}`);
     });
   });
+
+  describe('vidhide & filedon embed URLs (proxy-embed with hardened ad suppression)', () => {
+    it('should proxy vidhide mirror domains via /api/media/proxy-embed', () => {
+      const urls = [
+        'https://odvidhide.com/v/abcd1234efgh',
+        'https://vidhidepro.com/embed/xyz987',
+        'https://vidhideplus.com/e/mirror123',
+        'https://vidhide.com/v/test',
+        'vidhide.com/v/no-proto',
+      ];
+
+      urls.forEach((url) => {
+        expect(formatEmbedUrl(url)).toBe(
+          `/api/media/proxy-embed?url=${encodeURIComponent(url)}`
+        );
+      });
+    });
+
+    it('should proxy filedon mirror domains via /api/media/proxy-embed', () => {
+      const urls = [
+        'https://filedon.me/v/fd12345',
+        'https://filedon.co/embed/abc',
+        'https://sub.filedon.com/v/xyz',
+        'filedon.me/v/no-proto',
+      ];
+
+      urls.forEach((url) => {
+        expect(formatEmbedUrl(url)).toBe(
+          `/api/media/proxy-embed?url=${encodeURIComponent(url)}`
+        );
+      });
+    });
+  });
 });
