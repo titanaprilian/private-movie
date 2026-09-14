@@ -88,36 +88,38 @@ describe('formatEmbedUrl', () => {
     });
   });
 
-  describe('vidhide & filedon embed URLs (proxy-embed with hardened ad suppression)', () => {
-    it('should proxy vidhide mirror domains via /api/media/proxy-embed', () => {
-      const urls = [
-        'https://odvidhide.com/v/abcd1234efgh',
-        'https://vidhidepro.com/embed/xyz987',
-        'https://vidhideplus.com/e/mirror123',
-        'https://vidhide.com/v/test',
-        'vidhide.com/v/no-proto',
-      ];
-
-      urls.forEach((url) => {
-        expect(formatEmbedUrl(url)).toBe(
-          `/api/media/proxy-embed?url=${encodeURIComponent(url)}`
-        );
-      });
+  describe('vidhide & filedon embed URLs (reverse proxy with ad suppression)', () => {
+    it('should proxy vidhide mirror domains via /api/media/proxy/:domain/*', () => {
+      expect(formatEmbedUrl('https://odvidhide.com/v/abcd1234efgh')).toBe(
+        '/api/media/proxy/odvidhide.com/v/abcd1234efgh'
+      );
+      expect(formatEmbedUrl('https://vidhidepro.com/embed/xyz987?foo=bar')).toBe(
+        '/api/media/proxy/vidhidepro.com/embed/xyz987?foo=bar'
+      );
+      expect(formatEmbedUrl('https://vidhideplus.com/e/mirror123')).toBe(
+        '/api/media/proxy/vidhideplus.com/e/mirror123'
+      );
+      expect(formatEmbedUrl('https://vidhide.com/v/test')).toBe(
+        '/api/media/proxy/vidhide.com/v/test'
+      );
+      expect(formatEmbedUrl('vidhide.com/v/no-proto')).toBe(
+        '/api/media/proxy/vidhide.com/v/no-proto'
+      );
     });
 
-    it('should proxy filedon mirror domains via /api/media/proxy-embed', () => {
-      const urls = [
-        'https://filedon.me/v/fd12345',
-        'https://filedon.co/embed/abc',
-        'https://sub.filedon.com/v/xyz',
-        'filedon.me/v/no-proto',
-      ];
-
-      urls.forEach((url) => {
-        expect(formatEmbedUrl(url)).toBe(
-          `/api/media/proxy-embed?url=${encodeURIComponent(url)}`
-        );
-      });
+    it('should proxy filedon mirror domains via /api/media/proxy/:domain/*', () => {
+      expect(formatEmbedUrl('https://filedon.me/v/fd12345')).toBe(
+        '/api/media/proxy/filedon.me/v/fd12345'
+      );
+      expect(formatEmbedUrl('https://filedon.co/embed/abc?key=val')).toBe(
+        '/api/media/proxy/filedon.co/embed/abc?key=val'
+      );
+      expect(formatEmbedUrl('https://sub.filedon.com/v/xyz')).toBe(
+        '/api/media/proxy/sub.filedon.com/v/xyz'
+      );
+      expect(formatEmbedUrl('filedon.me/v/no-proto')).toBe(
+        '/api/media/proxy/filedon.me/v/no-proto'
+      );
     });
   });
 });

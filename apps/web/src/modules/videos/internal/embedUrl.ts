@@ -17,7 +17,7 @@ const AD_SUPPRESSED_PROVIDER_KEYWORDS = [
  * - Returns `/embed/{hash}` to load via the sandbox bootstrap
  *
  * For known popup/ad-heavy provider domains (e.g., vidhide, filedon and their mirrors):
- * - Returns `/api/media/proxy-embed?url={encodedUrl}` to inject the hardened ad-suppression shim
+ * - Returns `/api/media/proxy/:domain/*` for path-based reverse proxying with ad suppression
  *
  * For known problematic provider domains (e.g., desustream.net, onenesuhd.com, odstream.net):
  * - Returns `/api/media/relay?url={encodedUrl}` to bypass CSP frame-ancestors restrictions
@@ -52,7 +52,19 @@ export function formatEmbedUrl(url: string): string {
     lowerUrl.includes(keyword)
   );
   if (isAdSuppressedProvider) {
-    return `/api/media/proxy-embed?url=${encodeURIComponent(url)}`;
+    try {
+      const parsedUrl = new URL(
+        url.startsWith('http://') || url.startsWith('https://')
+          ? url
+          : `https://${url}`
+      );
+      const pathWithLeadingSlash = parsedUrl.pathname.startsWith('/')
+        ? parsedUrl.pathname
+        : `/${parsedUrl.pathname}`;
+      return `/api/media/proxy/${parsedUrl.host}${pathWithLeadingSlash}${parsedUrl.search}`;
+    } catch {
+      return `/api/media/proxy-embed?url=${encodeURIComponent(url)}`;
+    }
   }
 
   const isProxiedProvider = PROXIED_PROVIDER_DOMAINS.some((domain) =>

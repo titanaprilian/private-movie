@@ -117,7 +117,7 @@ describe('VideoPreviewModal Component', () => {
     expect(iframe).toBeInTheDocument();
     expect(iframe).toHaveAttribute(
       'src',
-      `/api/media/proxy-embed?url=${encodeURIComponent('https://odvidhide.com/v/abcd1234')}`
+      '/api/media/proxy/odvidhide.com/v/abcd1234'
     );
     expect(iframe).not.toHaveAttribute('sandbox');
     expect(iframe).toHaveAttribute(

@@ -51,13 +51,13 @@ const mockSeries: WatchSeriesDetails = {
             {
               id: 'src-1',
               type: 'embed',
-              url: 'https://embed.com/1',
+              url: 'https://odvidhide.com/v/sample1',
               label: 'Server A',
             },
             {
               id: 'src-2',
               type: 'embed',
-              url: 'https://embed.com/2',
+              url: 'https://filedon.co/embed/sample2',
               label: 'Server B',
             },
           ],
@@ -235,7 +235,7 @@ describe('SeriesWatchView', () => {
 
       expect(screen.getByTestId('watch-player')).toBeInTheDocument();
       const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
-      expect(iframe.src).toBe('https://embed.com/1');
+      expect(iframe).toHaveAttribute('src', '/api/media/proxy/odvidhide.com/v/sample1');
       expect(screen.getByTestId('active-episode-overview')).toBeInTheDocument();
     });
 
@@ -315,10 +315,10 @@ describe('SeriesWatchView', () => {
       );
 
       const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
-      expect(iframe.src).toBe('https://embed.com/1');
+      expect(iframe).toHaveAttribute('src', '/api/media/proxy/odvidhide.com/v/sample1');
 
       await user.click(screen.getByRole('button', { name: 'Server B' }));
-      expect(iframe.src).toBe('https://embed.com/2');
+      expect(iframe).toHaveAttribute('src', '/api/media/proxy/filedon.co/embed/sample2');
     });
 
     it('navigates next and previous episodes with boundary disabling', async () => {
