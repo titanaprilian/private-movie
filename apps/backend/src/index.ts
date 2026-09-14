@@ -21,9 +21,10 @@ autoSeedDefaultProviderAndBackfill(db).catch((err) => {
   console.error("[startup] Failed to auto-seed default storage provider:", err);
 });
 
-// Initialize background scheduler for ongoing seasons (runs every 30 minutes)
+// Initialize background scheduler for ongoing seasons (runs immediately on startup, then every 30 minutes)
 const scheduler = createOngoingSeasonScheduler({
   mediaService,
+  runImmediately: true,
 });
 scheduler.start();
 
