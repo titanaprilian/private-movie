@@ -4,3 +4,5 @@ coverage/
 *.log
 .turbo/
 .env
+backup_*.sql
+*.dump
