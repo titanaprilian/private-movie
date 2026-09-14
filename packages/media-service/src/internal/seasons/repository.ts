@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, isNotNull } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, seasons, type SeasonRow } from "@repo/db";
 
@@ -181,6 +181,18 @@ export function createSeasonsRepositoryInternal<
       if (result.length === 0) {
         throw new SeasonNotFoundError(`Season with id ${id} not found`);
       }
+    },
+
+    async findOngoingWithScraperUrl(): Promise<SeasonRow[]> {
+      return await db
+        .select()
+        .from(seasons)
+        .where(
+          and(
+            eq(seasons.status, "ongoing"),
+            isNotNull(seasons.scraperUrl)
+          )
+        );
     },
 
     async create(input: CreateSeasonInput): Promise<SeasonRow> {

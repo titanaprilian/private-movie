@@ -385,6 +385,24 @@ export function parseBulkScrapedEpisodeNumber(title: string): number | null {
   return null;
 }
 
+export interface OngoingScrapeResult {
+  seasonId: string;
+  seriesId: string;
+  success: boolean;
+  tmdbSynced: boolean;
+  episodesScraped: number;
+  sourcesSaved: number;
+  seasonCompleted: boolean;
+  error?: string | null;
+}
+
+export interface BatchOngoingScrapeResult {
+  totalProcessed: number;
+  successCount: number;
+  failureCount: number;
+  results: OngoingScrapeResult[];
+}
+
 export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
@@ -395,6 +413,8 @@ export interface MediaService {
   getTmdbPreview(type: "tv" | "movie", tmdbId: number, includeSpecials?: boolean): Promise<TmdbPreviewResult>;
   getTmdbSyncPreview(seriesId: string, input: TmdbSyncPreviewInput): Promise<TmdbSyncPreviewResult>;
   syncTmdb(seriesId: string, input: TmdbSyncInput): Promise<SeriesWithEpisodes>;
+  syncAndScrapeOngoingSeason(seasonId: string): Promise<OngoingScrapeResult>;
+  scrapeAllOngoingSeasons(): Promise<BatchOngoingScrapeResult>;
 }
 
 export type SaveEpisodeService = MediaService;
@@ -1129,6 +1149,205 @@ export function createMediaService<
 
       const updated = await seriesRepository.findByIdWithEpisodes(seriesId);
       return updated!;
+    },
+
+    async syncAndScrapeOngoingSeason(seasonId: string): Promise<OngoingScrapeResult> {
+      const seasonsRepository = createSeasonsRepositoryInternal(db);
+      const targetSeason = await seasonsRepository.findById(seasonId);
+      if (!targetSeason) {
+        throw new SeasonNotFoundError(`Season with id ${seasonId} not found`);
+      }
+
+      if (targetSeason.status !== "ongoing") {
+        const errorMsg = `Season ${seasonId} is not in ongoing status (current status: ${targetSeason.status})`;
+        await seasonsRepository.updateSeason(seasonId, {
+          lastScrapedAt: new Date(),
+          lastScrapeError: errorMsg,
+        });
+        return {
+          seasonId,
+          seriesId: targetSeason.seriesId,
+          success: false,
+          tmdbSynced: false,
+          episodesScraped: 0,
+          sourcesSaved: 0,
+          seasonCompleted: false,
+          error: errorMsg,
+        };
+      }
+
+      if (!targetSeason.scraperUrl || !targetSeason.source) {
+        const errorMsg = `Season ${seasonId} is missing scraperUrl or source`;
+        await seasonsRepository.updateSeason(seasonId, {
+          lastScrapedAt: new Date(),
+          lastScrapeError: errorMsg,
+        });
+        return {
+          seasonId,
+          seriesId: targetSeason.seriesId,
+          success: false,
+          tmdbSynced: false,
+          episodesScraped: 0,
+          sourcesSaved: 0,
+          seasonCompleted: false,
+          error: errorMsg,
+        };
+      }
+
+      try {
+        let tmdbSynced = false;
+        const targetSeries = await seriesRepository.findById(targetSeason.seriesId);
+        if (targetSeries?.tmdbId) {
+          try {
+            await this.syncTmdb(targetSeries.id, {
+              type: (targetSeries.type === "movie" ? "movie" : "tv"),
+              tmdbId: targetSeries.tmdbId,
+            });
+            tmdbSynced = true;
+          } catch (tmdbErr) {
+            // Log/continue or record error
+            console.warn(
+              `[media-service] TMDB sync failed for series ${targetSeries.id} during ongoing scrape:`,
+              tmdbErr instanceof Error ? tmdbErr.message : tmdbErr
+            );
+          }
+        }
+
+        const provider = MediaScraper.getProviderForUrl(targetSeason.scraperUrl);
+        if (!provider) {
+          throw new SeriesFetchError(`No provider found for ${targetSeason.scraperUrl}`);
+        }
+
+        const parsedSeries = await provider.parseSeries(targetSeason.scraperUrl, fetchHtml);
+
+        const seriesWithEpisodes = await seriesRepository.findByIdWithEpisodes(targetSeason.seriesId);
+        const seasonEpisodes = seriesWithEpisodes?.seasons?.find((s) => s.id === seasonId)?.episodes ?? [];
+
+        const offset = targetSeason.episodeOffset ?? 0;
+        let episodesScraped = 0;
+        let sourcesSaved = 0;
+
+        for (const scrapedEp of parsedSeries.episodes) {
+          const epNum = parseBulkScrapedEpisodeNumber(scrapedEp.title);
+          if (epNum === null || !Number.isInteger(epNum)) {
+            continue;
+          }
+
+          const targetOrder = epNum + offset;
+          const matchedEpisode = seasonEpisodes.find((e) => e.order === targetOrder);
+          if (!matchedEpisode) {
+            continue;
+          }
+
+          // Only scrape if the matched episode currently has ZERO video sources
+          if (matchedEpisode.videoSources && matchedEpisode.videoSources.length > 0) {
+            continue;
+          }
+
+          const rawSources = await provider.resolveVideoSources(
+            scrapedEp.url,
+            fetchHtml,
+            undefined,
+            options?.browserFn
+          );
+
+          // Exclude S3 storage, only direct and embed
+          const filteredSources = rawSources.filter((s) => s.type === "embed" || s.type === "direct");
+
+          if (filteredSources.length > 0) {
+            for (const vs of filteredSources) {
+              await videoSourceRepository.upsert({
+                episodeId: matchedEpisode.id,
+                type: vs.type,
+                url: vs.url,
+                label: vs.label,
+                quality: vs.quality ?? null,
+              });
+              sourcesSaved++;
+            }
+            episodesScraped++;
+          }
+        }
+
+        // Re-fetch season episodes to check auto-completion
+        const refreshedSeries = await seriesRepository.findByIdWithEpisodes(targetSeason.seriesId);
+        const refreshedSeasonEpisodes = refreshedSeries?.seasons?.find((s) => s.id === seasonId)?.episodes ?? [];
+
+        let seasonCompleted = false;
+        if (
+          refreshedSeasonEpisodes.length > 0 &&
+          refreshedSeasonEpisodes.every((e) => e.videoSources && e.videoSources.length > 0)
+        ) {
+          seasonCompleted = true;
+          await seasonsRepository.updateSeason(seasonId, {
+            status: "completed",
+            lastScrapedAt: new Date(),
+            lastScrapeError: null,
+          });
+        } else {
+          await seasonsRepository.updateSeason(seasonId, {
+            lastScrapedAt: new Date(),
+            lastScrapeError: null,
+          });
+        }
+
+        return {
+          seasonId,
+          seriesId: targetSeason.seriesId,
+          success: true,
+          tmdbSynced,
+          episodesScraped,
+          sourcesSaved,
+          seasonCompleted,
+        };
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        await seasonsRepository.updateSeason(seasonId, {
+          lastScrapedAt: new Date(),
+          lastScrapeError: errorMsg,
+        });
+        return {
+          seasonId,
+          seriesId: targetSeason.seriesId,
+          success: false,
+          tmdbSynced: false,
+          episodesScraped: 0,
+          sourcesSaved: 0,
+          seasonCompleted: false,
+          error: errorMsg,
+        };
+      }
+    },
+
+    async scrapeAllOngoingSeasons(): Promise<BatchOngoingScrapeResult> {
+      const seasonsRepository = createSeasonsRepositoryInternal(db);
+      const ongoingSeasons = await seasonsRepository.findOngoingWithScraperUrl();
+      const results: OngoingScrapeResult[] = [];
+
+      for (const season of ongoingSeasons) {
+        try {
+          const result = await this.syncAndScrapeOngoingSeason(season.id);
+          results.push(result);
+        } catch (err) {
+          results.push({
+            seasonId: season.id,
+            seriesId: season.seriesId,
+            success: false,
+            tmdbSynced: false,
+            episodesScraped: 0,
+            sourcesSaved: 0,
+            seasonCompleted: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      return {
+        totalProcessed: results.length,
+        successCount: results.filter((r) => r.success).length,
+        failureCount: results.filter((r) => !r.success).length,
+        results,
+      };
     },
   };
 }
