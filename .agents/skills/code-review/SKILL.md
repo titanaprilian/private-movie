@@ -19,8 +19,12 @@ You need three things before you can judge anything:
 ## 1. Review against coding standards
 
 - Check the diff against the project's own conventions: linting/formatting config, existing patterns in neighboring code, ADRs in the area touched, and the domain glossary vocabulary (naming should match what the spec and codebase already use).
-- Run the project's actual tooling rather than eyeballing style: typecheck, linter, single test files touched by the change, then the full test suite once.
-- If the ticket touches backend HTTP endpoints, also run `bun run test:integration` from the monorepo root as part of the review gate.
+- Run the project's actual tooling rather than eyeballing style:
+  1. `bun run typecheck`
+  2. `bun run lint`
+  3. `bun run test` (uses Turbo caching — if the implementing agent ran tests, unchanged/already passing packages hit Turbo cache immediately in seconds instead of re-running for minutes).
+  4. Only if the ticket touches backend HTTP endpoints, also run `bun run test:integration` from the monorepo root as part of the review gate (integration tests bypass cache by design).
+- Never run uncached package test commands (like bare `bun --filter=@repo/web run test`) during review; always rely on `bun run test` to utilize Turbo's build cache.
 - Flag anything that's technically working but inconsistent with how the rest of the codebase does it — new patterns should be a deliberate decision, not an accident of which agent happened to write the code.
 
 ## 2. Review against the spec/ticket

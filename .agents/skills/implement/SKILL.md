@@ -26,13 +26,15 @@ If the ticket references a **Parent** issue (the spec), fetch that too (`gh issu
 
 Use /tdd where possible, at pre-agreed seams.
 
-Run typechecking regularly, single test files regularly, and the full test suite once at the end.
+Run typechecking regularly, single test files regularly during development, and the test suite via Turbo before handing back so results are cached.
 
 **Running Package Tests (Mandatory Rule):**
-- When testing a single package, **ALWAYS** use the `run` keyword:
-  - `bun --filter=@repo/web run test` (or `bun run test:web`)
-  - `bun --filter=@repo/backend run test` (or `bun run test:backend`)
-- **NEVER** run bare `bun --filter=<pkg> test` or `bun test` — in Bun, `test` is a built-in top-level command that ignores `--filter` and runs all monorepo tests natively without the required Vitest/Node environment.
+- When running tests, **ALWAYS** use Turbo-cached scripts so results are cached for the orchestrator review:
+  - `bun run test:web` (or `bunx turbo run test --filter=@repo/web`)
+  - `bun run test:backend` (or `bunx turbo run test --filter=@repo/backend`)
+  - `bun run test` (runs all unit tests via Turbo)
+- **NEVER** run bare `bun test` or `bun --filter=<pkg> test` — in Bun, `test` is a built-in top-level command that ignores `--filter` and runs all monorepo tests natively without the required Vitest/Node environment.
+- Avoid raw `bun --filter=@repo/web run test` as it bypasses Turbo's cache and forces an uncached 2-3 minute full re-run. Prefer `bun run test:web` or `bun run test`.
 
 If the ticket touches backend HTTP endpoints (e.g., routes, middleware, CORS, auth guards), also write and run integration tests under `test/integration/` — not just unit tests. Run `bun run test:integration` from the monorepo root to verify before handing back.
 

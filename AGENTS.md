@@ -51,16 +51,16 @@ Tests use a conventional folder-based structure with Vitest as the test runner v
 **TDD-first workflow:**
 
 - Write tests before implementing features
-- Run `turbo run test --filter=<pkg>` (or `bun --filter=<pkg> run test`) for fast feedback on a single package
-- Run `turbo run test` (or `bun run test`) from the monorepo root to execute all unit tests
-- Run `turbo run test:integration` (or `bun run test:integration`) to execute integration tests (requires a running Postgres database)
+- Run `bun run test:web` or `bun run test:backend` (or `bunx turbo run test --filter=<pkg>`) for fast feedback with Turbo caching enabled
+- Run `bun run test` (or `turbo run test`) from the monorepo root to execute all unit tests (uses Turbo cache)
+- Run `bun run test:integration` (or `turbo run test:integration`) to execute integration tests (requires a running Postgres database)
 
 **⚠️ Bun CLI Test Constraint (Mandatory):**
 - **NEVER** run bare `bun test` or `bun --filter=<pkg> test`. In Bun, `test` is a built-in top-level command that invokes Bun's native test runner (which ignores `--filter`, scans the entire monorepo, and executes backend tests without Vitest/Node environment flags).
-- **ALWAYS** include the explicit `run` keyword when targeting a package script:
-  - `bun --filter=@repo/web run test` (or `bun run test:web`)
-  - `bun --filter=@repo/backend run test` (or `bun run test:backend`)
-- Or use Turbo: `bunx turbo run test --filter=<pkg>`
+- **ALWAYS** use the Turbo-cached scripts:
+  - `bun run test:web` (or `bunx turbo run test --filter=@repo/web`)
+  - `bun run test:backend` (or `bunx turbo run test --filter=@repo/backend`)
+  - Avoid raw `bun --filter=<pkg> run test` which bypasses Turbo's build cache and forces slow uncached re-runs.
 
 ---
 
