@@ -201,4 +201,121 @@ class DtoSerializationTest {
         assertEquals("SERIES_NOT_FOUND", errorObj.code)
         assertEquals("Series with given identifier was not found.", errorObj.message)
     }
+
+    @Test
+    fun deserializesHomeFeedWithLogoUrlAndHeroesArray() {
+        val payload = """
+            {
+              "data": {
+                "hero": {
+                  "id": "h1",
+                  "title": "Demo Series",
+                  "type": "series",
+                  "isFeatured": true,
+                  "createdAt": "2026-01-01T00:00:00.000Z",
+                  "updatedAt": "2026-01-01T00:00:00.000Z",
+                  "genres": [],
+                  "seasonsCount": 1,
+                  "episodesCount": 10,
+                  "tags": ["Action"],
+                  "logoUrl": "https://example.com/logo.png"
+                },
+                "heroes": [
+                  {
+                    "id": "h1",
+                    "title": "Hero 1",
+                    "type": "series",
+                    "isFeatured": true,
+                    "createdAt": "2026-01-01T00:00:00.000Z",
+                    "updatedAt": "2026-01-01T00:00:00.000Z",
+                    "genres": [],
+                    "seasonsCount": 1,
+                    "episodesCount": 10,
+                    "tags": ["Action"],
+                    "logoUrl": "https://example.com/logo1.png"
+                  },
+                  {
+                    "id": "h2",
+                    "title": "Hero 2",
+                    "type": "series",
+                    "isFeatured": false,
+                    "createdAt": "2026-01-01T00:00:00.000Z",
+                    "updatedAt": "2026-01-01T00:00:00.000Z",
+                    "genres": [],
+                    "seasonsCount": 2,
+                    "episodesCount": 20,
+                    "tags": ["Drama"],
+                    "logoUrl": null
+                  }
+                ],
+                "rows": [
+                  {
+                    "title": "Row 1",
+                    "items": [
+                      {
+                        "id": "s1",
+                        "title": "Series with logo",
+                        "type": "series",
+                        "isFeatured": false,
+                        "createdAt": "2026-01-01T00:00:00.000Z",
+                        "updatedAt": "2026-01-01T00:00:00.000Z",
+                        "genres": [],
+                        "seasonsCount": 1,
+                        "episodesCount": 5,
+                        "logoUrl": "https://example.com/series-logo.png"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<HomeFeedSuccessResponse>(payload)
+        val homeFeed = response.data
+
+        assertNotNull(homeFeed.hero)
+        assertEquals("https://example.com/logo.png", homeFeed.hero?.logoUrl)
+
+        assertNotNull(homeFeed.heroes)
+        assertEquals(2, homeFeed.heroes?.size)
+        assertEquals("h1", homeFeed.heroes?.get(0)?.id)
+        assertEquals("https://example.com/logo1.png", homeFeed.heroes?.get(0)?.logoUrl)
+        assertEquals("h2", homeFeed.heroes?.get(1)?.id)
+        assertNull(homeFeed.heroes?.get(1)?.logoUrl)
+
+        assertEquals("https://example.com/series-logo.png", homeFeed.rows[0].items[0].logoUrl)
+    }
+
+    @Test
+    fun deserializesHomeFeedWithNullLogoUrlAndNullHeroes() {
+        val payload = """
+            {
+              "data": {
+                "hero": {
+                  "id": "h1",
+                  "title": "Demo Series",
+                  "type": "series",
+                  "isFeatured": true,
+                  "createdAt": "2026-01-01T00:00:00.000Z",
+                  "updatedAt": "2026-01-01T00:00:00.000Z",
+                  "genres": [],
+                  "seasonsCount": 1,
+                  "episodesCount": 10,
+                  "tags": ["Action"],
+                  "logoUrl": null
+                },
+                "heroes": null,
+                "rows": []
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<HomeFeedSuccessResponse>(payload)
+        val homeFeed = response.data
+
+        assertNotNull(homeFeed.hero)
+        assertNull(homeFeed.hero?.logoUrl)
+        assertNull(homeFeed.heroes)
+    }
 }

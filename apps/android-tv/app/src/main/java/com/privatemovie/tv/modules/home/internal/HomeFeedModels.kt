@@ -18,6 +18,7 @@ data class TvSeries(
     val type: String,
     val posterUrl: String?,
     val backdropUrl: String?,
+    val logoUrl: String? = null,
     val rating: String?,
     val isFeatured: Boolean,
     val genres: List<TvGenre>,
@@ -37,6 +38,7 @@ data class TvHomeRow(
 
 data class TvHomeFeed(
     val hero: TvHomeHero?,
+    val heroes: List<TvHomeHero> = emptyList(),
     val rows: List<TvHomeRow>
 )
 
@@ -49,13 +51,14 @@ sealed interface HomeUiState {
 
 fun HomeFeed.toTvHomeFeed(): TvHomeFeed {
     val tvHero = hero?.toTvHomeHero()
+    val tvHeroes = heroes?.map { it.toTvHomeHero() } ?: emptyList()
     val tvRows = rows.map { rowDto ->
         TvHomeRow(
             title = rowDto.title,
             items = rowDto.items.map { itemDto -> itemDto.toTvSeries() }
         )
     }
-    return TvHomeFeed(hero = tvHero, rows = tvRows)
+    return TvHomeFeed(hero = tvHero, heroes = tvHeroes, rows = tvRows)
 }
 
 fun HomeFeedHero.toTvHomeHero(): TvHomeHero {
@@ -67,6 +70,7 @@ fun HomeFeedHero.toTvHomeHero(): TvHomeHero {
             type = type,
             posterUrl = posterUrl,
             backdropUrl = backdropUrl,
+            logoUrl = logoUrl,
             rating = rating,
             isFeatured = isFeatured,
             genres = genres.map { it.toTvGenre() },
@@ -85,6 +89,7 @@ fun SeriesMetadata.toTvSeries(): TvSeries {
         type = type,
         posterUrl = posterUrl,
         backdropUrl = backdropUrl,
+        logoUrl = logoUrl,
         rating = rating,
         isFeatured = isFeatured,
         genres = genres.map { it.toTvGenre() },

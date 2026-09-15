@@ -45,6 +45,7 @@ import kotlinx.serialization.Contextual
  * @param description 
  * @param posterUrl 
  * @param backdropUrl 
+ * @param logoUrl 
  * @param rating 
  */
 @Serializable
@@ -89,6 +90,9 @@ data class HomeFeedHero (
 
     @SerialName(value = "backdropUrl")
     val backdropUrl: kotlin.String? = null,
+
+    @SerialName(value = "logoUrl")
+    val logoUrl: kotlin.String? = null,
 
     @SerialName(value = "rating")
     val rating: kotlin.String? = null

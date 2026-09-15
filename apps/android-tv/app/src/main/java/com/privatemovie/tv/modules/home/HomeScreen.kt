@@ -1,7 +1,10 @@
 package com.privatemovie.tv.modules.home
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -34,10 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,14 +55,17 @@ import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
 import androidx.tv.material3.Card as TvCard
 import androidx.tv.material3.CardDefaults as TvCardDefaults
 import com.privatemovie.tv.components.EdgeScaleTransform
+import com.privatemovie.tv.components.LogoOrTitleRender
 import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
 import com.privatemovie.tv.components.TvMediaImage
 import com.privatemovie.tv.data.repository.MediaRepository
+import com.privatemovie.tv.modules.home.internal.HeroSliderState
 import com.privatemovie.tv.modules.home.internal.HomeUiState
 import com.privatemovie.tv.modules.home.internal.TvHomeFeed
 import com.privatemovie.tv.modules.home.internal.TvHomeHero
 import com.privatemovie.tv.modules.home.internal.TvSeries
+import com.privatemovie.tv.modules.home.internal.rememberHeroSliderState
 import com.privatemovie.tv.modules.home.internal.toTvHomeFeed
 
 /**
@@ -88,18 +97,11 @@ fun HomeScreen(
         )
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 48.dp, vertical = 28.dp)
     ) {
-        HomeTopBar(
-            onOpenDevSettings = onOpenDevSettings
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         when (val state = uiState) {
             is HomeUiState.Loading -> HomeLoading()
             is HomeUiState.Error -> HomeError(
@@ -110,9 +112,33 @@ fun HomeScreen(
                 feed = state.feed,
                 baseUrl = activeBackendUrl,
                 onSelectSeries = onSelectSeries,
+                onOpenDevSettings = onOpenDevSettings,
                 onRetry = { reloadKey += 1 }
             )
         }
+    }
+}
+
+@Composable
+fun FloatingTopBarOverlay(
+    onOpenDevSettings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Black.copy(alpha = 0.75f),
+                        Color.Black.copy(alpha = 0.4f),
+                        Color.Transparent
+                    )
+                )
+            )
+            .padding(horizontal = 48.dp, vertical = 20.dp)
+    ) {
+        HomeTopBar(onOpenDevSettings = onOpenDevSettings)
     }
 }
 
@@ -286,144 +312,154 @@ private fun HomeFeedContent(
     feed: TvHomeFeed,
     baseUrl: String,
     onSelectSeries: (String) -> Unit,
+    onOpenDevSettings: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val hasContent = feed.hero != null || feed.rows.any { it.items.isNotEmpty() }
+    val effectiveHeroes = remember(feed) {
+        if (feed.heroes.isNotEmpty()) {
+            feed.heroes
+        } else if (feed.hero != null) {
+            listOf(feed.hero)
+        } else {
+            emptyList()
+        }
+    }
+
+    val hasContent = effectiveHeroes.isNotEmpty() || feed.rows.any { it.items.isNotEmpty() }
     if (!hasContent) {
         HomeEmpty(onRetry = onRetry, modifier = modifier)
         return
     }
 
+    val sliderState = rememberHeroSliderState(heroes = effectiveHeroes)
     val heroFocus = remember { FocusRequester() }
-    LaunchedEffect(feed.hero?.series?.id) {
-        if (feed.hero != null) heroFocus.requestFocus()
+
+    LaunchedEffect(effectiveHeroes) {
+        if (effectiveHeroes.isNotEmpty()) {
+            heroFocus.requestFocus()
+        }
     }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(32.dp),
-        contentPadding = PaddingValues(bottom = 40.dp)
-    ) {
-        feed.hero?.let { hero ->
-            item(key = "hero-${hero.series.id}") {
-                FeaturedHeroCard(
-                    hero = hero,
-                    baseUrl = baseUrl,
-                    onSelect = { onSelectSeries(hero.series.id) },
-                    ctaFocusRequester = heroFocus
-                )
-            }
-        }
-
-        feed.rows.forEach { row ->
-            if (row.items.isNotEmpty()) {
-                item(key = "row-header-${row.title}") {
-                    Text(
-                        text = row.title,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(bottom = 12.dp)
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(32.dp),
+            contentPadding = PaddingValues(bottom = 48.dp)
+        ) {
+            if (effectiveHeroes.isNotEmpty()) {
+                item(key = "hero-slider") {
+                    FeaturedHeroSlider(
+                        sliderState = sliderState,
+                        baseUrl = baseUrl,
+                        onSelectSeries = onSelectSeries,
+                        ctaFocusRequester = heroFocus
                     )
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
-                    ) {
-                        itemsIndexed(row.items, key = { _, series -> series.id }) { index, series ->
-                            val transformOrigin = EdgeScaleTransform(index, row.items.size)
-                            SeriesPosterCard(
-                                series = series,
-                                baseUrl = baseUrl,
-                                onSelect = { onSelectSeries(series.id) },
-                                transformOrigin = transformOrigin
+                }
+            }
+
+            feed.rows.forEach { row ->
+                if (row.items.isNotEmpty()) {
+                    item(key = "row-header-${row.title}") {
+                        Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+                            Text(
+                                text = row.title,
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(bottom = 12.dp)
                             )
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                                contentPadding = PaddingValues(vertical = 8.dp)
+                            ) {
+                                itemsIndexed(row.items, key = { _, series -> series.id }) { index, series ->
+                                    val transformOrigin = EdgeScaleTransform(index, row.items.size)
+                                    SeriesPosterCard(
+                                        series = series,
+                                        baseUrl = baseUrl,
+                                        onSelect = { onSelectSeries(series.id) },
+                                        transformOrigin = transformOrigin
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+
+        FloatingTopBarOverlay(
+            onOpenDevSettings = onOpenDevSettings,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 }
 
 @Composable
-private fun HomeEmpty(
-    onRetry: () -> Unit,
+fun FeaturedHeroSlider(
+    sliderState: HeroSliderState,
+    baseUrl: String,
+    onSelectSeries: (String) -> Unit,
+    ctaFocusRequester: FocusRequester,
     modifier: Modifier = Modifier
 ) {
-    val retryFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { retryFocus.requestFocus() }
+    val heroes = sliderState.heroes
+    if (heroes.isEmpty()) return
 
     Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        modifier = modifier
+            .fillMaxWidth()
+            .height(480.dp)
+            .background(Color(0xFF141419))
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "No public content yet",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground
+        Crossfade(
+            targetState = sliderState.activeIndex,
+            animationSpec = tween(500),
+            label = "HeroSliderCrossfade"
+        ) { index ->
+            val hero = heroes.getOrNull(index) ?: heroes.first()
+            HeroSlideContent(
+                hero = hero,
+                baseUrl = baseUrl,
+                onSelect = { onSelectSeries(hero.series.id) },
+                ctaFocusRequester = ctaFocusRequester,
+                onKeyEvent = { sliderState.handleKeyEvent(it) },
+                onFocusChanged = { sliderState.onFocusChanged(it) }
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "New series will appear here once the catalog has playable content.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.LightGray
+        }
+
+        if (sliderState.heroCount > 1) {
+            PaginationDots(
+                count = sliderState.heroCount,
+                activeIndex = sliderState.activeIndex,
+                onSelectIndex = { sliderState.selectSlide(it) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 48.dp, bottom = 28.dp)
             )
-            Spacer(modifier = Modifier.height(24.dp))
-            val buttonShape = RoundedCornerShape(8.dp)
-            TvButton(
-                onClick = onRetry,
-                modifier = Modifier.focusRequester(retryFocus),
-                shape = TvButtonDefaults.shape(
-                    shape = buttonShape,
-                    focusedShape = buttonShape
-                ),
-                scale = TvButtonDefaults.scale(
-                    scale = 1.0f,
-                    focusedScale = 1.08f
-                ),
-                border = TvButtonDefaults.border(
-                    border = Border.None,
-                    focusedBorder = Border(
-                        border = BorderStroke(width = 2.dp, color = Color.White),
-                        shape = buttonShape
-                    )
-                ),
-                colors = TvButtonDefaults.colors(
-                    containerColor = Color.White.copy(alpha = 0.15f),
-                    focusedContainerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
-                    focusedContentColor = Color.White
-                )
-            ) {
-                Text("Retry", fontWeight = FontWeight.Bold)
-            }
         }
     }
 }
 
 @Composable
-private fun FeaturedHeroCard(
+fun HeroSlideContent(
     hero: TvHomeHero,
     baseUrl: String,
     onSelect: () -> Unit,
     ctaFocusRequester: FocusRequester,
+    onKeyEvent: (androidx.compose.ui.input.key.KeyEvent) -> Boolean,
+    onFocusChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val series = hero.series
-    val cardShape = RoundedCornerShape(16.dp)
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(420.dp)
-            .clip(cardShape)
-            .background(Color(0xFF18181F))
+        modifier = modifier.fillMaxSize()
     ) {
-        // Full-width backdrop image
+        // Full-bleed backdrop image
         TvMediaImage(
             imageUrl = series.backdropUrl ?: series.posterUrl,
             contentDescription = series.title,
@@ -434,7 +470,7 @@ private fun FeaturedHeroCard(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Gradient overlay (cinematic fade to dark surface)
+        // Gradient overlay (horizontal cinematic fade)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -452,16 +488,18 @@ private fun FeaturedHeroCard(
                 )
         )
 
+        // Gradient overlay (vertical bottom and top fade)
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
+                            Color.Black.copy(alpha = 0.5f),
                             Color.Transparent,
-                            Color.Black.copy(alpha = 0.7f)
+                            Color.Black.copy(alpha = 0.9f)
                         ),
-                        startY = 100f
+                        startY = 0f
                     )
                 )
         )
@@ -470,7 +508,7 @@ private fun FeaturedHeroCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp, vertical = 24.dp)
+                .padding(start = 48.dp, end = 48.dp, top = 88.dp, bottom = 24.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(0.65f)
@@ -541,18 +579,13 @@ private fun FeaturedHeroCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Title
-                Text(
-                    text = series.title,
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                // Logo or Title headline render
+                LogoOrTitleRender(
+                    logoUrl = series.logoUrl,
+                    title = series.title,
+                    baseUrl = baseUrl
                 )
 
                 // Synopsis
@@ -577,11 +610,14 @@ private fun FeaturedHeroCard(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Primary Action Button taking initial focus
+            // Primary Action Button with focus & d-pad navigation
             val ctaShape = RoundedCornerShape(8.dp)
             TvButton(
                 onClick = onSelect,
-                modifier = Modifier.focusRequester(ctaFocusRequester),
+                modifier = Modifier
+                    .focusRequester(ctaFocusRequester)
+                    .onFocusChanged { onFocusChanged(it.isFocused) }
+                    .onKeyEvent { onKeyEvent(it) },
                 shape = TvButtonDefaults.shape(
                     shape = ctaShape,
                     focusedShape = ctaShape
@@ -609,6 +645,91 @@ private fun FeaturedHeroCard(
                     text = "View Series",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun PaginationDots(
+    count: Int,
+    activeIndex: Int,
+    onSelectIndex: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (i in 0 until count) {
+            val isActive = i == activeIndex
+            Box(
+                modifier = Modifier
+                    .size(if (isActive) 10.dp else 8.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isActive) MaterialTheme.colorScheme.primary
+                        else Color.White.copy(alpha = 0.35f)
+                    )
+                    .clickable { onSelectIndex(i) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeEmpty(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val retryFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { retryFocus.requestFocus() }
+
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "No public content yet",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "New series will appear here once the catalog has playable content.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.LightGray
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            val buttonShape = RoundedCornerShape(8.dp)
+            TvButton(
+                onClick = onRetry,
+                modifier = Modifier.focusRequester(retryFocus),
+                shape = TvButtonDefaults.shape(
+                    shape = buttonShape,
+                    focusedShape = buttonShape
+                ),
+                scale = TvButtonDefaults.scale(
+                    scale = 1.0f,
+                    focusedScale = 1.08f
+                ),
+                border = TvButtonDefaults.border(
+                    border = Border.None,
+                    focusedBorder = Border(
+                        border = BorderStroke(width = 2.dp, color = Color.White),
+                        shape = buttonShape
+                    )
+                ),
+                colors = TvButtonDefaults.colors(
+                    containerColor = Color.White.copy(alpha = 0.15f),
+                    focusedContainerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White,
+                    focusedContentColor = Color.White
+                )
+            ) {
+                Text("Retry", fontWeight = FontWeight.Bold)
             }
         }
     }
