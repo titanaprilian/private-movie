@@ -28,10 +28,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,12 +66,16 @@ fun EpisodeCarousel(
     baseUrl: String?,
     onSelectEpisode: (TvEpisode) -> Unit,
     onEpisodeFocused: (TvEpisode) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    firstItemFocusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+    upFocusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+    downFocusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+    onUp: (() -> Unit)? = null
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(20.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+        contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp)
     ) {
         itemsIndexed(episodes, key = { _, episode -> episode.id }) { index, episode ->
             val transformOrigin = EdgeScaleTransform(index, episodes.size)
@@ -76,7 +84,33 @@ fun EpisodeCarousel(
                 baseUrl = baseUrl,
                 onSelect = { onSelectEpisode(episode) },
                 onFocus = { onEpisodeFocused(episode) },
-                transformOrigin = transformOrigin
+                transformOrigin = transformOrigin,
+                modifier = Modifier
+                    .then(
+                        if (index == 0 && firstItemFocusRequester != null) {
+                            Modifier.focusRequester(firstItemFocusRequester)
+                        } else Modifier
+                    )
+                    .then(
+                        if (upFocusRequester != null || downFocusRequester != null) {
+                            Modifier.focusProperties {
+                                upFocusRequester?.let { up = it }
+                                downFocusRequester?.let { down = it }
+                            }
+                        } else Modifier
+                    )
+                    .then(
+                        if (onUp != null) {
+                            Modifier.onKeyEvent { keyEvent ->
+                                if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
+                                    keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
+                                ) {
+                                    onUp()
+                                    true
+                                } else false
+                            }
+                        } else Modifier
+                    )
             )
         }
     }

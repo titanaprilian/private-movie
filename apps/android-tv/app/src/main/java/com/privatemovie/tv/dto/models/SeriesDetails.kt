@@ -87,6 +87,9 @@ data class SeriesDetails (
     @SerialName(value = "description")
     val description: kotlin.String? = null,
 
+    @SerialName(value = "logoUrl")
+    val logoUrl: kotlin.String? = null,
+
     @SerialName(value = "posterUrl")
     val posterUrl: kotlin.String? = null,
 

@@ -47,7 +47,8 @@ class DetailPlaybackLogicTest {
 
     private fun createSeriesDetails(
         seasons: List<TvSeason> = emptyList(),
-        standaloneEpisodes: List<TvEpisode> = emptyList()
+        standaloneEpisodes: List<TvEpisode> = emptyList(),
+        logoUrl: String? = null
     ): TvSeriesDetails {
         return TvSeriesDetails(
             id = "series-1",
@@ -56,6 +57,7 @@ class DetailPlaybackLogicTest {
             isFeatured = true,
             genres = emptyList(),
             description = "A test series",
+            logoUrl = logoUrl,
             posterUrl = "/posters/test.jpg",
             backdropUrl = "/backdrops/test.jpg",
             rating = "8.9",

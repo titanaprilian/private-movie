@@ -80,6 +80,7 @@ class DetailModelMappingTest {
             relations = emptyList(),
             genres = listOf(Genre(id = "g1", name = "Action", slug = "action")),
             description = "An exciting series.",
+            logoUrl = "https://example.com/logo.png",
             rating = "9.0"
         )
 
@@ -90,6 +91,7 @@ class DetailModelMappingTest {
         assertEquals("tv", tvDetails.type)
         assertTrue(tvDetails.isFeatured)
         assertEquals("An exciting series.", tvDetails.description)
+        assertEquals("https://example.com/logo.png", tvDetails.logoUrl)
         assertEquals("9.0", tvDetails.rating)
         assertEquals(1, tvDetails.genres.size)
         assertEquals("Action", tvDetails.genres[0].name)

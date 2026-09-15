@@ -28,12 +28,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
@@ -127,7 +131,6 @@ fun DetailScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(32.dp)
     ) {
         when (val state = uiState) {
             is DetailUiState.Loading -> DetailLoading(onBack = onBack)
@@ -165,7 +168,11 @@ private fun DetailLoading(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(48.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -228,7 +235,11 @@ private fun DetailError(
     val retryFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { retryFocus.requestFocus() }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(48.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -351,10 +362,17 @@ private fun DetailContent(
     }
 
     val playCtaFocusRequester = remember { FocusRequester() }
+    val backFocusRequester = remember { FocusRequester() }
+    val seasonTabsFocusRequester = remember { FocusRequester() }
+    val carouselFocusRequester = remember { FocusRequester() }
+    val descriptionPanelFocusRequester = remember { FocusRequester() }
+    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
     // Initial D-pad focus placed directly onto the Play Now CTA on screen entry
     LaunchedEffect(details.id) {
         playCtaFocusRequester.requestFocus()
+        lazyListState.scrollToItem(0, 0)
     }
 
     val currentEpisodes = if (details.seasons.isNotEmpty()) {
@@ -363,24 +381,64 @@ private fun DetailContent(
         details.standaloneEpisodes
     }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(28.dp),
-        contentPadding = PaddingValues(bottom = 40.dp)
-    ) {
-        // 1. Immersive Series Header (Backdrop + Poster + Metadata + Play CTA)
-        item(key = "header") {
-            SeriesHeader(
-                details = details,
-                baseUrl = activeBackendUrl,
-                firstPlayableEpisode = firstEpisode,
-                playCtaFocusRequester = playCtaFocusRequester,
-                onPlayCta = {
-                    firstEpisode?.let { onSelectEpisode(it) }
-                },
-                onBack = onBack
-            )
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    val customBringIntoViewSpec = remember(lazyListState) {
+        object : androidx.compose.foundation.gestures.BringIntoViewSpec {
+            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+                if (lazyListState.firstVisibleItemIndex == 0 && offset + size <= containerSize) {
+                    return 0f
+                }
+                val leadingEdge = offset
+                val trailingEdge = offset + size
+                return if (leadingEdge >= 0f && trailingEdge <= containerSize) {
+                    0f
+                } else if (leadingEdge < 0f) {
+                    leadingEdge
+                } else {
+                    trailingEdge - containerSize
+                }
+            }
         }
+    }
+
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides customBringIntoViewSpec
+    ) {
+        LazyColumn(
+            state = lazyListState,
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+            contentPadding = PaddingValues(bottom = 40.dp)
+        ) {
+            // 1. Full-Bleed Series Header (Backdrop + Poster + Metadata + Logo + Play CTA + Back Button)
+            item(key = "header") {
+                SeriesHeader(
+                    details = details,
+                    baseUrl = activeBackendUrl,
+                    firstPlayableEpisode = firstEpisode,
+                    playCtaFocusRequester = playCtaFocusRequester,
+                    backFocusRequester = backFocusRequester,
+                    onPlayCta = {
+                        firstEpisode?.let { onSelectEpisode(it) }
+                    },
+                    onBack = onBack,
+                    onDownFromCta = {
+                        coroutineScope.launch {
+                            if (details.seasons.size > 1) {
+                                lazyListState.animateScrollToItem(1)
+                                seasonTabsFocusRequester.requestFocus()
+                            } else if (currentEpisodes.isNotEmpty()) {
+                                lazyListState.animateScrollToItem(1)
+                                carouselFocusRequester.requestFocus()
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillParentMaxHeight()
+                        .clipToBounds()
+                )
+            }
 
         // 2. Season Selector Tabs (if more than 1 season)
         if (details.seasons.size > 1) {
@@ -392,19 +450,21 @@ private fun DetailContent(
                         selectedSeasonIndex = index
                         val nextSeasonEp = details.seasons.getOrNull(index)?.episodes?.firstOrNull()
                         currentlyInspectedEpisode = nextSeasonEp
+                    },
+                    firstTabFocusRequester = seasonTabsFocusRequester,
+                    upFocusRequester = playCtaFocusRequester,
+                    downFocusRequester = carouselFocusRequester,
+                    onUp = {
+                        coroutineScope.launch {
+                            lazyListState.animateScrollToItem(0)
+                            playCtaFocusRequester.requestFocus()
+                        }
                     }
                 )
             }
         }
 
-        // 3. Dynamic Episode Info Panel (shows title, full synopsis, and playback sources)
-        item(key = "dynamic-info-panel") {
-            EpisodeInfoPanel(
-                episode = currentlyInspectedEpisode
-            )
-        }
-
-        // 4. Horizontal 16:9 Episode Carousel Section
+        // 3. Horizontal 16:9 Episode Carousel Section
         item(key = "episodes-section") {
             val sectionTitle = if (details.seasons.isNotEmpty()) {
                 val currentSeason = details.seasons.getOrNull(selectedSeasonIndex)
@@ -421,7 +481,7 @@ private fun DetailContent(
                         letterSpacing = 0.5.sp
                     ),
                     color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(start = 48.dp, end = 48.dp, bottom = 8.dp)
                 )
 
                 if (currentEpisodes.isEmpty()) {
@@ -429,7 +489,7 @@ private fun DetailContent(
                         text = "No episodes available for this section.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
-                        modifier = Modifier.padding(vertical = 16.dp)
+                        modifier = Modifier.padding(horizontal = 48.dp, vertical = 16.dp)
                     )
                 } else {
                     EpisodeCarousel(
@@ -438,12 +498,35 @@ private fun DetailContent(
                         onSelectEpisode = onSelectEpisode,
                         onEpisodeFocused = { episode ->
                             currentlyInspectedEpisode = episode
-                        }
+                        },
+                        firstItemFocusRequester = carouselFocusRequester,
+                        upFocusRequester = if (details.seasons.size > 1) seasonTabsFocusRequester else playCtaFocusRequester,
+                        downFocusRequester = descriptionPanelFocusRequester,
+                        onUp = if (details.seasons.size <= 1) {
+                            {
+                                coroutineScope.launch {
+                                    lazyListState.animateScrollToItem(0)
+                                    playCtaFocusRequester.requestFocus()
+                                }
+                            }
+                        } else null
                     )
                 }
             }
         }
+
+        // 4. Bottom Episode Description Panel (shows full untruncated synopsis, title, sources)
+        item(key = "bottom-description-panel") {
+            Box(modifier = Modifier.padding(horizontal = 48.dp)) {
+                EpisodeInfoPanel(
+                    episode = currentlyInspectedEpisode,
+                    focusRequester = descriptionPanelFocusRequester,
+                    upFocusRequester = carouselFocusRequester
+                )
+            }
+        }
     }
+}
 }
 
 @Composable
@@ -451,11 +534,16 @@ private fun SeasonSelectorBar(
     seasons: List<TvSeason>,
     selectedIndex: Int,
     onSelectSeason: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    firstTabFocusRequester: FocusRequester? = null,
+    upFocusRequester: FocusRequester? = null,
+    downFocusRequester: FocusRequester? = null,
+    onUp: (() -> Unit)? = null
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = 48.dp)
     ) {
         itemsIndexed(seasons) { index, season ->
             val isSelected = index == selectedIndex
@@ -463,6 +551,32 @@ private fun SeasonSelectorBar(
 
             TvButton(
                 onClick = { onSelectSeason(index) },
+                modifier = Modifier
+                    .then(
+                        if (index == 0 && firstTabFocusRequester != null) {
+                            Modifier.focusRequester(firstTabFocusRequester)
+                        } else Modifier
+                    )
+                    .then(
+                        if (upFocusRequester != null || downFocusRequester != null) {
+                            Modifier.focusProperties {
+                                upFocusRequester?.let { up = it }
+                                downFocusRequester?.let { down = it }
+                            }
+                        } else Modifier
+                    )
+                    .then(
+                        if (onUp != null) {
+                            Modifier.onKeyEvent { keyEvent ->
+                                if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
+                                    keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
+                                ) {
+                                    onUp()
+                                    true
+                                } else false
+                            }
+                        } else Modifier
+                    ),
                 shape = TvButtonDefaults.shape(
                     shape = tabShape,
                     focusedShape = tabShape
