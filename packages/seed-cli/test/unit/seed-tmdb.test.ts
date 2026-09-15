@@ -156,7 +156,7 @@ describe("seed-tmdb fetchTmdbSeriesData", () => {
       title: "Jujutsu Kaisen",
       description: "A boy swallows a cursed finger...",
       posterPath: "https://image.tmdb.org/t/p/w500/jujutsu.jpg",
-      backdropPath: "https://image.tmdb.org/t/p/w500/jujutsu_bg.jpg",
+      backdropPath: "https://image.tmdb.org/t/p/original/jujutsu_bg.jpg",
       firstAirDate: "2020-10-03",
       voteAverage: 8.5,
       genres: ["Animation", "Action & Adventure"],

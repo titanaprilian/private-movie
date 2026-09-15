@@ -274,7 +274,7 @@ export async function getTmdbPreview(
 
     const title = movieData.title || movieData.name || `Movie ${tmdbId}`;
     const posterUrl = movieData.poster_path ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null;
-    const backdropUrl = movieData.backdrop_path ? `https://image.tmdb.org/t/p/w500${movieData.backdrop_path}` : null;
+    const backdropUrl = movieData.backdrop_path ? `https://image.tmdb.org/t/p/original${movieData.backdrop_path}` : null;
     const releaseDate = movieData.release_date || movieData.first_air_date || null;
 
     return {
@@ -307,7 +307,7 @@ export async function getTmdbPreview(
       title: seriesData.name || seriesData.title || `Series ${tmdbId}`,
       overview: seriesData.overview ?? "",
       posterUrl: seriesData.poster_path ? `https://image.tmdb.org/t/p/w500${seriesData.poster_path}` : null,
-      backdropUrl: seriesData.backdrop_path ? `https://image.tmdb.org/t/p/w500${seriesData.backdrop_path}` : null,
+      backdropUrl: seriesData.backdrop_path ? `https://image.tmdb.org/t/p/original${seriesData.backdrop_path}` : null,
       releaseDate: seriesData.first_air_date ?? null,
       genres: (seriesData.genres || []).map((g) => g.name),
       status: seriesData.status ?? null,
@@ -354,7 +354,7 @@ export async function fetchTmdbSeriesData(
 
     const title = movieData.title || movieData.name || `Movie ${tmdbId}`;
     const posterPath = movieData.poster_path ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null;
-    const backdropPath = movieData.backdrop_path ? `https://image.tmdb.org/t/p/w500${movieData.backdrop_path}` : null;
+    const backdropPath = movieData.backdrop_path ? `https://image.tmdb.org/t/p/original${movieData.backdrop_path}` : null;
     const releaseDate = movieData.release_date || movieData.first_air_date || null;
     const overview = movieData.overview ?? null;
 
@@ -424,7 +424,7 @@ export async function fetchTmdbSeriesData(
       title: seriesData.name || seriesData.title || `Series ${tmdbId}`,
       description: seriesData.overview ?? null,
       posterPath: seriesData.poster_path ? `https://image.tmdb.org/t/p/w500${seriesData.poster_path}` : null,
-      backdropPath: seriesData.backdrop_path ? `https://image.tmdb.org/t/p/w500${seriesData.backdrop_path}` : null,
+      backdropPath: seriesData.backdrop_path ? `https://image.tmdb.org/t/p/original${seriesData.backdrop_path}` : null,
       firstAirDate: seriesData.first_air_date ?? null,
       voteAverage: seriesData.vote_average ?? null,
       genres: (seriesData.genres || []).map((g) => g.name),
