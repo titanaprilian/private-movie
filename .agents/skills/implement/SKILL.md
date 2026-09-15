@@ -36,14 +36,24 @@ Run typechecking regularly, single test files regularly during development, and 
 - Pass the specific test file path through the double `--` separator so it reaches Vitest:
   - `bun run test:web -- -- test/unit/<feature>/<name>.test.ts`
   - `bun run test:backend -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:seed-cli -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:media-service -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:media-scraper -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:db -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:contracts -- -- test/unit/<feature>/<name>.test.ts`
 - Equivalently with Turbo directly:
-  - `bunx turbo run test --filter=@repo/web -- test/unit/<feature>/<name>.test.ts`
+  - `bunx turbo run test --filter=@repo/<pkg> -- test/unit/<feature>/<name>.test.ts`
 - This runs in ~2–5 seconds instead of the full suite (which can take 1–3 minutes).
 - Example: `bun run test:web -- -- test/unit/auth/LoginForm.test.tsx`
 
 **Before handing back — run the full suite once so results are cached for the orchestrator:**
 - `bun run test:web` (or `bunx turbo run test --filter=@repo/web`)
 - `bun run test:backend` (or `bunx turbo run test --filter=@repo/backend`)
+- `bun run test:seed-cli` (or `bunx turbo run test --filter=@repo/seed-cli`)
+- `bun run test:media-service` (or `bunx turbo run test --filter=@repo/media-service`)
+- `bun run test:media-scraper` (or `bunx turbo run test --filter=@repo/media-scraper`)
+- `bun run test:db` (or `bunx turbo run test --filter=@repo/db`)
+- `bun run test:contracts` (or `bunx turbo run test --filter=@repo/contracts`)
 - `bun run test` (runs all unit tests via Turbo)
 
 If the ticket touches backend HTTP endpoints (e.g., routes, middleware, CORS, auth guards), also write and run integration tests under `test/integration/` — not just unit tests.

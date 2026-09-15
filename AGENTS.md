@@ -54,18 +54,28 @@ Tests use a conventional folder-based structure with Vitest as the test runner v
 - **During the red → green loop, always use targeted test runs for fast feedback.** Pass the specific test file through the double `--` separator so it reaches Vitest:
   - `bun run test:web -- -- test/unit/<feature>/<name>.test.ts`
   - `bun run test:backend -- -- test/unit/<feature>/<name>.test.ts`
-  - Equivalently: `bunx turbo run test --filter=@repo/web -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:seed-cli -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:media-service -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:media-scraper -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:db -- -- test/unit/<feature>/<name>.test.ts`
+  - `bun run test:contracts -- -- test/unit/<feature>/<name>.test.ts`
+  - Equivalently: `bunx turbo run test --filter=@repo/<pkg> -- test/unit/<feature>/<name>.test.ts`
   - This completes in ~2–5 seconds. Never run the full suite in a tight TDD loop.
 - **Before handing back**, run the full suite once so Turbo caches results for the orchestrator:
-  - `bun run test:web` or `bun run test:backend` (or `bunx turbo run test --filter=<pkg>`)
+  - `bun run test:web`, `bun run test:backend`, `bun run test:seed-cli`, `bun run test:media-service`, `bun run test:media-scraper`, `bun run test:db`, or `bun run test:contracts` (or `bunx turbo run test --filter=<pkg>`)
   - `bun run test` (or `turbo run test`) from the monorepo root executes all unit tests
 - Run `bun run test:integration` (or `turbo run test:integration`) to execute integration tests (requires a running Postgres database)
 
 **⚠️ Bun CLI Test Constraint (Mandatory):**
-- **NEVER** run bare `bun test` or `bun --filter=<pkg> test`. In Bun, `test` is a built-in top-level command that invokes Bun's native test runner (which ignores `--filter`, scans the entire monorepo, and executes backend tests without Vitest/Node environment flags).
+- **NEVER** run bare `bun test` or `bun --filter=<pkg> test`. In Bun, `test` is a built-in top-level command that ignores `--filter`, scans the entire monorepo, and executes backend tests without Vitest/Node environment flags.
 - **ALWAYS** use the Turbo-cached scripts:
   - `bun run test:web` (or `bunx turbo run test --filter=@repo/web`)
   - `bun run test:backend` (or `bunx turbo run test --filter=@repo/backend`)
+  - `bun run test:seed-cli` (or `bunx turbo run test --filter=@repo/seed-cli`)
+  - `bun run test:media-service` (or `bunx turbo run test --filter=@repo/media-service`)
+  - `bun run test:media-scraper` (or `bunx turbo run test --filter=@repo/media-scraper`)
+  - `bun run test:db` (or `bunx turbo run test --filter=@repo/db`)
+  - `bun run test:contracts` (or `bunx turbo run test --filter=@repo/contracts`)
   - Avoid raw `bun --filter=<pkg> run test` which bypasses Turbo's build cache and forces slow uncached re-runs.
 
 ---
