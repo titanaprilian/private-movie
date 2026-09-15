@@ -243,7 +243,14 @@ describe('SeriesWatchView', () => {
               title: `S${i + 1} Episode 1`,
               order: 1,
               seasonId: `season-${i + 1}`,
-              videoSources: [],
+              videoSources: [
+                {
+                  id: `src-s${i + 1}-1`,
+                  type: 'embed',
+                  url: `https://embed.com/s${i + 1}`,
+                  label: 'Server 1',
+                },
+              ],
             },
           ],
         })),
@@ -319,7 +326,14 @@ describe('SeriesWatchView', () => {
                 seasonId: 'season-fb',
                 description: null,
                 duration: null,
-                videoSources: [],
+                videoSources: [
+                  {
+                    id: 'src-fb-1',
+                    type: 'embed',
+                    url: 'https://embed.com/fb1',
+                    label: 'Server 1',
+                  },
+                ],
               },
             ],
           },
@@ -418,6 +432,76 @@ describe('SeriesWatchView', () => {
 
       expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+    });
+
+    it('falls back to Series Overview mode when direct link references an unplayable episode (0 video sources)', () => {
+      const seriesWithUnplayable: WatchSeriesDetails = {
+        ...mockSeries,
+        seasons: [
+          {
+            id: 'season-1',
+            seriesId: 'series-1',
+            title: 'Season 1',
+            episodes: [
+              {
+                id: 'ep-playable',
+                title: 'Playable Ep',
+                order: 1,
+                seasonId: 'season-1',
+                videoSources: [
+                  { id: 'src-1', type: 'embed', url: 'https://embed.com/1', label: 'Server 1' },
+                ],
+              },
+              {
+                id: 'ep-unplayable',
+                title: 'Unplayable Ep',
+                order: 2,
+                seasonId: 'season-1',
+                videoSources: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      renderWithProviders(
+        <SeriesWatchView series={seriesWithUnplayable} initialEpisodeId="ep-unplayable" />
+      );
+
+      // Should fall back to overview mode instead of player mode
+      expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
+      expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+      expect(screen.getByText('Playable Ep')).toBeInTheDocument();
+      expect(screen.queryByText('Unplayable Ep')).not.toBeInTheDocument();
+    });
+
+    it('disables "Play Episode 1" CTA button and shows empty state when zero playable episodes exist across series', () => {
+      const seriesWithoutPlayable: WatchSeriesDetails = {
+        ...mockSeries,
+        seasons: [
+          {
+            id: 'season-1',
+            seriesId: 'series-1',
+            title: 'Season 1',
+            episodes: [
+              {
+                id: 'ep-no-source-1',
+                title: 'No Source 1',
+                order: 1,
+                seasonId: 'season-1',
+                videoSources: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      renderWithProviders(<SeriesWatchView series={seriesWithoutPlayable} />);
+
+      const playBtn = screen.getByRole('button', { name: /^play episode 1$/i });
+      expect(playBtn).toBeDisabled();
+      expect(screen.getByText('No episodes available for this season.')).toBeInTheDocument();
+      expect(screen.getByText('0 Episodes')).toBeInTheDocument();
     });
   });
 

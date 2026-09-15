@@ -7,6 +7,7 @@ export interface SeriesHeroBannerProps {
   series: WatchSeriesDetails;
   onPlay: () => void;
   onBack?: () => void;
+  isPlayDisabled?: boolean;
   isSpatialMode?: boolean;
   isPlayFocused?: boolean;
   isBackFocused?: boolean;
@@ -18,6 +19,7 @@ export function SeriesHeroBanner({
   series,
   onPlay,
   onBack,
+  isPlayDisabled,
   isSpatialMode,
   isPlayFocused,
   isBackFocused,
@@ -155,6 +157,7 @@ export function SeriesHeroBanner({
             ref={playRef}
             size="lg"
             onClick={onPlay}
+            disabled={isPlayDisabled}
             className={`gap-2 text-sm sm:text-base font-semibold px-6 py-2.5 shadow-lg shadow-indigo-500/10 ${
               isSpatialMode && isPlayFocused ? 'ring-2 ring-white' : ''
             }`}

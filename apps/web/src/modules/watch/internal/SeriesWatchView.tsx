@@ -24,6 +24,7 @@ import {
 import { useWatchState } from './useWatchState';
 import {
   getSeriesWithEpisodesQueryOptions,
+  type WatchEpisode,
   type WatchSeriesDetails,
 } from './api';
 import { formatEmbedUrl } from '../../videos/internal/embedUrl';
@@ -122,15 +123,29 @@ export function SeriesWatchView({
 
   const series = propSeries ?? querySeries;
 
+  // Helper to check if an episode is playable
+  const isPlayableEpisode = (ep: WatchEpisode) =>
+    Boolean(ep.videoSources && ep.videoSources.length > 0);
+
+  // Validate whether initialEpisodeId corresponds to an existing playable episode
+  const initialValidEpisodeId = useMemo(() => {
+    if (!initialEpisodeId || !series) return null;
+    const allPlayableEpisodes = series.seasons
+      ? series.seasons.flatMap((s) => (s.episodes ?? []).filter(isPlayableEpisode))
+      : (series.episodes ?? []).filter(isPlayableEpisode);
+    const match = allPlayableEpisodes.find((ep) => ep.id === initialEpisodeId);
+    return match ? match.id : null;
+  }, [series, initialEpisodeId]);
+
   // Track whether we are in overview mode or player mode
-  // If initialEpisodeId is provided, we start in player mode
+  // If initialEpisodeId is provided and valid/playable, we start in player mode
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(
-    initialEpisodeId ?? null
+    initialValidEpisodeId
   );
 
   useEffect(() => {
-    setSelectedEpisodeId(initialEpisodeId ?? null);
-  }, [initialEpisodeId]);
+    setSelectedEpisodeId(initialValidEpisodeId);
+  }, [initialValidEpisodeId]);
 
   const state = useWatchState(series, {
     initialSeasonId,
@@ -313,11 +328,12 @@ export function SeriesWatchView({
   const backFocused = isSpatialMode && activeZone === 'back';
   const playerFocused = isSpatialMode && activeZone === 'player';
 
-  // Find first available episode to play for Episode 1 CTA
-  const firstEpisode =
-    series.seasons?.find((s) => s.episodes && s.episodes.length > 0)
-      ?.episodes[0] ??
-    series.episodes?.[0] ??
+  // Find first playable episode across the entire series to play for Episode 1 CTA
+  const firstPlayableEpisode =
+    series.seasons
+      ?.flatMap((s) => s.episodes ?? [])
+      .find(isPlayableEpisode) ??
+    series.episodes?.find(isPlayableEpisode) ??
     null;
 
   const handleSelectEpisode = (episodeId: string) => {
@@ -380,8 +396,8 @@ export function SeriesWatchView({
   };
 
   const handlePlayFirstEpisode = () => {
-    if (firstEpisode) {
-      handleSelectEpisode(firstEpisode.id);
+    if (firstPlayableEpisode) {
+      handleSelectEpisode(firstPlayableEpisode.id);
     }
   };
 
@@ -429,6 +445,7 @@ export function SeriesWatchView({
                 window.location.href = '/';
               }
             }}
+            isPlayDisabled={!firstPlayableEpisode}
             isSpatialMode={isSpatialMode}
             isPlayFocused={isSpatialMode && activeZone === 'controls' && focusIndex === 0}
             isBackFocused={backFocused}

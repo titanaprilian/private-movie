@@ -44,14 +44,18 @@ export function useWatchState(
     options?.initialSourceIndex ?? 0
   );
 
-  // Helper to find all episodes across seasons or root episodes list
+  // Helper to filter episodes that have playable video sources
+  const isPlayableEpisode = (ep: WatchEpisode) =>
+    Boolean(ep.videoSources && ep.videoSources.length > 0);
+
+  // Helper to find all playable episodes across seasons or root episodes list
   const allEpisodes = useMemo(() => {
     if (!series) return [];
     if (series.episodes && series.episodes.length > 0) {
-      return series.episodes;
+      return series.episodes.filter(isPlayableEpisode);
     }
     if (series.seasons) {
-      return series.seasons.flatMap((s) => s.episodes ?? []);
+      return series.seasons.flatMap((s) => (s.episodes ?? []).filter(isPlayableEpisode));
     }
     return [];
   }, [series]);
@@ -68,10 +72,10 @@ export function useWatchState(
     const initialEpId = options?.initialEpisodeId;
     const initialSourceIdx = options?.initialSourceIndex ?? 0;
 
-    // Check if initialEpisodeId exists and matches an episode
+    // Check if initialEpisodeId exists and matches a playable episode
     if (initialEpId && allEpisodes.some((ep) => ep.id === initialEpId)) {
       const targetSeason = series.seasons?.find((s) =>
-        s.episodes?.some((ep) => ep.id === initialEpId)
+        (s.episodes ?? []).some((ep) => ep.id === initialEpId && isPlayableEpisode(ep))
       );
       setActiveSeasonIdState(targetSeason?.id ?? null);
       setActiveEpisodeIdState(initialEpId);
@@ -79,21 +83,23 @@ export function useWatchState(
       return;
     }
 
-    // Default to first season with episodes
+    // Default to first season
     if (series.seasons && series.seasons.length > 0) {
-      const firstSeasonWithEp =
-        series.seasons.find((s) => s.episodes && s.episodes.length > 0) ??
+      const firstSeasonWithPlayableEp =
+        series.seasons.find((s) => (s.episodes ?? []).some(isPlayableEpisode)) ??
         series.seasons[0];
-      setActiveSeasonIdState(firstSeasonWithEp.id);
-      setActiveEpisodeIdState(firstSeasonWithEp.episodes?.[0]?.id ?? null);
+      setActiveSeasonIdState(firstSeasonWithPlayableEp.id);
+      const firstPlayableEp = (firstSeasonWithPlayableEp.episodes ?? []).find(isPlayableEpisode);
+      setActiveEpisodeIdState(firstPlayableEp?.id ?? null);
       setActiveSourceIndexState(initialSourceIdx);
       return;
     }
 
     // Default to root episodes if no seasons
     if (series.episodes && series.episodes.length > 0) {
+      const firstPlayableEp = series.episodes.find(isPlayableEpisode);
       setActiveSeasonIdState(null);
-      setActiveEpisodeIdState(series.episodes[0].id);
+      setActiveEpisodeIdState(firstPlayableEp?.id ?? null);
       setActiveSourceIndexState(initialSourceIdx);
       return;
     }
@@ -110,12 +116,12 @@ export function useWatchState(
 
   const availableEpisodes = useMemo(() => {
     if (activeSeason) {
-      return activeSeason.episodes ?? [];
+      return (activeSeason.episodes ?? []).filter(isPlayableEpisode);
     }
     if (series?.seasons && series.seasons.length > 0) {
       return [];
     }
-    return series?.episodes ?? [];
+    return (series?.episodes ?? []).filter(isPlayableEpisode);
   }, [activeSeason, series]);
 
   const activeEpisode = useMemo(() => {
@@ -132,7 +138,7 @@ export function useWatchState(
     (seasonId: string) => {
       setActiveSeasonIdState(seasonId);
       const targetSeason = series?.seasons?.find((s) => s.id === seasonId);
-      const firstEpId = targetSeason?.episodes?.[0]?.id ?? null;
+      const firstEpId = (targetSeason?.episodes ?? []).find(isPlayableEpisode)?.id ?? null;
       setActiveEpisodeIdState(firstEpId);
       setActiveSourceIndexState(0);
     },
@@ -146,7 +152,7 @@ export function useWatchState(
 
       if (series?.seasons) {
         const targetSeason = series.seasons.find((s) =>
-          s.episodes?.some((ep) => ep.id === episodeId)
+          (s.episodes ?? []).some((ep) => ep.id === episodeId && isPlayableEpisode(ep))
         );
         if (targetSeason) {
           setActiveSeasonIdState(targetSeason.id);

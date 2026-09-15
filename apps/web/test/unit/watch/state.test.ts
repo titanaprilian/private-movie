@@ -256,6 +256,76 @@ describe('useWatchState hook', () => {
     expect(result.current.hasPrevEpisode).toBe(false);
   });
 
+  it('filters out episodes with zero video sources across seasons and availableEpisodes', () => {
+    const seriesWithUnplayableEpisodes = {
+      id: 'series-unplayable',
+      title: 'Unplayable Test Series',
+      episodes: [],
+      seasons: [
+        {
+          id: 'season-1',
+          seriesId: 'series-unplayable',
+          title: 'Season 1',
+          episodes: [
+            {
+              id: 'ep-unplayable-1',
+              title: 'Empty Sources 1',
+              order: 1,
+              seasonId: 'season-1',
+              videoSources: [],
+            },
+            {
+              id: 'ep-playable-1',
+              title: 'Playable Ep 1',
+              order: 2,
+              seasonId: 'season-1',
+              videoSources: [
+                { id: 'src-p1', type: 'embed' as const, url: 'https://embed.com/p1', label: 'Server 1' },
+              ],
+            },
+            {
+              id: 'ep-unplayable-2',
+              title: 'Null Sources 2',
+              order: 3,
+              seasonId: 'season-1',
+              videoSources: null as unknown as [],
+            },
+          ],
+        },
+        {
+          id: 'season-2',
+          seriesId: 'series-unplayable',
+          title: 'Season 2 (Empty)',
+          episodes: [
+            {
+              id: 'ep-unplayable-3',
+              title: 'Empty Sources 3',
+              order: 1,
+              seasonId: 'season-2',
+              videoSources: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useWatchState(seriesWithUnplayableEpisodes));
+
+    // Should default to first playable episode in first season with playable episodes
+    expect(result.current.activeSeasonId).toBe('season-1');
+    expect(result.current.activeEpisodeId).toBe('ep-playable-1');
+    expect(result.current.availableEpisodes).toHaveLength(1);
+    expect(result.current.availableEpisodes[0].id).toBe('ep-playable-1');
+
+    // Selecting season 2 which has 0 playable episodes gives 0 available episodes and null active episode
+    act(() => {
+      result.current.selectSeason('season-2');
+    });
+    expect(result.current.activeSeasonId).toBe('season-2');
+    expect(result.current.activeEpisodeId).toBeNull();
+    expect(result.current.availableEpisodes).toHaveLength(0);
+  });
+
   it('handles series with no seasons cleanly', () => {
     const seriesWithoutSeasons = {
       id: 'series-2',
