@@ -31,3 +31,4 @@ Tests live in `app/src/test/java/com/privatemovie/tv/`:
 - Build Debug APK: `./gradlew assembleDebug`
 - Run Unit Tests: `./gradlew test`
 - Typecheck Kotlin: `./gradlew compileDebugKotlin`
+- On-Device / TV Testing: Use the `test-android-tv` skill (`.agents/skills/test-android-tv/SKILL.md`) to build, deploy, remote-navigate via ADB keyevents, capture screenshots, and inspect crashes on real Android TV devices.
