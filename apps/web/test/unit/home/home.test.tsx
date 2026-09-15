@@ -5,6 +5,114 @@ import { CinematicHome } from '@/modules/home';
 import { IndexPage } from '@/routes/index';
 import { setAccessToken } from '@/lib/api';
 
+const mockHomeFeedDataWithMultipleHeroes = {
+  hero: {
+    id: 'hero-aot',
+    title: 'Attack on Titan: The Final Season',
+    description: 'The truth outside the walls and the identity of the Titans have been revealed.',
+    type: 'tv',
+    posterUrl: 'https://example.com/poster.jpg',
+    backdropUrl: 'https://example.com/banner.jpg',
+    rating: 'TV-MA',
+    tmdbId: 101,
+    tmdbSyncStatus: 'SYNCED',
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-01'),
+    genres: [
+      { id: 'g-1', name: 'Dark Fantasy', slug: 'dark-fantasy' },
+      { id: 'g-2', name: 'Action', slug: 'action' },
+    ],
+    tags: ['Featured Simulcast', 'Dark Fantasy', 'Action'],
+    seasonsCount: 4,
+    episodesCount: 88,
+  },
+  heroes: [
+    {
+      id: 'hero-aot',
+      title: 'Attack on Titan: The Final Season',
+      description: 'The truth outside the walls and the identity of the Titans have been revealed.',
+      type: 'tv',
+      posterUrl: 'https://example.com/poster.jpg',
+      backdropUrl: 'https://example.com/banner.jpg',
+      rating: 'TV-MA',
+      tmdbId: 101,
+      tmdbSyncStatus: 'SYNCED',
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      genres: [
+        { id: 'g-1', name: 'Dark Fantasy', slug: 'dark-fantasy' },
+        { id: 'g-2', name: 'Action', slug: 'action' },
+      ],
+      tags: ['Featured Simulcast', 'Dark Fantasy', 'Action'],
+      seasonsCount: 4,
+      episodesCount: 88,
+    },
+    {
+      id: 'hero-jujutsu',
+      title: 'Jujutsu Kaisen Season 2',
+      description: 'The past comes back to haunt Gojo and Geto in the Hidden Inventory arc.',
+      type: 'tv',
+      posterUrl: 'https://example.com/jjk-poster.jpg',
+      backdropUrl: 'https://example.com/jjk-banner.jpg',
+      rating: 'TV-MA',
+      tmdbId: 103,
+      tmdbSyncStatus: 'SYNCED',
+      createdAt: new Date('2026-01-02'),
+      updatedAt: new Date('2026-01-02'),
+      genres: [
+        { id: 'g-3', name: 'Supernatural', slug: 'supernatural' },
+        { id: 'g-2', name: 'Action', slug: 'action' },
+      ],
+      tags: ['Top Pick', 'Supernatural'],
+      seasonsCount: 2,
+      episodesCount: 47,
+    },
+    {
+      id: 'hero-frieren',
+      title: 'Frieren: Beyond Journey\'s End',
+      description: 'An elf mage discovers the true meaning of time and human connections.',
+      type: 'tv',
+      posterUrl: 'https://example.com/frieren-poster.jpg',
+      backdropUrl: 'https://example.com/frieren-banner.jpg',
+      rating: 'TV-14',
+      tmdbId: 104,
+      tmdbSyncStatus: 'SYNCED',
+      createdAt: new Date('2026-01-03'),
+      updatedAt: new Date('2026-01-03'),
+      genres: [
+        { id: 'g-4', name: 'Fantasy', slug: 'fantasy' },
+        { id: 'g-5', name: 'Adventure', slug: 'adventure' },
+      ],
+      tags: ['Masterpiece', 'Fantasy'],
+      seasonsCount: 1,
+      episodesCount: 28,
+    },
+  ],
+  rows: [
+    {
+      title: 'Trending Now',
+      items: [
+        {
+          id: 's-1',
+          title: 'Demon Slayer: Hashira Training Arc',
+          description: 'Tanjiro undergoes rigorous training with the Hashira.',
+          type: 'tv',
+          posterUrl: 'https://example.com/demon.jpg',
+          backdropUrl: null,
+          rating: 'TV-14',
+          tmdbId: 102,
+          tmdbSyncStatus: 'SYNCED',
+          createdAt: new Date('2026-01-01'),
+          updatedAt: new Date('2026-01-01'),
+          genres: [{ id: 'g-2', name: 'Action', slug: 'action' }],
+          seasonsCount: 4,
+          episodesCount: 55,
+        },
+      ],
+    },
+  ],
+};
+
 const mockHomeFeedData = {
   hero: {
     id: 'hero-aot',
@@ -47,10 +155,6 @@ const mockHomeFeedData = {
           episodesCount: 55,
         },
       ],
-    },
-    {
-      title: 'Simulcasts',
-      items: [],
     },
   ],
 };
@@ -308,6 +412,191 @@ describe('CinematicHome component', () => {
     });
 
     expect(heroPlayButton).toHaveClass('ring-2', 'ring-white');
+  });
+
+  describe('Hero Slider interactive features', () => {
+    it('renders hero slider controls and pagination dots when multiple heroes are provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes('/auth/refresh')) {
+          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        }
+        if (url.includes('/series/home-feed')) {
+          return new Response(JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ data: null }), { status: 200 });
+      });
+
+      renderWithProviders(<CinematicHome />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      });
+
+      const prevBtn = screen.getByRole('button', { name: /previous slide/i });
+      const nextBtn = screen.getByRole('button', { name: /next slide/i });
+      const dots = screen.getAllByRole('button', { name: /go to slide/i });
+
+      expect(prevBtn).toBeInTheDocument();
+      expect(nextBtn).toBeInTheDocument();
+      expect(dots).toHaveLength(3);
+    });
+
+    it('does not render prev/next buttons or dots when only a single hero is present', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes('/auth/refresh')) {
+          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        }
+        if (url.includes('/series/home-feed')) {
+          return new Response(JSON.stringify({ data: mockHomeFeedData }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ data: null }), { status: 200 });
+      });
+
+      renderWithProviders(<CinematicHome />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      });
+
+      expect(screen.queryByRole('button', { name: /previous slide/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /next slide/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /go to slide/i })).not.toBeInTheDocument();
+    });
+
+    it('cycles slides via Next and Previous arrow buttons with wrap-around', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes('/auth/refresh')) {
+          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        }
+        if (url.includes('/series/home-feed')) {
+          return new Response(JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ data: null }), { status: 200 });
+      });
+
+      const { user } = renderWithProviders(<CinematicHome />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      });
+
+      const nextBtn = screen.getByRole('button', { name: /next slide/i });
+      const prevBtn = screen.getByRole('button', { name: /previous slide/i });
+
+      // Click next -> Jujutsu Kaisen
+      await user.click(nextBtn);
+      expect(screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })).toBeInTheDocument();
+
+      // Click next -> Frieren
+      await user.click(nextBtn);
+      expect(screen.getByRole('heading', { level: 1, name: /Frieren/i })).toBeInTheDocument();
+
+      // Click next (wrap around) -> Attack on Titan
+      await user.click(nextBtn);
+      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+
+      // Click prev (wrap around backwards) -> Frieren
+      await user.click(prevBtn);
+      expect(screen.getByRole('heading', { level: 1, name: /Frieren/i })).toBeInTheDocument();
+    });
+
+    it('jumps directly to a slide when clicking pagination indicator dots', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes('/auth/refresh')) {
+          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        }
+        if (url.includes('/series/home-feed')) {
+          return new Response(JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ data: null }), { status: 200 });
+      });
+
+      const { user } = renderWithProviders(<CinematicHome />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      });
+
+      const dots = screen.getAllByRole('button', { name: /go to slide/i });
+
+      // Click dot 2 (3rd slide) -> Frieren
+      await user.click(dots[2]);
+      expect(screen.getByRole('heading', { level: 1, name: /Frieren/i })).toBeInTheDocument();
+
+      // Click dot 1 (2nd slide) -> Jujutsu Kaisen
+      await user.click(dots[1]);
+      expect(screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })).toBeInTheDocument();
+    });
+
+    it('auto-advances slides every 6 seconds and pauses on hover', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes('/auth/refresh')) {
+          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        }
+        if (url.includes('/series/home-feed')) {
+          return new Response(JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ data: null }), { status: 200 });
+      });
+
+      const { user } = renderWithProviders(<CinematicHome />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      });
+
+      // Advance time by 6 seconds
+      act(() => {
+        vi.advanceTimersByTime(6000);
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })).toBeInTheDocument();
+
+      // Mouse enter to pause timer
+      const sliderContainer = screen.getByTestId('hero-slider');
+      await user.hover(sliderContainer);
+
+      act(() => {
+        vi.advanceTimersByTime(6000);
+      });
+
+      // Should still be Jujutsu Kaisen because timer was paused
+      expect(screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })).toBeInTheDocument();
+
+      // Mouse unhover to resume timer
+      await user.unhover(sliderContainer);
+
+      act(() => {
+        vi.advanceTimersByTime(6000);
+      });
+
+      // Should advance to Frieren
+      expect(screen.getByRole('heading', { level: 1, name: /Frieren/i })).toBeInTheDocument();
+
+      vi.useRealTimers();
+    });
   });
 });
 

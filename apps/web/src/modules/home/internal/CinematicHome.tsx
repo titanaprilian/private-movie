@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -283,7 +283,37 @@ export function CinematicHome() {
 
   const { data, isLoading, isError, refetch } = useQuery(homeFeedQueryOptions());
 
-  const heroAnime = data?.hero ? mapHeroToSeriesItem(data.hero) : null;
+  const heroesList: SeriesItem[] = data?.heroes && data.heroes.length > 0
+    ? data.heroes.map(mapHeroToSeriesItem)
+    : data?.hero
+      ? [mapHeroToSeriesItem(data.hero)]
+      : [];
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const heroCount = heroesList.length;
+
+  const nextSlide = useCallback(() => {
+    if (heroCount <= 1) return;
+    setActiveIndex((prev) => (prev + 1) % heroCount);
+  }, [heroCount]);
+
+  const prevSlide = useCallback(() => {
+    if (heroCount <= 1) return;
+    setActiveIndex((prev) => (prev - 1 + heroCount) % heroCount);
+  }, [heroCount]);
+
+  useEffect(() => {
+    if (heroCount <= 1 || isPaused) return;
+    const interval = setInterval(() => {
+      nextSlide();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [heroCount, isPaused, nextSlide]);
+
+  const currentHero = heroesList[activeIndex] || null;
+
   const carouselRows: CarouselRowData[] =
     data?.rows.map((r, idx) => ({
       id: `row-${idx}-${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
@@ -292,7 +322,7 @@ export function CinematicHome() {
     })) ?? [];
 
   const { focusedRow, focusedItem } = useHomeFeedNav({
-    heroSeriesId: heroAnime?.id,
+    heroSeriesId: currentHero?.id,
     rows: carouselRows,
     onSelectSeries: (seriesId) => navigate({ to: '/watch/$seriesId', params: { seriesId } }),
   });
@@ -316,18 +346,30 @@ export function CinematicHome() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans selection:bg-red-600 selection:text-white">
-      {/* Hero Banner Section */}
-      {heroAnime ? (
-        <div className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 border-b border-zinc-800">
-          {/* Background Banner Image */}
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-            style={{ backgroundImage: `url(${heroAnime.bannerUrl})` }}
-          />
+      {/* Hero Banner / Slider Section */}
+      {currentHero ? (
+        <div
+          data-testid="hero-slider"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onFocus={() => setIsPaused(true)}
+          onBlur={() => setIsPaused(false)}
+          className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 border-b border-zinc-800 overflow-hidden group/hero"
+        >
+          {/* Background Banner Images with Smooth Crossfade */}
+          {heroesList.map((item, idx) => (
+            <div
+              key={item.id}
+              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                idx === activeIndex ? 'opacity-100 z-0' : 'opacity-0 -z-10'
+              }`}
+              style={{ backgroundImage: `url(${item.bannerUrl})` }}
+            />
+          ))}
 
           {/* Gradient overlays for cinematic effect */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10 pointer-events-none" />
 
           {/* Hero Content */}
           <div className="absolute bottom-12 left-0 z-20 w-full px-8 md:px-16 text-left">
@@ -340,21 +382,21 @@ export function CinematicHome() {
 
               {/* Title */}
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
-                {heroAnime.title}
+                {currentHero.title}
               </h1>
 
               {/* Meta Row */}
               <div className="flex items-center gap-3 text-sm text-zinc-300 flex-wrap">
-                <span className="text-emerald-400 font-semibold">{heroAnime.matchScore}</span>
-                <span>{heroAnime.year}</span>
-                <span className="border border-zinc-600 px-1.5 py-0.5 rounded text-xs font-mono bg-black/40">{heroAnime.rating}</span>
-                <span className="bg-red-600/80 text-white px-1.5 py-0.5 rounded text-xs font-mono font-bold">{heroAnime.subDub}</span>
-                <span>{heroAnime.seasons} {heroAnime.seasons === 1 ? 'Season' : 'Seasons'}</span>
+                <span className="text-emerald-400 font-semibold">{currentHero.matchScore}</span>
+                <span>{currentHero.year}</span>
+                <span className="border border-zinc-600 px-1.5 py-0.5 rounded text-xs font-mono bg-black/40">{currentHero.rating}</span>
+                <span className="bg-red-600/80 text-white px-1.5 py-0.5 rounded text-xs font-mono font-bold">{currentHero.subDub}</span>
+                <span>{currentHero.seasons} {currentHero.seasons === 1 ? 'Season' : 'Seasons'}</span>
               </div>
 
               {/* Synopsis */}
               <p className="text-zinc-300 text-base md:text-lg line-clamp-3 leading-relaxed max-w-2xl text-shadow">
-                {heroAnime.synopsis}
+                {currentHero.synopsis}
               </p>
 
               {/* Action Buttons */}
@@ -362,7 +404,7 @@ export function CinematicHome() {
                 <button
                   data-nav-row={0}
                   data-nav-item={0}
-                  onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: heroAnime.id } })}
+                  onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: currentHero.id } })}
                   className={`bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer ${
                     isSpatialMode && focusedRow === 0 && focusedItem === 0 ? 'ring-2 ring-white' : ''
                   }`}
@@ -374,7 +416,7 @@ export function CinematicHome() {
 
               {/* Genre tags */}
               <div className="flex items-center gap-2 pt-2">
-                {heroAnime.genres.map((genre) => (
+                {currentHero.genres.map((genre) => (
                   <span key={genre} className="text-xs text-zinc-400 font-mono flex items-center gap-2 bg-zinc-900/60 px-2 py-1 rounded border border-zinc-800">
                     {genre}
                   </span>
@@ -382,6 +424,45 @@ export function CinematicHome() {
               </div>
             </div>
           </div>
+
+          {/* Navigation Arrows & Pagination Indicators (Only when heroCount > 1) */}
+          {heroCount > 1 && (
+            <>
+              {/* Left Navigation Arrow */}
+              <button
+                onClick={prevSlide}
+                aria-label="Previous slide"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white border border-zinc-700/50 backdrop-blur-md opacity-0 group-hover/hero:opacity-100 transition-all duration-300 cursor-pointer"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+
+              {/* Right Navigation Arrow */}
+              <button
+                onClick={nextSlide}
+                aria-label="Next slide"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white border border-zinc-700/50 backdrop-blur-md opacity-0 group-hover/hero:opacity-100 transition-all duration-300 cursor-pointer"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+
+              {/* Pagination Dots */}
+              <div className="absolute bottom-6 right-8 md:right-16 z-30 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800/80">
+                {heroesList.map((item, idx) => (
+                  <button
+                    key={`dot-${item.id}-${idx}`}
+                    onClick={() => setActiveIndex(idx)}
+                    aria-label={`Go to slide ${idx + 1}`}
+                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                      idx === activeIndex
+                        ? 'w-7 bg-red-600'
+                        : 'w-2.5 bg-zinc-600 hover:bg-zinc-400'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div className="relative h-[40vh] min-h-[300px] w-full bg-zinc-950 border-b border-zinc-800 flex items-center justify-center text-center p-8">
