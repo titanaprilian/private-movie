@@ -26,6 +26,7 @@ export function SeriesHeroBanner({
 }: SeriesHeroBannerProps) {
   const [backdropFailed, setBackdropFailed] = useState(false);
   const [posterFailed, setPosterFailed] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   // Fallback backdrop hierarchy: backdropUrl -> posterUrl -> styled placeholder
   const heroImage = !backdropFailed && series.backdropUrl
@@ -33,6 +34,8 @@ export function SeriesHeroBanner({
     : !posterFailed && series.posterUrl
       ? series.posterUrl
       : null;
+
+  const showLogo = Boolean(series.logoUrl && !logoFailed);
 
   // Extract genre names
   const genreNames: string[] = Array.isArray(series.genres)
@@ -84,12 +87,37 @@ export function SeriesHeroBanner({
             {/* Seamless bottom fade gradient into page bg */}
             <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent z-10" />
             <div className="absolute inset-0 bg-gradient-to-r from-bg/60 via-transparent to-transparent z-10" />
+
+            {/* Bottom-left series logo or title heading fallback */}
+            <div className="absolute bottom-0 left-0 z-20 px-4 sm:px-8 md:px-12 lg:px-16 pb-6 pointer-events-none">
+              {showLogo ? (
+                <img
+                  src={series.logoUrl!}
+                  alt={series.title}
+                  onError={() => setLogoFailed(true)}
+                  className="max-w-[220px] sm:max-w-[320px] md:max-w-[400px] max-h-[80px] sm:max-h-[120px] md:max-h-[150px] w-auto h-auto object-contain object-left-bottom drop-shadow-lg"
+                />
+              ) : (
+                <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-fg leading-tight">
+                  {series.title}
+                </h1>
+              )}
+            </div>
           </>
         ) : (
           <div className="absolute inset-0 flex flex-col justify-end px-4 sm:px-8 md:px-12 lg:px-16 pb-8 bg-gradient-to-br from-card via-zinc-900/60 to-bg">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-fg leading-tight">
-              {series.title}
-            </h1>
+            {showLogo ? (
+              <img
+                src={series.logoUrl!}
+                alt={series.title}
+                onError={() => setLogoFailed(true)}
+                className="max-w-[220px] sm:max-w-[320px] md:max-w-[400px] max-h-[80px] sm:max-h-[120px] md:max-h-[150px] w-auto h-auto object-contain object-left-bottom drop-shadow-lg"
+              />
+            ) : (
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-fg leading-tight">
+                {series.title}
+              </h1>
+            )}
           </div>
         )}
       </div>

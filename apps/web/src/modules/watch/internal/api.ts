@@ -37,6 +37,7 @@ export interface WatchSeriesDetails {
   description?: string | null;
   posterUrl?: string | null;
   backdropUrl?: string | null;
+  logoUrl?: string | null;
   rating?: string | null;
   genres?: Array<{ id: string; name: string; slug: string }> | string[];
   seasons?: WatchSeason[];

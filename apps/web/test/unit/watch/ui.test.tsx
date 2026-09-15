@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../../utils';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -120,13 +120,31 @@ describe('SeriesWatchView', () => {
   });
 
   describe('Series Overview Mode (default when ep is not selected)', () => {
-    it('renders hero banner with backdrop image, omits text series title when image is present, and renders rating, genres, synopsis and Play Episode 1 CTA', () => {
-      renderWithProviders(<SeriesWatchView series={mockSeries} />);
+    it('renders hero banner with logo image when logoUrl is present, and renders rating, genres, synopsis and Play Episode 1 CTA', () => {
+      const seriesWithLogo: WatchSeriesDetails = {
+        ...mockSeries,
+        logoUrl: 'https://images.unsplash.com/logo-1.png',
+      };
+
+      renderWithProviders(<SeriesWatchView series={seriesWithLogo} />);
 
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
-      // Hero image is present (backdropUrl), so text series title heading is omitted in hero
+      // Backdrop img + Logo img present
+      const images = screen.getAllByRole('img', { name: 'Test Series' });
+      expect(images).toHaveLength(2);
+      const logoImg = images.find((img) => img.getAttribute('src') === 'https://images.unsplash.com/logo-1.png');
+      expect(logoImg).toBeInTheDocument();
+      expect(logoImg).toHaveClass('drop-shadow-lg');
+      expect(logoImg).toHaveClass('max-w-[220px]');
+      expect(logoImg).toHaveClass('sm:max-w-[320px]');
+      expect(logoImg).toHaveClass('md:max-w-[400px]');
+      expect(logoImg).toHaveClass('max-h-[80px]');
+      expect(logoImg).toHaveClass('sm:max-h-[120px]');
+      expect(logoImg).toHaveClass('md:max-h-[150px]');
+
+      // When logo is present, text title heading is omitted
       expect(screen.queryByRole('heading', { level: 1, name: 'Test Series' })).not.toBeInTheDocument();
-      expect(screen.getByRole('img', { name: 'Test Series' })).toBeInTheDocument();
+
       expect(screen.getByText('★ 8.8')).toBeInTheDocument();
       expect(screen.getByText('Action')).toBeInTheDocument();
       expect(screen.getByText('Fantasy')).toBeInTheDocument();
@@ -136,11 +154,41 @@ describe('SeriesWatchView', () => {
       expect(playBtn).toBeInTheDocument();
     });
 
-    it('gracefully renders text series title as fallback only when hero artwork is missing', () => {
+    it('gracefully renders text series title as fallback when logoUrl is absent', () => {
+      renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+      expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
+      // Backdrop img is present, logo img is absent, title heading fallback is rendered
+      expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
+      const images = screen.getAllByRole('img', { name: 'Test Series' });
+      expect(images).toHaveLength(1);
+      expect(images[0]).toHaveAttribute('src', mockSeries.backdropUrl);
+    });
+
+    it('gracefully renders text series title as fallback when logo fails to load (onError)', () => {
+      const seriesWithLogo: WatchSeriesDetails = {
+        ...mockSeries,
+        logoUrl: 'https://images.unsplash.com/broken-logo.png',
+      };
+
+      renderWithProviders(<SeriesWatchView series={seriesWithLogo} />);
+
+      const images = screen.getAllByRole('img', { name: 'Test Series' });
+      const logoImg = images.find((img) => img.getAttribute('src') === 'https://images.unsplash.com/broken-logo.png');
+      expect(logoImg).toBeInTheDocument();
+
+      fireEvent.error(logoImg!);
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
+      expect(screen.queryByRole('img', { name: 'Test Series' })).toHaveAttribute('src', mockSeries.backdropUrl);
+    });
+
+    it('gracefully renders text series title as fallback only when hero artwork and logo are missing', () => {
       const seriesWithoutArtwork: WatchSeriesDetails = {
         ...mockSeries,
         backdropUrl: null,
         posterUrl: null,
+        logoUrl: null,
       };
 
       renderWithProviders(<SeriesWatchView series={seriesWithoutArtwork} />);
