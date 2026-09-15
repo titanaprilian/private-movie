@@ -6,6 +6,7 @@ import com.privatemovie.tv.dto.models.SeasonWithEpisodes
 import com.privatemovie.tv.dto.models.SeriesDetails
 import com.privatemovie.tv.dto.models.VideoSource
 import com.privatemovie.tv.modules.player.internal.PlaybackMetadataHandoff
+import com.privatemovie.tv.modules.player.internal.PlaylistEpisodeItem
 
 data class TvVideoSource(
     val id: String,
@@ -136,4 +137,45 @@ fun TvSeriesDetails.findMetadataForEpisode(episodeId: String): PlaybackMetadataH
     }
     return PlaybackMetadataHandoff(seriesTitle = title)
 }
+
+/**
+ * Flattens all playable episodes in a series into an ordered playlist for player navigation.
+ */
+fun TvSeriesDetails.toPlaylistEpisodeItems(): List<PlaylistEpisodeItem> {
+    val items = mutableListOf<PlaylistEpisodeItem>()
+    for (season in seasons) {
+        for (ep in season.episodes) {
+            val primarySource = ep.videoSources.firstOrNull()
+            items.add(
+                PlaylistEpisodeItem(
+                    episodeId = ep.id,
+                    seriesTitle = title,
+                    seasonTitle = season.title,
+                    seasonNumber = season.seasonNumber,
+                    episodeOrder = ep.order,
+                    episodeTitle = ep.title,
+                    sourceTypeName = primarySource?.type,
+                    sourceUrl = primarySource?.url
+                )
+            )
+        }
+    }
+    for (ep in standaloneEpisodes) {
+        val primarySource = ep.videoSources.firstOrNull()
+        items.add(
+            PlaylistEpisodeItem(
+                episodeId = ep.id,
+                seriesTitle = title,
+                seasonTitle = null,
+                seasonNumber = null,
+                episodeOrder = ep.order,
+                episodeTitle = ep.title,
+                sourceTypeName = primarySource?.type,
+                sourceUrl = primarySource?.url
+            )
+        )
+    }
+    return items
+}
+
 

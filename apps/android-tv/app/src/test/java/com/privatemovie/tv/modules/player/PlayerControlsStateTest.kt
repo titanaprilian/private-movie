@@ -15,7 +15,7 @@ class PlayerControlsStateTest {
         val state = PlayerControlsState()
         assertTrue(state.isVisible)
         assertEquals(DEFAULT_CONTROLS_TIMEOUT_MS, state.timeoutMs)
-        assertEquals(3000L, state.timeoutMs)
+        assertEquals(3500L, state.timeoutMs)
         assertEquals(0L, state.activityNonce)
     }
 
@@ -86,5 +86,16 @@ class PlayerControlsStateTest {
         state.onAction(PlayerControlAction.ExitPlayer)
         assertFalse(state.isVisible)
         assertEquals(0L, state.activityNonce)
+    }
+
+    @Test
+    fun `shouldAutoHide returns true only when visible and playing`() {
+        val state = PlayerControlsState(initialVisible = true)
+        assertTrue(state.shouldAutoHide(isPlaying = true))
+        assertFalse(state.shouldAutoHide(isPlaying = false))
+
+        state.hide()
+        assertFalse(state.shouldAutoHide(isPlaying = true))
+        assertFalse(state.shouldAutoHide(isPlaying = false))
     }
 }

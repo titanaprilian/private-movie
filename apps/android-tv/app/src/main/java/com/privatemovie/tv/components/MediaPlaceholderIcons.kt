@@ -149,4 +149,80 @@ object MediaPlaceholderIcons {
             close()
         }.build()
     }
+
+    val Play: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "PlayIcon",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).path(fill = SolidColor(Color.White)) {
+            moveTo(8f, 5f)
+            lineTo(19f, 12f)
+            lineTo(8f, 19f)
+            close()
+        }.build()
+    }
+
+    val Pause: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "PauseIcon",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).path(fill = SolidColor(Color.White)) {
+            moveTo(6f, 19f)
+            lineTo(10f, 19f)
+            lineTo(10f, 5f)
+            lineTo(6f, 5f)
+            close()
+            moveTo(14f, 5f)
+            lineTo(14f, 19f)
+            lineTo(18f, 19f)
+            lineTo(18f, 5f)
+            close()
+        }.build()
+    }
+
+    val SkipPrevious: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "SkipPreviousIcon",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).path(fill = SolidColor(Color.White)) {
+            moveTo(6f, 6f)
+            lineTo(8f, 6f)
+            lineTo(8f, 18f)
+            lineTo(6f, 18f)
+            close()
+            moveTo(18f, 6f)
+            lineTo(9.5f, 12f)
+            lineTo(18f, 18f)
+            close()
+        }.build()
+    }
+
+    val SkipNext: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "SkipNextIcon",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).path(fill = SolidColor(Color.White)) {
+            moveTo(6f, 18f)
+            lineTo(14.5f, 12f)
+            lineTo(6f, 6f)
+            close()
+            moveTo(16f, 6f)
+            lineTo(18f, 6f)
+            lineTo(18f, 18f)
+            lineTo(16f, 18f)
+            close()
+        }.build()
+    }
 }

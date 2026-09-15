@@ -5,6 +5,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -17,6 +19,7 @@ import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.config.BackendUrlOverrideScreen
 import com.privatemovie.tv.modules.config.BackendUrlStore
 import com.privatemovie.tv.modules.detail.DetailScreen
+import com.privatemovie.tv.modules.detail.internal.toPlaylistEpisodeItems
 import com.privatemovie.tv.modules.home.HomeScreen
 import com.privatemovie.tv.modules.player.PlayerScreen
 import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_ORDER_KEY
@@ -27,7 +30,9 @@ import com.privatemovie.tv.modules.player.internal.PLAYER_SERIES_TITLE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
 import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
+import com.privatemovie.tv.modules.player.internal.PlaylistEpisodeItem
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
+import com.privatemovie.tv.modules.player.internal.resolvePlaylistNeighbors
 
 sealed class TvScreen(val route: String) {
     object Home : TvScreen("home")
@@ -52,6 +57,7 @@ fun AppNavigation(
     }
 ) {
     val activeUrl by urlStore.activeUrl.collectAsState()
+    var activePlaylist by remember { mutableStateOf<List<PlaylistEpisodeItem>>(emptyList()) }
 
     NavHost(
         navController = navController,
@@ -130,6 +136,9 @@ fun AppNavigation(
                     }
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
+                onLoadedDetails = { details ->
+                    activePlaylist = details.toPlaylistEpisodeItems()
+                },
                 onBack = {
                     navController.popBackStack()
                 }
@@ -142,11 +151,41 @@ fun AppNavigation(
         ) { backStackEntry ->
             val episodeId = backStackEntry.arguments?.getString("episodeId") ?: "unknown"
             val playbackHandle = navController.previousBackStackEntry?.savedStateHandle
+            val neighbors = remember(activePlaylist, episodeId) {
+                resolvePlaylistNeighbors(activePlaylist, episodeId)
+            }
+
+            fun playNeighbor(target: PlaylistEpisodeItem) {
+                playbackHandle?.apply {
+                    target.sourceTypeName?.let { set(PLAYER_SOURCE_TYPE_KEY, it) }
+                        ?: remove<String>(PLAYER_SOURCE_TYPE_KEY)
+                    target.sourceUrl?.let { set(PLAYER_SOURCE_URL_KEY, it) }
+                        ?: remove<String>(PLAYER_SOURCE_URL_KEY)
+                    target.seriesTitle?.let { set(PLAYER_SERIES_TITLE_KEY, it) }
+                        ?: remove<String>(PLAYER_SERIES_TITLE_KEY)
+                    target.seasonTitle?.let { set(PLAYER_SEASON_TITLE_KEY, it) }
+                        ?: remove<String>(PLAYER_SEASON_TITLE_KEY)
+                    target.seasonNumber?.let { set(PLAYER_SEASON_NUMBER_KEY, it) }
+                        ?: remove<Int>(PLAYER_SEASON_NUMBER_KEY)
+                    target.episodeOrder?.let { set(PLAYER_EPISODE_ORDER_KEY, it) }
+                        ?: remove<Int>(PLAYER_EPISODE_ORDER_KEY)
+                    target.episodeTitle?.let { set(PLAYER_EPISODE_TITLE_KEY, it) }
+                        ?: remove<String>(PLAYER_EPISODE_TITLE_KEY)
+                }
+                navController.navigate(TvScreen.Player.createRoute(target.episodeId)) {
+                    popUpTo(TvScreen.Player.route) { inclusive = true }
+                }
+            }
+
             PlayerScreen(
                 episodeId = episodeId,
                 onExitPlayer = {
                     navController.popBackStack()
                 },
+                hasPrevious = neighbors.hasPrevious,
+                hasNext = neighbors.hasNext,
+                onPlayPreviousEpisode = neighbors.previousEpisode?.let { prev -> { playNeighbor(prev) } },
+                onPlayNextEpisode = neighbors.nextEpisode?.let { next -> { playNeighbor(next) } },
                 playbackSourceTypeName = playbackHandle?.get<String>(PLAYER_SOURCE_TYPE_KEY),
                 playbackUrl = playbackHandle?.get<String>(PLAYER_SOURCE_URL_KEY),
                 seriesTitle = playbackHandle?.get<String>(PLAYER_SERIES_TITLE_KEY),

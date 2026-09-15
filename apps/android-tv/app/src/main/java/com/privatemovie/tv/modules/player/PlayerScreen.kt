@@ -19,9 +19,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,9 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -53,15 +59,20 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
+import com.privatemovie.tv.components.MediaPlaceholderIcons
 import com.privatemovie.tv.modules.player.internal.DEFAULT_CONTROLS_TIMEOUT_MS
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
 import com.privatemovie.tv.modules.player.internal.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
+import com.privatemovie.tv.modules.player.internal.VideoProgressBar
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
+import com.privatemovie.tv.modules.player.internal.calculateClampedSeekPosition
 import com.privatemovie.tv.modules.player.internal.formatPlayerHeadline
 import com.privatemovie.tv.modules.player.internal.formatPlayerSubtitle
 import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.internal.handleRemoteKey
+import com.privatemovie.tv.modules.player.internal.PlaybackCompletionDecision
+import com.privatemovie.tv.modules.player.internal.onPlaybackEnded
 import com.privatemovie.tv.modules.player.internal.resolvePlayerHandoff
 import com.privatemovie.tv.modules.player.internal.shouldAutoFullscreenOnEntry
 import kotlinx.coroutines.delay
@@ -70,13 +81,17 @@ import kotlinx.coroutines.delay
  * Public seam for the dedicated Android TV player experience.
  *
  * Exclusively uses native Media3 ExoPlayer for playback. Controls navigation,
- * fullscreen behavior, and TV remote key mappings.
+ * fullscreen behavior, playlist episode transitions, and TV remote key mappings.
  */
 @Composable
 fun PlayerScreen(
     episodeId: String,
     onExitPlayer: () -> Unit,
     modifier: Modifier = Modifier,
+    hasPrevious: Boolean = false,
+    hasNext: Boolean = false,
+    onPlayPreviousEpisode: (() -> Unit)? = null,
+    onPlayNextEpisode: (() -> Unit)? = null,
     playbackSourceTypeName: String? = null,
     playbackUrl: String? = null,
     seriesTitle: String? = null,
@@ -127,6 +142,10 @@ fun PlayerScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
 
+    var currentPositionMs by remember { mutableLongStateOf(0L) }
+    var durationMs by remember { mutableLongStateOf(0L) }
+    var bufferedPositionMs by remember { mutableLongStateOf(0L) }
+
     // Auto-hiding transport overlay state
     var controlsVisible by remember { mutableStateOf(true) }
     var userActivityNonce by remember { mutableLongStateOf(0L) }
@@ -135,9 +154,21 @@ fun PlayerScreen(
     val playerFocus = remember { FocusRequester() }
     val playPauseFocus = remember { FocusRequester() }
 
-    // Auto-hide controls overlay after 3 seconds of inactivity
-    LaunchedEffect(controlsVisible, userActivityNonce) {
-        if (controlsVisible) {
+    // Position polling loop when playing
+    LaunchedEffect(exoPlayer, isPlaying) {
+        val player = exoPlayer ?: return@LaunchedEffect
+        while (true) {
+            currentPositionMs = player.currentPosition
+            durationMs = player.duration.coerceAtLeast(0L)
+            bufferedPositionMs = player.bufferedPosition
+            isPlaying = player.isPlaying
+            delay(500L)
+        }
+    }
+
+    // Auto-hide controls overlay after 3.5 seconds of inactivity while playing
+    LaunchedEffect(controlsVisible, userActivityNonce, isPlaying) {
+        if (controlsVisible && isPlaying) {
             delay(DEFAULT_CONTROLS_TIMEOUT_MS)
             controlsVisible = false
         }
@@ -178,8 +209,11 @@ fun PlayerScreen(
 
     fun seekNative(seconds: Int) {
         exoPlayer?.let { player ->
-            val target = (player.currentPosition + seconds * 1000L).coerceAtLeast(0L)
+            val cur = player.currentPosition
+            val dur = player.duration.coerceAtLeast(0L)
+            val target = calculateClampedSeekPosition(cur, seconds, dur)
             player.seekTo(target)
+            currentPositionMs = target
             statusText = if (seconds < 0) "Seeking ${seconds}s" else "Seeking +${seconds}s"
         }
     }
@@ -291,6 +325,12 @@ fun PlayerScreen(
                     isLoading = false
                     errorMessage = message
                 },
+                onPlaybackEnded = {
+                    when (onPlaybackEnded(hasNext = hasNext && onPlayNextEpisode != null)) {
+                        PlaybackCompletionDecision.AdvanceToNext -> onPlayNextEpisode?.invoke()
+                        PlaybackCompletionDecision.ExitPlayer -> onExitPlayer()
+                    }
+                },
                 modifier = Modifier.fillMaxSize()
             )
         } else {
@@ -329,7 +369,7 @@ fun PlayerScreen(
                     .padding(24.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top Bar
+                // Top Bar: Clean headline & subtitle without intrusive on-screen Exit button
                 AnimatedVisibility(
                     visible = controlsVisible,
                     enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
@@ -337,7 +377,7 @@ fun PlayerScreen(
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
@@ -359,12 +399,6 @@ fun PlayerScreen(
                                 color = Color.LightGray
                             )
                         }
-
-                        TvPlayerButton(
-                            onClick = { onRemoteKey(RemoteControlKey.BACK) }
-                        ) {
-                            Text("Exit Player (Back)")
-                        }
                     }
                 }
 
@@ -372,41 +406,73 @@ fun PlayerScreen(
                     Spacer(modifier = Modifier.weight(1f))
                 }
 
-                // Bottom Transport Control Bar
+                // Bottom Transport Control Bar & Progress Scrubber
                 AnimatedVisibility(
                     visible = controlsVisible,
                     enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
                     exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xAA000000), shape = RoundedCornerShape(12.dp))
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                            .background(Color(0xAA000000), shape = RoundedCornerShape(16.dp))
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        TvPlayerButton(
-                            onClick = { applyAction(PlayerControlAction.SeekBackward()) }
+                        VideoProgressBar(
+                            positionMs = currentPositionMs,
+                            durationMs = durationMs,
+                            bufferedPositionMs = bufferedPositionMs,
+                            onSeek = { seconds -> applyAction(if (seconds < 0) PlayerControlAction.SeekBackward(-seconds) else PlayerControlAction.SeekForward(seconds)) },
+                            onTogglePlayPause = { applyAction(PlayerControlAction.TogglePlayPause) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("<< Seek -10s")
-                        }
+                            // Previous Episode button
+                            TvPlayerIconButton(
+                                icon = MediaPlaceholderIcons.SkipPrevious,
+                                contentDescription = "Previous Episode",
+                                enabled = hasPrevious && onPlayPreviousEpisode != null,
+                                onClick = {
+                                    userActivityNonce++
+                                    onPlayPreviousEpisode?.invoke()
+                                },
+                                size = 48.dp
+                            )
 
-                        Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(24.dp))
 
-                        TvPlayerButton(
-                            onClick = { applyAction(PlayerControlAction.TogglePlayPause) },
-                            modifier = Modifier.focusRequester(playPauseFocus)
-                        ) {
-                            Text(if (isPlaying) "Pause" else "Play")
-                        }
+                            // Play/Pause button (prominent center)
+                            TvPlayerIconButton(
+                                icon = if (isPlaying) MediaPlaceholderIcons.Pause else MediaPlaceholderIcons.Play,
+                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                enabled = true,
+                                onClick = { applyAction(PlayerControlAction.TogglePlayPause) },
+                                modifier = Modifier.focusRequester(playPauseFocus),
+                                size = 56.dp,
+                                iconSize = 32.dp
+                            )
 
-                        Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(24.dp))
 
-                        TvPlayerButton(
-                            onClick = { applyAction(PlayerControlAction.SeekForward()) }
-                        ) {
-                            Text("Seek +10s >>")
+                            // Next Episode button
+                            TvPlayerIconButton(
+                                icon = MediaPlaceholderIcons.SkipNext,
+                                contentDescription = "Next Episode",
+                                enabled = hasNext && onPlayNextEpisode != null,
+                                onClick = {
+                                    userActivityNonce++
+                                    onPlayNextEpisode?.invoke()
+                                },
+                                size = 48.dp
+                            )
                         }
                     }
                 }
@@ -416,8 +482,67 @@ fun PlayerScreen(
 }
 
 /**
- * TV-aware button for player transport controls.
- * Provides a 1.1x scale factor and a bright, visible white border ring on focus.
+ * TV-aware media control icon button with scale effect and high-contrast focus border ring.
+ */
+@Composable
+private fun TvPlayerIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 48.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 24.dp,
+    shape: Shape = CircleShape
+) {
+    Box(
+        modifier = if (!enabled) modifier.alpha(0.4f) else modifier
+    ) {
+        TvButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.size(size),
+            shape = TvButtonDefaults.shape(
+                shape = shape,
+                focusedShape = shape
+            ),
+            scale = TvButtonDefaults.scale(
+                scale = 1.0f,
+                focusedScale = 1.15f
+            ),
+            border = TvButtonDefaults.border(
+                border = Border.None,
+                focusedBorder = Border(
+                    border = BorderStroke(width = 2.dp, color = Color.White),
+                    shape = shape
+                )
+            ),
+            colors = TvButtonDefaults.colors(
+                containerColor = Color(0xFF2C2C2C),
+                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = Color(0xFF1E1E1E),
+                disabledContentColor = Color.Gray
+            )
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDescription,
+                    modifier = Modifier.size(iconSize),
+                    tint = Color.White
+                )
+            }
+        }
+    }
+}
+
+/**
+ * TV-aware button for player transport controls and failure actions.
  */
 @Composable
 private fun TvPlayerButton(
@@ -486,3 +611,4 @@ private fun PlayerFailure(
         }
     }
 }
+

@@ -27,7 +27,8 @@ fun NativePlayerView(
     onPlayerReady: (ExoPlayer) -> Unit,
     onFirstFrame: () -> Unit,
     onError: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPlaybackEnded: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -36,6 +37,7 @@ fun NativePlayerView(
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     if (playbackState == Player.STATE_READY) onFirstFrame()
+                    if (playbackState == Player.STATE_ENDED) onPlaybackEnded?.invoke()
                 }
 
                 override fun onPlayerError(error: PlaybackException) {

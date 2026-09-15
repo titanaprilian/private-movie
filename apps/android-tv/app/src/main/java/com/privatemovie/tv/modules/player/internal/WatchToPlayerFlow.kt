@@ -18,6 +18,7 @@ const val PLAYER_SEASON_TITLE_KEY = "seasonTitle"
 const val PLAYER_SEASON_NUMBER_KEY = "seasonNumber"
 const val PLAYER_EPISODE_ORDER_KEY = "episodeOrder"
 const val PLAYER_EPISODE_TITLE_KEY = "episodeTitle"
+const val PLAYER_SERIES_ID_KEY = "seriesId"
 
 /** Clear failure message shown when no playable target reaches the player. */
 const val NO_PLAYABLE_SOURCE_MESSAGE = "No playable source for this episode"
@@ -143,6 +144,50 @@ fun formatPlayerSubtitle(
         seasonStr != null -> seasonStr
         else -> ""
     }
+}
+
+/**
+ * Represents a playable episode item in a series playlist.
+ */
+data class PlaylistEpisodeItem(
+    val episodeId: String,
+    val seriesTitle: String? = null,
+    val seasonTitle: String? = null,
+    val seasonNumber: Int? = null,
+    val episodeOrder: Int? = null,
+    val episodeTitle: String? = null,
+    val sourceTypeName: String? = null,
+    val sourceUrl: String? = null
+)
+
+/**
+ * Result of resolving adjacent episodes for a target [episodeId] within an ordered playlist.
+ */
+data class ResolvedPlaylistNeighbors(
+    val previousEpisode: PlaylistEpisodeItem? = null,
+    val currentEpisode: PlaylistEpisodeItem? = null,
+    val nextEpisode: PlaylistEpisodeItem? = null
+) {
+    val hasPrevious: Boolean get() = previousEpisode != null
+    val hasNext: Boolean get() = nextEpisode != null
+}
+
+/**
+ * Pure function resolving previous, current, and next episodes from an ordered list of [PlaylistEpisodeItem].
+ */
+fun resolvePlaylistNeighbors(
+    playlist: List<PlaylistEpisodeItem>,
+    currentEpisodeId: String
+): ResolvedPlaylistNeighbors {
+    val index = playlist.indexOfFirst { it.episodeId == currentEpisodeId }
+    if (index == -1) {
+        return ResolvedPlaylistNeighbors()
+    }
+    return ResolvedPlaylistNeighbors(
+        previousEpisode = playlist.getOrNull(index - 1),
+        currentEpisode = playlist.getOrNull(index),
+        nextEpisode = playlist.getOrNull(index + 1)
+    )
 }
 
 /** Player-side resolution of a handoff into a renderer + loadable URL. */

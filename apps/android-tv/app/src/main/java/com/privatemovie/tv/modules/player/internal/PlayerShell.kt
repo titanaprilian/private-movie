@@ -76,7 +76,70 @@ sealed interface PlayerControlAction {
 }
 
 const val DEFAULT_SEEK_SECONDS = 10
-const val DEFAULT_CONTROLS_TIMEOUT_MS = 3000L
+const val DEFAULT_CONTROLS_TIMEOUT_MS = 3500L
+
+/**
+ * Calculates a clamped target playback position in milliseconds.
+ *
+ * Clamps backward seeks to minimum 0L, and forward seeks to [durationMs] (if positive).
+ */
+fun calculateClampedSeekPosition(
+    currentPositionMs: Long,
+    deltaSeconds: Int,
+    durationMs: Long
+): Long {
+    val deltaMs = deltaSeconds * 1000L
+    val targetMs = currentPositionMs + deltaMs
+    val minMs = 0L
+    return if (durationMs > 0L) {
+        targetMs.coerceIn(minMs, durationMs)
+    } else {
+        targetMs.coerceAtLeast(minMs)
+    }
+}
+
+/**
+ * Formats a timestamp duration in milliseconds to `mm:ss` or `hh:mm:ss`.
+ *
+ * If [referenceDurationMs] (e.g. video duration) is 1 hour or greater, or if [positionMs]
+ * is 1 hour or greater, formats as `hh:mm:ss`. Otherwise formats as `mm:ss`.
+ */
+fun formatPlaybackTime(
+    positionMs: Long,
+    referenceDurationMs: Long = 0L
+): String {
+    val safePos = positionMs.coerceAtLeast(0L)
+    val totalSeconds = safePos / 1000L
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+
+    val refTotalSeconds = referenceDurationMs.coerceAtLeast(0L) / 1000L
+    val showHours = hours > 0L || refTotalSeconds >= 3600L
+
+    return if (showHours) {
+        String.format(java.util.Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds)
+    }
+}
+
+/**
+ * Decision returned when the active media item finishes playback.
+ */
+enum class PlaybackCompletionDecision {
+    /** Advance to and play the next episode. */
+    AdvanceToNext,
+
+    /** Exit the player back to the episode detail screen. */
+    ExitPlayer,
+}
+
+/**
+ * Pure decision function determining player response upon reaching end-of-stream.
+ */
+fun onPlaybackEnded(hasNext: Boolean): PlaybackCompletionDecision =
+    if (hasNext) PlaybackCompletionDecision.AdvanceToNext else PlaybackCompletionDecision.ExitPlayer
 
 /**
  * State holder for player controls overlay visibility and auto-hide scheduling.
@@ -90,6 +153,12 @@ class PlayerControlsState(
 
     var activityNonce: Long = 0L
         private set
+
+    /**
+     * Determines whether the inactivity auto-hide countdown should tick.
+     * When playback is paused or overlay is hidden, auto-hide should be paused.
+     */
+    fun shouldAutoHide(isPlaying: Boolean): Boolean = isVisible && isPlaying
 
     fun show() {
         isVisible = true

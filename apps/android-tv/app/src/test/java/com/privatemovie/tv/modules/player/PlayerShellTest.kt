@@ -140,8 +140,8 @@ class PlayerShellTest {
     }
 
     @Test
-    fun `default controls timeout constant is 3000ms`() {
-        assertEquals(3000L, DEFAULT_CONTROLS_TIMEOUT_MS)
+    fun `default controls timeout constant is 3500ms`() {
+        assertEquals(3500L, DEFAULT_CONTROLS_TIMEOUT_MS)
     }
 
     @Test

@@ -77,6 +77,7 @@ fun DetailScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     activeBackendUrl: String? = null,
+    onLoadedDetails: ((TvSeriesDetails) -> Unit)? = null,
     onPlaySource: ((episodeId: String, videoSource: TvVideoSource, metadata: PlaybackMetadataHandoff) -> Unit)? = null
 ) {
     var uiState by remember { mutableStateOf<DetailUiState>(DetailUiState.Loading) }
@@ -87,7 +88,11 @@ fun DetailScreen(
         uiState = DetailUiState.Loading
         val result = mediaRepository.getSeriesById(seriesId)
         uiState = result.fold(
-            onSuccess = { DetailUiState.Success(it.toTvSeriesDetails()) },
+            onSuccess = {
+                val mapped = it.toTvSeriesDetails()
+                onLoadedDetails?.invoke(mapped)
+                DetailUiState.Success(mapped)
+            },
             onFailure = { DetailUiState.Error(it.message ?: "Failed to load series details") }
         )
     }
