@@ -15,6 +15,9 @@
     "fill-tmdb-ids": "bun --env-file=../../.env src/fill-tmdb-ids.ts",
     "db:fill-tmdb-ids": "bun --env-file=../../.env src/fill-tmdb-ids.ts",
     "fill:tmdb-ids": "bun --env-file=../../.env src/fill-tmdb-ids.ts",
+    "backfill:logos": "bun --env-file=../../.env src/backfill-series-logos.ts",
+    "db:fill-logos": "bun --env-file=../../.env src/backfill-series-logos.ts",
+    "fill:logos": "bun --env-file=../../.env src/backfill-series-logos.ts",
     "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

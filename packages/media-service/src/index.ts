@@ -123,6 +123,8 @@ export type {
   TmdbSeriesDetailsResponse,
   TmdbSeriesFullData,
   TmdbSeriesSeasonMeta,
+  TmdbImageItem,
+  TmdbImagesResponse,
 };
 
 export type VideoSource = "otakudesu" | "dramula";
