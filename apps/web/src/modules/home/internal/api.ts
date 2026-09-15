@@ -35,6 +35,7 @@ export interface HomeFeedRow {
 
 export interface HomeFeedPayload {
   hero: HomeFeedHero | null;
+  heroes?: HomeFeedHero[];
   rows: HomeFeedRow[];
 }
 

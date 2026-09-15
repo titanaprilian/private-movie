@@ -54,6 +54,7 @@ export type MediaHomeFeedRow = {
 
 export type MediaHomeFeed = {
   hero: MediaHomeFeedHero | null;
+  heroes: MediaHomeFeedHero[];
   rows: MediaHomeFeedRow[];
 };
 

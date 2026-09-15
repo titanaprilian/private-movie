@@ -17,11 +17,13 @@ describe("GET /series/home-feed", () => {
     const body = response.body as {
       data: {
         hero: unknown;
+        heroes: unknown[];
         rows: Array<{ title: string; items: unknown[] }>;
       };
     };
 
     expect(body.data.hero).toBeNull();
+    expect(body.data.heroes).toEqual([]);
     expect(body.data.rows).toHaveLength(3);
     expect(body.data.rows[0].title).toBe("Ongoing");
     expect(body.data.rows[0].items).toEqual([]);
@@ -73,11 +75,13 @@ describe("GET /series/home-feed", () => {
     const body = response.body as {
       data: {
         hero: unknown;
+        heroes: unknown[];
         rows: Array<{ title: string; items: unknown[] }>;
       };
     };
 
     expect(body.data.hero).toBeNull();
+    expect(body.data.heroes).toEqual([]);
     expect(body.data.rows).toHaveLength(3);
     expect(body.data.rows[0].title).toBe("Ongoing");
     expect(body.data.rows[0].items).toHaveLength(0);
@@ -241,6 +245,12 @@ describe("GET /series/home-feed", () => {
           seasonsCount: number;
           episodesCount: number;
         };
+        heroes: Array<{
+          id: string;
+          title: string;
+          type: string;
+          tags: string[];
+        }>;
         rows: Array<{
           title: string;
           items: Array<{
@@ -256,6 +266,8 @@ describe("GET /series/home-feed", () => {
     };
 
     expect(body.data.hero).not.toBeNull();
+    expect(body.data.heroes).toHaveLength(1);
+    expect(body.data.heroes[0].id).toBe(tvSeriesId);
     expect(body.data.hero.id).toBe(tvSeriesId);
     expect(body.data.hero.title).toBe("Demon Slayer");
     expect(body.data.hero.tags).toContain("TV Series");
@@ -464,5 +476,144 @@ describe("GET /series/home-feed", () => {
     // Korean Drama series with ongoing season should also appear in Ongoing row (duplicates allowed)
     const ongoingRow2 = body.data.rows[0];
     expect(ongoingRow2.items.map((i) => i.id)).toContain(kdSeriesId);
+  });
+
+  it("supports multiple featured series in heroes array (up to 10) ordered by updatedAt desc, createdAt desc, with hero set to heroes[0]", async () => {
+    const baseTime = Date.now();
+
+    // Insert 12 featured series with video sources
+    const featuredSeriesIds: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      const sId = crypto.randomUUID();
+      featuredSeriesIds.push(sId);
+      const updatedAt = new Date(baseTime + i * 1000);
+      const createdAt = new Date(baseTime + i * 500);
+
+      await db.insert(series).values({
+        id: sId,
+        title: `Featured Series ${i + 1}`,
+        type: "tv",
+        isFeatured: true,
+        createdAt,
+        updatedAt,
+      });
+
+      const sSeasonId = crypto.randomUUID();
+      await db.insert(seasons).values({
+        id: sSeasonId,
+        seriesId: sId,
+        title: "Season 1",
+        seasonNumber: 1,
+        status: "completed",
+        createdAt,
+        updatedAt,
+      });
+
+      const sEpId = crypto.randomUUID();
+      await db.insert(episodes).values({
+        id: sEpId,
+        title: "Episode 1",
+        order: 1,
+        seasonId: sSeasonId,
+        createdAt,
+        updatedAt,
+      });
+
+      await db.insert(videoSources).values({
+        id: crypto.randomUUID(),
+        episodeId: sEpId,
+        type: "hls",
+        url: `https://example.com/featured-${i + 1}.m3u8`,
+        label: "1080p",
+        createdAt,
+        updatedAt,
+      });
+    }
+
+    const response = await request(app, { path: "/series/home-feed" });
+
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        hero: { id: string; title: string } | null;
+        heroes: Array<{ id: string; title: string }>;
+      };
+    };
+
+    expect(body.data.heroes).toHaveLength(10);
+    expect(body.data.hero).not.toBeNull();
+    expect(body.data.hero!.id).toBe(body.data.heroes[0].id);
+
+    // Expected order: latest updatedAt descending (which is index 11 down to 2)
+    const expectedTop10 = featuredSeriesIds.slice().reverse().slice(0, 10);
+    expect(body.data.heroes.map((h) => h.id)).toEqual(expectedTop10);
+  });
+
+  it("falls back to top recently updated series when no series are marked as featured", async () => {
+    const baseTime = Date.now();
+
+    const nonFeaturedIds: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const sId = crypto.randomUUID();
+      nonFeaturedIds.push(sId);
+      const updatedAt = new Date(baseTime + i * 1000);
+
+      await db.insert(series).values({
+        id: sId,
+        title: `Non Featured Series ${i + 1}`,
+        type: "tv",
+        isFeatured: false,
+        createdAt: new Date(baseTime),
+        updatedAt,
+      });
+
+      const sSeasonId = crypto.randomUUID();
+      await db.insert(seasons).values({
+        id: sSeasonId,
+        seriesId: sId,
+        title: "Season 1",
+        seasonNumber: 1,
+        status: "completed",
+        createdAt: new Date(baseTime),
+        updatedAt,
+      });
+
+      const sEpId = crypto.randomUUID();
+      await db.insert(episodes).values({
+        id: sEpId,
+        title: "Episode 1",
+        order: 1,
+        seasonId: sSeasonId,
+        createdAt: new Date(baseTime),
+        updatedAt,
+      });
+
+      await db.insert(videoSources).values({
+        id: crypto.randomUUID(),
+        episodeId: sEpId,
+        type: "hls",
+        url: `https://example.com/non-featured-${i + 1}.m3u8`,
+        label: "720p",
+        createdAt: new Date(baseTime),
+        updatedAt,
+      });
+    }
+
+    const response = await request(app, { path: "/series/home-feed" });
+
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        hero: { id: string; title: string } | null;
+        heroes: Array<{ id: string; title: string }>;
+      };
+    };
+
+    expect(body.data.heroes.length).toBeGreaterThanOrEqual(3);
+    expect(body.data.hero).not.toBeNull();
+    expect(body.data.hero!.id).toBe(body.data.heroes[0].id);
+
+    // Latest updated non-featured series should be first in heroes
+    expect(body.data.heroes[0].id).toBe(nonFeaturedIds[2]);
   });
 });

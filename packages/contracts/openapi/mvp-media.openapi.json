@@ -296,6 +296,7 @@
         "type": "object",
         "required": [
           "hero",
+          "heroes",
           "rows"
         ],
         "properties": {
@@ -308,6 +309,12 @@
                 "type": "null"
               }
             ]
+          },
+          "heroes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HomeFeedHero"
+            }
           },
           "rows": {
             "type": "array",

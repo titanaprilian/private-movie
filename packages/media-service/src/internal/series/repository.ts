@@ -134,6 +134,7 @@ export interface HomeFeedRow {
 
 export interface HomeFeedPayload {
   hero: HomeFeedHero | null;
+  heroes: HomeFeedHero[];
   rows: HomeFeedRow[];
 }
 
@@ -574,12 +575,21 @@ export function createSeriesRepositoryInternal<
         WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${genres.name} = 'Korean Drama'
       )`;
 
-      const [heroSeries] = await db
+      let heroSeriesList = await db
         .select()
         .from(series)
         .where(and(eq(series.isFeatured, true), hasVideoSources))
         .orderBy(desc(series.updatedAt), desc(series.createdAt))
-        .limit(1);
+        .limit(10);
+
+      if (heroSeriesList.length === 0) {
+        heroSeriesList = await db
+          .select()
+          .from(series)
+          .where(hasVideoSources)
+          .orderBy(desc(series.updatedAt), desc(series.createdAt))
+          .limit(10);
+      }
 
       const [ongoingRows, recentlyAddedRows, koreanDramaRows] = await Promise.all([
         db
@@ -603,10 +613,7 @@ export function createSeriesRepositoryInternal<
       ]);
 
       const allSeriesMap = new Map<string, SeriesRow>();
-      if (heroSeries) {
-        allSeriesMap.set(heroSeries.id, heroSeries);
-      }
-      for (const s of [...ongoingRows, ...recentlyAddedRows, ...koreanDramaRows]) {
+      for (const s of [...heroSeriesList, ...ongoingRows, ...recentlyAddedRows, ...koreanDramaRows]) {
         allSeriesMap.set(s.id, s);
       }
 
@@ -673,17 +680,18 @@ export function createSeriesRepositoryInternal<
         });
       }
 
-      let hero: HomeFeedHero | null = null;
-      if (heroSeries) {
-        const enrichedHero = enrichedMap.get(heroSeries.id)!;
+      const heroes: HomeFeedHero[] = heroSeriesList.map((s) => {
+        const enrichedHero = enrichedMap.get(s.id)!;
         const genreNames = enrichedHero.genres.map((g) => g.name);
         const typeTag = enrichedHero.type === "movie" ? "Movie" : "TV Series";
         const tags = [typeTag, ...genreNames];
-        hero = {
+        return {
           ...enrichedHero,
           tags,
         };
-      }
+      });
+
+      const hero: HomeFeedHero | null = heroes[0] ?? null;
 
       const rows: HomeFeedRow[] = [
         {
@@ -702,6 +710,7 @@ export function createSeriesRepositoryInternal<
 
       return {
         hero,
+        heroes,
         rows,
       };
     },

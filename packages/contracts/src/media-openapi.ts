@@ -222,13 +222,17 @@ export const MVP_MEDIA_OPENAPI = {
       HomeFeed: {
         title: "HomeFeed",
         type: "object",
-        required: ["hero", "rows"],
+        required: ["hero", "heroes", "rows"],
         properties: {
           hero: {
             anyOf: [
               { $ref: "#/components/schemas/HomeFeedHero" },
               { type: "null" },
             ],
+          },
+          heroes: {
+            type: "array",
+            items: { $ref: "#/components/schemas/HomeFeedHero" },
           },
           rows: {
             type: "array",
