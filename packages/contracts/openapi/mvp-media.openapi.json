@@ -211,6 +211,12 @@
               "null"
             ]
           },
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "rating": {
             "type": [
               "string",
@@ -545,6 +551,12 @@
             ]
           },
           "backdropUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "logoUrl": {
             "type": [
               "string",
               "null"

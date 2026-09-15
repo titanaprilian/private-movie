@@ -3,6 +3,7 @@ import {
   fetchTmdbSeriesData,
   saveTmdbSeries,
   getTmdbPreview,
+  selectBestTmdbLogo,
   TmdbFetchError,
   SeriesNotFoundError,
   createMediaService,
@@ -200,6 +201,7 @@ describe("TMDB Service getTmdbPreview", () => {
       overview: "A great TV show overview.",
       posterUrl: "https://image.tmdb.org/t/p/w500/tv_poster.jpg",
       backdropUrl: "https://image.tmdb.org/t/p/original/tv_backdrop.jpg",
+      logoUrl: null,
       releaseDate: "2021-01-01",
       genres: ["Drama", "Action"],
       status: "Returning Series",
@@ -289,13 +291,10 @@ describe("TMDB Service getTmdbPreview", () => {
       overview: "A thief who steals corporate secrets...",
       posterUrl: "https://image.tmdb.org/t/p/w500/inception.jpg",
       backdropUrl: "https://image.tmdb.org/t/p/original/inception_bg.jpg",
+      logoUrl: null,
       releaseDate: "2010-07-16",
       genres: ["Action", "Sci-Fi"],
       runtime: 148,
-      totalSeasons: undefined,
-      totalEpisodes: undefined,
-      status: undefined,
-      seasons: undefined,
     });
   });
 
@@ -768,5 +767,29 @@ describe("createMediaService getTmdbSyncPreview", () => {
         thumbnailChanged: true,
       })
     );
+  });
+});
+
+describe("selectBestTmdbLogo", () => {
+  it("returns null when logos array is empty or undefined", () => {
+    expect(selectBestTmdbLogo(undefined)).toBeNull();
+    expect(selectBestTmdbLogo([])).toBeNull();
+  });
+
+  it("selects highest-rated English logo when available", () => {
+    const logos = [
+      { file_path: "/ja_logo.png", vote_average: 9.5, iso_639_1: "ja" },
+      { file_path: "/en_logo_low.png", vote_average: 4.0, iso_639_1: "en" },
+      { file_path: "/en_logo_high.png", vote_average: 8.5, iso_639_1: "en-US" },
+    ];
+    expect(selectBestTmdbLogo(logos)).toBe("https://image.tmdb.org/t/p/w500/en_logo_high.png");
+  });
+
+  it("falls back to highest-rated non-English logo when no English logos exist", () => {
+    const logos = [
+      { file_path: "/fr_logo.png", vote_average: 6.0, iso_639_1: "fr" },
+      { file_path: "/ja_logo.png", vote_average: 9.0, iso_639_1: "ja" },
+    ];
+    expect(selectBestTmdbLogo(logos)).toBe("https://image.tmdb.org/t/p/w500/ja_logo.png");
   });
 });

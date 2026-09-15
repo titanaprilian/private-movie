@@ -1,0 +1,1 @@
+ALTER TABLE "series" ADD COLUMN "logo_url" text;

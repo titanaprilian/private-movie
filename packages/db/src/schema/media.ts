@@ -31,6 +31,7 @@ export const series = pgTable("series", {
   type: text("type").notNull().default("tv"),
   posterUrl: text("poster_url"),
   backdropUrl: text("backdrop_url"),
+  logoUrl: text("logo_url"),
   rating: text("rating"),
   tmdbId: integer("tmdb_id").unique(),
   tmdbSyncStatus: text("tmdb_sync_status").notNull().default("PENDING"),

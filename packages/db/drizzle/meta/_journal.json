@@ -162,6 +162,13 @@
       "when": 1789358043339,
       "tag": "0022_material_turbo",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789445658436,
+      "tag": "0023_slippery_king_cobra",
+      "breakpoints": true
     }
   ]
 }

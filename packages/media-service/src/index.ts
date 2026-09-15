@@ -79,6 +79,7 @@ import {
   fetchTmdbSeriesData,
   saveTmdbSeries,
   getTmdbPreview,
+  selectBestTmdbLogo,
   TmdbFetchError,
   type FetchTmdbSeriesOptions,
   type GetTmdbPreviewOptions,
@@ -98,9 +99,11 @@ import {
   type TmdbSeriesDetailsResponse,
   type TmdbSeriesFullData,
   type TmdbSeriesSeasonMeta,
+  type TmdbImageItem,
+  type TmdbImagesResponse,
 } from "./internal/tmdb/service";
 
-export { TmdbFetchError, fetchTmdbSeriesData, saveTmdbSeries, getTmdbPreview };
+export { TmdbFetchError, fetchTmdbSeriesData, saveTmdbSeries, getTmdbPreview, selectBestTmdbLogo };
 export type {
   FetchTmdbSeriesOptions,
   GetTmdbPreviewOptions,
@@ -884,6 +887,7 @@ export function createMediaService<
         (existingSeries.description ?? null) !== (data.description ?? null) ||
         (existingSeries.posterUrl ?? null) !== (data.posterPath ?? null) ||
         (existingSeries.backdropUrl ?? null) !== (data.backdropPath ?? null) ||
+        (existingSeries.logoUrl ?? null) !== (data.logoUrl ?? null) ||
         (existingSeries.rating ?? null) !== (incomingRating ?? null) ||
         (existingSeries.title ?? null) !== (data.title ?? null);
 
@@ -1002,6 +1006,7 @@ export function createMediaService<
           overview: data.description,
           posterUrl: data.posterPath,
           backdropUrl: data.backdropPath,
+          logoUrl: data.logoUrl,
           rating: incomingRating,
           releaseDate: data.firstAirDate,
           genres: data.genres,
@@ -1033,6 +1038,7 @@ export function createMediaService<
             description: data.description,
             posterUrl: data.posterPath,
             backdropUrl: data.backdropPath,
+            logoUrl: data.logoUrl,
             rating: data.voteAverage ? String(data.voteAverage) : null,
             tmdbId: data.tmdbId,
             type: data.type ?? input.type,

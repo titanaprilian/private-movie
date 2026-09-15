@@ -34,6 +34,7 @@ export type MediaSeriesMetadata = {
   type: string;
   posterUrl: string | null;
   backdropUrl: string | null;
+  logoUrl: string | null;
   rating: string | null;
   isFeatured: boolean;
   createdAt: string;
@@ -103,6 +104,7 @@ export type MediaSeriesDetails = {
   type: string;
   posterUrl: string | null;
   backdropUrl: string | null;
+  logoUrl: string | null;
   rating: string | null;
   isFeatured: boolean;
   createdAt: string;
