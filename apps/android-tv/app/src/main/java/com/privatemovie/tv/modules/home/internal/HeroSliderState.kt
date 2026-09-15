@@ -25,7 +25,10 @@ class HeroSliderState(
 ) {
     var activeIndex: Int by mutableIntStateOf(0)
 
-    var isPaused by mutableStateOf(false)
+    var isCtaFocused by mutableStateOf(false)
+        private set
+
+    var timerResetToken: Int by mutableIntStateOf(0)
         private set
 
     val heroCount: Int
@@ -34,26 +37,46 @@ class HeroSliderState(
     val activeHero: TvHomeHero?
         get() = if (heroes.isNotEmpty() && activeIndex in heroes.indices) heroes[activeIndex] else null
 
-    fun advanceSlide() {
+    fun resetTimer() {
+        timerResetToken++
+    }
+
+    fun advanceSlide(resetTimer: Boolean = false) {
         if (heroCount > 1) {
             activeIndex = (activeIndex + 1) % heroCount
+            if (resetTimer) {
+                resetTimer()
+            }
         }
     }
 
-    fun previousSlide() {
+    fun previousSlide(resetTimer: Boolean = true) {
         if (heroCount > 1) {
             activeIndex = (activeIndex - 1 + heroCount) % heroCount
+            if (resetTimer) {
+                resetTimer()
+            }
         }
     }
 
-    fun selectSlide(index: Int) {
+    fun selectSlide(index: Int, resetTimer: Boolean = true) {
         if (index in 0 until heroCount) {
             activeIndex = index
+            if (resetTimer) {
+                resetTimer()
+            }
+        }
+    }
+
+    fun onCtaFocusChanged(focused: Boolean) {
+        isCtaFocused = focused
+        if (focused) {
+            resetTimer()
         }
     }
 
     fun onFocusChanged(isFocused: Boolean) {
-        isPaused = isFocused
+        onCtaFocusChanged(isFocused)
     }
 
     fun handleKey(isKeyDown: Boolean, keyCode: Int): Boolean {
@@ -61,13 +84,13 @@ class HeroSliderState(
             when (keyCode) {
                 android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
                     if (heroCount > 1) {
-                        previousSlide()
+                        previousSlide(resetTimer = true)
                         return true
                     }
                 }
                 android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
                     if (heroCount > 1) {
-                        advanceSlide()
+                        advanceSlide(resetTimer = true)
                         return true
                     }
                 }
@@ -86,8 +109,8 @@ class HeroSliderState(
     suspend fun runAutoAdvanceLoop() {
         while (true) {
             delay(autoAdvanceIntervalMs)
-            if (!isPaused && heroCount > 1) {
-                advanceSlide()
+            if (isCtaFocused && heroCount > 1) {
+                advanceSlide(resetTimer = false)
             }
         }
     }
@@ -108,8 +131,13 @@ fun rememberHeroSliderState(
         HeroSliderState(heroes = heroes, autoAdvanceIntervalMs = autoAdvanceIntervalMs)
     }
 
-    LaunchedEffect(state) {
-        state.runAutoAdvanceLoop()
+    LaunchedEffect(state, state.timerResetToken, state.isCtaFocused) {
+        if (state.isCtaFocused && state.heroCount > 1) {
+            while (true) {
+                delay(autoAdvanceIntervalMs)
+                state.advanceSlide(resetTimer = false)
+            }
+        }
     }
 
     return state

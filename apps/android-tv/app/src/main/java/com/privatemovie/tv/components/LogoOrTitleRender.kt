@@ -49,8 +49,8 @@ fun LogoOrTitleRender(
             contentDescription = contentDescription ?: title,
             contentScale = ContentScale.Fit,
             modifier = modifier
-                .heightIn(max = 110.dp)
-                .widthIn(max = 380.dp),
+                .heightIn(max = 80.dp)
+                .widthIn(max = 340.dp),
             loading = {
                 TitleHeadlineText(title = title)
             },
