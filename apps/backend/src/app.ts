@@ -10,7 +10,7 @@ import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes, embedRoutes } from "./modules/media/http";
 import { storageRoutes } from "./modules/storage/http";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
-import { InternalServerError } from "./lib/errors";
+import { InternalServerError, getDomainErrorStatus } from "./lib/errors";
 
 export interface CreateAppDeps {
   db: DbClient;
@@ -69,6 +69,10 @@ export const createApp = (deps: CreateAppDeps) => {
             message: "request validation failed",
           },
         };
+      }
+      const domainStatus = getDomainErrorStatus(error);
+      if (domainStatus !== null) {
+        return errorResponse(set, domainStatus, error as Error);
       }
       console.error(error); return errorResponse(set, 500, new InternalServerError());
     })

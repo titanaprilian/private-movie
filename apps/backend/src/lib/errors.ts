@@ -18,3 +18,42 @@ export class UploadSessionNotFoundError extends Error {
   }
 }
 
+export function getDomainErrorStatus(error: unknown): number | null {
+  if (!(error instanceof Error)) return null;
+  const name = error.name || error.constructor?.name || "";
+
+  if (name.endsWith("NotFoundError")) return 404;
+
+  if (
+    name === "GenreAlreadyExistsError" ||
+    name === "EmailAlreadyRegisteredError" ||
+    name === "StorageProviderInUseError" ||
+    name === "SeasonNotEmptyError" ||
+    name.endsWith("AlreadyExistsError") ||
+    name === "ConflictError"
+  ) {
+    return 409;
+  }
+
+  if (name === "UnauthorizedError" || name === "InvalidCredentialsError") return 401;
+
+  if (name === "AccountLockedError") return 429;
+
+  if (name === "FileTooLargeError") return 413;
+
+  if (name === "S3NotConfiguredError") return 400;
+
+  if (
+    name === "InvalidRegistrationInputError" ||
+    name === "SeasonNotOngoingError" ||
+    name === "SeasonMissingScraperUrlError" ||
+    name === "EpisodeParseError" ||
+    name === "SeriesParseError" ||
+    name === "EpisodeMissingFieldsError"
+  ) {
+    return 400;
+  }
+
+  return null;
+}
+
