@@ -47,6 +47,7 @@ import com.privatemovie.tv.components.LogoOrTitleRender
 import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
 import com.privatemovie.tv.components.TvMediaImage
+import com.privatemovie.tv.components.isRepeatKeyEvent
 
 /**
  * Series Header component with full-bleed backdrop banner edge-to-edge, floating Back button
@@ -328,6 +329,9 @@ fun SeriesHeader(
                             up = backFocusRequester
                         }
                         .onKeyEvent { keyEvent ->
+                            if (isRepeatKeyEvent(keyEvent)) {
+                                return@onKeyEvent true
+                            }
                             if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
                                 keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN
                             ) {

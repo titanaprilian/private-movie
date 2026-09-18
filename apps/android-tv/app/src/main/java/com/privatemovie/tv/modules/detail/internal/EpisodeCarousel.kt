@@ -48,6 +48,7 @@ import com.privatemovie.tv.components.EdgeScaleTransform
 import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
 import com.privatemovie.tv.components.TvMediaImage
+import com.privatemovie.tv.components.isRepeatKeyEvent
 
 /**
  * Horizontal carousel of 16:9 episode thumbnail cards.
@@ -102,6 +103,9 @@ fun EpisodeCarousel(
                     .then(
                         if (onUp != null) {
                             Modifier.onKeyEvent { keyEvent ->
+                                if (isRepeatKeyEvent(keyEvent)) {
+                                    return@onKeyEvent true
+                                }
                                 if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
                                     keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
                                 ) {

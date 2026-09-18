@@ -41,6 +41,9 @@ import kotlinx.coroutines.launch
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
+import com.privatemovie.tv.components.FocusTransitionCoordinator
+import com.privatemovie.tv.components.isRepeatKeyEvent
+import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.detail.internal.DetailUiState
 import com.privatemovie.tv.modules.detail.internal.EpisodeCarousel
@@ -368,10 +371,11 @@ private fun DetailContent(
     val descriptionPanelFocusRequester = remember { FocusRequester() }
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val focusCoordinator = remember(coroutineScope) { FocusTransitionCoordinator(coroutineScope) }
 
     // Initial D-pad focus placed directly onto the Play Now CTA on screen entry
     LaunchedEffect(details.id) {
-        playCtaFocusRequester.requestFocus()
+        requestFocusSafely(playCtaFocusRequester)
         lazyListState.scrollToItem(0, 0)
     }
 
@@ -424,13 +428,15 @@ private fun DetailContent(
                     },
                     onBack = onBack,
                     onDownFromCta = {
-                        coroutineScope.launch {
+                        focusCoordinator.tryRequestFocus {
                             if (details.seasons.size > 1) {
                                 lazyListState.animateScrollToItem(1)
-                                seasonTabsFocusRequester.requestFocus()
+                                requestFocusSafely(seasonTabsFocusRequester)
                             } else if (currentEpisodes.isNotEmpty()) {
                                 lazyListState.animateScrollToItem(1)
-                                carouselFocusRequester.requestFocus()
+                                requestFocusSafely(carouselFocusRequester)
+                            } else {
+                                false
                             }
                         }
                     },
@@ -455,9 +461,9 @@ private fun DetailContent(
                     upFocusRequester = playCtaFocusRequester,
                     downFocusRequester = carouselFocusRequester,
                     onUp = {
-                        coroutineScope.launch {
+                        focusCoordinator.tryRequestFocus {
                             lazyListState.animateScrollToItem(0)
-                            playCtaFocusRequester.requestFocus()
+                            requestFocusSafely(playCtaFocusRequester)
                         }
                     }
                 )
@@ -504,9 +510,9 @@ private fun DetailContent(
                         downFocusRequester = descriptionPanelFocusRequester,
                         onUp = if (details.seasons.size <= 1) {
                             {
-                                coroutineScope.launch {
+                                focusCoordinator.tryRequestFocus {
                                     lazyListState.animateScrollToItem(0)
-                                    playCtaFocusRequester.requestFocus()
+                                    requestFocusSafely(playCtaFocusRequester)
                                 }
                             }
                         } else null
@@ -568,6 +574,9 @@ private fun SeasonSelectorBar(
                     .then(
                         if (onUp != null) {
                             Modifier.onKeyEvent { keyEvent ->
+                                if (isRepeatKeyEvent(keyEvent)) {
+                                    return@onKeyEvent true
+                                }
                                 if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
                                     keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
                                 ) {

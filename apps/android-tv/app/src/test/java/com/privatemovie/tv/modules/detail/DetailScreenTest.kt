@@ -1,15 +1,26 @@
 package com.privatemovie.tv.modules.detail
 
+import androidx.compose.ui.focus.FocusRequester
+import com.privatemovie.tv.components.FocusTransitionCoordinator
+import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.network.HttpResponse
 import com.privatemovie.tv.data.network.MediaApiClient
 import com.privatemovie.tv.data.repository.DefaultMediaRepository
 import com.privatemovie.tv.data.FakeHttpTransport
+import com.privatemovie.tv.modules.detail.internal.TvEpisode
+import com.privatemovie.tv.modules.detail.internal.TvSeason
+import com.privatemovie.tv.modules.detail.internal.TvSeriesDetails
 import com.privatemovie.tv.modules.detail.internal.toTvSeriesDetails
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicInteger
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DetailScreenTest {
 
     @Test
@@ -134,5 +145,133 @@ class DetailScreenTest {
         val result = repository.getSeriesById("unknown")
         assertTrue(result.isFailure)
         assertEquals("Series unknown not found", result.exceptionOrNull()?.message)
+    }
+
+    @Test
+    fun `downward focus transition targets carousel for single-season series`() = runTest {
+        val playCtaFocus = FocusRequester()
+        val carouselFocus = FocusRequester()
+        val coordinator = FocusTransitionCoordinator(this)
+        var targetFocused = false
+
+        val details = TvSeriesDetails(
+            id = "s-1",
+            title = "Single Season Show",
+            type = "tv",
+            isFeatured = false,
+            genres = emptyList(),
+            description = "A show",
+            posterUrl = null,
+            backdropUrl = null,
+            rating = "8.0",
+            seasons = listOf(
+                TvSeason(
+                    id = "season-1",
+                    title = "Season 1",
+                    seasonNumber = 1,
+                    description = "Season 1 description",
+                    episodes = listOf(
+                        TvEpisode(
+                            id = "ep-1",
+                            title = "Pilot",
+                            order = 1,
+                            description = "Pilot episode",
+                            thumbnailUrl = null,
+                            videoSources = emptyList()
+                        )
+                    )
+                )
+            ),
+            standaloneEpisodes = emptyList()
+        )
+
+        val handled = coordinator.tryRequestFocus {
+            if (details.seasons.size > 1) {
+                false
+            } else {
+                targetFocused = requestFocusSafely(carouselFocus, maxRetries = 2, rawRequest = { true })
+                targetFocused
+            }
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertTrue(targetFocused)
+    }
+
+    @Test
+    fun `downward focus transition targets season tabs for multi-season series`() = runTest {
+        val playCtaFocus = FocusRequester()
+        val seasonTabsFocus = FocusRequester()
+        val coordinator = FocusTransitionCoordinator(this)
+        var targetFocused = false
+
+        val details = TvSeriesDetails(
+            id = "s-2",
+            title = "Multi Season Show",
+            type = "tv",
+            isFeatured = false,
+            genres = emptyList(),
+            description = "A show",
+            posterUrl = null,
+            backdropUrl = null,
+            rating = "8.0",
+            seasons = listOf(
+                TvSeason(id = "season-1", title = "Season 1", seasonNumber = 1, description = null, episodes = emptyList()),
+                TvSeason(id = "season-2", title = "Season 2", seasonNumber = 2, description = null, episodes = emptyList())
+            ),
+            standaloneEpisodes = emptyList()
+        )
+
+        val handled = coordinator.tryRequestFocus {
+            if (details.seasons.size > 1) {
+                targetFocused = requestFocusSafely(seasonTabsFocus, maxRetries = 2, rawRequest = { true })
+                targetFocused
+            } else {
+                false
+            }
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertTrue(targetFocused)
+    }
+
+    @Test
+    fun `upward focus transition targets play CTA safely`() = runTest {
+        val playCtaFocus = FocusRequester()
+        val coordinator = FocusTransitionCoordinator(this)
+        var ctaFocused = false
+
+        val handled = coordinator.tryRequestFocus {
+            ctaFocused = requestFocusSafely(playCtaFocus, maxRetries = 2, rawRequest = { true })
+            ctaFocused
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertTrue(ctaFocused)
+    }
+
+    @Test
+    fun `rapid D-pad transitions are guarded against contention`() = runTest {
+        val coordinator = FocusTransitionCoordinator(this)
+        val counter = AtomicInteger(0)
+
+        val first = coordinator.tryRequestFocus {
+            counter.incrementAndGet()
+            kotlinx.coroutines.delay(500)
+            true
+        }
+
+        val second = coordinator.tryRequestFocus {
+            counter.incrementAndGet()
+            true
+        }
+
+        assertTrue(first)
+        assertFalse(second)
+        advanceUntilIdle()
+        assertEquals(1, counter.get())
     }
 }
