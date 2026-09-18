@@ -7,8 +7,8 @@ import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_TITLE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SERIES_TITLE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
-import com.privatemovie.tv.modules.player.internal.PlaybackMetadataHandoff
-import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
+import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
+import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

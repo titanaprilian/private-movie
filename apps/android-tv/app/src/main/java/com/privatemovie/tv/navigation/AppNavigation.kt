@@ -29,8 +29,10 @@ import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_TITLE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SERIES_TITLE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
-import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
-import com.privatemovie.tv.modules.player.internal.PlaylistEpisodeItem
+import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
+import com.privatemovie.tv.modules.player.PlaybackSourceRef
+import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
+import com.privatemovie.tv.modules.player.PlayerNavArgs
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
 import com.privatemovie.tv.modules.player.internal.resolvePlaylistNeighbors
 

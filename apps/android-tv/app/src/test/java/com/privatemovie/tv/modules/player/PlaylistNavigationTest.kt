@@ -1,7 +1,7 @@
 package com.privatemovie.tv.modules.player
 
-import com.privatemovie.tv.modules.player.internal.PlaybackCompletionDecision
-import com.privatemovie.tv.modules.player.internal.PlaylistEpisodeItem
+import com.privatemovie.tv.modules.player.PlaybackCompletionDecision
+import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 import com.privatemovie.tv.modules.player.internal.onPlaybackEnded
 import com.privatemovie.tv.modules.player.internal.resolvePlaylistNeighbors
 import org.junit.Assert.assertEquals

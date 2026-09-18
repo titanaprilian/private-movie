@@ -301,8 +301,6 @@
         "title": "HomeFeed",
         "type": "object",
         "required": [
-          "hero",
-          "heroes",
           "rows"
         ],
         "properties": {
@@ -317,7 +315,10 @@
             ]
           },
           "heroes": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "$ref": "#/components/schemas/HomeFeedHero"
             }

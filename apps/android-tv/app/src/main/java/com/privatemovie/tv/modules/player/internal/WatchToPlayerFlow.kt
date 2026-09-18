@@ -1,5 +1,9 @@
 package com.privatemovie.tv.modules.player.internal
 
+import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
+import com.privatemovie.tv.modules.player.PlaybackSourceRef
+import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
+
 /**
  * End-to-end watch-to-player flow decisions for the Android TV MVP path
  * (Home -> Watch/Detail -> Player) against the real backend contract.
@@ -22,25 +26,6 @@ const val PLAYER_SERIES_ID_KEY = "seriesId"
 
 /** Clear failure message shown when no playable target reaches the player. */
 const val NO_PLAYABLE_SOURCE_MESSAGE = "No playable source for this episode"
-
-/**
- * Minimal normalized playback source reference for flow decisions.
- * Callers map their own models (e.g. detail `TvVideoSource`) into this
- * to avoid cross-module internal imports.
- */
-data class PlaybackSourceRef(
-    val type: String,
-    val url: String
-)
-
-/** Normalized metadata payload passed from detail flow to player. */
-data class PlaybackMetadataHandoff(
-    val seriesTitle: String? = null,
-    val seasonTitle: String? = null,
-    val seasonNumber: Int? = null,
-    val episodeOrder: Int? = null,
-    val episodeTitle: String? = null
-)
 
 /** What the watch/detail flow should do for an episode's source list. */
 sealed interface EpisodePlaybackDecision {
@@ -145,20 +130,6 @@ fun formatPlayerSubtitle(
         else -> ""
     }
 }
-
-/**
- * Represents a playable episode item in a series playlist.
- */
-data class PlaylistEpisodeItem(
-    val episodeId: String,
-    val seriesTitle: String? = null,
-    val seasonTitle: String? = null,
-    val seasonNumber: Int? = null,
-    val episodeOrder: Int? = null,
-    val episodeTitle: String? = null,
-    val sourceTypeName: String? = null,
-    val sourceUrl: String? = null
-)
 
 /**
  * Result of resolving adjacent episodes for a target [episodeId] within an ordered playlist.

@@ -33,7 +33,7 @@ import kotlinx.serialization.Contextual
  *
  * @param id 
  * @param episodeId 
- * @param type Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player).
+ * @param type Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player, 's3' for S3 object storage).
  * @param url Normalized client-consumable playback target URL (e.g. /embed/{hash} for videobello embeds or direct video stream URL).
  * @param label 
  * @param createdAt 
@@ -50,7 +50,7 @@ data class VideoSource (
     @SerialName(value = "episodeId")
     val episodeId: kotlin.String,
 
-    /* Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player). */
+    /* Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player, 's3' for S3 object storage). */
     @SerialName(value = "type")
     val type: VideoSource.Type,
 
@@ -73,9 +73,9 @@ data class VideoSource (
 ) {
 
     /**
-     * Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player).
+     * Client-consumable playback target kind ('embed' for WebView playback, 'direct' for native player, 's3' for S3 object storage).
      *
-     * Values: EMBED,DIRECT
+     * Values: EMBED,DIRECT,S3
      */
     @Serializable
     enum class Type(val value: kotlin.String) {

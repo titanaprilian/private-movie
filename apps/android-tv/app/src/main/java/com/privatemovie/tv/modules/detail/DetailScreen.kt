@@ -57,8 +57,8 @@ import com.privatemovie.tv.modules.detail.internal.TvVideoSource
 import com.privatemovie.tv.modules.detail.internal.findFirstPlayableEpisode
 import com.privatemovie.tv.modules.detail.internal.findMetadataForEpisode
 import com.privatemovie.tv.modules.detail.internal.toTvSeriesDetails
+import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.internal.EpisodePlaybackDecision
-import com.privatemovie.tv.modules.player.internal.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
 
 /**

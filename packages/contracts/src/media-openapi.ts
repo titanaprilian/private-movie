@@ -223,7 +223,7 @@ export const MVP_MEDIA_OPENAPI = {
       HomeFeed: {
         title: "HomeFeed",
         type: "object",
-        required: ["hero", "heroes", "rows"],
+        required: ["rows"],
         properties: {
           hero: {
             anyOf: [
@@ -232,7 +232,7 @@ export const MVP_MEDIA_OPENAPI = {
             ],
           },
           heroes: {
-            type: "array",
+            type: ["array", "null"],
             items: { $ref: "#/components/schemas/HomeFeedHero" },
           },
           rows: {

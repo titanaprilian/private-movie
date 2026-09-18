@@ -9,7 +9,7 @@ import com.privatemovie.tv.modules.player.internal.PLAYER_SERIES_TITLE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
 import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
-import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
+import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
 import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
 import com.privatemovie.tv.modules.player.internal.formatPlayerHeadline

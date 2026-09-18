@@ -1,6 +1,9 @@
 package com.privatemovie.tv.modules.player.internal
 
 import com.privatemovie.tv.dto.models.VideoSource
+import com.privatemovie.tv.modules.player.PlaybackCompletionDecision
+import com.privatemovie.tv.modules.player.PlayerControlAction
+import com.privatemovie.tv.modules.player.DEFAULT_SEEK_SECONDS
 
 /**
  * Internal player-shell logic for the dedicated Android TV player screen.
@@ -47,35 +50,6 @@ enum class RemoteControlKey {
     DOWN,
 }
 
-/**
- * Declarative control actions the player shell can take in response to a
- * remote-control intent. The Compose layer applies these (toggle playback,
- * seek, exit, fullscreen attempt, show/hide controls overlay) against the active [PlaybackRenderer].
- */
-sealed interface PlayerControlAction {
-    /** Primary activation and media-key behavior: toggle play/pause. */
-    data object TogglePlayPause : PlayerControlAction
-
-    /** Back navigation: exit playback to the watch/detail flow. */
-    data object ExitPlayer : PlayerControlAction
-
-    /** Seek-oriented left behavior (native guaranteed, embed best-effort). */
-    data class SeekBackward(val seconds: Int = DEFAULT_SEEK_SECONDS) : PlayerControlAction
-
-    /** Seek-oriented right behavior (native guaranteed, embed best-effort). */
-    data class SeekForward(val seconds: Int = DEFAULT_SEEK_SECONDS) : PlayerControlAction
-
-    /** Fullscreen attempt for the player surface / provider-compatible embeds. */
-    data object RequestFullscreen : PlayerControlAction
-
-    /** Signals the UI to show the controls overlay and reset inactivity timeout. */
-    data object ShowControls : PlayerControlAction
-
-    /** Signals the UI to hide/dismiss the controls overlay. */
-    data object HideControls : PlayerControlAction
-}
-
-const val DEFAULT_SEEK_SECONDS = 10
 const val DEFAULT_CONTROLS_TIMEOUT_MS = 3500L
 
 /**
@@ -122,17 +96,6 @@ fun formatPlaybackTime(
     } else {
         String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds)
     }
-}
-
-/**
- * Decision returned when the active media item finishes playback.
- */
-enum class PlaybackCompletionDecision {
-    /** Advance to and play the next episode. */
-    AdvanceToNext,
-
-    /** Exit the player back to the episode detail screen. */
-    ExitPlayer,
 }
 
 /**

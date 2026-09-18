@@ -1,10 +1,10 @@
 package com.privatemovie.tv.modules.player
 
 import com.privatemovie.tv.dto.models.VideoSource
-import com.privatemovie.tv.modules.player.internal.DEFAULT_CONTROLS_TIMEOUT_MS
-import com.privatemovie.tv.modules.player.internal.DEFAULT_SEEK_SECONDS
+import com.privatemovie.tv.modules.player.DEFAULT_CONTROLS_TIMEOUT_MS
+import com.privatemovie.tv.modules.player.DEFAULT_SEEK_SECONDS
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
-import com.privatemovie.tv.modules.player.internal.PlayerControlAction
+import com.privatemovie.tv.modules.player.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
 import com.privatemovie.tv.modules.player.internal.handleRemoteKey
 import com.privatemovie.tv.modules.player.internal.initialActionsOnEntry

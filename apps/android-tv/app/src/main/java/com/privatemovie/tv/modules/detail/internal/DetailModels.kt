@@ -5,8 +5,8 @@ import com.privatemovie.tv.dto.models.Genre
 import com.privatemovie.tv.dto.models.SeasonWithEpisodes
 import com.privatemovie.tv.dto.models.SeriesDetails
 import com.privatemovie.tv.dto.models.VideoSource
-import com.privatemovie.tv.modules.player.internal.PlaybackMetadataHandoff
-import com.privatemovie.tv.modules.player.internal.PlaylistEpisodeItem
+import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
+import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 
 data class TvVideoSource(
     val id: String,

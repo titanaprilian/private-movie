@@ -60,18 +60,19 @@ import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
 import com.privatemovie.tv.components.MediaPlaceholderIcons
-import com.privatemovie.tv.modules.player.internal.DEFAULT_CONTROLS_TIMEOUT_MS
+import com.privatemovie.tv.modules.player.DEFAULT_CONTROLS_TIMEOUT_MS
+import com.privatemovie.tv.modules.player.PlaybackCompletionDecision
+import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
+import com.privatemovie.tv.modules.player.PlaybackSourceRef
+import com.privatemovie.tv.modules.player.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
-import com.privatemovie.tv.modules.player.internal.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
 import com.privatemovie.tv.modules.player.internal.VideoProgressBar
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
 import com.privatemovie.tv.modules.player.internal.calculateClampedSeekPosition
 import com.privatemovie.tv.modules.player.internal.formatPlayerHeadline
 import com.privatemovie.tv.modules.player.internal.formatPlayerSubtitle
-import com.privatemovie.tv.modules.player.internal.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.internal.handleRemoteKey
-import com.privatemovie.tv.modules.player.internal.PlaybackCompletionDecision
 import com.privatemovie.tv.modules.player.internal.onPlaybackEnded
 import com.privatemovie.tv.modules.player.internal.resolvePlayerHandoff
 import com.privatemovie.tv.modules.player.internal.shouldAutoFullscreenOnEntry

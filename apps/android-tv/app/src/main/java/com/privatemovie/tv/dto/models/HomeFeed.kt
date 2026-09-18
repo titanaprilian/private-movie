@@ -33,22 +33,22 @@ import kotlinx.serialization.Contextual
 /**
  * 
  *
+ * @param rows 
  * @param hero 
  * @param heroes 
- * @param rows 
  */
 @Serializable
 
 data class HomeFeed (
 
+    @SerialName(value = "rows")
+    val rows: kotlin.collections.List<HomeFeedRow>,
+
     @SerialName(value = "hero")
-    val hero: HomeFeedHero?,
+    val hero: HomeFeedHero? = null,
 
     @SerialName(value = "heroes")
-    val heroes: kotlin.collections.List<HomeFeedHero>? = null,
-
-    @SerialName(value = "rows")
-    val rows: kotlin.collections.List<HomeFeedRow>
+    val heroes: kotlin.collections.List<HomeFeedHero>? = null
 
 ) {
 

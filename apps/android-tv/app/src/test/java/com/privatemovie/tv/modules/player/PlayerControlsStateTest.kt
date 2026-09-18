@@ -1,7 +1,7 @@
 package com.privatemovie.tv.modules.player
 
 import com.privatemovie.tv.modules.player.internal.DEFAULT_CONTROLS_TIMEOUT_MS
-import com.privatemovie.tv.modules.player.internal.PlayerControlAction
+import com.privatemovie.tv.modules.player.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.PlayerControlsState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

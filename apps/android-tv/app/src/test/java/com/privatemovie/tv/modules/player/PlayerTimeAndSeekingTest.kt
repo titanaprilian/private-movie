@@ -1,6 +1,6 @@
 package com.privatemovie.tv.modules.player
 
-import com.privatemovie.tv.modules.player.internal.PlaybackCompletionDecision
+import com.privatemovie.tv.modules.player.PlaybackCompletionDecision
 import com.privatemovie.tv.modules.player.internal.calculateClampedSeekPosition
 import com.privatemovie.tv.modules.player.internal.formatPlaybackTime
 import com.privatemovie.tv.modules.player.internal.onPlaybackEnded
