@@ -67,11 +67,6 @@ export interface SeriesUpsertInput {
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
 
-export interface SeriesRelationItem {
-  relatedSeriesId: string;
-  relationType: string;
-}
-
 export interface UpdateSeriesInput {
   title?: string;
   description?: string | null;
@@ -84,7 +79,6 @@ export interface UpdateSeriesInput {
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
   isFeatured?: boolean;
   genreIds?: string[];
-  relations?: SeriesRelationItem[];
 }
 
 export interface SeriesListParams {
@@ -113,7 +107,6 @@ export interface SeriesListResult {
 export type SeriesWithEpisodes = SeriesRow & {
   seasons: SeasonWithEpisodes[];
   episodes: EpisodeWithVideoSources[];
-  relations: SeriesRelationItem[];
   genres?: Array<{ id: string; name: string; slug: string }>;
 };
 
@@ -302,7 +295,6 @@ export function createSeriesRepositoryInternal<
         ...seriesRow,
         seasons: seasonsWithEpisodes,
         episodes: episodesWithSources,
-        relations: [],
         genres: seriesGenres,
       };
     },
@@ -443,7 +435,7 @@ export function createSeriesRepositoryInternal<
     async updateSeries(
       id: string,
       input: UpdateSeriesInput
-    ): Promise<SeriesWithSeasons & { relations: SeriesRelationItem[] }> {
+    ): Promise<SeriesWithSeasons> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
         updatedAt: now,
@@ -505,7 +497,6 @@ export function createSeriesRepositoryInternal<
       return {
         ...row,
         seasons: childSeasons,
-        relations: [],
       };
     },
 

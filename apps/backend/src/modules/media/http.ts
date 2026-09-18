@@ -2418,14 +2418,6 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           posterUrl: t.Optional(t.Nullable(t.String())),
           isFeatured: t.Optional(t.Boolean()),
           genreIds: t.Optional(t.Array(t.String())),
-          relations: t.Optional(
-            t.Array(
-              t.Object({
-                relatedSeriesId: t.String(),
-                relationType: t.String(),
-              })
-            )
-          ),
         }),
       }
     )
@@ -2467,14 +2459,6 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           posterUrl: t.Optional(t.Nullable(t.String())),
           isFeatured: t.Optional(t.Boolean()),
           genreIds: t.Optional(t.Array(t.String())),
-          relations: t.Optional(
-            t.Array(
-              t.Object({
-                relatedSeriesId: t.String(),
-                relationType: t.String(),
-              })
-            )
-          ),
         }),
       }
     )

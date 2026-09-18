@@ -28,8 +28,8 @@ export function SeriesCombobox({
   onValueChange,
   excludeSeriesId,
   initialSeriesList = [],
-  id = 'add-relation-series',
-  'aria-label': ariaLabel = 'Related Series',
+  id = 'series-combobox',
+  'aria-label': ariaLabel = 'Select series',
 }: SeriesComboboxProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

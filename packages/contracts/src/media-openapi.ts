@@ -64,7 +64,7 @@ export const MVP_MEDIA_OPENAPI = {
         operationId: "getSeriesById",
         summary: "Get public series details with episodes",
         description:
-          "Returns a series with its nested seasons, episodes, video sources, relations, and genres. When `sourceTypes` is supplied (e.g. `direct,s3`), episodes only include video sources with matching types.",
+          "Returns a series with its nested seasons, episodes, video sources, and genres. When `sourceTypes` is supplied (e.g. `direct,s3`), episodes only include video sources with matching types.",
         parameters: [
           {
             name: "id",
@@ -333,7 +333,6 @@ export const MVP_MEDIA_OPENAPI = {
           "updatedAt",
           "seasons",
           "episodes",
-          "relations",
           "genres",
         ],
         properties: {
@@ -355,17 +354,6 @@ export const MVP_MEDIA_OPENAPI = {
           episodes: {
             type: "array",
             items: { $ref: "#/components/schemas/EpisodeWithSources" },
-          },
-          relations: {
-            type: "array",
-            items: {
-              type: "object",
-              required: ["relatedSeriesId", "relationType"],
-              properties: {
-                relatedSeriesId: { type: "string" },
-                relationType: { type: "string" },
-              },
-            },
           },
           genres: {
             type: "array",

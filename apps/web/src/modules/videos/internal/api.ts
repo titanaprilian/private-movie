@@ -56,13 +56,6 @@ export interface EpisodesListResponse {
   };
 }
 
-export interface SeriesRelationItem {
-  relatedSeriesId: string;
-  relationType: string;
-  title?: string | null;
-  posterUrl?: string | null;
-}
-
 export interface SeriesItem {
   id: string;
   sourceUrl: string;
@@ -76,7 +69,6 @@ export interface SeriesItem {
   updatedAt: Date | string;
   genreIds?: string[];
   genres?: Array<{ id: string; name: string; slug: string }> | string[];
-  relations?: SeriesRelationItem[];
   seasons?: Array<{
     id: string;
     seriesId?: string;
@@ -135,7 +127,6 @@ export interface SeriesDetails {
   updatedAt: Date | string;
   seasons?: SeasonDetails[];
   episodes: Episode[];
-  relations?: SeriesRelationItem[];
   genres?: Array<{ id: string; name: string; slug: string }> | string[];
 }
 
@@ -628,7 +619,6 @@ export interface UpdateSeriesParams {
   description?: string | null;
   posterUrl?: string | null;
   genreIds?: string[];
-  relations?: { relatedSeriesId: string; relationType: string }[];
   isFeatured?: boolean;
 }
 

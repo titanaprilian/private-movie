@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import {
   DragDropContext,
@@ -815,32 +815,6 @@ export function SeriesDetailView({
               </Popover>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Related Series section */}
-      {series.relations && series.relations.length > 0 && (
-        <div className="p-2.5 rounded border border-c bg-card space-y-2">
-          <div className="text-xs font-medium mono uppercase tracking-wider text-muted">
-            Related Series
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {series.relations.map((rel) => (
-              <Link
-                key={rel.relatedSeriesId}
-                to="/admin/videos/$seriesId"
-                params={{ seriesId: rel.relatedSeriesId }}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-c bg-sidebar hover:border-primary transition-colors text-xs cursor-pointer"
-              >
-                <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 rounded bg-card border border-c text-muted">
-                  {rel.relationType}
-                </span>
-                <span className="font-medium text-current">
-                  {rel.title || rel.relatedSeriesId}
-                </span>
-              </Link>
-            ))}
-          </div>
         </div>
       )}
 

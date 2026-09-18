@@ -382,62 +382,13 @@ describe('SeriesDetailView component', () => {
     expect(sourceDeleted).toBe(true);
   });
 
-  it('renders Related Series section when relations exist', async () => {
-    const mockSeriesWithRelations: SeriesDetails = {
-      ...mockSeries,
-      id: 'series-with-relations',
-      relations: [
-        { relatedSeriesId: 'dm-season-2', relationType: 'sequel', title: 'Deep Modules Season 2' },
-        { relatedSeriesId: 'dm-prequel', relationType: 'prequel' },
-      ],
-    };
+  it('does not render Related Series section card', async () => {
+    renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
 
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-      if (url.includes('/series/series-with-relations')) {
-        return new Response(JSON.stringify({ data: mockSeriesWithRelations }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
-    });
-
-    renderWithProviders(<SeriesDetailView seriesId="series-with-relations" />);
-
-    expect(await screen.findByText('Related Series')).toBeInTheDocument();
-    expect(screen.getByText('sequel')).toBeInTheDocument();
-    expect(screen.getByText('Deep Modules Season 2')).toBeInTheDocument();
-    expect(screen.getByText('prequel')).toBeInTheDocument();
-    expect(screen.getByText('dm-prequel')).toBeInTheDocument();
-
-    const sequelLink = screen.getByText('Deep Modules Season 2').closest('a');
-    expect(sequelLink).toBeInTheDocument();
-    expect(sequelLink).toHaveAttribute('href', '/admin/videos/dm-season-2');
-  });
-
-  it('safely hides Related Series section when relations array is empty or undefined', async () => {
-    const mockSeriesNoRelations: SeriesDetails = {
-      ...mockSeries,
-      id: 'series-no-relations',
-      relations: [],
-    };
-
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-      if (url.includes('/series/series-no-relations')) {
-        return new Response(JSON.stringify({ data: mockSeriesNoRelations }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
-    });
-
-    renderWithProviders(<SeriesDetailView seriesId="series-no-relations" />);
-
-    await screen.findByRole('heading', { level: 1, name: mockSeriesNoRelations.title });
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
     expect(screen.queryByText('Related Series')).not.toBeInTheDocument();
+    // View still renders core sections
+    expect(screen.getAllByText(mockSeries.episodes[0].title).length).toBeGreaterThan(0);
   });
 
   it('renders season selector and filters episodes by selected season when multiple seasons exist', async () => {

@@ -28,7 +28,7 @@ describe('SeriesCombobox component', () => {
       <SeriesCombobox value="" onValueChange={vi.fn()} initialSeriesList={mockSeriesList} />
     );
 
-    expect(screen.getByRole('combobox', { name: 'Related Series' })).toHaveTextContent(
+    expect(screen.getByRole('combobox', { name: 'Select series' })).toHaveTextContent(
       'Select a series...'
     );
   });
@@ -42,7 +42,7 @@ describe('SeriesCombobox component', () => {
       />
     );
 
-    expect(screen.getByRole('combobox', { name: 'Related Series' })).toHaveTextContent(
+    expect(screen.getByRole('combobox', { name: 'Select series' })).toHaveTextContent(
       'Demon Slayer'
     );
   });
@@ -57,7 +57,7 @@ describe('SeriesCombobox component', () => {
       />
     );
 
-    const trigger = screen.getByRole('combobox', { name: 'Related Series' });
+    const trigger = screen.getByRole('combobox', { name: 'Select series' });
     await user.click(trigger);
 
     expect(screen.queryByText('Attack on Titan')).not.toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('SeriesCombobox component', () => {
       />
     );
 
-    const trigger = screen.getByRole('combobox', { name: 'Related Series' });
+    const trigger = screen.getByRole('combobox', { name: 'Select series' });
     await user.click(trigger);
 
     const listbox = screen.getByRole('listbox');
@@ -118,7 +118,7 @@ describe('SeriesCombobox component', () => {
       { queryClient }
     );
 
-    const trigger = screen.getByRole('combobox', { name: 'Related Series' });
+    const trigger = screen.getByRole('combobox', { name: 'Select series' });
     fireEvent.click(trigger);
 
     const searchInput = screen.getByPlaceholderText('Search series...');

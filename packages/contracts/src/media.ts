@@ -111,10 +111,6 @@ export type MediaSeriesDetails = {
   updatedAt: string;
   seasons: MediaSeasonWithEpisodes[];
   episodes: MediaEpisodeWithSources[];
-  relations: Array<{
-    relatedSeriesId: string;
-    relationType: string;
-  }>;
   genres: MediaGenre[];
 };
 
