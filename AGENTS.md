@@ -78,6 +78,15 @@ Tests use a conventional folder-based structure with Vitest as the test runner v
   - `bun run test:contracts` (or `bunx turbo run test --filter=@repo/contracts`)
   - Avoid raw `bun --filter=<pkg> run test` which bypasses Turbo's build cache and forces slow uncached re-runs.
 
+**Silent mode & debugging:**
+- Vitest base config (`packages/config-vitest/vitest.base.ts:10`) enables `silent: true` with `onConsoleLog` filtering and `setup.ts` JSDOM stubs — console `log`/`warn`/`error` noise (React warnings, JSDOM stubs, expected catch-block stderr) is suppressed during `bun run test` runs, while pass/fail reporters remain fully visible.
+- Android TV tests silence Gradle task lifecycle logs via `./gradlew test -q` (`apps/android-tv/package.json:8`).
+- To inspect verbose logs for a targeted debugging run, pass `--silent=false` through to Vitest:
+  - `bun run test:web -- -- --silent=false test/unit/<feature>/<name>.test.ts`
+  - `bun run test:backend -- -- --silent=false test/unit/<feature>/<name>.test.ts`
+  - `bunx turbo run test --filter=@repo/web -- --silent=false test/unit/<feature>/<name>.test.ts`
+- For full-suite verbose output: `bun run test -- -- --silent=false` (or per-package `bun run test:<pkg> -- -- --silent=false`).
+
 ---
 
 ## Platform Mappings
