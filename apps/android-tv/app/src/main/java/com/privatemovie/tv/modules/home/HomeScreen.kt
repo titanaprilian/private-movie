@@ -71,6 +71,7 @@ import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
 import com.privatemovie.tv.components.TvHorizontalBringIntoViewSpec
 import com.privatemovie.tv.components.TvMediaImage
+import com.privatemovie.tv.components.TvVerticalHeaderBringIntoViewSpec
 import com.privatemovie.tv.components.isRepeatKeyEvent
 import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.repository.MediaRepository
@@ -350,6 +351,7 @@ private fun HomeError(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun HomeFeedContent(
     feed: TvHomeFeed,
@@ -430,9 +432,17 @@ private fun HomeFeedContent(
     @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
     val horizontalBringIntoViewSpec = remember { TvHorizontalBringIntoViewSpec(edgeMargin = 48f) }
 
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    val verticalHeaderBringIntoViewSpec = remember(lazyListState) {
+        TvVerticalHeaderBringIntoViewSpec(lazyListState)
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
-        LazyColumn(
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides verticalHeaderBringIntoViewSpec
+        ) {
+            LazyColumn(
             state = lazyListState,
             modifier = Modifier
                 .fillMaxSize()
@@ -532,6 +542,7 @@ private fun HomeFeedContent(
                     }
                 }
             }
+        }
         }
     }
 }

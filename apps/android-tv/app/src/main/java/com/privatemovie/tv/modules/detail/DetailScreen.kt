@@ -41,6 +41,7 @@ import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
 import com.privatemovie.tv.components.FocusTransitionCoordinator
+import com.privatemovie.tv.components.TvVerticalHeaderBringIntoViewSpec
 import com.privatemovie.tv.components.isRepeatKeyEvent
 import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.repository.MediaRepository
@@ -344,6 +345,7 @@ private fun DetailError(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun DetailContent(
     details: TvSeriesDetails,
@@ -403,12 +405,21 @@ private fun DetailContent(
         lazyListState.scrollToItem(0, 0)
     }
 
-    LazyColumn(
-        state = lazyListState,
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        contentPadding = PaddingValues(bottom = 40.dp)
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    val verticalHeaderBringIntoViewSpec = remember(lazyListState) {
+        TvVerticalHeaderBringIntoViewSpec(lazyListState)
+    }
+
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides verticalHeaderBringIntoViewSpec
     ) {
+        LazyColumn(
+            state = lazyListState,
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+            contentPadding = PaddingValues(bottom = 40.dp)
+        ) {
         // 1. Full-Bleed Series Header (Backdrop + Poster + Metadata + Logo + Play CTA + Back Button)
         item(key = "header") {
             SeriesHeader(
@@ -528,6 +539,7 @@ private fun DetailContent(
                     focusRequester = remember { FocusRequester() }
                 )
             }
+        }
         }
     }
 }
