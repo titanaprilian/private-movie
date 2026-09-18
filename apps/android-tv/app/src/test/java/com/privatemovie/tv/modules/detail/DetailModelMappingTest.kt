@@ -77,7 +77,6 @@ class DetailModelMappingTest {
             updatedAt = "2026-01-01T00:00:00Z",
             seasons = listOf(season1),
             episodes = emptyList(),
-            relations = emptyList(),
             genres = listOf(Genre(id = "g1", name = "Action", slug = "action")),
             description = "An exciting series.",
             logoUrl = "https://example.com/logo.png",
@@ -145,7 +144,6 @@ class DetailModelMappingTest {
             updatedAt = "2026-01-01T00:00:00Z",
             seasons = emptyList(),
             episodes = listOf(episode),
-            relations = emptyList(),
             genres = emptyList()
         )
 

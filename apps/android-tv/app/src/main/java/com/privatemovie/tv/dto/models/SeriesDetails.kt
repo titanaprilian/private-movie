@@ -26,7 +26,6 @@ package com.privatemovie.tv.dto.models
 import com.privatemovie.tv.dto.models.EpisodeWithSources
 import com.privatemovie.tv.dto.models.Genre
 import com.privatemovie.tv.dto.models.SeasonWithEpisodes
-import com.privatemovie.tv.dto.models.SeriesDetailsRelationsInner
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
@@ -43,7 +42,6 @@ import kotlinx.serialization.Contextual
  * @param updatedAt 
  * @param seasons 
  * @param episodes 
- * @param relations 
  * @param genres 
  * @param description 
  * @param posterUrl 
@@ -77,9 +75,6 @@ data class SeriesDetails (
 
     @SerialName(value = "episodes")
     val episodes: kotlin.collections.List<EpisodeWithSources>,
-
-    @SerialName(value = "relations")
-    val relations: kotlin.collections.List<SeriesDetailsRelationsInner>,
 
     @SerialName(value = "genres")
     val genres: kotlin.collections.List<Genre>,

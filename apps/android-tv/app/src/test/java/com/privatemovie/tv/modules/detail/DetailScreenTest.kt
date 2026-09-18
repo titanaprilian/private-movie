@@ -80,7 +80,6 @@ class DetailScreenTest {
                           }
                         ],
                         "episodes": [],
-                        "relations": [],
                         "genres": [
                           { "id": "g-1", "name": "Action", "slug": "action" }
                         ],

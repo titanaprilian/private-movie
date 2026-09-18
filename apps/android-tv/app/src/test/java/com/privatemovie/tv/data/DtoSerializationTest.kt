@@ -153,8 +153,7 @@ class DtoSerializationTest {
                     ]
                   }
                 ],
-                "episodes": [],
-                "relations": []
+                "episodes": []
               }
             }
         """.trimIndent()
