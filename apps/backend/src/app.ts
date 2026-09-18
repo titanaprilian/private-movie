@@ -9,6 +9,8 @@ import { episodeRoutes } from "./modules/episodes/http";
 import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes, embedRoutes } from "./modules/media/http";
+import { seasonRoutes } from "./modules/seasons/http";
+import { seriesRoutes } from "./modules/series/http";
 import { storageRoutes } from "./modules/storage/http";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import { InternalServerError, getDomainErrorStatus } from "./lib/errors";
@@ -127,13 +129,28 @@ export const createApp = (deps: CreateAppDeps) => {
           })
         )
         .use(
-          mediaRoutes({
+          seriesRoutes({
             db,
             authService: auth,
             fetchHtml: deps.fetchHtml,
             browserFn: deps.browserFn,
             s3StorageService: deps.s3StorageService,
             storageProviderRegistry: deps.storageProviderRegistry,
+          })
+        )
+        .use(
+          seasonRoutes({
+            db,
+            authService: auth,
+            fetchHtml: deps.fetchHtml,
+            browserFn: deps.browserFn,
+            s3StorageService: deps.s3StorageService,
+          })
+        )
+        .use(
+          mediaRoutes({
+            db,
+            authService: auth,
           })
         )
         .use(genreRoutes({ db, authService: auth }))

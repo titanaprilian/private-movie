@@ -43,6 +43,11 @@ export function getDomainErrorStatus(error: unknown): number | null {
 
   if (name === "S3NotConfiguredError") return 503;
 
+  if (name === "TmdbFetchError") {
+    const status = (error as { status?: number }).status;
+    return status === 404 ? 404 : 400;
+  }
+
   if (
     name === "InvalidRegistrationInputError" ||
     name === "SeasonNotOngoingError" ||
