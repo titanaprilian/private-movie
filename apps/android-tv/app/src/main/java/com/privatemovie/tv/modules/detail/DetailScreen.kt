@@ -21,8 +21,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,7 +36,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
@@ -57,11 +56,9 @@ import com.privatemovie.tv.modules.detail.internal.TvVideoSource
 import com.privatemovie.tv.modules.detail.internal.findFirstPlayableEpisode
 import com.privatemovie.tv.modules.detail.internal.findMetadataForEpisode
 import com.privatemovie.tv.modules.detail.internal.toPlaylistEpisodeItems
-import com.privatemovie.tv.modules.detail.internal.toTvSeriesDetails
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.PlayerNavArgs
-import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 import com.privatemovie.tv.modules.player.internal.EpisodePlaybackDecision
 import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
 
@@ -69,16 +66,7 @@ import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
  * Public seam for the Android TV series watch/detail experience.
  *
  * Renders real public series metadata, seasons, and episodes fetched from [MediaRepository]
- * (`GET /api/series/{id}`). Provides:
- * 1. An immersive series header with 16:9 backdrop banner, 2:3 vertical poster card,
- *    rich metadata, and a prominent "Play Now / Watch Episode 1" CTA button that receives
- *    initial D-pad focus.
- * 2. Horizontal season selector tabs when multiple seasons exist.
- * 3. A horizontal 16:9 episode thumbnail carousel with episode order badges and titles.
- * 4. A dynamic info panel updating with the highlighted episode's synopsis, title, and
- *    playback sources as the user navigates across cards.
- * 5. Single-click instant playback for single-source episodes and an explicit source picker
- *    modal for multi-source episodes.
+ * via [DetailViewModel].
  */
 @Composable
 fun DetailScreen(
@@ -90,24 +78,19 @@ fun DetailScreen(
     activeBackendUrl: String? = null,
     onLoadedDetails: ((TvSeriesDetails) -> Unit)? = null,
     onPlaySource: ((episodeId: String, videoSource: TvVideoSource, metadata: PlaybackMetadataHandoff) -> Unit)? = null,
-    onPlayNavArgs: ((PlayerNavArgs) -> Unit)? = null
-) {
-    var uiState by remember { mutableStateOf<DetailUiState>(DetailUiState.Loading) }
-    var reloadKey by remember { mutableIntStateOf(0) }
-    var pendingSourcePickerEpisode by remember { mutableStateOf<TvEpisode?>(null) }
-
-    LaunchedEffect(seriesId, reloadKey) {
-        uiState = DetailUiState.Loading
-        val result = mediaRepository.getSeriesById(seriesId)
-        uiState = result.fold(
-            onSuccess = {
-                val mapped = it.toTvSeriesDetails()
-                onLoadedDetails?.invoke(mapped)
-                DetailUiState.Success(mapped)
-            },
-            onFailure = { DetailUiState.Error(it.message ?: "Failed to load series details") }
+    onPlayNavArgs: ((PlayerNavArgs) -> Unit)? = null,
+    viewModel: DetailViewModel = remember(seriesId, mediaRepository) {
+        DetailViewModel(
+            seriesId = seriesId,
+            mediaRepository = mediaRepository,
+            onLoadedDetails = onLoadedDetails
         )
     }
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val selectedSeasonIndex by viewModel.selectedSeasonIndex.collectAsState()
+    val activeEpisodeIndex by viewModel.activeEpisodeIndex.collectAsState()
+    val pendingSourcePickerEpisode by viewModel.pendingSourcePickerEpisode.collectAsState()
 
     val handleStartPlayback: (TvEpisode, TvVideoSource?) -> Unit = { episode, source ->
         val details = (uiState as? DetailUiState.Success)?.details
@@ -141,7 +124,7 @@ fun DetailScreen(
                 handleStartPlayback(episode, singleSource)
             }
             is EpisodePlaybackDecision.NeedsSourcePicker -> {
-                pendingSourcePickerEpisode = episode
+                viewModel.openSourcePicker(episode)
             }
         }
     }
@@ -155,12 +138,16 @@ fun DetailScreen(
             is DetailUiState.Loading -> DetailLoading(onBack = onBack)
             is DetailUiState.Error -> DetailError(
                 message = state.message,
-                onRetry = { reloadKey += 1 },
+                onRetry = { viewModel.retry() },
                 onBack = onBack
             )
             is DetailUiState.Success -> DetailContent(
                 details = state.details,
                 activeBackendUrl = activeBackendUrl,
+                selectedSeasonIndex = selectedSeasonIndex,
+                activeEpisodeIndex = activeEpisodeIndex,
+                onSelectSeason = { viewModel.selectSeason(it) },
+                onEpisodeFocusedIndex = { viewModel.setEpisodeIndex(it) },
                 onSelectEpisode = handleSelectEpisode,
                 onBack = onBack
             )
@@ -172,11 +159,11 @@ fun DetailScreen(
             episodeTitle = episode.title,
             sources = episode.videoSources,
             onSelectSource = { source ->
-                pendingSourcePickerEpisode = null
+                viewModel.dismissSourcePicker()
                 handleStartPlayback(episode, source)
             },
             onDismiss = {
-                pendingSourcePickerEpisode = null
+                viewModel.dismissSourcePicker()
             }
         )
     }
@@ -366,11 +353,14 @@ private fun DetailError(
 private fun DetailContent(
     details: TvSeriesDetails,
     activeBackendUrl: String?,
+    selectedSeasonIndex: Int,
+    activeEpisodeIndex: Int,
+    onSelectSeason: (Int) -> Unit,
+    onEpisodeFocusedIndex: (Int) -> Unit,
     onSelectEpisode: (TvEpisode) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedSeasonIndex by remember { mutableIntStateOf(0) }
     val firstEpisode = remember(details) { findFirstPlayableEpisode(details) }
     var currentlyInspectedEpisode by remember(details, selectedSeasonIndex) {
         val initialEp = if (details.seasons.isNotEmpty()) {
@@ -380,9 +370,6 @@ private fun DetailContent(
         }
         mutableStateOf(initialEp)
     }
-
-    // Remembered episode index within the active season/standalone list — resets to 0 on season change.
-    var activeEpisodeIndex by remember(details, selectedSeasonIndex) { mutableIntStateOf(0) }
 
     val playCtaFocusRequester = remember { FocusRequester() }
     val backFocusRequester = remember { FocusRequester() }
@@ -397,12 +384,10 @@ private fun DetailContent(
         details.standaloneEpisodes
     }
 
-    // One FocusRequester per episode card — allows restoring focus to any remembered index.
     val episodeFocusRequesters = remember(currentEpisodes) {
         List(currentEpisodes.size) { FocusRequester() }
     }
 
-    // Helper: scroll carousel into view and focus the remembered episode (fallback to index 0).
     val focusRememberedEpisode: suspend () -> Boolean = {
         val targetIndex = activeEpisodeIndex.coerceIn(0, (currentEpisodes.size - 1).coerceAtLeast(0))
         val requester = episodeFocusRequesters.getOrNull(targetIndex)
@@ -415,7 +400,6 @@ private fun DetailContent(
         }
     }
 
-    // Initial D-pad focus placed directly onto the Play Now CTA on screen entry
     LaunchedEffect(details.id) {
         requestFocusSafely(playCtaFocusRequester)
         lazyListState.scrollToItem(0, 0)
@@ -436,126 +420,120 @@ private fun DetailContent(
             verticalArrangement = Arrangement.spacedBy(24.dp),
             contentPadding = PaddingValues(bottom = 40.dp)
         ) {
-        // 1. Full-Bleed Series Header (Backdrop + Poster + Metadata + Logo + Play CTA + Back Button)
-        item(key = "header") {
-            SeriesHeader(
-                details = details,
-                baseUrl = activeBackendUrl,
-                firstPlayableEpisode = firstEpisode,
-                playCtaFocusRequester = playCtaFocusRequester,
-                backFocusRequester = backFocusRequester,
-                onPlayCta = {
-                    firstEpisode?.let { onSelectEpisode(it) }
-                },
-                onBack = onBack,
-                onDownFromCta = {
-                    focusCoordinator.tryRequestFocus {
-                        if (details.seasons.size > 1) {
-                            lazyListState.animateScrollToItem(1)
-                            requestFocusSafely(seasonTabsFocusRequester)
-                        } else if (currentEpisodes.isNotEmpty()) {
-                            focusRememberedEpisode()
-                        } else {
-                            false
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillParentMaxHeight()
-                    .clipToBounds()
-            )
-        }
-
-        // 2. Season Selector Tabs (if more than 1 season)
-        if (details.seasons.size > 1) {
-            item(key = "seasons-bar") {
-                SeasonSelectorBar(
-                    seasons = details.seasons,
-                    selectedIndex = selectedSeasonIndex,
-                    onSelectSeason = { index ->
-                        // Reset episode focus memory to Episode 1 when switching seasons.
-                        selectedSeasonIndex = index
-                        activeEpisodeIndex = 0
-                        val nextSeasonEp = details.seasons.getOrNull(index)?.episodes?.firstOrNull()
-                        currentlyInspectedEpisode = nextSeasonEp
+            item(key = "header") {
+                SeriesHeader(
+                    details = details,
+                    baseUrl = activeBackendUrl,
+                    firstPlayableEpisode = firstEpisode,
+                    playCtaFocusRequester = playCtaFocusRequester,
+                    backFocusRequester = backFocusRequester,
+                    onPlayCta = {
+                        firstEpisode?.let { onSelectEpisode(it) }
                     },
-                    firstTabFocusRequester = seasonTabsFocusRequester,
-                    onUp = {
+                    onBack = onBack,
+                    onDownFromCta = {
                         focusCoordinator.tryRequestFocus {
-                            lazyListState.animateScrollToItem(0)
-                            requestFocusSafely(playCtaFocusRequester)
-                        }
-                    },
-                    onDown = if (currentEpisodes.isNotEmpty()) {
-                        {
-                            focusCoordinator.tryRequestFocus {
+                            if (details.seasons.size > 1) {
+                                lazyListState.animateScrollToItem(1)
+                                requestFocusSafely(seasonTabsFocusRequester)
+                            } else if (currentEpisodes.isNotEmpty()) {
                                 focusRememberedEpisode()
+                            } else {
+                                false
                             }
                         }
-                    } else null
+                    },
+                    modifier = Modifier
+                        .fillParentMaxHeight()
+                        .clipToBounds()
                 )
             }
-        }
 
-        // 3. Horizontal 16:9 Episode Carousel Section
-        item(key = "episodes-section") {
-            val sectionTitle = if (details.seasons.isNotEmpty()) {
-                val currentSeason = details.seasons.getOrNull(selectedSeasonIndex)
-                currentSeason?.title ?: "Episodes"
-            } else {
-                "Episodes"
-            }
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = sectionTitle,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(start = 48.dp, end = 48.dp, bottom = 8.dp)
-                )
-
-                if (currentEpisodes.isEmpty()) {
-                    Text(
-                        text = "No episodes available for this section.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(horizontal = 48.dp, vertical = 16.dp)
-                    )
-                } else {
-                    EpisodeCarousel(
-                        episodes = currentEpisodes,
-                        baseUrl = activeBackendUrl,
-                        onSelectEpisode = onSelectEpisode,
-                        onEpisodeFocused = { episode, index ->
-                            currentlyInspectedEpisode = episode
-                            activeEpisodeIndex = index
+            if (details.seasons.size > 1) {
+                item(key = "seasons-bar") {
+                    SeasonSelectorBar(
+                        seasons = details.seasons,
+                        selectedIndex = selectedSeasonIndex,
+                        onSelectSeason = { index ->
+                            onSelectSeason(index)
+                            val nextSeasonEp = details.seasons.getOrNull(index)?.episodes?.firstOrNull()
+                            currentlyInspectedEpisode = nextSeasonEp
                         },
-                        itemFocusRequesters = episodeFocusRequesters,
-                        onUp = if (details.seasons.size <= 1) {
+                        firstTabFocusRequester = seasonTabsFocusRequester,
+                        onUp = {
+                            focusCoordinator.tryRequestFocus {
+                                lazyListState.animateScrollToItem(0)
+                                requestFocusSafely(playCtaFocusRequester)
+                            }
+                        },
+                        onDown = if (currentEpisodes.isNotEmpty()) {
                             {
                                 focusCoordinator.tryRequestFocus {
-                                    lazyListState.animateScrollToItem(0)
-                                    requestFocusSafely(playCtaFocusRequester)
+                                    focusRememberedEpisode()
                                 }
                             }
                         } else null
                     )
                 }
             }
-        }
 
-        // 4. Bottom Episode Description Panel (shows full untruncated synopsis, title, sources)
-        item(key = "bottom-description-panel") {
-            Box(modifier = Modifier.padding(horizontal = 48.dp)) {
-                EpisodeInfoPanel(
-                    episode = currentlyInspectedEpisode,
-                    focusRequester = remember { FocusRequester() }
-                )
+            item(key = "episodes-section") {
+                val sectionTitle = if (details.seasons.isNotEmpty()) {
+                    val currentSeason = details.seasons.getOrNull(selectedSeasonIndex)
+                    currentSeason?.title ?: "Episodes"
+                } else {
+                    "Episodes"
+                }
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = sectionTitle,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(start = 48.dp, end = 48.dp, bottom = 8.dp)
+                    )
+
+                    if (currentEpisodes.isEmpty()) {
+                        Text(
+                            text = "No episodes available for this section.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(horizontal = 48.dp, vertical = 16.dp)
+                        )
+                    } else {
+                        EpisodeCarousel(
+                            episodes = currentEpisodes,
+                            baseUrl = activeBackendUrl,
+                            onSelectEpisode = onSelectEpisode,
+                            onEpisodeFocused = { episode, index ->
+                                currentlyInspectedEpisode = episode
+                                onEpisodeFocusedIndex(index)
+                            },
+                            itemFocusRequesters = episodeFocusRequesters,
+                            onUp = if (details.seasons.size <= 1) {
+                                {
+                                    focusCoordinator.tryRequestFocus {
+                                        lazyListState.animateScrollToItem(0)
+                                        requestFocusSafely(playCtaFocusRequester)
+                                    }
+                                }
+                            } else null
+                        )
+                    }
+                }
             }
-        }
+
+            item(key = "bottom-description-panel") {
+                Box(modifier = Modifier.padding(horizontal = 48.dp)) {
+                    EpisodeInfoPanel(
+                        episode = currentlyInspectedEpisode,
+                        focusRequester = remember { FocusRequester() }
+                    )
+                }
+            }
         }
     }
 }
