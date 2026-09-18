@@ -61,11 +61,14 @@ import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
 import androidx.tv.material3.Card as TvCard
 import androidx.tv.material3.CardDefaults as TvCardDefaults
 import com.privatemovie.tv.components.EdgeScaleTransform
+import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.components.ImageUrlResolver
 import com.privatemovie.tv.components.LogoOrTitleRender
 import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
 import com.privatemovie.tv.components.TvMediaImage
+import com.privatemovie.tv.components.isRepeatKeyEvent
+import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.home.internal.HeroSliderState
 import com.privatemovie.tv.modules.home.internal.HomeUiState
@@ -205,6 +208,9 @@ private fun HomeTopBar(
         }
         if (onDownFromSettings != null) {
             buttonModifier = buttonModifier.onKeyEvent { keyEvent ->
+                if (isRepeatKeyEvent(keyEvent)) {
+                    return@onKeyEvent true
+                }
                 if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
                     keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN
                 ) {
@@ -371,10 +377,11 @@ private fun HomeFeedContent(
     val firstCatalogItemFocus = remember { FocusRequester() }
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val focusCoordinator = remember(coroutineScope) { FocusTransitionCoordinator(coroutineScope) }
 
     LaunchedEffect(effectiveHeroes) {
         if (effectiveHeroes.isNotEmpty()) {
-            heroFocus.requestFocus()
+            requestFocusSafely(heroFocus)
             lazyListState.scrollToItem(0, 0)
         }
     }
@@ -420,19 +427,23 @@ private fun HomeFeedContent(
                             ctaFocusRequester = heroFocus,
                             settingsFocusRequester = settingsFocus,
                             onUpFromCta = {
-                                settingsFocus.requestFocus()
+                                focusCoordinator.tryRequestFocus {
+                                    requestFocusSafely(settingsFocus)
+                                }
                             },
                             onDownFromCta = {
                                 val hasRows = feed.rows.any { it.items.isNotEmpty() }
                                 if (hasRows) {
-                                    coroutineScope.launch {
+                                    focusCoordinator.tryRequestFocus {
                                         lazyListState.animateScrollToItem(1)
-                                        firstCatalogItemFocus.requestFocus()
+                                        requestFocusSafely(firstCatalogItemFocus)
                                     }
                                 }
                             },
                             onDownFromSettings = {
-                                heroFocus.requestFocus()
+                                focusCoordinator.tryRequestFocus {
+                                    requestFocusSafely(heroFocus)
+                                }
                             },
                             modifier = Modifier
                                 .fillParentMaxHeight()
@@ -473,9 +484,9 @@ private fun HomeFeedContent(
                                             focusRequester = if (isVeryFirst) firstCatalogItemFocus else null,
                                             onUp = if (rowIndex == 0 && effectiveHeroes.isNotEmpty()) {
                                                 {
-                                                    coroutineScope.launch {
+                                                    focusCoordinator.tryRequestFocus {
                                                         lazyListState.animateScrollToItem(0)
-                                                        heroFocus.requestFocus()
+                                                        requestFocusSafely(heroFocus)
                                                     }
                                                 }
                                             } else null
@@ -546,6 +557,9 @@ fun FeaturedHeroSlider(
                         sliderState.onCtaFocusChanged(it.isFocused)
                     }
                     .onKeyEvent { keyEvent ->
+                        if (isRepeatKeyEvent(keyEvent)) {
+                            return@onKeyEvent true
+                        }
                         if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
                             when (keyEvent.nativeKeyEvent.keyCode) {
                                 android.view.KeyEvent.KEYCODE_DPAD_UP -> {
@@ -953,6 +967,9 @@ fun SeriesPosterCard(
         }
         if (onUp != null) {
             cardModifier = cardModifier.onKeyEvent { keyEvent ->
+                if (isRepeatKeyEvent(keyEvent)) {
+                    return@onKeyEvent true
+                }
                 if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
                     keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
                 ) {
