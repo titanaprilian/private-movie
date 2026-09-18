@@ -1,6 +1,27 @@
-import { createHmac, createHash } from "node:crypto";
+import { createHmac, createHash, timingSafeEqual } from "node:crypto";
 
-const JWT_SECRET = process.env.JWT_SECRET || "default-jwt-secret-key-change-in-production";
+const INSECURE_PLACEHOLDERS = [
+  "default-jwt-secret-key-change-in-production",
+  "secret",
+  "changeme",
+  "jwt-secret",
+];
+
+export function validateJwtSecret(): void {
+  const secret = process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === "production") {
+    if (!secret || secret.trim() === "" || INSECURE_PLACEHOLDERS.includes(secret.trim().toLowerCase())) {
+      throw new Error(
+        "FATAL: Insecure or missing JWT_SECRET in production environment. Please provide a secure JWT_SECRET."
+      );
+    }
+  }
+}
+
+function getJwtSecret(): string {
+  validateJwtSecret();
+  return process.env.JWT_SECRET || "default-jwt-secret-key-change-in-production";
+}
 
 function base64urlEncode(str: string): string {
   return Buffer.from(str).toString("base64url");
@@ -11,6 +32,7 @@ function base64urlDecode(str: string): string {
 }
 
 export function signJwt(payload: object, expiresInSeconds: number = 15 * 60): string {
+  const secret = getJwtSecret();
   const header = { alg: "HS256", typ: "JWT" };
   const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
   const fullPayload = { ...payload, exp };
@@ -19,7 +41,7 @@ export function signJwt(payload: object, expiresInSeconds: number = 15 * 60): st
   const encodedPayload = base64urlEncode(JSON.stringify(fullPayload));
 
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
-  const signature = createHmac("sha256", JWT_SECRET)
+  const signature = createHmac("sha256", secret)
     .update(signatureInput)
     .digest("base64url");
 
@@ -27,18 +49,34 @@ export function signJwt(payload: object, expiresInSeconds: number = 15 * 60): st
 }
 
 export function verifyJwt(token: string): { sub: string; email?: string; name?: string; exp?: number } {
+  const secret = getJwtSecret();
   const parts = token.split(".");
   if (parts.length !== 3) {
     throw new Error("Invalid token format");
   }
   const [encodedHeader, encodedPayload, signature] = parts;
+
+  let header: { alg?: string; typ?: string };
+  try {
+    header = JSON.parse(base64urlDecode(encodedHeader));
+  } catch {
+    throw new Error("Invalid token header format");
+  }
+
+  if (header.alg !== "HS256") {
+    throw new Error("Unsupported or invalid algorithm");
+  }
+
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
 
-  const expectedSignature = createHmac("sha256", JWT_SECRET)
+  const expectedSignature = createHmac("sha256", secret)
     .update(signatureInput)
     .digest("base64url");
 
-  if (signature !== expectedSignature) {
+  const sigBuffer = Buffer.from(signature);
+  const expectedSigBuffer = Buffer.from(expectedSignature);
+
+  if (sigBuffer.length !== expectedSigBuffer.length || !timingSafeEqual(sigBuffer, expectedSigBuffer)) {
     throw new Error("Invalid signature");
   }
 

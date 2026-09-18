@@ -46,4 +46,12 @@ describe("AuthenticationService.verifyAccessToken", () => {
       UnauthorizedError
     );
   });
+
+  it("throws UnauthorizedError when token algorithm header is not HS256", async () => {
+    const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
+    const payload = Buffer.from(JSON.stringify({ sub: "user-123" })).toString("base64url");
+    const token = `${header}.${payload}.sig`;
+
+    await expect(authService.verifyAccessToken(token)).rejects.toThrow(UnauthorizedError);
+  });
 });

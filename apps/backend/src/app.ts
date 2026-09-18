@@ -79,22 +79,7 @@ export const createApp = (deps: CreateAppDeps) => {
     .use(
       rateLimit({
         duration: 60000,
-        max: (key) => {
-          if (key.endsWith(":login")) {
-            return 10;
-          }
-          return 100;
-        },
-        generator: (request, server) => {
-          const ip =
-            server?.requestIP(request)?.address ||
-            request.headers.get("x-forwarded-for") ||
-            request.headers.get("x-real-ip") ||
-            "127.0.0.1";
-          const url = new URL(request.url);
-          const isLogin = url.pathname === "/api/auth/login";
-          return `${ip}:${isLogin ? "login" : "global"}`;
-        },
+        max: 100,
         errorResponse: new Response(
           JSON.stringify({
             error: {

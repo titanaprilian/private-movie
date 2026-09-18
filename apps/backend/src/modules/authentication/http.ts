@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { rateLimit } from "@elysiajs/rate-limit";
 import {
   AccountLockedError,
   EmailAlreadyRegisteredError,
@@ -6,6 +7,7 @@ import {
   InvalidRegistrationInputError,
   UnauthorizedError,
   UserNotFoundError,
+  type User,
   type AuthenticationService,
 } from "@repo/contracts";
 import { errorResponse, successResponse } from "../../lib/response";
@@ -14,6 +16,48 @@ import { createAuthenticationServiceInternal } from "./internal/authentication-s
 export interface AuthRoutesOptions {
   db?: Parameters<typeof createAuthenticationServiceInternal>[0];
   authService?: AuthenticationService;
+}
+
+export interface AuthResultPayload {
+  user: User;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+function handleAuthResponse(
+  result: AuthResultPayload,
+  headers: Record<string, string | undefined>,
+  refreshTokenCookie: { set: (options: Record<string, unknown>) => void }
+) {
+  const isMobile = headers["x-client-type"] === "mobile";
+
+  if (isMobile) {
+    return successResponse({
+      ...result.user,
+      user: result.user,
+      tokens: {
+        accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+      },
+    });
+  } else {
+    refreshTokenCookie.set({
+      value: result.tokens.refreshToken,
+      httpOnly: true,
+      secure: true,
+      path: "/",
+      sameSite: "lax",
+    });
+    return successResponse({
+      ...result.user,
+      user: result.user,
+      tokens: {
+        accessToken: result.tokens.accessToken,
+      },
+    });
+  }
 }
 
 export const authRoutes = (options: AuthRoutesOptions) => {
@@ -25,33 +69,7 @@ export const authRoutes = (options: AuthRoutesOptions) => {
       async ({ body, set, headers, cookie: { refreshToken } }) => {
         try {
           const result = await auth.register(body);
-          const isMobile = headers["x-client-type"] === "mobile";
-
-          if (isMobile) {
-            return successResponse({
-              ...result.user,
-              user: result.user,
-              tokens: {
-                accessToken: result.tokens.accessToken,
-                refreshToken: result.tokens.refreshToken,
-              },
-            });
-          } else {
-            refreshToken.set({
-              value: result.tokens.refreshToken,
-              httpOnly: true,
-              secure: true,
-              path: "/",
-              sameSite: "lax",
-            });
-            return successResponse({
-              ...result.user,
-              user: result.user,
-              tokens: {
-                accessToken: result.tokens.accessToken,
-              },
-            });
-          }
+          return handleAuthResponse(result, headers, refreshToken);
         } catch (error) {
           if (error instanceof EmailAlreadyRegisteredError) {
             return errorResponse(set, 409, error);
@@ -70,38 +88,46 @@ export const authRoutes = (options: AuthRoutesOptions) => {
         }),
       }
     )
+    .use(
+      rateLimit({
+        duration: 60000,
+        max: 10,
+        generator: (request, server) => {
+          const ip =
+            server?.requestIP(request)?.address ||
+            request.headers.get("x-forwarded-for") ||
+            request.headers.get("x-real-ip") ||
+            "127.0.0.1";
+          return `${ip}:login`;
+        },
+        errorResponse: new Response(
+          JSON.stringify({
+            error: {
+              code: "RATE_LIMIT",
+              message: "rate-limit reached",
+            },
+          }),
+          {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        ),
+        skip: (request) => {
+          if (process.env.NODE_ENV === "test") {
+            return request.headers.get("x-test-rate-limit") !== "true";
+          }
+          return false;
+        },
+      })
+    )
     .post(
       "/auth/login",
       async ({ body, set, headers, cookie: { refreshToken } }) => {
         try {
           const result = await auth.verifyCredentials(body);
-          const isMobile = headers["x-client-type"] === "mobile";
-
-          if (isMobile) {
-            return successResponse({
-              ...result.user,
-              user: result.user,
-              tokens: {
-                accessToken: result.tokens.accessToken,
-                refreshToken: result.tokens.refreshToken,
-              },
-            });
-          } else {
-            refreshToken.set({
-              value: result.tokens.refreshToken,
-              httpOnly: true,
-              secure: true,
-              path: "/",
-              sameSite: "lax",
-            });
-            return successResponse({
-              ...result.user,
-              user: result.user,
-              tokens: {
-                accessToken: result.tokens.accessToken,
-              },
-            });
-          }
+          return handleAuthResponse(result, headers, refreshToken);
         } catch (error) {
           if (error instanceof InvalidCredentialsError) {
             return errorResponse(set, 401, error);
@@ -212,33 +238,7 @@ export const authRoutes = (options: AuthRoutesOptions) => {
           }
 
           const result = await auth.refresh(token);
-          const isMobile = headers["x-client-type"] === "mobile";
-
-          if (isMobile) {
-            return successResponse({
-              ...result.user,
-              user: result.user,
-              tokens: {
-                accessToken: result.tokens.accessToken,
-                refreshToken: result.tokens.refreshToken,
-              },
-            });
-          } else {
-            refreshToken.set({
-              value: result.tokens.refreshToken,
-              httpOnly: true,
-              secure: true,
-              path: "/",
-              sameSite: "lax",
-            });
-            return successResponse({
-              ...result.user,
-              user: result.user,
-              tokens: {
-                accessToken: result.tokens.accessToken,
-              },
-            });
-          }
+          return handleAuthResponse(result, headers, refreshToken);
         } catch (error) {
           if (error instanceof UnauthorizedError) {
             return errorResponse(set, 401, error);
