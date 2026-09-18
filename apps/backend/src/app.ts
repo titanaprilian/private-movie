@@ -5,6 +5,7 @@ import { cors } from "@elysiajs/cors";
 import { rateLimit } from "@elysiajs/rate-limit";
 import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
+import { episodeRoutes } from "./modules/episodes/http";
 import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
 import { mediaRoutes, embedRoutes } from "./modules/media/http";
@@ -74,7 +75,7 @@ export const createApp = (deps: CreateAppDeps) => {
       if (domainStatus !== null) {
         return errorResponse(set, domainStatus, error as Error);
       }
-      console.error(error); return errorResponse(set, 500, new InternalServerError());
+      return errorResponse(set, 500, new InternalServerError());
     })
     .use(
       rateLimit({
@@ -115,6 +116,16 @@ export const createApp = (deps: CreateAppDeps) => {
       app
         .use(healthRoutes({ db }))
         .use(authRoutes({ authService: auth }))
+        .use(
+          episodeRoutes({
+            db,
+            authService: auth,
+            fetchHtml: deps.fetchHtml,
+            browserFn: deps.browserFn,
+            s3StorageService: deps.s3StorageService,
+            storageProviderRegistry: deps.storageProviderRegistry,
+          })
+        )
         .use(
           mediaRoutes({
             db,

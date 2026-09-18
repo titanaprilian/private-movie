@@ -41,14 +41,17 @@ export function getDomainErrorStatus(error: unknown): number | null {
 
   if (name === "FileTooLargeError") return 413;
 
-  if (name === "S3NotConfiguredError") return 400;
+  if (name === "S3NotConfiguredError") return 503;
 
   if (
     name === "InvalidRegistrationInputError" ||
     name === "SeasonNotOngoingError" ||
     name === "SeasonMissingScraperUrlError" ||
     name === "EpisodeParseError" ||
+    name === "EpisodeFetchError" ||
+    name === "MirrorResolveError" ||
     name === "SeriesParseError" ||
+    name === "SeriesFetchError" ||
     name === "EpisodeMissingFieldsError"
   ) {
     return 400;

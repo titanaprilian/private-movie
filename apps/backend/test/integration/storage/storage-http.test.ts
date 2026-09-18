@@ -229,7 +229,7 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       expect(data.percentUsed).toBeCloseTo(6.0, 1);
     });
 
-    it("returns 400 when S3 storage service is not configured", async () => {
+    it("returns 503 when S3 storage service is not configured", async () => {
       const unconfiguredS3: S3StorageService = {
         isConfigured: () => false,
         getPresignedUploadUrl: async () => { throw new Error("not configured"); },
@@ -256,7 +256,7 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         headers: authHeaders(accessToken),
       });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(503);
       expect((res.body as ErrorResponse).error.code).toBe("S3_NOT_CONFIGURED");
     });
   });
