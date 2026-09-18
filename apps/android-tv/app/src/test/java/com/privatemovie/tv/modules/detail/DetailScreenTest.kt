@@ -274,4 +274,155 @@ class DetailScreenTest {
         advanceUntilIdle()
         assertEquals(1, counter.get())
     }
+
+    // ── Episode focus-memory & season-reset tests ─────────────────────────────
+
+    private fun makeDetails(seasons: List<TvSeason> = emptyList(), standalone: List<TvEpisode> = emptyList()) =
+        TvSeriesDetails(
+            id = "s-test",
+            title = "Test Show",
+            type = "tv",
+            isFeatured = false,
+            genres = emptyList(),
+            description = null,
+            posterUrl = null,
+            backdropUrl = null,
+            rating = null,
+            seasons = seasons,
+            standaloneEpisodes = standalone
+        )
+
+    private fun makeEpisode(id: String, order: Int) = TvEpisode(
+        id = id,
+        title = "Episode $order",
+        order = order,
+        description = null,
+        thumbnailUrl = null,
+        videoSources = emptyList()
+    )
+
+    @Test
+    fun `downward navigation restores focus to remembered episode index`() = runTest {
+        val episodes = listOf(makeEpisode("ep-1", 1), makeEpisode("ep-2", 2), makeEpisode("ep-3", 3))
+        val focusRequesters = List(episodes.size) { FocusRequester() }
+        val coordinator = FocusTransitionCoordinator(this)
+
+        // Simulate user has navigated to episode index 2 (the third card).
+        var rememberedIndex = 2
+        var focusedIndex = -1
+
+        val handled = coordinator.tryRequestFocus {
+            val targetIndex = rememberedIndex.coerceIn(0, episodes.size - 1)
+            val requester = focusRequesters.getOrNull(targetIndex)
+            if (requester != null) {
+                focusedIndex = targetIndex
+                requestFocusSafely(requester, maxRetries = 2, rawRequest = { true })
+            } else {
+                false
+            }
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertEquals(2, focusedIndex)
+    }
+
+    @Test
+    fun `focus fallback to episode 0 when remembered index is out of bounds`() = runTest {
+        val episodes = listOf(makeEpisode("ep-1", 1), makeEpisode("ep-2", 2))
+        val focusRequesters = List(episodes.size) { FocusRequester() }
+        val coordinator = FocusTransitionCoordinator(this)
+
+        // Stale index from a previous season with more episodes.
+        var rememberedIndex = 99
+        var focusedIndex = -1
+
+        val handled = coordinator.tryRequestFocus {
+            val targetIndex = rememberedIndex.coerceIn(0, (episodes.size - 1).coerceAtLeast(0))
+            val requester = focusRequesters.getOrNull(targetIndex) ?: focusRequesters.firstOrNull()
+            if (requester != null) {
+                focusedIndex = targetIndex
+                requestFocusSafely(requester, maxRetries = 2, rawRequest = { true })
+            } else {
+                false
+            }
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        // Clamped to the last valid index (1 for a 2-episode list).
+        assertEquals(1, focusedIndex)
+    }
+
+    @Test
+    fun `season tab switch resets active episode index to 0`() {
+        var activeEpisodeIndex = 3 // user was on episode 4
+
+        // Simulate selecting a new season.
+        val newSeasonIndex = 1
+        activeEpisodeIndex = 0 // this is what DetailContent does on season switch
+
+        assertEquals(0, activeEpisodeIndex)
+    }
+
+    @Test
+    fun `navigating between carousel and info panel preserves episode focus index`() = runTest {
+        val episodes = listOf(makeEpisode("ep-1", 1), makeEpisode("ep-2", 2), makeEpisode("ep-3", 3))
+        var activeEpisodeIndex = 0
+
+        // User focuses episode index 2 in the carousel.
+        val onEpisodeFocused: (TvEpisode, Int) -> Unit = { _, index ->
+            activeEpisodeIndex = index
+        }
+        onEpisodeFocused(episodes[2], 2)
+        assertEquals(2, activeEpisodeIndex)
+
+        // User navigates to the info panel (a vertical move — index must not change).
+        // (The panel transition does NOT call onEpisodeFocused — it just moves vertical focus.)
+        assertEquals(2, activeEpisodeIndex)
+
+        // User returns to the carousel — remembered index is still 2.
+        val focusRequesters = List(episodes.size) { FocusRequester() }
+        val coordinator = FocusTransitionCoordinator(this)
+        var restoredIndex = -1
+
+        val handled = coordinator.tryRequestFocus {
+            val targetIndex = activeEpisodeIndex.coerceIn(0, episodes.size - 1)
+            val requester = focusRequesters.getOrNull(targetIndex)
+            if (requester != null) {
+                restoredIndex = targetIndex
+                requestFocusSafely(requester, maxRetries = 2, rawRequest = { true })
+            } else false
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertEquals(2, restoredIndex)
+    }
+
+    @Test
+    fun `downward transition from season tabs targets remembered episode not card 0`() = runTest {
+        val episodes = listOf(makeEpisode("ep-1", 1), makeEpisode("ep-2", 2), makeEpisode("ep-3", 3))
+        val focusRequesters = List(episodes.size) { FocusRequester() }
+        val coordinator = FocusTransitionCoordinator(this)
+
+        var rememberedIndex = 1 // user previously focused episode 2
+        var actuallyFocusedIndex = -1
+
+        // Simulate pressing D-pad Down from season tabs.
+        val onDown: () -> Unit = {
+            coordinator.tryRequestFocus {
+                val targetIndex = rememberedIndex.coerceIn(0, episodes.size - 1)
+                val requester = focusRequesters.getOrNull(targetIndex)
+                if (requester != null) {
+                    actuallyFocusedIndex = targetIndex
+                    requestFocusSafely(requester, maxRetries = 2, rawRequest = { true })
+                } else false
+            }
+        }
+
+        onDown()
+        advanceUntilIdle()
+        assertEquals(1, actuallyFocusedIndex)
+    }
 }

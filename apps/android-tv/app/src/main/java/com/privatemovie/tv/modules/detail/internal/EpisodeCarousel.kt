@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +49,7 @@ import androidx.tv.material3.CardDefaults as TvCardDefaults
 import com.privatemovie.tv.components.EdgeScaleTransform
 import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
+import com.privatemovie.tv.components.TvHorizontalBringIntoViewSpec
 import com.privatemovie.tv.components.TvMediaImage
 import com.privatemovie.tv.components.isRepeatKeyEvent
 
@@ -59,52 +63,60 @@ import com.privatemovie.tv.components.isRepeatKeyEvent
  * - TV Card focus scaling and high-contrast border
  *
  * Highlighting or focusing an episode updates [onEpisodeFocused] to keep the dynamic info panel synced.
+ *
+ * Callers may pass a list of [FocusRequester] (one per episode) via [itemFocusRequesters] so that the
+ * parent can programmatically restore focus to any remembered episode index — not just Card 0.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EpisodeCarousel(
     episodes: List<TvEpisode>,
     baseUrl: String?,
     onSelectEpisode: (TvEpisode) -> Unit,
-    onEpisodeFocused: (TvEpisode) -> Unit,
+    onEpisodeFocused: (TvEpisode, Int) -> Unit,
     modifier: Modifier = Modifier,
-    firstItemFocusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+    itemFocusRequesters: List<FocusRequester> = emptyList(),
     onUp: (() -> Unit)? = null
 ) {
-    LazyRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
-        contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp)
-    ) {
-        itemsIndexed(episodes, key = { _, episode -> episode.id }) { index, episode ->
-            val transformOrigin = EdgeScaleTransform(index, episodes.size)
-            EpisodeThumbnailCard(
-                episode = episode,
-                baseUrl = baseUrl,
-                onSelect = { onSelectEpisode(episode) },
-                onFocus = { onEpisodeFocused(episode) },
-                transformOrigin = transformOrigin,
-                modifier = Modifier
-                    .then(
-                        if (index == 0 && firstItemFocusRequester != null) {
-                            Modifier.focusRequester(firstItemFocusRequester)
-                        } else Modifier
-                    )
-                    .then(
-                        if (onUp != null) {
-                            Modifier.onKeyEvent { keyEvent ->
-                                if (isRepeatKeyEvent(keyEvent)) {
-                                    return@onKeyEvent true
+    val bringIntoViewSpec = remember { TvHorizontalBringIntoViewSpec(edgeMargin = 48f) }
+    CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoViewSpec) {
+        LazyRow(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp)
+        ) {
+            itemsIndexed(episodes, key = { _, episode -> episode.id }) { index, episode ->
+                val transformOrigin = EdgeScaleTransform(index, episodes.size)
+                val itemRequester = itemFocusRequesters.getOrNull(index)
+                EpisodeThumbnailCard(
+                    episode = episode,
+                    baseUrl = baseUrl,
+                    onSelect = { onSelectEpisode(episode) },
+                    onFocus = { onEpisodeFocused(episode, index) },
+                    transformOrigin = transformOrigin,
+                    modifier = Modifier
+                        .then(
+                            if (itemRequester != null) {
+                                Modifier.focusRequester(itemRequester)
+                            } else Modifier
+                        )
+                        .then(
+                            if (onUp != null) {
+                                Modifier.onKeyEvent { keyEvent ->
+                                    if (isRepeatKeyEvent(keyEvent)) {
+                                        return@onKeyEvent true
+                                    }
+                                    if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
+                                        keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
+                                    ) {
+                                        onUp()
+                                        true
+                                    } else false
                                 }
-                                if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
-                                    keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
-                                ) {
-                                    onUp()
-                                    true
-                                } else false
-                            }
-                        } else Modifier
-                    )
-            )
+                            } else Modifier
+                        )
+                )
+            }
         }
     }
 }

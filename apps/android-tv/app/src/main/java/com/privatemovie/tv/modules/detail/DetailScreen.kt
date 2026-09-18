@@ -363,20 +363,15 @@ private fun DetailContent(
         mutableStateOf(initialEp)
     }
 
+    // Remembered episode index within the active season/standalone list — resets to 0 on season change.
+    var activeEpisodeIndex by remember(details, selectedSeasonIndex) { mutableIntStateOf(0) }
+
     val playCtaFocusRequester = remember { FocusRequester() }
     val backFocusRequester = remember { FocusRequester() }
     val seasonTabsFocusRequester = remember { FocusRequester() }
-    val carouselFocusRequester = remember { FocusRequester() }
-    val descriptionPanelFocusRequester = remember { FocusRequester() }
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val focusCoordinator = remember(coroutineScope) { FocusTransitionCoordinator(coroutineScope) }
-
-    // Initial D-pad focus placed directly onto the Play Now CTA on screen entry
-    LaunchedEffect(details.id) {
-        requestFocusSafely(playCtaFocusRequester)
-        lazyListState.scrollToItem(0, 0)
-    }
 
     val currentEpisodes = if (details.seasons.isNotEmpty()) {
         details.seasons.getOrNull(selectedSeasonIndex)?.episodes ?: emptyList()
@@ -384,66 +379,65 @@ private fun DetailContent(
         details.standaloneEpisodes
     }
 
-    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-    val customBringIntoViewSpec = remember(lazyListState) {
-        object : androidx.compose.foundation.gestures.BringIntoViewSpec {
-            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
-                if (lazyListState.firstVisibleItemIndex == 0 && offset + size <= containerSize) {
-                    return 0f
-                }
-                val leadingEdge = offset
-                val trailingEdge = offset + size
-                return if (leadingEdge >= 0f && trailingEdge <= containerSize) {
-                    0f
-                } else if (leadingEdge < 0f) {
-                    leadingEdge
-                } else {
-                    trailingEdge - containerSize
-                }
-            }
+    // One FocusRequester per episode card — allows restoring focus to any remembered index.
+    val episodeFocusRequesters = remember(currentEpisodes) {
+        List(currentEpisodes.size) { FocusRequester() }
+    }
+
+    // Helper: scroll carousel into view and focus the remembered episode (fallback to index 0).
+    val focusRememberedEpisode: suspend () -> Boolean = {
+        val targetIndex = activeEpisodeIndex.coerceIn(0, (currentEpisodes.size - 1).coerceAtLeast(0))
+        val requester = episodeFocusRequesters.getOrNull(targetIndex)
+            ?: episodeFocusRequesters.firstOrNull()
+        if (requester != null) {
+            lazyListState.animateScrollToItem(if (details.seasons.size > 1) 2 else 1)
+            requestFocusSafely(requester)
+        } else {
+            false
         }
     }
 
-    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-    androidx.compose.runtime.CompositionLocalProvider(
-        androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides customBringIntoViewSpec
+    // Initial D-pad focus placed directly onto the Play Now CTA on screen entry
+    LaunchedEffect(details.id) {
+        requestFocusSafely(playCtaFocusRequester)
+        lazyListState.scrollToItem(0, 0)
+    }
+
+    LazyColumn(
+        state = lazyListState,
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(bottom = 40.dp)
     ) {
-        LazyColumn(
-            state = lazyListState,
-            modifier = modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            contentPadding = PaddingValues(bottom = 40.dp)
-        ) {
-            // 1. Full-Bleed Series Header (Backdrop + Poster + Metadata + Logo + Play CTA + Back Button)
-            item(key = "header") {
-                SeriesHeader(
-                    details = details,
-                    baseUrl = activeBackendUrl,
-                    firstPlayableEpisode = firstEpisode,
-                    playCtaFocusRequester = playCtaFocusRequester,
-                    backFocusRequester = backFocusRequester,
-                    onPlayCta = {
-                        firstEpisode?.let { onSelectEpisode(it) }
-                    },
-                    onBack = onBack,
-                    onDownFromCta = {
-                        focusCoordinator.tryRequestFocus {
-                            if (details.seasons.size > 1) {
-                                lazyListState.animateScrollToItem(1)
-                                requestFocusSafely(seasonTabsFocusRequester)
-                            } else if (currentEpisodes.isNotEmpty()) {
-                                lazyListState.animateScrollToItem(1)
-                                requestFocusSafely(carouselFocusRequester)
-                            } else {
-                                false
-                            }
+        // 1. Full-Bleed Series Header (Backdrop + Poster + Metadata + Logo + Play CTA + Back Button)
+        item(key = "header") {
+            SeriesHeader(
+                details = details,
+                baseUrl = activeBackendUrl,
+                firstPlayableEpisode = firstEpisode,
+                playCtaFocusRequester = playCtaFocusRequester,
+                backFocusRequester = backFocusRequester,
+                onPlayCta = {
+                    firstEpisode?.let { onSelectEpisode(it) }
+                },
+                onBack = onBack,
+                onDownFromCta = {
+                    focusCoordinator.tryRequestFocus {
+                        if (details.seasons.size > 1) {
+                            lazyListState.animateScrollToItem(1)
+                            requestFocusSafely(seasonTabsFocusRequester)
+                        } else if (currentEpisodes.isNotEmpty()) {
+                            focusRememberedEpisode()
+                        } else {
+                            false
                         }
-                    },
-                    modifier = Modifier
-                        .fillParentMaxHeight()
-                        .clipToBounds()
-                )
-            }
+                    }
+                },
+                modifier = Modifier
+                    .fillParentMaxHeight()
+                    .clipToBounds()
+            )
+        }
 
         // 2. Season Selector Tabs (if more than 1 season)
         if (details.seasons.size > 1) {
@@ -452,7 +446,9 @@ private fun DetailContent(
                     seasons = details.seasons,
                     selectedIndex = selectedSeasonIndex,
                     onSelectSeason = { index ->
+                        // Reset episode focus memory to Episode 1 when switching seasons.
                         selectedSeasonIndex = index
+                        activeEpisodeIndex = 0
                         val nextSeasonEp = details.seasons.getOrNull(index)?.episodes?.firstOrNull()
                         currentlyInspectedEpisode = nextSeasonEp
                     },
@@ -462,7 +458,14 @@ private fun DetailContent(
                             lazyListState.animateScrollToItem(0)
                             requestFocusSafely(playCtaFocusRequester)
                         }
-                    }
+                    },
+                    onDown = if (currentEpisodes.isNotEmpty()) {
+                        {
+                            focusCoordinator.tryRequestFocus {
+                                focusRememberedEpisode()
+                            }
+                        }
+                    } else null
                 )
             }
         }
@@ -499,10 +502,11 @@ private fun DetailContent(
                         episodes = currentEpisodes,
                         baseUrl = activeBackendUrl,
                         onSelectEpisode = onSelectEpisode,
-                        onEpisodeFocused = { episode ->
+                        onEpisodeFocused = { episode, index ->
                             currentlyInspectedEpisode = episode
+                            activeEpisodeIndex = index
                         },
-                        firstItemFocusRequester = carouselFocusRequester,
+                        itemFocusRequesters = episodeFocusRequesters,
                         onUp = if (details.seasons.size <= 1) {
                             {
                                 focusCoordinator.tryRequestFocus {
@@ -521,12 +525,11 @@ private fun DetailContent(
             Box(modifier = Modifier.padding(horizontal = 48.dp)) {
                 EpisodeInfoPanel(
                     episode = currentlyInspectedEpisode,
-                    focusRequester = descriptionPanelFocusRequester
+                    focusRequester = remember { FocusRequester() }
                 )
             }
         }
     }
-}
 }
 
 @Composable
@@ -536,7 +539,8 @@ private fun SeasonSelectorBar(
     onSelectSeason: (Int) -> Unit,
     modifier: Modifier = Modifier,
     firstTabFocusRequester: FocusRequester? = null,
-    onUp: (() -> Unit)? = null
+    onUp: (() -> Unit)? = null,
+    onDown: (() -> Unit)? = null
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
@@ -556,17 +560,26 @@ private fun SeasonSelectorBar(
                         } else Modifier
                     )
                     .then(
-                        if (onUp != null) {
+                        if (onUp != null || onDown != null) {
                             Modifier.onKeyEvent { keyEvent ->
                                 if (isRepeatKeyEvent(keyEvent)) {
                                     return@onKeyEvent true
                                 }
-                                if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
-                                    keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
-                                ) {
-                                    onUp()
-                                    true
-                                } else false
+                                when {
+                                    onUp != null &&
+                                        keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
+                                        keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP -> {
+                                        onUp()
+                                        true
+                                    }
+                                    onDown != null &&
+                                        keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
+                                        keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                        onDown()
+                                        true
+                                    }
+                                    else -> false
+                                }
                             }
                         } else Modifier
                     ),

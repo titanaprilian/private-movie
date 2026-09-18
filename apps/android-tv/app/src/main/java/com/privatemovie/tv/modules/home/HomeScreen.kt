@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -68,6 +69,7 @@ import com.privatemovie.tv.components.ImageUrlResolver
 import com.privatemovie.tv.components.LogoOrTitleRender
 import com.privatemovie.tv.components.MediaAspectRatio
 import com.privatemovie.tv.components.MediaPlaceholderIcons
+import com.privatemovie.tv.components.TvHorizontalBringIntoViewSpec
 import com.privatemovie.tv.components.TvMediaImage
 import com.privatemovie.tv.components.isRepeatKeyEvent
 import com.privatemovie.tv.components.requestFocusSafely
@@ -376,10 +378,20 @@ private fun HomeFeedContent(
     val sliderState = rememberHeroSliderState(heroes = effectiveHeroes)
     val heroFocus = remember { FocusRequester() }
     val settingsFocus = remember { FocusRequester() }
-    val firstCatalogItemFocus = remember { FocusRequester() }
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val focusCoordinator = remember(coroutineScope) { FocusTransitionCoordinator(coroutineScope) }
+
+    // Per-row last-focused card index. rowFocusIndices[rowIndex] = lastCardIndex.
+    val rowFocusIndices = remember { mutableStateMapOf<Int, Int>() }
+
+    // Per-row, per-card FocusRequesters. Keyed by (rowIndex -> List<FocusRequester>).
+    // Recomputed only when the row item counts change.
+    val rowFocusRequesters = remember(feed.rows) {
+        feed.rows.mapIndexed { rowIndex, row ->
+            rowIndex to List(row.items.size) { FocusRequester() }
+        }.toMap()
+    }
 
     var isInitialFocusPlaced by rememberSaveable { mutableStateOf(false) }
 
@@ -390,95 +402,101 @@ private fun HomeFeedContent(
         }
     }
 
-    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-    val customBringIntoViewSpec = remember(lazyListState) {
-        object : androidx.compose.foundation.gestures.BringIntoViewSpec {
-            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
-                val isVertical = containerSize <= 1080f
-                if (isVertical && lazyListState.firstVisibleItemIndex == 0 && offset + size <= containerSize) {
-                    return 0f
-                }
-                val margin = 64f
-                val leadingEdge = offset
-                val trailingEdge = offset + size
-                return if (leadingEdge >= margin && trailingEdge <= containerSize - margin) {
-                    0f
-                } else if (leadingEdge < margin) {
-                    leadingEdge - margin
-                } else {
-                    (trailingEdge - containerSize) + margin
-                }
+    // Scroll to the catalog rows section and restore focus to the remembered card for a given row.
+    // Falls back to card 0 if the remembered index is out of range or focus acquisition fails.
+    val focusRowCard: suspend (targetRowIndex: Int) -> Boolean = { targetRowIndex ->
+        val row = feed.rows.getOrNull(targetRowIndex)
+        val requesters = rowFocusRequesters[targetRowIndex]
+        if (row != null && requesters != null && requesters.isNotEmpty()) {
+            val rememberedIndex = rowFocusIndices[targetRowIndex] ?: 0
+            val clampedIndex = rememberedIndex.coerceIn(0, requesters.size - 1)
+            // LazyColumn item index: hero is item 0, rows start at item 1.
+            val lazyItemIndex = if (effectiveHeroes.isNotEmpty()) targetRowIndex + 1 else targetRowIndex
+            lazyListState.animateScrollToItem(lazyItemIndex)
+            val targetRequester = requesters[clampedIndex]
+            val success = requestFocusSafely(targetRequester)
+            if (!success) {
+                // Fallback: try Card 0
+                requestFocusSafely(requesters[0])
+            } else {
+                true
             }
+        } else {
+            false
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        @OptIn(
-            androidx.compose.foundation.ExperimentalFoundationApi::class,
-            androidx.compose.ui.ExperimentalComposeUiApi::class
-        )
-        androidx.compose.runtime.CompositionLocalProvider(
-            androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides customBringIntoViewSpec
-        ) {
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .focusRestorer(),
-                verticalArrangement = Arrangement.spacedBy(32.dp),
-                contentPadding = PaddingValues(bottom = 48.dp)
-            ) {
-                if (effectiveHeroes.isNotEmpty()) {
-                    item(key = "hero-slider") {
-                        FeaturedHeroSlider(
-                            sliderState = sliderState,
-                            baseUrl = baseUrl,
-                            onSelectSeries = onSelectSeries,
-                            onOpenDevSettings = onOpenDevSettings,
-                            ctaFocusRequester = heroFocus,
-                            settingsFocusRequester = settingsFocus,
-                            onUpFromCta = {
-                                focusCoordinator.tryRequestFocus {
-                                    requestFocusSafely(settingsFocus)
-                                }
-                            },
-                            onDownFromCta = {
-                                val hasRows = feed.rows.any { it.items.isNotEmpty() }
-                                if (hasRows) {
-                                    focusCoordinator.tryRequestFocus {
-                                        lazyListState.animateScrollToItem(1)
-                                        requestFocusSafely(firstCatalogItemFocus)
-                                    }
-                                }
-                            },
-                            onDownFromSettings = {
-                                focusCoordinator.tryRequestFocus {
-                                    lazyListState.animateScrollToItem(0)
-                                    requestFocusSafely(heroFocus)
-                                }
-                            },
-                            modifier = Modifier
-                                .fillParentMaxHeight()
-                                .clipToBounds()
-                        )
-                    }
-                }
+    // Per-row BringIntoView spec for horizontal carousels — stateless, shared across all rows.
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    val horizontalBringIntoViewSpec = remember { TvHorizontalBringIntoViewSpec(edgeMargin = 48f) }
 
-                var isFirstCardPlaced = false
-                feed.rows.forEachIndexed { rowIndex, row ->
-                    if (row.items.isNotEmpty()) {
-                        item(key = "row-header-${row.title}") {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = row.title,
-                                    style = MaterialTheme.typography.titleLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 0.5.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.padding(start = 48.dp, end = 48.dp, bottom = 12.dp)
-                                )
-                                @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+    Box(modifier = modifier.fillMaxSize()) {
+        @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier
+                .fillMaxSize()
+                .focusRestorer(),
+            verticalArrangement = Arrangement.spacedBy(32.dp),
+            contentPadding = PaddingValues(bottom = 48.dp)
+        ) {
+            if (effectiveHeroes.isNotEmpty()) {
+                item(key = "hero-slider") {
+                    FeaturedHeroSlider(
+                        sliderState = sliderState,
+                        baseUrl = baseUrl,
+                        onSelectSeries = onSelectSeries,
+                        onOpenDevSettings = onOpenDevSettings,
+                        ctaFocusRequester = heroFocus,
+                        settingsFocusRequester = settingsFocus,
+                        onUpFromCta = {
+                            focusCoordinator.tryRequestFocus {
+                                requestFocusSafely(settingsFocus)
+                            }
+                        },
+                        onDownFromCta = {
+                            val firstNonEmptyRowIndex = feed.rows.indexOfFirst { it.items.isNotEmpty() }
+                            if (firstNonEmptyRowIndex >= 0) {
+                                focusCoordinator.tryRequestFocus {
+                                    focusRowCard(firstNonEmptyRowIndex)
+                                }
+                            }
+                        },
+                        onDownFromSettings = {
+                            focusCoordinator.tryRequestFocus {
+                                lazyListState.animateScrollToItem(0)
+                                requestFocusSafely(heroFocus)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillParentMaxHeight()
+                            .clipToBounds()
+                    )
+                }
+            }
+
+            @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+            feed.rows.forEachIndexed { rowIndex, row ->
+                if (row.items.isNotEmpty()) {
+                    item(key = "row-header-${row.title}") {
+                        val requesters = rowFocusRequesters[rowIndex] ?: emptyList()
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = row.title,
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(start = 48.dp, end = 48.dp, bottom = 12.dp)
+                            )
+                            @OptIn(
+                                androidx.compose.foundation.ExperimentalFoundationApi::class,
+                                androidx.compose.ui.ExperimentalComposeUiApi::class
+                            )
+                            androidx.compose.runtime.CompositionLocalProvider(
+                                androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides horizontalBringIntoViewSpec
+                            ) {
                                 LazyRow(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -488,16 +506,16 @@ private fun HomeFeedContent(
                                 ) {
                                     itemsIndexed(row.items, key = { _, series -> series.id }) { index, series ->
                                         val transformOrigin = EdgeScaleTransform(index, row.items.size)
-                                        val isVeryFirst = !isFirstCardPlaced && rowIndex == 0 && index == 0
-                                        if (isVeryFirst) {
-                                            isFirstCardPlaced = true
-                                        }
+                                        val itemRequester = requesters.getOrNull(index)
                                         SeriesPosterCard(
                                             series = series,
                                             baseUrl = baseUrl,
                                             onSelect = { onSelectSeries(series.id) },
                                             transformOrigin = transformOrigin,
-                                            focusRequester = if (isVeryFirst) firstCatalogItemFocus else null,
+                                            focusRequester = itemRequester,
+                                            onFocused = {
+                                                rowFocusIndices[rowIndex] = index
+                                            },
                                             onUp = if (rowIndex == 0 && effectiveHeroes.isNotEmpty()) {
                                                 {
                                                     focusCoordinator.tryRequestFocus {
@@ -964,6 +982,7 @@ fun SeriesPosterCard(
     modifier: Modifier = Modifier,
     transformOrigin: TransformOrigin = TransformOrigin.Center,
     focusRequester: FocusRequester? = null,
+    onFocused: (() -> Unit)? = null,
     onUp: (() -> Unit)? = null
 ) {
     val cardShape = RoundedCornerShape(10.dp)
@@ -980,6 +999,11 @@ fun SeriesPosterCard(
 
         if (focusRequester != null) {
             cardModifier = cardModifier.focusRequester(focusRequester)
+        }
+        if (onFocused != null) {
+            cardModifier = cardModifier.onFocusChanged { state ->
+                if (state.isFocused) onFocused()
+            }
         }
         if (onUp != null) {
             cardModifier = cardModifier.onKeyEvent { keyEvent ->
