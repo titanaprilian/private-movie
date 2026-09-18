@@ -100,20 +100,30 @@ fun PlayerScreen(
     seasonNumber: Int? = null,
     episodeOrder: Int? = null,
     episodeTitle: String? = null,
-    backendBaseUrl: String? = null
+    backendBaseUrl: String? = null,
+    playerNavArgs: PlayerNavArgs? = null,
+    onPlayNavArgs: ((PlayerNavArgs) -> Unit)? = null
 ) {
-    val headlineText = remember(seriesTitle) { formatPlayerHeadline(seriesTitle) }
-    val subtitleText = remember(seasonNumber, seasonTitle, episodeOrder, episodeTitle) {
+    val effectiveSeriesTitle = playerNavArgs?.metadata?.seriesTitle ?: seriesTitle
+    val effectiveSeasonTitle = playerNavArgs?.metadata?.seasonTitle ?: seasonTitle
+    val effectiveSeasonNumber = playerNavArgs?.metadata?.seasonNumber ?: seasonNumber
+    val effectiveEpisodeOrder = playerNavArgs?.metadata?.episodeOrder ?: episodeOrder
+    val effectiveEpisodeTitle = playerNavArgs?.metadata?.episodeTitle ?: episodeTitle
+
+    val headlineText = remember(effectiveSeriesTitle) { formatPlayerHeadline(effectiveSeriesTitle) }
+    val subtitleText = remember(effectiveSeasonNumber, effectiveSeasonTitle, effectiveEpisodeOrder, effectiveEpisodeTitle) {
         formatPlayerSubtitle(
-            seasonNumber = seasonNumber,
-            seasonTitle = seasonTitle,
-            episodeOrder = episodeOrder,
-            episodeTitle = episodeTitle
+            seasonNumber = effectiveSeasonNumber,
+            seasonTitle = effectiveSeasonTitle,
+            episodeOrder = effectiveEpisodeOrder,
+            episodeTitle = effectiveEpisodeTitle
         )
     }
 
-    val handoffTarget = remember(playbackSourceTypeName, playbackUrl, episodeId) {
-        val source = if (!playbackUrl.isNullOrBlank() && !playbackSourceTypeName.isNullOrBlank()) {
+    val handoffTarget = remember(playerNavArgs, playbackSourceTypeName, playbackUrl, episodeId) {
+        val source = if (playerNavArgs?.source != null) {
+            playerNavArgs.source
+        } else if (!playbackUrl.isNullOrBlank() && !playbackSourceTypeName.isNullOrBlank()) {
             PlaybackSourceRef(type = playbackSourceTypeName, url = playbackUrl)
         } else if (!playbackUrl.isNullOrBlank()) {
             PlaybackSourceRef(type = "", url = playbackUrl)
@@ -122,13 +132,13 @@ fun PlayerScreen(
         }
         resolvePlayerHandoff(
             handoff = buildPlayerHandoff(
-                episodeId = episodeId,
+                episodeId = playerNavArgs?.episodeId ?: episodeId,
                 source = source,
-                seriesTitle = seriesTitle,
-                seasonTitle = seasonTitle,
-                seasonNumber = seasonNumber,
-                episodeOrder = episodeOrder,
-                episodeTitle = episodeTitle
+                seriesTitle = effectiveSeriesTitle,
+                seasonTitle = effectiveSeasonTitle,
+                seasonNumber = effectiveSeasonNumber,
+                episodeOrder = effectiveEpisodeOrder,
+                episodeTitle = effectiveEpisodeTitle
             ),
             backendBaseUrl = backendBaseUrl
         )
@@ -327,7 +337,8 @@ fun PlayerScreen(
                     errorMessage = message
                 },
                 onPlaybackEnded = {
-                    when (onPlaybackEnded(hasNext = hasNext && onPlayNextEpisode != null)) {
+                    val computedDecision = onPlaybackEnded(hasNext = (hasPrevious || hasNext) || (playerNavArgs?.playlist?.isNotEmpty() == true && hasNext) || (onPlayNextEpisode != null))
+                    when (computedDecision) {
                         PlaybackCompletionDecision.AdvanceToNext -> onPlayNextEpisode?.invoke()
                         PlaybackCompletionDecision.ExitPlayer -> onExitPlayer()
                     }

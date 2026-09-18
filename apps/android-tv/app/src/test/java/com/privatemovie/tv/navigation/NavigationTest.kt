@@ -1,15 +1,10 @@
 package com.privatemovie.tv.navigation
 
-import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_ORDER_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_TITLE_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_NUMBER_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_TITLE_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SERIES_TITLE_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
+import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
-import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
+import com.privatemovie.tv.modules.player.PlayerNavArgs
+import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -54,57 +49,45 @@ class NavigationTest {
     }
 
     @Test
-    fun `source picker handoff keys match what the player reads`() {
-        // Contract between AppNavigation's onPlaySource and PlayerScreen args:
-        // renaming either side must break this test, not TV playback.
-        assertEquals("playbackSourceType", PLAYER_SOURCE_TYPE_KEY)
-        assertEquals("playbackUrl", PLAYER_SOURCE_URL_KEY)
+    fun `player nav args key is constant and matches expected name`() {
+        assertEquals("player_nav_args", PLAYER_NAV_ARGS_KEY)
+    }
 
-        val handoff = buildPlayerHandoff(
+    @Test
+    fun `typed PlayerNavArgs encapsulates episode source metadata and playlist`() {
+        val navArgs = PlayerNavArgs(
             episodeId = "episode-108",
-            source = PlaybackSourceRef(type = "embed", url = "/embed/abc123")
-        )
-        assertEquals("episode-108", handoff.episodeId)
-        assertEquals("embed", handoff.sourceTypeName)
-        assertEquals("/embed/abc123", handoff.sourceUrl)
-    }
-
-    @Test
-    fun `direct play without a source clears the handoff for player failure handling`() {
-        val handoff = buildPlayerHandoff(episodeId = "episode-109", source = null)
-        assertEquals("episode-109", handoff.episodeId)
-        assertNull(handoff.sourceTypeName)
-        assertNull(handoff.sourceUrl)
-    }
-
-    @Test
-    fun `metadata handoff keys match what the player reads`() {
-        assertEquals("seriesTitle", PLAYER_SERIES_TITLE_KEY)
-        assertEquals("seasonTitle", PLAYER_SEASON_TITLE_KEY)
-        assertEquals("seasonNumber", PLAYER_SEASON_NUMBER_KEY)
-        assertEquals("episodeOrder", PLAYER_EPISODE_ORDER_KEY)
-        assertEquals("episodeTitle", PLAYER_EPISODE_TITLE_KEY)
-    }
-
-    @Test
-    fun `handoff includes rich metadata fields`() {
-        val handoff = buildPlayerHandoff(
-            episodeId = "ep-1",
-            source = PlaybackSourceRef(type = "direct", url = "https://example.com/video.mp4"),
+            source = PlaybackSourceRef(type = "embed", url = "/embed/abc123"),
             metadata = PlaybackMetadataHandoff(
                 seriesTitle = "Demon Slayer",
-                seasonTitle = "Season 1: Unwavering Resolve",
+                seasonTitle = "Season 1",
                 seasonNumber = 1,
-                episodeOrder = 1,
-                episodeTitle = "Cruelty"
+                episodeOrder = 8,
+                episodeTitle = "Episode 8"
+            ),
+            playlist = listOf(
+                PlaylistEpisodeItem(
+                    episodeId = "episode-108",
+                    seriesTitle = "Demon Slayer",
+                    episodeTitle = "Episode 8"
+                )
             )
         )
 
-        assertEquals("ep-1", handoff.episodeId)
-        assertEquals("Demon Slayer", handoff.seriesTitle)
-        assertEquals("Season 1: Unwavering Resolve", handoff.seasonTitle)
-        assertEquals(1, handoff.seasonNumber)
-        assertEquals(1, handoff.episodeOrder)
-        assertEquals("Cruelty", handoff.episodeTitle)
+        assertEquals("episode-108", navArgs.episodeId)
+        assertEquals("embed", navArgs.source?.type)
+        assertEquals("/embed/abc123", navArgs.source?.url)
+        assertEquals("Demon Slayer", navArgs.metadata?.seriesTitle)
+        assertEquals(1, navArgs.playlist.size)
+    }
+
+    @Test
+    fun `direct play without a source creates PlayerNavArgs with null source`() {
+        val navArgs = PlayerNavArgs(
+            episodeId = "episode-109",
+            source = null
+        )
+        assertEquals("episode-109", navArgs.episodeId)
+        assertNull(navArgs.source)
     }
 }

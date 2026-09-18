@@ -56,8 +56,12 @@ import com.privatemovie.tv.modules.detail.internal.TvSeriesDetails
 import com.privatemovie.tv.modules.detail.internal.TvVideoSource
 import com.privatemovie.tv.modules.detail.internal.findFirstPlayableEpisode
 import com.privatemovie.tv.modules.detail.internal.findMetadataForEpisode
+import com.privatemovie.tv.modules.detail.internal.toPlaylistEpisodeItems
 import com.privatemovie.tv.modules.detail.internal.toTvSeriesDetails
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
+import com.privatemovie.tv.modules.player.PlaybackSourceRef
+import com.privatemovie.tv.modules.player.PlayerNavArgs
+import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 import com.privatemovie.tv.modules.player.internal.EpisodePlaybackDecision
 import com.privatemovie.tv.modules.player.internal.decideEpisodePlayback
 
@@ -85,7 +89,8 @@ fun DetailScreen(
     modifier: Modifier = Modifier,
     activeBackendUrl: String? = null,
     onLoadedDetails: ((TvSeriesDetails) -> Unit)? = null,
-    onPlaySource: ((episodeId: String, videoSource: TvVideoSource, metadata: PlaybackMetadataHandoff) -> Unit)? = null
+    onPlaySource: ((episodeId: String, videoSource: TvVideoSource, metadata: PlaybackMetadataHandoff) -> Unit)? = null,
+    onPlayNavArgs: ((PlayerNavArgs) -> Unit)? = null
 ) {
     var uiState by remember { mutableStateOf<DetailUiState>(DetailUiState.Loading) }
     var reloadKey by remember { mutableIntStateOf(0) }
@@ -105,12 +110,23 @@ fun DetailScreen(
     }
 
     val handleStartPlayback: (TvEpisode, TvVideoSource?) -> Unit = { episode, source ->
-        val metadata = (uiState as? DetailUiState.Success)?.details?.findMetadataForEpisode(episode.id)
+        val details = (uiState as? DetailUiState.Success)?.details
+        val metadata = details?.findMetadataForEpisode(episode.id)
             ?: PlaybackMetadataHandoff(
                 episodeOrder = episode.order,
                 episodeTitle = episode.title
             )
-        if (source != null && onPlaySource != null) {
+        val playlist = details?.toPlaylistEpisodeItems() ?: emptyList()
+        val sourceRef = source?.let { PlaybackSourceRef(type = it.type, url = it.url) }
+        val playerNavArgs = PlayerNavArgs(
+            episodeId = episode.id,
+            source = sourceRef,
+            metadata = metadata,
+            playlist = playlist
+        )
+        if (onPlayNavArgs != null) {
+            onPlayNavArgs(playerNavArgs)
+        } else if (source != null && onPlaySource != null) {
             onPlaySource(episode.id, source, metadata)
         } else {
             onPlayEpisode(episode.id, metadata)

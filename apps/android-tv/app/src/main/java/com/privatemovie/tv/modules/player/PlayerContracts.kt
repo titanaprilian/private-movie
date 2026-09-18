@@ -54,6 +54,16 @@ enum class PlaybackCompletionDecision {
     ExitPlayer,
 }
 
+/**
+ * Key used to pass [PlayerNavArgs] inside savedStateHandle across Compose navigation destinations.
+ */
+const val PLAYER_NAV_ARGS_KEY = "player_nav_args"
+
+/**
+ * Key used to store/read [PlayerNavArgs] payload as a JSON string when persisting across savedStateHandle.
+ */
+const val PLAYER_NAV_ARGS_JSON_KEY = "player_nav_args_json"
+
 const val DEFAULT_SEEK_SECONDS = 10
 const val DEFAULT_CONTROLS_TIMEOUT_MS = 3500L
 

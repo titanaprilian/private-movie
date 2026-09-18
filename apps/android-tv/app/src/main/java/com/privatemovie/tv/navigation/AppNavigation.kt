@@ -5,8 +5,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -19,22 +17,13 @@ import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.config.BackendUrlOverrideScreen
 import com.privatemovie.tv.modules.config.BackendUrlStore
 import com.privatemovie.tv.modules.detail.DetailScreen
-import com.privatemovie.tv.modules.detail.internal.toPlaylistEpisodeItems
 import com.privatemovie.tv.modules.home.HomeScreen
-import com.privatemovie.tv.modules.player.PlayerScreen
-import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_ORDER_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_EPISODE_TITLE_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_NUMBER_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SEASON_TITLE_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SERIES_TITLE_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_TYPE_KEY
-import com.privatemovie.tv.modules.player.internal.PLAYER_SOURCE_URL_KEY
+import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
-import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 import com.privatemovie.tv.modules.player.PlayerNavArgs
-import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
-import com.privatemovie.tv.modules.player.internal.resolvePlaylistNeighbors
+import com.privatemovie.tv.modules.player.PlayerScreen
+import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 
 sealed class TvScreen(val route: String) {
     object Home : TvScreen("home")
@@ -59,7 +48,6 @@ fun AppNavigation(
     }
 ) {
     val activeUrl by urlStore.activeUrl.collectAsState()
-    var activePlaylist by remember { mutableStateOf<List<PlaylistEpisodeItem>>(emptyList()) }
 
     NavHost(
         navController = navController,
@@ -98,48 +86,25 @@ fun AppNavigation(
                 activeBackendUrl = activeUrl,
                 mediaRepository = mediaRepository,
                 onPlayEpisode = { episodeId, metadata ->
-                    navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        remove<String>(PLAYER_SOURCE_TYPE_KEY)
-                        remove<String>(PLAYER_SOURCE_URL_KEY)
-                        metadata.seriesTitle?.let { set(PLAYER_SERIES_TITLE_KEY, it) }
-                            ?: remove<String>(PLAYER_SERIES_TITLE_KEY)
-                        metadata.seasonTitle?.let { set(PLAYER_SEASON_TITLE_KEY, it) }
-                            ?: remove<String>(PLAYER_SEASON_TITLE_KEY)
-                        metadata.seasonNumber?.let { set(PLAYER_SEASON_NUMBER_KEY, it) }
-                            ?: remove<Int>(PLAYER_SEASON_NUMBER_KEY)
-                        metadata.episodeOrder?.let { set(PLAYER_EPISODE_ORDER_KEY, it) }
-                            ?: remove<Int>(PLAYER_EPISODE_ORDER_KEY)
-                        metadata.episodeTitle?.let { set(PLAYER_EPISODE_TITLE_KEY, it) }
-                            ?: remove<String>(PLAYER_EPISODE_TITLE_KEY)
-                    }
+                    val playerNavArgs = PlayerNavArgs(
+                        episodeId = episodeId,
+                        metadata = metadata
+                    )
+                    navController.currentBackStackEntry?.savedStateHandle?.set(PLAYER_NAV_ARGS_KEY, playerNavArgs)
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
                 onPlaySource = { episodeId, source, metadata ->
-                    val handoff = buildPlayerHandoff(
+                    val playerNavArgs = PlayerNavArgs(
                         episodeId = episodeId,
                         source = PlaybackSourceRef(type = source.type, url = source.url),
                         metadata = metadata
                     )
-                    navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        handoff.sourceTypeName?.let { set(PLAYER_SOURCE_TYPE_KEY, it) }
-                            ?: remove<String>(PLAYER_SOURCE_TYPE_KEY)
-                        handoff.sourceUrl?.let { set(PLAYER_SOURCE_URL_KEY, it) }
-                            ?: remove<String>(PLAYER_SOURCE_URL_KEY)
-                        handoff.seriesTitle?.let { set(PLAYER_SERIES_TITLE_KEY, it) }
-                            ?: remove<String>(PLAYER_SERIES_TITLE_KEY)
-                        handoff.seasonTitle?.let { set(PLAYER_SEASON_TITLE_KEY, it) }
-                            ?: remove<String>(PLAYER_SEASON_TITLE_KEY)
-                        handoff.seasonNumber?.let { set(PLAYER_SEASON_NUMBER_KEY, it) }
-                            ?: remove<Int>(PLAYER_SEASON_NUMBER_KEY)
-                        handoff.episodeOrder?.let { set(PLAYER_EPISODE_ORDER_KEY, it) }
-                            ?: remove<Int>(PLAYER_EPISODE_ORDER_KEY)
-                        handoff.episodeTitle?.let { set(PLAYER_EPISODE_TITLE_KEY, it) }
-                            ?: remove<String>(PLAYER_EPISODE_TITLE_KEY)
-                    }
+                    navController.currentBackStackEntry?.savedStateHandle?.set(PLAYER_NAV_ARGS_KEY, playerNavArgs)
                     navController.navigate(TvScreen.Player.createRoute(episodeId))
                 },
-                onLoadedDetails = { details ->
-                    activePlaylist = details.toPlaylistEpisodeItems()
+                onPlayNavArgs = { playerNavArgs ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set(PLAYER_NAV_ARGS_KEY, playerNavArgs)
+                    navController.navigate(TvScreen.Player.createRoute(playerNavArgs.episodeId))
                 },
                 onBack = {
                     navController.popBackStack()
@@ -152,28 +117,29 @@ fun AppNavigation(
             arguments = listOf(navArgument("episodeId") { type = NavType.StringType })
         ) { backStackEntry ->
             val episodeId = backStackEntry.arguments?.getString("episodeId") ?: "unknown"
-            val playbackHandle = navController.previousBackStackEntry?.savedStateHandle
-            val neighbors = remember(activePlaylist, episodeId) {
-                resolvePlaylistNeighbors(activePlaylist, episodeId)
-            }
+            val playerNavArgs = navController.previousBackStackEntry?.savedStateHandle?.get<PlayerNavArgs>(PLAYER_NAV_ARGS_KEY)
+
+            val playlist = playerNavArgs?.playlist ?: emptyList()
+            val currentIndex = playlist.indexOfFirst { it.episodeId == episodeId }
+            val prevItem = if (currentIndex > 0) playlist.getOrNull(currentIndex - 1) else null
+            val nextItem = if (currentIndex >= 0 && currentIndex < playlist.size - 1) playlist.getOrNull(currentIndex + 1) else null
 
             fun playNeighbor(target: PlaylistEpisodeItem) {
-                playbackHandle?.apply {
-                    target.sourceTypeName?.let { set(PLAYER_SOURCE_TYPE_KEY, it) }
-                        ?: remove<String>(PLAYER_SOURCE_TYPE_KEY)
-                    target.sourceUrl?.let { set(PLAYER_SOURCE_URL_KEY, it) }
-                        ?: remove<String>(PLAYER_SOURCE_URL_KEY)
-                    target.seriesTitle?.let { set(PLAYER_SERIES_TITLE_KEY, it) }
-                        ?: remove<String>(PLAYER_SERIES_TITLE_KEY)
-                    target.seasonTitle?.let { set(PLAYER_SEASON_TITLE_KEY, it) }
-                        ?: remove<String>(PLAYER_SEASON_TITLE_KEY)
-                    target.seasonNumber?.let { set(PLAYER_SEASON_NUMBER_KEY, it) }
-                        ?: remove<Int>(PLAYER_SEASON_NUMBER_KEY)
-                    target.episodeOrder?.let { set(PLAYER_EPISODE_ORDER_KEY, it) }
-                        ?: remove<Int>(PLAYER_EPISODE_ORDER_KEY)
-                    target.episodeTitle?.let { set(PLAYER_EPISODE_TITLE_KEY, it) }
-                        ?: remove<String>(PLAYER_EPISODE_TITLE_KEY)
-                }
+                val nextNavArgs = PlayerNavArgs(
+                    episodeId = target.episodeId,
+                    source = if (target.sourceTypeName != null && target.sourceUrl != null) {
+                        PlaybackSourceRef(type = target.sourceTypeName, url = target.sourceUrl)
+                    } else null,
+                    metadata = PlaybackMetadataHandoff(
+                        seriesTitle = target.seriesTitle,
+                        seasonTitle = target.seasonTitle,
+                        seasonNumber = target.seasonNumber,
+                        episodeOrder = target.episodeOrder,
+                        episodeTitle = target.episodeTitle
+                    ),
+                    playlist = playlist
+                )
+                navController.currentBackStackEntry?.savedStateHandle?.set(PLAYER_NAV_ARGS_KEY, nextNavArgs)
                 navController.navigate(TvScreen.Player.createRoute(target.episodeId)) {
                     popUpTo(TvScreen.Player.route) { inclusive = true }
                 }
@@ -181,20 +147,14 @@ fun AppNavigation(
 
             PlayerScreen(
                 episodeId = episodeId,
+                playerNavArgs = playerNavArgs,
                 onExitPlayer = {
                     navController.popBackStack()
                 },
-                hasPrevious = neighbors.hasPrevious,
-                hasNext = neighbors.hasNext,
-                onPlayPreviousEpisode = neighbors.previousEpisode?.let { prev -> { playNeighbor(prev) } },
-                onPlayNextEpisode = neighbors.nextEpisode?.let { next -> { playNeighbor(next) } },
-                playbackSourceTypeName = playbackHandle?.get<String>(PLAYER_SOURCE_TYPE_KEY),
-                playbackUrl = playbackHandle?.get<String>(PLAYER_SOURCE_URL_KEY),
-                seriesTitle = playbackHandle?.get<String>(PLAYER_SERIES_TITLE_KEY),
-                seasonTitle = playbackHandle?.get<String>(PLAYER_SEASON_TITLE_KEY),
-                seasonNumber = playbackHandle?.get<Int>(PLAYER_SEASON_NUMBER_KEY),
-                episodeOrder = playbackHandle?.get<Int>(PLAYER_EPISODE_ORDER_KEY),
-                episodeTitle = playbackHandle?.get<String>(PLAYER_EPISODE_TITLE_KEY),
+                hasPrevious = prevItem != null,
+                hasNext = nextItem != null,
+                onPlayPreviousEpisode = prevItem?.let { prev -> { playNeighbor(prev) } },
+                onPlayNextEpisode = nextItem?.let { next -> { playNeighbor(next) } },
                 backendBaseUrl = activeUrl
             )
         }
