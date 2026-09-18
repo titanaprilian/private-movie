@@ -5,10 +5,10 @@ import { cors } from "@elysiajs/cors";
 import { rateLimit } from "@elysiajs/rate-limit";
 import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
-import { episodeRoutes } from "./modules/episodes/http";
+import { episodeRoutes, UNTHROTTLED_EPISODE_ROUTE_SUFFIXES } from "./modules/episodes/http";
 import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
-import { mediaRoutes, embedRoutes } from "./modules/media/http";
+import { mediaRoutes, embedRoutes, UNTHROTTLED_MEDIA_ROUTE_PREFIXES } from "./modules/media/http";
 import { seasonRoutes } from "./modules/seasons/http";
 import { seriesRoutes } from "./modules/series/http";
 import { storageRoutes } from "./modules/storage/http";
@@ -105,12 +105,13 @@ export const createApp = (deps: CreateAppDeps) => {
           // Do not rate limit embed, media proxy, and long-lived streaming endpoints 
           // (video streams rapidly fetch hundreds of chunks which breaks the global 100/min limit)
           const url = new URL(request.url);
-          return (
-            url.pathname.startsWith("/embed") ||
-            url.pathname.startsWith("/api/media/relay") ||
-            url.pathname.startsWith("/api/media/proxy") ||
-            url.pathname.endsWith("/remote-ingest")
+          const isMediaUnthrottled = UNTHROTTLED_MEDIA_ROUTE_PREFIXES.some((prefix) =>
+            url.pathname.startsWith(prefix)
           );
+          const isEpisodeUnthrottled = UNTHROTTLED_EPISODE_ROUTE_SUFFIXES.some((suffix) =>
+            url.pathname.endsWith(suffix)
+          );
+          return isMediaUnthrottled || isEpisodeUnthrottled;
         },
       })
     )

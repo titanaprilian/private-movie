@@ -21,6 +21,10 @@ import { successResponse } from "../../lib/response";
 import { FileTooLargeError, UploadSessionNotFoundError } from "../../lib/errors";
 import { IngestService } from "./internal/ingest-service";
 
+export const UNTHROTTLED_EPISODE_ROUTE_SUFFIXES = [
+  "/remote-ingest",
+];
+
 export interface EpisodeRoutesOptions {
   db: DbClient;
   authService: AuthenticationService;
