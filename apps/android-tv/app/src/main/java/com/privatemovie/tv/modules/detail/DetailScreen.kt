@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
@@ -458,8 +457,6 @@ private fun DetailContent(
                         currentlyInspectedEpisode = nextSeasonEp
                     },
                     firstTabFocusRequester = seasonTabsFocusRequester,
-                    upFocusRequester = playCtaFocusRequester,
-                    downFocusRequester = carouselFocusRequester,
                     onUp = {
                         focusCoordinator.tryRequestFocus {
                             lazyListState.animateScrollToItem(0)
@@ -506,8 +503,6 @@ private fun DetailContent(
                             currentlyInspectedEpisode = episode
                         },
                         firstItemFocusRequester = carouselFocusRequester,
-                        upFocusRequester = if (details.seasons.size > 1) seasonTabsFocusRequester else playCtaFocusRequester,
-                        downFocusRequester = descriptionPanelFocusRequester,
                         onUp = if (details.seasons.size <= 1) {
                             {
                                 focusCoordinator.tryRequestFocus {
@@ -526,8 +521,7 @@ private fun DetailContent(
             Box(modifier = Modifier.padding(horizontal = 48.dp)) {
                 EpisodeInfoPanel(
                     episode = currentlyInspectedEpisode,
-                    focusRequester = descriptionPanelFocusRequester,
-                    upFocusRequester = carouselFocusRequester
+                    focusRequester = descriptionPanelFocusRequester
                 )
             }
         }
@@ -542,8 +536,6 @@ private fun SeasonSelectorBar(
     onSelectSeason: (Int) -> Unit,
     modifier: Modifier = Modifier,
     firstTabFocusRequester: FocusRequester? = null,
-    upFocusRequester: FocusRequester? = null,
-    downFocusRequester: FocusRequester? = null,
     onUp: (() -> Unit)? = null
 ) {
     LazyRow(
@@ -561,14 +553,6 @@ private fun SeasonSelectorBar(
                     .then(
                         if (index == 0 && firstTabFocusRequester != null) {
                             Modifier.focusRequester(firstTabFocusRequester)
-                        } else Modifier
-                    )
-                    .then(
-                        if (upFocusRequester != null || downFocusRequester != null) {
-                            Modifier.focusProperties {
-                                upFocusRequester?.let { up = it }
-                                downFocusRequester?.let { down = it }
-                            }
                         } else Modifier
                     )
                     .then(

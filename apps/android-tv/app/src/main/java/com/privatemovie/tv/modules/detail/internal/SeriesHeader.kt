@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -167,10 +166,7 @@ fun SeriesHeader(
             TvButton(
                 onClick = onBack,
                 modifier = Modifier
-                    .focusRequester(backFocusRequester)
-                    .focusProperties {
-                        down = playCtaFocusRequester
-                    },
+                    .focusRequester(backFocusRequester),
                 shape = TvButtonDefaults.shape(shape = backShape, focusedShape = backShape),
                 scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.05f),
                 border = TvButtonDefaults.border(
@@ -325,9 +321,6 @@ fun SeriesHeader(
                     enabled = isCtaEnabled,
                     modifier = Modifier
                         .focusRequester(playCtaFocusRequester)
-                        .focusProperties {
-                            up = backFocusRequester
-                        }
                         .onKeyEvent { keyEvent ->
                             if (isRepeatKeyEvent(keyEvent)) {
                                 return@onKeyEvent true

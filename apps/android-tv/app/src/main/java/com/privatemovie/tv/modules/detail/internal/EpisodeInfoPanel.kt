@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -39,8 +38,7 @@ import androidx.tv.material3.Surface
 fun EpisodeInfoPanel(
     episode: TvEpisode?,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester? = null,
-    upFocusRequester: FocusRequester? = null
+    focusRequester: FocusRequester? = null
 ) {
     val panelShape = RoundedCornerShape(12.dp)
 
@@ -65,11 +63,6 @@ fun EpisodeInfoPanel(
             .fillMaxWidth()
             .then(
                 if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier
-            )
-            .then(
-                if (upFocusRequester != null) {
-                    Modifier.focusProperties { up = upFocusRequester }
-                } else Modifier
             )
     ) {
         Box(

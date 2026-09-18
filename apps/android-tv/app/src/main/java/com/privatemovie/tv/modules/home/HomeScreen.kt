@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -379,10 +381,12 @@ private fun HomeFeedContent(
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val focusCoordinator = remember(coroutineScope) { FocusTransitionCoordinator(coroutineScope) }
 
+    var isInitialFocusPlaced by rememberSaveable { mutableStateOf(false) }
+
     LaunchedEffect(effectiveHeroes) {
-        if (effectiveHeroes.isNotEmpty()) {
+        if (!isInitialFocusPlaced && effectiveHeroes.isNotEmpty()) {
+            isInitialFocusPlaced = true
             requestFocusSafely(heroFocus)
-            lazyListState.scrollToItem(0, 0)
         }
     }
 
@@ -390,30 +394,37 @@ private fun HomeFeedContent(
     val customBringIntoViewSpec = remember(lazyListState) {
         object : androidx.compose.foundation.gestures.BringIntoViewSpec {
             override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
-                if (lazyListState.firstVisibleItemIndex == 0 && offset + size <= containerSize) {
+                val isVertical = containerSize <= 1080f
+                if (isVertical && lazyListState.firstVisibleItemIndex == 0 && offset + size <= containerSize) {
                     return 0f
                 }
+                val margin = 64f
                 val leadingEdge = offset
                 val trailingEdge = offset + size
-                return if (leadingEdge >= 0f && trailingEdge <= containerSize) {
+                return if (leadingEdge >= margin && trailingEdge <= containerSize - margin) {
                     0f
-                } else if (leadingEdge < 0f) {
-                    leadingEdge
+                } else if (leadingEdge < margin) {
+                    leadingEdge - margin
                 } else {
-                    trailingEdge - containerSize
+                    (trailingEdge - containerSize) + margin
                 }
             }
         }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+        @OptIn(
+            androidx.compose.foundation.ExperimentalFoundationApi::class,
+            androidx.compose.ui.ExperimentalComposeUiApi::class
+        )
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides customBringIntoViewSpec
         ) {
             LazyColumn(
                 state = lazyListState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .focusRestorer(),
                 verticalArrangement = Arrangement.spacedBy(32.dp),
                 contentPadding = PaddingValues(bottom = 48.dp)
             ) {
@@ -442,6 +453,7 @@ private fun HomeFeedContent(
                             },
                             onDownFromSettings = {
                                 focusCoordinator.tryRequestFocus {
+                                    lazyListState.animateScrollToItem(0)
                                     requestFocusSafely(heroFocus)
                                 }
                             },
@@ -456,7 +468,7 @@ private fun HomeFeedContent(
                 feed.rows.forEachIndexed { rowIndex, row ->
                     if (row.items.isNotEmpty()) {
                         item(key = "row-header-${row.title}") {
-                            Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = row.title,
                                     style = MaterialTheme.typography.titleLarge.copy(
@@ -464,11 +476,15 @@ private fun HomeFeedContent(
                                         letterSpacing = 0.5.sp
                                     ),
                                     color = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.padding(bottom = 12.dp)
+                                    modifier = Modifier.padding(start = 48.dp, end = 48.dp, bottom = 12.dp)
                                 )
+                                @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
                                 LazyRow(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .focusRestorer(),
                                     horizontalArrangement = Arrangement.spacedBy(20.dp),
-                                    contentPadding = PaddingValues(vertical = 8.dp)
+                                    contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp)
                                 ) {
                                     itemsIndexed(row.items, key = { _, series -> series.id }) { index, series ->
                                         val transformOrigin = EdgeScaleTransform(index, row.items.size)

@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -69,8 +68,6 @@ fun EpisodeCarousel(
     onEpisodeFocused: (TvEpisode) -> Unit,
     modifier: Modifier = Modifier,
     firstItemFocusRequester: androidx.compose.ui.focus.FocusRequester? = null,
-    upFocusRequester: androidx.compose.ui.focus.FocusRequester? = null,
-    downFocusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     onUp: (() -> Unit)? = null
 ) {
     LazyRow(
@@ -90,14 +87,6 @@ fun EpisodeCarousel(
                     .then(
                         if (index == 0 && firstItemFocusRequester != null) {
                             Modifier.focusRequester(firstItemFocusRequester)
-                        } else Modifier
-                    )
-                    .then(
-                        if (upFocusRequester != null || downFocusRequester != null) {
-                            Modifier.focusProperties {
-                                upFocusRequester?.let { up = it }
-                                downFocusRequester?.let { down = it }
-                            }
                         } else Modifier
                     )
                     .then(
