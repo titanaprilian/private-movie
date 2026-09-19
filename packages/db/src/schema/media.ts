@@ -13,6 +13,8 @@ export const genres = pgTable("genres", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),
   slug: text("slug").notNull().unique(),
+  isBigGenre: boolean("is_big_genre").notNull().default(false),
+  displayOrder: integer("display_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

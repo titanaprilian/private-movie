@@ -6,6 +6,8 @@ describe("db schema exports", () => {
     expect(schema).toBeDefined();
     expect(schema.videoSources).toBeDefined();
     expect(schema.genres).toBeDefined();
+    expect(schema.genres.isBigGenre).toBeDefined();
+    expect(schema.genres.displayOrder).toBeDefined();
     expect(schema.seriesToGenres).toBeDefined();
     expect(schema.series).toBeDefined();
     expect(schema.series.tmdbId).toBeDefined();

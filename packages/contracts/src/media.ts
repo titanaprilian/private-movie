@@ -25,6 +25,8 @@ export type MediaGenre = {
   id: string;
   name: string;
   slug: string;
+  isBigGenre?: boolean;
+  displayOrder?: number;
 };
 
 export type MediaSeriesMetadata = {

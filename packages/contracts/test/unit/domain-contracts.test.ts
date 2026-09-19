@@ -18,14 +18,20 @@ describe("domain contracts", () => {
       id: "genre-1",
       name: "Action",
       slug: "action",
+      isBigGenre: true,
+      displayOrder: 1,
     };
     const createReq: CreateGenreRequest = {
       name: "Comedy",
       slug: "comedy",
+      isBigGenre: false,
+      displayOrder: 0,
     };
     const updateReq: UpdateGenreRequest = {
       name: "Action Comedy",
       slug: "action-comedy",
+      isBigGenre: true,
+      displayOrder: 2,
     };
     const resp: GenreResponse = {
       data: genre,

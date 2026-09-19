@@ -78,8 +78,8 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const mockGenresList: Genre[] = [
-  { id: 'g-1', name: 'Action', slug: 'action' },
-  { id: 'g-2', name: 'Sci-Fi', slug: 'sci-fi' },
+  { id: 'g-1', name: 'Action', slug: 'action', isBigGenre: false, displayOrder: 0 },
+  { id: 'g-2', name: 'Sci-Fi', slug: 'sci-fi', isBigGenre: false, displayOrder: 0 },
 ];
 
 const mockSeriesResponse = {

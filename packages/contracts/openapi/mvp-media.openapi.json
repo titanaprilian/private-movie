@@ -13,6 +13,15 @@
         "description": "Returns the featured hero series (when present) and the Ongoing, Korean Drama, and Recently Added rows backed by series that have video sources. When `sourceTypes` is supplied (e.g. `direct,s3`), only series with at least one episode containing a matching video source type are included.",
         "parameters": [
           {
+            "name": "genre",
+            "in": "query",
+            "required": false,
+            "description": "Optional genre slug to filter home feed series by.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sourceTypes",
             "in": "query",
             "required": false,

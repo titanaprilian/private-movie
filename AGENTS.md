@@ -26,6 +26,14 @@ When implementing a feature or fixing a bug, follow this strict execution sequen
 
 ---
 
+## API Contracts & Canonical Types (`packages/contracts`)
+
+- **Contract-First Design**: Whenever an API endpoint is created, modified, or has its request/query/response payload shape altered, you **must** define or update the canonical TypeScript interfaces and DTOs in `packages/contracts/src/` first before implementing or consuming them in `apps/backend` or `apps/web`.
+- **Framework Independence**: `packages/contracts` must remain pure TypeScript contracts free of framework-specific dependencies (no Elysia, no Drizzle, no React).
+- **Single Source of Truth**: All backend response envelopes, frontend API callers, and native client mappings must import and adhere to canonical domain types exported from `@repo/contracts`.
+
+---
+
 ## Testing Conventions
 
 Tests use a conventional folder-based structure with Vitest as the test runner via `packages/config-vitest/`.
