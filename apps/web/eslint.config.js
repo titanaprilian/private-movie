@@ -28,7 +28,26 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/modules/*/internal/**', '**/modules/*/internal/**'],
+              message:
+                'Do not import from internal directories of other modules. Import from the public module entry point (@/modules/<feature>) instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/modules/*/**/*.{ts,tsx}', 'test/unit/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
   prettier
 );
+

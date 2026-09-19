@@ -1,3 +1,3 @@
-export * from './internal/CinematicHome';
-export * from './internal/api';
-export * from './internal/useHomeFeedNav';
+export { CinematicHome } from './internal/CinematicHome';
+export { homeFeedQueryOptions } from './internal/api';
+

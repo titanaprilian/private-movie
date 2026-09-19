@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useAuth, LogoutButton, useAuthStore } from '@/modules/auth';
+import { useAuth, LogoutButton } from '@/modules/auth';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,15 +13,16 @@ import {
 } from '@/components/ui/dialog';
 
 export function ProfileView() {
-  const { user } = useAuth();
+  const { user, logoutAll } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogoutAll = async () => {
-    await useAuthStore.getState().logoutAll();
+    await logoutAll();
     setIsOpen(false);
     navigate({ to: '/login' });
   };
+
 
   const formattedDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-US', {

@@ -1,7 +1,8 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { createRouter, createMemoryHistory } from '@tanstack/react-router';
 import { routeTree } from '@/routeTree.gen';
-import { useAuthStore } from '@/modules/auth';
+import { useAuthStore } from '@/modules/auth/internal/store';
+
 
 describe('Router integration - /admin auth guard & relocated pages', () => {
   beforeEach(() => {

@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '../../utils';
 import { setAccessToken, getAccessToken } from '@/lib/api';
-import { useAuthStore, useAuth } from '@/modules/auth';
+import { useAuth } from '@/modules/auth';
+import { useAuthStore } from '@/modules/auth/internal/store';
 import type { User } from '@repo/contracts';
+
 
 const mockUser: User = {
   id: 'user-123',

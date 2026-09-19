@@ -1,7 +1,8 @@
 import { renderWithProviders, screen } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProfileView } from '@/modules/profile';
-import { useAuthStore } from '@/modules/auth';
+import { useAuthStore } from '@/modules/auth/internal/store';
+
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),

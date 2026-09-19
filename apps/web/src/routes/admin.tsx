@@ -1,18 +1,12 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
-import { useAuthStore } from '@/modules/auth';
+import { checkAuthSession } from '@/modules/auth';
 import { Shell } from '@/modules/shell';
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: async () => {
-    const store = useAuthStore.getState();
+    const isAuthenticated = await checkAuthSession();
 
-    if (!store.isAuthenticated && !store.user) {
-      await store.checkAuth();
-    }
-
-    const updatedIsAuthenticated = useAuthStore.getState().isAuthenticated;
-
-    if (!updatedIsAuthenticated) {
+    if (!isAuthenticated) {
       throw redirect({
         to: '/login',
       });
@@ -28,4 +22,5 @@ export function AdminPage() {
     </Shell>
   );
 }
+
 

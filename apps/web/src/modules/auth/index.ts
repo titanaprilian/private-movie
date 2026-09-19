@@ -8,6 +8,10 @@ import {
   type RegisterFormProps,
 } from './internal/components/RegisterForm';
 import {
+  LogoutButton,
+  type LogoutButtonProps,
+} from './internal/components/LogoutButton';
+import {
   registerSchema,
   loginSchema,
   type RegisterSchema,
@@ -38,13 +42,17 @@ export const useAuth = () => {
   };
 };
 
-import {
-  LogoutButton,
-  type LogoutButtonProps,
-} from './internal/components/LogoutButton';
+export async function checkAuthSession(): Promise<boolean> {
+  const store = useAuthStore.getState();
+
+  if (!store.isAuthenticated && !store.user) {
+    await store.checkAuth();
+  }
+
+  return useAuthStore.getState().isAuthenticated;
+}
 
 export {
-  useAuthStore,
   LoginForm,
   type LoginFormProps,
   RegisterForm,
@@ -56,3 +64,4 @@ export {
   type RegisterSchema,
   type LoginSchema,
 };
+

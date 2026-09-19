@@ -1,8 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { renderWithProviders, screen } from '../../utils';
 import { Route, AdminPage } from '@/routes/admin';
-import { useAuthStore } from '@/modules/auth';
+import { useAuthStore } from '@/modules/auth/internal/store';
 import { redirect } from '@tanstack/react-router';
+
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-router')>();
