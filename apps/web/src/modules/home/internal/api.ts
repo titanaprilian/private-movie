@@ -17,10 +17,13 @@ export type {
 };
 
 export async function fetchHomeFeed(genreSlug?: string): Promise<MediaHomeFeed> {
+  const queryParam: Record<string, string> = {};
+  if (genreSlug) {
+    queryParam.genre = genreSlug;
+  }
+  
   const res = await api.series['home-feed'].get({
-    $query: {
-      genre: genreSlug,
-    },
+    $query: queryParam,
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
