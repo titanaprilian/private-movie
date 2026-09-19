@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { renderWithProviders } from '../../utils';
+import { renderWithProviders, screen } from '../../utils';
 import { Route, AdminPage } from '@/routes/admin';
 import { useAuthStore } from '@/modules/auth';
 import { redirect } from '@tanstack/react-router';
@@ -10,7 +10,13 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     createFileRoute: () => (config: unknown) => config,
     redirect: vi.fn((opts) => opts),
-    Outlet: () => null,
+    Outlet: () => <div data-testid="admin-outlet">Admin Outlet Content</div>,
+    Link: ({ children, to, className }: { children: React.ReactNode; to: string; className?: string }) => (
+      <a href={to} className={className}>
+        {children}
+      </a>
+    ),
+    useNavigate: () => vi.fn(),
   };
 });
 
@@ -70,7 +76,11 @@ describe('/admin route', () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  it('renders AdminPage layout with Outlet', () => {
+  it('renders AdminPage layout wrapping Outlet with Shell', () => {
     renderWithProviders(<AdminPage />);
+    expect(screen.getByTestId('admin-outlet')).toBeInTheDocument();
+    expect(screen.getByText('Admin Outlet Content')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /series/i }).length).toBeGreaterThan(0);
   });
 });
+
