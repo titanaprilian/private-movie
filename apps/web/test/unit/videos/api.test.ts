@@ -226,7 +226,7 @@ describe('videos api', () => {
         )
     );
 
-    await expect(fetchEpisodes()).rejects.toThrow('Failed to fetch episodes');
+    await expect(fetchEpisodes()).rejects.toThrow('Database connection failed');
 
     fetchSpy.mockRestore();
   });
@@ -442,7 +442,7 @@ describe('videos api', () => {
         )
     );
 
-    await expect(fetchSeries()).rejects.toThrow('Failed to fetch series');
+    await expect(fetchSeries()).rejects.toThrow('Database error');
 
     fetchSpy.mockRestore();
   });
@@ -517,7 +517,7 @@ describe('videos api', () => {
         )
     );
 
-    await expect(fetchSeriesDetail('invalid-id')).rejects.toThrow('Failed to fetch series details');
+    await expect(fetchSeriesDetail('invalid-id')).rejects.toThrow('Series not found');
 
     fetchSpy.mockRestore();
   });
@@ -664,7 +664,7 @@ describe('videos api', () => {
           metadata: {},
         },
       })
-    ).rejects.toThrow('Failed to save media');
+    ).rejects.toThrow('Invalid payload');
 
     fetchSpy.mockRestore();
   });
@@ -1139,7 +1139,7 @@ describe('videos api', () => {
         type: 'tv',
         tmdbId: 1399,
       })
-    ).rejects.toThrow('Failed to sync series with TMDB');
+    ).rejects.toThrow('Series not found');
 
     fetchSpy.mockRestore();
   });

@@ -1,144 +1,116 @@
 import { queryOptions } from '@tanstack/react-query';
-import { api, getAccessToken, getApiBaseUrl } from '@/lib/api';
+import { api, getAccessToken, getApiBaseUrl, extractErrorMessage } from '@/lib/api';
+import type {
+  AdminPaginationMeta,
+  AdminVideoSourceItem,
+  AdminEpisodeItem,
+  AdminSeasonItem,
+  AdminSeriesItemSeasonSummary,
+  AdminSeriesItem,
+  AdminSeriesDetails,
+  AdminSeriesListQuery,
+  AdminSeriesListResponseData,
+  AdminUpdateSeriesRequest,
+  AdminUpdateSeasonRequest,
+  AdminScrapeOngoingSeasonResponseData,
+  AdminEpisodesListQuery,
+  AdminEpisodesListResponseData,
+  AdminUpdateEpisodeRequest,
+  AdminReorderEpisodesRequestItem,
+  AdminVideoSourceInput,
+  AdminAddVideoSourcesRequest,
+  AdminUpdateVideoSourceRequest,
+  AdminPreviewScrapeRequest,
+  AdminPreviewScrapeEpisodeData,
+  AdminPreviewScrapeSeriesData,
+  AdminPreviewScrapeResponseData,
+  AdminSaveMediaRequest,
+  AdminPreviewScrapeSeriesRequest,
+  AdminPreviewBulkSourcesRequest,
+  AdminBulkSourceItem,
+  AdminPreviewBulkSourcesResponseData,
+  AdminScrapeSourcesRequest,
+  AdminTmdbPreviewQuery,
+  AdminTmdbImportRequest,
+  AdminTmdbSyncRequest,
+  AdminTmdbSyncPreviewQuery,
+  AdminTmdbPreviewSeasonItem,
+  AdminTmdbPreviewResponseData,
+  AdminPresignUploadRequest,
+  AdminPresignUploadResponseData,
+  AdminUploadProgressResponseData,
+} from '@repo/contracts';
 import { parseIngestUrl, type ParsedIngestUrl } from './parseIngestUrl';
 
 export { parseIngestUrl };
 export type { ParsedIngestUrl };
 
-export interface VideoSource {
-  id: string;
-  type: 'embed' | 'direct' | 's3';
-  url: string;
-  label: string;
-  quality?: string | null;
-  storageProviderId?: string | null;
-}
+// Canonical Contracts & Legacy Aliases
+export type VideoSource = AdminVideoSourceItem;
+export type VideoSourceInput = AdminVideoSourceInput;
+export type Episode = AdminEpisodeItem;
+export type EpisodesListResponse = AdminEpisodesListResponseData;
+export type SeriesItem = AdminSeriesItem;
+export type SeriesListResponse = AdminSeriesListResponseData;
+export type SeasonDetails = AdminSeasonItem;
+export type SeriesDetails = AdminSeriesDetails;
+export type FetchSeriesParams = AdminSeriesListQuery & { tab?: 'all' | 'featured' | 'ongoing' };
+export type FetchEpisodesParams = AdminEpisodesListQuery & { source?: 'otakudesu' | 'dramula' };
+export type PreviewScrapeParams = AdminPreviewScrapeRequest;
+export type PreviewScrapeEpisodeData = AdminPreviewScrapeEpisodeData;
+export type PreviewScrapeSeriesData = AdminPreviewScrapeSeriesData;
+export type SaveMediaParams = AdminSaveMediaRequest;
+export type AddVideoSourceInput = AdminVideoSourceInput;
+export type UpdateVideoSourceInput = AdminUpdateVideoSourceRequest;
+export type ReorderEpisodeItem = AdminReorderEpisodesRequestItem;
+export type UpdateSeriesParams = AdminUpdateSeriesRequest;
+export type UpdateSeasonParams = AdminUpdateSeasonRequest;
+export type ImportTmdbParams = AdminTmdbImportRequest;
+export type SyncTmdbParams = AdminTmdbSyncRequest;
+export type FetchSeriesTmdbSyncPreviewParams = AdminTmdbSyncPreviewQuery;
+export type PresignUploadSourceParams = AdminPresignUploadRequest;
+export type PresignUploadSourceResult = AdminPresignUploadResponseData;
 
-export interface VideoSourceInput {
-  type: 'embed' | 'direct' | 's3';
-  url: string;
-  label: string;
-  quality?: string | null;
-  storageProviderId?: string | null;
-}
-
-export interface Episode {
-  id: string;
-  sourceUrl?: string;
-  source?: string;
-  title: string;
-  order?: number;
-  videoType?: string | null;
-  videoSources: VideoSource[];
-  description?: string | null;
-  duration?: number | string | null;
-  tags?: string[] | null;
-  resolution?: string | null;
-  format?: string | null;
-  size?: string | null;
-  metadata?: unknown;
-  seriesId?: string | null;
-  seasonId?: string | null;
-  tmdbId?: number | null;
-  thumbnailUrl?: string | null;
-  rating?: string | null;
-  airDate?: Date | string | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-}
-
-export interface EpisodesListResponse {
-  episodes: Episode[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-  };
-}
-
-export interface SeriesItem {
-  id: string;
-  sourceUrl: string;
-  source: string;
-  title: string;
-  description?: string | null;
-  posterUrl?: string | null;
-  isFeatured?: boolean | null;
-  hasOngoing?: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  genreIds?: string[];
-  genres?: Array<{ id: string; name: string; slug: string }> | string[];
-  seasons?: Array<{
-    id: string;
-    seriesId?: string;
-    title?: string;
-    status?: 'completed' | 'ongoing' | 'pending' | string | null;
-    seasonNumber?: number | null;
-    [key: string]: unknown;
-  }>;
-}
-
-export interface SeriesListResponse {
-  series: SeriesItem[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-  };
-}
-
-export interface SeasonDetails {
-  id: string;
-  seriesId: string;
-  sourceUrl?: string | null;
-  source?: string | null;
-  title: string;
-  description?: string | null;
-  posterUrl?: string | null;
-  backdropUrl?: string | null;
-  status?: 'completed' | 'ongoing' | 'pending' | string | null;
-  scraperUrl?: string | null;
-  episodeOffset?: number;
-  lastScrapedAt?: Date | string | null;
-  lastScrapeError?: string | null;
-  rating?: string | null;
-  tmdbId?: number | null;
-  tmdbSeason?: number | null;
-  tmdbSyncStatus?: string;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  episodes: Episode[];
-}
-
-export interface SeriesDetails {
-  id: string;
-  sourceUrl: string;
-  source: string;
-  title: string;
-  type?: 'movie' | 'tv' | null;
-  description?: string | null;
-  posterUrl?: string | null;
-  backdropUrl?: string | null;
-  tmdbId?: number | null;
-  tmdbSyncStatus?: string | null;
-  isFeatured?: boolean | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  seasons?: SeasonDetails[];
-  episodes: Episode[];
-  genres?: Array<{ id: string; name: string; slug: string }> | string[];
-}
-
-export interface FetchSeriesParams {
-  page?: number;
-  limit?: number;
-  q?: string;
-  genre?: string;
-  source?: 'otakudesu' | 'dramula';
-  filter?: 'all' | 'featured' | 'ongoing';
-  tab?: 'all' | 'featured' | 'ongoing';
-}
+export type {
+  AdminPaginationMeta,
+  AdminVideoSourceItem,
+  AdminEpisodeItem,
+  AdminSeasonItem,
+  AdminSeriesItemSeasonSummary,
+  AdminSeriesItem,
+  AdminSeriesDetails,
+  AdminSeriesListQuery,
+  AdminSeriesListResponseData,
+  AdminUpdateSeriesRequest,
+  AdminUpdateSeasonRequest,
+  AdminScrapeOngoingSeasonResponseData,
+  AdminEpisodesListQuery,
+  AdminEpisodesListResponseData,
+  AdminUpdateEpisodeRequest,
+  AdminReorderEpisodesRequestItem,
+  AdminVideoSourceInput,
+  AdminAddVideoSourcesRequest,
+  AdminUpdateVideoSourceRequest,
+  AdminPreviewScrapeRequest,
+  AdminPreviewScrapeEpisodeData,
+  AdminPreviewScrapeSeriesData,
+  AdminPreviewScrapeResponseData,
+  AdminSaveMediaRequest,
+  AdminPreviewScrapeSeriesRequest,
+  AdminPreviewBulkSourcesRequest,
+  AdminBulkSourceItem,
+  AdminPreviewBulkSourcesResponseData,
+  AdminScrapeSourcesRequest,
+  AdminTmdbPreviewQuery,
+  AdminTmdbImportRequest,
+  AdminTmdbSyncRequest,
+  AdminTmdbSyncPreviewQuery,
+  AdminTmdbPreviewSeasonItem,
+  AdminTmdbPreviewResponseData,
+  AdminPresignUploadRequest,
+  AdminPresignUploadResponseData,
+  AdminUploadProgressResponseData,
+};
 
 export async function fetchSeries(
   params?: FetchSeriesParams
@@ -169,10 +141,7 @@ export async function fetchSeries(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to fetch series'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch series'));
   }
 
   return res.data.data as unknown as SeriesListResponse;
@@ -183,12 +152,6 @@ export function seriesListQueryOptions(params?: FetchSeriesParams) {
     queryKey: ['series', 'list', params],
     queryFn: () => fetchSeries(params),
   });
-}
-
-export interface FetchEpisodesParams {
-  page?: number;
-  limit?: number;
-  source?: 'otakudesu' | 'dramula';
 }
 
 export async function fetchEpisodes(
@@ -209,10 +172,7 @@ export async function fetchEpisodes(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to fetch episodes'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch episodes'));
   }
 
   return res.data.data as EpisodesListResponse;
@@ -229,10 +189,7 @@ export async function fetchEpisode(id: string): Promise<Episode> {
   const res = await api.episodes[id].get();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to fetch episode'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch episode'));
   }
 
   return res.data.data as unknown as Episode;
@@ -249,10 +206,7 @@ export async function fetchSeriesDetail(id: string): Promise<SeriesDetails> {
   const res = await api.series[id].get();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to fetch series details'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch series details'));
   }
 
   return res.data.data as unknown as SeriesDetails;
@@ -263,12 +217,6 @@ export function seriesDetailQueryOptions(id: string) {
     queryKey: ['series', id],
     queryFn: () => fetchSeriesDetail(id),
   });
-}
-
-export interface PreviewScrapeParams {
-  sourceUrl: string;
-  source: 'otakudesu' | 'dramula';
-  html?: string;
 }
 
 export interface PreviewScrapeResult {
@@ -316,11 +264,7 @@ export async function previewScrape(
     const code = errValue?.error?.code || errValue?.code;
     const missingFields =
       errValue?.error?.missingFields || errValue?.missingFields;
-    const message =
-      errValue?.error?.message ||
-      errValue?.message ||
-      (res.error?.value as { message?: string })?.message ||
-      'Failed to scrape preview';
+    const message = extractErrorMessage(res.error, 'Failed to scrape preview');
 
     if (code === 'EPISODE_MISSING_FIELDS' || Array.isArray(missingFields)) {
       const err = new Error(message) as Error & {
@@ -365,31 +309,10 @@ export async function previewScrapeSeries(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to scrape series preview'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to scrape series preview'));
   }
 
   return res.data.data as PreviewScrapeSeriesResult;
-}
-
-export interface SaveMediaParams {
-  episode: {
-    sourceUrl: string;
-    source: 'otakudesu' | string;
-    title: string;
-    videoType: string | null;
-    videoSources?: VideoSourceInput[];
-    metadata: Record<string, unknown>;
-  };
-  series?: {
-    sourceUrl: string;
-    source: 'otakudesu' | string;
-    title: string;
-    description: string | null;
-    posterUrl: string | null;
-  } | null;
 }
 
 export interface SaveMediaResult {
@@ -419,17 +342,14 @@ export async function saveMedia(
           sourceUrl: params.series.sourceUrl,
           source: params.series.source as 'otakudesu' | 'dramula',
           title: params.series.title,
-          description: params.series.description,
-          posterUrl: params.series.posterUrl,
+          description: params.series.description ?? null,
+          posterUrl: params.series.posterUrl ?? null,
         }
       : undefined,
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to save media'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to save media'));
   }
 
   return res.data.data as SaveMediaResult;
@@ -463,10 +383,7 @@ export async function updateEpisode(id: string, data: UpdateEpisodeData): Promis
   const res = await (api.episodes as any)[id].patch(patchPayload);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to update episode'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to update episode'));
   }
 
   return res.data.data as Episode;
@@ -476,10 +393,7 @@ export async function deleteEpisode(id: string): Promise<Episode> {
   const res = await api.episodes[id].delete();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to delete episode'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to delete episode'));
   }
 
   return res.data.data as Episode;
@@ -509,21 +423,10 @@ export async function scrapeEpisodeSources(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to deep scrape video sources'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to deep scrape video sources'));
   }
 
   return res.data.data as Episode;
-}
-
-export interface AddVideoSourceInput {
-  type: 'embed' | 'direct' | 's3';
-  url: string;
-  label: string;
-  quality?: string | null;
-  storageProviderId?: string | null;
 }
 
 export async function addVideoSource(
@@ -537,24 +440,13 @@ export async function addVideoSource(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to add video source'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to add video source'));
   }
 
   return res.data.data as Episode;
 }
 
 export const addVideoSources = addVideoSource;
-
-export interface UpdateVideoSourceInput {
-  type?: 'embed' | 'direct' | 's3';
-  url?: string;
-  label?: string;
-  quality?: string | null;
-  storageProviderId?: string | null;
-}
 
 export async function updateVideoSource(
   episodeId: string,
@@ -567,10 +459,7 @@ export async function updateVideoSource(
   );
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to update video source'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to update video source'));
   }
 
   return res.data.data as Episode;
@@ -584,19 +473,10 @@ export async function deleteVideoSource(
   const res = await (api.episodes as any)[episodeId].sources[sourceId].delete();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to delete video source'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to delete video source'));
   }
 
   return res.data.data as Episode;
-}
-
-export interface ReorderEpisodeItem {
-  id: string;
-  order: number;
-  seasonId?: string;
 }
 
 export async function updateEpisodeOrders(
@@ -607,19 +487,8 @@ export async function updateEpisodeOrders(
   const res = await (api.series as any)[seriesId].episodes.order.patch(orders);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to reorder episodes'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to reorder episodes'));
   }
-}
-
-export interface UpdateSeriesParams {
-  title?: string;
-  description?: string | null;
-  posterUrl?: string | null;
-  genreIds?: string[];
-  isFeatured?: boolean;
 }
 
 export async function updateSeries(
@@ -630,10 +499,7 @@ export async function updateSeries(
   const res = await (api.series as any)[id].patch(updates);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to update series'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to update series'));
   }
 
   return res.data.data as SeriesItem;
@@ -644,22 +510,10 @@ export async function deleteSeries(id: string): Promise<SeriesItem> {
   const res = await (api.series as any)[id].delete();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to delete series'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to delete series'));
   }
 
   return res.data.data as SeriesItem;
-}
-
-export interface UpdateSeasonParams {
-  title?: string;
-  description?: string | null;
-  status?: 'completed' | 'ongoing' | 'pending';
-  scraperUrl?: string | null;
-  source?: string | null;
-  episodeOffset?: number;
 }
 
 export async function updateSeason(
@@ -670,10 +524,7 @@ export async function updateSeason(
   const res = await (api.seasons as any)[seasonId].patch(params);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to update season'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to update season'));
   }
 
   return res.data.data as unknown as SeasonDetails;
@@ -688,10 +539,7 @@ export async function deleteSeason(seasonId: string): Promise<void> {
       | { code?: string; message?: string; error?: { code?: string; message?: string } }
       | undefined;
     const code = errorValue?.error?.code || errorValue?.code;
-    const message =
-      errorValue?.error?.message ||
-      errorValue?.message ||
-      'Failed to delete season';
+    const message = extractErrorMessage(res.error, 'Failed to delete season');
     const error = new Error(message) as Error & { code?: string };
     error.code = code;
     throw error;
@@ -716,14 +564,7 @@ export async function scrapeOngoingSeason(
   const res = await (api.seasons as any)[seasonId]['scrape-ongoing'].post();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    const errorValue = res.error?.value as
-      | { code?: string; message?: string; error?: { code?: string; message?: string } }
-      | undefined;
-    const message =
-      errorValue?.error?.message ||
-      errorValue?.message ||
-      'Failed to auto-scrape ongoing season';
-    throw new Error(message);
+    throw new Error(extractErrorMessage(res.error, 'Failed to auto-scrape ongoing season'));
   }
 
   return res.data.data as ScrapeOngoingSeasonResult;
@@ -773,10 +614,7 @@ export async function previewBulkSources(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to fetch bulk scrape preview'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch bulk scrape preview'));
   }
 
   return res.data.data as PreviewBulkSourcesResult;
@@ -812,25 +650,10 @@ export async function saveBulkSources(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to save bulk sources'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to save bulk sources'));
   }
 
   return res.data.data as SaveBulkSourcesResult;
-}
-
-export interface ImportTmdbParams {
-  type: 'tv' | 'movie';
-  tmdbId: number;
-  includeSpecials?: boolean;
-}
-
-export interface SyncTmdbParams {
-  type: 'tv' | 'movie';
-  tmdbId: number;
-  includeSpecials?: boolean;
 }
 
 export async function syncSeriesTmdb(
@@ -841,10 +664,7 @@ export async function syncSeriesTmdb(
   const res = await (api.series as any)[seriesId]['tmdb-sync'].post(params);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to sync series with TMDB'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to sync series with TMDB'));
   }
 
   return res.data.data as unknown as SeriesDetails;
@@ -857,10 +677,7 @@ export async function importTmdb(
   const res = await (api.series as any)['tmdb-import'].post(params);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to import TMDB series'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to import TMDB series'));
   }
 
   return res.data.data as unknown as SeriesDetails;
@@ -898,19 +715,10 @@ export async function fetchSeriesTmdbPreview(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to fetch TMDB preview'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch TMDB preview'));
   }
 
   return res.data.data as TmdbPreviewResult;
-}
-
-export interface FetchSeriesTmdbSyncPreviewParams {
-  type: 'tv' | 'movie';
-  tmdbId: number;
-  includeSpecials?: boolean;
 }
 
 export interface EpisodeChangeItem {
@@ -971,24 +779,10 @@ export async function fetchSeriesTmdbSyncPreview(
   });
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to fetch TMDB sync preview'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch TMDB sync preview'));
   }
 
   return res.data.data as TmdbSyncPreviewResult;
-}
-
-export interface PresignUploadSourceParams {
-  filename: string;
-  contentType?: string;
-  storageProviderId?: string;
-}
-
-export interface PresignUploadSourceResult {
-  uploadUrl: string;
-  key: string;
 }
 
 export async function presignUploadSource(
@@ -1001,7 +795,7 @@ export async function presignUploadSource(
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
     const errorVal = res.error?.value as { error?: { code?: string; message?: string }; code?: string; message?: string } | undefined;
     const code = errorVal?.error?.code || errorVal?.code;
-    const message = errorVal?.error?.message || errorVal?.message || (res.error?.value as { message?: string })?.message || 'Failed to request presigned upload URL';
+    const message = extractErrorMessage(res.error, 'Failed to request presigned upload URL');
     const err = new Error(message) as Error & { code?: string };
     if (code) err.code = code;
     throw err;
@@ -1179,10 +973,7 @@ export async function getUploadProgress(sessionId: string): Promise<UploadProgre
   const res = await (api.episodes as any)['upload-progress'][sessionId].get();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Upload session not found'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Upload session not found'));
   }
 
   return res.data.data as UploadProgress;
