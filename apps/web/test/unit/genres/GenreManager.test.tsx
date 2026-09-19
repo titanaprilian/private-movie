@@ -76,8 +76,8 @@ describe('GenreManager component', () => {
             id: `g-${Date.now()}`,
             name: body.name,
             slug: body.slug,
-            isBigGenre: false,
-            displayOrder: 0,
+            isBigGenre: body.isBigGenre ?? false,
+            displayOrder: body.displayOrder ?? 0,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -100,6 +100,8 @@ describe('GenreManager component', () => {
               ...genresState[index],
               name: body.name,
               slug: body.slug,
+              isBigGenre: body.isBigGenre ?? genresState[index].isBigGenre,
+              displayOrder: body.displayOrder ?? genresState[index].displayOrder,
               updatedAt: new Date().toISOString(),
             };
             return new Response(
@@ -280,5 +282,61 @@ describe('GenreManager component', () => {
         screen.getByText('Genre with this name or slug already exists')
       ).toBeInTheDocument();
     });
+  });
+
+  it('supports configuring Big Genre toggle and display order in Create and Edit dialogs', async () => {
+    const { user } = renderWithProviders(
+      <>
+        <GenreManager />
+        <Toaster />
+      </>
+    );
+
+    await screen.findByText('Action & Adventure');
+
+    // Create Big Genre
+    const createBtn = screen.getByRole('button', { name: /create genre/i });
+    await user.click(createBtn);
+
+    const nameInput = screen.getByLabelText(/genre name/i);
+    await user.type(nameInput, 'Korean Drama');
+
+    const bigGenreCheckbox = screen.getByLabelText(/set as big genre/i);
+    await user.click(bigGenreCheckbox);
+
+    const displayOrderInput = screen.getByLabelText(/display order/i);
+    await user.clear(displayOrderInput);
+    await user.type(displayOrderInput, '2');
+
+    const submitBtn = screen.getByRole('button', { name: /^create$/i });
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Korean Drama')).toBeInTheDocument();
+    });
+
+    // 1 header + 1 badge = 2 elements
+    expect(screen.getAllByText('Big Genre')).toHaveLength(2);
+    expect(screen.getByText('2')).toBeInTheDocument();
+
+    // Edit Genre to update Big Genre toggle and display order
+    const editBtns = screen.getAllByRole('button', { name: /edit genre/i });
+    await user.click(editBtns[0]); // Edit Action & Adventure
+
+    const editBigGenreCheckbox = screen.getByLabelText(/set as big genre/i);
+    await user.click(editBigGenreCheckbox);
+
+    const editDisplayOrderInput = screen.getByLabelText(/display order/i);
+    await user.clear(editDisplayOrderInput);
+    await user.type(editDisplayOrderInput, '1');
+
+    const saveBtn = screen.getByRole('button', { name: /save changes/i });
+    await user.click(saveBtn);
+
+    await waitFor(() => {
+      // 1 header + 2 badges = 3 elements
+      expect(screen.getAllByText('Big Genre')).toHaveLength(3);
+    });
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 });

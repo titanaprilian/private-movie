@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -33,12 +34,16 @@ export function GenreManager() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createSlug, setCreateSlug] = useState('');
+  const [createIsBigGenre, setCreateIsBigGenre] = useState(false);
+  const [createDisplayOrder, setCreateDisplayOrder] = useState(0);
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
   const [editingGenre, setEditingGenre] = useState<Genre | null>(null);
   const [editName, setEditName] = useState('');
   const [editSlug, setEditSlug] = useState('');
+  const [editIsBigGenre, setEditIsBigGenre] = useState(false);
+  const [editDisplayOrder, setEditDisplayOrder] = useState(0);
   const [editError, setEditError] = useState<string | null>(null);
 
   const [deletingGenre, setDeletingGenre] = useState<Genre | null>(null);
@@ -67,8 +72,19 @@ export function GenreManager() {
 
   // Update Mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, name, slug }: { id: string; name: string; slug: string }) =>
-      updateGenre(id, { name, slug }),
+    mutationFn: ({
+      id,
+      name,
+      slug,
+      isBigGenre,
+      displayOrder,
+    }: {
+      id: string;
+      name: string;
+      slug: string;
+      isBigGenre?: boolean;
+      displayOrder?: number;
+    }) => updateGenre(id, { name, slug, isBigGenre, displayOrder }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['genres'] });
       toast.success('Genre updated successfully');
@@ -97,6 +113,8 @@ export function GenreManager() {
   const resetCreateForm = () => {
     setCreateName('');
     setCreateSlug('');
+    setCreateIsBigGenre(false);
+    setCreateDisplayOrder(0);
     setIsSlugManuallyEdited(false);
     setCreateError(null);
   };
@@ -117,6 +135,8 @@ export function GenreManager() {
     setEditingGenre(genre);
     setEditName(genre.name);
     setEditSlug(genre.slug);
+    setEditIsBigGenre(genre.isBigGenre ?? false);
+    setEditDisplayOrder(genre.displayOrder ?? 0);
     setEditError(null);
   };
 
@@ -132,6 +152,8 @@ export function GenreManager() {
     createMutation.mutate({
       name: createName.trim(),
       slug: createSlug.trim(),
+      isBigGenre: createIsBigGenre,
+      displayOrder: createDisplayOrder,
     });
   };
 
@@ -143,6 +165,8 @@ export function GenreManager() {
       id: editingGenre.id,
       name: editName.trim(),
       slug: editSlug.trim(),
+      isBigGenre: editIsBigGenre,
+      displayOrder: editDisplayOrder,
     });
   };
 
@@ -208,25 +232,27 @@ export function GenreManager() {
               <tr className="border-b border-c bg-sidebar text-muted uppercase tracking-wide text-xs">
                 <th className="px-4 py-3 font-semibold">Name</th>
                 <th className="px-4 py-3 font-semibold">Slug</th>
+                <th className="px-4 py-3 font-semibold">Big Genre</th>
+                <th className="px-4 py-3 font-semibold">Display Order</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-xs text-muted mono">
+                  <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted mono">
                     Loading genres...
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-xs text-red-600 dark:text-red-400 mono">
+                  <td colSpan={5} className="px-4 py-8 text-center text-xs text-red-600 dark:text-red-400 mono">
                     {error instanceof Error ? error.message : 'Error loading genres'}
                   </td>
                 </tr>
               ) : filteredGenres.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-xs text-muted mono">
+                  <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted mono">
                     {searchTerm ? 'No genres found matching query' : 'No genres found'}
                   </td>
                 </tr>
@@ -241,6 +267,18 @@ export function GenreManager() {
                     </td>
                     <td className="px-4 py-3 text-xs mono text-muted">
                       {genre.slug}
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {genre.isBigGenre ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                          Big Genre
+                        </span>
+                      ) : (
+                        <span className="text-muted text-xs mono">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs mono text-fg">
+                      {genre.displayOrder ?? 0}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -330,6 +368,27 @@ export function GenreManager() {
                 required
               />
             </div>
+            <div className="flex items-center space-x-2 pt-1">
+              <Checkbox
+                id="create-genre-big"
+                checked={createIsBigGenre}
+                onCheckedChange={(checked) => setCreateIsBigGenre(Boolean(checked))}
+              />
+              <Label htmlFor="create-genre-big" className="cursor-pointer font-medium text-xs">
+                Set as Big Genre
+              </Label>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="create-genre-order">Display Order</Label>
+              <Input
+                id="create-genre-order"
+                type="number"
+                placeholder="0"
+                value={createDisplayOrder}
+                onChange={(e) => setCreateDisplayOrder(parseInt(e.target.value || '0', 10))}
+                className="mono text-xs"
+              />
+            </div>
             <DialogFooter className="pt-2">
               <Button
                 type="button"
@@ -357,7 +416,7 @@ export function GenreManager() {
           <DialogHeader>
             <DialogTitle>Edit Genre</DialogTitle>
             <DialogDescription>
-              Update the name or URL slug for this genre.
+              Update the name, URL slug, or Big Genre settings for this genre.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -383,6 +442,27 @@ export function GenreManager() {
                 onChange={(e) => setEditSlug(e.target.value)}
                 className="mono text-xs"
                 required
+              />
+            </div>
+            <div className="flex items-center space-x-2 pt-1">
+              <Checkbox
+                id="edit-genre-big"
+                checked={editIsBigGenre}
+                onCheckedChange={(checked) => setEditIsBigGenre(Boolean(checked))}
+              />
+              <Label htmlFor="edit-genre-big" className="cursor-pointer font-medium text-xs">
+                Set as Big Genre
+              </Label>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-genre-order">Display Order</Label>
+              <Input
+                id="edit-genre-order"
+                type="number"
+                placeholder="0"
+                value={editDisplayOrder}
+                onChange={(e) => setEditDisplayOrder(parseInt(e.target.value || '0', 10))}
+                className="mono text-xs"
               />
             </div>
             <DialogFooter className="pt-2">
@@ -443,3 +523,4 @@ export function GenreManager() {
     </div>
   );
 }
+
