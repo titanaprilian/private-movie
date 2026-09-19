@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { seriesListQueryOptions, type SeriesItem } from './api';
+import { api } from '@/lib/api';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
@@ -13,6 +13,17 @@ import {
 } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { MediaSeriesMetadata } from '@repo/contracts';
+
+export type SeriesItem = MediaSeriesMetadata | {
+  id: string;
+  title: string;
+  source?: string;
+  sourceUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+};
 
 export interface SeriesComboboxProps {
   value: string;
@@ -44,7 +55,16 @@ export function SeriesCombobox({
   }, [searchQuery]);
 
   const { data, isLoading } = useQuery({
-    ...seriesListQueryOptions({ q: debouncedQuery }),
+    queryKey: ['series', 'list', { q: debouncedQuery }],
+    queryFn: async () => {
+      const res = await api.series.get({
+        $query: debouncedQuery ? { q: debouncedQuery } : {},
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const raw = (res.data as any)?.data;
+      if (!raw) return { series: [], meta: { total: 0, page: 1, limit: 20 } };
+      return raw as { series: SeriesItem[]; meta: { total: number; page: number; limit: number } };
+    },
     enabled: Boolean(debouncedQuery),
   });
 

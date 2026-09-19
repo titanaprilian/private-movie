@@ -27,7 +27,7 @@ import {
   type WatchEpisode,
   type WatchSeriesDetails,
 } from './api';
-import { formatEmbedUrl } from '../../videos/internal/embedUrl';
+import { formatEmbedUrl } from '@/lib/media';
 import { useInputMode } from '@/hooks/useInputMode';
 import { useWatchNav } from './useWatchNav';
 import { useAdblockDetector } from './useAdblockDetector';

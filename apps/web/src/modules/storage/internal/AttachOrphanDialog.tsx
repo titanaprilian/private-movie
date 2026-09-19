@@ -17,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SeriesCombobox, seriesDetailQueryOptions } from '@/modules/videos';
+import { SeriesCombobox } from '@/components/media/SeriesCombobox';
+import { api } from '@/lib/api';
 import type { AttachOrphanInput } from './api';
 
 export interface AttachOrphanDialogProps {
@@ -42,9 +43,15 @@ export function AttachOrphanDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch episodes for selected series via seriesDetailQueryOptions
+  // Fetch episodes for selected series via api.series[id]
   const { data: seriesDetail, isLoading: isLoadingEpisodes } = useQuery({
-    ...seriesDetailQueryOptions(selectedSeriesId),
+    queryKey: ['series', 'detail', selectedSeriesId],
+    queryFn: async () => {
+      const res = await api.series[selectedSeriesId].get();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const raw = (res.data as any)?.data;
+      return raw as { episodes: Array<{ id: string; title: string; order: number }> } | undefined;
+    },
     enabled: Boolean(selectedSeriesId),
   });
 

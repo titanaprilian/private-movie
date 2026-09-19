@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from '@tanstack/react-router';
 
-export interface CustomVideoPlayerProps {
+export interface VideoPlayerProps {
   src: string;
   title?: string;
   onEnded?: () => void;
   autoPlay?: boolean;
-  seriesId?: string;
-  currentOrder?: number;
   onNextEpisode?: () => void;
+  hasNextEpisode?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -18,25 +16,14 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function CustomVideoPlayer({
+export function VideoPlayer({
   src,
   title,
   onEnded,
   autoPlay = false,
-  seriesId,
-  currentOrder,
   onNextEpisode,
-}: CustomVideoPlayerProps) {
-  let navigate: ReturnType<typeof useNavigate> | undefined;
-  try {
-    if (typeof useNavigate === 'function') {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      navigate = useNavigate();
-    }
-  } catch {
-    // optional navigation in non-router contexts
-  }
-
+  hasNextEpisode = false,
+}: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -55,21 +42,13 @@ export function CustomVideoPlayer({
     if (onNextEpisode) {
       onNextEpisode();
     }
-    const targetOrder = (currentOrder ?? 1) + 1;
-    if (seriesId && navigate) {
-      navigate({
-        to: '/admin/videos/$seriesId',
-        params: { seriesId },
-        search: { order: targetOrder },
-      });
-    }
-  }, [seriesId, currentOrder, onNextEpisode, navigate]);
+  }, [onNextEpisode]);
 
   const handleVideoEnded = () => {
     if (onEnded) {
       onEnded();
     }
-    if (seriesId || currentOrder !== undefined || onNextEpisode) {
+    if (onNextEpisode || hasNextEpisode) {
       setCountdown(5);
     }
   };

@@ -1,7 +1,6 @@
-import { createTestQueryClient, renderWithProviders, screen, fireEvent, within, act } from '../../utils';
+import { createTestQueryClient, renderWithProviders, screen, fireEvent, within, act } from '../../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { SeriesCombobox } from '@/modules/videos/internal/SeriesCombobox';
-import { seriesListQueryOptions } from '@/modules/videos/internal/api';
+import { SeriesCombobox } from '@/components/media/SeriesCombobox';
 
 const mockSeriesList = [
   {
@@ -100,11 +99,11 @@ describe('SeriesCombobox component', () => {
       },
     ];
 
-    queryClient.setQueryData(seriesListQueryOptions({ q: undefined }).queryKey, {
+    queryClient.setQueryData(['series', 'list', { q: undefined }], {
       series: mockSeriesList,
       meta: { total: 2, page: 1, limit: 20 },
     });
-    queryClient.setQueryData(seriesListQueryOptions({ q: 'Bye' }).queryKey, {
+    queryClient.setQueryData(['series', 'list', { q: 'Bye' }], {
       series: searchResults,
       meta: { total: 1, page: 1, limit: 20 },
     });

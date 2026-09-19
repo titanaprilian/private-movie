@@ -4,8 +4,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { CustomVideoPlayer } from './CustomVideoPlayer';
-import { formatEmbedUrl } from './embedUrl';
+import { VideoPlayer } from '@/components/media/VideoPlayer';
+import { formatEmbedUrl } from '@/lib/media';
 import type { VideoSource } from './api';
 
 export interface VideoPreviewModalProps {
@@ -63,9 +63,9 @@ export function VideoPreviewModal({
               allowFullScreen
             />
           ) : (
-            <CustomVideoPlayer
+            <VideoPlayer
               src={source.url}
-              title={source.label || episodeTitle || 'Source Preview'}
+              title={`${source.label || 'Direct Video'} (${source.quality || 'Auto'})`}
               autoPlay={false}
             />
           )}

@@ -1,13 +1,8 @@
-import { renderWithProviders, screen, userEvent, fireEvent, act } from '../../utils';
+import { renderWithProviders, screen, userEvent, fireEvent, act } from '../../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CustomVideoPlayer } from '@/modules/videos/internal/CustomVideoPlayer';
+import { VideoPlayer } from '@/components/media/VideoPlayer';
 
-const mockNavigate = vi.fn();
-vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => mockNavigate,
-}));
-
-describe('CustomVideoPlayer component', () => {
+describe('VideoPlayer component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Mock HTMLMediaElement prototype methods for JSDOM
@@ -17,7 +12,7 @@ describe('CustomVideoPlayer component', () => {
   });
 
   it('renders native video element with correct src prop', () => {
-    renderWithProviders(<CustomVideoPlayer src="https://example.com/video.mp4" title="Test Video" />);
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" title="Test Video" />);
 
     const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
     expect(video).toBeInTheDocument();
@@ -26,7 +21,7 @@ describe('CustomVideoPlayer component', () => {
 
   it('toggles play/pause state when play button is clicked', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CustomVideoPlayer src="https://example.com/video.mp4" />);
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const playButton = screen.getByRole('button', { name: /play/i });
     expect(playButton).toBeInTheDocument();
@@ -47,7 +42,7 @@ describe('CustomVideoPlayer component', () => {
   });
 
   it('updates volume when volume control is changed', async () => {
-    renderWithProviders(<CustomVideoPlayer src="https://example.com/video.mp4" />);
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const volumeSlider = screen.getByLabelText(/volume/i) as HTMLInputElement;
     expect(volumeSlider).toBeInTheDocument();
@@ -61,7 +56,7 @@ describe('CustomVideoPlayer component', () => {
   });
 
   it('renders progress bar and formatted time display', () => {
-    renderWithProviders(<CustomVideoPlayer src="https://example.com/video.mp4" />);
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const progressBar = screen.getByLabelText(/progress/i);
     expect(progressBar).toBeInTheDocument();
@@ -69,13 +64,13 @@ describe('CustomVideoPlayer component', () => {
     expect(screen.getByText('00:00 / 00:00')).toBeInTheDocument();
   });
 
-  it('triggers countdown overlay when video ends and navigates to order + 1 when finished', () => {
+  it('triggers countdown overlay when video ends and invokes onNextEpisode when countdown finishes', () => {
     vi.useFakeTimers();
+    const handleNextEpisode = vi.fn();
     renderWithProviders(
-      <CustomVideoPlayer
+      <VideoPlayer
         src="https://example.com/video.mp4"
-        seriesId="series-123"
-        currentOrder={1}
+        onNextEpisode={handleNextEpisode}
       />
     );
 
@@ -91,21 +86,17 @@ describe('CustomVideoPlayer component', () => {
       });
     }
 
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/admin/videos/$seriesId',
-      params: { seriesId: 'series-123' },
-      search: { order: 2 },
-    });
+    expect(handleNextEpisode).toHaveBeenCalledTimes(1);
 
     vi.useRealTimers();
   });
 
-  it('navigates immediately when Play Now button is clicked in countdown overlay', () => {
+  it('invokes onNextEpisode immediately when Play Now button is clicked in countdown overlay', () => {
+    const handleNextEpisode = vi.fn();
     renderWithProviders(
-      <CustomVideoPlayer
+      <VideoPlayer
         src="https://example.com/video.mp4"
-        seriesId="series-123"
-        currentOrder={2}
+        onNextEpisode={handleNextEpisode}
       />
     );
 
@@ -115,19 +106,15 @@ describe('CustomVideoPlayer component', () => {
     const playNowBtn = screen.getByRole('button', { name: /Play Now/i });
     fireEvent.click(playNowBtn);
 
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/admin/videos/$seriesId',
-      params: { seriesId: 'series-123' },
-      search: { order: 3 },
-    });
+    expect(handleNextEpisode).toHaveBeenCalledTimes(1);
   });
 
   it('cancels countdown when Cancel button is clicked in countdown overlay', () => {
+    const handleNextEpisode = vi.fn();
     renderWithProviders(
-      <CustomVideoPlayer
+      <VideoPlayer
         src="https://example.com/video.mp4"
-        seriesId="series-123"
-        currentOrder={1}
+        onNextEpisode={handleNextEpisode}
       />
     );
 
@@ -140,6 +127,6 @@ describe('CustomVideoPlayer component', () => {
     fireEvent.click(cancelBtn);
 
     expect(screen.queryByTestId('auto-next-countdown-overlay')).not.toBeInTheDocument();
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(handleNextEpisode).not.toHaveBeenCalled();
   });
 });

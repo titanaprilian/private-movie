@@ -15,7 +15,7 @@ describe('VideoPreviewModal Component', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('renders CustomVideoPlayer for direct video sources', () => {
+  it('renders VideoPlayer for direct video sources', () => {
     const directSource: VideoSource = {
       id: 'src-direct',
       type: 'direct',
@@ -37,13 +37,13 @@ describe('VideoPreviewModal Component', () => {
     expect(screen.getByText(/Server Direct 1080p — Episode 1/)).toBeInTheDocument();
     expect(screen.getByText('https://stream.example.com/video.mp4')).toBeInTheDocument();
 
-    // Check video element rendered by CustomVideoPlayer
+    // Check video element rendered by VideoPlayer
     const video = screen.getByTestId('custom-video-element');
     expect(video).toBeInTheDocument();
     expect(video).toHaveAttribute('src', 'https://stream.example.com/video.mp4');
   });
 
-  it('renders CustomVideoPlayer for s3 video sources', () => {
+  it('renders VideoPlayer for s3 video sources', () => {
     const s3Source: VideoSource = {
       id: 'src-s3',
       type: 's3',

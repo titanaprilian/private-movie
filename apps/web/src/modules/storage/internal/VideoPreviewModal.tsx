@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { CustomVideoPlayer } from '@/modules/videos';
+import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { getStoragePreviewUrl } from './api';
 
 export interface VideoPreviewModalProps {
@@ -78,7 +78,7 @@ export function VideoPreviewModal({
               {error}
             </div>
           ) : previewUrl ? (
-            <CustomVideoPlayer
+            <VideoPlayer
               src={previewUrl}
               title={filename || fileKey}
               autoPlay={false}
