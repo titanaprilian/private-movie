@@ -525,7 +525,7 @@ export function createSeriesRepositoryInternal<
       return row;
     },
 
-    async getHomeFeed(sourceTypes?: string[]): Promise<HomeFeedPayload> {
+    async getHomeFeed(sourceTypes?: string[], genreSlug?: string): Promise<HomeFeedPayload> {
       const normalizedTypes = (sourceTypes ?? [])
         .map((t) => t.trim())
         .filter((t) => t.length > 0);
@@ -559,12 +559,161 @@ export function createSeriesRepositoryInternal<
         WHERE ${seasons.seriesId} = ${series.id} AND ${seasons.status} = 'ongoing'
       )`;
 
-      const hasKoreanDramaGenre = sql`EXISTS (
-        SELECT 1
-        FROM ${seriesToGenres}
-        INNER JOIN ${genres} ON ${seriesToGenres.genreId} = ${genres.id}
-        WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${genres.name} = 'Korean Drama'
-      )`;
+      const cleanGenreSlug = genreSlug?.trim();
+
+      if (cleanGenreSlug) {
+        const hasTargetGenre = sql`EXISTS (
+          SELECT 1
+          FROM ${seriesToGenres}
+          INNER JOIN ${genres} ON ${seriesToGenres.genreId} = ${genres.id}
+          WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${genres.slug} = ${cleanGenreSlug}
+        )`;
+
+        let heroSeriesList = await db
+          .select()
+          .from(series)
+          .where(and(eq(series.isFeatured, true), hasTargetGenre, hasVideoSources))
+          .orderBy(desc(series.updatedAt), desc(series.createdAt))
+          .limit(10);
+
+        if (heroSeriesList.length === 0) {
+          heroSeriesList = await db
+            .select()
+            .from(series)
+            .where(and(hasTargetGenre, hasVideoSources))
+            .orderBy(desc(series.updatedAt), desc(series.createdAt))
+            .limit(10);
+        }
+
+        const [ongoingRows, recentlyAddedRows, topRatedRows] = await Promise.all([
+          db
+            .select()
+            .from(series)
+            .where(and(hasOngoingSeason, hasTargetGenre, hasVideoSources))
+            .orderBy(desc(series.updatedAt))
+            .limit(10),
+          db
+            .select()
+            .from(series)
+            .where(and(hasTargetGenre, hasVideoSources))
+            .orderBy(desc(series.createdAt))
+            .limit(10),
+          db
+            .select()
+            .from(series)
+            .where(and(hasTargetGenre, hasVideoSources))
+            .orderBy(sql`COALESCE(${series.rating}, '0') DESC`, desc(series.createdAt))
+            .limit(10),
+        ]);
+
+        const allSeriesMap = new Map<string, SeriesRow>();
+        for (const s of [...heroSeriesList, ...ongoingRows, ...recentlyAddedRows, ...topRatedRows]) {
+          allSeriesMap.set(s.id, s);
+        }
+
+        const allSeriesList = Array.from(allSeriesMap.values());
+        const allSeriesIds = allSeriesList.map((s) => s.id);
+
+        const genresMap = new Map<string, Array<{ id: string; name: string; slug: string }>>();
+        const seasonsCountMap = new Map<string, number>();
+        const episodesCountMap = new Map<string, number>();
+
+        if (allSeriesIds.length > 0) {
+          const genreMappings = await db
+            .select({
+              seriesId: seriesToGenres.seriesId,
+              id: genres.id,
+              name: genres.name,
+              slug: genres.slug,
+            })
+            .from(seriesToGenres)
+            .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+            .where(inArray(seriesToGenres.seriesId, allSeriesIds));
+
+          for (const g of genreMappings) {
+            const list = genresMap.get(g.seriesId) ?? [];
+            list.push({ id: g.id, name: g.name, slug: g.slug });
+            genresMap.set(g.seriesId, list);
+          }
+
+          const seasonCounts = await db
+            .select({
+              seriesId: seasons.seriesId,
+              value: count(seasons.id),
+            })
+            .from(seasons)
+            .where(inArray(seasons.seriesId, allSeriesIds))
+            .groupBy(seasons.seriesId);
+
+          for (const sc of seasonCounts) {
+            seasonsCountMap.set(sc.seriesId, Number(sc.value));
+          }
+
+          const episodeCounts = await db
+            .select({
+              seriesId: seasons.seriesId,
+              value: count(episodes.id),
+            })
+            .from(episodes)
+            .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+            .where(inArray(seasons.seriesId, allSeriesIds))
+            .groupBy(seasons.seriesId);
+
+          for (const ec of episodeCounts) {
+            episodesCountMap.set(ec.seriesId, Number(ec.value));
+          }
+        }
+
+        const enrichedMap = new Map<string, SeriesWithMetadata>();
+        for (const s of allSeriesList) {
+          enrichedMap.set(s.id, {
+            ...s,
+            genres: genresMap.get(s.id) ?? [],
+            seasonsCount: seasonsCountMap.get(s.id) ?? 0,
+            episodesCount: episodesCountMap.get(s.id) ?? 0,
+          });
+        }
+
+        const heroes: HomeFeedHero[] = heroSeriesList.map((s) => {
+          const enrichedHero = enrichedMap.get(s.id)!;
+          const genreNames = enrichedHero.genres.map((g) => g.name);
+          const typeTag = enrichedHero.type === "movie" ? "Movie" : "TV Series";
+          const tags = [typeTag, ...genreNames];
+          return {
+            ...enrichedHero,
+            tags,
+          };
+        });
+
+        const hero: HomeFeedHero | null = heroes[0] ?? null;
+
+        const rows: HomeFeedRow[] = [
+          {
+            title: "Ongoing",
+            items: ongoingRows.map((s) => enrichedMap.get(s.id)!),
+          },
+          {
+            title: "Recently Added",
+            items: recentlyAddedRows.map((s) => enrichedMap.get(s.id)!),
+          },
+          {
+            title: "Top Rated",
+            items: topRatedRows.map((s) => enrichedMap.get(s.id)!),
+          },
+        ];
+
+        return {
+          hero,
+          heroes,
+          rows,
+        };
+      }
+
+      const activeBigGenres = await db
+        .select()
+        .from(genres)
+        .where(eq(genres.isBigGenre, true))
+        .orderBy(asc(genres.displayOrder), asc(genres.name));
 
       let heroSeriesList = await db
         .select()
@@ -582,29 +731,42 @@ export function createSeriesRepositoryInternal<
           .limit(10);
       }
 
-      const [ongoingRows, recentlyAddedRows, koreanDramaRows] = await Promise.all([
-        db
+      const ongoingRowsPromise = db
+        .select()
+        .from(series)
+        .where(and(hasOngoingSeason, hasVideoSources))
+        .orderBy(desc(series.updatedAt))
+        .limit(10);
+
+      const bigGenreRowsPromises = activeBigGenres.map((bigGenre) => {
+        const hasGenre = sql`EXISTS (
+          SELECT 1
+          FROM ${seriesToGenres}
+          WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${seriesToGenres.genreId} = ${bigGenre.id}
+        )`;
+        return db
           .select()
           .from(series)
-          .where(and(hasOngoingSeason, hasVideoSources))
-          .orderBy(desc(series.updatedAt))
-          .limit(10),
-        db
-          .select()
-          .from(series)
-          .where(hasVideoSources)
+          .where(and(hasGenre, hasVideoSources))
           .orderBy(desc(series.createdAt))
-          .limit(10),
-        db
-          .select()
-          .from(series)
-          .where(and(hasKoreanDramaGenre, hasVideoSources))
-          .orderBy(desc(series.createdAt))
-          .limit(10),
+          .limit(10);
+      });
+
+      const recentlyAddedRowsPromise = db
+        .select()
+        .from(series)
+        .where(hasVideoSources)
+        .orderBy(desc(series.createdAt))
+        .limit(10);
+
+      const [ongoingRows, bigGenreRowsList, recentlyAddedRows] = await Promise.all([
+        ongoingRowsPromise,
+        Promise.all(bigGenreRowsPromises),
+        recentlyAddedRowsPromise,
       ]);
 
       const allSeriesMap = new Map<string, SeriesRow>();
-      for (const s of [...heroSeriesList, ...ongoingRows, ...recentlyAddedRows, ...koreanDramaRows]) {
+      for (const s of [...heroSeriesList, ...ongoingRows, ...recentlyAddedRows, ...bigGenreRowsList.flat()]) {
         allSeriesMap.set(s.id, s);
       }
 
@@ -689,10 +851,10 @@ export function createSeriesRepositoryInternal<
           title: "Ongoing",
           items: ongoingRows.map((s) => enrichedMap.get(s.id)!),
         },
-        {
-          title: "Korean Drama",
-          items: koreanDramaRows.map((s) => enrichedMap.get(s.id)!),
-        },
+        ...activeBigGenres.map((bigGenre, index) => ({
+          title: bigGenre.name,
+          items: (bigGenreRowsList[index] ?? []).map((s) => enrichedMap.get(s.id)!),
+        })),
         {
           title: "Recently Added",
           items: recentlyAddedRows.map((s) => enrichedMap.get(s.id)!),

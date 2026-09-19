@@ -7,11 +7,15 @@ import { GenreAlreadyExistsError, GenreNotFoundError } from "./errors";
 export interface CreateGenreInput {
   name: string;
   slug: string;
+  isBigGenre?: boolean;
+  displayOrder?: number;
 }
 
 export interface UpdateGenreInput {
   name: string;
   slug: string;
+  isBigGenre?: boolean;
+  displayOrder?: number;
 }
 
 export function createGenreRepositoryInternal<
@@ -47,6 +51,8 @@ export function createGenreRepositoryInternal<
           id,
           name: input.name,
           slug: input.slug,
+          isBigGenre: input.isBigGenre ?? false,
+          displayOrder: input.displayOrder ?? 0,
           createdAt: now,
           updatedAt: now,
         })
@@ -80,13 +86,21 @@ export function createGenreRepositoryInternal<
       }
 
       const now = new Date();
+      const setValues: Record<string, unknown> = {
+        name: input.name,
+        slug: input.slug,
+        updatedAt: now,
+      };
+      if (input.isBigGenre !== undefined) {
+        setValues.isBigGenre = input.isBigGenre;
+      }
+      if (input.displayOrder !== undefined) {
+        setValues.displayOrder = input.displayOrder;
+      }
+
       const [updated] = await db
         .update(genres)
-        .set({
-          name: input.name,
-          slug: input.slug,
-          updatedAt: now,
-        })
+        .set(setValues)
         .where(eq(genres.id, id))
         .returning();
 

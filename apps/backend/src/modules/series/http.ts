@@ -109,8 +109,15 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       "/series/home-feed",
       async ({ query }) => {
         const sourceTypes = parseSourceTypesParam(query?.sourceTypes);
-        const feed = await seriesRepository.getHomeFeed(sourceTypes);
+        const genre = query?.genre;
+        const feed = await seriesRepository.getHomeFeed(sourceTypes, genre);
         return successResponse(feed);
+      },
+      {
+        query: t.Object({
+          genre: t.Optional(t.String()),
+          sourceTypes: t.Optional(t.Union([t.String(), t.Array(t.String())])),
+        }),
       }
     )
     .post(

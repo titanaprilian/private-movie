@@ -33,6 +33,8 @@ export const genreRoutes = (options: GenreRoutesOptions) => {
         body: t.Object({
           name: t.String({ minLength: 1 }),
           slug: t.String({ minLength: 1 }),
+          isBigGenre: t.Optional(t.Boolean()),
+          displayOrder: t.Optional(t.Number()),
         }),
       }
     )
@@ -50,6 +52,8 @@ export const genreRoutes = (options: GenreRoutesOptions) => {
         body: t.Object({
           name: t.String({ minLength: 1 }),
           slug: t.String({ minLength: 1 }),
+          isBigGenre: t.Optional(t.Boolean()),
+          displayOrder: t.Optional(t.Number()),
         }),
       }
     )

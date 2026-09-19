@@ -121,6 +121,8 @@ describe("PUT /genres/:id", () => {
       const updatedPayload = {
         name: "Romantic Comedy",
         slug: "romantic-comedy",
+        isBigGenre: true,
+        displayOrder: 10,
       };
 
       const response = await request(app, {
@@ -132,12 +134,14 @@ describe("PUT /genres/:id", () => {
 
       expect(response.status).toBe(200);
       const body = response.body as {
-        data: { id: string; name: string; slug: string };
+        data: { id: string; name: string; slug: string; isBigGenre: boolean; displayOrder: number };
       };
 
       expect(body.data.id).toBe(genre.id);
       expect(body.data.name).toBe(updatedPayload.name);
       expect(body.data.slug).toBe(updatedPayload.slug);
+      expect(body.data.isBigGenre).toBe(true);
+      expect(body.data.displayOrder).toBe(10);
 
       const rows = await db
         .select()
@@ -146,6 +150,8 @@ describe("PUT /genres/:id", () => {
       expect(rows).toHaveLength(1);
       expect(rows[0].name).toBe(updatedPayload.name);
       expect(rows[0].slug).toBe(updatedPayload.slug);
+      expect(rows[0].isBigGenre).toBe(true);
+      expect(rows[0].displayOrder).toBe(10);
     });
   });
 });

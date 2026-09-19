@@ -76,6 +76,8 @@ describe("POST /genres", () => {
       const payload = {
         name: "Sci-Fi & Fantasy",
         slug: "sci-fi-and-fantasy",
+        isBigGenre: true,
+        displayOrder: 5,
       };
 
       const response = await request(app, {
@@ -87,12 +89,14 @@ describe("POST /genres", () => {
 
       expect([200, 201]).toContain(response.status);
       const body = response.body as {
-        data: { id: string; name: string; slug: string };
+        data: { id: string; name: string; slug: string; isBigGenre: boolean; displayOrder: number };
       };
 
       expect(body.data).toBeDefined();
       expect(body.data.name).toBe(payload.name);
       expect(body.data.slug).toBe(payload.slug);
+      expect(body.data.isBigGenre).toBe(true);
+      expect(body.data.displayOrder).toBe(5);
       expect(body.data.id).toBeDefined();
 
       const rows = await db
@@ -102,6 +106,8 @@ describe("POST /genres", () => {
       expect(rows).toHaveLength(1);
       expect(rows[0].name).toBe(payload.name);
       expect(rows[0].slug).toBe(payload.slug);
+      expect(rows[0].isBigGenre).toBe(true);
+      expect(rows[0].displayOrder).toBe(5);
     });
   });
 
