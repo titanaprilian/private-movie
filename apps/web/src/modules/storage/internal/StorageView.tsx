@@ -262,7 +262,7 @@ export function StorageView() {
       <StorageResourceTable
         resources={resources}
         isLoading={isLoadingResources}
-        orphanedCount={metrics?.orphanedFiles ?? 0}
+        orphanedCount={metrics?.orphanCount ?? 0}
         onRefreshScan={() => refreshScanMutation.mutate()}
         isRefreshing={refreshScanMutation.isPending}
         onPreview={(res) => setPreviewResource(res)}
@@ -305,7 +305,7 @@ export function StorageView() {
         open={isLimitDialogOpen}
         onOpenChange={setIsLimitDialogOpen}
         currentLimitGb={
-          metrics ? Math.round(metrics.limitSizeBytes / (1024 * 1024 * 1024)) : (activeProvider?.storageLimitGb ?? 50)
+          metrics ? Math.round(metrics.limitBytes / (1024 * 1024 * 1024)) : (activeProvider?.storageLimitGb ?? 50)
         }
         onSave={handleSaveLimit}
       />
@@ -341,7 +341,7 @@ export function StorageView() {
         targetType={deleteTargetType}
         targetResource={deleteSingleResource}
         selectedResources={deleteBatchResources}
-        allOrphansCount={metrics?.orphanedFiles ?? 0}
+        allOrphansCount={metrics?.orphanCount ?? 0}
         allOrphansSizeBytes={
           resources
             .filter((r) => r.status === 'orphaned')

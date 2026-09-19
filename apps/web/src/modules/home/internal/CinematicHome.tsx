@@ -14,8 +14,8 @@ import { useInputMode } from '@/hooks/useInputMode';
 import { useHomeFeedNav } from './useHomeFeedNav';
 import {
   homeFeedQueryOptions,
-  type BackendSeriesWithMetadata,
-  type HomeFeedHero,
+  type MediaSeriesMetadata,
+  type MediaHomeFeedHero,
 } from './api';
 
 export interface SeriesItem {
@@ -40,7 +40,7 @@ export interface CarouselRowData {
   items: SeriesItem[];
 }
 
-function mapSeriesToSeriesItem(s: BackendSeriesWithMetadata): SeriesItem {
+function mapSeriesToSeriesItem(s: MediaSeriesMetadata): SeriesItem {
   const genres = s.genres && s.genres.length > 0 ? s.genres.map((g) => g.name) : [];
   const year = s.createdAt ? new Date(s.createdAt).getFullYear() : 2026;
   const rawRating = s.rating || (s.type === 'movie' ? '7.5' : '8.0');
@@ -72,7 +72,7 @@ function mapSeriesToSeriesItem(s: BackendSeriesWithMetadata): SeriesItem {
   };
 }
 
-function mapHeroToSeriesItem(hero: HomeFeedHero): SeriesItem {
+function mapHeroToSeriesItem(hero: MediaHomeFeedHero): SeriesItem {
   const base = mapSeriesToSeriesItem(hero);
   if (hero.tags && hero.tags.length > 0) {
     return {

@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { api, getAccessToken } from '@/lib/api';
+import { api, getAccessToken, getApiBaseUrl } from '@/lib/api';
 import { parseIngestUrl, type ParsedIngestUrl } from './parseIngestUrl';
 
 export { parseIngestUrl };
@@ -337,7 +337,7 @@ export async function previewScrape(
     throw new Error(message);
   }
 
-  return res.data.data as unknown as PreviewScrapeResult;
+  return res.data.data as PreviewScrapeResult;
 }
 
 export interface PreviewScrapeSeriesResult {
@@ -371,7 +371,7 @@ export async function previewScrapeSeries(
     );
   }
 
-  return res.data.data as unknown as PreviewScrapeSeriesResult;
+  return res.data.data as PreviewScrapeSeriesResult;
 }
 
 export interface SaveMediaParams {
@@ -432,7 +432,7 @@ export async function saveMedia(
     );
   }
 
-  return res.data.data as unknown as SaveMediaResult;
+  return res.data.data as SaveMediaResult;
 }
 
 export interface UpdateEpisodeData {
@@ -482,7 +482,7 @@ export async function deleteEpisode(id: string): Promise<Episode> {
     );
   }
 
-  return res.data.data as unknown as Episode;
+  return res.data.data as Episode;
 }
 
 export interface ScrapeEpisodeSourcesParams {
@@ -515,7 +515,7 @@ export async function scrapeEpisodeSources(
     );
   }
 
-  return res.data.data as unknown as Episode;
+  return res.data.data as Episode;
 }
 
 export interface AddVideoSourceInput {
@@ -543,7 +543,7 @@ export async function addVideoSource(
     );
   }
 
-  return res.data.data as unknown as Episode;
+  return res.data.data as Episode;
 }
 
 export const addVideoSources = addVideoSource;
@@ -573,7 +573,7 @@ export async function updateVideoSource(
     );
   }
 
-  return res.data.data as unknown as Episode;
+  return res.data.data as Episode;
 }
 
 export async function deleteVideoSource(
@@ -590,7 +590,7 @@ export async function deleteVideoSource(
     );
   }
 
-  return res.data.data as unknown as Episode;
+  return res.data.data as Episode;
 }
 
 export interface ReorderEpisodeItem {
@@ -779,7 +779,7 @@ export async function previewBulkSources(
     );
   }
 
-  return res.data.data as unknown as PreviewBulkSourcesResult;
+  return res.data.data as PreviewBulkSourcesResult;
 }
 
 export interface SaveBulkSourcesMappingItem {
@@ -818,7 +818,7 @@ export async function saveBulkSources(
     );
   }
 
-  return res.data.data as unknown as SaveBulkSourcesResult;
+  return res.data.data as SaveBulkSourcesResult;
 }
 
 export interface ImportTmdbParams {
@@ -904,7 +904,7 @@ export async function fetchSeriesTmdbPreview(
     );
   }
 
-  return res.data.data as unknown as TmdbPreviewResult;
+  return res.data.data as TmdbPreviewResult;
 }
 
 export interface FetchSeriesTmdbSyncPreviewParams {
@@ -977,7 +977,7 @@ export async function fetchSeriesTmdbSyncPreview(
     );
   }
 
-  return res.data.data as unknown as TmdbSyncPreviewResult;
+  return res.data.data as TmdbSyncPreviewResult;
 }
 
 export interface PresignUploadSourceParams {
@@ -1022,26 +1022,6 @@ export interface UploadEpisodeVideoSourceOptions {
     total: number;
   }) => void;
   signal?: AbortSignal;
-}
-
-function getApiBaseUrl(): string {
-  const envApiUrl = import.meta.env.VITE_API_URL as string | undefined;
-  let base: string;
-  if (typeof window !== 'undefined') {
-    if (
-      envApiUrl === 'http://localhost:3000' &&
-      window.location.hostname !== 'localhost'
-    ) {
-      base = window.location.origin;
-    } else if (envApiUrl) {
-      base = envApiUrl;
-    } else {
-      base = window.location.origin;
-    }
-  } else {
-    base = envApiUrl || 'http://localhost:3000';
-  }
-  return base.replace(/\/api\/?$/, '');
 }
 
 export function getMaxUploadSizeMb(): number {

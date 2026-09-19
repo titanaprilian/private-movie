@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type {
-  StorageMetrics as BackendStorageMetrics,
+  StorageMetrics,
   StorageResourceItem,
   StorageResourcesResponseData,
   StorageLimitUpdateResponseData,
@@ -17,6 +17,7 @@ import type {
 } from '@repo/contracts';
 
 export type {
+  StorageMetrics,
   StorageProviderItem,
   StorageProviderType,
   CreateStorageProviderRequest,
@@ -24,21 +25,6 @@ export type {
   TestStorageProviderRequest,
   TestStorageProviderResponseData,
 };
-
-export interface StorageMetrics {
-  totalSizeBytes: number;
-  limitSizeBytes: number;
-  percentUsed: number;
-  totalFiles: number;
-  linkedFiles: number;
-  orphanedFiles: number;
-  // Aliases for contract compatibility
-  totalBytes?: number;
-  limitBytes?: number;
-  totalCount?: number;
-  linkedCount?: number;
-  orphanCount?: number;
-}
 
 export interface VideoSourceMetadata {
   id: string;
@@ -217,24 +203,12 @@ export async function fetchStorageMetrics(providerId?: string): Promise<StorageM
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as BackendStorageMetrics | undefined;
+  const data = (res.data as any)?.data as StorageMetrics | undefined;
   if (res.error || !data) {
     throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage metrics'));
   }
 
-  return {
-    totalSizeBytes: data.totalBytes,
-    limitSizeBytes: data.limitBytes,
-    percentUsed: data.percentUsed,
-    totalFiles: data.totalCount,
-    linkedFiles: data.linkedCount,
-    orphanedFiles: data.orphanCount,
-    totalBytes: data.totalBytes,
-    limitBytes: data.limitBytes,
-    totalCount: data.totalCount,
-    linkedCount: data.linkedCount,
-    orphanCount: data.orphanCount,
-  };
+  return data;
 }
 
 export function storageMetricsQueryOptions(providerId?: string) {

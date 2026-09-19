@@ -1,63 +1,41 @@
 import { queryOptions } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type {
+  MediaGenre,
+  MediaHomeFeed,
+  MediaHomeFeedHero,
+  MediaHomeFeedRow,
+  MediaSeriesMetadata,
+} from '@repo/contracts';
 
-export interface BackendGenre {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-export interface BackendSeriesWithMetadata {
-  id: string;
-  title: string;
-  description: string | null;
-  type: 'tv' | 'movie';
-  posterUrl: string | null;
-  backdropUrl: string | null;
-  rating: string | null;
-  tmdbId: number | null;
-  tmdbSyncStatus: string;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-  genres: BackendGenre[];
-  seasonsCount: number;
-  episodesCount: number;
-}
-
-export interface HomeFeedHero extends BackendSeriesWithMetadata {
-  tags: string[];
-}
-
-export interface HomeFeedRow {
-  title: string;
-  items: BackendSeriesWithMetadata[];
-}
-
-export interface HomeFeedPayload {
-  hero: HomeFeedHero | null;
-  heroes?: HomeFeedHero[];
-  rows: HomeFeedRow[];
-}
+export type {
+  MediaGenre,
+  MediaHomeFeed,
+  MediaHomeFeedHero,
+  MediaHomeFeedRow,
+  MediaSeriesMetadata,
+};
 
 function extractErrorMessage(error: unknown, fallback: string): string {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const value = (error as any)?.value;
-  if (value) {
-    if (typeof value.error?.message === 'string') return value.error.message;
-    if (typeof value.message === 'string') return value.message;
+  if (error && typeof error === 'object' && 'value' in error) {
+    const value = (error as { value?: unknown }).value;
+    if (value && typeof value === 'object') {
+      const errObj = value as { error?: { message?: string }; message?: string };
+      if (typeof errObj.error?.message === 'string') return errObj.error.message;
+      if (typeof errObj.message === 'string') return errObj.message;
+    }
   }
   return fallback;
 }
 
-export async function fetchHomeFeed(): Promise<HomeFeedPayload> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.series as any)['home-feed'].get();
+export async function fetchHomeFeed(): Promise<MediaHomeFeed> {
+  const res = await api.series['home-feed'].get();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
     throw new Error(extractErrorMessage(res.error, 'Failed to fetch home feed'));
   }
 
-  return res.data.data as HomeFeedPayload;
+  return res.data.data as unknown as MediaHomeFeed;
 }
 
 export function homeFeedQueryOptions() {

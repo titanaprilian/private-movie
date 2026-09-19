@@ -21,12 +21,12 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const mockMetrics: StorageMetrics = {
-  totalSizeBytes: 10737418240, // 10 GB
-  limitSizeBytes: 53687091200, // 50 GB
+  totalBytes: 10737418240, // 10 GB
+  limitBytes: 53687091200, // 50 GB
   percentUsed: 20.0,
-  totalFiles: 4,
-  linkedFiles: 2,
-  orphanedFiles: 2,
+  totalCount: 4,
+  linkedCount: 2,
+  orphanCount: 2,
 };
 
 const mockResources: StorageResource[] = [

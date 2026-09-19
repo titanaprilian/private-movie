@@ -67,12 +67,12 @@ describe('Storage API Client Utilities', () => {
       );
 
       const res = await fetchStorageMetrics();
-      expect(res.totalSizeBytes).toBe(10000);
-      expect(res.limitSizeBytes).toBe(50000000000);
+      expect(res.totalBytes).toBe(10000);
+      expect(res.limitBytes).toBe(50000000000);
       expect(res.percentUsed).toBe(0.02);
-      expect(res.totalFiles).toBe(10);
-      expect(res.linkedFiles).toBe(8);
-      expect(res.orphanedFiles).toBe(2);
+      expect(res.totalCount).toBe(10);
+      expect(res.linkedCount).toBe(8);
+      expect(res.orphanCount).toBe(2);
       expect(fetchSpy).toHaveBeenCalledWith(
         expect.stringContaining('/api/storage/metrics'),
         expect.any(Object)

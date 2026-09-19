@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { getSeriesWithEpisodesQueryOptions } from '@/modules/watch/internal/api';
+import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from '@/modules/watch/internal/api';
 import { useWatchState } from '@/modules/watch/internal/useWatchState';
 import { api } from '@/lib/api';
 
@@ -12,25 +12,44 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
-const mockSeriesData = {
+const mockSeriesData: WatchSeriesDetails = {
   id: 'series-1',
   title: 'Test Series',
   description: 'A test series description',
+  type: 'tv',
   posterUrl: 'https://example.com/poster.jpg',
+  backdropUrl: null,
+  logoUrl: null,
+  rating: '8.5',
+  isFeatured: false,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+  genres: [],
   seasons: [
     {
       id: 'season-1',
       seriesId: 'series-1',
       title: 'Season 1',
+      description: null,
+      posterUrl: null,
+      seasonNumber: 1,
+      status: 'completed',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
       episodes: [
         {
           id: 'ep-1',
           title: 'Episode 1',
           order: 1,
           seasonId: 'season-1',
+          description: null,
+          thumbnailUrl: null,
+          rating: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
           videoSources: [
-            { id: 'src-1', type: 'embed' as const, url: 'https://embed.com/1', label: 'Server 1' },
-            { id: 'src-2', type: 'embed' as const, url: 'https://embed.com/2', label: 'Server 2' },
+            { id: 'src-1', episodeId: 'ep-1', type: 'embed' as const, url: 'https://embed.com/1', label: 'Server 1', quality: null, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+            { id: 'src-2', episodeId: 'ep-1', type: 'embed' as const, url: 'https://embed.com/2', label: 'Server 2', quality: null, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
           ],
         },
         {
@@ -38,8 +57,13 @@ const mockSeriesData = {
           title: 'Episode 2',
           order: 2,
           seasonId: 'season-1',
+          description: null,
+          thumbnailUrl: null,
+          rating: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
           videoSources: [
-            { id: 'src-3', type: 'embed' as const, url: 'https://embed.com/3', label: 'Server 1' },
+            { id: 'src-3', episodeId: 'ep-2', type: 'embed' as const, url: 'https://embed.com/3', label: 'Server 1', quality: null, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
           ],
         },
       ],
@@ -48,14 +72,25 @@ const mockSeriesData = {
       id: 'season-2',
       seriesId: 'series-1',
       title: 'Season 2',
+      description: null,
+      posterUrl: null,
+      seasonNumber: 2,
+      status: 'completed',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
       episodes: [
         {
           id: 'ep-3',
           title: 'Episode 3',
           order: 1,
           seasonId: 'season-2',
+          description: null,
+          thumbnailUrl: null,
+          rating: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
           videoSources: [
-            { id: 'src-4', type: 'embed' as const, url: 'https://embed.com/4', label: 'Server 1' },
+            { id: 'src-4', episodeId: 'ep-3', type: 'embed' as const, url: 'https://embed.com/4', label: 'Server 1', quality: null, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
           ],
         },
       ],
@@ -67,9 +102,14 @@ const mockSeriesData = {
       title: 'Episode 1',
       order: 1,
       seasonId: 'season-1',
+      description: null,
+      thumbnailUrl: null,
+      rating: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
       videoSources: [
-        { id: 'src-1', type: 'embed' as const, url: 'https://embed.com/1', label: 'Server 1' },
-        { id: 'src-2', type: 'embed' as const, url: 'https://embed.com/2', label: 'Server 2' },
+        { id: 'src-1', episodeId: 'ep-1', type: 'embed' as const, url: 'https://embed.com/1', label: 'Server 1', quality: null, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+        { id: 'src-2', episodeId: 'ep-1', type: 'embed' as const, url: 'https://embed.com/2', label: 'Server 2', quality: null, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
       ],
     },
     {
@@ -77,8 +117,13 @@ const mockSeriesData = {
       title: 'Episode 2',
       order: 2,
       seasonId: 'season-1',
+      description: null,
+      thumbnailUrl: null,
+      rating: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
       videoSources: [
-        { id: 'src-3', type: 'embed' as const, url: 'https://embed.com/3', label: 'Server 1' },
+        { id: 'src-3', episodeId: 'ep-2', type: 'embed' as const, url: 'https://embed.com/3', label: 'Server 1', quality: null, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
       ],
     },
     {
@@ -86,8 +131,13 @@ const mockSeriesData = {
       title: 'Episode 3',
       order: 1,
       seasonId: 'season-2',
+      description: null,
+      thumbnailUrl: null,
+      rating: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
       videoSources: [
-        { id: 'src-4', type: 'embed' as const, url: 'https://embed.com/4', label: 'Server 1' },
+        { id: 'src-4', episodeId: 'ep-3', type: 'embed' as const, url: 'https://embed.com/4', label: 'Server 1', quality: null, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
       ],
     },
   ],
@@ -309,7 +359,7 @@ describe('useWatchState hook', () => {
       ],
     };
 
-    const { result } = renderHook(() => useWatchState(seriesWithUnplayableEpisodes));
+    const { result } = renderHook(() => useWatchState(seriesWithUnplayableEpisodes as unknown as WatchSeriesDetails));
 
     // Should default to first playable episode in first season with playable episodes
     expect(result.current.activeSeasonId).toBe('season-1');
@@ -344,7 +394,7 @@ describe('useWatchState hook', () => {
       ],
     };
 
-    const { result } = renderHook(() => useWatchState(seriesWithoutSeasons));
+    const { result } = renderHook(() => useWatchState(seriesWithoutSeasons as unknown as WatchSeriesDetails));
 
     expect(result.current.activeSeasonId).toBeNull();
     expect(result.current.activeEpisodeId).toBe('ep-flat-1');

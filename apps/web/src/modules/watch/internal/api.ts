@@ -1,62 +1,46 @@
 import { queryOptions } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type {
+  MediaSeriesDetails,
+  MediaSeasonWithEpisodes,
+  MediaEpisodeWithSources,
+  MediaVideoSource,
+} from '@repo/contracts';
 
-export interface WatchVideoSource {
-  id: string;
-  type: 'embed' | 'direct';
-  url: string;
-  label: string;
-  quality?: string | null;
-}
+export type WatchSeriesDetails = MediaSeriesDetails;
+export type WatchSeason = MediaSeasonWithEpisodes;
+export type WatchEpisode = MediaEpisodeWithSources;
+export type WatchVideoSource = MediaVideoSource;
 
-export interface WatchEpisode {
-  id: string;
-  title: string;
-  order?: number;
-  seasonId?: string | null;
-  description?: string | null;
-  thumbnailUrl?: string | null;
-  duration?: number | string | null;
-  videoSources: WatchVideoSource[];
-  airDate?: Date | string | null;
-  rating?: string | null;
-}
+export type {
+  MediaSeriesDetails,
+  MediaSeasonWithEpisodes,
+  MediaEpisodeWithSources,
+  MediaVideoSource,
+};
 
-export interface WatchSeason {
-  id: string;
-  seriesId: string;
-  title: string;
-  description?: string | null;
-  posterUrl?: string | null;
-  episodes: WatchEpisode[];
-}
-
-export interface WatchSeriesDetails {
-  id: string;
-  title: string;
-  description?: string | null;
-  posterUrl?: string | null;
-  backdropUrl?: string | null;
-  logoUrl?: string | null;
-  rating?: string | null;
-  genres?: Array<{ id: string; name: string; slug: string }> | string[];
-  seasons?: WatchSeason[];
-  episodes: WatchEpisode[];
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === 'object' && 'value' in error) {
+    const value = (error as { value?: unknown }).value;
+    if (value && typeof value === 'object') {
+      const errObj = value as { error?: { message?: string }; message?: string };
+      if (typeof errObj.error?.message === 'string') return errObj.error.message;
+      if (typeof errObj.message === 'string') return errObj.message;
+    }
+  }
+  return fallback;
 }
 
 export async function fetchSeriesWithEpisodes(
   seriesId: string
-): Promise<WatchSeriesDetails> {
+): Promise<MediaSeriesDetails> {
   const res = await api.series[seriesId].get();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
-    throw new Error(
-      (res.error?.value as { message?: string })?.message ||
-        'Failed to fetch series details'
-    );
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch series details'));
   }
 
-  return res.data.data as unknown as WatchSeriesDetails;
+  return res.data.data as unknown as MediaSeriesDetails;
 }
 
 export function getSeriesWithEpisodesQueryOptions(seriesId: string) {

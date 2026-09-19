@@ -36,17 +36,17 @@ export function StorageMetricsGrid({
   }
 
   const {
-    totalSizeBytes = 0,
-    limitSizeBytes = 0,
+    totalBytes = 0,
+    limitBytes = 0,
     percentUsed = 0,
-    totalFiles = 0,
-    linkedFiles = 0,
-    orphanedFiles = 0,
+    totalCount = 0,
+    linkedCount = 0,
+    orphanCount = 0,
   } = metrics;
 
-  const limitGb = (limitSizeBytes / (1024 * 1024 * 1024)).toFixed(0);
-  const decimalUsed = formatBytes(totalSizeBytes, { decimals: 2, standard: 'decimal' });
-  const binaryUsed = formatBytes(totalSizeBytes, { decimals: 2, standard: 'binary' });
+  const limitGb = (limitBytes / (1024 * 1024 * 1024)).toFixed(0);
+  const decimalUsed = formatBytes(totalBytes, { decimals: 2, standard: 'decimal' });
+  const binaryUsed = formatBytes(totalBytes, { decimals: 2, standard: 'binary' });
 
   // Dynamic threshold color shifts: neutral/blue -> amber at >= 80% -> red at >= 90%
   let capacityBarColor = 'bg-primary';
@@ -80,7 +80,7 @@ export function StorageMetricsGrid({
               </span>
             </div>
             <p className="text-xs text-muted mt-0.5" data-testid="capacity-details">
-              {formatDualBytes(totalSizeBytes)} used of {limitGb} GB limit
+              {formatDualBytes(totalBytes)} used of {limitGb} GB limit
             </p>
           </div>
           <Button
@@ -128,7 +128,7 @@ export function StorageMetricsGrid({
           <div>
             <div className="text-xs text-muted uppercase tracking-wide mono">Total Files</div>
             <div className="text-xl font-semibold mono text-fg mt-1" data-testid="metric-total-files">
-              {totalFiles}
+              {totalCount}
             </div>
             <div className="text-[11px] text-muted mt-0.5">Objects in bucket</div>
           </div>
@@ -142,7 +142,7 @@ export function StorageMetricsGrid({
           <div>
             <div className="text-xs text-muted uppercase tracking-wide mono">Linked Files</div>
             <div className="text-xl font-semibold mono text-fg mt-1" data-testid="metric-linked-files">
-              {linkedFiles}
+              {linkedCount}
             </div>
             <div className="text-[11px] text-green-600 dark:text-green-400 mt-0.5">Associated to episodes</div>
           </div>
@@ -156,7 +156,7 @@ export function StorageMetricsGrid({
           <div>
             <div className="text-xs text-muted uppercase tracking-wide mono">Orphaned Files</div>
             <div className="text-xl font-semibold mono text-fg mt-1" data-testid="metric-orphaned-files">
-              {orphanedFiles}
+              {orphanCount}
             </div>
             <div className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">Unlinked S3 objects</div>
           </div>

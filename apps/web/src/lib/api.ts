@@ -1,16 +1,17 @@
 import { edenTreaty } from '@elysiajs/eden';
 import type { App } from '@repo/backend';
 
-// Create a global eden client
-// Flow: if VITE_API_URL is set config-wise we check it, but if it points to localhost and we are hitting the app from LAN,
-// we override it to use the current host so that Vite's proxy takes over.
-let envApiUrl = import.meta.env.VITE_API_URL;
-if (typeof window !== 'undefined' && envApiUrl === 'http://localhost:3000' && window.location.hostname !== 'localhost') {
-  envApiUrl = window.location.origin;
+export function getApiBaseUrl(): string {
+  let envApiUrl = import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && envApiUrl === 'http://localhost:3000' && window.location.hostname !== 'localhost') {
+    envApiUrl = window.location.origin;
+  }
+  const rawBase = envApiUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+  return rawBase.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 }
-const rawBase = envApiUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
-// Normalise base URL so whether VITE_API_URL includes a trailing /api or not, edenTreaty and direct calls resolve cleanly.
-const API_URL = rawBase.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+
+// Create a global eden client
+const API_URL = getApiBaseUrl();
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;

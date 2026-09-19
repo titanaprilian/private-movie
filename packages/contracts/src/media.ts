@@ -76,6 +76,7 @@ export type MediaEpisodeWithSources = {
   title: string;
   order: number;
   description: string | null;
+  duration?: number | string | null;
   seasonId: string | null;
   thumbnailUrl: string | null;
   rating: string | null;
