@@ -133,3 +133,21 @@ const client = edenTreaty<App>(API_URL, {
 });
 
 export const api = client.api;
+
+export function extractErrorMessage(error: unknown, fallback: string): string {
+  if (!error) return fallback;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const err = error as any;
+  if (typeof err === 'string' && err !== '[object Object]') return err;
+
+  if (err.value) {
+    if (typeof err.value === 'string' && err.value !== '[object Object]') return err.value;
+    if (typeof err.value.error?.message === 'string') return err.value.error.message;
+    if (typeof err.value.message === 'string') return err.value.message;
+    if (typeof err.value.error === 'string') return err.value.error;
+  }
+  if (typeof err.error?.message === 'string') return err.error.message;
+  if (typeof err.error === 'string') return err.error;
+  if (typeof err.message === 'string' && err.message !== '[object Object]') return err.message;
+  return fallback;
+}

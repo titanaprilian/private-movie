@@ -1,5 +1,7 @@
 export * from "./auth";
+export * from "./genres";
 export * from "./media";
+export * from "./media-management";
 export * from "./media-openapi";
 export * from "./storage";
 
