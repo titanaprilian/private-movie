@@ -18,6 +18,7 @@ import { Route as AdminGenresRouteImport } from './routes/admin/genres'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
 import { Route as AdminStorageRouteImport } from './routes/admin/storage'
 import { Route as GuideAdblockRouteImport } from './routes/guide.adblock'
+import { Route as GenresSlugRouteImport } from './routes/genres.$slug'
 import { Route as WatchSeriesIdRouteImport } from './routes/watch.$seriesId'
 import { Route as AdminVideosIndexRouteImport } from './routes/admin/videos.index'
 import { Route as AdminVideosSeriesIdRouteImport } from './routes/admin/videos.$seriesId'
@@ -67,6 +68,11 @@ const GuideAdblockRoute = GuideAdblockRouteImport.update({
   path: '/guide/adblock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GenresSlugRoute = GenresSlugRouteImport.update({
+  id: '/genres/$slug',
+  path: '/genres/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WatchSeriesIdRoute = WatchSeriesIdRouteImport.update({
   id: '/watch/$seriesId',
   path: '/watch/$seriesId',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
   '/guide/adblock': typeof GuideAdblockRoute
+  '/genres/$slug': typeof GenresSlugRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
   '/guide/adblock': typeof GuideAdblockRoute
+  '/genres/$slug': typeof GenresSlugRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
   '/guide/adblock': typeof GuideAdblockRoute
+  '/genres/$slug': typeof GenresSlugRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/admin/profile'
     | '/admin/storage'
     | '/guide/adblock'
+    | '/genres/$slug'
     | '/watch/$seriesId'
     | '/admin/'
     | '/admin/videos/$seriesId'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/admin/profile'
     | '/admin/storage'
     | '/guide/adblock'
+    | '/genres/$slug'
     | '/watch/$seriesId'
     | '/admin'
     | '/admin/videos/$seriesId'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/admin/profile'
     | '/admin/storage'
     | '/guide/adblock'
+    | '/genres/$slug'
     | '/watch/$seriesId'
     | '/admin/'
     | '/admin/videos/$seriesId'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   GuideAdblockRoute: typeof GuideAdblockRoute
+  GenresSlugRoute: typeof GenresSlugRoute
   WatchSeriesIdRoute: typeof WatchSeriesIdRoute
 }
 
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuideAdblockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/genres/$slug': {
+      id: '/genres/$slug'
+      path: '/genres/$slug'
+      fullPath: '/genres/$slug'
+      preLoaderRoute: typeof GenresSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/watch/$seriesId': {
       id: '/watch/$seriesId'
       path: '/watch/$seriesId'
@@ -293,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   GuideAdblockRoute: GuideAdblockRoute,
+  GenresSlugRoute: GenresSlugRoute,
   WatchSeriesIdRoute: WatchSeriesIdRoute,
 }
 export const routeTree = rootRouteImport

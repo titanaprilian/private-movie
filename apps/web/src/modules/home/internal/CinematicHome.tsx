@@ -11,6 +11,7 @@ import {
   Star,
 } from 'lucide-react';
 import { useInputMode } from '@/hooks/useInputMode';
+import { PublicNavbar } from '@/modules/navigation';
 import { useHomeFeedNav } from './useHomeFeedNav';
 import {
   homeFeedQueryOptions,
@@ -277,11 +278,11 @@ function CarouselRowComponent({
   );
 }
 
-export function CinematicHome() {
+export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
   const navigate = useNavigate();
   const { isSpatialMode } = useInputMode();
 
-  const { data, isLoading, isError, refetch } = useQuery(homeFeedQueryOptions());
+  const { data, isLoading, isError, refetch } = useQuery(homeFeedQueryOptions(genreSlug));
 
   const heroesList: SeriesItem[] = data?.heroes && data.heroes.length > 0
     ? data.heroes.map(mapHeroToSeriesItem)
@@ -330,6 +331,7 @@ export function CinematicHome() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans">
+        <PublicNavbar />
         <HomeFeedHeroSkeleton />
         <div className="relative z-30 pb-20 -mt-10 space-y-4">
           <HomeFeedRowSkeleton />
@@ -341,11 +343,17 @@ export function CinematicHome() {
   }
 
   if (isError) {
-    return <HomeFeedErrorState onRetry={() => refetch()} />;
+    return (
+      <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans">
+        <PublicNavbar />
+        <HomeFeedErrorState onRetry={() => refetch()} />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans selection:bg-red-600 selection:text-white">
+      <PublicNavbar />
       {/* Hero Banner / Slider Section */}
       {currentHero ? (
         <div
