@@ -27,27 +27,31 @@ import { renderWithProviders } from '../../utils';
 
 const seriesMockMap = new Map<string, unknown>();
 
-vi.mock('@/lib/api', () => ({
-  api: {
-    series: new Proxy(
-      {},
-      {
-        get: (_target, prop: string) => {
-          return (
-            seriesMockMap.get(prop) ?? {
-              get: () =>
-                Promise.resolve({
-                  error: {
-                    value: { message: 'Failed to fetch series details' },
-                  },
-                }),
-            }
-          );
-        },
-      }
-    ),
-  },
-}));
+vi.mock('@/lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api')>();
+  return {
+    ...actual,
+    api: {
+      series: new Proxy(
+        {},
+        {
+          get: (_target, prop: string) => {
+            return (
+              seriesMockMap.get(prop) ?? {
+                get: () =>
+                  Promise.resolve({
+                    error: {
+                      value: { message: 'Failed to fetch series details' },
+                    },
+                  }),
+              }
+            );
+          },
+        }
+      ),
+    },
+  };
+});
 
 const mockSeriesPayload: WatchSeriesDetails = {
   id: 'series-real-1',

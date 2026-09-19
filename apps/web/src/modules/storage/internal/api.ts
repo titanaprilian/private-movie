@@ -1,12 +1,19 @@
 import { queryOptions } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, extractErrorMessage } from '@/lib/api';
 import type {
   StorageMetrics,
   StorageResourceItem,
+  StorageResourcesQuery,
   StorageResourcesResponseData,
+  StorageLimitUpdateRequest,
   StorageLimitUpdateResponseData,
+  StorageUpdateSourceMetadataRequest,
+  StorageAttachRequest,
+  StorageDeleteRequest,
   StorageDeleteResponseData,
+  StoragePurgeOrphansRequest,
   StoragePurgeOrphansResponseData,
+  StorageScanRequest,
   StoragePreviewUrlResponseData,
   StorageProviderItem,
   StorageProviderType,
@@ -18,6 +25,19 @@ import type {
 
 export type {
   StorageMetrics,
+  StorageResourceItem,
+  StorageResourcesQuery,
+  StorageResourcesResponseData,
+  StorageLimitUpdateRequest,
+  StorageLimitUpdateResponseData,
+  StorageUpdateSourceMetadataRequest,
+  StorageAttachRequest,
+  StorageDeleteRequest,
+  StorageDeleteResponseData,
+  StoragePurgeOrphansRequest,
+  StoragePurgeOrphansResponseData,
+  StorageScanRequest,
+  StoragePreviewUrlResponseData,
   StorageProviderItem,
   StorageProviderType,
   CreateStorageProviderRequest,
@@ -25,6 +45,12 @@ export type {
   TestStorageProviderRequest,
   TestStorageProviderResponseData,
 };
+
+// Backward compatibility aliases
+export type StorageResourceFilterParams = StorageResourcesQuery;
+export type UpdateStorageLimitInput = StorageLimitUpdateRequest;
+export type AttachOrphanInput = StorageAttachRequest;
+export type EditSourceMetadataInput = StorageUpdateSourceMetadataRequest;
 
 export interface VideoSourceMetadata {
   id: string;
@@ -55,16 +81,6 @@ export interface StorageResource {
   isLoneSource?: boolean;
 }
 
-export interface StorageResourceFilterParams {
-  providerId?: string;
-  status?: 'all' | 'linked' | 'orphaned';
-  search?: string;
-  sortBy?: 'size' | 'date' | 'name';
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
-
 export interface StorageResourcesResponse {
   data: StorageResource[];
   pagination: {
@@ -73,24 +89,6 @@ export interface StorageResourcesResponse {
     total: number;
     totalPages: number;
   };
-}
-
-export interface UpdateStorageLimitInput {
-  providerId?: string;
-  limitGb: number;
-}
-
-export interface EditSourceMetadataInput {
-  label?: string;
-  quality?: string;
-}
-
-export interface AttachOrphanInput {
-  providerId?: string;
-  key: string;
-  episodeId: string;
-  label?: string;
-  quality?: string;
 }
 
 export interface BatchDeleteResponse {
@@ -141,24 +139,6 @@ export function formatDualBytes(bytes: number, decimals = 2): string {
   const binary = formatBytes(bytes, { decimals, standard: 'binary' });
   const decimal = formatBytes(bytes, { decimals, standard: 'decimal' });
   return `${binary} (${decimal})`;
-}
-
-function extractErrorMessage(error: unknown, fallback: string): string {
-  if (!error) return fallback;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const err = error as any;
-  if (typeof err === 'string' && err !== '[object Object]') return err;
-
-  if (err.value) {
-    if (typeof err.value === 'string' && err.value !== '[object Object]') return err.value;
-    if (typeof err.value.error?.message === 'string') return err.value.error.message;
-    if (typeof err.value.message === 'string') return err.value.message;
-    if (typeof err.value.error === 'string') return err.value.error;
-  }
-  if (typeof err.error?.message === 'string') return err.error.message;
-  if (typeof err.error === 'string') return err.error;
-  if (typeof err.message === 'string' && err.message !== '[object Object]') return err.message;
-  return fallback;
 }
 
 function mapResourceItem(item: StorageResourceItem): StorageResource {
@@ -219,7 +199,7 @@ export function storageMetricsQueryOptions(providerId?: string) {
 }
 
 export async function fetchStorageResources(
-  params: StorageResourceFilterParams = {}
+  params: StorageResourcesQuery = {}
 ): Promise<StorageResourcesResponse> {
   const query: Record<string, string> = {};
   if (params.providerId) query.providerId = params.providerId;
@@ -259,7 +239,7 @@ export async function fetchStorageResources(
   };
 }
 
-export function storageResourcesQueryOptions(params: StorageResourceFilterParams = {}) {
+export function storageResourcesQueryOptions(params: StorageResourcesQuery = {}) {
   return queryOptions({
     queryKey: ['storage', 'resources', params],
     queryFn: () => fetchStorageResources(params),
@@ -297,7 +277,7 @@ export async function updateStorageLimit(
 
 export async function updateSourceMetadata(
   id: string,
-  input: EditSourceMetadataInput
+  input: StorageUpdateSourceMetadataRequest
 ): Promise<VideoSourceMetadata> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res = await (api.storage.resources as any)[id].patch(input);
@@ -317,7 +297,7 @@ export async function updateSourceMetadata(
 }
 
 export async function attachOrphanFile(
-  input: AttachOrphanInput
+  input: StorageAttachRequest
 ): Promise<VideoSourceMetadata> {
   const res = await api.storage.resources.attach.post(input);
 

@@ -4,13 +4,17 @@ import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from '@/mo
 import { useWatchState } from '@/modules/watch/internal/useWatchState';
 import { api } from '@/lib/api';
 
-vi.mock('@/lib/api', () => ({
-  api: {
-    series: {
-      get: vi.fn(),
+vi.mock('@/lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api')>();
+  return {
+    ...actual,
+    api: {
+      series: {
+        get: vi.fn(),
+      },
     },
-  },
-}));
+  };
+});
 
 const mockSeriesData: WatchSeriesDetails = {
   id: 'series-1',

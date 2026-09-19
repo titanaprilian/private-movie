@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, extractErrorMessage } from '@/lib/api';
 import type {
   MediaGenre,
   MediaHomeFeed,
@@ -15,18 +15,6 @@ export type {
   MediaHomeFeedRow,
   MediaSeriesMetadata,
 };
-
-function extractErrorMessage(error: unknown, fallback: string): string {
-  if (error && typeof error === 'object' && 'value' in error) {
-    const value = (error as { value?: unknown }).value;
-    if (value && typeof value === 'object') {
-      const errObj = value as { error?: { message?: string }; message?: string };
-      if (typeof errObj.error?.message === 'string') return errObj.error.message;
-      if (typeof errObj.message === 'string') return errObj.message;
-    }
-  }
-  return fallback;
-}
 
 export async function fetchHomeFeed(): Promise<MediaHomeFeed> {
   const res = await api.series['home-feed'].get();

@@ -1,23 +1,16 @@
 import { queryOptions } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, extractErrorMessage } from '@/lib/api';
+import type {
+  GenreItem,
+  CreateGenreRequest,
+  UpdateGenreRequest,
+} from '@repo/contracts';
 
-export interface Genre {
-  id: string;
-  name: string;
-  slug: string;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-}
+export type Genre = GenreItem;
+export type CreateGenreInput = CreateGenreRequest;
+export type UpdateGenreInput = UpdateGenreRequest;
 
-export interface CreateGenreInput {
-  name: string;
-  slug: string;
-}
-
-export interface UpdateGenreInput {
-  name: string;
-  slug: string;
-}
+export type { GenreItem, CreateGenreRequest, UpdateGenreRequest };
 
 export function slugifyGenre(name: string): string {
   return name
@@ -28,24 +21,14 @@ export function slugifyGenre(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-function extractErrorMessage(error: unknown, fallback: string): string {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const value = (error as any)?.value;
-  if (value) {
-    if (typeof value.error?.message === 'string') return value.error.message;
-    if (typeof value.message === 'string') return value.message;
-  }
-  return fallback;
-}
-
-export async function fetchGenres(): Promise<Genre[]> {
+export async function fetchGenres(): Promise<GenreItem[]> {
   const res = await api.genres.get();
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
     throw new Error(extractErrorMessage(res.error, 'Failed to fetch genres'));
   }
 
-  return res.data.data as Genre[];
+  return res.data.data as GenreItem[];
 }
 
 export function genresQueryOptions() {
@@ -55,20 +38,20 @@ export function genresQueryOptions() {
   });
 }
 
-export async function createGenre(input: CreateGenreInput): Promise<Genre> {
+export async function createGenre(input: CreateGenreRequest): Promise<GenreItem> {
   const res = await api.genres.post(input);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
     throw new Error(extractErrorMessage(res.error, 'Failed to create genre'));
   }
 
-  return res.data.data as Genre;
+  return res.data.data as GenreItem;
 }
 
 export async function updateGenre(
   id: string,
-  input: UpdateGenreInput
-): Promise<Genre> {
+  input: UpdateGenreRequest
+): Promise<GenreItem> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res = await (api.genres as any)[id].put(input);
 
@@ -76,10 +59,10 @@ export async function updateGenre(
     throw new Error(extractErrorMessage(res.error, 'Failed to update genre'));
   }
 
-  return res.data.data as Genre;
+  return res.data.data as GenreItem;
 }
 
-export async function deleteGenre(id: string): Promise<Genre> {
+export async function deleteGenre(id: string): Promise<GenreItem> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res = await (api.genres as any)[id].delete();
 
@@ -87,5 +70,5 @@ export async function deleteGenre(id: string): Promise<Genre> {
     throw new Error(extractErrorMessage(res.error, 'Failed to delete genre'));
   }
 
-  return res.data.data as Genre;
+  return res.data.data as GenreItem;
 }
