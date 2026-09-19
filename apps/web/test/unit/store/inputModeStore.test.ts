@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { useInputMode, useInputModeStore } from '@/store/inputModeStore';
+import { useInputModeStore } from '@/store/inputModeStore';
 
-describe('inputModeStore re-exports', () => {
-  it('exports useInputMode and useInputModeStore from shared store module', () => {
-    expect(useInputMode).toBeDefined();
+describe('inputModeStore', () => {
+  it('exports useInputModeStore from shared store module', () => {
     expect(useInputModeStore).toBeDefined();
+    expect(useInputModeStore.getState().isSpatialMode).toBe(false);
+    useInputModeStore.getState().setSpatialMode(true);
+    expect(useInputModeStore.getState().isSpatialMode).toBe(true);
+    useInputModeStore.getState().setSpatialMode(false);
   });
 });

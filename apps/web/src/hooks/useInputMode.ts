@@ -1,15 +1,8 @@
 import { useEffect } from 'react';
-import { create } from 'zustand';
+import { useInputModeStore, type InputModeState } from '@/store/inputModeStore';
 
-export interface InputModeState {
-  isSpatialMode: boolean;
-  setSpatialMode: (isSpatialMode: boolean) => void;
-}
-
-export const useInputModeStore = create<InputModeState>((set) => ({
-  isSpatialMode: false,
-  setSpatialMode: (isSpatialMode) => set({ isSpatialMode }),
-}));
+export type { InputModeState };
+export { useInputModeStore };
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 

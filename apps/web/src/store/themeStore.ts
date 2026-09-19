@@ -1,10 +1,1 @@
-import { useUIStore, type Theme } from './uiStore';
-
-export type { Theme };
-export interface ThemeState {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  toggleTheme: () => void;
-}
-
-export const useThemeStore = useUIStore;
+export { useUIStore, useUIStore as useThemeStore, type Theme, type UIState as ThemeState } from './uiStore';

@@ -1,5 +1,5 @@
 import { Toaster as Sonner } from 'sonner';
-import { useThemeStore } from '@/store/themeStore';
+import { useUIStore } from '@/store/uiStore';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -62,7 +62,7 @@ const toastIcons = {
 };
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const theme = useThemeStore((state) => state.theme);
+  const theme = useUIStore((state) => state.theme);
 
   return (
     <Sonner
