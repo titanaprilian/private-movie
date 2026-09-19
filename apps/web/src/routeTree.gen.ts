@@ -11,10 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as FormRouteImport } from './routes/form'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
-import { Route as WatchDemoRouteImport } from './routes/watch-demo'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminGenresRouteImport } from './routes/admin/genres'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
@@ -34,11 +32,6 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FormRoute = FormRouteImport.update({
-  id: '/form',
-  path: '/form',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -47,11 +40,6 @@ const LoginRoute = LoginRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WatchDemoRoute = WatchDemoRouteImport.update({
-  id: '/watch-demo',
-  path: '/watch-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -98,10 +86,8 @@ const AdminVideosSeriesIdRoute = AdminVideosSeriesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/form': typeof FormRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
@@ -113,10 +99,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/form': typeof FormRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
@@ -130,10 +114,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/form': typeof FormRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/watch-demo': typeof WatchDemoRoute
   '/admin/genres': typeof AdminGenresRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
@@ -148,10 +130,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/form'
     | '/login'
     | '/register'
-    | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
     | '/admin/storage'
@@ -163,10 +143,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/form'
     | '/login'
     | '/register'
-    | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
     | '/admin/storage'
@@ -179,10 +157,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/form'
     | '/login'
     | '/register'
-    | '/watch-demo'
     | '/admin/genres'
     | '/admin/profile'
     | '/admin/storage'
@@ -196,10 +172,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  FormRoute: typeof FormRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
-  WatchDemoRoute: typeof WatchDemoRoute
   GuideAdblockRoute: typeof GuideAdblockRoute
   WatchSeriesIdRoute: typeof WatchSeriesIdRoute
 }
@@ -220,13 +194,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/form': {
-      id: '/form'
-      path: '/form'
-      fullPath: '/form'
-      preLoaderRoute: typeof FormRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -239,13 +206,6 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/watch-demo': {
-      id: '/watch-demo'
-      path: '/watch-demo'
-      fullPath: '/watch-demo'
-      preLoaderRoute: typeof WatchDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -330,10 +290,8 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  FormRoute: FormRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
-  WatchDemoRoute: WatchDemoRoute,
   GuideAdblockRoute: GuideAdblockRoute,
   WatchSeriesIdRoute: WatchSeriesIdRoute,
 }

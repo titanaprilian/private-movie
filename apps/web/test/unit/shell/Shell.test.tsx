@@ -59,7 +59,7 @@ describe('Shell layout component', () => {
     expect(screen.getAllByText('Private Movie').length).toBeGreaterThan(0);
     expect(screen.queryByText('monoRepo')).not.toBeInTheDocument();
     expect(screen.queryByText(/workspace/i)).not.toBeInTheDocument();
-    expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Series').length).toBeGreaterThan(0);
   });
 
   it('renders primary navigation links and omits deprecated template links', () => {
@@ -87,26 +87,26 @@ describe('Shell layout component', () => {
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
   });
 
-  it('dynamically applies active link styling based on exact and prefix route matches', () => {
-    // 1. Root admin dashboard route
-    mockCurrentPath = '/admin';
+  it('dynamically applies active link styling based on route matches', () => {
+    // 1. Series route
+    mockCurrentPath = '/admin/videos';
     const { unmount } = renderWithProviders(
       <Shell>
         <div>Content</div>
       </Shell>
     );
 
-    const desktopDashboardLink = screen.getAllByRole('link', {
-      name: /dashboard/i,
-    })[0];
     const desktopSeriesLink = screen.getAllByRole('link', {
       name: /series/i,
     })[0];
+    const desktopGenresLink = screen.getAllByRole('link', {
+      name: /genres/i,
+    })[0];
 
-    expect(desktopDashboardLink.className).toContain('active-bg');
-    expect(desktopDashboardLink.className).toContain('text-primary');
-    expect(desktopSeriesLink.className).not.toContain('active-bg');
-    expect(desktopSeriesLink.className).toContain('text-muted');
+    expect(desktopSeriesLink.className).toContain('active-bg');
+    expect(desktopSeriesLink.className).toContain('text-primary');
+    expect(desktopGenresLink.className).not.toContain('active-bg');
+    expect(desktopGenresLink.className).toContain('text-muted');
 
     unmount();
 
@@ -118,20 +118,17 @@ describe('Shell layout component', () => {
       </Shell>
     );
 
-    const nestedDashboardLink = screen.getAllByRole('link', {
-      name: /dashboard/i,
-    })[0];
     const nestedSeriesLink = screen.getAllByRole('link', {
       name: /series/i,
     })[0];
+    const nestedGenresLink = screen.getAllByRole('link', {
+      name: /genres/i,
+    })[0];
 
-    // Dashboard should not be active since it requires exact match
-    expect(nestedDashboardLink.className).not.toContain('active-bg');
-    expect(nestedDashboardLink.className).toContain('text-muted');
-
-    // Series should be active due to prefix matching
     expect(nestedSeriesLink.className).toContain('active-bg');
     expect(nestedSeriesLink.className).toContain('text-primary');
+    expect(nestedGenresLink.className).not.toContain('active-bg');
+    expect(nestedGenresLink.className).toContain('text-muted');
   });
 
   it('toggles sidebar collapse state and updates desktop sidebar width and label visibility', async () => {
