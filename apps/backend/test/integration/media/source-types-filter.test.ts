@@ -45,6 +45,8 @@ describe("sourceTypes filtering on home feed and series details", () => {
       id: kdGenreId,
       name: "Korean Drama",
       slug: "korean-drama",
+      isBigGenre: true,
+      displayOrder: 1,
       createdAt: now,
       updatedAt: now,
     });

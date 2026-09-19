@@ -1,12 +1,24 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, seasons, series, videoSources } from "@repo/db";
+import { episodes, genres, seasons, series, seriesToGenres, videoSources } from "@repo/db";
 import { MVP_MEDIA_OPENAPI } from "@repo/contracts";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
 
 async function insertPublicSeries(title: string) {
   const now = new Date();
+
+  const genreId = crypto.randomUUID();
+  await db.insert(genres).values({
+    id: genreId,
+    name: "Korean Drama",
+    slug: "korean-drama",
+    isBigGenre: true,
+    displayOrder: 1,
+    createdAt: now,
+    updatedAt: now,
+  });
+
   const seriesId = crypto.randomUUID();
   await db.insert(series).values({
     id: seriesId,
@@ -17,6 +29,11 @@ async function insertPublicSeries(title: string) {
     isFeatured: false,
     createdAt: now,
     updatedAt: now,
+  });
+
+  await db.insert(seriesToGenres).values({
+    seriesId,
+    genreId,
   });
 
   const seasonId = crypto.randomUUID();

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll, beforeEach } from "vitest";
-import { episodes, seasons, series, videoSources } from "@repo/db";
+import { episodes, genres, seasons, series, seriesToGenres, videoSources } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db, truncateAll } from "../../utils/db";
 
@@ -24,6 +24,18 @@ describe("Android TV MVP flow: home-feed -> series details -> playback targets (
 
   it("walks the full TV MVP journey from home feed to normalized playback targets", async () => {
     const now = new Date();
+
+    const genreId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: genreId,
+      name: "Korean Drama",
+      slug: "korean-drama",
+      isBigGenre: true,
+      displayOrder: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     const seriesId = crypto.randomUUID();
     await db.insert(series).values({
       id: seriesId,
@@ -33,6 +45,11 @@ describe("Android TV MVP flow: home-feed -> series details -> playback targets (
       isFeatured: true,
       createdAt: now,
       updatedAt: now,
+    });
+
+    await db.insert(seriesToGenres).values({
+      seriesId,
+      genreId,
     });
 
     const seasonId = crypto.randomUUID();
