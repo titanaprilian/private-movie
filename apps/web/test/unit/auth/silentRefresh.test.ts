@@ -200,4 +200,29 @@ describe('Silent Refresh Interceptor and Store Integration', () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
     expect(typeof useAuthStore.getState().checkAuth).toBe('function');
   });
+
+  it('does not trigger POST /api/auth/refresh when unauthenticated guest requests public endpoints', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      return new Response(JSON.stringify({ data: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    await api.genres.get();
+    await api.series['home-feed'].get({ $query: {} });
+
+    const refreshCalls = fetchSpy.mock.calls.filter(([input, init]) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      const method = init?.method?.toUpperCase() || 'GET';
+      return url.includes('/auth/refresh') && method === 'POST';
+    });
+
+    expect(refreshCalls.length).toBe(0);
+  });
 });

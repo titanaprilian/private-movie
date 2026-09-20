@@ -110,15 +110,9 @@ const customFetcher = async (
     return fetch(input, { ...init, credentials: 'include' });
   }
 
-  let refreshed = false;
-  if (!accessToken) {
-    await doSilentRefresh();
-    refreshed = true;
-  }
-
   let response = await fetch(input, applyAuthHeader(init, accessToken));
 
-  if (response.status === 401 && !refreshed) {
+  if (response.status === 401) {
     const newToken = await doSilentRefresh();
     if (newToken) {
       response = await fetch(input, applyAuthHeader(init, newToken));
