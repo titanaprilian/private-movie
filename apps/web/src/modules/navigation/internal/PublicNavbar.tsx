@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from '@tanstack/react-router';
 import { genresQueryOptions } from '@/modules/genres';
+import { CatalogSearch } from '@/modules/search';
+import type { SeriesItem } from '@/modules/videos';
 
 function useCurrentPath() {
   try {
@@ -71,6 +73,16 @@ export function PublicNavbar() {
     .filter((g) => g.isBigGenre)
     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
 
+  // Extract genre slug if currently on a genre route (/genres/:slug)
+  const genreMatch = pathname.match(/^\/genres\/([^/]+)/);
+  const currentGenreSlug = genreMatch ? genreMatch[1] : undefined;
+
+  const handleSelectSeries = (series: SeriesItem) => {
+    if (typeof window !== 'undefined') {
+      window.location.href = `/watch/${series.id}`;
+    }
+  };
+
   return (
     <header
       data-testid="public-navbar"
@@ -80,46 +92,56 @@ export function PublicNavbar() {
           : 'bg-gradient-to-b from-black/90 via-black/50 to-transparent py-4'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
-        <SafeLink
-          to="/"
-          className="flex items-center gap-2 font-black tracking-wider text-red-600 text-lg sm:text-xl uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded px-1"
-        >
-          <span>PRIVATE MOVIE</span>
-        </SafeLink>
-
-        <nav aria-label="Main Navigation" className="flex items-center gap-4 sm:gap-6">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-6 sm:gap-8 min-w-0">
           <SafeLink
             to="/"
-            className={`text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded px-2 py-1 ${
-              pathname === '/'
-                ? 'text-white font-bold border-b-2 border-red-600 pb-0.5'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
+            className="flex items-center gap-2 font-black tracking-wider text-red-600 text-lg sm:text-xl uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded px-1 shrink-0"
           >
-            Home
+            <span>PRIVATE MOVIE</span>
           </SafeLink>
 
-          {bigGenres.map((genre) => {
-            const targetPath = `/genres/${genre.slug}`;
-            const isActive = pathname === targetPath;
+          <nav aria-label="Main Navigation" className="hidden sm:flex items-center gap-4 sm:gap-6">
+            <SafeLink
+              to="/"
+              className={`text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded px-2 py-1 ${
+                pathname === '/'
+                  ? 'text-white font-bold border-b-2 border-red-600 pb-0.5'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Home
+            </SafeLink>
 
-            return (
-              <SafeLink
-                key={genre.id}
-                to="/genres/$slug"
-                params={{ slug: genre.slug }}
-                className={`text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded px-2 py-1 ${
-                  isActive
-                    ? 'text-white font-bold border-b-2 border-red-600 pb-0.5'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                {genre.name}
-              </SafeLink>
-            );
-          })}
-        </nav>
+            {bigGenres.map((genre) => {
+              const targetPath = `/genres/${genre.slug}`;
+              const isActive = pathname === targetPath;
+
+              return (
+                <SafeLink
+                  key={genre.id}
+                  to="/genres/$slug"
+                  params={{ slug: genre.slug }}
+                  className={`text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded px-2 py-1 ${
+                    isActive
+                      ? 'text-white font-bold border-b-2 border-red-600 pb-0.5'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {genre.name}
+                </SafeLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-4 shrink-0">
+          <CatalogSearch
+            genre={currentGenreSlug}
+            onSelectSeries={handleSelectSeries}
+            className="w-48 sm:w-64"
+          />
+        </div>
       </div>
     </header>
   );

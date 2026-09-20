@@ -1,4 +1,4 @@
-import { renderWithProviders, screen, waitFor } from '../../utils';
+import { renderWithProviders, screen, waitFor, fireEvent } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRouter, createMemoryHistory, RouterProvider } from '@tanstack/react-router';
 import { routeTree } from '@/routeTree.gen';
@@ -35,10 +35,27 @@ const mockGenres = [
   },
 ];
 
+const mockSeriesList = [
+  {
+    id: 's-1',
+    title: 'Solo Leveling',
+    slug: 'solo-leveling',
+    type: 'tv',
+    posterUrl: 'http://example.com/solo.jpg',
+    genres: ['Animation'],
+    rating: '8.5',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    seasons: [{ id: 'season-1' }],
+  },
+];
+
+let requestedUrls: string[] = [];
+
 describe('PublicNavbar component', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     setAccessToken('mock-access-token');
+    requestedUrls = [];
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url =
@@ -48,6 +65,8 @@ describe('PublicNavbar component', () => {
             ? input.toString()
             : input.url;
 
+      requestedUrls.push(url);
+
       if (url.includes('/api/genres') || url.includes('/genres')) {
         return new Response(JSON.stringify({ data: mockGenres }), {
           status: 200,
@@ -55,10 +74,18 @@ describe('PublicNavbar component', () => {
         });
       }
 
-      if (url.includes('/series/home-feed')) {
+      if (url.includes('/api/series') || url.includes('/series')) {
+        if (url.includes('/series/home-feed')) {
+          return new Response(
+            JSON.stringify({
+              data: { hero: null, rows: [] },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
         return new Response(
           JSON.stringify({
-            data: { hero: null, rows: [] },
+            data: { series: mockSeriesList, pagination: { page: 1, limit: 10, total: 1, totalPages: 1 } },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
@@ -105,5 +132,47 @@ describe('PublicNavbar component', () => {
       const homeLink = screen.getByRole('link', { name: 'Home' });
       expect(homeLink).toHaveClass('text-white', 'font-bold');
     });
+  });
+
+  it('embeds search input and performs un-scoped global search when on Home route', async () => {
+    const history = createMemoryHistory({ initialEntries: ['/'] });
+    const router = createRouter({ routeTree, history });
+
+    renderWithProviders(<RouterProvider router={router} />);
+
+    const searchInput = await screen.findByRole('textbox', { name: /search series catalog/i });
+    expect(searchInput).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: 'Solo' } });
+
+    await waitFor(
+      () => {
+        const searchCall = requestedUrls.find((url) => url.includes('/series'));
+        expect(searchCall).toBeDefined();
+        expect(searchCall).not.toContain('genre=');
+      },
+      { timeout: 1500 }
+    );
+  });
+
+  it('scopes search query to current genre when on /genres/$slug route', async () => {
+    const history = createMemoryHistory({ initialEntries: ['/genres/animation'] });
+    const router = createRouter({ routeTree, history });
+
+    renderWithProviders(<RouterProvider router={router} />);
+
+    const searchInput = await screen.findByRole('textbox', { name: /search series catalog/i });
+    expect(searchInput).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: 'Solo' } });
+
+    await waitFor(
+      () => {
+        const searchCall = requestedUrls.find((url) => url.includes('/series'));
+        expect(searchCall).toBeDefined();
+        expect(searchCall).toContain('genre=animation');
+      },
+      { timeout: 1500 }
+    );
   });
 });
