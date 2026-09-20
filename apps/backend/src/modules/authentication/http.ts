@@ -11,6 +11,7 @@ import {
   type AuthenticationService,
 } from "@repo/contracts";
 import { errorResponse, successResponse } from "../../lib/response";
+import { getClientIp } from "../../lib/ip";
 import { createAuthenticationServiceInternal } from "./internal/authentication-service";
 
 export interface AuthRoutesOptions {
@@ -64,6 +65,34 @@ export const authRoutes = (options: AuthRoutesOptions) => {
   const auth = options.authService ?? createAuthenticationServiceInternal(options.db!);
 
   return new Elysia({ name: "auth-routes" })
+    .use(
+      rateLimit({
+        duration: 60000,
+        max: 10,
+        generator: (request, server) => `${getClientIp(request, server)}:login`,
+        errorResponse: new Response(
+          JSON.stringify({
+            error: {
+              code: "RATE_LIMIT",
+              message: "rate-limit reached",
+            },
+          }),
+          {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        ),
+        skip: (request) => {
+          if (process.env.NODE_ENV === "test" && request.headers.get("x-test-rate-limit") !== "true") {
+            return true;
+          }
+          const url = new URL(request.url);
+          return !url.pathname.endsWith("/auth/login");
+        },
+      })
+    )
     .post(
       "/auth/register",
       async ({ body, set, headers, cookie: { refreshToken } }) => {
@@ -87,40 +116,6 @@ export const authRoutes = (options: AuthRoutesOptions) => {
           password: t.String(),
         }),
       }
-    )
-    .use(
-      rateLimit({
-        duration: 60000,
-        max: 10,
-        generator: (request, server) => {
-          const ip =
-            server?.requestIP(request)?.address ||
-            request.headers.get("x-forwarded-for") ||
-            request.headers.get("x-real-ip") ||
-            "127.0.0.1";
-          return `${ip}:login`;
-        },
-        errorResponse: new Response(
-          JSON.stringify({
-            error: {
-              code: "RATE_LIMIT",
-              message: "rate-limit reached",
-            },
-          }),
-          {
-            status: 429,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        ),
-        skip: (request) => {
-          if (process.env.NODE_ENV === "test") {
-            return request.headers.get("x-test-rate-limit") !== "true";
-          }
-          return false;
-        },
-      })
     )
     .post(
       "/auth/login",

@@ -3,6 +3,7 @@ import type { AuthenticationService } from "@repo/contracts";
 import type { DbClient } from "@repo/db";
 import { cors } from "@elysiajs/cors";
 import { rateLimit } from "@elysiajs/rate-limit";
+import { getClientIp } from "./lib/ip";
 import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
 import { episodeRoutes, UNTHROTTLED_EPISODE_ROUTE_SUFFIXES } from "./modules/episodes/http";
@@ -83,6 +84,7 @@ export const createApp = (deps: CreateAppDeps) => {
       rateLimit({
         duration: 60000,
         max: 100,
+        generator: (request, server) => getClientIp(request, server),
         errorResponse: new Response(
           JSON.stringify({
             error: {
