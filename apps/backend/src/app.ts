@@ -78,6 +78,7 @@ export const createApp = (deps: CreateAppDeps) => {
       if (domainStatus !== null) {
         return errorResponse(set, domainStatus, error as Error);
       }
+      console.error("[Unhandled Server Error]", error);
       return errorResponse(set, 500, new InternalServerError());
     })
     .use(

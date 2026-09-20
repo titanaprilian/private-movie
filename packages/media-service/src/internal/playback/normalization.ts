@@ -40,11 +40,15 @@ export async function normalizeVideoSourceAsync<
     // Determine the service to use: either from registry or options.s3StorageService
     let service: S3StorageService | undefined = options?.s3StorageService;
     if (options?.storageProviderRegistry) {
-      const registryService = await options.storageProviderRegistry.getService(
-        source.storageProviderId
-      );
-      if (registryService) {
-        service = registryService;
+      try {
+        const registryService = await options.storageProviderRegistry.getService(
+          source.storageProviderId
+        );
+        if (registryService) {
+          service = registryService;
+        }
+      } catch {
+        // Fall back gracefully to raw source URL if registry lookup fails
       }
     }
 

@@ -881,7 +881,11 @@ export function createStorageService<
           );
         }
 
-        service = registry.getServiceForProvider(row);
+        const resolvedService = registry.getServiceForProvider(row);
+        if (!resolvedService) {
+          throw new Error("Failed to decrypt storage provider credentials");
+        }
+        service = resolvedService;
       } else {
         if (
           !input.endpoint ||

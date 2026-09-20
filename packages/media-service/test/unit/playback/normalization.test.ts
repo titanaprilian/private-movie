@@ -62,6 +62,27 @@ describe("playback target normalization", () => {
         quality: "1080p",
       });
     });
+
+    it("degrades gracefully to original url if storage provider resolution throws an error", async () => {
+      const failingRegistry = {
+        getService: async () => {
+          throw new Error("Failed to decrypt storage provider credentials");
+        },
+      } as any;
+
+      const source = {
+        id: "src-s3",
+        type: "s3",
+        url: "episodes/123/video.mp4",
+        storageProviderId: "provider-corrupted",
+      };
+
+      const result = await normalizeVideoSource(source, {
+        storageProviderRegistry: failingRegistry,
+      });
+
+      expect(result).toEqual(source);
+    });
   });
 
   describe("normalizeVideoSources", () => {

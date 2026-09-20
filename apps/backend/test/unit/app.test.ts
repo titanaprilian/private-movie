@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createApp } from "@/app";
 import type { DbClient } from "@repo/db";
 import type { AuthenticationService } from "@repo/contracts";
@@ -18,7 +18,9 @@ describe("composition root global error handler", () => {
     expect(await response.text()).toBe("NOT_FOUND");
   });
 
-  it("returns 500 envelope for thrown non-domain errors", async () => {
+  it("returns 500 envelope and logs error for thrown non-domain errors", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
     const mockDb = {
       $client: {
         unsafe: () => {
@@ -44,5 +46,12 @@ describe("composition root global error handler", () => {
         message: "internal server error",
       },
     });
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[Unhandled Server Error]",
+      expect.any(Error)
+    );
+
+    consoleSpy.mockRestore();
   });
 });

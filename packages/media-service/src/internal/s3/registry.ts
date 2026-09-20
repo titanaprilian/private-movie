@@ -19,7 +19,7 @@ export interface StorageProviderRegistry {
     provider: StorageProviderRow;
     service: S3StorageService;
   } | null>;
-  getServiceForProvider(provider: StorageProviderRow): S3StorageService;
+  getServiceForProvider(provider: StorageProviderRow): S3StorageService | null;
   getService(providerId?: string | null): Promise<S3StorageService | null>;
   invalidateCache(providerId?: string): void;
 }
@@ -33,27 +33,37 @@ export function createStorageProviderRegistry<
 ): StorageProviderRegistry {
   const serviceCache = new Map<string, S3StorageService>();
 
-  function instantiateService(provider: StorageProviderRow): S3StorageService {
-    const accessKeyId = decryptCredential(provider.accessKeyIdEnc);
-    const secretAccessKey = decryptCredential(provider.secretAccessKeyEnc);
+  function instantiateService(provider: StorageProviderRow): S3StorageService | null {
+    try {
+      const accessKeyId = decryptCredential(provider.accessKeyIdEnc);
+      const secretAccessKey = decryptCredential(provider.secretAccessKeyEnc);
 
-    return createS3StorageService({
-      endpoint: provider.endpoint,
-      region: provider.region,
-      bucket: provider.bucket,
-      accessKeyId,
-      secretAccessKey,
-      forcePathStyle: provider.forcePathStyle,
-      publicBaseUrl: provider.publicBaseUrl,
-    });
+      return createS3StorageService({
+        endpoint: provider.endpoint,
+        region: provider.region,
+        bucket: provider.bucket,
+        accessKeyId,
+        secretAccessKey,
+        forcePathStyle: provider.forcePathStyle,
+        publicBaseUrl: provider.publicBaseUrl,
+      });
+    } catch (error) {
+      console.warn(
+        `[StorageProviderRegistry] Failed to decrypt credentials for provider ${provider.id} (${provider.name}):`,
+        error
+      );
+      return null;
+    }
   }
 
-  function getServiceForProvider(provider: StorageProviderRow): S3StorageService {
+  function getServiceForProvider(provider: StorageProviderRow): S3StorageService | null {
     const cached = serviceCache.get(provider.id);
     if (cached) return cached;
 
     const instance = instantiateService(provider);
-    serviceCache.set(provider.id, instance);
+    if (instance) {
+      serviceCache.set(provider.id, instance);
+    }
     return instance;
   }
 
@@ -69,9 +79,11 @@ export function createStorageProviderRegistry<
       .limit(1);
 
     if (defaultRow) {
+      const service = getServiceForProvider(defaultRow);
+      if (!service) return null;
       return {
         provider: defaultRow,
-        service: getServiceForProvider(defaultRow),
+        service,
       };
     }
 
@@ -83,9 +95,11 @@ export function createStorageProviderRegistry<
       .limit(1);
 
     if (enabledRow) {
+      const service = getServiceForProvider(enabledRow);
+      if (!service) return null;
       return {
         provider: enabledRow,
-        service: getServiceForProvider(enabledRow),
+        service,
       };
     }
 
@@ -96,9 +110,11 @@ export function createStorageProviderRegistry<
       .limit(1);
 
     if (firstRow) {
+      const service = getServiceForProvider(firstRow);
+      if (!service) return null;
       return {
         provider: firstRow,
-        service: getServiceForProvider(firstRow),
+        service,
       };
     }
 
@@ -123,9 +139,12 @@ export function createStorageProviderRegistry<
       return null;
     }
 
+    const service = getServiceForProvider(row);
+    if (!service) return null;
+
     return {
       provider: row,
-      service: getServiceForProvider(row),
+      service,
     };
   }
 
