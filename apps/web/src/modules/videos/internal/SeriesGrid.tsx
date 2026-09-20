@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
@@ -46,7 +46,9 @@ export function SeriesGrid() {
   const { data } = useSuspenseQuery(seriesListQueryOptions(search));
   const { data: genres = [] } = useQuery(genresQueryOptions());
 
-  const [inputValue, setInputValue] = useState(search.q ?? '');
+  const searchQ = search.q ?? '';
+  const [inputValue, setInputValue] = useState(searchQ);
+  const lastSyncedQRef = useRef(searchQ);
   const [editingSeries, setEditingSeries] = useState<SeriesItem | null>(null);
   const [deletingSeries, setDeletingSeries] = useState<SeriesItem | null>(null);
 
@@ -105,28 +107,34 @@ export function SeriesGrid() {
   };
 
   useEffect(() => {
-    setInputValue(search.q ?? '');
-  }, [search.q]);
+    if (searchQ !== lastSyncedQRef.current) {
+      lastSyncedQRef.current = searchQ;
+      setInputValue(searchQ);
+    }
+  }, [searchQ]);
 
   useEffect(() => {
+    const trimmed = inputValue.trim();
+    if (trimmed === lastSyncedQRef.current) {
+      return;
+    }
+
     const handler = setTimeout(() => {
-      const trimmed = inputValue.trim();
-      const currentQ = search.q ?? '';
-      if (trimmed !== currentQ) {
-        navigate({
-          search: (old: Record<string, unknown>) => ({
-            ...old,
-            q: trimmed || undefined,
-            page: 1,
-          }),
-        });
-      }
+      lastSyncedQRef.current = trimmed;
+      navigate({
+        search: (old: Record<string, unknown>) => ({
+          ...old,
+          q: trimmed || undefined,
+          page: 1,
+        }),
+        replace: true,
+      });
     }, 500);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [inputValue, search.q, navigate]);
+  }, [inputValue, navigate]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteSeries(id),

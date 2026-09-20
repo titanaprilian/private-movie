@@ -223,6 +223,7 @@ describe('SeriesGrid component', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith({
       search: expect.any(Function),
+      replace: true,
     });
 
     const searchFn = mockNavigate.mock.calls[0][0].search;
@@ -586,5 +587,94 @@ describe('SeriesGrid component', () => {
     });
 
     expect(screen.getByText('42 series')).toBeInTheDocument();
+  });
+
+  it('does not revert or overwrite typed input when search.q changes from in-flight debounced navigation', () => {
+    vi.useFakeTimers();
+    const { queryClient, rerender } = renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined });
+    const input = screen.getByPlaceholderText('Filter series...') as HTMLInputElement;
+
+    // User types 'Solo'
+    fireEvent.change(input, { target: { value: 'Solo' } });
+    expect(input.value).toBe('Solo');
+
+    // Debounce timer fires
+    vi.advanceTimersByTime(500);
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+      replace: true,
+    });
+
+    // Before or during route update, user types 'Solo Leveling'
+    fireEvent.change(input, { target: { value: 'Solo Leveling' } });
+    expect(input.value).toBe('Solo Leveling');
+
+    // Route finishes updating and search.q becomes 'Solo'
+    const newSearch = { page: 1, q: 'Solo' };
+    queryClient.setQueryData(seriesListQueryOptions(newSearch).queryKey, mockSeriesResponse);
+    mockSearchState = newSearch;
+    rerender(<SeriesGrid />);
+
+    // Typed input must NOT be reverted to 'Solo'
+    expect(input.value).toBe('Solo Leveling');
+
+    vi.useRealTimers();
+  });
+
+  it('preserves search input and pending debounce when switching tabs or toggling genres', () => {
+    vi.useFakeTimers();
+    renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined, genre: 'sci-fi' });
+    const input = screen.getByPlaceholderText('Filter series...') as HTMLInputElement;
+
+    // User types 'hunter'
+    fireEvent.change(input, { target: { value: 'hunter' } });
+
+    // User removes genre filter 'sci-fi' at 200ms (timer still pending)
+    const removeSciFiBtn = screen.getByRole('button', { name: 'Remove Sci-Fi filter' });
+    fireEvent.click(removeSciFiBtn);
+
+    // Genre navigate called
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+    const genreSearchFn = mockNavigate.mock.calls[0][0].search;
+    expect(genreSearchFn({ genre: 'sci-fi', page: 1 })).toEqual({ genre: undefined, page: 1 });
+
+    mockNavigate.mockReset();
+
+    // Advance timer to 500ms
+    vi.advanceTimersByTime(500);
+
+    // Debounce timer fires with replace: true
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+      replace: true,
+    });
+
+    // The search updater function receives current search state (which has genre cleared)
+    const debouncedSearchFn = mockNavigate.mock.calls[0][0].search;
+    expect(debouncedSearchFn({ genre: undefined, page: 1 })).toEqual({
+      genre: undefined,
+      q: 'hunter',
+      page: 1,
+    });
+
+    vi.useRealTimers();
+  });
+
+  it('updates search input when search.q changes externally (e.g. back button navigation)', () => {
+    const { queryClient, rerender } = renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined });
+    const input = screen.getByPlaceholderText('Filter series...') as HTMLInputElement;
+    expect(input.value).toBe('');
+
+    // External URL change (e.g. Back button)
+    const externalSearch = { page: 1, q: 'Frieren' };
+    queryClient.setQueryData(seriesListQueryOptions(externalSearch).queryKey, mockSeriesResponse);
+    mockSearchState = externalSearch;
+    rerender(<SeriesGrid />);
+
+    expect(input.value).toBe('Frieren');
+    // Ensure no spurious navigate was called
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
