@@ -85,7 +85,7 @@ describe('PublicNavbar component', () => {
         }
         return new Response(
           JSON.stringify({
-            data: { series: mockSeriesList, pagination: { page: 1, limit: 10, total: 1, totalPages: 1 } },
+            data: { series: mockSeriesList, meta: { total: 1, page: 1, limit: 10 } },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
