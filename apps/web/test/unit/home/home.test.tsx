@@ -5,6 +5,15 @@ import { CinematicHome } from '@/modules/home';
 import { IndexPage } from '@/routes/index';
 import { setAccessToken } from '@/lib/api';
 
+const mockNavigate = vi.fn();
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 const mockHomeFeedDataWithMultipleHeroes = {
   hero: {
     id: 'hero-aot',
@@ -597,6 +606,332 @@ describe('CinematicHome component', () => {
 
       vi.useRealTimers();
     });
+  });
+});
+
+describe('Index route page', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    setAccessToken('mock-access-token');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders CinematicHome layout by default', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/auth/refresh')) {
+        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+      }
+      if (url.includes('/series/home-feed')) {
+        return new Response(JSON.stringify({ data: mockHomeFeedData }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ data: null }), { status: 200 });
+    });
+
+    renderWithProviders(<IndexPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+    });
+    expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+  });
+});
+
+describe('Recently Added Episodes carousel', () => {
+  const mockFeedWithRecentEpisodes = {
+    hero: null,
+    heroes: [],
+    rows: [
+      {
+        title: 'Trending Now',
+        items: [
+          {
+            id: 's-1',
+            title: 'Demon Slayer: Hashira Training Arc',
+            description: 'Tanjiro trains with the Hashira.',
+            type: 'tv',
+            posterUrl: 'https://example.com/demon.jpg',
+            backdropUrl: null,
+            rating: '8.5',
+            createdAt: new Date('2026-01-01'),
+            updatedAt: new Date('2026-01-01'),
+            genres: [],
+            seasonsCount: 4,
+            episodesCount: 55,
+          },
+        ],
+      },
+      {
+        title: 'Recently Added',
+        items: [
+          {
+            id: 's-legacy',
+            title: 'Legacy Series Row Item',
+            description: 'Old series-based row.',
+            type: 'tv',
+            posterUrl: 'https://example.com/legacy.jpg',
+            backdropUrl: null,
+            rating: '7.0',
+            createdAt: new Date('2026-01-01'),
+            updatedAt: new Date('2026-01-01'),
+            genres: [],
+            seasonsCount: 1,
+            episodesCount: 12,
+          },
+        ],
+      },
+    ],
+    recentlyAddedEpisodes: [
+      {
+        id: 'ep-12',
+        title: 'The Final Battle',
+        order: 12,
+        thumbnailUrl: 'https://example.com/ep12.jpg',
+        duration: 1440,
+        rating: 'TV-MA',
+        createdAt: new Date('2026-02-01').toISOString(),
+        series: {
+          id: 's-aot',
+          title: 'Attack on Titan',
+          posterUrl: 'https://example.com/aot-poster.jpg',
+          backdropUrl: 'https://example.com/aot-backdrop.jpg',
+        },
+        season: {
+          id: 'season-1',
+          seasonNumber: 1,
+          title: 'Season 1',
+        },
+        videoSources: [
+          {
+            id: 'vs-1',
+            episodeId: 'ep-12',
+            type: 'hls',
+            url: 'https://example.com/ep12.m3u8',
+            label: '1080p',
+            quality: '1080p',
+            createdAt: new Date('2026-02-01').toISOString(),
+            updatedAt: new Date('2026-02-01').toISOString(),
+          },
+        ],
+      },
+      {
+        id: 'ep-3',
+        title: 'No Thumbnail Episode',
+        order: 3,
+        thumbnailUrl: null,
+        duration: null,
+        rating: null,
+        createdAt: new Date('2026-01-15').toISOString(),
+        series: {
+          id: 's-fallback',
+          title: 'Fallback Show',
+          posterUrl: 'https://example.com/fallback-poster.jpg',
+          backdropUrl: null,
+        },
+        season: {
+          id: 'season-x',
+          seasonNumber: null,
+          title: 'Specials',
+        },
+        videoSources: [
+          {
+            id: 'vs-2',
+            episodeId: 'ep-3',
+            type: 'hls',
+            url: 'https://example.com/ep3.m3u8',
+            label: '720p',
+            quality: '720p',
+            createdAt: new Date('2026-01-15').toISOString(),
+            updatedAt: new Date('2026-01-15').toISOString(),
+          },
+        ],
+      },
+    ],
+  };
+
+  function mockFeedFetch(feedData: unknown) {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/auth/refresh')) {
+        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+      }
+      if (url.includes('/series/home-feed')) {
+        return new Response(JSON.stringify({ data: feedData }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ data: null }), { status: 200 });
+    });
+  }
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    mockNavigate.mockClear();
+    setAccessToken('mock-access-token');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders the Recently Added Episodes carousel when items are present', async () => {
+    mockFeedFetch(mockFeedWithRecentEpisodes);
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 2, name: 'Recently Added Episodes' })).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByTestId('episode-card')).toHaveLength(2);
+  });
+
+  it('filters out the legacy series-based Recently Added row', async () => {
+    mockFeedFetch(mockFeedWithRecentEpisodes);
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 2, name: 'Recently Added Episodes' })).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: 'Recently Added' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Legacy Series Row Item')).not.toBeInTheDocument();
+  });
+
+  it('renders 16:9 landscape cards with S{season} E{episode} badge overlay', async () => {
+    mockFeedFetch(mockFeedWithRecentEpisodes);
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByText('S1 E12')).toBeInTheDocument();
+    });
+
+    // Null season number falls back to EP {order}
+    expect(screen.getByText('EP 3')).toBeInTheDocument();
+
+    const cards = screen.getAllByTestId('episode-card');
+    const thumbnails = cards.map((card) => card.querySelector('[data-testid="episode-thumbnail"]'));
+    for (const thumb of thumbnails) {
+      expect(thumb).toHaveClass('aspect-video');
+    }
+  });
+
+  it('renders episode title directly below thumbnail and series title below episode title', async () => {
+    mockFeedFetch(mockFeedWithRecentEpisodes);
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByText('The Final Battle')).toBeInTheDocument();
+    });
+
+    const card = screen.getAllByTestId('episode-card')[0];
+    const episodeTitle = card.querySelector('[data-testid="episode-title"]');
+    const seriesTitle = card.querySelector('[data-testid="episode-series-title"]');
+    expect(episodeTitle).toHaveTextContent('The Final Battle');
+    expect(seriesTitle).toHaveTextContent('Attack on Titan');
+    // Episode title node precedes series title node in DOM order
+    expect(episodeTitle!.compareDocumentPosition(seriesTitle!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+  });
+
+  it('falls back from episode thumbnail to series backdrop/poster', async () => {
+    mockFeedFetch(mockFeedWithRecentEpisodes);
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('episode-card')).toHaveLength(2);
+    });
+
+    const images = screen.getAllByTestId('episode-thumbnail-img');
+    // First episode uses its own thumbnail
+    expect(images[0]).toHaveAttribute('src', 'https://example.com/ep12.jpg');
+    // Second episode has no thumbnail/backdrop -> falls back to series poster
+    expect(images[1]).toHaveAttribute('src', 'https://example.com/fallback-poster.jpg');
+  });
+
+  it('uses placeholder image when episode, backdrop, and poster are all missing', async () => {
+    const feed = {
+      ...mockFeedWithRecentEpisodes,
+      recentlyAddedEpisodes: [
+        {
+          ...mockFeedWithRecentEpisodes.recentlyAddedEpisodes[1],
+          series: {
+            id: 's-bare',
+            title: 'Bare Show',
+            posterUrl: null,
+            backdropUrl: null,
+          },
+        },
+      ],
+    };
+    mockFeedFetch(feed);
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('episode-card')).toHaveLength(1);
+    });
+
+    const img = screen.getByTestId('episode-thumbnail-img');
+    expect(img.getAttribute('src')).toMatch(/unsplash|placeholder/);
+  });
+
+  it('navigates to /watch/$seriesId?ep=$episodeId when an episode card is clicked', async () => {
+    mockFeedFetch(mockFeedWithRecentEpisodes);
+
+    const { user } = renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('episode-card')).toHaveLength(2);
+    });
+
+    await user.click(screen.getAllByTestId('episode-card')[0]);
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/watch/$seriesId',
+      params: { seriesId: 's-aot' },
+      search: { ep: 'ep-12' },
+    });
+  });
+
+  it('omits the carousel when recentlyAddedEpisodes is empty', async () => {
+    mockFeedFetch({ ...mockFeedWithRecentEpisodes, recentlyAddedEpisodes: [] });
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('heading', { level: 2, name: 'Recently Added Episodes' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('episode-card')).not.toBeInTheDocument();
+  });
+
+  it('omits the carousel when recentlyAddedEpisodes is undefined', async () => {
+    const feedWithoutEpisodes = { ...mockFeedWithRecentEpisodes, recentlyAddedEpisodes: undefined };
+    mockFeedFetch(feedWithoutEpisodes);
+
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('heading', { level: 2, name: 'Recently Added Episodes' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('episode-card')).not.toBeInTheDocument();
   });
 });
 

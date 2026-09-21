@@ -5,6 +5,7 @@ import type {
   MediaHomeFeed,
   MediaHomeFeedHero,
   MediaHomeFeedRow,
+  MediaRecentlyAddedEpisode,
   MediaSeriesMetadata,
 } from '@repo/contracts';
 
@@ -13,6 +14,7 @@ export type {
   MediaHomeFeed,
   MediaHomeFeedHero,
   MediaHomeFeedRow,
+  MediaRecentlyAddedEpisode,
   MediaSeriesMetadata,
 };
 

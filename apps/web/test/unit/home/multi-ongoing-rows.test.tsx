@@ -107,7 +107,10 @@ describe('CinematicHome multi-ongoing rows', () => {
       headings.indexOf('Ongoing Korean Drama')
     );
     expect(headings).toContain('Animation');
-    expect(headings).toContain('Recently Added');
+    // Legacy series-based "Recently Added" row is filtered out on Web in favor
+    // of the dedicated Recently Added Episodes carousel (#501)
+    expect(headings).not.toContain('Recently Added');
+    expect(screen.queryByText('New Arrival')).not.toBeInTheDocument();
   });
 
   it('displays populated series cards with posters, badges, and metadata per ongoing row', async () => {
@@ -123,8 +126,9 @@ describe('CinematicHome multi-ongoing rows', () => {
     const animHeading = screen.getByRole('heading', { level: 2, name: /Ongoing Animation/ });
     const animRow = animHeading.closest('div.relative.group\\/row') ?? animHeading.parentElement!;
     const animCards = within(animRow.parentElement as HTMLElement).getAllByTestId('series-card');
-    // Total cards across all rows: 2 + 1 + 1 + 1 = 5
-    expect(screen.getAllByTestId('series-card')).toHaveLength(5);
+    // Total cards across all rows: 2 + 1 + 1 = 4 (legacy "Recently Added"
+    // series row is filtered out on Web per #501)
+    expect(screen.getAllByTestId('series-card')).toHaveLength(4);
     expect(animCards.length).toBeGreaterThanOrEqual(2);
 
     expect(screen.getByText('Solo Leveling')).toBeInTheDocument();

@@ -15,6 +15,7 @@ import { PublicNavbar } from '@/modules/navigation';
 import { useHomeFeedNav } from './useHomeFeedNav';
 import {
   homeFeedQueryOptions,
+  type MediaRecentlyAddedEpisode,
   type MediaSeriesMetadata,
   type MediaHomeFeedHero,
 } from './api';
@@ -39,6 +40,120 @@ export interface CarouselRowData {
   id: string;
   title: string;
   items: SeriesItem[];
+}
+
+const EPISODE_THUMBNAIL_PLACEHOLDER =
+  'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop';
+
+function episodeBadge(seasonNumber: number | null, order: number): string {
+  if (seasonNumber !== null && seasonNumber !== undefined) {
+    return `S${seasonNumber} E${order}`;
+  }
+  return `EP ${order}`;
+}
+
+function resolveEpisodeThumbnail(ep: MediaRecentlyAddedEpisode): string {
+  return (
+    ep.thumbnailUrl ||
+    ep.series.backdropUrl ||
+    ep.series.posterUrl ||
+    EPISODE_THUMBNAIL_PLACEHOLDER
+  );
+}
+
+function RecentlyAddedEpisodesRow({ episodes }: { episodes: MediaRecentlyAddedEpisode[] }) {
+  const navigate = useNavigate();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!containerRef.current) return;
+    const scrollAmount = direction === 'left' ? -600 : 600;
+    if (typeof containerRef.current.scrollBy === 'function') {
+      containerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    } else {
+      containerRef.current.scrollLeft += scrollAmount;
+    }
+  };
+
+  return (
+    <div className="relative group/row my-6">
+      <h2 className="text-xl md:text-2xl font-bold mb-3 text-zinc-100 flex items-center gap-2 px-8 md:px-16">
+        <span>Recently Added Episodes</span>
+        <ChevronRight className="w-5 h-5 text-zinc-500 opacity-0 group-hover/row:opacity-100 transition-opacity" />
+      </h2>
+
+      <div className="relative px-8 md:px-16">
+        {/* Left Scroll Button */}
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-0 bottom-0 z-40 w-12 bg-black/60 hover:bg-black/90 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          aria-label="Scroll Recently Added Episodes left"
+        >
+          <ChevronLeft className="w-8 h-8" />
+        </button>
+
+        {/* Horizontal Carousel Container */}
+        <div
+          ref={containerRef}
+          className="flex gap-4 overflow-x-auto py-4 scrollbar-none scroll-smooth snap-x snap-mandatory"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {episodes.map((ep) => (
+            <div
+              key={ep.id}
+              data-testid="episode-card"
+              onClick={() =>
+                navigate({
+                  to: '/watch/$seriesId',
+                  params: { seriesId: ep.series.id },
+                  search: { ep: ep.id },
+                })
+              }
+              className="w-[280px] sm:w-[320px] flex-shrink-0 snap-start group relative rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-300 transform hover:scale-105 z-10 hover:z-30 shadow-md hover:shadow-2xl cursor-pointer overflow-hidden"
+            >
+              {/* Thumbnail / 16:9 Aspect Ratio Box */}
+              <div data-testid="episode-thumbnail" className="relative aspect-video w-full bg-zinc-800 overflow-hidden">
+                <img
+                  data-testid="episode-thumbnail-img"
+                  src={resolveEpisodeThumbnail(ep)}
+                  alt={ep.title}
+                  className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-60" />
+
+                {/* Season/Episode Badge (Top Left) */}
+                <div className="absolute top-2 left-2 z-10">
+                  <span className="bg-black/80 backdrop-blur-md text-zinc-200 font-mono font-bold text-[10px] uppercase px-1.5 py-0.5 rounded border border-zinc-700 shadow">
+                    {episodeBadge(ep.season.seasonNumber, ep.order)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Episode title + series title beneath the thumbnail */}
+              <div className="p-2 sm:p-3 bg-zinc-900 space-y-0.5">
+                <h3 data-testid="episode-title" className="text-sm font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">
+                  {ep.title}
+                </h3>
+                <p data-testid="episode-series-title" className="text-xs text-zinc-400 truncate">
+                  {ep.series.title}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Right Scroll Button */}
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-0 bottom-0 z-40 w-12 bg-black/60 hover:bg-black/90 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          aria-label="Scroll Recently Added Episodes right"
+        >
+          <ChevronRight className="w-8 h-8" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function mapSeriesToSeriesItem(s: MediaSeriesMetadata): SeriesItem {
@@ -316,11 +431,16 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
   const currentHero = heroesList[activeIndex] || null;
 
   const carouselRows: CarouselRowData[] =
-    data?.rows.map((r, idx) => ({
-      id: `row-${idx}-${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-      title: r.title,
-      items: r.items.map(mapSeriesToSeriesItem),
-    })) ?? [];
+    data?.rows
+      .filter((r) => r.title.trim().toLowerCase() !== 'recently added')
+      .map((r, idx) => ({
+        id: `row-${idx}-${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        title: r.title,
+        items: r.items.map(mapSeriesToSeriesItem),
+      })) ?? [];
+
+  const recentlyAddedEpisodes: MediaRecentlyAddedEpisode[] =
+    data?.recentlyAddedEpisodes ?? [];
 
   const { focusedRow, focusedItem } = useHomeFeedNav({
     heroSeriesId: currentHero?.id,
@@ -494,6 +614,9 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
             isSpatialMode={isSpatialMode}
           />
         ))}
+        {recentlyAddedEpisodes.length > 0 && (
+          <RecentlyAddedEpisodesRow episodes={recentlyAddedEpisodes} />
+        )}
       </div>
     </div>
   );
