@@ -90,7 +90,7 @@ function HomeFeedHeroSkeleton() {
       data-testid="hero-skeleton"
       aria-busy="true"
       aria-label="Loading featured series"
-      className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 border-b border-zinc-800 animate-pulse flex items-end p-8 md:p-16"
+      className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 animate-pulse flex items-end p-8 md:p-16"
     >
       <div className="max-w-3xl space-y-4 w-full">
         <div className="h-4 w-32 bg-zinc-800 rounded" />
@@ -362,7 +362,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           onMouseLeave={() => setIsPaused(false)}
           onFocus={() => setIsPaused(true)}
           onBlur={() => setIsPaused(false)}
-          className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 border-b border-zinc-800 overflow-hidden group/hero"
+          className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 overflow-hidden group/hero"
         >
           {/* Background Banner Images with Smooth Crossfade */}
           {heroesList.map((item, idx) => (
@@ -473,7 +473,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           )}
         </div>
       ) : (
-        <div className="relative h-[40vh] min-h-[300px] w-full bg-zinc-950 border-b border-zinc-800 flex items-center justify-center text-center p-8">
+        <div data-testid="hero-empty" className="relative h-[40vh] min-h-[300px] w-full bg-zinc-950 flex items-center justify-center text-center p-8">
           <div className="space-y-3">
             <Sparkles className="w-8 h-8 text-zinc-600 mx-auto" />
             <h2 className="text-xl font-semibold text-zinc-400">No Featured Series Available</h2>
