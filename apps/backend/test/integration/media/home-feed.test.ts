@@ -831,6 +831,292 @@ describe("GET /series/home-feed", () => {
     expect(ongoing.items.map((i) => i.id)).toContain(sId);
   });
 
+  it("orders highlighted ongoing series before non-highlighted backfill in Big Genre rows", async () => {
+    const baseTime = Date.now();
+    const now = new Date(baseTime);
+    const bigId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: bigId,
+      name: "Anime",
+      slug: "anime",
+      isBigGenre: true,
+      displayOrder: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    async function seedOngoing(
+      title: string,
+      updatedAt: Date,
+      highlighted: boolean,
+      status: "ongoing" | "completed" = "ongoing",
+      withSources = true,
+    ): Promise<string> {
+      const sId = crypto.randomUUID();
+      await db.insert(series).values({
+        id: sId,
+        title,
+        type: "tv",
+        isOngoingHighlighted: highlighted,
+        createdAt: now,
+        updatedAt,
+      });
+      await db.insert(seriesToGenres).values({ seriesId: sId, genreId: bigId });
+      const seasonId = crypto.randomUUID();
+      await db.insert(seasons).values({
+        id: seasonId,
+        seriesId: sId,
+        title: "Season 1",
+        seasonNumber: 1,
+        status,
+        createdAt: now,
+        updatedAt: now,
+      });
+      const epId = crypto.randomUUID();
+      await db.insert(episodes).values({
+        id: epId,
+        title: "Episode 1",
+        order: 1,
+        seasonId,
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (withSources) {
+        await db.insert(videoSources).values({
+          id: crypto.randomUUID(),
+          episodeId: epId,
+          type: "hls",
+          url: `https://example.com/${sId}.m3u8`,
+          label: "1080p",
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      return sId;
+    }
+
+    // Non-highlighted has the newest updatedAt, but highlighted must still come first
+    const plainNewest = await seedOngoing("Plain Newest", new Date(baseTime + 5000), false);
+    const highlightedOld = await seedOngoing("Highlighted Old", new Date(baseTime + 1000), true);
+    const highlightedNew = await seedOngoing("Highlighted New", new Date(baseTime + 2000), true);
+    // Highlighted but completed-only -> safety gate must exclude it
+    await seedOngoing("Highlighted Completed", new Date(baseTime + 9000), true, "completed");
+    // Highlighted but sourceless -> safety gate must exclude it
+    await seedOngoing("Highlighted No Sources", new Date(baseTime + 8000), true, "ongoing", false);
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        rows: Array<{ title: string; items: Array<{ id: string; title: string }> }>;
+      };
+    };
+    const row = body.data.rows.find((r) => r.title === "Ongoing Anime")!;
+    expect(row).toBeDefined();
+    const ids = row.items.map((i) => i.id);
+    // Highlighted first (newest highlighted before older highlighted), then backfill
+    expect(ids).toEqual([highlightedNew, highlightedOld, plainNewest]);
+  });
+
+  it("applies soft-cap expansion and backfill: 0, 3, 10, and 12 highlighted series", async () => {
+    const baseTime = Date.now();
+    const now = new Date(baseTime);
+
+    async function seedCase(suffix: string, highlightedCount: number, plainCount: number) {
+      const bigId = crypto.randomUUID();
+      await db.insert(genres).values({
+        id: bigId,
+        name: `Big ${suffix}`,
+        slug: `big-${suffix}`,
+        isBigGenre: true,
+        displayOrder: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+      const highlightedIds: string[] = [];
+      for (let i = 0; i < highlightedCount; i++) {
+        const sId = crypto.randomUUID();
+        highlightedIds.push(sId);
+        await db.insert(series).values({
+          id: sId,
+          title: `H ${suffix} ${i}`,
+          type: "tv",
+          isOngoingHighlighted: true,
+          createdAt: now,
+          updatedAt: new Date(baseTime + i * 1000),
+        });
+        await db.insert(seriesToGenres).values({ seriesId: sId, genreId: bigId });
+        const seasonId = crypto.randomUUID();
+        await db.insert(seasons).values({
+          id: seasonId,
+          seriesId: sId,
+          title: "Season 1",
+          seasonNumber: 1,
+          status: "ongoing",
+          createdAt: now,
+          updatedAt: now,
+        });
+        const epId = crypto.randomUUID();
+        await db.insert(episodes).values({
+          id: epId,
+          title: "Episode 1",
+          order: 1,
+          seasonId,
+          createdAt: now,
+          updatedAt: now,
+        });
+        await db.insert(videoSources).values({
+          id: crypto.randomUUID(),
+          episodeId: epId,
+          type: "hls",
+          url: `https://example.com/${sId}.m3u8`,
+          label: "1080p",
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      for (let i = 0; i < plainCount; i++) {
+        const sId = crypto.randomUUID();
+        await db.insert(series).values({
+          id: sId,
+          title: `P ${suffix} ${i}`,
+          type: "tv",
+          isOngoingHighlighted: false,
+          createdAt: now,
+          updatedAt: new Date(baseTime + 50000 + i * 1000),
+        });
+        await db.insert(seriesToGenres).values({ seriesId: sId, genreId: bigId });
+        const seasonId = crypto.randomUUID();
+        await db.insert(seasons).values({
+          id: seasonId,
+          seriesId: sId,
+          title: "Season 1",
+          seasonNumber: 1,
+          status: "ongoing",
+          createdAt: now,
+          updatedAt: now,
+        });
+        const epId = crypto.randomUUID();
+        await db.insert(episodes).values({
+          id: epId,
+          title: "Episode 1",
+          order: 1,
+          seasonId,
+          createdAt: now,
+          updatedAt: now,
+        });
+        await db.insert(videoSources).values({
+          id: crypto.randomUUID(),
+          episodeId: epId,
+          type: "hls",
+          url: `https://example.com/${sId}.m3u8`,
+          label: "1080p",
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      return { bigId, highlightedIds };
+    }
+
+    async function fetchOngoingRow(slug: string) {
+      const response = await request(app, { path: "/series/home-feed" });
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: {
+          rows: Array<{ title: string; items: Array<{ id: string }> }>;
+        };
+      };
+      const row = body.data.rows.find((r) =>
+        r.title.toLowerCase().includes(`ongoing big ${slug}`),
+      );
+      return row!;
+    }
+
+    // Case 0 highlighted + 2 plain -> backfill to 2 (never sparse-driven beyond availability)
+    await seedCase("zero", 0, 2);
+    let row = await fetchOngoingRow("zero");
+    expect(row.items).toHaveLength(2);
+
+    // Case 3 highlighted + 10 plain -> 3 highlighted + 7 backfill = 10
+    await seedCase("three", 3, 10);
+    row = await fetchOngoingRow("three");
+    expect(row.items).toHaveLength(10);
+
+    // Case 10 highlighted + 5 plain -> exactly 10 highlighted, no backfill needed
+    await seedCase("ten", 10, 5);
+    row = await fetchOngoingRow("ten");
+    expect(row.items).toHaveLength(10);
+
+    // Case 12 highlighted + 10 plain -> all 12 highlighted surface (expansion past 10, ceiling 20)
+    const twelve = await seedCase("twelve", 12, 10);
+    row = await fetchOngoingRow("twelve");
+    expect(row.items).toHaveLength(12);
+    // Highlighted items come first; plain backfill would only appear past position 12 (none here)
+    for (const hId of twelve.highlightedIds) {
+      expect(row.items.map((i) => i.id)).toContain(hId);
+    }
+  });
+
+  it("orders highlighted series first in the fallback Ongoing row with the same safety gate", async () => {
+    const baseTime = Date.now();
+    const now = new Date(baseTime);
+
+    async function seedFallback(title: string, updatedAt: Date, highlighted: boolean) {
+      const sId = crypto.randomUUID();
+      await db.insert(series).values({
+        id: sId,
+        title,
+        type: "tv",
+        isOngoingHighlighted: highlighted,
+        createdAt: now,
+        updatedAt,
+      });
+      const seasonId = crypto.randomUUID();
+      await db.insert(seasons).values({
+        id: seasonId,
+        seriesId: sId,
+        title: "Season 1",
+        seasonNumber: 1,
+        status: "ongoing",
+        createdAt: now,
+        updatedAt: now,
+      });
+      const epId = crypto.randomUUID();
+      await db.insert(episodes).values({
+        id: epId,
+        title: "Episode 1",
+        order: 1,
+        seasonId,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await db.insert(videoSources).values({
+        id: crypto.randomUUID(),
+        episodeId: epId,
+        type: "hls",
+        url: `https://example.com/${sId}.m3u8`,
+        label: "1080p",
+        createdAt: now,
+        updatedAt: now,
+      });
+      return sId;
+    }
+
+    const plain = await seedFallback("Fallback Plain", new Date(baseTime + 5000), false);
+    const highlighted = await seedFallback("Fallback Highlighted", new Date(baseTime + 1000), true);
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        rows: Array<{ title: string; items: Array<{ id: string }> }>;
+      };
+    };
+    const row = body.data.rows.find((r) => r.title === "Ongoing")!;
+    expect(row).toBeDefined();
+    expect(row.items.map((i) => i.id)).toEqual([highlighted, plain]);
+  });
+
   it("omits rows with zero items in category-scoped feeds", async () => {
     const now = new Date();
     const genreId = crypto.randomUUID();

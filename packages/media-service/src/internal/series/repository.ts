@@ -743,18 +743,47 @@ export function createSeriesRepositoryInternal<
           .limit(10);
       }
 
+      const ONGOING_SOFT_CAP = 10;
+      const ONGOING_HARD_CAP = 20;
+
+      async function fetchOngoingRow(
+        extraConditions: ReturnType<typeof and>,
+      ): Promise<SeriesRow[]> {
+        const highlighted = await db
+          .select()
+          .from(series)
+          .where(
+            and(
+              extraConditions,
+              eq(series.isOngoingHighlighted, true),
+            ),
+          )
+          .orderBy(desc(series.updatedAt))
+          .limit(ONGOING_HARD_CAP);
+        if (highlighted.length >= ONGOING_SOFT_CAP) {
+          return highlighted.slice(0, ONGOING_HARD_CAP);
+        }
+        const backfill = await db
+          .select()
+          .from(series)
+          .where(
+            and(
+              extraConditions,
+              eq(series.isOngoingHighlighted, false),
+            ),
+          )
+          .orderBy(desc(series.updatedAt))
+          .limit(ONGOING_SOFT_CAP - highlighted.length);
+        return [...highlighted, ...backfill];
+      }
+
       const ongoingPerGenrePromises = activeBigGenres.map((bigGenre) => {
         const hasGenre = sql`EXISTS (
           SELECT 1
           FROM ${seriesToGenres}
           WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${seriesToGenres.genreId} = ${bigGenre.id}
         )`;
-        return db
-          .select()
-          .from(series)
-          .where(and(hasOngoingSeason, hasGenre, hasVideoSources))
-          .orderBy(desc(series.isOngoingHighlighted), desc(series.updatedAt))
-          .limit(10);
+        return fetchOngoingRow(and(hasOngoingSeason, hasGenre, hasVideoSources));
       });
 
       const bigGenreRowsPromises = activeBigGenres.map((bigGenre) => {
@@ -789,12 +818,7 @@ export function createSeriesRepositoryInternal<
         (rows) => rows.length > 0
       );
       if (!hasAnyPerGenreOngoing) {
-        fallbackOngoingRows = await db
-          .select()
-          .from(series)
-          .where(and(hasOngoingSeason, hasVideoSources))
-          .orderBy(desc(series.isOngoingHighlighted), desc(series.updatedAt))
-          .limit(10);
+        fallbackOngoingRows = await fetchOngoingRow(and(hasOngoingSeason, hasVideoSources));
       }
 
       const allSeriesMap = new Map<string, SeriesRow>();

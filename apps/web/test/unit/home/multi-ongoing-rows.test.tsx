@@ -164,6 +164,45 @@ describe('CinematicHome multi-ongoing rows', () => {
     });
   });
 
+  it('preserves backend order with highlighted series first and shows no highlight badge clutter', async () => {
+    const orderedFeed = {
+      hero: null,
+      heroes: [],
+      rows: [
+        {
+          title: 'Ongoing Anime',
+          items: [
+            seriesItem('anim-h1', 'Alpha One'),
+            seriesItem('anim-h2', 'Alpha Two'),
+            seriesItem('anim-p1', 'Beta One'),
+          ],
+        },
+      ],
+    };
+    vi.restoreAllMocks();
+    setAccessToken('mock-access-token');
+    mockFetchWithFeed(orderedFeed);
+    renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alpha One')).toBeInTheDocument();
+    });
+
+    const cards = screen.getAllByTestId('series-card');
+    expect(cards.map((c) => c.textContent)).toEqual([
+      expect.stringContaining('Alpha One'),
+      expect.stringContaining('Alpha Two'),
+      expect.stringContaining('Beta One'),
+    ]);
+
+    // Curation is communicated by front-of-row positioning only — no extra badges on cards
+    for (const card of cards) {
+      expect(within(card).queryByText(/highlighted/i)).toBeNull();
+      expect(within(card).queryByText(/curated/i)).toBeNull();
+      expect(within(card).queryByText(/spotlight/i)).toBeNull();
+    }
+  });
+
   it('provides scroll buttons and snap scrolling for every ongoing row', async () => {
     renderWithProviders(<CinematicHome />);
 
