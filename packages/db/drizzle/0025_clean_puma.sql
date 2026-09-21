@@ -1,0 +1,1 @@
+ALTER TABLE "series" ADD COLUMN "is_ongoing_highlighted" boolean DEFAULT false NOT NULL;

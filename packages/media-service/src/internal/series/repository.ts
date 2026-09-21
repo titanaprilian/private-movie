@@ -78,6 +78,7 @@ export interface UpdateSeriesInput {
   seasonNumber?: number | null;
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
   isFeatured?: boolean;
+  isOngoingHighlighted?: boolean;
   genreIds?: string[];
 }
 
@@ -88,6 +89,7 @@ export interface SeriesListParams {
   q?: string;
   genre?: string;
   filter?: "all" | "featured" | "ongoing";
+  highlighted?: boolean;
 }
 
 export type SeasonWithEpisodes = SeasonRow & {
@@ -337,6 +339,10 @@ export function createSeriesRepositoryInternal<
         );
       }
 
+      if (params.highlighted === true) {
+        conditions.push(eq(series.isOngoingHighlighted, true));
+      }
+
       if (params.genre && params.genre.trim() !== "") {
         const slugs = params.genre
           .split(",")
@@ -368,7 +374,11 @@ export function createSeriesRepositoryInternal<
           .select()
           .from(series)
           .where(where)
-          .orderBy(desc(series.createdAt))
+          .orderBy(
+            ...(params.filter === "ongoing"
+              ? [desc(series.isOngoingHighlighted), desc(series.updatedAt)]
+              : [desc(series.createdAt)])
+          )
           .limit(limit)
           .offset(offset),
         db.select({ value: count() }).from(series).where(where),
@@ -450,6 +460,8 @@ export function createSeriesRepositoryInternal<
       if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
       if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
       if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
+      if (input.isOngoingHighlighted !== undefined)
+        updateData.isOngoingHighlighted = input.isOngoingHighlighted;
 
       const [row] = await db
         .update(series)
@@ -590,7 +602,7 @@ export function createSeriesRepositoryInternal<
             .select()
             .from(series)
             .where(and(hasOngoingSeason, hasTargetGenre, hasVideoSources))
-            .orderBy(desc(series.updatedAt))
+            .orderBy(desc(series.isOngoingHighlighted), desc(series.updatedAt))
             .limit(10),
           db
             .select()
@@ -741,7 +753,7 @@ export function createSeriesRepositoryInternal<
           .select()
           .from(series)
           .where(and(hasOngoingSeason, hasGenre, hasVideoSources))
-          .orderBy(desc(series.updatedAt))
+          .orderBy(desc(series.isOngoingHighlighted), desc(series.updatedAt))
           .limit(10);
       });
 
@@ -781,7 +793,7 @@ export function createSeriesRepositoryInternal<
           .select()
           .from(series)
           .where(and(hasOngoingSeason, hasVideoSources))
-          .orderBy(desc(series.updatedAt))
+          .orderBy(desc(series.isOngoingHighlighted), desc(series.updatedAt))
           .limit(10);
       }
 

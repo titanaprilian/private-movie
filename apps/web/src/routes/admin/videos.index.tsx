@@ -8,6 +8,7 @@ export type SeriesListSearch = {
   q?: string;
   genre?: string;
   tab?: 'all' | 'featured' | 'ongoing';
+  highlighted?: boolean;
 };
 
 export const Route = createFileRoute('/admin/videos/')({
@@ -30,10 +31,18 @@ export const Route = createFileRoute('/admin/videos/')({
       rawTab === 'featured' || rawTab === 'ongoing' || rawTab === 'all'
         ? (rawTab as 'all' | 'featured' | 'ongoing')
         : undefined;
+    const rawHighlighted = search.highlighted;
+    const highlighted =
+      rawHighlighted === true ||
+      rawHighlighted === 'true' ||
+      rawHighlighted === 1 ||
+      rawHighlighted === '1'
+        ? true
+        : undefined;
 
-    return { page, q, genre, tab };
+    return { page, q, genre, tab, highlighted };
   },
-  loaderDeps: ({ search: { page, q, genre, tab } }) => ({ page, q, genre, tab }),
+  loaderDeps: ({ search: { page, q, genre, tab, highlighted } }) => ({ page, q, genre, tab, highlighted }),
   loader: ({ deps }: { deps?: SeriesListSearch } = {}) =>
     Promise.all([
       queryClient.ensureQueryData(genresQueryOptions()),

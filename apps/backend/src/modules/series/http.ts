@@ -74,7 +74,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       async ({ query }) => {
         const page = query.page ?? 1;
         const limit = query.limit ?? 20;
-        const { source, q, genre, filter } = query;
+        const { source, q, genre, filter, highlighted } = query;
         const result = await seriesRepository.list({
           page,
           limit,
@@ -82,6 +82,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
           q,
           genre,
           filter,
+          highlighted,
         });
         return successResponse({
           series: result.series,
@@ -102,6 +103,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
           filter: t.Optional(
             t.Union([t.Literal("all"), t.Literal("featured"), t.Literal("ongoing")])
           ),
+          highlighted: t.Optional(t.Boolean()),
         }),
       }
     )
@@ -205,6 +207,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
           isFeatured: t.Optional(t.Boolean()),
+          isOngoingHighlighted: t.Optional(t.Boolean()),
           genreIds: t.Optional(t.Array(t.String())),
         }),
       }
@@ -225,6 +228,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
           description: t.Optional(t.Nullable(t.String())),
           posterUrl: t.Optional(t.Nullable(t.String())),
           isFeatured: t.Optional(t.Boolean()),
+          isOngoingHighlighted: t.Optional(t.Boolean()),
           genreIds: t.Optional(t.Array(t.String())),
         }),
       }

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { genresQueryOptions } from '@/modules/genres';
 import {
   seriesListQueryOptions,
+  updateSeries,
   deleteSeries,
   type SeriesItem,
 } from './api';
@@ -38,6 +39,7 @@ export function SeriesGrid() {
     q?: string;
     genre?: string;
     tab?: 'all' | 'featured' | 'ongoing';
+    highlighted?: boolean;
   };
   const navigate = useNavigate({ from: '/admin/videos/' });
   const openDialog = useScrapeWorkerStore((state) => state.openDialog);
@@ -54,6 +56,39 @@ export function SeriesGrid() {
 
   const activeTab =
     search.tab === 'featured' || search.tab === 'ongoing' ? search.tab : 'all';
+
+  const highlightedOnly = search.highlighted === true;
+  const bigGenres = genres.filter((genre) => Boolean(genre.isBigGenre));
+
+  const highlightedCountsQuery = useQuery({
+    ...seriesListQueryOptions({ filter: 'ongoing', highlighted: true, limit: 100 }),
+    enabled: activeTab === 'ongoing',
+    staleTime: 30_000,
+  });
+  const highlightedSeries = highlightedCountsQuery.data?.series ?? [];
+  const highlightedCountByGenreSlug = new Map<string, number>();
+  for (const item of highlightedSeries) {
+    const itemGenres = Array.isArray(item.genres) ? item.genres : [];
+    for (const genre of itemGenres) {
+      const slug = typeof genre === 'string' ? genre : genre.slug;
+      if (slug) {
+        highlightedCountByGenreSlug.set(
+          slug,
+          (highlightedCountByGenreSlug.get(slug) ?? 0) + 1
+        );
+      }
+    }
+  }
+
+  const handleToggleHighlightedOnly = () => {
+    navigate({
+      search: (old: Record<string, unknown>) => ({
+        ...old,
+        highlighted: highlightedOnly ? undefined : true,
+        page: 1,
+      }),
+    });
+  };
 
   const handleTabChange = (nextTab: string) => {
     navigate({
@@ -136,8 +171,7 @@ export function SeriesGrid() {
     };
   }, [inputValue, navigate]);
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteSeries(id),
+  const deleteMutation = useMutation({    mutationFn: (id: string) => deleteSeries(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series'] });
       toast.success('series.delete', {
@@ -151,6 +185,57 @@ export function SeriesGrid() {
       });
     },
   });
+
+  type SeriesListQueryData = { series: SeriesItem[]; meta: { total: number; page: number; limit: number } };
+
+  const highlightMutation = useMutation({
+    mutationFn: ({ id, highlighted }: { id: string; highlighted: boolean }) =>
+      updateSeries(id, { isOngoingHighlighted: highlighted }),
+    onMutate: async ({ id, highlighted }) => {
+      await queryClient.cancelQueries({ queryKey: ['series'] });
+      const previous = queryClient.getQueriesData<SeriesListQueryData>({
+        queryKey: ['series'],
+      });
+      queryClient.setQueriesData<SeriesListQueryData>(
+        { queryKey: ['series'] },
+        (old) => {
+          if (!old || !Array.isArray(old.series)) return old;
+          return {
+            ...old,
+            series: old.series.map((item) =>
+              item.id === id
+                ? { ...item, isOngoingHighlighted: highlighted }
+                : item
+            ),
+          };
+        }
+      );
+      return { previous };
+    },
+    onError: (error: Error, _vars, context) => {
+      context?.previous.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error('series.highlight', {
+        description: `Failed to update highlight: ${error.message}`,
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['series'] });
+    },
+  });
+
+  const handleToggleHighlight = (
+    item: SeriesItem,
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    highlightMutation.mutate({
+      id: item.id,
+      highlighted: !item.isOngoingHighlighted,
+    });
+  };
 
   const handleOpenEdit = (item: SeriesItem, e: React.MouseEvent) => {
     e.preventDefault();
@@ -209,6 +294,73 @@ export function SeriesGrid() {
           <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {/* Big Genre quick-filter chips + Highlighted Only toggle (ongoing tab) */}
+      {activeTab === 'ongoing' && (
+        <div className="bg-card border border-c rounded p-3 space-y-2.5">
+          {bigGenres.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap" aria-label="Filter by big genre">
+              {bigGenres.map((genre) => {
+                const isActive = selectedSlugs.includes(genre.slug);
+                const highlightedCount =
+                  highlightedCountByGenreSlug.get(genre.slug) ?? 0;
+                return (
+                  <button
+                    key={genre.id}
+                    type="button"
+                    onClick={() => handleToggleGenre(genre.slug)}
+                    aria-pressed={isActive}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs mono font-medium border transition-colors cursor-pointer ${
+                      isActive
+                        ? 'bg-primary text-primary-fg border-primary'
+                        : 'border-c hover-bg text-muted bg-card'
+                    }`}
+                  >
+                    <span>{genre.name}</span>
+                    <span
+                      aria-label={`${highlightedCount} highlighted in ${genre.name}`}
+                      title={`${highlightedCount} highlighted`}
+                      className={`inline-flex items-center justify-center min-w-5 h-4 px-1 rounded text-[10px] font-semibold ${
+                        isActive
+                          ? 'bg-primary-fg/20 text-primary-fg'
+                          : 'bg-primary/10 text-primary'
+                      }`}
+                    >
+                      {highlightedCount}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={highlightedOnly}
+              aria-label="Highlighted Only"
+              onClick={handleToggleHighlightedOnly}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs mono font-medium border transition-colors cursor-pointer ${
+                highlightedOnly
+                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40'
+                  : 'border-c hover-bg text-muted bg-card'
+              }`}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill={highlightedOnly ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              <span>★ Highlighted Only</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter bar & Genre Combobox */}
       <div className="bg-card border border-c rounded p-3 space-y-3">
@@ -348,6 +500,7 @@ export function SeriesGrid() {
             const isOngoing = Boolean(
               item.hasOngoing || item.seasons?.some((s) => s.status === 'ongoing')
             );
+            const isHighlighted = Boolean(item.isOngoingHighlighted);
 
             return (
               <div
@@ -375,7 +528,7 @@ export function SeriesGrid() {
                     )}
 
                     {/* Status Badges Overlay */}
-                    {(isFeatured || isOngoing) && (
+                    {(isFeatured || isOngoing || isHighlighted) && (
                       <div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
                         {isFeatured && (
                           <span className="text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-primary/30 bg-card/90 backdrop-blur-xs text-primary shadow-xs">
@@ -387,8 +540,36 @@ export function SeriesGrid() {
                             Ongoing
                           </span>
                         )}
+                        {isHighlighted && (
+                          <span className="text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-yellow-500/50 bg-card/90 backdrop-blur-xs text-yellow-600 dark:text-yellow-400 shadow-xs">
+                            Highlighted Ongoing
+                          </span>
+                        )}
                       </div>
                     )}
+                    {/* 1-click highlight star toggle */}
+                    <button
+                      type="button"
+                      aria-label={`${isHighlighted ? 'Unhighlight' : 'Highlight'} ${item.title}`}
+                      aria-pressed={isHighlighted}
+                      onClick={(e) => handleToggleHighlight(item, e)}
+                      className={`absolute top-2 right-2 z-10 w-7 h-7 rounded flex items-center justify-center border backdrop-blur-xs shadow-xs transition-colors cursor-pointer ${
+                        isHighlighted
+                          ? 'border-yellow-500/50 bg-card/90 text-yellow-500'
+                          : 'border-c bg-card/90 text-muted hover:text-yellow-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+                      }`}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill={isHighlighted ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    </button>
                   </div>
 
                   {/* Card Content */}

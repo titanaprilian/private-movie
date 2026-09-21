@@ -189,6 +189,7 @@ export const MVP_MEDIA_OPENAPI = {
           logoUrl: { type: ["string", "null"] },
           rating: { type: ["string", "null"] },
           isFeatured: { type: "boolean" },
+          isOngoingHighlighted: { type: "boolean" },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
           genres: {
@@ -353,6 +354,7 @@ export const MVP_MEDIA_OPENAPI = {
           logoUrl: { type: ["string", "null"] },
           rating: { type: ["string", "null"] },
           isFeatured: { type: "boolean" },
+          isOngoingHighlighted: { type: "boolean" },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
           seasons: {

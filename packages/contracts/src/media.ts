@@ -39,6 +39,7 @@ export type MediaSeriesMetadata = {
   logoUrl: string | null;
   rating: string | null;
   isFeatured: boolean;
+  isOngoingHighlighted?: boolean;
   createdAt: string;
   updatedAt: string;
   genres: MediaGenre[];
@@ -110,6 +111,7 @@ export type MediaSeriesDetails = {
   logoUrl: string | null;
   rating: string | null;
   isFeatured: boolean;
+  isOngoingHighlighted?: boolean;
   createdAt: string;
   updatedAt: string;
   seasons: MediaSeasonWithEpisodes[];

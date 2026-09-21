@@ -85,6 +85,7 @@ export interface AdminSeriesItem {
   posterUrl?: string | null;
   backdropUrl?: string | null;
   isFeatured?: boolean | null;
+  isOngoingHighlighted?: boolean | null;
   hasOngoing?: boolean;
   tmdbId?: number | null;
   tmdbSyncStatus?: string | null;
@@ -108,6 +109,7 @@ export interface AdminSeriesListQuery {
   q?: string;
   genre?: string;
   filter?: "all" | "featured" | "ongoing";
+  highlighted?: boolean;
 }
 
 export interface AdminSeriesListResponseData {
@@ -120,6 +122,7 @@ export interface AdminUpdateSeriesRequest {
   description?: string | null;
   posterUrl?: string | null;
   isFeatured?: boolean;
+  isOngoingHighlighted?: boolean;
   genreIds?: string[];
 }
 

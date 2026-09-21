@@ -123,6 +123,7 @@ export async function fetchSeries(
     genre: params?.genre,
     source: params?.source,
     filter: filter && filter !== 'all' ? filter : undefined,
+    highlighted: params?.highlighted,
   };
 
   const query = Object.fromEntries(
@@ -137,6 +138,7 @@ export async function fetchSeries(
       genre?: string;
       source?: 'otakudesu';
       filter?: 'all' | 'featured' | 'ongoing';
+      highlighted?: boolean;
     },
   });
 

@@ -44,6 +44,8 @@ export function EditSeriesDialog({
   const [editDescription, setEditDescription] = useState('');
   const [editPosterUrl, setEditPosterUrl] = useState('');
   const [editIsFeatured, setEditIsFeatured] = useState<boolean>(false);
+  const [editIsOngoingHighlighted, setEditIsOngoingHighlighted] =
+    useState<boolean>(false);
   const [selectedGenreIds, setSelectedGenreIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export function EditSeriesDialog({
       setEditDescription(series.description ?? '');
       setEditPosterUrl(series.posterUrl ?? '');
       setEditIsFeatured(Boolean(series.isFeatured));
+      setEditIsOngoingHighlighted(Boolean(series.isOngoingHighlighted));
 
       let initialGenreIds: string[] = [];
       if ('genreIds' in series && series.genreIds && Array.isArray(series.genreIds) && series.genreIds.length > 0) {
@@ -98,6 +101,7 @@ export function EditSeriesDialog({
       description: editDescription || null,
       posterUrl: editPosterUrl || null,
       isFeatured: editIsFeatured,
+      isOngoingHighlighted: editIsOngoingHighlighted,
       genreIds: selectedGenreIds,
     });
   };
@@ -108,7 +112,7 @@ export function EditSeriesDialog({
         <DialogHeader>
           <DialogTitle>Edit Series</DialogTitle>
           <DialogDescription>
-            Update series details, featured flag, and assigned genres.
+            Update series details, featured and highlight flags, and assigned genres.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2 min-w-0 max-w-full overflow-hidden">
@@ -143,6 +147,17 @@ export function EditSeriesDialog({
             />
             <Label htmlFor="edit-series-featured" className="cursor-pointer font-medium text-sm">
               Featured Series
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-2 py-1">
+            <Checkbox
+              id="edit-series-highlighted"
+              checked={editIsOngoingHighlighted}
+              onCheckedChange={(checked) => setEditIsOngoingHighlighted(Boolean(checked))}
+            />
+            <Label htmlFor="edit-series-highlighted" className="cursor-pointer font-medium text-sm">
+              Highlight in Ongoing Feed
             </Label>
           </div>
 

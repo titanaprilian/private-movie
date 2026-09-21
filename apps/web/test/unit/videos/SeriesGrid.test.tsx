@@ -373,6 +373,7 @@ describe('SeriesGrid component', () => {
       description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
       posterUrl: 'https://example.com/solo-leveling.jpg',
       isFeatured: false,
+      isOngoingHighlighted: false,
       genreIds: ['g-1'],
     });
   });
@@ -412,6 +413,7 @@ describe('SeriesGrid component', () => {
       description: 'Sung Jinwoo ascends from E-rank hunter to shadow monarch.',
       posterUrl: 'https://example.com/solo-leveling.jpg',
       isFeatured: false,
+      isOngoingHighlighted: false,
       genreIds: ['g-1'],
     });
   });

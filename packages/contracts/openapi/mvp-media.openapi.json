@@ -235,6 +235,9 @@
           "isFeatured": {
             "type": "boolean"
           },
+          "isOngoingHighlighted": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -578,6 +581,9 @@
             ]
           },
           "isFeatured": {
+            "type": "boolean"
+          },
+          "isOngoingHighlighted": {
             "type": "boolean"
           },
           "createdAt": {
