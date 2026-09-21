@@ -352,6 +352,36 @@ export function buildProxyShim(domain: string): string {
 </script>`;
 }
 
+export const RELAY_EMBED_REFERER = "https://dramula.com";
+export const RELAY_CDN_REFERER = "https://videobello.net/";
+
+/**
+ * CDN / player host fragments intercepted by `apps/web/public/media-proxy-sw.js`.
+ * Requests to these hosts carry the videobello player page as Referer —
+ * the CDN allow-lists the player, not dramula.
+ */
+export const RELAY_CDN_HOST_FRAGMENTS = [
+  "skylayer64.online",
+  "cloudremux.online",
+  "cloudflow",
+  "streamflow",
+  "medialayer",
+  "desustream.net",
+  "onenesuhd.com",
+  "odstream.net",
+];
+
+export function resolveRelayReferer(hostname: string): string {
+  const host = hostname.toLowerCase();
+  if (host === "videobello.net" || host.endsWith(".videobello.net")) {
+    return RELAY_EMBED_REFERER;
+  }
+  if (RELAY_CDN_HOST_FRAGMENTS.some((fragment) => host.includes(fragment))) {
+    return RELAY_CDN_REFERER;
+  }
+  return RELAY_EMBED_REFERER;
+}
+
 export function sanitizeHtmlContent(html: string, domain: string): string {
   let processed = html;
 

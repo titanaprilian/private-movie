@@ -3,7 +3,7 @@ import { MVP_MEDIA_OPENAPI, type AuthenticationService } from "@repo/contracts";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import type { DbClient } from "@repo/db";
-import { AD_SUPPRESSION_SHIM, sanitizeHtmlContent } from "./internal/proxy-helpers";
+import { AD_SUPPRESSION_SHIM, resolveRelayReferer, sanitizeHtmlContent } from "./internal/proxy-helpers";
 
 export const UNTHROTTLED_MEDIA_ROUTE_PREFIXES = [
   "/embed",
@@ -277,7 +277,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           }
 
           const outboundHeaders: Record<string, string> = {
-            Referer: "https://dramula.com",
+            Referer: resolveRelayReferer(targetUrl.hostname),
           };
 
           request.headers.forEach((value, key) => {
