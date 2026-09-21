@@ -127,16 +127,110 @@ export interface HomeFeedRow {
   items: SeriesWithMetadata[];
 }
 
+export interface RecentlyAddedEpisode {
+  id: string;
+  title: string;
+  order: number;
+  thumbnailUrl: string | null;
+  duration: number | null;
+  rating: string | null;
+  createdAt: string;
+  series: {
+    id: string;
+    title: string;
+    posterUrl: string | null;
+    backdropUrl: string | null;
+  };
+  season: {
+    id: string;
+    seasonNumber: number | null;
+    title: string;
+  };
+  videoSources: VideoSourceRow[];
+}
+
 export interface HomeFeedPayload {
   hero: HomeFeedHero | null;
   heroes: HomeFeedHero[];
   rows: HomeFeedRow[];
+  recentlyAddedEpisodes: RecentlyAddedEpisode[];
 }
 
 export function createSeriesRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
 >(db: PgDatabase<THKT, TSchema>, options?: SeriesRepositoryOptions) {
+  async function fetchRecentlyAddedEpisodes(): Promise<RecentlyAddedEpisode[]> {
+    const candidateRows = await db
+      .select({
+        episode: episodes,
+        season: seasons,
+        serie: series,
+        latestSourceAt: sql<Date>`MAX(${videoSources.createdAt})`,
+      })
+      .from(episodes)
+      .innerJoin(videoSources, eq(videoSources.episodeId, episodes.id))
+      .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+      .innerJoin(series, eq(seasons.seriesId, series.id))
+      .groupBy(episodes.id, seasons.id, series.id)
+      .orderBy(sql`MAX(${videoSources.createdAt}) DESC`);
+
+    const seenSeries = new Set<string>();
+    const picked: typeof candidateRows = [];
+    for (const row of candidateRows) {
+      if (seenSeries.has(row.serie.id)) continue;
+      seenSeries.add(row.serie.id);
+      picked.push(row);
+      if (picked.length >= 10) break;
+    }
+
+    if (picked.length === 0) return [];
+
+    const pickedEpisodeIds = picked.map((r) => r.episode.id);
+    const allSources = await db
+      .select()
+      .from(videoSources)
+      .where(inArray(videoSources.episodeId, pickedEpisodeIds))
+      .orderBy(asc(videoSources.createdAt));
+
+    const normalizedSources = await normalizeVideoSources(allSources, {
+      s3StorageService: options?.s3StorageService,
+      storageProviderRegistry: options?.storageProviderRegistry,
+    });
+
+    const sourcesByEpisode = new Map<string, VideoSourceRow[]>();
+    for (const s of normalizedSources) {
+      const list = sourcesByEpisode.get(s.episodeId) ?? [];
+      list.push(s);
+      sourcesByEpisode.set(s.episodeId, list);
+    }
+
+    return picked.map((row) => ({
+      id: row.episode.id,
+      title: row.episode.title,
+      order: row.episode.order,
+      thumbnailUrl: row.episode.thumbnailUrl,
+      duration: row.episode.duration,
+      rating: row.episode.rating,
+      createdAt:
+        row.episode.createdAt instanceof Date
+          ? row.episode.createdAt.toISOString()
+          : String(row.episode.createdAt),
+      series: {
+        id: row.serie.id,
+        title: row.serie.title,
+        posterUrl: row.serie.posterUrl,
+        backdropUrl: row.serie.backdropUrl,
+      },
+      season: {
+        id: row.season.id,
+        seasonNumber: row.season.seasonNumber,
+        title: row.season.title,
+      },
+      videoSources: sourcesByEpisode.get(row.episode.id) ?? [],
+    }));
+  }
+
   return {
     async upsert(input: SeriesUpsertInput): Promise<SeriesRow> {
       const now = new Date();
@@ -714,10 +808,13 @@ export function createSeriesRepositoryInternal<
           },
         ].filter((row) => row.items.length > 0);
 
+        const recentlyAddedEpisodes = await fetchRecentlyAddedEpisodes();
+
         return {
           hero,
           heroes,
           rows,
+          recentlyAddedEpisodes,
         };
       }
 
@@ -925,10 +1022,13 @@ export function createSeriesRepositoryInternal<
         },
       ].filter((row) => row.items.length > 0);
 
+      const recentlyAddedEpisodes = await fetchRecentlyAddedEpisodes();
+
       return {
         hero,
         heroes,
         rows,
+        recentlyAddedEpisodes,
       };
     },
   };

@@ -1180,3 +1180,321 @@ describe("GET /series/home-feed", () => {
     }
   });
 });
+
+describe("GET /series/home-feed recentlyAddedEpisodes", () => {
+  let app: App;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  type RecentlyAddedEpisodeBody = {
+    id: string;
+    title: string;
+    order: number;
+    thumbnailUrl: string | null;
+    duration: number | null;
+    rating: string | null;
+    createdAt: string;
+    series: {
+      id: string;
+      title: string;
+      posterUrl: string | null;
+      backdropUrl: string | null;
+    };
+    season: {
+      id: string;
+      seasonNumber: number | null;
+      title: string;
+    };
+    videoSources: Array<{ id: string; episodeId: string; type: string; url: string }>;
+  };
+
+  type FeedBody = {
+    data: {
+      rows: Array<{ title: string; items: Array<{ id: string }> }>;
+      recentlyAddedEpisodes: RecentlyAddedEpisodeBody[];
+    };
+  };
+
+  async function seedEpisodeWithSource(opts: {
+    seriesTitle: string;
+    seasonNumber?: number;
+    episodeTitle: string;
+    episodeOrder?: number;
+    sourceCreatedAt: Date;
+  }): Promise<{ seriesId: string; seasonId: string; episodeId: string }> {
+    const now = new Date();
+    const seriesId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: seriesId,
+      title: opts.seriesTitle,
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const seasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: seasonId,
+      seriesId,
+      title: `Season ${opts.seasonNumber ?? 1}`,
+      seasonNumber: opts.seasonNumber ?? 1,
+      status: "completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const episodeId = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: episodeId,
+      title: opts.episodeTitle,
+      order: opts.episodeOrder ?? 1,
+      seasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId,
+      type: "hls",
+      url: `https://example.com/${episodeId}.m3u8`,
+      label: "1080p",
+      createdAt: opts.sourceCreatedAt,
+      updatedAt: opts.sourceCreatedAt,
+    });
+    return { seriesId, seasonId, episodeId };
+  }
+
+  it("populates recentlyAddedEpisodes with episode, series, season, and video source metadata", async () => {
+    const seeded = await seedEpisodeWithSource({
+      seriesTitle: "Meta Show",
+      episodeTitle: "Fresh Episode",
+      sourceCreatedAt: new Date(),
+    });
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as FeedBody;
+
+    expect(body.data.recentlyAddedEpisodes).toHaveLength(1);
+    const ep = body.data.recentlyAddedEpisodes[0];
+    expect(ep.id).toBe(seeded.episodeId);
+    expect(ep.title).toBe("Fresh Episode");
+    expect(ep.series.id).toBe(seeded.seriesId);
+    expect(ep.series.title).toBe("Meta Show");
+    expect(ep.season.id).toBe(seeded.seasonId);
+    expect(ep.season.seasonNumber).toBe(1);
+    expect(ep.videoSources.length).toBeGreaterThanOrEqual(1);
+    expect(ep.videoSources[0].episodeId).toBe(seeded.episodeId);
+  });
+
+  it("strictly excludes episodes without video sources", async () => {
+    const now = new Date();
+    const emptySeriesId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: emptySeriesId,
+      title: "Sourceless Show",
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const emptySeasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: emptySeasonId,
+      seriesId: emptySeriesId,
+      title: "Season 1",
+      seasonNumber: 1,
+      status: "completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(episodes).values({
+      id: crypto.randomUUID(),
+      title: "Lonely Episode",
+      order: 1,
+      seasonId: emptySeasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await seedEpisodeWithSource({
+      seriesTitle: "Sourced Show",
+      episodeTitle: "Playable Episode",
+      sourceCreatedAt: now,
+    });
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as FeedBody;
+
+    expect(body.data.recentlyAddedEpisodes).toHaveLength(1);
+    expect(body.data.recentlyAddedEpisodes[0].series.id).not.toBe(emptySeriesId);
+    expect(body.data.recentlyAddedEpisodes[0].title).toBe("Playable Episode");
+  });
+
+  it("orders episodes by newest video source creation timestamp descending", async () => {
+    const base = Date.now();
+    const oldest = await seedEpisodeWithSource({
+      seriesTitle: "Old Show",
+      episodeTitle: "Old Episode",
+      sourceCreatedAt: new Date(base - 30000),
+    });
+    const middle = await seedEpisodeWithSource({
+      seriesTitle: "Mid Show",
+      episodeTitle: "Mid Episode",
+      sourceCreatedAt: new Date(base - 20000),
+    });
+    const newest = await seedEpisodeWithSource({
+      seriesTitle: "New Show",
+      episodeTitle: "New Episode",
+      sourceCreatedAt: new Date(base - 10000),
+    });
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as FeedBody;
+
+    expect(body.data.recentlyAddedEpisodes.map((e) => e.id)).toEqual([
+      newest.episodeId,
+      middle.episodeId,
+      oldest.episodeId,
+    ]);
+  });
+
+  it("returns at most 1 episode per series (newest release for that show)", async () => {
+    const base = Date.now();
+    const now = new Date(base);
+    const seriesId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: seriesId,
+      title: "Bulk Show",
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const seasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: seasonId,
+      seriesId,
+      title: "Season 1",
+      seasonNumber: 1,
+      status: "completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const oldEpId = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: oldEpId,
+      title: "Episode 1",
+      order: 1,
+      seasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: oldEpId,
+      type: "hls",
+      url: `https://example.com/${oldEpId}.m3u8`,
+      label: "1080p",
+      createdAt: new Date(base - 20000),
+      updatedAt: new Date(base - 20000),
+    });
+
+    const newEpId = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: newEpId,
+      title: "Episode 2",
+      order: 2,
+      seasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: newEpId,
+      type: "hls",
+      url: `https://example.com/${newEpId}.m3u8`,
+      label: "1080p",
+      createdAt: new Date(base - 5000),
+      updatedAt: new Date(base - 5000),
+    });
+
+    await seedEpisodeWithSource({
+      seriesTitle: "Other Show",
+      episodeTitle: "Other Episode",
+      sourceCreatedAt: new Date(base - 10000),
+    });
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as FeedBody;
+
+    const bulkEntries = body.data.recentlyAddedEpisodes.filter(
+      (e) => e.series.id === seriesId
+    );
+    expect(bulkEntries).toHaveLength(1);
+    expect(bulkEntries[0].id).toBe(newEpId);
+  });
+
+  it("keeps the legacy Recently Added series row for Android TV backward compatibility", async () => {
+    await seedEpisodeWithSource({
+      seriesTitle: "Legacy Show",
+      episodeTitle: "Legacy Episode",
+      sourceCreatedAt: new Date(),
+    });
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as FeedBody;
+
+    const legacyRow = body.data.rows.find((r) => r.title === "Recently Added");
+    expect(legacyRow).toBeDefined();
+    expect(legacyRow!.items.length).toBeGreaterThan(0);
+    expect(body.data.recentlyAddedEpisodes.length).toBeGreaterThan(0);
+  });
+
+  it("ignores genre and sourceTypes query parameters for recentlyAddedEpisodes", async () => {
+    const now = new Date();
+    const genreId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: genreId,
+      name: "Action",
+      slug: "action",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const tagged = await seedEpisodeWithSource({
+      seriesTitle: "Tagged Show",
+      episodeTitle: "Tagged Episode",
+      sourceCreatedAt: new Date(now.getTime() - 1000),
+    });
+    await db.insert(seriesToGenres).values({ seriesId: tagged.seriesId, genreId });
+
+    const untagged = await seedEpisodeWithSource({
+      seriesTitle: "Untagged Show",
+      episodeTitle: "Untagged Episode",
+      sourceCreatedAt: new Date(now.getTime()),
+    });
+
+    const plain = await request(app, { path: "/series/home-feed" });
+    const genreScoped = await request(app, { path: "/series/home-feed?genre=action" });
+    const sourceFiltered = await request(app, {
+      path: "/series/home-feed?sourceTypes=embed",
+    });
+
+    expect(plain.status).toBe(200);
+    expect(genreScoped.status).toBe(200);
+    expect(sourceFiltered.status).toBe(200);
+
+    const plainIds = (plain.body as FeedBody).data.recentlyAddedEpisodes.map((e) => e.id);
+    const genreIds = (genreScoped.body as FeedBody).data.recentlyAddedEpisodes.map((e) => e.id);
+    const sourceIds = (sourceFiltered.body as FeedBody).data.recentlyAddedEpisodes.map((e) => e.id);
+
+    expect(plainIds).toContain(tagged.episodeId);
+    expect(plainIds).toContain(untagged.episodeId);
+    expect(genreIds).toEqual(plainIds);
+    expect(sourceIds).toEqual(plainIds);
+  });
+});

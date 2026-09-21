@@ -139,6 +139,7 @@ export type {
   HomeFeedHero,
   HomeFeedRow,
   HomeFeedPayload,
+  RecentlyAddedEpisode,
 } from "./internal/series/repository";
 export { EpisodeNotFoundError, createEpisodeRepositoryInternal } from "./internal/episodes/repository";
 export { SeasonNotFoundError, SeasonNotEmptyError, SeasonNotOngoingError, SeasonMissingScraperUrlError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";

@@ -60,6 +60,29 @@ export type MediaHomeFeed = {
   hero: MediaHomeFeedHero | null;
   heroes: MediaHomeFeedHero[];
   rows: MediaHomeFeedRow[];
+  recentlyAddedEpisodes: MediaRecentlyAddedEpisode[];
+};
+
+export type MediaRecentlyAddedEpisode = {
+  id: string;
+  title: string;
+  order: number;
+  thumbnailUrl: string | null;
+  duration: number | null;
+  rating: string | null;
+  createdAt: string;
+  series: {
+    id: string;
+    title: string;
+    posterUrl: string | null;
+    backdropUrl: string | null;
+  };
+  season: {
+    id: string;
+    seasonNumber: number | null;
+    title: string;
+  };
+  videoSources: MediaVideoSource[];
 };
 
 export type MediaVideoSource = {
