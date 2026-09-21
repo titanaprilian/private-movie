@@ -24,11 +24,7 @@ describe("GET /series/home-feed", () => {
 
     expect(body.data.hero).toBeNull();
     expect(body.data.heroes).toEqual([]);
-    expect(body.data.rows).toHaveLength(2);
-    expect(body.data.rows[0].title).toBe("Ongoing");
-    expect(body.data.rows[0].items).toEqual([]);
-    expect(body.data.rows[1].title).toBe("Recently Added");
-    expect(body.data.rows[1].items).toEqual([]);
+    expect(body.data.rows).toEqual([]);
   });
 
   it("excludes series without video sources from hero, ongoing, and recently added rows", async () => {
@@ -80,11 +76,7 @@ describe("GET /series/home-feed", () => {
 
     expect(body.data.hero).toBeNull();
     expect(body.data.heroes).toEqual([]);
-    expect(body.data.rows).toHaveLength(2);
-    expect(body.data.rows[0].title).toBe("Ongoing");
-    expect(body.data.rows[0].items).toHaveLength(0);
-    expect(body.data.rows[1].title).toBe("Recently Added");
-    expect(body.data.rows[1].items).toHaveLength(0);
+    expect(body.data.rows).toEqual([]);
   });
 
   it("returns populated hero, ongoing, and recently added rows when series have video sources", async () => {
@@ -425,10 +417,13 @@ describe("GET /series/home-feed", () => {
     };
 
     expect(body.data.rows).toHaveLength(4);
-    expect(body.data.rows[0].title).toBe("Ongoing");
+    expect(body.data.rows[0].title).toBe("Ongoing Korean Drama");
     expect(body.data.rows[1].title).toBe("Korean Drama");
     expect(body.data.rows[2].title).toBe("Anime");
     expect(body.data.rows[3].title).toBe("Recently Added");
+
+    expect(body.data.rows[0].items).toHaveLength(1);
+    expect(body.data.rows[0].items[0].id).toBe(kdSeriesId);
 
     expect(body.data.rows[1].items).toHaveLength(1);
     expect(body.data.rows[1].items[0].id).toBe(kdSeriesId);
@@ -660,5 +655,242 @@ describe("GET /series/home-feed", () => {
 
     // Latest updated non-featured series should be first in heroes
     expect(body.data.heroes[0].id).toBe(nonFeaturedIds[2]);
+  });
+
+  it("partitions ongoing rows per big genre ordered by display order with latest-update ordering", async () => {
+    const baseTime = Date.now();
+    const now = new Date(baseTime);
+
+    const animId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: animId,
+      name: "Animation",
+      slug: "animation",
+      isBigGenre: true,
+      displayOrder: 2,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const kdId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: kdId,
+      name: "Korean Drama",
+      slug: "korean-drama",
+      isBigGenre: true,
+      displayOrder: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    async function seedOngoingSeries(
+      title: string,
+      genreId: string,
+      updatedAt: Date,
+      withSources: boolean,
+      status: "ongoing" | "completed" = "ongoing"
+    ): Promise<string> {
+      const sId = crypto.randomUUID();
+      await db.insert(series).values({
+        id: sId,
+        title,
+        type: "tv",
+        createdAt: now,
+        updatedAt,
+      });
+      await db.insert(seriesToGenres).values({ seriesId: sId, genreId });
+      const seasonId = crypto.randomUUID();
+      await db.insert(seasons).values({
+        id: seasonId,
+        seriesId: sId,
+        title: "Season 1",
+        seasonNumber: 1,
+        status,
+        createdAt: now,
+        updatedAt: now,
+      });
+      const epId = crypto.randomUUID();
+      await db.insert(episodes).values({
+        id: epId,
+        title: "Episode 1",
+        order: 1,
+        seasonId,
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (withSources) {
+        await db.insert(videoSources).values({
+          id: crypto.randomUUID(),
+          episodeId: epId,
+          type: "hls",
+          url: `https://example.com/${sId}.m3u8`,
+          label: "1080p",
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      return sId;
+    }
+
+    // KD: newer updates should come first; one completed (excluded), one without sources (excluded)
+    const kdNew = await seedOngoingSeries("KD New", kdId, new Date(baseTime + 3000), true);
+    const kdOld = await seedOngoingSeries("KD Old", kdId, new Date(baseTime + 1000), true);
+    await seedOngoingSeries("KD No Sources", kdId, new Date(baseTime + 5000), false);
+    await seedOngoingSeries("KD Completed", kdId, new Date(baseTime + 4000), true, "completed");
+    const animId1 = await seedOngoingSeries("Anim 1", animId, new Date(baseTime + 2000), true);
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        rows: Array<{ title: string; items: Array<{ id: string; title: string }> }>;
+      };
+    };
+
+    const titles = body.data.rows.map((r) => r.title);
+    // Ongoing rows first in display order: KD (1) before Animation (2)
+    expect(titles[0]).toBe("Ongoing Korean Drama");
+    expect(titles[1]).toBe("Ongoing Animation");
+    // Catalog + recently added follow ongoing rows
+    expect(titles.indexOf("Korean Drama")).toBeGreaterThan(1);
+    expect(titles.indexOf("Animation")).toBeGreaterThan(1);
+    expect(titles[titles.length - 1]).toBe("Recently Added");
+
+    const kdRow = body.data.rows.find((r) => r.title === "Ongoing Korean Drama")!;
+    expect(kdRow.items.map((i) => i.id)).toEqual([kdNew, kdOld]);
+
+    const animRow = body.data.rows.find((r) => r.title === "Ongoing Animation")!;
+    expect(animRow.items.map((i) => i.id)).toEqual([animId1]);
+
+    // No generic Ongoing fallback when per-genre ongoing exists
+    expect(titles).not.toContain("Ongoing");
+  });
+
+  it("omits empty ongoing rows and falls back to generic Ongoing when no big genre has ongoing titles", async () => {
+    const now = new Date();
+    const emptyBigId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: emptyBigId,
+      name: "Animation",
+      slug: "animation",
+      isBigGenre: true,
+      displayOrder: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Series with ongoing season but NO genre link and with sources -> only visible via fallback
+    const sId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: sId,
+      title: "Lone Ongoing",
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const seasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: seasonId,
+      seriesId: sId,
+      title: "Season 1",
+      seasonNumber: 1,
+      status: "ongoing",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const epId = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: epId,
+      title: "Episode 1",
+      order: 1,
+      seasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: epId,
+      type: "hls",
+      url: "https://example.com/lone.m3u8",
+      label: "1080p",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        rows: Array<{ title: string; items: Array<{ id: string }> }>;
+      };
+    };
+    const titles = body.data.rows.map((r) => r.title);
+    expect(titles).toContain("Ongoing");
+    expect(titles).not.toContain("Ongoing Animation");
+    const ongoing = body.data.rows.find((r) => r.title === "Ongoing")!;
+    expect(ongoing.items.map((i) => i.id)).toContain(sId);
+  });
+
+  it("omits rows with zero items in category-scoped feeds", async () => {
+    const now = new Date();
+    const genreId = crypto.randomUUID();
+    await db.insert(genres).values({
+      id: genreId,
+      name: "Drama",
+      slug: "drama",
+      createdAt: now,
+      updatedAt: now,
+    });
+    // Completed-only series with sources: ongoing row should be omitted
+    const sId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: sId,
+      title: "Completed Drama",
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(seriesToGenres).values({ seriesId: sId, genreId });
+    const seasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: seasonId,
+      seriesId: sId,
+      title: "Season 1",
+      seasonNumber: 1,
+      status: "completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const epId = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: epId,
+      title: "Episode 1",
+      order: 1,
+      seasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(videoSources).values({
+      id: crypto.randomUUID(),
+      episodeId: epId,
+      type: "hls",
+      url: "https://example.com/completed.m3u8",
+      label: "1080p",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const response = await request(app, { path: "/series/home-feed?genre=drama" });
+    expect(response.status).toBe(200);
+    const body = response.body as {
+      data: {
+        rows: Array<{ title: string; items: Array<{ id: string }> }>;
+      };
+    };
+    const titles = body.data.rows.map((r) => r.title);
+    expect(titles).not.toContain("Ongoing");
+    for (const row of body.data.rows) {
+      expect(row.items.length).toBeGreaterThan(0);
+    }
   });
 });

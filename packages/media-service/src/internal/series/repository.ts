@@ -700,7 +700,7 @@ export function createSeriesRepositoryInternal<
             title: "Top Rated",
             items: topRatedRows.map((s) => enrichedMap.get(s.id)!),
           },
-        ];
+        ].filter((row) => row.items.length > 0);
 
         return {
           hero,
@@ -731,12 +731,19 @@ export function createSeriesRepositoryInternal<
           .limit(10);
       }
 
-      const ongoingRowsPromise = db
-        .select()
-        .from(series)
-        .where(and(hasOngoingSeason, hasVideoSources))
-        .orderBy(desc(series.updatedAt))
-        .limit(10);
+      const ongoingPerGenrePromises = activeBigGenres.map((bigGenre) => {
+        const hasGenre = sql`EXISTS (
+          SELECT 1
+          FROM ${seriesToGenres}
+          WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${seriesToGenres.genreId} = ${bigGenre.id}
+        )`;
+        return db
+          .select()
+          .from(series)
+          .where(and(hasOngoingSeason, hasGenre, hasVideoSources))
+          .orderBy(desc(series.updatedAt))
+          .limit(10);
+      });
 
       const bigGenreRowsPromises = activeBigGenres.map((bigGenre) => {
         const hasGenre = sql`EXISTS (
@@ -759,14 +766,27 @@ export function createSeriesRepositoryInternal<
         .orderBy(desc(series.createdAt))
         .limit(10);
 
-      const [ongoingRows, bigGenreRowsList, recentlyAddedRows] = await Promise.all([
-        ongoingRowsPromise,
+      const [ongoingPerGenreList, bigGenreRowsList, recentlyAddedRows] = await Promise.all([
+        Promise.all(ongoingPerGenrePromises),
         Promise.all(bigGenreRowsPromises),
         recentlyAddedRowsPromise,
       ]);
 
+      let fallbackOngoingRows: SeriesRow[] = [];
+      const hasAnyPerGenreOngoing = ongoingPerGenreList.some(
+        (rows) => rows.length > 0
+      );
+      if (!hasAnyPerGenreOngoing) {
+        fallbackOngoingRows = await db
+          .select()
+          .from(series)
+          .where(and(hasOngoingSeason, hasVideoSources))
+          .orderBy(desc(series.updatedAt))
+          .limit(10);
+      }
+
       const allSeriesMap = new Map<string, SeriesRow>();
-      for (const s of [...heroSeriesList, ...ongoingRows, ...recentlyAddedRows, ...bigGenreRowsList.flat()]) {
+      for (const s of [...heroSeriesList, ...fallbackOngoingRows, ...recentlyAddedRows, ...ongoingPerGenreList.flat(), ...bigGenreRowsList.flat()]) {
         allSeriesMap.set(s.id, s);
       }
 
@@ -847,10 +867,18 @@ export function createSeriesRepositoryInternal<
       const hero: HomeFeedHero | null = heroes[0] ?? null;
 
       const rows: HomeFeedRow[] = [
-        {
-          title: "Ongoing",
-          items: ongoingRows.map((s) => enrichedMap.get(s.id)!),
-        },
+        ...activeBigGenres.map((bigGenre, index) => ({
+          title: `Ongoing ${bigGenre.name}`,
+          items: (ongoingPerGenreList[index] ?? []).map((s) => enrichedMap.get(s.id)!),
+        })),
+        ...(hasAnyPerGenreOngoing
+          ? []
+          : [
+              {
+                title: "Ongoing",
+                items: fallbackOngoingRows.map((s) => enrichedMap.get(s.id)!),
+              },
+            ]),
         ...activeBigGenres.map((bigGenre, index) => ({
           title: bigGenre.name,
           items: (bigGenreRowsList[index] ?? []).map((s) => enrichedMap.get(s.id)!),
@@ -859,7 +887,7 @@ export function createSeriesRepositoryInternal<
           title: "Recently Added",
           items: recentlyAddedRows.map((s) => enrichedMap.get(s.id)!),
         },
-      ];
+      ].filter((row) => row.items.length > 0);
 
       return {
         hero,

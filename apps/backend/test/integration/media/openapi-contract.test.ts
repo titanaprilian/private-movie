@@ -120,7 +120,7 @@ describe("MVP public media OpenAPI contract", () => {
     expect("error" in (body as Record<string, unknown>)).toBe(false);
     expect(Array.isArray(body.data.rows)).toBe(true);
     expect(body.data.rows.map((row) => row.title)).toEqual([
-      "Ongoing",
+      "Ongoing Korean Drama",
       "Korean Drama",
       "Recently Added",
     ]);
