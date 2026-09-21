@@ -111,13 +111,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       "/series/home-feed",
       async ({ query }) => {
         const sourceTypes = parseSourceTypesParam(query?.sourceTypes);
-        const genre = query?.genre;
-        const feed = await seriesRepository.getHomeFeed(sourceTypes, genre);
+        const feed = await seriesRepository.getHomeFeed(sourceTypes);
         return successResponse(feed);
       },
       {
         query: t.Object({
-          genre: t.Optional(t.String()),
           sourceTypes: t.Optional(t.Union([t.String(), t.Array(t.String())])),
         }),
       }

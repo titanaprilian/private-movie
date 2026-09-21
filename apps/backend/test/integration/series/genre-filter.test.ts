@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { genres, series, seriesToGenres } from "@repo/db";
+import { genres, seasons, series, seriesToGenres } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
 
@@ -111,5 +111,71 @@ describe("GET /series?genre=slug", () => {
 
     expect(body.data.series).toEqual([]);
     expect(body.data.meta.total).toBe(0);
+  });
+
+  it("combines genre with filter=ongoing / filter=all and pagination metadata", async () => {
+    const actionGenre = await insertGenreRow("Action", "action");
+
+    async function insertGenreSeries(title: string, status: "ongoing" | "completed") {
+      const row = await insertSeriesRow(title);
+      await linkSeriesToGenre(row.id, actionGenre.id);
+      const now = new Date();
+      await db.insert(seasons).values({
+        id: crypto.randomUUID(),
+        seriesId: row.id,
+        title: "Season 1",
+        seasonNumber: 1,
+        status,
+        createdAt: now,
+        updatedAt: now,
+      });
+      return row;
+    }
+
+    const ongoing1 = await insertGenreSeries("Ongoing Action 1", "ongoing");
+    const ongoing2 = await insertGenreSeries("Ongoing Action 2", "ongoing");
+    const completed = await insertGenreSeries("Completed Action", "completed");
+
+    const ongoingResponse = await request(app, {
+      path: "/series?genre=action&filter=ongoing&page=1&limit=20",
+    });
+    expect(ongoingResponse.status).toBe(200);
+    const ongoingBody = ongoingResponse.body as {
+      data: {
+        series: { id: string }[];
+        meta: { total: number; page: number; limit: number };
+      };
+    };
+    expect(ongoingBody.data.meta).toEqual({ total: 2, page: 1, limit: 20 });
+    const ongoingIds = ongoingBody.data.series.map((s) => s.id);
+    expect(ongoingIds).toContain(ongoing1.id);
+    expect(ongoingIds).toContain(ongoing2.id);
+    expect(ongoingIds).not.toContain(completed.id);
+
+    const allResponse = await request(app, {
+      path: "/series?genre=action&filter=all&page=1&limit=20",
+    });
+    expect(allResponse.status).toBe(200);
+    const allBody = allResponse.body as {
+      data: {
+        series: { id: string }[];
+        meta: { total: number; page: number; limit: number };
+      };
+    };
+    expect(allBody.data.meta).toEqual({ total: 3, page: 1, limit: 20 });
+    expect(allBody.data.series).toHaveLength(3);
+
+    const page2Response = await request(app, {
+      path: "/series?genre=action&filter=all&page=2&limit=2",
+    });
+    expect(page2Response.status).toBe(200);
+    const page2Body = page2Response.body as {
+      data: {
+        series: { id: string }[];
+        meta: { total: number; page: number; limit: number };
+      };
+    };
+    expect(page2Body.data.meta).toEqual({ total: 3, page: 2, limit: 2 });
+    expect(page2Body.data.series).toHaveLength(1);
   });
 });

@@ -432,92 +432,6 @@ describe("GET /series/home-feed", () => {
     expect(body.data.rows[2].items[0].id).toBe(animeSeriesId);
   });
 
-  it("returns category-scoped home feed when ?genre=<slug> is supplied", async () => {
-    const now = new Date();
-
-    const actionGenreId = crypto.randomUUID();
-    await db.insert(genres).values({
-      id: actionGenreId,
-      name: "Action",
-      slug: "action",
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const actionSeriesId = crypto.randomUUID();
-    await db.insert(series).values({
-      id: actionSeriesId,
-      title: "John Wick",
-      type: "movie",
-      rating: "9.0",
-      isFeatured: true,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    await db.insert(seriesToGenres).values({
-      seriesId: actionSeriesId,
-      genreId: actionGenreId,
-    });
-
-    const seasonId = crypto.randomUUID();
-    await db.insert(seasons).values({
-      id: seasonId,
-      seriesId: actionSeriesId,
-      title: "Season 1",
-      seasonNumber: 1,
-      status: "ongoing",
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const epId = crypto.randomUUID();
-    await db.insert(episodes).values({
-      id: epId,
-      title: "Episode 1",
-      order: 1,
-      seasonId: seasonId,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    await db.insert(videoSources).values({
-      id: crypto.randomUUID(),
-      episodeId: epId,
-      type: "hls",
-      url: "https://example.com/johnwick.m3u8",
-      label: "1080p",
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const response = await request(app, { path: "/series/home-feed?genre=action" });
-
-    expect(response.status).toBe(200);
-    const body = response.body as {
-      data: {
-        hero: { id: string; title: string } | null;
-        heroes: Array<{ id: string; title: string }>;
-        rows: Array<{
-          title: string;
-          items: Array<{ id: string; title: string }>;
-        }>;
-      };
-    };
-
-    expect(body.data.hero).not.toBeNull();
-    expect(body.data.hero!.id).toBe(actionSeriesId);
-
-    expect(body.data.rows).toHaveLength(3);
-    expect(body.data.rows[0].title).toBe("Ongoing");
-    expect(body.data.rows[1].title).toBe("Recently Added");
-    expect(body.data.rows[2].title).toBe("Top Rated");
-
-    expect(body.data.rows[0].items[0].id).toBe(actionSeriesId);
-    expect(body.data.rows[1].items[0].id).toBe(actionSeriesId);
-    expect(body.data.rows[2].items[0].id).toBe(actionSeriesId);
-  });
-
   it("supports multiple featured series in heroes array (up to 10) ordered by updatedAt desc, createdAt desc, with hero set to heroes[0]", async () => {
     const baseTime = Date.now();
 
@@ -1117,7 +1031,7 @@ describe("GET /series/home-feed", () => {
     expect(row.items.map((i) => i.id)).toEqual([highlighted, plain]);
   });
 
-  it("omits rows with zero items in category-scoped feeds", async () => {
+  it("omits rows with zero items (completed-only catalog has no Ongoing row)", async () => {
     const now = new Date();
     const genreId = crypto.randomUUID();
     await db.insert(genres).values({
@@ -1166,7 +1080,7 @@ describe("GET /series/home-feed", () => {
       updatedAt: now,
     });
 
-    const response = await request(app, { path: "/series/home-feed?genre=drama" });
+    const response = await request(app, { path: "/series/home-feed" });
     expect(response.status).toBe(200);
     const body = response.body as {
       data: {
@@ -1454,47 +1368,45 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
     expect(body.data.recentlyAddedEpisodes.length).toBeGreaterThan(0);
   });
 
-  it("ignores genre and sourceTypes query parameters for recentlyAddedEpisodes", async () => {
+  it("ignores the sourceTypes query parameter for recentlyAddedEpisodes", async () => {
     const now = new Date();
-    const genreId = crypto.randomUUID();
-    await db.insert(genres).values({
-      id: genreId,
-      name: "Action",
-      slug: "action",
-      createdAt: now,
-      updatedAt: now,
-    });
 
-    const tagged = await seedEpisodeWithSource({
-      seriesTitle: "Tagged Show",
-      episodeTitle: "Tagged Episode",
+    const first = await seedEpisodeWithSource({
+      seriesTitle: "First Show",
+      episodeTitle: "First Episode",
       sourceCreatedAt: new Date(now.getTime() - 1000),
     });
-    await db.insert(seriesToGenres).values({ seriesId: tagged.seriesId, genreId });
 
-    const untagged = await seedEpisodeWithSource({
-      seriesTitle: "Untagged Show",
-      episodeTitle: "Untagged Episode",
+    const second = await seedEpisodeWithSource({
+      seriesTitle: "Second Show",
+      episodeTitle: "Second Episode",
       sourceCreatedAt: new Date(now.getTime()),
     });
 
     const plain = await request(app, { path: "/series/home-feed" });
-    const genreScoped = await request(app, { path: "/series/home-feed?genre=action" });
     const sourceFiltered = await request(app, {
       path: "/series/home-feed?sourceTypes=embed",
     });
 
     expect(plain.status).toBe(200);
-    expect(genreScoped.status).toBe(200);
     expect(sourceFiltered.status).toBe(200);
 
     const plainIds = (plain.body as FeedBody).data.recentlyAddedEpisodes.map((e) => e.id);
-    const genreIds = (genreScoped.body as FeedBody).data.recentlyAddedEpisodes.map((e) => e.id);
     const sourceIds = (sourceFiltered.body as FeedBody).data.recentlyAddedEpisodes.map((e) => e.id);
 
-    expect(plainIds).toContain(tagged.episodeId);
-    expect(plainIds).toContain(untagged.episodeId);
-    expect(genreIds).toEqual(plainIds);
+    expect(plainIds).toContain(first.episodeId);
+    expect(plainIds).toContain(second.episodeId);
     expect(sourceIds).toEqual(plainIds);
+  });
+
+  it("ignores the removed genre query parameter and serves the global feed", async () => {
+    const plain = await request(app, { path: "/series/home-feed" });
+    const withGenre = await request(app, { path: "/series/home-feed?genre=action" });
+
+    expect(plain.status).toBe(200);
+    expect(withGenre.status).toBe(200);
+    expect((withGenre.body as FeedBody).data.recentlyAddedEpisodes).toEqual(
+      (plain.body as FeedBody).data.recentlyAddedEpisodes,
+    );
   });
 });
