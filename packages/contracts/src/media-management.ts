@@ -3,6 +3,8 @@
  * video sources, scraping, TMDB synchronization, and uploads.
  */
 
+import type { ScraperProvider } from "./scraper";
+
 export interface AdminPaginationMeta {
   total: number;
   page: number;
@@ -105,7 +107,7 @@ export interface AdminSeriesDetails extends Omit<AdminSeriesItem, "seasons"> {
 export interface AdminSeriesListQuery {
   page?: number;
   limit?: number;
-  source?: "otakudesu" | "dramula";
+  source?: ScraperProvider;
   q?: string;
   genre?: string;
   filter?: "all" | "featured" | "ongoing";
@@ -191,13 +193,13 @@ export interface AdminUpdateVideoSourceRequest {
 // Scraping Preview & Save
 export interface AdminPreviewScrapeRequest {
   sourceUrl: string;
-  source: "otakudesu" | "dramula";
+  source: ScraperProvider;
   html?: string;
 }
 
 export interface AdminPreviewScrapeEpisodeData {
   sourceUrl: string;
-  source: "otakudesu" | "dramula";
+  source: ScraperProvider;
   title: string;
   videoType?: string | null;
   videoSources?: Array<{
@@ -211,7 +213,7 @@ export interface AdminPreviewScrapeEpisodeData {
 
 export interface AdminPreviewScrapeSeriesData {
   sourceUrl: string;
-  source: "otakudesu" | "dramula";
+  source: ScraperProvider;
   title: string;
   description?: string | null;
   posterUrl?: string | null;
@@ -230,14 +232,14 @@ export interface AdminSaveMediaRequest {
 
 export interface AdminPreviewScrapeSeriesRequest {
   sourceUrl: string;
-  source: "otakudesu" | "dramula";
+  source: ScraperProvider;
   html?: string;
 }
 
 // Bulk sources preview & save
 export interface AdminPreviewBulkSourcesRequest {
   sourceUrl: string;
-  source: "otakudesu" | "dramula";
+  source: ScraperProvider;
   episodeOffset?: number;
   seasonId?: string;
   html?: string;

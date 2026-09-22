@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import {
+  SCRAPER_PROVIDERS,
   type AuthenticationService,
 } from "@repo/contracts";
 import type { DbClient } from "@repo/db";
@@ -24,6 +25,8 @@ import { IngestService } from "./internal/ingest-service";
 export const UNTHROTTLED_EPISODE_ROUTE_SUFFIXES = [
   "/remote-ingest",
 ];
+
+const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
 
 export interface EpisodeRoutesOptions {
   db: DbClient;
@@ -325,7 +328,7 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
         beforeHandle: auth,
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
-          source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
+          source: scraperSourceSchema,
           html: t.Optional(t.String()),
         }),
       }
@@ -347,7 +350,7 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
         body: t.Object({
           episode: t.Object({
             sourceUrl: t.String({ format: "uri" }),
-            source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
+            source: scraperSourceSchema,
             title: t.String(),
             videoType: t.Optional(t.Nullable(t.String())),
             videoSources: t.Optional(
@@ -366,7 +369,7 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
             t.Nullable(
               t.Object({
                 sourceUrl: t.String({ format: "uri" }),
-                source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
+                source: scraperSourceSchema,
                 title: t.String(),
                 description: t.Nullable(t.String()),
                 posterUrl: t.Nullable(t.String()),

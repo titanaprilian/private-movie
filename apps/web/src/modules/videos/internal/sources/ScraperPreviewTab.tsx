@@ -1,10 +1,29 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { SCRAPER_PROVIDERS, type ScraperProvider } from '@repo/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { previewScrape, addVideoSources, type VideoSourceInput } from '../api';
+
+const PROVIDER_META: Record<string, { label: string; placeholder: string }> = {
+  otakudesu: { label: 'Otakudesu', placeholder: 'https://otakudesu.cloud/episode/...' },
+  dramula: { label: 'Dramula', placeholder: 'https://dramula.com/watch/...' },
+};
+
+function getProviderMeta(provider: string): { label: string; placeholder: string } {
+  return PROVIDER_META[provider] ?? { label: provider, placeholder: 'https://...' };
+}
 
 export interface ScraperPreviewTabProps {
   episodeId: string;
@@ -15,11 +34,22 @@ export interface ScraperPreviewTabProps {
 export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPreviewTabProps) {
   const queryClient = useQueryClient();
   const [scrapeUrl, setScrapeUrl] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState<ScraperProvider>('otakudesu');
+  const [providerPopoverOpen, setProviderPopoverOpen] = useState(false);
   const [extractedSources, setExtractedSources] = useState<VideoSourceInput[] | null>(null);
   const [previewWarnings, setPreviewWarnings] = useState<string[]>([]);
 
+  const providerMeta = getProviderMeta(selectedProvider);
+
+  const handleSelectProvider = (provider: ScraperProvider) => {
+    setSelectedProvider(provider);
+    setProviderPopoverOpen(false);
+    setExtractedSources(null);
+    setPreviewWarnings([]);
+  };
+
   const previewMutation = useMutation({
-    mutationFn: (params: { sourceUrl: string; source: 'otakudesu' }) =>
+    mutationFn: (params: { sourceUrl: string; source: ScraperProvider }) =>
       previewScrape(params),
     onSuccess: (data) => {
       setExtractedSources(data.episode.videoSources || []);
@@ -55,15 +85,80 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
   return (
     <div className="space-y-3">
       <div className="p-3 border border-c rounded bg-sidebar space-y-3">
-        <div className="text-xs font-medium mono text-muted uppercase">Scrape Otakudesu URL</div>
+        <div className="text-xs font-medium mono text-muted uppercase">
+          Scrape {providerMeta.label} URL
+        </div>
+
+        <div>
+          <Label htmlFor="scrape-provider" className="text-[10px] text-muted">
+            Provider
+          </Label>
+          <Popover open={providerPopoverOpen} onOpenChange={setProviderPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                id="scrape-provider"
+                role="combobox"
+                aria-expanded={providerPopoverOpen}
+                aria-label="Select scraper provider"
+                className="w-full px-3 h-8 rounded border border-c bg-transparent text-xs mono font-medium hover-bg flex items-center justify-between gap-1.5 cursor-pointer text-foreground"
+              >
+                <span>{providerMeta.label}</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search providers..." />
+                <CommandList>
+                  <CommandEmpty>No provider found.</CommandEmpty>
+                  <CommandGroup>
+                    {SCRAPER_PROVIDERS.map((provider) => {
+                      const meta = getProviderMeta(provider);
+                      const isSelected = provider === selectedProvider;
+                      return (
+                        <CommandItem
+                          key={provider}
+                          value={meta.label}
+                          onSelect={() => handleSelectProvider(provider)}
+                          className="flex items-center gap-2 px-2 py-1.5 cursor-pointer"
+                        >
+                          <span
+                            className={`w-3 h-3 shrink-0 ${
+                              isSelected ? 'opacity-100' : 'opacity-0'
+                            }`}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </span>
+                          <span className="text-xs mono">{meta.label}</span>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         <div>
           <Label htmlFor="scrape-url" className="text-[10px] text-muted">
-            Otakudesu URL
+            {providerMeta.label} URL
           </Label>
           <Input
             id="scrape-url"
-            placeholder="https://otakudesu.cloud/episode/..."
+            placeholder={providerMeta.placeholder}
             value={scrapeUrl}
             onChange={(e) => setScrapeUrl(e.target.value)}
             className="text-xs h-8"
@@ -79,7 +174,7 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
           onClick={() => {
             previewMutation.mutate({
               sourceUrl: scrapeUrl,
-              source: 'otakudesu',
+              source: selectedProvider,
             });
           }}
         >

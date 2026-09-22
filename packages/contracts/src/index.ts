@@ -3,6 +3,7 @@ export * from "./genres";
 export * from "./media";
 export * from "./media-management";
 export * from "./media-openapi";
+export * from "./scraper";
 export * from "./storage";
 
 export type Dummy = {

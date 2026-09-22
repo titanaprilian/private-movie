@@ -1,5 +1,8 @@
 import { Elysia, t } from "elysia";
-import type { AuthenticationService } from "@repo/contracts";
+import {
+  SCRAPER_PROVIDERS,
+  type AuthenticationService,
+} from "@repo/contracts";
 import type { DbClient } from "@repo/db";
 import {
   createEpisodeRepositoryInternal,
@@ -25,6 +28,8 @@ export interface SeriesRoutesOptions {
   storageProviderRegistry?: StorageProviderRegistry;
   mediaService?: MediaService;
 }
+
+const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
 
 function parseSourceTypesParam(input: unknown): string[] | undefined {
   if (input === undefined || input === null) {
@@ -97,7 +102,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
         query: t.Object({
           page: t.Optional(t.Number({ default: 1, minimum: 1 })),
           limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
-          source: t.Optional(t.Union([t.Literal("otakudesu"), t.Literal("dramula")])),
+          source: t.Optional(scraperSourceSchema),
           q: t.Optional(t.String()),
           genre: t.Optional(t.String()),
           filter: t.Optional(
@@ -130,7 +135,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
         beforeHandle: auth,
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
-          source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
+          source: scraperSourceSchema,
           html: t.Optional(t.String()),
         }),
       }
@@ -304,7 +309,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
         }),
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
-          source: t.Union([t.Literal("otakudesu"), t.Literal("dramula")]),
+          source: scraperSourceSchema,
           episodeOffset: t.Optional(t.Number()),
           seasonId: t.Optional(t.String()),
           html: t.Optional(t.String()),
