@@ -7,7 +7,8 @@ import type {
   ScrapedVideoSource,
   BrowserFn,
 } from "../../types";
-import { parseDramulaEpisodeHtml, resolveVideobelloHash } from "./parse";
+import { EpisodeParseError } from "../../errors";
+import { parseDramulaEpisodeHtml } from "./parse";
 
 export * from "./parse";
 
@@ -71,8 +72,9 @@ export class DramulaProvider implements MediaProvider {
               },
             ];
           }
-        } catch {
-          // fall through if browserFn fails
+        } catch (err) {
+          console.error(`[dramula] browserFn failed for ${url}:`, err);
+          // fall through to static HTML parsing
         }
       }
 
@@ -87,8 +89,6 @@ export class DramulaProvider implements MediaProvider {
     if (!hasUnresolved) {
       return sources;
     }
-
-    const html = (context?.html as string) ?? (await fetchFn.get(url));
 
     const resolvedSources = await Promise.all(
       sources.map(async (source) => {
@@ -107,16 +107,20 @@ export class DramulaProvider implements MediaProvider {
                 url: iframeSrc,
               };
             }
-          } catch {
-            // fall through to resolveVideobelloHash
+          } catch (err) {
+            console.error(
+              `[dramula] browserFn failed to resolve videobello source for ${url}:`,
+              err
+            );
+            throw new EpisodeParseError(
+              `Failed to resolve videobello source for ${url}: browser rendering failed`
+            );
           }
         }
 
-        const extractedHash = await resolveVideobelloHash(html, url, fetchFn);
-        return {
-          ...source,
-          url: source.url.replace(".00000000", `.${extractedHash}`),
-        };
+        throw new EpisodeParseError(
+          `Failed to resolve videobello source for ${url}: browser rendering is required but browserFn did not resolve the .00000000 placeholder`
+        );
       })
     );
 

@@ -18,6 +18,9 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app .
 
+# Install Chromium and its system dependencies for Playwright
+RUN bunx playwright install chromium --with-deps
+
 EXPOSE 3000
 
 CMD ["bun", "apps/backend/src/index.ts"]
