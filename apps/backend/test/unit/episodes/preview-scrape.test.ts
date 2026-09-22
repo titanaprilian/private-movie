@@ -262,6 +262,153 @@ describe("previewScrape unit service", () => {
   });
 });
 
+describe("previewScrape dramula videobello hash resolution", () => {
+  const DRAMULA_URL = "https://dramula.com/watch/teach-you-a-lesson-2026/s1e10";
+  // Videobello URLs are normalized to the proxied `/embed/...` playback path
+  // by the end of previewScrape — assertions target the normalized form.
+  const RESOLVED_URL =
+    "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.bf0e5daa?source=0";
+  const NORMALIZED_RESOLVED_URL =
+    "/embed/ZXBpc29kZToxMDM4Nw.bf0e5daa?source=0";
+
+  // Minimal Dramula episode page: no iframe node, SvelteKit JSON payload with
+  // a matching episode id -> parseEpisode emits a `.00000000` placeholder source.
+  const dramulaPlaceholderHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Teach You a Lesson - Dramula</title>
+        <link rel="canonical" href="${DRAMULA_URL}" />
+      </head>
+      <body>
+        <h1>Teach You a Lesson</h1>
+        <script type="application/json" data-sveltekit-fetched="">
+          {
+            "status": 200,
+            "body": {
+              "data": {
+                "episodes": [
+                  { "id": 10387, "slug": "s1e10" }
+                ]
+              }
+            }
+          }
+        </script>
+      </body>
+    </html>
+  `;
+
+  const resolvedBrowserHtml = `
+    <html>
+      <body>
+        <iframe src="${RESOLVED_URL}"></iframe>
+      </body>
+    </html>
+  `;
+
+  function buildDramulaFetchFn(): FetchFn {
+    return {
+      get: async (url) => {
+        throw new Error(`Unexpected fetch URL: ${url}`);
+      },
+      post: async () => "",
+    };
+  }
+
+  it("resolves .00000000 placeholders to real hashes via browserFn", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: buildDramulaFetchFn(),
+      browserFn: async () => resolvedBrowserHtml,
+    });
+
+    const result = await service.previewScrape({
+      sourceUrl: DRAMULA_URL,
+      source: "dramula",
+      html: dramulaPlaceholderHtml,
+    });
+
+    expect(
+      result.episode.videoSources.some((vs) => vs.url.includes(".00000000"))
+    ).toBe(false);
+    expect(result.episode.videoSources).toContainEqual(
+      expect.objectContaining({ type: "embed", url: NORMALIZED_RESOLVED_URL })
+    );
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("falls back to placeholder sources with a warning when browserFn throws", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: buildDramulaFetchFn(),
+      browserFn: async () => {
+        throw new Error("browser rendering failed");
+      },
+    });
+
+    const result = await service.previewScrape({
+      sourceUrl: DRAMULA_URL,
+      source: "dramula",
+      html: dramulaPlaceholderHtml,
+    });
+
+    expect(
+      result.episode.videoSources.some((vs) => vs.url.includes(".00000000"))
+    ).toBe(true);
+    expect(result.warnings).toContain(
+      "Failed to resolve videobello embed hash; sources may not play correctly"
+    );
+  });
+
+  it("falls back to placeholder sources with a warning when no browserFn is provided", async () => {
+    const service = createMediaService(null as never, {
+      fetchHtml: buildDramulaFetchFn(),
+    });
+
+    const result = await service.previewScrape({
+      sourceUrl: DRAMULA_URL,
+      source: "dramula",
+      html: dramulaPlaceholderHtml,
+    });
+
+    expect(
+      result.episode.videoSources.some((vs) => vs.url.includes(".00000000"))
+    ).toBe(true);
+    expect(result.warnings).toContain(
+      "Failed to resolve videobello embed hash; sources may not play correctly"
+    );
+  });
+
+  it("skips resolution entirely when no .00000000 URLs are present", async () => {
+    let browserFnCalls = 0;
+    const service = createMediaService(null as never, {
+      fetchHtml: buildDramulaFetchFn(),
+      browserFn: async () => {
+        browserFnCalls += 1;
+        return resolvedBrowserHtml;
+      },
+    });
+
+    const result = await service.previewScrape({
+      sourceUrl: DRAMULA_URL,
+      source: "dramula",
+      html: `
+        <html>
+          <head><title>Teach You a Lesson</title></head>
+          <body>
+            <h1>Teach You a Lesson</h1>
+            <iframe src="${RESOLVED_URL}"></iframe>
+          </body>
+        </html>
+      `,
+    });
+
+    expect(browserFnCalls).toBe(0);
+    expect(result.episode.videoSources).toContainEqual(
+      expect.objectContaining({ type: "embed", url: NORMALIZED_RESOLVED_URL })
+    );
+    expect(result.warnings).toEqual([]);
+  });
+});
+
 describe("previewScrape mirror resolution", () => {
   it("resolves all 720p mirrors and returns them as embed video sources", async () => {
     const service = createMediaService(null as never, {

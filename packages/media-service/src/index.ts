@@ -4,6 +4,7 @@ import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { episodes, genres, seasons, series, seriesToGenres, slugifyGenre, type SeriesRow } from "@repo/db";
 import {
   MediaScraper,
+  EpisodeParseError,
   extractDirectVideoSources,
   parseEpisodeOrder,
   resolveMirrors,
@@ -473,6 +474,29 @@ export function createMediaService<
 
       const scraped = await provider.parseEpisode(input.sourceUrl, effectiveFetch);
       const warnings: string[] = [];
+
+      // Some providers (e.g. Dramula videobello embeds) emit `.00000000`
+      // placeholder hashes that must be resolved via headless-browser rendering.
+      if (scraped.videoSources.some((vs) => vs.url.includes(".00000000"))) {
+        try {
+          const resolved = await provider.resolveVideoSources(
+            input.sourceUrl,
+            effectiveFetch,
+            undefined,
+            options?.browserFn
+          );
+          scraped.videoSources = resolved;
+        } catch (error) {
+          if (error instanceof EpisodeParseError) {
+            warnings.push(
+              "Failed to resolve videobello embed hash; sources may not play correctly"
+            );
+          } else {
+            throw error;
+          }
+        }
+      }
+
       let series: PreviewScrapeResult["series"] = null;
 
       // Extract direct video sources from the primary embed iframe
