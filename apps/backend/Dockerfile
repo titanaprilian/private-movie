@@ -12,7 +12,7 @@ RUN bun install
 COPY --from=pruner /app/out/full/ .
 RUN bunx turbo run build --filter=@repo/backend...
 
-FROM oven/bun:1-alpine AS runner
+FROM oven/bun:1 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
