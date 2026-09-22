@@ -1,4 +1,9 @@
 :80 {
+	# Reverse proxy embed sandbox to the backend container
+	handle /embed/* {
+		reverse_proxy backend:3000
+	}
+
 	# Reverse proxy API traffic to the backend container
 	handle /api/* {
 		reverse_proxy backend:3000
