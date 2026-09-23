@@ -269,7 +269,12 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
       async ({ params, request, set }) => {
         try {
           const domain = params.domain;
-          const wildcard = params["*"] || "";
+          let wildcard = params["*"] || "";
+          // Strip protocol and duplicate domain prefixes (e.g. from JWPlayer chunk resolution)
+          wildcard = wildcard.replace(/^https?:\/+/i, "");
+          if (wildcard.toLowerCase().startsWith(`${domain.toLowerCase()}/`)) {
+            wildcard = wildcard.slice(domain.length + 1);
+          }
           const requestUrl = new URL(request.url);
           const searchParams = requestUrl.search;
           const targetUrl = `https://${domain}/${wildcard}${searchParams}`;

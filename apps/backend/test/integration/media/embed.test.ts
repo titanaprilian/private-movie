@@ -335,4 +335,29 @@ describe('GET /embed/:hash', () => {
     const data = await response.json();
     expect(data.status).toBe("ok");
   });
+
+  it('should strip duplicate domain and protocol prefixes from proxy wildcard', async () => {
+    let capturedUrls: string[] = [];
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      capturedUrls.push(input.toString());
+      return new Response("console.log('chunk');", {
+        status: 200,
+        headers: { "Content-Type": "application/javascript" },
+      });
+    });
+
+    // Duplicate domain in path (e.g. from JWPlayer relative path resolution)
+    const res1 = await app.handle(
+      new Request("http://localhost:3000/api/media/proxy/videobello.net/videobello.net/player/v/8.38.2/jwplayer.core.controls.js")
+    );
+    expect(res1.status).toBe(200);
+    expect(capturedUrls[0]).toBe("https://videobello.net/player/v/8.38.2/jwplayer.core.controls.js");
+
+    // Protocol prefix in path
+    const res2 = await app.handle(
+      new Request("http://localhost:3000/api/media/proxy/videobello.net/http://videobello.net/player/v/8.38.2/jwpsrv.js")
+    );
+    expect(res2.status).toBe(200);
+    expect(capturedUrls[1]).toBe("https://videobello.net/player/v/8.38.2/jwpsrv.js");
+  });
 });
