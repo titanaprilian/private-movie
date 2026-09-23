@@ -284,6 +284,55 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
               result: Buffer.from(result).toString("base64"),
             };
           }
+          if (op === "sign") {
+            const keyBuf = Buffer.from(keyRaw || "", "base64");
+            const dataBuf = Buffer.from(data, "base64");
+            const algObj = { ...algorithm };
+
+            const importedKey = await globalThis.crypto.subtle.importKey(
+              "raw",
+              keyBuf,
+              (keyAlgorithm as AlgorithmIdentifier) || { name: (algObj.name as string) || "HMAC" },
+              false,
+              ["sign"]
+            );
+
+            const result = await globalThis.crypto.subtle.sign(
+              algObj as unknown as AlgorithmIdentifier,
+              importedKey,
+              dataBuf
+            );
+
+            return {
+              result: Buffer.from(result).toString("base64"),
+            };
+          }
+
+          if (op === "verify") {
+            const keyBuf = Buffer.from(keyRaw || "", "base64");
+            const dataBuf = Buffer.from(data, "base64");
+            const sigBuf = Buffer.from((payload as { signature?: string }).signature || "", "base64");
+            const algObj = { ...algorithm };
+
+            const importedKey = await globalThis.crypto.subtle.importKey(
+              "raw",
+              keyBuf,
+              (keyAlgorithm as AlgorithmIdentifier) || { name: (algObj.name as string) || "HMAC" },
+              false,
+              ["verify"]
+            );
+
+            const result = await globalThis.crypto.subtle.verify(
+              algObj as unknown as AlgorithmIdentifier,
+              importedKey,
+              sigBuf,
+              dataBuf
+            );
+
+            return {
+              result,
+            };
+          }
 
           set.status = 400;
           return { error: "Unsupported operation" };

@@ -457,4 +457,28 @@ describe('GET /embed/:hash', () => {
     const decrypted = Buffer.from(data.result, "base64").toString("utf-8");
     expect(decrypted).toBe("Secret Stream Data");
   });
+
+  it('should execute HMAC sign operations via /api/media/crypto-subtle', async () => {
+    const keyRaw = Buffer.from("hmac-secret-key").toString("base64");
+    const dataRaw = Buffer.from("message to sign").toString("base64");
+
+    const response = await app.handle(
+      new Request("http://localhost:3000/api/media/crypto-subtle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          op: "sign",
+          algorithm: { name: "HMAC", hash: "SHA-256" },
+          keyRaw,
+          keyAlgorithm: { name: "HMAC", hash: "SHA-256" },
+          data: dataRaw,
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.result).toBeTruthy();
+    expect(typeof data.result).toBe("string");
+  });
 });

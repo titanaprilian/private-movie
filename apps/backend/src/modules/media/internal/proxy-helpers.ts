@@ -867,6 +867,57 @@ export const WEBCRYPTO_INSECURE_POLYFILL_SHIM = `<script id="pm-webcrypto-polyfi
           return fromBase64(resJson.result);
         });
       }
+
+      sign: function(algorithm, key, data) {
+        var alg = Object.assign({}, typeof algorithm === 'string' ? { name: algorithm } : algorithm);
+        var dataB64 = toBase64(toBuffer(data));
+        return fetch('/api/media/crypto-subtle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            op: 'sign',
+            algorithm: alg,
+            keyRaw: key ? key._rawBase64 : null,
+            keyAlgorithm: key ? key.algorithm : null,
+            data: dataB64
+          })
+        }).then(function(res) {
+          if (!res.ok) throw new Error('Signing failed on insecure origin proxy');
+          return res.json();
+        }).then(function(resJson) {
+          return fromBase64(resJson.result);
+        });
+      },
+
+      verify: function(algorithm, key, signature, data) {
+        var alg = Object.assign({}, typeof algorithm === 'string' ? { name: algorithm } : algorithm);
+        var sigB64 = toBase64(toBuffer(signature));
+        var dataB64 = toBase64(toBuffer(data));
+        return fetch('/api/media/crypto-subtle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            op: 'verify',
+            algorithm: alg,
+            keyRaw: key ? key._rawBase64 : null,
+            keyAlgorithm: key ? key.algorithm : null,
+            signature: sigB64,
+            data: dataB64
+          })
+        }).then(function(res) {
+          if (!res.ok) throw new Error('Verification failed on insecure origin proxy');
+          return res.json();
+        }).then(function(resJson) {
+          return Boolean(resJson.result);
+        });
+      },
+
+      exportKey: function(format, key) {
+        if (format === 'raw' && key && key._rawBase64) {
+          return Promise.resolve(fromBase64(key._rawBase64));
+        }
+        return Promise.reject(new Error('Only raw key export supported'));
+      }
     };
   })();
 </script>`;
