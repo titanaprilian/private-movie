@@ -494,7 +494,10 @@ export function buildRelayInterceptorShim(): string {
     var CDN_FRAGMENTS = ${fragments};
     function shouldIntercept(url) {
       if (typeof url !== 'string' || !url) return false;
-      if (url.indexOf('/api/media/relay?url=') !== -1) return false;
+      // Recursion guard: never re-intercept relay calls. Checked first so a
+      // relay URL resolved against the upstream <base> tag
+      // (https://videobello.net/api/media/relay?url=...) still matches.
+      if (url.indexOf('/api/media/relay') !== -1) return false;
       var lower = url.toLowerCase();
       if (lower.indexOf('videobello.net') !== -1) return true;
       for (var i = 0; i < CDN_FRAGMENTS.length; i++) {
@@ -502,8 +505,19 @@ export function buildRelayInterceptorShim(): string {
       }
       return false;
     }
+    function relayBase() {
+      // Root relay calls to the host application's origin explicitly. A bare
+      // relative path would inherit the upstream <base href> tag and be sent
+      // to the provider host, causing 404 routing errors.
+      try {
+        if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') {
+          return window.location.origin + '/api/media/relay?url=';
+        }
+      } catch (e) {}
+      return '/api/media/relay?url=';
+    }
     function toRelay(url) {
-      return '/api/media/relay?url=' + encodeURIComponent(url);
+      return relayBase() + encodeURIComponent(url);
     }
     function toHref(input) {
       if (typeof input === 'string') return input;
@@ -613,8 +627,32 @@ export function enforceMobileVideoAttributes(html: string): string {
 }
 
 /**
+ * Proactively deregisters legacy Service Workers under the embed scope on
+ * page load so stale worker caches from existing browser profiles cannot
+ * intercept player traffic. Scoped narrowly to /embed/ registrations.
+ */
+export const EMBED_SW_CLEANUP_SHIM = `<script id="pm-sw-cleanup">
+  (function() {
+    try {
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var i = 0; i < registrations.length; i++) {
+            try {
+              var scope = registrations[i].scope || '';
+              if (scope.indexOf('/embed/') !== -1) {
+                registrations[i].unregister();
+              }
+            } catch (e) {}
+          }
+        }).catch(function() {});
+      }
+    } catch (e) {}
+  })();
+</script>`;
+
+/**
  * Compose the final server-rendered embed document: upstream player HTML +
- * base tag + ad-suppression shim + relay interceptor + mobile video shim.
+ * base tag + SW cleanup + ad-suppression shim + relay interceptor + mobile video shim.
  */
 export function buildServerRenderedEmbedDocument(
   upstreamHtml: string,
@@ -622,7 +660,7 @@ export function buildServerRenderedEmbedDocument(
 ): string {
   let processed = enforceMobileVideoAttributes(upstreamHtml);
   const injections =
-    `<base href="${origin}/">\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim()}\n  ${MOBILE_VIDEO_SHIM}`;
+    `<base href="${origin}/">\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim()}\n  ${MOBILE_VIDEO_SHIM}`;
 
   if (/(<head[^>]*>)/i.test(processed)) {
     processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);

@@ -7,6 +7,7 @@ export {
   EMBED_UPSTREAM_ORIGIN,
   EMBED_USER_AGENT,
   MOBILE_VIDEO_SHIM,
+  EMBED_SW_CLEANUP_SHIM,
   resolveRelayReferer,
   buildRelayInterceptorShim,
   buildServerRenderedEmbedDocument,

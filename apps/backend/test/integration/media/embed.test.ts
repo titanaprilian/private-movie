@@ -46,8 +46,9 @@ describe('GET /embed/:hash', () => {
 
     // Upstream player content is inlined server-side
     expect(html).toContain('Bello Player');
-    // No client-side service worker bootstrap or document replacement
-    expect(html).not.toContain('serviceWorker');
+    // No client-side service worker registration bootstrap or document replacement
+    // (embed-scope deregistration cleanup is expected — see pm-sw-cleanup test)
+    expect(html).not.toContain('serviceWorker.register');
     expect(html).not.toContain('/media-proxy-sw.js');
     expect(html).not.toContain('document.write');
   });
@@ -139,6 +140,47 @@ describe('GET /embed/:hash', () => {
     // before host matching, or they bypass the relay and 403.
     expect(html).toContain('var abs = absolutize(url);');
     expect(html).toContain('if (!shouldIntercept(abs))');
+  });
+
+  it('should root relay requests to the local origin instead of the base tag host', async () => {
+    mockUpstream();
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    const html = await response.text();
+
+    // A bare relative relay path would inherit <base href="https://videobello.net/">
+    // and 404 on the provider host; the shim must prefix window.location.origin.
+    expect(html).toContain('window.location.origin');
+    expect(html).toContain("window.location.origin + '/api/media/relay?url='");
+  });
+
+  it('should strictly ignore relay route paths before inspecting domain fragments', async () => {
+    mockUpstream();
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    const html = await response.text();
+
+    expect(html).toContain("url.indexOf('/api/media/relay') !== -1) return false");
+  });
+
+  it('should proactively deregister legacy embed-scope service workers', async () => {
+    mockUpstream();
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    const html = await response.text();
+
+    expect(html).toContain('pm-sw-cleanup');
+    expect(html).toContain('getRegistrations');
+    expect(html).toContain('unregister');
+    expect(html).toContain('/embed/');
+    // Cleanup must never register a new worker.
+    expect(html).not.toContain('serviceWorker.register');
   });
 
   it('should return a user-friendly error document on upstream failure', async () => {
