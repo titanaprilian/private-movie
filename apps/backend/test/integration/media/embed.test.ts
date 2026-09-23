@@ -291,4 +291,48 @@ describe('GET /embed/:hash', () => {
     expect(html).toContain('e.preventDefault()');
     expect(html).toContain('e.stopPropagation()');
   });
+
+  it('should proxy /player/* assets with CORS headers and upstream referer', async () => {
+    let capturedHeaders: Record<string, string> = {};
+    vi.spyOn(global, "fetch").mockImplementation(async (_input, init) => {
+      capturedHeaders = (init?.headers as Record<string, string>) || {};
+      return new Response("window.jwplayer = function() {};", {
+        status: 200,
+        headers: { "Content-Type": "application/javascript" },
+      });
+    });
+
+    const response = await app.handle(
+      new Request("http://localhost:3000/player/v/8.38.2/jwplayer.js")
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/javascript");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+    expect(capturedHeaders["Referer"]).toBe("https://dramula.com");
+    const js = await response.text();
+    expect(js).toContain("jwplayer");
+  });
+
+  it('should proxy POST /api/embed with CORS headers', async () => {
+    vi.spyOn(global, "fetch").mockImplementation(async () => {
+      return new Response(JSON.stringify({ status: "ok", streamUrl: "https://stream.example.com" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+
+    const response = await app.handle(
+      new Request("http://localhost:3000/api/embed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hash: "test-hash", sourceId: "0" }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+    const data = await response.json();
+    expect(data.status).toBe("ok");
+  });
 });

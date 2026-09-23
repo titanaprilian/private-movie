@@ -7,6 +7,7 @@ import { AD_SUPPRESSION_SHIM, EMBED_UPSTREAM_ORIGIN, EMBED_USER_AGENT, RELAY_EMB
 
 export const UNTHROTTLED_MEDIA_ROUTE_PREFIXES = [
   "/embed",
+  "/player",
   "/api/media/relay",
   "/api/media/proxy",
 ];
@@ -142,6 +143,36 @@ export const embedRoutes = () => {
         hash: t.String(),
       }),
     }
+  ).get(
+    "/player/*",
+    async ({ params, set }) => {
+      const wildcard = params["*"] || "";
+      const targetUrl = `${EMBED_UPSTREAM_ORIGIN}/player/${wildcard}`;
+      try {
+        const res = await fetch(targetUrl, {
+          headers: {
+            "User-Agent": EMBED_USER_AGENT,
+            Referer: RELAY_EMBED_REFERER,
+          },
+        });
+        if (!res.ok) {
+          set.status = res.status;
+          return "Player asset not found";
+        }
+        const contentType =
+          res.headers.get("Content-Type") || "application/javascript";
+        return new Response(res.body, {
+          status: 200,
+          headers: {
+            "Content-Type": contentType,
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      } catch {
+        set.status = 502;
+        return "Upstream unavailable";
+      }
+    }
   );
 };
 
@@ -150,6 +181,34 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
 
   return new Elysia({ name: "media-routes" })
     .get("/openapi.json", () => MVP_MEDIA_OPENAPI)
+    .post(
+      "/embed",
+      async ({ request, set }) => {
+        try {
+          const body = await request.clone().arrayBuffer();
+          const res = await fetch(`${EMBED_UPSTREAM_ORIGIN}/api/embed`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "User-Agent": EMBED_USER_AGENT,
+              Referer: RELAY_EMBED_REFERER,
+            },
+            body,
+          });
+          const text = await res.text();
+          return new Response(text, {
+            status: res.status,
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+        } catch {
+          set.status = 502;
+          return { error: "Failed to forward embed API request" };
+        }
+      }
+    )
     .get(
       "/media/proxy-embed",
       async ({ query, set }) => {

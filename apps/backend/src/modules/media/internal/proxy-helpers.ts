@@ -579,6 +579,21 @@ export function buildRelayInterceptorShim(
         return origOpen.apply(this, arguments);
       };
     }
+    try {
+      var origScriptSrc = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, 'src');
+      if (origScriptSrc && origScriptSrc.set) {
+        Object.defineProperty(HTMLScriptElement.prototype, 'src', {
+          set: function(val) {
+            if (typeof val === 'string' && val.indexOf('/player/') !== -1 && val.indexOf('/api/media/proxy/') === -1) {
+              val = toProxy(val);
+            }
+            return origScriptSrc.set.call(this, val);
+          },
+          get: origScriptSrc.get,
+          configurable: true
+        });
+      }
+    } catch (e) {}
   })();
 </script>`;
 }
