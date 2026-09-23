@@ -406,4 +406,55 @@ describe('GET /embed/:hash', () => {
     expect(capturedUrl).toBe("https://videobello.net/_app/immutable/entry/start.ItzsbE--.js");
     expect(capturedHeaders["Referer"]).toBe("https://dramula.com");
   });
+
+  it('should inject WEBCRYPTO_INSECURE_POLYFILL_SHIM into embed documents', async () => {
+    mockUpstream();
+    const response = await app.handle(
+      new Request("http://localhost:3000/embed/video-123")
+    );
+
+    const html = await response.text();
+    expect(html).toContain('pm-webcrypto-polyfill');
+    expect(html).toContain('window.crypto.subtle');
+    expect(html).toContain('/api/media/crypto-subtle');
+  });
+
+  it('should execute crypto operations via /api/media/crypto-subtle', async () => {
+    const keyRaw = Buffer.from(new Uint8Array(16)).toString("base64");
+    const iv = Buffer.from(new Uint8Array(16)).toString("base64");
+
+    // 1. Encrypt via Bun crypto
+    const key = await globalThis.crypto.subtle.importKey(
+      "raw",
+      new Uint8Array(16),
+      { name: "AES-CBC" },
+      false,
+      ["encrypt"]
+    );
+    const encrypted = await globalThis.crypto.subtle.encrypt(
+      { name: "AES-CBC", iv: new Uint8Array(16) },
+      key,
+      new TextEncoder().encode("Secret Stream Data")
+    );
+
+    // 2. Decrypt via /api/media/crypto-subtle
+    const response = await app.handle(
+      new Request("http://localhost:3000/api/media/crypto-subtle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          op: "decrypt",
+          algorithm: { name: "AES-CBC", iv },
+          keyRaw,
+          keyAlgorithm: { name: "AES-CBC" },
+          data: Buffer.from(encrypted).toString("base64"),
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    const decrypted = Buffer.from(data.result, "base64").toString("utf-8");
+    expect(decrypted).toBe("Secret Stream Data");
+  });
 });

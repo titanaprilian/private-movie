@@ -503,6 +503,7 @@ export function buildRelayInterceptorShim(
       // Same-origin proxy assets (/_app chunks, player scripts) already route
       // through the backend reverse proxy — never send them to the relay.
       if (url.indexOf('/api/media/proxy/') !== -1) return false;
+      if (url.indexOf('/api/media/crypto-subtle') !== -1) return false;
       var lower = url.toLowerCase();
       if (lower.indexOf('videobello.net') !== -1) return true;
       for (var i = 0; i < CDN_FRAGMENTS.length; i++) {
@@ -753,6 +754,123 @@ export const DEBUG_LOGGER_SHIM = `<script id="pm-debug-logger">
     };
   })();
 </script>`;
+/**
+ * Polyfill for window.crypto.subtle on non-secure contexts (e.g. mobile LAN IP testing over HTTP).
+ * When accessed over http://192.168.x.x, browsers disable window.crypto.subtle per W3C spec.
+ * This transparently proxies cryptographic calls (AES-CBC, AES-GCM, digest) to the backend
+ * using native WebCrypto, ensuring mobile can decrypt player stream keys without HTTPS setup.
+ */
+export const WEBCRYPTO_INSECURE_POLYFILL_SHIM = `<script id="pm-webcrypto-polyfill">
+  (function() {
+    if (typeof window === 'undefined') return;
+    window.crypto = window.crypto || {};
+    if (window.crypto.subtle) return;
+
+    function toBase64(buf) {
+      var bytes = new Uint8Array(buf);
+      var binary = '';
+      for (var i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function fromBase64(str) {
+      var binary = atob(str);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    function toBuffer(val) {
+      if (!val) return null;
+      if (val instanceof ArrayBuffer) return val;
+      if (ArrayBuffer.isView(val)) return val.buffer.slice(val.byteOffset, val.byteOffset + val.byteLength);
+      return val;
+    }
+
+    window.crypto.subtle = {
+      importKey: function(format, keyData, algorithm, extractable, keyUsages) {
+        var rawBuf = toBuffer(keyData);
+        var keyObj = {
+          type: 'secret',
+          extractable: extractable,
+          algorithm: typeof algorithm === 'string' ? { name: algorithm } : algorithm,
+          usages: keyUsages,
+          _rawBase64: rawBuf ? toBase64(rawBuf) : null
+        };
+        return Promise.resolve(keyObj);
+      },
+
+      decrypt: function(algorithm, key, data) {
+        var alg = Object.assign({}, typeof algorithm === 'string' ? { name: algorithm } : algorithm);
+        if (alg.iv) alg.iv = toBase64(toBuffer(alg.iv));
+        if (alg.counter) alg.counter = toBase64(toBuffer(alg.counter));
+        var dataB64 = toBase64(toBuffer(data));
+        return fetch('/api/media/crypto-subtle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            op: 'decrypt',
+            algorithm: alg,
+            keyRaw: key ? key._rawBase64 : null,
+            keyAlgorithm: key ? key.algorithm : null,
+            data: dataB64
+          })
+        }).then(function(res) {
+          if (!res.ok) throw new Error('Decryption failed on insecure origin proxy');
+          return res.json();
+        }).then(function(resJson) {
+          return fromBase64(resJson.result);
+        });
+      },
+
+      encrypt: function(algorithm, key, data) {
+        var alg = Object.assign({}, typeof algorithm === 'string' ? { name: algorithm } : algorithm);
+        if (alg.iv) alg.iv = toBase64(toBuffer(alg.iv));
+        if (alg.counter) alg.counter = toBase64(toBuffer(alg.counter));
+        var dataB64 = toBase64(toBuffer(data));
+        return fetch('/api/media/crypto-subtle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            op: 'encrypt',
+            algorithm: alg,
+            keyRaw: key ? key._rawBase64 : null,
+            keyAlgorithm: key ? key.algorithm : null,
+            data: dataB64
+          })
+        }).then(function(res) {
+          if (!res.ok) throw new Error('Encryption failed on insecure origin proxy');
+          return res.json();
+        }).then(function(resJson) {
+          return fromBase64(resJson.result);
+        });
+      },
+
+      digest: function(algorithm, data) {
+        var alg = typeof algorithm === 'string' ? { name: algorithm } : algorithm;
+        var dataB64 = toBase64(toBuffer(data));
+        return fetch('/api/media/crypto-subtle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            op: 'digest',
+            algorithm: alg,
+            data: dataB64
+          })
+        }).then(function(res) {
+          return res.json();
+        }).then(function(resJson) {
+          return fromBase64(resJson.result);
+        });
+      }
+    };
+  })();
+</script>`;
+
 
 
 /**
@@ -813,7 +931,7 @@ export function buildServerRenderedEmbedDocument(
   // Using proxyDocumentBase (/api/media/proxy/<domain>/embed/) ensures that
   // `../_app/...` resolves to `/api/media/proxy/<domain>/_app/...` without stripping the domain.
   const injections =
-    `<base href="${proxyDocumentBase}">\n  ${DEBUG_LOGGER_SHIM}\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim(proxyDomainRoot)}\n  ${MOBILE_VIDEO_SHIM}`;
+    `<base href="${proxyDocumentBase}">\n  ${DEBUG_LOGGER_SHIM}\n  ${WEBCRYPTO_INSECURE_POLYFILL_SHIM}\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim(proxyDomainRoot)}\n  ${MOBILE_VIDEO_SHIM}`;
   if (/(<head[^>]*>)/i.test(processed)) {
     processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);
   } else if (/(<html[^>]*>)/i.test(processed)) {

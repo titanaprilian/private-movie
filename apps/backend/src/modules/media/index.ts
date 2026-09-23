@@ -9,6 +9,7 @@ export {
   MOBILE_VIDEO_SHIM,
   EMBED_SW_CLEANUP_SHIM,
   DEBUG_LOGGER_SHIM,
+  WEBCRYPTO_INSECURE_POLYFILL_SHIM,
   resolveRelayReferer,
   buildRelayInterceptorShim,
   buildServerRenderedEmbedDocument,
