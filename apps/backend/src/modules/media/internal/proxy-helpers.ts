@@ -702,6 +702,17 @@ export function buildServerRenderedEmbedDocument(
   // preloaded player scripts/styles under root paths) so native ES module
   // imports resolve same-origin through the reverse proxy instead of hitting
   // the upstream host cross-origin (CORS-blocked for modules).
+  // Rewrite relative/root asset tags and inline dynamic imports for SvelteKit.
+  // WebKit on iOS resolves dynamic imports in inline scripts against window.location.href,
+  // ignoring <base href>. Absolute same-origin URLs ensure both Chrome and WebKit load correctly.
+  processed = processed.replace(
+    /import\((['"])(?:\.\.\/|\.\/|\/)?_app\//g,
+    `import($1${proxyDomainRoot}_app/`
+  );
+  processed = processed.replace(
+    /(src|href)=(["'])(?:\.\.\/|\.\/)?_app\//gi,
+    `$1=$2${proxyDomainRoot}_app/`
+  );
   processed = processed.replace(
     /(src|href)=(["'])\/(?!\/|api\/media\/proxy\/)/gi,
     `$1=$2${proxyDomainRoot}`

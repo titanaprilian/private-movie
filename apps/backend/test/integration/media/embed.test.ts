@@ -248,6 +248,30 @@ describe('GET /embed/:hash', () => {
     expect(html).not.toContain('src="/_app/');
   });
 
+  it('should rewrite relative ../_app/ dynamic imports and link hrefs for iOS WebKit', async () => {
+    mockUpstream(
+      '<!DOCTYPE html><html><head>' +
+        '<link href="../_app/immutable/assets/0.DRrGxDDX.css" rel="stylesheet">' +
+        '</head><body><script>' +
+        'Promise.all([' +
+        '  import("../_app/immutable/entry/start.ItzsbE--.js"),' +
+        '  import("../_app/immutable/entry/app.p3B28OhT.js")' +
+        ']);' +
+        '</script></body></html>'
+    );
+    const response = await app.handle(
+      new Request("http://localhost:3000/embed/video-123")
+    );
+
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain('href="/api/media/proxy/videobello.net/_app/immutable/assets/0.DRrGxDDX.css"');
+    expect(html).toContain('import("/api/media/proxy/videobello.net/_app/immutable/entry/start.ItzsbE--.js")');
+    expect(html).toContain('import("/api/media/proxy/videobello.net/_app/immutable/entry/app.p3B28OhT.js")');
+    expect(html).not.toContain('import("../_app/');
+  });
+
   it('should route player /api/embed calls to the same-origin proxy', async () => {
     mockUpstream();
     const response = await app.handle(
@@ -359,5 +383,27 @@ describe('GET /embed/:hash', () => {
     );
     expect(res2.status).toBe(200);
     expect(capturedUrls[1]).toBe("https://videobello.net/player/v/8.38.2/jwpsrv.js");
+  });
+
+  it('should proxy /_app/* assets directly at root with CORS headers', async () => {
+    let capturedUrl = "";
+    let capturedHeaders: Record<string, string> = {};
+    vi.spyOn(global, "fetch").mockImplementation(async (input, init) => {
+      capturedUrl = input.toString();
+      capturedHeaders = (init?.headers as Record<string, string>) || {};
+      return new Response("console.log('sveltekit');", {
+        status: 200,
+        headers: { "Content-Type": "application/javascript" },
+      });
+    });
+
+    const response = await app.handle(
+      new Request("http://localhost:3000/_app/immutable/entry/start.ItzsbE--.js")
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+    expect(capturedUrl).toBe("https://videobello.net/_app/immutable/entry/start.ItzsbE--.js");
+    expect(capturedHeaders["Referer"]).toBe("https://dramula.com");
   });
 });

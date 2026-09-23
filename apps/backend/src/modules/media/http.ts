@@ -8,6 +8,7 @@ import { AD_SUPPRESSION_SHIM, EMBED_UPSTREAM_ORIGIN, EMBED_USER_AGENT, RELAY_EMB
 export const UNTHROTTLED_MEDIA_ROUTE_PREFIXES = [
   "/embed",
   "/player",
+  "/_app",
   "/api/media/relay",
   "/api/media/proxy",
 ];
@@ -158,6 +159,37 @@ export const embedRoutes = () => {
         if (!res.ok) {
           set.status = res.status;
           return "Player asset not found";
+        }
+        const contentType =
+          res.headers.get("Content-Type") || "application/javascript";
+        return new Response(res.body, {
+          status: 200,
+          headers: {
+            "Content-Type": contentType,
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      } catch {
+        set.status = 502;
+        return "Upstream unavailable";
+      }
+    }
+  ).all(
+    "/_app/*",
+    async ({ params, request, set }) => {
+      const wildcard = params["*"] || "";
+      const requestUrl = new URL(request.url);
+      const targetUrl = `${EMBED_UPSTREAM_ORIGIN}/_app/${wildcard}${requestUrl.search}`;
+      try {
+        const res = await fetch(targetUrl, {
+          headers: {
+            "User-Agent": EMBED_USER_AGENT,
+            Referer: RELAY_EMBED_REFERER,
+          },
+        });
+        if (!res.ok) {
+          set.status = res.status;
+          return "Asset not found";
         }
         const contentType =
           res.headers.get("Content-Type") || "application/javascript";
