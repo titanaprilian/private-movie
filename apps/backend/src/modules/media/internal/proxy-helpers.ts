@@ -354,9 +354,13 @@ export function buildProxyShim(domain: string): string {
 
 export const RELAY_EMBED_REFERER = "https://dramula.com";
 export const RELAY_CDN_REFERER = "https://videobello.net/";
+export const EMBED_UPSTREAM_ORIGIN = "https://videobello.net";
+export const EMBED_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
 /**
- * CDN / player host fragments intercepted by `apps/web/public/media-proxy-sw.js`.
+ * CDN / player host fragments intercepted in-page by the relay interceptor
+ * shim and routed through `/api/media/relay`.
  * Requests to these hosts carry the videobello player page as Referer —
  * the CDN allow-lists the player, not dramula.
  */
@@ -474,4 +478,180 @@ export function sanitizeHtmlContent(html: string, domain: string): string {
   }
 
   return processed;
+}
+
+/**
+ * In-page fetch/XHR interceptor shim. Routes outbound media and playlist
+ * requests to BelloCloud CDN domains through the backend relay
+ * (`/api/media/relay?url=...`) so the server can attach the required
+ * Referer headers. Replaces the former Service Worker interception, which
+ * fails on insecure origins and detaches on mobile WebKit.
+ */
+export function buildRelayInterceptorShim(): string {
+  const fragments = JSON.stringify(RELAY_CDN_HOST_FRAGMENTS);
+  return `<script id="pm-relay-interceptor">
+  (function() {
+    var CDN_FRAGMENTS = ${fragments};
+    function shouldIntercept(url) {
+      if (typeof url !== 'string' || !url) return false;
+      if (url.indexOf('/api/media/relay?url=') !== -1) return false;
+      var lower = url.toLowerCase();
+      if (lower.indexOf('videobello.net') !== -1) return true;
+      for (var i = 0; i < CDN_FRAGMENTS.length; i++) {
+        if (lower.indexOf(CDN_FRAGMENTS[i].toLowerCase()) !== -1) return true;
+      }
+      return false;
+    }
+    function toRelay(url) {
+      return '/api/media/relay?url=' + encodeURIComponent(url);
+    }
+    function toHref(input) {
+      if (typeof input === 'string') return input;
+      if (input && typeof input.url === 'string') return input.url;
+      if (typeof URL !== 'undefined' && input instanceof URL) return input.href;
+      return input;
+    }
+    function absolutize(url) {
+      try {
+        return new URL(toHref(url), document.baseURI).href;
+      } catch (e) {
+        return toHref(url);
+      }
+    }
+    function rewrite(url) {
+      // Absolutize first: player scripts (HLS.js, JWPlayer) request relative
+      // paths (e.g. playlist.m3u8, /hls/1080p/manifest) that only match
+      // CDN hosts once resolved against document.baseURI.
+      var abs = absolutize(url);
+      if (!shouldIntercept(abs)) return url;
+      return toRelay(abs);
+    }
+    if (typeof window.fetch === 'function') {
+      var origFetch = window.fetch;
+      window.fetch = function(input, init) {
+        if (typeof input === 'string') {
+          input = rewrite(input);
+        } else if (typeof URL !== 'undefined' && input instanceof URL) {
+          var href = rewrite(input.href);
+          if (href !== input.href) input = href;
+        } else if (input && typeof input.url === 'string') {
+          try {
+            input = new Request(rewrite(input.url), input);
+          } catch (e) {}
+        }
+        return origFetch.call(this, input, init);
+      };
+    }
+    if (typeof XMLHttpRequest !== 'undefined') {
+      var origOpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(method, url) {
+        if (typeof url === 'string' || (typeof URL !== 'undefined' && url instanceof URL)) {
+          arguments[1] = rewrite(url);
+        }
+        return origOpen.apply(this, arguments);
+      };
+    }
+  })();
+</script>`;
+}
+
+/**
+ * Mobile playback enforcement shim. Ensures every <video> element carries
+ * playsinline / webkit-playsinline so mobile WebKit plays inline instead of
+ * suspending or forcing fullscreen.
+ */
+export const MOBILE_VIDEO_SHIM = `<script id="pm-mobile-video">
+  (function() {
+    function enforce(video) {
+      try {
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        if (!video.hasAttribute('preload')) video.setAttribute('preload', 'metadata');
+      } catch (e) {}
+    }
+    function enforceAll(root) {
+      try {
+        var scope = root || document;
+        var videos = scope.querySelectorAll ? scope.querySelectorAll('video') : [];
+        for (var i = 0; i < videos.length; i++) enforce(videos[i]);
+      } catch (e) {}
+    }
+    document.addEventListener('DOMContentLoaded', function() { enforceAll(document); });
+    enforceAll(document);
+    if (typeof MutationObserver !== 'undefined') {
+      var observer = new MutationObserver(function(mutations) {
+        for (var i = 0; i < mutations.length; i++) {
+          var mutation = mutations[i];
+          for (var j = 0; j < mutation.addedNodes.length; j++) {
+            var node = mutation.addedNodes[j];
+            if (node && node.tagName === 'VIDEO') {
+              enforce(node);
+            } else if (node && node.querySelectorAll) {
+              enforceAll(node);
+            }
+          }
+        }
+      });
+      if (document.documentElement) {
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      }
+    }
+  })();
+</script>`;
+
+export function enforceMobileVideoAttributes(html: string): string {
+  return html.replace(
+    /<video\b([^>]*)>/gi,
+    (match, attrs) => {
+      let result = attrs as string;
+      if (!/\bplaysinline\b/i.test(result)) result += " playsinline";
+      if (!/\bwebkit-playsinline\b/i.test(result)) result += " webkit-playsinline";
+      if (!/\bpreload\s*=/i.test(result)) result += ' preload="metadata"';
+      return `<video${result}>`;
+    }
+  );
+}
+
+/**
+ * Compose the final server-rendered embed document: upstream player HTML +
+ * base tag + ad-suppression shim + relay interceptor + mobile video shim.
+ */
+export function buildServerRenderedEmbedDocument(
+  upstreamHtml: string,
+  origin: string = EMBED_UPSTREAM_ORIGIN
+): string {
+  let processed = enforceMobileVideoAttributes(upstreamHtml);
+  const injections =
+    `<base href="${origin}/">\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim()}\n  ${MOBILE_VIDEO_SHIM}`;
+
+  if (/(<head[^>]*>)/i.test(processed)) {
+    processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);
+  } else if (/(<html[^>]*>)/i.test(processed)) {
+    processed = processed.replace(
+      /(<html[^>]*>)/i,
+      `$1\n<head>\n  ${injections}\n</head>`
+    );
+  } else {
+    processed = `<head>\n  ${injections}\n</head>\n${processed}`;
+  }
+
+  return processed;
+}
+
+export function buildEmbedErrorDocument(message: string): string {
+  const safe = message
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video unavailable</title>
+</head>
+<body>
+  <p>${safe}</p>
+</body>
+</html>`;
 }

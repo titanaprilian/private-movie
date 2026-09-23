@@ -1,7 +1,21 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import type { App } from '../../utils/app';
 import { buildApp } from '../../utils/app';
 import { truncateAll } from '../../utils/db';
+
+const UPSTREAM_HTML =
+  '<!DOCTYPE html><html><head><title>Bello Player</title></head><body><video src="https://skylayer64.online/v/playlist.m3u8"></video></body></html>';
+
+function mockUpstream(html = UPSTREAM_HTML, ok = true) {
+  return vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+    void input;
+    return new Response(html, {
+      status: ok ? 200 : 500,
+      statusText: ok ? "OK" : "Error",
+      headers: { "Content-Type": "text/html" },
+    });
+  });
+}
 
 describe('GET /embed/:hash', () => {
   let app: App;
@@ -14,7 +28,12 @@ describe('GET /embed/:hash', () => {
     await truncateAll();
   });
 
-  it('should return HTML bootstrap document that registers service worker', async () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should return a complete server-rendered player document without service worker registration', async () => {
+    mockUpstream();
     const hash = 'test-video-hash-123';
     const response = await app.handle(
       new Request(`http://localhost:3000/embed/${hash}`)
@@ -25,66 +44,143 @@ describe('GET /embed/:hash', () => {
 
     const html = await response.text();
 
-    // Verify the HTML contains service worker registration
-    expect(html).toContain('/media-proxy-sw.js');
-    expect(html).not.toContain('/media-proxy-sw.js?v=');
-    expect(html).toContain("navigator.serviceWorker.register('/media-proxy-sw.js', { scope: '/embed/' })");
-
-    // Verify it waits for service worker activation
-    expect(html).toContain('clients.claim');
-
-    // Verify it will fetch from proxy-embed endpoint
-    expect(html).toContain('/api/media/proxy-embed');
-    expect(html).toContain(hash);
-
-    // Verify document.write usage for injecting HTML
-    expect(html).toContain('document.write');
+    // Upstream player content is inlined server-side
+    expect(html).toContain('Bello Player');
+    // No client-side service worker bootstrap or document replacement
+    expect(html).not.toContain('serviceWorker');
+    expect(html).not.toContain('/media-proxy-sw.js');
+    expect(html).not.toContain('document.write');
   });
 
-  it('should handle different hash values', async () => {
-    const hash = 'another-hash-xyz';
+  it('should fetch upstream with provider referer and forward query params', async () => {
+    let capturedUrl = "";
+    let capturedHeaders: Record<string, string> = {};
+    vi.spyOn(global, "fetch").mockImplementation(async (input, init) => {
+      capturedUrl = input.toString();
+      capturedHeaders = (init?.headers as Record<string, string>) || {};
+      return new Response(UPSTREAM_HTML, {
+        status: 200,
+        headers: { "Content-Type": "text/html" },
+      });
+    });
+
     const response = await app.handle(
-      new Request(`http://localhost:3000/embed/${hash}`)
+      new Request(`http://localhost:3000/embed/abc123?foo=bar`)
     );
 
     expect(response.status).toBe(200);
-    const html = await response.text();
-    expect(html).toContain(hash);
+    expect(capturedUrl).toBe('https://videobello.net/embed/abc123?foo=bar');
+    expect(capturedHeaders["Referer"]).toBe("https://dramula.com");
+    expect(capturedHeaders["User-Agent"]).toContain("Mozilla/5.0");
   });
 
-  it('should return proper HTML structure', async () => {
-    const hash = 'video-123';
+  it('should inject base tag, relay interceptor shim, and ad-suppression shim', async () => {
+    mockUpstream();
     const response = await app.handle(
-      new Request(`http://localhost:3000/embed/${hash}`)
+      new Request(`http://localhost:3000/embed/video-123`)
     );
 
     const html = await response.text();
 
-    // Verify basic HTML structure
-    expect(html).toMatch(/<!DOCTYPE html>/i);
-    expect(html).toMatch(/<html/i);
-    expect(html).toMatch(/<head/i);
-    expect(html).toMatch(/<body/i);
+    expect(html).toContain('<base href="https://videobello.net/">');
+    expect(html).toContain('pm-relay-interceptor');
+    expect(html).toContain('/api/media/relay?url=');
+    expect(html).toContain('XMLHttpRequest');
+    // Ad-suppression shim still present
+    expect(html).toContain("Object.defineProperty(window, 'open'");
   });
 
-  it('should construct correct videobello.net/embed URL in fetch call', async () => {
-    const hash = 'ZXBpc29kZS0xMjM';
+  it('should enforce mobile-friendly video attributes', async () => {
+    mockUpstream();
     const response = await app.handle(
-      new Request(`http://localhost:3000/embed/${hash}`)
+      new Request(`http://localhost:3000/embed/video-123`)
     );
 
-    expect(response.status).toBe(200);
     const html = await response.text();
 
-    // Verify the URL includes /embed/ subpath
-    expect(html).toContain('https://videobello.net/embed/');
-    expect(html).toContain(`https://videobello.net/embed/${hash}`);
+    expect(html).toContain('playsinline');
+    expect(html).toContain('webkit-playsinline');
+    expect(html).toContain('pm-mobile-video');
+  });
+
+  it('should accept real Dramula hashes with dots, colons, and base64 padding', async () => {
+    let capturedUrl = "";
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      capturedUrl = input.toString();
+      return new Response(UPSTREAM_HTML, {
+        status: 200,
+        headers: { "Content-Type": "text/html" },
+      });
+    });
+
+    for (const hash of [
+      'ZXBpc29kZToxMDM4Nw.bf0e5daa',
+      'ZXBpc29kZToxMDM4Nw.00000000',
+      'ZXBpc29kZS0xMjM=',
+    ]) {
+      const response = await app.handle(
+        new Request(`http://localhost:3000/embed/${hash}`)
+      );
+
+      expect(response.status).toBe(200);
+      expect(capturedUrl).toBe(`https://videobello.net/embed/${hash}`);
+    }
+  });
+
+  it('should absolutize relative player URLs before deciding to intercept', async () => {
+    mockUpstream();
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    const html = await response.text();
+
+    // Relative HLS/JWPlayer paths must be resolved against document.baseURI
+    // before host matching, or they bypass the relay and 403.
+    expect(html).toContain('var abs = absolutize(url);');
+    expect(html).toContain('if (!shouldIntercept(abs))');
+  });
+
+  it('should return a user-friendly error document on upstream failure', async () => {
+    mockUpstream("", false);
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    expect(response.status).toBe(502);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    const html = await response.text();
+    expect(html).toContain('Could not load the video player');
+    expect(html).not.toContain('serviceWorker');
+  });
+
+  it('should return a user-friendly error document on fetch rejection', async () => {
+    vi.spyOn(global, "fetch").mockRejectedValue(new Error("network down"));
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    expect(response.status).toBe(502);
+    const html = await response.text();
+    expect(html).toContain('Could not load the video player');
+  });
+
+  it('should reject invalid hashes with a user-friendly error', async () => {
+    const spy = mockUpstream();
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/invalid%20hash!`)
+    );
+
+    expect(response.status).toBe(400);
+    const html = await response.text();
+    expect(html).toContain('currently unavailable');
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('should contain the ad-suppression script shim', async () => {
-    const hash = 'test-video-hash-123';
+    mockUpstream();
     const response = await app.handle(
-      new Request(`http://localhost:3000/embed/${hash}`)
+      new Request(`http://localhost:3000/embed/test-video-hash-123`)
     );
 
     expect(response.status).toBe(200);

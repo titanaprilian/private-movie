@@ -3,7 +3,7 @@ import { MVP_MEDIA_OPENAPI, type AuthenticationService } from "@repo/contracts";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import type { DbClient } from "@repo/db";
-import { AD_SUPPRESSION_SHIM, resolveRelayReferer, sanitizeHtmlContent } from "./internal/proxy-helpers";
+import { AD_SUPPRESSION_SHIM, EMBED_UPSTREAM_ORIGIN, EMBED_USER_AGENT, RELAY_EMBED_REFERER, buildEmbedErrorDocument, buildServerRenderedEmbedDocument, resolveRelayReferer, sanitizeHtmlContent } from "./internal/proxy-helpers";
 
 export const UNTHROTTLED_MEDIA_ROUTE_PREFIXES = [
   "/embed",
@@ -17,65 +17,120 @@ export interface MediaRoutesOptions {
 }
 
 /**
- * Root-level route for the embed sandbox bootstrap.
+ * Root-level route for the embed sandbox.
+ * Server-renders the upstream BelloCloud player HTML (single HTTP response,
+ * no Service Worker) with an in-page fetch/XHR relay interceptor and mobile
+ * video attributes injected.
  * Registers at `/embed/:hash` (not under `/api` prefix).
  */
 export const embedRoutes = () => {
   return new Elysia({ name: "embed-routes" }).get(
     "/embed/:hash",
-    async ({ params }) => {
+    async ({ params, request }) => {
       const { hash } = params;
 
-      const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Embed</title>
-  ${AD_SUPPRESSION_SHIM}
-</head>
-<body>
-  <script>
-    (async () => {
-      if ('serviceWorker' in navigator) {
-        try {
-          const registration = await navigator.serviceWorker.register('/media-proxy-sw.js', { scope: '/embed/' });
-          await registration.update();
-          await navigator.serviceWorker.ready;
-          // Force the service worker to claim this page immediately
-          if (registration.active) {
-            await registration.active.postMessage({ type: 'CLAIM_CLIENTS' });
+      // BelloCloud/Dramula hashes are base64-ish with dot separators and
+      // checksums (e.g. `ZXBpc29kZToxMDM4Nw.bf0e5daa`, `...00000000`,
+      // trailing `=` padding). Reject only empty hashes and characters
+      // that could break out of the upstream path — never `/` or `\`.
+      if (!hash || !/^[A-Za-z0-9_.~:=-]+$/.test(hash)) {
+        return new Response(
+          buildEmbedErrorDocument("This video is currently unavailable."),
+          {
+            status: 400,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
           }
-          if (navigator.serviceWorker.clients) {
-            await navigator.serviceWorker.clients.claim();
-          }
-          await new Promise(resolve => setTimeout(resolve, 100));
-          const queryParams = window.location.search;
-          const embedUrl = '/api/media/proxy-embed?url=' + encodeURIComponent('https://videobello.net/embed/${hash}' + queryParams);
-          const response = await fetch(embedUrl);
-          
-          if (!response.ok) {
-            document.body.innerHTML = '<p>Failed to load embed content</p>';
-            return;
-          }
-          
-          const embedHtml = await response.text();
-          document.open();
-          document.write(embedHtml);
-          document.close();
-        } catch (error) {
-          console.error('Service Worker registration failed:', error);
-          document.body.innerHTML = '<p>Service Worker failed to load</p>';
-        }
-      } else {
-        document.body.innerHTML = '<p>Service Workers are not supported in this browser</p>';
+        );
       }
-    })();
-  </script>
-</body>
-</html>`;
 
-      return new Response(html, {
+      let upstreamUrl: URL;
+      try {
+        upstreamUrl = new URL(`${EMBED_UPSTREAM_ORIGIN}/embed/${hash}`);
+        const incoming = new URL(request.url);
+        upstreamUrl.search = incoming.search;
+        // Guard against dot-segment normalization escaping /embed/.
+        if (!upstreamUrl.pathname.startsWith("/embed/")) {
+          return new Response(
+            buildEmbedErrorDocument("This video is currently unavailable."),
+            {
+              status: 400,
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            }
+          );
+        }
+      } catch {
+        return new Response(
+          buildEmbedErrorDocument("This video is currently unavailable."),
+          {
+            status: 400,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          }
+        );
+      }
+
+      let upstream: Response;
+      try {
+        upstream = await fetch(upstreamUrl.toString(), {
+          headers: {
+            "User-Agent": EMBED_USER_AGENT,
+            Referer: RELAY_EMBED_REFERER,
+          },
+        });
+      } catch {
+        return new Response(
+          buildEmbedErrorDocument(
+            "Could not load the video player. Please try again later."
+          ),
+          {
+            status: 502,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          }
+        );
+      }
+
+      if (!upstream.ok) {
+        return new Response(
+          buildEmbedErrorDocument(
+            "Could not load the video player. Please try again later."
+          ),
+          {
+            status: 502,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          }
+        );
+      }
+
+      let upstreamHtml: string;
+      try {
+        upstreamHtml = await upstream.text();
+      } catch {
+        return new Response(
+          buildEmbedErrorDocument(
+            "Could not load the video player. Please try again later."
+          ),
+          {
+            status: 502,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          }
+        );
+      }
+
+      if (!upstreamHtml || !upstreamHtml.trim()) {
+        return new Response(
+          buildEmbedErrorDocument("This video is currently unavailable."),
+          {
+            status: 502,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          }
+        );
+      }
+
+      const document = buildServerRenderedEmbedDocument(
+        upstreamHtml,
+        upstream.url ? new URL(upstream.url).origin : EMBED_UPSTREAM_ORIGIN
+      );
+
+      return new Response(document, {
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
