@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
 import { buildApp, request, type App } from "../../utils/app";
+import { RELAY_EMBED_REFERER } from "../../../src/modules/media";
 
 describe("Reverse Proxy Route (/api/media/proxy/:domain/*)", () => {
   let app: App;
@@ -54,7 +55,7 @@ describe("Reverse Proxy Route (/api/media/proxy/:domain/*)", () => {
 
     expect(response.status).toBe(200);
     expect(capturedUrl).toBe("https://vidhidepro.com/v/abcd123?autoplay=1");
-    expect(capturedHeaders["Referer"]).toBe("https://vidhidepro.com");
+    expect(capturedHeaders["Referer"]).toBe(RELAY_EMBED_REFERER);
     expect(capturedHeaders["User-Agent"]).toContain("Mozilla/5.0");
     expect(response.headers.get("content-type")).toContain("text/html");
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
