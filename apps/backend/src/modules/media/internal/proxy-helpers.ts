@@ -866,7 +866,7 @@ export const WEBCRYPTO_INSECURE_POLYFILL_SHIM = `<script id="pm-webcrypto-polyfi
         }).then(function(resJson) {
           return fromBase64(resJson.result);
         });
-      }
+      },
 
       sign: function(algorithm, key, data) {
         var alg = Object.assign({}, typeof algorithm === 'string' ? { name: algorithm } : algorithm);
