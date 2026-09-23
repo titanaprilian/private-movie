@@ -250,7 +250,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             const importedKey = await globalThis.crypto.subtle.importKey(
               "raw",
               keyBuf,
-              (keyAlgorithm as AlgorithmIdentifier) || { name: algObj.name as string },
+              (keyAlgorithm as unknown as AlgorithmIdentifier) || { name: algObj.name as string },
               false,
               [op as KeyUsage]
             );
@@ -292,7 +292,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             const importedKey = await globalThis.crypto.subtle.importKey(
               "raw",
               keyBuf,
-              (keyAlgorithm as AlgorithmIdentifier) || { name: (algObj.name as string) || "HMAC" },
+              (keyAlgorithm as unknown as AlgorithmIdentifier) || { name: (algObj.name as string) || "HMAC" },
               false,
               ["sign"]
             );
@@ -317,7 +317,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             const importedKey = await globalThis.crypto.subtle.importKey(
               "raw",
               keyBuf,
-              (keyAlgorithm as AlgorithmIdentifier) || { name: (algObj.name as string) || "HMAC" },
+              (keyAlgorithm as unknown as AlgorithmIdentifier) || { name: (algObj.name as string) || "HMAC" },
               false,
               ["verify"]
             );
