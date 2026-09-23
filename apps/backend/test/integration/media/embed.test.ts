@@ -361,7 +361,7 @@ describe('GET /embed/:hash', () => {
   });
 
   it('should strip duplicate domain and protocol prefixes from proxy wildcard', async () => {
-    let capturedUrls: string[] = [];
+    const capturedUrls: string[] = [];
     vi.spyOn(global, "fetch").mockImplementation(async (input) => {
       capturedUrls.push(input.toString());
       return new Response("console.log('chunk');", {

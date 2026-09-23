@@ -220,7 +220,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         try {
           const line = `[${new Date().toISOString()}] ${typeof body === "string" ? body : JSON.stringify(body)}\n`;
           await fs.appendFile("/tmp/player-mobile.log", line);
-        } catch {}
+        } catch {
+          /* best-effort debug logging; ignore filesystem errors */
+        }
         return { ok: true };
       }
     )
