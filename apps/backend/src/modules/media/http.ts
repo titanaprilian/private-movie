@@ -328,11 +328,16 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
               "cookie",
               "connection",
               "accept-encoding",
+              "user-agent",
+              "sec-ch-ua",
+              "sec-ch-ua-mobile",
+              "sec-ch-ua-platform",
             ];
             if (!unsafeHeaders.includes(lowerKey)) {
               outboundHeaders[key] = value;
             }
           });
+          outboundHeaders["User-Agent"] = EMBED_USER_AGENT;
 
           const isGetOrHead = ["GET", "HEAD"].includes(request.method.toUpperCase());
           const targetResponse = await fetch(targetUrl, {
@@ -440,11 +445,16 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
               "cookie",
               "connection",
               "accept-encoding",
+              "user-agent",
+              "sec-ch-ua",
+              "sec-ch-ua-mobile",
+              "sec-ch-ua-platform",
             ];
             if (!unsafeHeaders.includes(lowerKey)) {
               outboundHeaders[key] = value;
             }
           });
+          outboundHeaders["User-Agent"] = EMBED_USER_AGENT;
 
           const targetResponse = await fetch(targetUrl.toString(), {
             method: request.method,
