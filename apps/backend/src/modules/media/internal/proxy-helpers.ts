@@ -678,6 +678,82 @@ export const EMBED_SW_CLEANUP_SHIM = `<script id="pm-sw-cleanup">
     } catch (e) {}
   })();
 </script>`;
+/**
+ * Client-side debug logger. Forwards console messages, unhandled errors,
+ * and failed fetch requests to /api/media/debug-log for real-time mobile debugging.
+ */
+export const DEBUG_LOGGER_SHIM = `<script id="pm-debug-logger">
+  (function() {
+    function sendLog(type, data) {
+      try {
+        var payload = JSON.stringify({
+          time: new Date().toISOString(),
+          ua: navigator.userAgent,
+          type: type,
+          data: data
+        });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/media/debug-log', payload);
+        } else {
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', '/api/media/debug-log', true);
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.send(payload);
+        }
+      } catch (e) {}
+    }
+
+    var origError = console.error;
+    console.error = function() {
+      try {
+        sendLog('console.error', Array.prototype.slice.call(arguments).map(String));
+      } catch (e) {}
+      origError.apply(console, arguments);
+    };
+
+    var origWarn = console.warn;
+    console.warn = function() {
+      try {
+        sendLog('console.warn', Array.prototype.slice.call(arguments).map(String));
+      } catch (e) {}
+      origWarn.apply(console, arguments);
+    };
+
+    window.addEventListener('error', function(e) {
+      sendLog('window.error', { message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno });
+    });
+
+    window.addEventListener('unhandledrejection', function(e) {
+      sendLog('unhandledrejection', { reason: String(e.reason) });
+    });
+
+    var origFetch = window.fetch;
+    window.fetch = function(input, init) {
+      var url = typeof input === 'string' ? input : (input && input.url ? input.url : String(input));
+      var method = (init && init.method) || (input && input.method) || 'GET';
+      return origFetch.apply(this, arguments).then(function(res) {
+        if (!res.ok) {
+          try {
+            res.clone().text().then(function(bodyText) {
+              sendLog('fetch.error', { url: url, method: method, status: res.status, body: bodyText.slice(0, 500) });
+            }).catch(function() {
+              sendLog('fetch.error', { url: url, method: method, status: res.status });
+            });
+          } catch (e) {
+            sendLog('fetch.error', { url: url, method: method, status: res.status });
+          }
+        } else {
+          sendLog('fetch.ok', { url: url, method: method, status: res.status });
+        }
+        return res;
+      }).catch(function(err) {
+        sendLog('fetch.fail', { url: url, method: method, error: String(err) });
+        throw err;
+      });
+    };
+  })();
+</script>`;
+
 
 /**
  * Compose the final server-rendered embed document: upstream player HTML +
@@ -737,7 +813,7 @@ export function buildServerRenderedEmbedDocument(
   // Using proxyDocumentBase (/api/media/proxy/<domain>/embed/) ensures that
   // `../_app/...` resolves to `/api/media/proxy/<domain>/_app/...` without stripping the domain.
   const injections =
-    `<base href="${proxyDocumentBase}">\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim(proxyDomainRoot)}\n  ${MOBILE_VIDEO_SHIM}`;
+    `<base href="${proxyDocumentBase}">\n  ${DEBUG_LOGGER_SHIM}\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim(proxyDomainRoot)}\n  ${MOBILE_VIDEO_SHIM}`;
   if (/(<head[^>]*>)/i.test(processed)) {
     processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);
   } else if (/(<html[^>]*>)/i.test(processed)) {

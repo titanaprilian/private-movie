@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import { Elysia, t } from "elysia";
 import { MVP_MEDIA_OPENAPI, type AuthenticationService } from "@repo/contracts";
 import { authGuard } from "../../lib/auth";
@@ -213,6 +214,16 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
 
   return new Elysia({ name: "media-routes" })
     .get("/openapi.json", () => MVP_MEDIA_OPENAPI)
+    .post(
+      "/media/debug-log",
+      async ({ body }) => {
+        try {
+          const line = `[${new Date().toISOString()}] ${typeof body === "string" ? body : JSON.stringify(body)}\n`;
+          await fs.appendFile("/tmp/player-mobile.log", line);
+        } catch {}
+        return { ok: true };
+      }
+    )
     .post(
       "/embed",
       async ({ request, set }) => {
