@@ -219,7 +219,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           const outboundHeaders: Record<string, string> = {
             "User-Agent":
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            Referer: `https://${domain}`,
+            Referer: resolveRelayReferer(domain) || `https://${domain}`,
           };
 
           // Forward safe inbound request headers

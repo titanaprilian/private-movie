@@ -83,7 +83,7 @@ describe('GET /embed/:hash', () => {
 
     const html = await response.text();
 
-    expect(html).toContain('<base href="https://videobello.net/">');
+    expect(html).toContain('<base href="/api/media/proxy/videobello.net/embed/">');
     expect(html).toContain('pm-relay-interceptor');
     expect(html).toContain('/api/media/relay?url=');
     expect(html).toContain('XMLHttpRequest');
@@ -217,6 +217,58 @@ describe('GET /embed/:hash', () => {
     const html = await response.text();
     expect(html).toContain('currently unavailable');
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('should rewrite root-relative SvelteKit bundles and player assets through the proxy', async () => {
+    mockUpstream(
+      '<!DOCTYPE html><html><head>' +
+        '<link rel="modulepreload" href="/_app/immutable/start.CBwQ8d0s.js">' +
+        '<link rel="stylesheet" href="/_app/immutable/app.css">' +
+        '<script type="module" src="/_app/immutable/entry/start.js"></script>' +
+        '<script src="/player/jwplayer.js"></script>' +
+        '</head><body><div id="app"></div></body></html>'
+    );
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    // Same-origin proxy base routes relative chunk imports through backend
+    expect(html).toContain('<base href="/api/media/proxy/videobello.net/embed/">');
+    expect(html).not.toContain('<base href="https://videobello.net/">');
+    // Root-relative entry bundles / preloaded assets rewritten to proxy
+    expect(html).toContain('href="/api/media/proxy/videobello.net/_app/immutable/start.CBwQ8d0s.js"');
+    expect(html).toContain('href="/api/media/proxy/videobello.net/_app/immutable/app.css"');
+    expect(html).toContain('src="/api/media/proxy/videobello.net/_app/immutable/entry/start.js"');
+    expect(html).toContain('src="/api/media/proxy/videobello.net/player/jwplayer.js"');
+    // No bare cross-origin root-relative module URLs remain
+    expect(html).not.toContain('href="/_app/');
+    expect(html).not.toContain('src="/_app/');
+  });
+
+  it('should route player /api/embed calls to the same-origin proxy', async () => {
+    mockUpstream();
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    const html = await response.text();
+
+    expect(html).toContain("urlStr === '/api/embed'");
+    expect(html).toContain("toProxy(urlStr)");
+  });
+
+  it('should never route proxied assets to the relay interceptor', async () => {
+    mockUpstream();
+    const response = await app.handle(
+      new Request(`http://localhost:3000/embed/video-123`)
+    );
+
+    const html = await response.text();
+
+    expect(html).toContain("url.indexOf('/api/media/proxy/') !== -1) return false");
   });
 
   it('should contain the ad-suppression script shim', async () => {

@@ -487,7 +487,9 @@ export function sanitizeHtmlContent(html: string, domain: string): string {
  * Referer headers. Replaces the former Service Worker interception, which
  * fails on insecure origins and detaches on mobile WebKit.
  */
-export function buildRelayInterceptorShim(): string {
+export function buildRelayInterceptorShim(
+  proxyDomainRoot: string = "/api/media/proxy/videobello.net/"
+): string {
   const fragments = JSON.stringify(RELAY_CDN_HOST_FRAGMENTS);
   return `<script id="pm-relay-interceptor">
   (function() {
@@ -498,6 +500,9 @@ export function buildRelayInterceptorShim(): string {
       // relay URL resolved against the upstream <base> tag
       // (https://videobello.net/api/media/relay?url=...) still matches.
       if (url.indexOf('/api/media/relay') !== -1) return false;
+      // Same-origin proxy assets (/_app chunks, player scripts) already route
+      // through the backend reverse proxy — never send them to the relay.
+      if (url.indexOf('/api/media/proxy/') !== -1) return false;
       var lower = url.toLowerCase();
       if (lower.indexOf('videobello.net') !== -1) return true;
       for (var i = 0; i < CDN_FRAGMENTS.length; i++) {
@@ -532,11 +537,20 @@ export function buildRelayInterceptorShim(): string {
         return toHref(url);
       }
     }
+    function toProxy(path) {
+      return '${proxyDomainRoot}' + path.replace(/^[/]+/, '');
+    }
     function rewrite(url) {
-      // Absolutize first: player scripts (HLS.js, JWPlayer) request relative
-      // paths (e.g. playlist.m3u8, /hls/1080p/manifest) that only match
-      // CDN hosts once resolved against document.baseURI.
+      var urlStr = toHref(url);
+      if (typeof urlStr === 'string') {
+        if (urlStr === '/api/embed' || urlStr.indexOf('/api/embed') === 0 || (urlStr.indexOf('/api/') === 0 && urlStr.indexOf('/api/media/') === -1)) {
+          return toProxy(urlStr);
+        }
+      }
       var abs = absolutize(url);
+      if (abs.indexOf('videobello.net/api/embed') !== -1) {
+        return toProxy('api/embed');
+      }
       if (!shouldIntercept(abs)) return url;
       return toRelay(abs);
     }
@@ -658,10 +672,46 @@ export function buildServerRenderedEmbedDocument(
   upstreamHtml: string,
   origin: string = EMBED_UPSTREAM_ORIGIN
 ): string {
-  let processed = enforceMobileVideoAttributes(upstreamHtml);
-  const injections =
-    `<base href="${origin}/">\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim()}\n  ${MOBILE_VIDEO_SHIM}`;
+  let domain = "videobello.net";
+  try {
+    domain = new URL(origin).hostname || domain;
+  } catch {
+    // keep default domain
+  }
+  const proxyDomainRoot = `/api/media/proxy/${domain}/`;
+  const proxyDocumentBase = `/api/media/proxy/${domain}/embed/`;
 
+  let processed = enforceMobileVideoAttributes(upstreamHtml);
+
+  // Rewrite root-relative asset tags (SvelteKit entry bundles under /_app/,
+  // preloaded player scripts/styles under root paths) so native ES module
+  // imports resolve same-origin through the reverse proxy instead of hitting
+  // the upstream host cross-origin (CORS-blocked for modules).
+  processed = processed.replace(
+    /(src|href)=(["'])\/(?!\/|api\/media\/proxy\/)/gi,
+    `$1=$2${proxyDomainRoot}`
+  );
+
+  // Rewrite absolute upstream URLs (https://<domain>/...) to the proxy.
+  const domainEscaped = domain.replace(/\./g, "\\.");
+  processed = processed.replace(
+    new RegExp(`https?://${domainEscaped}/`, "gi"),
+    proxyDomainRoot
+  );
+
+  // Rewrite bare stream/download paths used by inline player scripts.
+  processed = processed.replace(
+    /(["'])\/stream\//g,
+    `$1${proxyDomainRoot}stream/`
+  );
+  processed = processed.replace(/(["'])\/dl\?/g, `$1${proxyDomainRoot}dl?`);
+
+  // Same-origin base: relative entry/chunk imports (../_app/..., ./chunk.js)
+  // resolve relative to the embed document path through the backend reverse proxy.
+  // Using proxyDocumentBase (/api/media/proxy/<domain>/embed/) ensures that
+  // `../_app/...` resolves to `/api/media/proxy/<domain>/_app/...` without stripping the domain.
+  const injections =
+    `<base href="${proxyDocumentBase}">\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim(proxyDomainRoot)}\n  ${MOBILE_VIDEO_SHIM}`;
   if (/(<head[^>]*>)/i.test(processed)) {
     processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);
   } else if (/(<html[^>]*>)/i.test(processed)) {
