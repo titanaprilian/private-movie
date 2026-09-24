@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -66,6 +68,9 @@ import com.privatemovie.tv.components.isRepeatKeyEvent
  *
  * Callers may pass a list of [FocusRequester] (one per episode) via [itemFocusRequesters] so that the
  * parent can programmatically restore focus to any remembered episode index — not just Card 0.
+ *
+ * The row's [LazyListState] can be hoisted via [carouselState] so the parent can scroll a target
+ * card into view before requesting focus (see downward D-pad transitions in the detail screen).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -76,11 +81,13 @@ fun EpisodeCarousel(
     onEpisodeFocused: (TvEpisode, Int) -> Unit,
     modifier: Modifier = Modifier,
     itemFocusRequesters: List<FocusRequester> = emptyList(),
-    onUp: (() -> Unit)? = null
+    onUp: (() -> Unit)? = null,
+    carouselState: LazyListState = rememberLazyListState()
 ) {
     val bringIntoViewSpec = remember { TvHorizontalBringIntoViewSpec(edgeMargin = 48f) }
     CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoViewSpec) {
         LazyRow(
+            state = carouselState,
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp)

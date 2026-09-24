@@ -48,6 +48,9 @@ import com.privatemovie.tv.modules.detail.internal.DetailUiState
 import com.privatemovie.tv.modules.detail.internal.EpisodeCarousel
 import com.privatemovie.tv.modules.detail.internal.EpisodeInfoPanel
 import com.privatemovie.tv.modules.detail.internal.SeriesHeader
+import com.privatemovie.tv.modules.detail.internal.executeCarouselFocus
+import com.privatemovie.tv.modules.detail.internal.planDownwardFocus
+import com.privatemovie.tv.modules.detail.internal.shouldConsumeDownKey
 import com.privatemovie.tv.modules.detail.internal.SourcePickerDialog
 import com.privatemovie.tv.modules.detail.internal.TvEpisode
 import com.privatemovie.tv.modules.detail.internal.TvSeason
@@ -405,16 +408,35 @@ private fun DetailContent(
     val episodeFocusRequesters = remember(currentEpisodes) {
         List(currentEpisodes.size) { FocusRequester() }
     }
+    val carouselListState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    // Resets the horizontal carousel scroll when the episode list changes
+    // (e.g. season switch) so stale offsets never strand focus off-screen.
+    LaunchedEffect(currentEpisodes) {
+        if (carouselListState.firstVisibleItemIndex >= currentEpisodes.size) {
+            carouselListState.scrollToItem(0, 0)
+        }
+    }
 
     val focusRememberedEpisode: suspend () -> Boolean = {
-        val targetIndex = activeEpisodeIndex.coerceIn(0, (currentEpisodes.size - 1).coerceAtLeast(0))
-        val requester = episodeFocusRequesters.getOrNull(targetIndex)
-            ?: episodeFocusRequesters.firstOrNull()
-        if (requester != null) {
-            lazyListState.animateScrollToItem(if (details.seasons.size > 1) 2 else 1)
-            requestFocusSafely(requester)
-        } else {
+        val plan = planDownwardFocus(currentEpisodes.size, activeEpisodeIndex)
+        if (plan == null) {
             false
+        } else {
+            // Vertical: bring the carousel section on screen.
+            lazyListState.animateScrollToItem(if (details.seasons.size > 1) 2 else 1)
+            // Horizontal: scroll the target card into view before requesting focus.
+            try {
+                carouselListState.animateScrollToItem(plan.targetIndex)
+            } catch (_: Exception) {
+                // Best-effort: a failed scroll must not block the focus attempt.
+            }
+            // Focus the target card, falling back to Card 0 when the target
+            // cannot acquire focus after retries.
+            executeCarouselFocus(plan) { index ->
+                val requester = episodeFocusRequesters.getOrNull(index)
+                if (requester != null) requestFocusSafely(requester) else false
+            } != null
         }
     }
 
@@ -464,14 +486,18 @@ private fun DetailContent(
                     },
                     onBack = onBack,
                     onDownFromCta = {
-                        focusCoordinator.tryRequestFocus {
-                            if (details.seasons.size > 1) {
-                                lazyListState.animateScrollToItem(1)
-                                requestFocusSafely(seasonTabsFocusRequester)
-                            } else if (currentEpisodes.isNotEmpty()) {
-                                focusRememberedEpisode()
-                            } else {
-                                false
+                        // Never swallow the event when the transition cannot even
+                        // start (no episodes, or one already in flight).
+                        if (!shouldConsumeDownKey(currentEpisodes.size, focusCoordinator.isInFlight)) {
+                            false
+                        } else {
+                            focusCoordinator.tryRequestFocus {
+                                if (details.seasons.size > 1) {
+                                    lazyListState.animateScrollToItem(1)
+                                    requestFocusSafely(seasonTabsFocusRequester)
+                                } else {
+                                    focusRememberedEpisode()
+                                }
                             }
                         }
                     },
@@ -500,8 +526,12 @@ private fun DetailContent(
                         },
                         onDown = if (currentEpisodes.isNotEmpty()) {
                             {
-                                focusCoordinator.tryRequestFocus {
-                                    focusRememberedEpisode()
+                                if (!shouldConsumeDownKey(currentEpisodes.size, focusCoordinator.isInFlight)) {
+                                    false
+                                } else {
+                                    focusCoordinator.tryRequestFocus {
+                                        focusRememberedEpisode()
+                                    }
                                 }
                             }
                         } else null
@@ -545,6 +575,7 @@ private fun DetailContent(
                                 onEpisodeFocusedIndex(index)
                             },
                             itemFocusRequesters = episodeFocusRequesters,
+                            carouselState = carouselListState,
                             onUp = if (details.seasons.size <= 1) {
                                 {
                                     focusCoordinator.tryRequestFocus {
@@ -578,7 +609,7 @@ private fun SeasonSelectorBar(
     modifier: Modifier = Modifier,
     firstTabFocusRequester: FocusRequester? = null,
     onUp: (() -> Unit)? = null,
-    onDown: (() -> Unit)? = null
+    onDown: (() -> Boolean)? = null
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
@@ -613,8 +644,9 @@ private fun SeasonSelectorBar(
                                     onDown != null &&
                                         keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
                                         keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                        // Only consume when the transition can start;
+                                        // otherwise let focus move naturally.
                                         onDown()
-                                        true
                                     }
                                     else -> false
                                 }

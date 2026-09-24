@@ -64,7 +64,7 @@ fun SeriesHeader(
     onPlayCta: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    onDownFromCta: (() -> Unit)? = null
+    onDownFromCta: (() -> Boolean)? = null
 ) {
     val context = LocalContext.current
     val rawImageUrl = details.backdropUrl ?: details.posterUrl
@@ -328,10 +328,10 @@ fun SeriesHeader(
                             if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
                                 keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN
                             ) {
-                                if (onDownFromCta != null) {
-                                    onDownFromCta()
-                                    true
-                                } else false
+                                // Only consume the event when the transition can actually
+                                // start; otherwise let focus move naturally so the user
+                                // never gets stuck on the CTA.
+                                onDownFromCta?.invoke() ?: false
                             } else false
                         },
                     shape = TvButtonDefaults.shape(
