@@ -154,7 +154,7 @@ class MediaApiClientTest {
 
         val result = client.getGenres()
 
-        assertEquals("http://10.0.2.2:3000/genres", fakeTransport.lastRequestedUrl)
+        assertEquals("http://10.0.2.2:3000/api/genres", fakeTransport.lastRequestedUrl)
         assertTrue(result is ApiResponse.Success)
         val genres = (result as ApiResponse.Success).data.data
         assertEquals(2, genres.size)

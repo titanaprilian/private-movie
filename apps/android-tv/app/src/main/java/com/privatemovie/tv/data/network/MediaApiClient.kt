@@ -48,7 +48,7 @@ class MediaApiClient(
 
     suspend fun getGenres(): ApiResponse<GenresListResponse> {
         val baseUrl = sanitizeBaseUrl(baseUrlProvider())
-        val endpointUrl = "$baseUrl/genres"
+        val endpointUrl = "$baseUrl/api/genres"
         return try {
             val response = transport.get(endpointUrl)
             parseResponse<GenresListResponse>(response)
