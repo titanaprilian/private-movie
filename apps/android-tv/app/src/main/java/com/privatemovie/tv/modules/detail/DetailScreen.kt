@@ -44,6 +44,7 @@ import com.privatemovie.tv.components.TvVerticalHeaderBringIntoViewSpec
 import com.privatemovie.tv.components.isRepeatKeyEvent
 import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.repository.MediaRepository
+import com.privatemovie.tv.modules.detail.internal.DetailBackButton
 import com.privatemovie.tv.modules.detail.internal.DetailUiState
 import com.privatemovie.tv.modules.detail.internal.EpisodeCarousel
 import com.privatemovie.tv.modules.detail.internal.EpisodeInfoPanel
@@ -206,25 +207,7 @@ private fun DetailLoading(
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground
             )
-            val backShape = RoundedCornerShape(8.dp)
-            TvButton(
-                onClick = onBack,
-                shape = TvButtonDefaults.shape(shape = backShape, focusedShape = backShape),
-                scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.05f),
-                border = TvButtonDefaults.border(
-                    border = Border.None,
-                    focusedBorder = Border(
-                        border = BorderStroke(width = 2.dp, color = Color.White),
-                        shape = backShape
-                    )
-                ),
-                colors = TvButtonDefaults.colors(
-                    containerColor = Color.White.copy(alpha = 0.15f),
-                    focusedContainerColor = Color.White.copy(alpha = 0.3f),
-                    contentColor = Color.White,
-                    focusedContentColor = Color.White
-                )
-            ) {
+            DetailBackButton(onClick = onBack) {
                 Text("Back", fontWeight = FontWeight.Medium)
             }
         }
@@ -273,25 +256,7 @@ private fun DetailError(
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground
             )
-            val backShape = RoundedCornerShape(8.dp)
-            TvButton(
-                onClick = onBack,
-                shape = TvButtonDefaults.shape(shape = backShape, focusedShape = backShape),
-                scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.05f),
-                border = TvButtonDefaults.border(
-                    border = Border.None,
-                    focusedBorder = Border(
-                        border = BorderStroke(width = 2.dp, color = Color.White),
-                        shape = backShape
-                    )
-                ),
-                colors = TvButtonDefaults.colors(
-                    containerColor = Color.White.copy(alpha = 0.15f),
-                    focusedContainerColor = Color.White.copy(alpha = 0.3f),
-                    contentColor = Color.White,
-                    focusedContentColor = Color.White
-                )
-            ) {
+            DetailBackButton(onClick = onBack) {
                 Text("Back", fontWeight = FontWeight.Medium)
             }
         }
@@ -339,24 +304,7 @@ private fun DetailError(
                         Text("Retry", fontWeight = FontWeight.Bold)
                     }
 
-                    TvButton(
-                        onClick = onBack,
-                        shape = TvButtonDefaults.shape(shape = btnShape, focusedShape = btnShape),
-                        scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.05f),
-                        border = TvButtonDefaults.border(
-                            border = Border.None,
-                            focusedBorder = Border(
-                                border = BorderStroke(width = 2.dp, color = Color.White),
-                                shape = btnShape
-                            )
-                        ),
-                        colors = TvButtonDefaults.colors(
-                            containerColor = Color.White.copy(alpha = 0.15f),
-                            focusedContainerColor = Color.White.copy(alpha = 0.25f),
-                            contentColor = Color.White,
-                            focusedContentColor = Color.White
-                        )
-                    ) {
+                    DetailBackButton(onClick = onBack) {
                         Text("Back to Home", fontWeight = FontWeight.Medium)
                     }
                 }

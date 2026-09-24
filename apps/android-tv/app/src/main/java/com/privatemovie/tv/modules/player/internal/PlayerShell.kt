@@ -51,6 +51,7 @@ enum class RemoteControlKey {
 }
 
 const val DEFAULT_CONTROLS_TIMEOUT_MS = 3500L
+const val DEFAULT_EXIT_CONFIRM_TIMEOUT_MS = 2500L
 
 /**
  * Calculates a clamped target playback position in milliseconds.
@@ -147,6 +148,8 @@ class PlayerControlsState(
                 resetTimeout()
             }
             is PlayerControlAction.ExitPlayer,
+            is PlayerControlAction.ShowExitConfirmation,
+            is PlayerControlAction.DismissExitConfirmation,
             is PlayerControlAction.RequestFullscreen -> Unit
         }
     }
@@ -167,6 +170,8 @@ fun nextControlsVisibility(
         is PlayerControlAction.SeekForward -> true
         is PlayerControlAction.HideControls -> false
         is PlayerControlAction.ExitPlayer,
+        is PlayerControlAction.ShowExitConfirmation,
+        is PlayerControlAction.DismissExitConfirmation,
         is PlayerControlAction.RequestFullscreen -> currentVisible
     }
 
@@ -189,6 +194,97 @@ fun supportsSeek(renderer: PlaybackRenderer): Boolean = true
 
 /** The player shell auto-attempts fullscreen on entry (TV-only dedicated flow). */
 fun shouldAutoFullscreenOnEntry(): Boolean = true
+
+/**
+ * Exit guard suppressing the "Playback unavailable" flash on player teardown.
+ *
+ * Once exit is initiated, failure UI must no longer render (route args and
+ * player callbacks may go stale during the pop transition). [tryExit]
+ * returns true only for the first exit request so [onExitPlayer] fires once.
+ */
+class PlayerExitGuard {
+    var isExiting: Boolean = false
+        private set
+
+    fun tryExit(): Boolean {
+        if (isExiting) return false
+        isExiting = true
+        return true
+    }
+
+    /** Whether failure UI ("Playback unavailable") may render. */
+    fun shouldShowFailure(): Boolean = !isExiting
+}
+
+/**
+ * Teardown guard for the native player surface.
+ *
+ * Listeners are detached before `player.release()`; any error callback still
+ * racing through release is suppressed via [shouldDispatchError] so teardown
+ * noise never reaches the shell's error UI.
+ */
+class PlayerTeardownGuard {
+    var isDisposing: Boolean = false
+        private set
+
+    fun markDisposing() {
+        isDisposing = true
+    }
+
+    /** Whether an error callback should be dispatched to the shell. */
+    fun shouldDispatchError(): Boolean = !isDisposing
+}
+
+/**
+ * Focus target owning D-pad focus in the player shell.
+ */
+enum class PlayerFocusTarget {
+    /** Central Play/Pause transport button (controls overlay visible). */
+    PLAY_PAUSE_BUTTON,
+
+    /** Player background container intercepting remote keys (controls hidden). */
+    PLAYER_CONTAINER,
+}
+
+/**
+ * Resolves which focus target should own D-pad focus for the given
+ * controls-overlay visibility. Visible controls focus Play/Pause (including
+ * while the stream is still loading); hidden controls focus the container
+ * so remote keys are still intercepted.
+ */
+fun resolvePlayerFocusTarget(controlsVisible: Boolean): PlayerFocusTarget =
+    if (controlsVisible) PlayerFocusTarget.PLAY_PAUSE_BUTTON else PlayerFocusTarget.PLAYER_CONTAINER
+
+/**
+ * State holder for player focus placement and restoration.
+ *
+ * On entry with visible controls, Play/Pause takes initial focus immediately.
+ * When controls auto-hide, focus transfers to the player container; when
+ * controls reappear on D-pad interaction, focus returns to Play/Pause.
+ * [focusRequestNonce] bumps on every transition so Compose effects re-run
+ * the resilient focus request even when the target is unchanged.
+ */
+class PlayerFocusState(
+    initialTarget: PlayerFocusTarget = PlayerFocusTarget.PLAY_PAUSE_BUTTON
+) {
+    var currentTarget: PlayerFocusTarget = initialTarget
+        private set
+
+    var focusRequestNonce: Long = 0L
+        private set
+
+    fun onEntry(controlsVisible: Boolean): PlayerFocusTarget =
+        transition(resolvePlayerFocusTarget(controlsVisible))
+
+    fun onControlsVisibilityChanged(controlsVisible: Boolean): PlayerFocusTarget =
+        transition(resolvePlayerFocusTarget(controlsVisible))
+
+    private fun transition(target: PlayerFocusTarget): PlayerFocusTarget {
+        currentTarget = target
+        focusRequestNonce++
+        return target
+    }
+}
 
 /**
  * Declarative actions dispatched automatically when entering the player
@@ -215,6 +311,69 @@ fun resolvePlaybackUrl(rawUrl: String?, backendBaseUrl: String?): String? {
 }
 
 /**
+ * State holder for the double-Back exit confirmation flow.
+ *
+ * When transport controls are hidden, the first Back press arms a confirmation
+ * window (showing the floating prompt) instead of exiting. A second Back press
+ * while armed exits playback. If the timeout elapses, the prompt dismisses and
+ * the state resets.
+ */
+class DoubleBackExitState(
+    val timeoutMs: Long = DEFAULT_EXIT_CONFIRM_TIMEOUT_MS
+) {
+    var isConfirmationActive: Boolean = false
+        private set
+
+    var confirmationNonce: Long = 0L
+        private set
+
+    /** Whether the floating exit prompt should be visible. */
+    val showPrompt: Boolean get() = isConfirmationActive
+
+    /**
+     * Handles a Back press given [controlsVisible].
+     * Returns HideControls when controls are visible (prompt never armed),
+     * ShowExitConfirmation on first press while hidden, ExitPlayer on second
+     * press within the window.
+     */
+    fun onBackPressed(controlsVisible: Boolean): PlayerControlAction {
+        if (controlsVisible) {
+            return PlayerControlAction.HideControls
+        }
+        return if (isConfirmationActive) {
+            PlayerControlAction.ExitPlayer
+        } else {
+            isConfirmationActive = true
+            confirmationNonce++
+            PlayerControlAction.ShowExitConfirmation
+        }
+    }
+
+    /** Dismisses the prompt after the timeout elapses and resets the window. */
+    fun onTimeoutElapsed() {
+        isConfirmationActive = false
+    }
+
+    /** Explicit dismissal (same as timeout). */
+    fun dismiss() {
+        isConfirmationActive = false
+    }
+
+    fun onAction(action: PlayerControlAction) {
+        when (action) {
+            is PlayerControlAction.ShowExitConfirmation -> {
+                isConfirmationActive = true
+                confirmationNonce++
+            }
+            is PlayerControlAction.DismissExitConfirmation -> dismiss()
+            is PlayerControlAction.ExitPlayer,
+            is PlayerControlAction.HideControls -> dismiss()
+            else -> Unit
+        }
+    }
+}
+
+/**
  * Maps an MVP remote-control [key] to its declarative [PlayerControlAction]
  * for the active [renderer] and [controlsVisible] state.
  *
@@ -226,13 +385,15 @@ fun resolvePlaybackUrl(rawUrl: String?, backendBaseUrl: String?): String? {
  *    - D-pad navigation keys (LEFT, RIGHT, UP, DOWN) and CENTER_OK refresh inactivity timeout (ShowControls).
  *      D-pad Left/Right does NOT trigger immediate seeks; focus traversal moves across transport buttons.
  * 3. When controls overlay is hidden:
- *    - Back key exits playback (ExitPlayer).
+ *    - First Back press arms exit confirmation (ShowExitConfirmation); a second Back press
+ *      while [exitConfirmationActive] exits playback (ExitPlayer).
  *    - Any D-pad/OK interaction reveals the controls overlay (ShowControls) and focuses center Play/Pause.
  */
 fun handleRemoteKey(
     key: RemoteControlKey,
     renderer: PlaybackRenderer,
-    controlsVisible: Boolean = true
+    controlsVisible: Boolean = true,
+    exitConfirmationActive: Boolean = false
 ): PlayerControlAction {
     when (key) {
         RemoteControlKey.PLAY_PAUSE -> return PlayerControlAction.TogglePlayPause
@@ -243,7 +404,7 @@ fun handleRemoteKey(
 
     if (!controlsVisible) {
         return when (key) {
-            RemoteControlKey.BACK -> PlayerControlAction.ExitPlayer
+            RemoteControlKey.BACK -> if (exitConfirmationActive) PlayerControlAction.ExitPlayer else PlayerControlAction.ShowExitConfirmation
             RemoteControlKey.PLAY_PAUSE -> PlayerControlAction.TogglePlayPause
             RemoteControlKey.FAST_FORWARD -> PlayerControlAction.SeekForward()
             RemoteControlKey.REWIND -> PlayerControlAction.SeekBackward()

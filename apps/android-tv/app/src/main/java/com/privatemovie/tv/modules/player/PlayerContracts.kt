@@ -72,6 +72,7 @@ const val PLAYER_RETURN_EPISODE_ID_KEY = "player_return_episode_id"
 
 const val DEFAULT_SEEK_SECONDS = 10
 const val DEFAULT_CONTROLS_TIMEOUT_MS = 3500L
+const val DEFAULT_EXIT_CONFIRM_TIMEOUT_MS = 2500L
 
 /**
  * Declarative control actions the player shell can take in response to a
@@ -98,4 +99,10 @@ sealed interface PlayerControlAction {
 
     /** Signals the UI to hide/dismiss the controls overlay. */
     data object HideControls : PlayerControlAction
+
+    /** First Back press while controls are hidden: show exit confirmation prompt. */
+    data object ShowExitConfirmation : PlayerControlAction
+
+    /** Dismiss the exit confirmation prompt without exiting (timeout elapsed). */
+    data object DismissExitConfirmation : PlayerControlAction
 }

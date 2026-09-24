@@ -56,10 +56,23 @@ class PlayerShellTest {
     }
 
     @Test
-    fun `back key exits playback when controls are hidden`() {
+    fun `back key arms exit confirmation on first press when controls are hidden`() {
+        assertEquals(
+            PlayerControlAction.ShowExitConfirmation,
+            handleRemoteKey(RemoteControlKey.BACK, PlaybackRenderer.NATIVE, controlsVisible = false)
+        )
+    }
+
+    @Test
+    fun `back key exits playback on second press within confirmation window`() {
         assertEquals(
             PlayerControlAction.ExitPlayer,
-            handleRemoteKey(RemoteControlKey.BACK, PlaybackRenderer.NATIVE, controlsVisible = false)
+            handleRemoteKey(
+                RemoteControlKey.BACK,
+                PlaybackRenderer.NATIVE,
+                controlsVisible = false,
+                exitConfirmationActive = true
+            )
         )
     }
 
@@ -116,11 +129,20 @@ class PlayerShellTest {
     }
 
     @Test
-    fun `back key exits playback even when controls are hidden`() {
+    fun `back key double-press flow when controls are hidden`() {
         for (renderer in PlaybackRenderer.entries) {
             assertEquals(
-                PlayerControlAction.ExitPlayer,
+                PlayerControlAction.ShowExitConfirmation,
                 handleRemoteKey(RemoteControlKey.BACK, renderer, controlsVisible = false)
+            )
+            assertEquals(
+                PlayerControlAction.ExitPlayer,
+                handleRemoteKey(
+                    RemoteControlKey.BACK,
+                    renderer,
+                    controlsVisible = false,
+                    exitConfirmationActive = true
+                )
             )
         }
     }

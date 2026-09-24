@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,14 +61,19 @@ import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
 import com.privatemovie.tv.components.MediaPlaceholderIcons
+import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.modules.player.DEFAULT_CONTROLS_TIMEOUT_MS
+import com.privatemovie.tv.modules.player.DEFAULT_EXIT_CONFIRM_TIMEOUT_MS
 import com.privatemovie.tv.modules.player.PlaybackCompletionDecision
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
+import com.privatemovie.tv.modules.player.internal.PlayerExitGuard
+import com.privatemovie.tv.modules.player.internal.PlayerFocusTarget
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
 import com.privatemovie.tv.modules.player.internal.VideoProgressBar
+import com.privatemovie.tv.modules.player.internal.resolvePlayerFocusTarget
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
 import com.privatemovie.tv.modules.player.internal.calculateClampedSeekPosition
 import com.privatemovie.tv.modules.player.internal.formatPlayerHeadline
@@ -161,6 +167,23 @@ fun PlayerScreen(
     var controlsVisible by remember { mutableStateOf(true) }
     var userActivityNonce by remember { mutableLongStateOf(0L) }
 
+    // Double-Back exit confirmation state (only armed while controls are hidden)
+    var exitConfirmationVisible by remember { mutableStateOf(false) }
+    var exitConfirmNonce by remember { mutableLongStateOf(0L) }
+
+    // Exit guard: once exit is initiated, failure UI is suppressed so stale
+    // route args / teardown callbacks during the pop transition cannot flash
+    // "Playback unavailable", and onExitPlayer fires exactly once.
+    val exitGuard = remember { PlayerExitGuard() }
+    var isExiting by remember { mutableStateOf(false) }
+
+    fun requestExit() {
+        if (exitGuard.tryExit()) {
+            isExiting = true
+            onExitPlayer()
+        }
+    }
+
     val view = LocalView.current
     val playerFocus = remember { FocusRequester() }
     val playPauseFocus = remember { FocusRequester() }
@@ -185,14 +208,22 @@ fun PlayerScreen(
         }
     }
 
-    // Programmatically focus Play/Pause button when overlay becomes visible
+    // Auto-dismiss the exit confirmation prompt after the timeout window elapses
+    LaunchedEffect(exitConfirmationVisible, exitConfirmNonce) {
+        if (exitConfirmationVisible) {
+            delay(DEFAULT_EXIT_CONFIRM_TIMEOUT_MS)
+            exitConfirmationVisible = false
+        }
+    }
+
+    // Focus placement & restoration: Play/Pause owns focus while the overlay is
+    // visible (including during loading/buffering); the player container takes
+    // over when controls auto-hide so remote keys keep being intercepted.
+    // Resilient retries guard against dropped requests during composition.
     LaunchedEffect(controlsVisible) {
-        if (controlsVisible) {
-            try {
-                playPauseFocus.requestFocus()
-            } catch (_: Exception) {
-                // Best-effort in case view isn't yet attached
-            }
+        when (resolvePlayerFocusTarget(controlsVisible)) {
+            PlayerFocusTarget.PLAY_PAUSE_BUTTON -> requestFocusSafely(playPauseFocus)
+            PlayerFocusTarget.PLAYER_CONTAINER -> requestFocusSafely(playerFocus)
         }
     }
 
@@ -233,33 +264,49 @@ fun PlayerScreen(
         when (action) {
             is PlayerControlAction.TogglePlayPause -> {
                 controlsVisible = true
+                exitConfirmationVisible = false
                 userActivityNonce++
                 toggleNativePlayback()
             }
-            is PlayerControlAction.ExitPlayer -> onExitPlayer()
+            is PlayerControlAction.ExitPlayer -> requestExit()
             is PlayerControlAction.HideControls -> {
                 controlsVisible = false
             }
+            is PlayerControlAction.ShowExitConfirmation -> {
+                exitConfirmationVisible = true
+                exitConfirmNonce++
+            }
+            is PlayerControlAction.DismissExitConfirmation -> {
+                exitConfirmationVisible = false
+            }
             is PlayerControlAction.SeekBackward -> {
                 controlsVisible = true
+                exitConfirmationVisible = false
                 userActivityNonce++
                 seekNative(-action.seconds)
             }
             is PlayerControlAction.SeekForward -> {
                 controlsVisible = true
+                exitConfirmationVisible = false
                 userActivityNonce++
                 seekNative(action.seconds)
             }
             is PlayerControlAction.RequestFullscreen -> attemptFullscreen()
             is PlayerControlAction.ShowControls -> {
                 controlsVisible = true
+                exitConfirmationVisible = false
                 userActivityNonce++
             }
         }
     }
 
     fun onRemoteKey(key: RemoteControlKey): Boolean {
-        val action = handleRemoteKey(key, renderer, controlsVisible = controlsVisible)
+        val action = handleRemoteKey(
+            key,
+            renderer,
+            controlsVisible = controlsVisible,
+            exitConfirmationActive = exitConfirmationVisible
+        )
         applyAction(action)
         return true
     }
@@ -286,9 +333,11 @@ fun PlayerScreen(
     }
 
     // Auto-attempt fullscreen on entry: TV-only dedicated playback flow.
+    // Play/Pause acquires initial focus right away with safe retries so the
+    // request survives layout attachment races, even while still loading.
     LaunchedEffect(Unit) {
-        playerFocus.requestFocus()
         if (shouldAutoFullscreenOnEntry()) attemptFullscreen()
+        requestFocusSafely(playPauseFocus)
     }
 
     Box(
@@ -340,15 +389,15 @@ fun PlayerScreen(
                     val computedDecision = onPlaybackEnded(hasNext = (hasPrevious || hasNext) || (playerNavArgs?.playlist?.isNotEmpty() == true && hasNext) || (onPlayNextEpisode != null))
                     when (computedDecision) {
                         PlaybackCompletionDecision.AdvanceToNext -> onPlayNextEpisode?.invoke()
-                        PlaybackCompletionDecision.ExitPlayer -> onExitPlayer()
+                        PlaybackCompletionDecision.ExitPlayer -> requestExit()
                     }
                 },
                 modifier = Modifier.fillMaxSize()
             )
-        } else {
+        } else if (!isExiting) {
             PlayerFailure(
                 message = handoffFailure ?: "No playable source for this episode",
-                onExitPlayer = onExitPlayer
+                onExitPlayer = { requestExit() }
             )
         }
 
@@ -365,10 +414,10 @@ fun PlayerScreen(
         }
 
         errorMessage?.let { message ->
-            if (handoffFailure == null) {
+            if (handoffFailure == null && !isExiting) {
                 PlayerFailure(
                     message = message,
-                    onExitPlayer = onExitPlayer
+                    onExitPlayer = { requestExit() }
                 )
             }
         }
@@ -490,6 +539,52 @@ fun PlayerScreen(
                 }
             }
         }
+
+        // Double-Back exit confirmation floating pill (bottom-center, non-focusable).
+        if (combinedFailure == null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                AnimatedVisibility(
+                    visible = exitConfirmationVisible && !controlsVisible,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    ExitConfirmationPill()
+                }
+            }
+        }
+    }
+}
+
+/**
+ * High-contrast floating pill prompting a second Back press to exit.
+ * Deliberately non-focusable so D-pad navigation stays on transport controls.
+ */
+@Composable
+private fun ExitConfirmationPill(modifier: Modifier = Modifier) {
+    val pillShape = RoundedCornerShape(24.dp)
+    Box(
+        modifier = modifier
+            .padding(bottom = 48.dp)
+            .border(
+                width = 2.dp,
+                color = Color.White,
+                shape = pillShape
+            )
+            .background(
+                color = Color(0xFF000000),
+                shape = pillShape
+            )
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Press back again to exit",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = Color.White
+        )
     }
 }
 

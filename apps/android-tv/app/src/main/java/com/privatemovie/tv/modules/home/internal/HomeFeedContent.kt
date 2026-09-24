@@ -44,7 +44,6 @@ import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.components.TvHorizontalBringIntoViewSpec
 import com.privatemovie.tv.components.TvVerticalHeaderBringIntoViewSpec
 import com.privatemovie.tv.components.requestFocusSafely
-
 @Composable
 fun HomeLoading(modifier: Modifier = Modifier) {
     Box(
@@ -190,7 +189,11 @@ fun HomeFeedContent(
     onSelectSeries: (String) -> Unit,
     onOpenDevSettings: () -> Unit,
     onRetry: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSelectHero: ((String) -> Unit)? = null,
+    onSelectRowCard: ((rowIndex: Int, cardIndex: Int, seriesId: String) -> Unit)? = null,
+    returnFocusTarget: HomeReturnFocusTarget? = null,
+    onReturnFocusConsumed: (() -> Unit)? = null
 ) {
     val effectiveHeroes = remember(feed) {
         if (feed.heroes.isNotEmpty()) {
@@ -226,12 +229,74 @@ fun HomeFeedContent(
         }.toMap()
     }
 
+    val handleSelectHero: (String) -> Unit = { seriesId ->
+        if (onSelectHero != null) onSelectHero(seriesId) else onSelectSeries(seriesId)
+    }
+    val handleSelectRowCard: (Int, Int, String) -> Unit = { rowIndex, cardIndex, seriesId ->
+        if (onSelectRowCard != null) onSelectRowCard(rowIndex, cardIndex, seriesId)
+        else onSelectSeries(seriesId)
+    }
+
     var isInitialFocusPlaced by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(effectiveHeroes) {
-        if (!isInitialFocusPlaced && effectiveHeroes.isNotEmpty()) {
+        if (!isInitialFocusPlaced && effectiveHeroes.isNotEmpty() && returnFocusTarget == null) {
             isInitialFocusPlaced = true
             requestFocusSafely(heroFocus)
+        }
+    }
+
+    // End-to-end return focus: when popping back from Detail, restore focus to
+    // the origin item (Hero CTA or exact row card) with a 3-step fallback:
+    // target card -> Card 0 of that row -> Hero CTA. Consumed once applied so
+    // recompositions do not trigger focus jumps.
+    // Per-row horizontal list states for scroll-into-view before focusing.
+    val rowListStates = remember(feed.rows) {
+        feed.rows.map { androidx.compose.foundation.lazy.LazyListState() }
+    }
+    LaunchedEffect(returnFocusTarget, feed) {
+        val target = returnFocusTarget ?: return@LaunchedEffect
+        if (!shouldRestoreHomeFocus(target)) return@LaunchedEffect
+        val resolved = resolveHomeReturnFocus(feed, target) ?: return@LaunchedEffect
+        // Skip the initial-focus effect once a return target has been handled.
+        isInitialFocusPlaced = true
+        focusCoordinator.tryRequestFocus {
+            val result = executeHomeReturnFocus(
+                resolved = resolved,
+                requestCardFocus = { rowIndex, cardIndex ->
+                    // LazyColumn item index: hero is item 0, rows start at item 1.
+                    val lazyItemIndex =
+                        if (effectiveHeroes.isNotEmpty()) rowIndex + 1 else rowIndex
+                    try {
+                        lazyListState.animateScrollToItem(lazyItemIndex)
+                    } catch (_: Exception) {
+                        // Best-effort: a failed scroll must not block focus.
+                    }
+                    rowListStates.getOrNull(rowIndex)?.let {
+                        try {
+                            it.animateScrollToItem(cardIndex)
+                        } catch (_: Exception) {
+                        }
+                    }
+                    val requester = rowFocusRequesters[rowIndex]?.getOrNull(cardIndex)
+                    if (requester != null) requestFocusSafely(requester) else false
+                },
+                requestHeroFocus = {
+                    try {
+                        lazyListState.animateScrollToItem(0)
+                    } catch (_: Exception) {
+                    }
+                    requestFocusSafely(heroFocus)
+                }
+            )
+            if (result != HomeReturnFocusResult.Unfocused) {
+                onReturnFocusConsumed?.invoke()
+            } else {
+                // Even when focus could not be acquired, consume the target so
+                // recompositions do not loop retrying focus transitions.
+                onReturnFocusConsumed?.invoke()
+            }
+            result != HomeReturnFocusResult.Unfocused
         }
     }
 
@@ -286,7 +351,7 @@ fun HomeFeedContent(
                         FeaturedHeroSlider(
                             sliderState = sliderState,
                             baseUrl = baseUrl,
-                            onSelectSeries = onSelectSeries,
+                            onSelectSeries = handleSelectHero,
                             onOpenDevSettings = onOpenDevSettings,
                             ctaFocusRequester = heroFocus,
                             settingsFocusRequester = settingsFocus,
@@ -339,6 +404,8 @@ fun HomeFeedContent(
                                     androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides horizontalBringIntoViewSpec
                                 ) {
                                     LazyRow(
+                                        state = rowListStates.getOrNull(rowIndex)
+                                            ?: androidx.compose.foundation.lazy.rememberLazyListState(),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .focusRestorer(),
@@ -351,7 +418,7 @@ fun HomeFeedContent(
                                             SeriesPosterCard(
                                                 series = series,
                                                 baseUrl = baseUrl,
-                                                onSelect = { onSelectSeries(series.id) },
+                                                onSelect = { handleSelectRowCard(rowIndex, index, series.id) },
                                                 transformOrigin = transformOrigin,
                                                 focusRequester = itemRequester,
                                                 onFocused = {

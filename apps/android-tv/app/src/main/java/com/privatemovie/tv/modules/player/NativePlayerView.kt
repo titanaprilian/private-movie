@@ -19,6 +19,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.util.EventLogger
 import androidx.media3.ui.PlayerView
 import com.privatemovie.tv.data.network.MediaTlsConfig
+import com.privatemovie.tv.modules.player.internal.PlayerTeardownGuard
 
 private const val TAG = "NativePlayerView"
 private const val TV_BROWSER_USER_AGENT =
@@ -43,6 +44,38 @@ fun NativePlayerView(
     onPlaybackEnded: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val teardownGuard = remember { PlayerTeardownGuard() }
+
+    val playbackListener = remember {
+        object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                val stateName = when (playbackState) {
+                    Player.STATE_IDLE -> "STATE_IDLE"
+                    Player.STATE_BUFFERING -> "STATE_BUFFERING"
+                    Player.STATE_READY -> "STATE_READY"
+                    Player.STATE_ENDED -> "STATE_ENDED"
+                    else -> "UNKNOWN($playbackState)"
+                }
+                Log.i(TAG, "onPlaybackStateChanged: $stateName")
+
+                if (playbackState == Player.STATE_READY) onFirstFrame()
+                if (playbackState == Player.STATE_ENDED) onPlaybackEnded?.invoke()
+            }
+
+            override fun onIsLoadingChanged(isLoading: Boolean) {
+                Log.d(TAG, "onIsLoadingChanged: isLoading=$isLoading")
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                if (!teardownGuard.shouldDispatchError()) {
+                    Log.i(TAG, "Suppressing player error during disposal: ${error.errorCodeName}(${error.errorCode})")
+                    return
+                }
+                Log.e(TAG, "onPlayerError: errorCode=${error.errorCodeName}(${error.errorCode}), message=${error.message}", error)
+                onError(error.message ?: "Native playback failed")
+            }
+        }
+    }
 
     val player = remember {
         MediaTlsConfig.configure()
@@ -84,30 +117,7 @@ fun NativePlayerView(
                 // Detailed ExoPlayer internal event logging (filters under tag "EventLogger")
                 addAnalyticsListener(EventLogger())
 
-                addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(playbackState: Int) {
-                        val stateName = when (playbackState) {
-                            Player.STATE_IDLE -> "STATE_IDLE"
-                            Player.STATE_BUFFERING -> "STATE_BUFFERING"
-                            Player.STATE_READY -> "STATE_READY"
-                            Player.STATE_ENDED -> "STATE_ENDED"
-                            else -> "UNKNOWN($playbackState)"
-                        }
-                        Log.i(TAG, "onPlaybackStateChanged: $stateName")
-
-                        if (playbackState == Player.STATE_READY) onFirstFrame()
-                        if (playbackState == Player.STATE_ENDED) onPlaybackEnded?.invoke()
-                    }
-
-                    override fun onIsLoadingChanged(isLoading: Boolean) {
-                        Log.d(TAG, "onIsLoadingChanged: isLoading=$isLoading")
-                    }
-
-                    override fun onPlayerError(error: PlaybackException) {
-                        Log.e(TAG, "onPlayerError: errorCode=${error.errorCodeName}(${error.errorCode}), message=${error.message}", error)
-                        onError(error.message ?: "Native playback failed")
-                    }
-                })
+                addListener(playbackListener)
             }
     }
 
@@ -120,7 +130,13 @@ fun NativePlayerView(
     }
 
     DisposableEffect(Unit) {
-        onDispose { player.release() }
+        onDispose {
+            // Detach listeners before release so teardown errors are never
+            // dispatched to onError (which would flash "Playback unavailable").
+            teardownGuard.markDisposing()
+            player.removeListener(playbackListener)
+            player.release()
+        }
     }
 
     AndroidView(

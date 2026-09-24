@@ -162,27 +162,10 @@ fun SeriesHeader(
                 .fillMaxWidth()
                 .padding(start = 48.dp, top = 24.dp)
         ) {
-            val backShape = RoundedCornerShape(8.dp)
-            TvButton(
+            DetailBackButton(
                 onClick = onBack,
                 modifier = Modifier
-                    .focusRequester(backFocusRequester),
-                shape = TvButtonDefaults.shape(shape = backShape, focusedShape = backShape),
-                scale = TvButtonDefaults.scale(scale = 1.0f, focusedScale = 1.05f),
-                border = TvButtonDefaults.border(
-                    border = Border.None,
-                    focusedBorder = Border(
-                        border = BorderStroke(width = 2.dp, color = Color.White),
-                        shape = backShape
-                    )
-                ),
-                colors = TvButtonDefaults.colors(
-                    containerColor = Color.Black.copy(alpha = 0.5f),
-                    focusedContainerColor = Color.White.copy(alpha = 0.35f),
-                    contentColor = Color.White,
-                    focusedContentColor = Color.White
-                ),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    .focusRequester(backFocusRequester)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

@@ -37,6 +37,7 @@ fun HomeScreen(
     }
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
 
     LaunchedEffect(activeBackendUrl) {
         viewModel.loadFeed()
@@ -58,7 +59,17 @@ fun HomeScreen(
                 baseUrl = activeBackendUrl,
                 onSelectSeries = onSelectSeries,
                 onOpenDevSettings = onOpenDevSettings,
-                onRetry = { viewModel.retry() }
+                onRetry = { viewModel.retry() },
+                onSelectHero = { seriesId ->
+                    viewModel.recordHeroSelection(seriesId)
+                    onSelectSeries(seriesId)
+                },
+                onSelectRowCard = { rowIndex, cardIndex, seriesId ->
+                    viewModel.recordRowCardSelection(rowIndex, cardIndex, seriesId)
+                    onSelectSeries(seriesId)
+                },
+                returnFocusTarget = pendingReturnFocus,
+                onReturnFocusConsumed = { viewModel.consumeReturnFocus() }
             )
         }
     }

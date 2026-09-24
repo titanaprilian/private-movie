@@ -19,6 +19,7 @@ import com.privatemovie.tv.modules.config.BackendUrlStore
 import com.privatemovie.tv.modules.detail.DetailScreen
 import com.privatemovie.tv.modules.detail.DetailViewModel
 import com.privatemovie.tv.modules.home.HomeScreen
+import com.privatemovie.tv.modules.home.HomeViewModel
 import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
 import com.privatemovie.tv.modules.player.PLAYER_RETURN_EPISODE_ID_KEY
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
@@ -54,6 +55,11 @@ fun AppNavigation(
     // Detail reuses loaded series details instead of reloading and flashing
     // loading states or resetting scroll/focus to the hero banner.
     val detailViewModels = remember { mutableMapOf<String, DetailViewModel>() }
+    // Retain the HomeViewModel across Home -> Detail -> Home so the recorded
+    // return-focus origin survives navigation and focus can be restored.
+    val homeViewModel = remember(mediaRepository) {
+        HomeViewModel(mediaRepository = mediaRepository)
+    }
 
     NavHost(
         navController = navController,
@@ -64,6 +70,7 @@ fun AppNavigation(
             HomeScreen(
                 activeBackendUrl = activeUrl,
                 mediaRepository = mediaRepository,
+                viewModel = homeViewModel,
                 onSelectSeries = { seriesId ->
                     navController.navigate(TvScreen.Detail.createRoute(seriesId))
                 },
@@ -139,7 +146,12 @@ fun AppNavigation(
             arguments = listOf(navArgument("episodeId") { type = NavType.StringType })
         ) { backStackEntry ->
             val episodeId = backStackEntry.arguments?.getString("episodeId") ?: "unknown"
-            val playerNavArgs = navController.previousBackStackEntry?.savedStateHandle?.get<PlayerNavArgs>(PLAYER_NAV_ARGS_KEY)
+            // Snapshot args on first composition: previousBackStackEntry is
+            // invalidated during pop transitions, which would otherwise drop
+            // args to null and flash "Playback unavailable" on exit.
+            val playerNavArgs = remember {
+                navController.previousBackStackEntry?.savedStateHandle?.get<PlayerNavArgs>(PLAYER_NAV_ARGS_KEY)
+            }
 
             val playlist = playerNavArgs?.playlist ?: emptyList()
             val currentIndex = playlist.indexOfFirst { it.episodeId == episodeId }
