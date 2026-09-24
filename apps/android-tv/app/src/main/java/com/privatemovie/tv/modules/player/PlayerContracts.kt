@@ -64,6 +64,12 @@ const val PLAYER_NAV_ARGS_KEY = "player_nav_args"
  */
 const val PLAYER_NAV_ARGS_JSON_KEY = "player_nav_args_json"
 
+/**
+ * Key used to return the latest played episode id from the Player back to the
+ * Detail screen via the detail destination's SavedStateHandle.
+ */
+const val PLAYER_RETURN_EPISODE_ID_KEY = "player_return_episode_id"
+
 const val DEFAULT_SEEK_SECONDS = 10
 const val DEFAULT_CONTROLS_TIMEOUT_MS = 3500L
 

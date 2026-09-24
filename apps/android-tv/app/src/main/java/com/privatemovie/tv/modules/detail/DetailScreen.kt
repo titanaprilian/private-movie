@@ -85,12 +85,22 @@ fun DetailScreen(
             mediaRepository = mediaRepository,
             onLoadedDetails = onLoadedDetails
         )
-    }
+    },
+    playerReturnEpisodeId: String? = null,
+    onPlayerReturnConsumed: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedSeasonIndex by viewModel.selectedSeasonIndex.collectAsState()
     val activeEpisodeIndex by viewModel.activeEpisodeIndex.collectAsState()
     val pendingSourcePickerEpisode by viewModel.pendingSourcePickerEpisode.collectAsState()
+    val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
+
+    LaunchedEffect(playerReturnEpisodeId) {
+        if (playerReturnEpisodeId != null) {
+            viewModel.applyPlayerReturn(playerReturnEpisodeId)
+            onPlayerReturnConsumed?.invoke()
+        }
+    }
 
     val handleStartPlayback: (TvEpisode, TvVideoSource?) -> Unit = { episode, source ->
         val details = (uiState as? DetailUiState.Success)?.details
@@ -149,7 +159,11 @@ fun DetailScreen(
                 onSelectSeason = { viewModel.selectSeason(it) },
                 onEpisodeFocusedIndex = { viewModel.setEpisodeIndex(it) },
                 onSelectEpisode = handleSelectEpisode,
-                onBack = onBack
+                onBack = onBack,
+                returnFocusTarget = pendingReturnFocus,
+                hasCompletedInitialFocus = viewModel.hasCompletedInitialFocus,
+                onInitialFocusPerformed = { viewModel.hasCompletedInitialFocus = true },
+                onReturnFocusConsumed = { viewModel.consumeReturnFocus() }
             )
         }
     }
@@ -359,7 +373,11 @@ private fun DetailContent(
     onEpisodeFocusedIndex: (Int) -> Unit,
     onSelectEpisode: (TvEpisode) -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    returnFocusTarget: com.privatemovie.tv.modules.detail.internal.DetailReturnFocusTarget? = null,
+    hasCompletedInitialFocus: Boolean = true,
+    onInitialFocusPerformed: (() -> Unit)? = null,
+    onReturnFocusConsumed: (() -> Unit)? = null
 ) {
     val firstEpisode = remember(details) { findFirstPlayableEpisode(details) }
     var currentlyInspectedEpisode by remember(details, selectedSeasonIndex) {
@@ -401,8 +419,22 @@ private fun DetailContent(
     }
 
     LaunchedEffect(details.id) {
-        requestFocusSafely(playCtaFocusRequester)
-        lazyListState.scrollToItem(0, 0)
+        if (returnFocusTarget != null) {
+            // Returning from the player: focus the active episode card directly
+            // instead of resetting to the hero banner. Scroll position is restored
+            // to the carousel, not the top.
+            focusRememberedEpisode()
+            onReturnFocusConsumed?.invoke()
+        } else if (!hasCompletedInitialFocus) {
+            requestFocusSafely(playCtaFocusRequester)
+            lazyListState.scrollToItem(0, 0)
+            onInitialFocusPerformed?.invoke()
+        } else {
+            // Re-entering an already-visited detail screen (e.g. back from player
+            // without a return payload): restore the remembered episode focus
+            // rather than jumping back to the hero banner.
+            focusRememberedEpisode()
+        }
     }
 
     @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)

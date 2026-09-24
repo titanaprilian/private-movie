@@ -17,8 +17,10 @@ import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.config.BackendUrlOverrideScreen
 import com.privatemovie.tv.modules.config.BackendUrlStore
 import com.privatemovie.tv.modules.detail.DetailScreen
+import com.privatemovie.tv.modules.detail.DetailViewModel
 import com.privatemovie.tv.modules.home.HomeScreen
 import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
+import com.privatemovie.tv.modules.player.PLAYER_RETURN_EPISODE_ID_KEY
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.PlayerNavArgs
@@ -48,6 +50,10 @@ fun AppNavigation(
     }
 ) {
     val activeUrl by urlStore.activeUrl.collectAsState()
+    // Retain one DetailViewModel per series so navigating Detail -> Player ->
+    // Detail reuses loaded series details instead of reloading and flashing
+    // loading states or resetting scroll/focus to the hero banner.
+    val detailViewModels = remember { mutableMapOf<String, DetailViewModel>() }
 
     NavHost(
         navController = navController,
@@ -81,10 +87,26 @@ fun AppNavigation(
             arguments = listOf(navArgument("seriesId") { type = NavType.StringType })
         ) { backStackEntry ->
             val seriesId = backStackEntry.arguments?.getString("seriesId") ?: "unknown"
+            val detailViewModel = remember(seriesId, mediaRepository) {
+                detailViewModels.getOrPut(seriesId) {
+                    DetailViewModel(
+                        seriesId = seriesId,
+                        mediaRepository = mediaRepository
+                    )
+                }
+            }
+            val playerReturnEpisodeId by backStackEntry.savedStateHandle
+                .getStateFlow<String?>(PLAYER_RETURN_EPISODE_ID_KEY, null)
+                .collectAsState()
             DetailScreen(
                 seriesId = seriesId,
                 activeBackendUrl = activeUrl,
                 mediaRepository = mediaRepository,
+                viewModel = detailViewModel,
+                playerReturnEpisodeId = playerReturnEpisodeId,
+                onPlayerReturnConsumed = {
+                    backStackEntry.savedStateHandle.remove<String>(PLAYER_RETURN_EPISODE_ID_KEY)
+                },
                 onPlayEpisode = { episodeId, metadata ->
                     val playerNavArgs = PlayerNavArgs(
                         episodeId = episodeId,
@@ -149,6 +171,12 @@ fun AppNavigation(
                 episodeId = episodeId,
                 playerNavArgs = playerNavArgs,
                 onExitPlayer = {
+                    // Hand the latest played episode back to the detail screen
+                    // (covers "Next Episode" navigation inside the player: the
+                    // current route's episodeId is the latest one).
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(PLAYER_RETURN_EPISODE_ID_KEY, episodeId)
                     navController.popBackStack()
                 },
                 hasPrevious = prevItem != null,
