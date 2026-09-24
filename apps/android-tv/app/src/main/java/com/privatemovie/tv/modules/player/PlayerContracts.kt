@@ -1,27 +1,36 @@
 package com.privatemovie.tv.modules.player
 
+import java.io.Serializable as JavaSerializable
+import kotlinx.serialization.Serializable as KxSerializable
+
 /**
  * Clean, normalized playback source reference for player handoff and execution.
+ *
+ * Implements [JavaSerializable] so it can be stored in Android
+ * `SavedStateHandle` across navigation destinations.
  */
+@KxSerializable
 data class PlaybackSourceRef(
     val type: String,
     val url: String
-)
+) : JavaSerializable
 
 /**
  * Normalized metadata payload passed to the player screen for headline & subtitle formatting.
  */
+@KxSerializable
 data class PlaybackMetadataHandoff(
     val seriesTitle: String? = null,
     val seasonTitle: String? = null,
     val seasonNumber: Int? = null,
     val episodeOrder: Int? = null,
     val episodeTitle: String? = null
-)
+) : JavaSerializable
 
 /**
  * Playable episode item representing a single entry in a series playlist.
  */
+@KxSerializable
 data class PlaylistEpisodeItem(
     val episodeId: String,
     val seriesTitle: String? = null,
@@ -31,17 +40,18 @@ data class PlaylistEpisodeItem(
     val episodeTitle: String? = null,
     val sourceTypeName: String? = null,
     val sourceUrl: String? = null
-)
+) : JavaSerializable
 
 /**
  * Comprehensive navigation payload for entering the Player screen with type safety.
  */
+@KxSerializable
 data class PlayerNavArgs(
     val episodeId: String,
     val source: PlaybackSourceRef? = null,
     val metadata: PlaybackMetadataHandoff? = null,
     val playlist: List<PlaylistEpisodeItem> = emptyList()
-)
+) : JavaSerializable
 
 /**
  * Decision returned when the active media item finishes playback.
