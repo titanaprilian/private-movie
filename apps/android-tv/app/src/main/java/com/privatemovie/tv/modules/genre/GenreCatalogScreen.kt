@@ -2,9 +2,8 @@ package com.privatemovie.tv.modules.genre
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -15,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import com.privatemovie.tv.components.CatalogTopBar
 import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogError
@@ -23,18 +21,19 @@ import com.privatemovie.tv.modules.genre.internal.GenreCatalogFilter
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogGrid
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogLoading
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogUiState
-import com.privatemovie.tv.modules.home.internal.CatalogSearchViewModel
-import com.privatemovie.tv.modules.home.internal.CatalogTopBarViewModel
 import kotlinx.coroutines.launch
 
 /**
  * Public seam for the Big Genre catalog browsing experience (`genre/{slug}`).
  *
- * Renders the shared [CatalogTopBar] with the active genre highlighted,
- * "All" vs "Ongoing" filter pills, and a 5-column vertical poster grid with
- * infinite lazy-loading. D-pad Up from the pills/top row returns to the
- * header; remote Back navigates to Home via [onNavigateHome]; selecting
- * another genre goes through [onSelectGenre].
+ * Full-bleed layout: no top navigation bar is rendered — the filter pills and
+ * 5-column poster grid extend to the top safe boundary and the global
+ * `TvNavigationDrawer` shell (owned by `AppNavigation`) provides Search /
+ * Home / genre navigation from the collapsed 72dp left rail. D-pad Left from
+ * a leftmost-column card shifts focus into the drawer via [onFocusDrawer].
+ * D-pad Up from the pills/top row returns to the header focus target;
+ * remote Back navigates to Home via [onNavigateHome]; selecting another
+ * genre goes through [onSelectGenre].
  */
 @Composable
 fun GenreCatalogScreen(
@@ -48,12 +47,7 @@ fun GenreCatalogScreen(
     viewModel: GenreCatalogViewModel = remember(mediaRepository, genreSlug) {
         GenreCatalogViewModel(mediaRepository = mediaRepository, genreSlug = genreSlug)
     },
-    headerViewModel: CatalogTopBarViewModel = remember(mediaRepository) {
-        CatalogTopBarViewModel(mediaRepository = mediaRepository)
-    },
-    searchViewModel: CatalogSearchViewModel = remember(mediaRepository) {
-        CatalogSearchViewModel(mediaRepository = mediaRepository)
-    }
+    onFocusDrawer: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val headerFocus = remember { FocusRequester() }
@@ -76,35 +70,11 @@ fun GenreCatalogScreen(
         Unit
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        CatalogTopBar(
-            headerViewModel = headerViewModel,
-            searchViewModel = searchViewModel,
-            onNavigateHome = onNavigateHome,
-            onSelectGenre = onSelectGenre,
-            onSelectSeries = onSelectSeries,
-            modifier = Modifier.fillMaxWidth(),
-            activeGenreSlug = genreSlug,
-            headerFocusRequester = headerFocus,
-            onDownToContent = {
-                val pillsTarget = when (val state = uiState) {
-                    is GenreCatalogUiState.Success -> pillFocusers[state.filter]
-                    else -> pillFocusers[GenreCatalogFilter.ALL]
-                }
-                coroutineScope.launch {
-                    val focused = pillsTarget?.let { requestFocusSafely(it) } ?: false
-                    if (!focused) {
-                        requestFocusSafely(headerFocus)
-                    }
-                }
-                Unit
-            }
-        )
-
         when (val state = uiState) {
             is GenreCatalogUiState.Loading -> GenreCatalogLoading(modifier = Modifier.fillMaxSize())
             is GenreCatalogUiState.Error -> GenreCatalogError(
@@ -132,6 +102,7 @@ fun GenreCatalogScreen(
                     onRetryNextPage = { viewModel.retryNextPage() },
                     onNearBottom = { viewModel.loadNextPage() },
                     onUpToHeader = focusHeader,
+                    onLeftFromEdge = onFocusDrawer,
                     pillFocusers = pillFocusers,
                     gridState = gridState
                 )

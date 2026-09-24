@@ -42,7 +42,9 @@ import com.privatemovie.tv.dto.models.SeriesSummary
  * Poster card for the genre catalog grid, bound to [SeriesSummary].
  *
  * D-pad Up from the top grid row is intercepted via [onUp] so the host can
- * return focus to the filter pills / header.
+ * return focus to the filter pills / header. D-pad Left from a leftmost
+ * column card is intercepted via [onLeft] so the host can shift focus into
+ * the left navigation drawer.
  */
 @Composable
 fun GenrePosterCard(
@@ -52,7 +54,8 @@ fun GenrePosterCard(
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
     onFocused: (() -> Unit)? = null,
-    onUp: (() -> Unit)? = null
+    onUp: (() -> Unit)? = null,
+    onLeft: (() -> Unit)? = null
 ) {
     val cardShape = RoundedCornerShape(10.dp)
 
@@ -67,16 +70,27 @@ fun GenrePosterCard(
                 if (state.isFocused) onFocused()
             }
         }
-        if (onUp != null) {
+        if (onUp != null || onLeft != null) {
             cardModifier = cardModifier.onKeyEvent { keyEvent ->
                 if (isRepeatKeyEvent(keyEvent)) {
                     return@onKeyEvent true
                 }
-                if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
-                    keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
-                ) {
-                    onUp()
-                    true
+                if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
+                    when (keyEvent.nativeKeyEvent.keyCode) {
+                        android.view.KeyEvent.KEYCODE_DPAD_UP -> {
+                            if (onUp != null) {
+                                onUp()
+                                true
+                            } else false
+                        }
+                        android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            if (onLeft != null) {
+                                onLeft()
+                                true
+                            } else false
+                        }
+                        else -> false
+                    }
                 } else {
                     false
                 }

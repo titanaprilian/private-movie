@@ -1,5 +1,6 @@
 package com.privatemovie.tv.navigation
 
+import com.privatemovie.tv.components.drawer.DrawerDestination
 import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
@@ -8,6 +9,7 @@ import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NavigationTest {
@@ -21,12 +23,13 @@ class NavigationTest {
     fun `dev_settings is no longer a route`() {
         val routes = listOf(
             TvScreen.Home.route,
+            TvScreen.Search.route,
             TvScreen.Genre.route,
             TvScreen.Detail.route,
             TvScreen.Player.route
         )
         assertFalse(routes.contains("dev_settings"))
-        assertEquals(listOf("home", "genre/{slug}", "detail/{seriesId}", "player/{episodeId}"), routes)
+        assertEquals(listOf("home", "search", "genre/{slug}", "detail/{seriesId}", "player/{episodeId}"), routes)
     }
 
     @Test
@@ -83,6 +86,28 @@ class NavigationTest {
     }
 
     @Test
+    fun `TvScreen Search route is a single top-level segment`() {
+        assertEquals("search", TvScreen.Search.route)
+        assertEquals(1, TvScreen.Search.route.split("/").size)
+    }
+
+    @Test
+    fun `search and genre screens return to home without backstack buildup`() {
+        // Search and GenreCatalog both pop back to Home, so Back from either
+        // lands directly on Home rather than stacking browsing destinations.
+        assertEquals("search", TvScreen.Search.route)
+        assertEquals("genre/animation", TvScreen.Genre.createRoute("animation"))
+        assertEquals(TvScreen.Home.route, "home")
+    }
+
+    @Test
+    fun `search result selects detail via single-segment route`() {
+        // Clicking a search result navigates to the series detail view.
+        val detailRoute = TvScreen.Detail.createRoute("series-9")
+        assertEquals("detail/series-9", detailRoute)
+        assertEquals(2, detailRoute.split("/").size)
+    }
+    @Test
     fun `player nav args key is constant and matches expected name`() {
         assertEquals("player_nav_args", PLAYER_NAV_ARGS_KEY)
     }
@@ -123,5 +148,74 @@ class NavigationTest {
         )
         assertEquals("episode-109", navArgs.episodeId)
         assertNull(navArgs.source)
+    }
+
+    @Test
+    fun `drawer is visible on browsing routes`() {
+        assertTrue(isDrawerVisibleForRoute(TvScreen.Home.route))
+        assertTrue(isDrawerVisibleForRoute(TvScreen.Search.route))
+        assertTrue(isDrawerVisibleForRoute(TvScreen.Genre.route))
+        assertTrue(isDrawerVisibleForRoute(TvScreen.Genre.createRoute("animation")))
+    }
+
+    @Test
+    fun `drawer is suppressed on the player route`() {
+        assertFalse(isDrawerVisibleForRoute(TvScreen.Player.route))
+        assertFalse(isDrawerVisibleForRoute(TvScreen.Player.createRoute("episode-108")))
+    }
+
+    @Test
+    fun `drawer is hidden on detail and unknown routes`() {
+        assertFalse(isDrawerVisibleForRoute(TvScreen.Detail.createRoute("series-42")))
+        assertFalse(isDrawerVisibleForRoute(null))
+        assertFalse(isDrawerVisibleForRoute("unknown"))
+    }
+
+    @Test
+    fun `drawer destinations map to browsing routes without backstack loops`() {
+        assertEquals("search", drawerDestinationToRoute(DrawerDestination.Search))
+        assertEquals("home", drawerDestinationToRoute(DrawerDestination.Home))
+        assertEquals(
+            "genre/k-drama",
+            drawerDestinationToRoute(DrawerDestination.Genre(slug = "k-drama", name = "Korean Drama"))
+        )
+    }
+
+    @Test
+    fun `drawer current route resolves genre slug for active highlight`() {
+        assertEquals("home", resolveDrawerCurrentRoute("home", null))
+        assertEquals("search", resolveDrawerCurrentRoute("search", null))
+        assertEquals("genre/k-drama", resolveDrawerCurrentRoute("genre/{slug}", "k-drama"))
+        assertNull(resolveDrawerCurrentRoute("player/{episodeId}", "episode-108"))
+    }
+
+    @Test
+    fun `browsing content rail padding matches the collapsed drawer rail`() {
+        assertEquals(72, BROWSING_CONTENT_RAIL_PADDING_DP)
+        assertEquals(
+            com.privatemovie.tv.components.drawer.TvDrawerDefaults.COLLAPSED_WIDTH_DP,
+            BROWSING_CONTENT_RAIL_PADDING_DP
+        )
+    }
+
+    @Test
+    fun `leftmost grid column detection covers first column only`() {
+        assertTrue(isLeftmostBrowsingIndex(0))
+        assertTrue(isLeftmostBrowsingIndex(5))
+        assertTrue(isLeftmostBrowsingIndex(10))
+        assertFalse(isLeftmostBrowsingIndex(1))
+        assertFalse(isLeftmostBrowsingIndex(4))
+        assertFalse(isLeftmostBrowsingIndex(6))
+        assertFalse(isLeftmostBrowsingIndex(-1))
+    }
+
+    @Test
+    fun `dpad left on the leftmost card focuses the drawer`() {
+        val left = android.view.KeyEvent.KEYCODE_DPAD_LEFT
+        val right = android.view.KeyEvent.KEYCODE_DPAD_RIGHT
+        assertTrue(shouldFocusDrawerOnKey(left, isKeyDown = true, isLeftmost = true))
+        assertFalse(shouldFocusDrawerOnKey(left, isKeyDown = true, isLeftmost = false))
+        assertFalse(shouldFocusDrawerOnKey(left, isKeyDown = false, isLeftmost = true))
+        assertFalse(shouldFocusDrawerOnKey(right, isKeyDown = true, isLeftmost = true))
     }
 }

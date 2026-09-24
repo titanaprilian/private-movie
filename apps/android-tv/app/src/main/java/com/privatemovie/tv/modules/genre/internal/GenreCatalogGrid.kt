@@ -66,6 +66,7 @@ fun GenreCatalogGrid(
     onRetryNextPage: (() -> Unit)? = null,
     onNearBottom: (() -> Unit)? = null,
     onUpToHeader: (() -> Unit)? = null,
+    onLeftFromEdge: (() -> Unit)? = null,
     pillFocusers: Map<GenreCatalogFilter, FocusRequester>? = null,
     gridState: LazyGridState = rememberLazyGridState()
 ) {
@@ -111,7 +112,8 @@ fun GenreCatalogGrid(
                             onNearBottom?.invoke()
                         }
                     },
-                    onUp = if (index < GENRE_GRID_COLUMNS) onUpToHeader else null
+                    onUp = if (index < GENRE_GRID_COLUMNS) onUpToHeader else null,
+                    onLeft = if (index % GENRE_GRID_COLUMNS == 0) onLeftFromEdge else null
                 )
             }
 

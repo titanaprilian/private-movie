@@ -1,16 +1,30 @@
 package com.privatemovie.tv.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.privatemovie.tv.components.drawer.DrawerDestination
+import com.privatemovie.tv.components.drawer.TvDrawerDefaults
+import com.privatemovie.tv.components.drawer.TvNavigationDrawer
+import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.network.MediaApiClient
 import com.privatemovie.tv.data.repository.DefaultMediaRepository
 import com.privatemovie.tv.data.repository.MediaRepository
@@ -27,9 +41,12 @@ import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.PlayerNavArgs
 import com.privatemovie.tv.modules.player.PlayerScreen
 import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
+import com.privatemovie.tv.modules.search.SearchScreen
+import kotlinx.coroutines.launch
 
 sealed class TvScreen(val route: String) {
     object Home : TvScreen("home")
+    object Search : TvScreen("search")
     object Genre : TvScreen("genre/{slug}") {
         fun createRoute(slug: String) = "genre/$slug"
     }
@@ -62,11 +79,60 @@ fun AppNavigation(
     val homeViewModel = remember(mediaRepository) {
         HomeViewModel(mediaRepository = mediaRepository)
     }
+    var bigGenres by remember { mutableStateOf<List<com.privatemovie.tv.dto.models.GenreItem>>(emptyList()) }
+    LaunchedEffect(mediaRepository) {
+        bigGenres = mediaRepository.getGenres().getOrDefault(emptyList())
+    }
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val destinationRoute = navBackStackEntry?.destination?.route
+    val drawerVisible = isDrawerVisibleForRoute(destinationRoute)
+    val drawerCurrentRoute = resolveDrawerCurrentRoute(
+        destinationRoute = destinationRoute,
+        argumentSlug = navBackStackEntry?.arguments?.getString("slug")
+    )
+
+    val drawerFocusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
+    val focusDrawer: () -> Unit = {
+        coroutineScope.launch {
+            requestFocusSafely(drawerFocusRequester)
+        }
+        Unit
+    }
+
+    fun navigateFromDrawer(destination: DrawerDestination) {
+        when (destination) {
+            DrawerDestination.Search -> {
+                navController.navigate(TvScreen.Search.route) {
+                    popUpTo(TvScreen.Home.route)
+                    launchSingleTop = true
+                }
+            }
+            DrawerDestination.Home -> {
+                navController.navigate(TvScreen.Home.route) {
+                    popUpTo(TvScreen.Home.route)
+                    launchSingleTop = true
+                }
+            }
+            is DrawerDestination.Genre -> {
+                navController.navigate(TvScreen.Genre.createRoute(destination.slug)) {
+                    popUpTo(TvScreen.Home.route)
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
     NavHost(
         navController = navController,
         startDestination = TvScreen.Home.route,
-        modifier = modifier
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                start = if (drawerVisible) TvDrawerDefaults.COLLAPSED_WIDTH_DP.dp else 0.dp
+            )
     ) {
         composable(TvScreen.Home.route) {
             HomeScreen(
@@ -81,7 +147,22 @@ fun AppNavigation(
                         popUpTo(TvScreen.Home.route)
                         launchSingleTop = true
                     }
-                }
+                },
+                onFocusDrawer = focusDrawer
+            )
+        }
+
+        composable(TvScreen.Search.route) {
+            SearchScreen(
+                activeBackendUrl = activeUrl,
+                mediaRepository = mediaRepository,
+                onSelectSeries = { seriesId ->
+                    navController.navigate(TvScreen.Detail.createRoute(seriesId))
+                },
+                onNavigateHome = {
+                    navController.popBackStack(TvScreen.Home.route, inclusive = false)
+                },
+                onFocusDrawer = focusDrawer
             )
         }
 
@@ -105,7 +186,8 @@ fun AppNavigation(
                         popUpTo(TvScreen.Home.route)
                         launchSingleTop = true
                     }
-                }
+                },
+                onFocusDrawer = focusDrawer
             )
         }
 
@@ -216,6 +298,15 @@ fun AppNavigation(
                 onPlayPreviousEpisode = prevItem?.let { prev -> { playNeighbor(prev) } },
                 onPlayNextEpisode = nextItem?.let { next -> { playNeighbor(next) } },
                 backendBaseUrl = activeUrl
+            )
+        }
+    }
+        if (drawerVisible) {
+            TvNavigationDrawer(
+                bigGenres = bigGenres,
+                currentRoute = drawerCurrentRoute,
+                drawerFocusRequester = drawerFocusRequester,
+                onSelectDestination = { destination -> navigateFromDrawer(destination) }
             )
         }
     }

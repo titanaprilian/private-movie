@@ -60,7 +60,8 @@ fun FeaturedHeroSlider(
     onSelectSeries: (String) -> Unit,
     ctaFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
-    onDownFromCta: (() -> Unit)? = null
+    onDownFromCta: (() -> Unit)? = null,
+    onLeftFromCta: (() -> Unit)? = null
 ) {
     val heroes = sliderState.heroes
     if (heroes.isEmpty()) return
@@ -112,6 +113,12 @@ fun FeaturedHeroSlider(
                                 android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
                                     if (onDownFromCta != null) {
                                         onDownFromCta()
+                                        true
+                                    } else false
+                                }
+                                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
+                                    if (onLeftFromCta != null) {
+                                        onLeftFromCta()
                                         true
                                     } else false
                                 }

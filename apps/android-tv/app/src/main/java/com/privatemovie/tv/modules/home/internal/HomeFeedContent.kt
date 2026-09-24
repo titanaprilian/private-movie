@@ -193,7 +193,8 @@ fun HomeFeedContent(
     onSelectRowCard: ((rowIndex: Int, cardIndex: Int, seriesId: String) -> Unit)? = null,
     returnFocusTarget: HomeReturnFocusTarget? = null,
     onReturnFocusConsumed: (() -> Unit)? = null,
-    externalCtaFocusRequester: FocusRequester? = null
+    externalCtaFocusRequester: FocusRequester? = null,
+    onLeftFromEdge: (() -> Unit)? = null
 ) {
     val effectiveHeroes = remember(feed) {
         if (feed.heroes.isNotEmpty()) {
@@ -360,6 +361,7 @@ fun HomeFeedContent(
                                     }
                                 }
                             },
+                            onLeftFromCta = onLeftFromEdge,
                             modifier = Modifier
                                 .fillParentMaxHeight()
                                 .clipToBounds()
@@ -417,7 +419,8 @@ fun HomeFeedContent(
                                                             requestFocusSafely(heroFocus)
                                                         }
                                                     }
-                                                } else null
+                                                } else null,
+                                                onLeft = if (index == 0) onLeftFromEdge else null
                                             )
                                         }
                                     }

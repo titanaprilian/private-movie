@@ -195,4 +195,19 @@ class GenreCatalogViewModelTest {
         assertTrue(shouldPrefetch(focusedIndex = 19, totalLoaded = 20))
         assertFalse(shouldPrefetch(focusedIndex = 0, totalLoaded = 0))
     }
+
+    @Test
+    fun `full-bleed genre grid routes dpad left from leftmost column to the drawer`() {
+        // Genre renders no top bar: first-column grid cards are the left edge.
+        val left = android.view.KeyEvent.KEYCODE_DPAD_LEFT
+        assertTrue(
+            com.privatemovie.tv.navigation.isLeftmostBrowsingIndex(0) &&
+                com.privatemovie.tv.navigation.shouldFocusDrawerOnKey(
+                    left, isKeyDown = true, isLeftmost = true
+                )
+        )
+        assertFalse(
+            com.privatemovie.tv.navigation.isLeftmostBrowsingIndex(3)
+        )
+    }
 }

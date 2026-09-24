@@ -243,4 +243,21 @@ class HomeScreenTest {
         advanceUntilIdle()
         assertEquals(0, focusedIndex) // defaults to card 0 for first time
     }
+
+    @Test
+    fun `full-bleed home routes dpad left from hero and leftmost cards to the drawer`() {
+        // Home renders no top bar: the hero CTA and index-0 row cards are the
+        // left edge, so D-pad Left from them must focus the drawer rail.
+        val left = android.view.KeyEvent.KEYCODE_DPAD_LEFT
+        assertTrue(
+            com.privatemovie.tv.navigation.shouldFocusDrawerOnKey(
+                left, isKeyDown = true, isLeftmost = true
+            )
+        )
+        assertFalse(
+            com.privatemovie.tv.navigation.shouldFocusDrawerOnKey(
+                left, isKeyDown = true, isLeftmost = false
+            )
+        )
+    }
 }
