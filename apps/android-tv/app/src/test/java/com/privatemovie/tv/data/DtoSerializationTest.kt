@@ -1,8 +1,10 @@
 package com.privatemovie.tv.data
 
 import com.privatemovie.tv.dto.models.ErrorEnvelope
+import com.privatemovie.tv.dto.models.GenresListResponse
 import com.privatemovie.tv.dto.models.HomeFeedSuccessResponse
 import com.privatemovie.tv.dto.models.SeriesDetailsSuccessResponse
+import com.privatemovie.tv.dto.models.SeriesPageResponse
 import com.privatemovie.tv.dto.models.VideoSource
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -316,5 +318,163 @@ class DtoSerializationTest {
         assertNotNull(homeFeed.hero)
         assertNull(homeFeed.hero?.logoUrl)
         assertNull(homeFeed.heroes)
+    }
+
+    @Test
+    fun deserializesGenresListResponse() {
+        val payload = """
+            {
+              "data": [
+                {
+                  "id": "g-1",
+                  "name": "Animation",
+                  "slug": "animation",
+                  "isBigGenre": true,
+                  "displayOrder": 1,
+                  "createdAt": "2026-01-01T00:00:00.000Z",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                },
+                {
+                  "id": "g-2",
+                  "name": "Drama",
+                  "slug": "drama",
+                  "isBigGenre": true,
+                  "displayOrder": 2,
+                  "createdAt": "2026-01-01T00:00:00.000Z",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                },
+                {
+                  "id": "g-3",
+                  "name": "Obscure",
+                  "slug": "obscure"
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<GenresListResponse>(payload)
+        val genres = response.data
+
+        assertEquals(3, genres.size)
+        assertEquals("animation", genres[0].slug)
+        assertEquals(true, genres[0].isBigGenre)
+        assertEquals(1, genres[0].displayOrder)
+        assertEquals("Drama", genres[1].name)
+        assertEquals(2, genres[1].displayOrder)
+        // Missing big-genre fields default leniently.
+        assertEquals(false, genres[2].isBigGenre)
+        assertEquals(0, genres[2].displayOrder)
+    }
+
+    @Test
+    fun deserializesSeriesPageResponseWithRealListShape() {
+        // Mirrors GET /api/series list items (SeriesWithSeasons: full series
+        // row plus seasons/genres arrays, unknown keys ignored).
+        val payload = """
+            {
+              "data": {
+                "series": [
+                  {
+                    "id": "series-1",
+                    "sourceUrl": "https://example.com/s1",
+                    "source": "dramula",
+                    "title": "Series One",
+                    "type": "tv",
+                    "description": "First series",
+                    "posterUrl": "https://example.com/poster1.jpg",
+                    "backdropUrl": null,
+                    "logoUrl": null,
+                    "rating": "PG-13",
+                    "isFeatured": false,
+                    "isOngoingHighlighted": true,
+                    "createdAt": "2026-01-01T00:00:00.000Z",
+                    "updatedAt": "2026-02-01T00:00:00.000Z",
+                    "genres": [
+                      { "id": "g-1", "name": "Animation", "slug": "animation" }
+                    ],
+                    "seasons": [
+                      {
+                        "id": "season-1",
+                        "seriesId": "series-1",
+                        "title": "Season 1",
+                        "status": "ongoing"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "series-2",
+                    "sourceUrl": "https://example.com/s2",
+                    "source": "dramula",
+                    "title": "Series Two",
+                    "type": "tv",
+                    "description": null,
+                    "posterUrl": null,
+                    "backdropUrl": null,
+                    "rating": null,
+                    "isFeatured": true,
+                    "createdAt": "2026-01-01T00:00:00.000Z",
+                    "updatedAt": "2026-01-01T00:00:00.000Z",
+                    "genres": [],
+                    "seasons": []
+                  }
+                ],
+                "meta": {
+                  "total": 42,
+                  "page": 1,
+                  "limit": 20
+                }
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<SeriesPageResponse>(payload)
+        val page = response.data
+
+        assertEquals(2, page.series.size)
+        assertEquals("series-1", page.series[0].id)
+        assertEquals("Series One", page.series[0].title)
+        assertEquals("https://example.com/poster1.jpg", page.series[0].posterUrl)
+        assertEquals(1, page.series[0].genres.size)
+        assertEquals("animation", page.series[0].genres[0].slug)
+        assertEquals("series-2", page.series[1].id)
+        assertNull(page.series[1].posterUrl)
+        assertEquals(42, page.meta.total)
+        assertEquals(1, page.meta.page)
+        assertEquals(20, page.meta.limit)
+    }
+
+    @Test
+    fun deserializesSearchPageResponseWithMinimalItems() {
+        // GET /api/series?limit=5&q=... shares the paged envelope; search
+        // items may carry only a subset of summary fields.
+        val payload = """
+            {
+              "data": {
+                "series": [
+                  {
+                    "id": "series-9",
+                    "title": "Demon Slayer",
+                    "posterUrl": "https://example.com/ds.jpg"
+                  }
+                ],
+                "meta": {
+                  "total": 1,
+                  "page": 1,
+                  "limit": 5
+                }
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<SeriesPageResponse>(payload)
+        val page = response.data
+
+        assertEquals(1, page.series.size)
+        assertEquals("series-9", page.series[0].id)
+        assertEquals("Demon Slayer", page.series[0].title)
+        assertEquals("https://example.com/ds.jpg", page.series[0].posterUrl)
+        assertNull(page.series[0].description)
+        assertEquals(1, page.meta.total)
+        assertEquals(5, page.meta.limit)
     }
 }

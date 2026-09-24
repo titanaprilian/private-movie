@@ -58,13 +58,9 @@ fun FeaturedHeroSlider(
     sliderState: HeroSliderState,
     baseUrl: String,
     onSelectSeries: (String) -> Unit,
-    onOpenDevSettings: () -> Unit,
     ctaFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
-    settingsFocusRequester: FocusRequester? = null,
-    onUpFromCta: (() -> Unit)? = null,
-    onDownFromCta: (() -> Unit)? = null,
-    onDownFromSettings: (() -> Unit)? = null
+    onDownFromCta: (() -> Unit)? = null
 ) {
     val heroes = sliderState.heroes
     if (heroes.isEmpty()) return
@@ -113,12 +109,6 @@ fun FeaturedHeroSlider(
                         }
                         if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
                             when (keyEvent.nativeKeyEvent.keyCode) {
-                                android.view.KeyEvent.KEYCODE_DPAD_UP -> {
-                                    if (onUpFromCta != null) {
-                                        onUpFromCta()
-                                        true
-                                    } else false
-                                }
                                 android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
                                     if (onDownFromCta != null) {
                                         onDownFromCta()
@@ -181,13 +171,6 @@ fun FeaturedHeroSlider(
                 }
             }
         }
-
-        FloatingTopBarOverlay(
-            onOpenDevSettings = onOpenDevSettings,
-            settingsFocusRequester = settingsFocusRequester,
-            onDownFromSettings = onDownFromSettings,
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
 
         if (sliderState.heroCount > 1) {
             PaginationDots(

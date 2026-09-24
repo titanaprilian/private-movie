@@ -187,13 +187,13 @@ fun HomeFeedContent(
     feed: TvHomeFeed,
     baseUrl: String,
     onSelectSeries: (String) -> Unit,
-    onOpenDevSettings: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
     onSelectHero: ((String) -> Unit)? = null,
     onSelectRowCard: ((rowIndex: Int, cardIndex: Int, seriesId: String) -> Unit)? = null,
     returnFocusTarget: HomeReturnFocusTarget? = null,
-    onReturnFocusConsumed: (() -> Unit)? = null
+    onReturnFocusConsumed: (() -> Unit)? = null,
+    externalCtaFocusRequester: FocusRequester? = null
 ) {
     val effectiveHeroes = remember(feed) {
         if (feed.heroes.isNotEmpty()) {
@@ -212,8 +212,7 @@ fun HomeFeedContent(
     }
 
     val sliderState = rememberHeroSliderState(heroes = effectiveHeroes)
-    val heroFocus = remember { FocusRequester() }
-    val settingsFocus = remember { FocusRequester() }
+    val heroFocus = externalCtaFocusRequester ?: remember { FocusRequester() }
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val focusCoordinator = remember(coroutineScope) { FocusTransitionCoordinator(coroutineScope) }
@@ -352,26 +351,13 @@ fun HomeFeedContent(
                             sliderState = sliderState,
                             baseUrl = baseUrl,
                             onSelectSeries = handleSelectHero,
-                            onOpenDevSettings = onOpenDevSettings,
                             ctaFocusRequester = heroFocus,
-                            settingsFocusRequester = settingsFocus,
-                            onUpFromCta = {
-                                focusCoordinator.tryRequestFocus {
-                                    requestFocusSafely(settingsFocus)
-                                }
-                            },
                             onDownFromCta = {
                                 val firstNonEmptyRowIndex = feed.rows.indexOfFirst { it.items.isNotEmpty() }
                                 if (firstNonEmptyRowIndex >= 0) {
                                     focusCoordinator.tryRequestFocus {
                                         focusRowCard(firstNonEmptyRowIndex)
                                     }
-                                }
-                            },
-                            onDownFromSettings = {
-                                focusCoordinator.tryRequestFocus {
-                                    lazyListState.animateScrollToItem(0)
-                                    requestFocusSafely(heroFocus)
                                 }
                             },
                             modifier = Modifier

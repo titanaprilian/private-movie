@@ -14,10 +14,10 @@ import androidx.navigation.navArgument
 import com.privatemovie.tv.data.network.MediaApiClient
 import com.privatemovie.tv.data.repository.DefaultMediaRepository
 import com.privatemovie.tv.data.repository.MediaRepository
-import com.privatemovie.tv.modules.config.BackendUrlOverrideScreen
 import com.privatemovie.tv.modules.config.BackendUrlStore
 import com.privatemovie.tv.modules.detail.DetailScreen
 import com.privatemovie.tv.modules.detail.DetailViewModel
+import com.privatemovie.tv.modules.genre.GenreCatalogScreen
 import com.privatemovie.tv.modules.home.HomeScreen
 import com.privatemovie.tv.modules.home.HomeViewModel
 import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
@@ -30,7 +30,9 @@ import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 
 sealed class TvScreen(val route: String) {
     object Home : TvScreen("home")
-    object DevSettings : TvScreen("dev_settings")
+    object Genre : TvScreen("genre/{slug}") {
+        fun createRoute(slug: String) = "genre/$slug"
+    }
     object Detail : TvScreen("detail/{seriesId}") {
         fun createRoute(seriesId: String) = "detail/$seriesId"
     }
@@ -74,17 +76,35 @@ fun AppNavigation(
                 onSelectSeries = { seriesId ->
                     navController.navigate(TvScreen.Detail.createRoute(seriesId))
                 },
-                onOpenDevSettings = {
-                    navController.navigate(TvScreen.DevSettings.route)
+                onSelectGenre = { slug ->
+                    navController.navigate(TvScreen.Genre.createRoute(slug)) {
+                        popUpTo(TvScreen.Home.route)
+                        launchSingleTop = true
+                    }
                 }
             )
         }
 
-        composable(TvScreen.DevSettings.route) {
-            BackendUrlOverrideScreen(
-                urlStore = urlStore,
-                onBack = {
-                    navController.popBackStack()
+        composable(
+            route = TvScreen.Genre.route,
+            arguments = listOf(navArgument("slug") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val slug = backStackEntry.arguments?.getString("slug") ?: ""
+            GenreCatalogScreen(
+                genreSlug = slug,
+                activeBackendUrl = activeUrl,
+                mediaRepository = mediaRepository,
+                onSelectSeries = { seriesId ->
+                    navController.navigate(TvScreen.Detail.createRoute(seriesId))
+                },
+                onNavigateHome = {
+                    navController.popBackStack(TvScreen.Home.route, inclusive = false)
+                },
+                onSelectGenre = { newSlug ->
+                    navController.navigate(TvScreen.Genre.createRoute(newSlug)) {
+                        popUpTo(TvScreen.Home.route)
+                        launchSingleTop = true
+                    }
                 }
             )
         }

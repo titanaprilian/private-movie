@@ -130,4 +130,146 @@ class MediaApiClientTest {
         val failure = result as ApiResponse.Failure
         assertTrue(failure.throwable is java.io.IOException)
     }
+
+    @Test
+    fun getGenresRequestsCorrectEndpointAndParsesSuccess() = runTest {
+        val fakeTransport = FakeHttpTransport().apply {
+            responseToReturn = HttpResponse(
+                statusCode = 200,
+                body = """
+                    {
+                      "data": [
+                        { "id": "g-1", "name": "Animation", "slug": "animation", "isBigGenre": true, "displayOrder": 1 },
+                        { "id": "g-2", "name": "Drama", "slug": "drama", "isBigGenre": false, "displayOrder": 5 }
+                      ]
+                    }
+                """.trimIndent()
+            )
+        }
+
+        val client = MediaApiClient(
+            baseUrlProvider = { "http://10.0.2.2:3000/" },
+            transport = fakeTransport
+        )
+
+        val result = client.getGenres()
+
+        assertEquals("http://10.0.2.2:3000/genres", fakeTransport.lastRequestedUrl)
+        assertTrue(result is ApiResponse.Success)
+        val genres = (result as ApiResponse.Success).data.data
+        assertEquals(2, genres.size)
+        assertEquals("animation", genres[0].slug)
+        assertTrue(genres[0].isBigGenre)
+        assertEquals(1, genres[0].displayOrder)
+    }
+
+    @Test
+    fun getSeriesEncodesGenreFilterAndPagination() = runTest {
+        val fakeTransport = FakeHttpTransport().apply {
+            responseToReturn = HttpResponse(
+                statusCode = 200,
+                body = """{"data":{"series":[],"meta":{"total":0,"page":2,"limit":20}}}"""
+            )
+        }
+
+        val client = MediaApiClient(
+            baseUrlProvider = { "http://10.0.2.2:3000" },
+            transport = fakeTransport
+        )
+
+        val result = client.getSeries(genre = "animation", filter = "ongoing", page = 2, limit = 20)
+
+        assertEquals(
+            "http://10.0.2.2:3000/api/series?page=2&limit=20&genre=animation&filter=ongoing",
+            fakeTransport.lastRequestedUrl
+        )
+        assertTrue(result is ApiResponse.Success)
+        assertEquals(0, (result as ApiResponse.Success).data.data.meta.total)
+    }
+
+    @Test
+    fun getSeriesOmitsBlankGenreAndAllFilter() = runTest {
+        val fakeTransport = FakeHttpTransport().apply {
+            responseToReturn = HttpResponse(
+                statusCode = 200,
+                body = """{"data":{"series":[],"meta":{"total":0,"page":1,"limit":20}}}"""
+            )
+        }
+
+        val client = MediaApiClient(
+            baseUrlProvider = { "http://10.0.2.2:3000" },
+            transport = fakeTransport
+        )
+
+        client.getSeries(genre = null, filter = "all", page = 1, limit = 20)
+
+        assertEquals(
+            "http://10.0.2.2:3000/api/series?page=1&limit=20",
+            fakeTransport.lastRequestedUrl
+        )
+    }
+
+    @Test
+    fun searchSeriesEncodesQueryAndLimit() = runTest {
+        val fakeTransport = FakeHttpTransport().apply {
+            responseToReturn = HttpResponse(
+                statusCode = 200,
+                body = """
+                    {
+                      "data": {
+                        "series": [
+                          { "id": "s-9", "title": "Demon Slayer", "type": "tv", "isFeatured": false }
+                        ],
+                        "meta": { "total": 1, "page": 1, "limit": 5 }
+                      }
+                    }
+                """.trimIndent()
+            )
+        }
+
+        val client = MediaApiClient(
+            baseUrlProvider = { "http://10.0.2.2:3000" },
+            transport = fakeTransport
+        )
+
+        val result = client.searchSeries("demon slayer", limit = 5)
+
+        assertEquals(
+            "http://10.0.2.2:3000/api/series?limit=5&q=demon+slayer",
+            fakeTransport.lastRequestedUrl
+        )
+        assertTrue(result is ApiResponse.Success)
+        val page = (result as ApiResponse.Success).data.data
+        assertEquals(1, page.series.size)
+        assertEquals("Demon Slayer", page.series[0].title)
+    }
+
+    @Test
+    fun getSeriesHandlesErrorEnvelope() = runTest {
+        val fakeTransport = FakeHttpTransport().apply {
+            responseToReturn = HttpResponse(
+                statusCode = 500,
+                body = """
+                    {
+                      "error": {
+                        "code": "INTERNAL_ERROR",
+                        "message": "Something went wrong"
+                      }
+                    }
+                """.trimIndent()
+            )
+        }
+
+        val client = MediaApiClient(
+            baseUrlProvider = { "http://10.0.2.2:3000" },
+            transport = fakeTransport
+        )
+
+        val result = client.getSeries(genre = "drama", filter = null, page = 1, limit = 20)
+
+        assertTrue(result is ApiResponse.Error)
+        val error = result as ApiResponse.Error
+        assertEquals(500, error.statusCode)
+        assertEquals("INTERNAL_ERROR", error.error?.code)
+    }
 }

@@ -2,9 +2,12 @@ package com.privatemovie.tv.data.network
 
 import com.privatemovie.tv.dto.models.ErrorEnvelope
 import com.privatemovie.tv.dto.models.ErrorObject
+import com.privatemovie.tv.dto.models.GenresListResponse
 import com.privatemovie.tv.dto.models.HomeFeedSuccessResponse
 import com.privatemovie.tv.dto.models.SeriesDetailsSuccessResponse
+import com.privatemovie.tv.dto.models.SeriesPageResponse
 import kotlinx.serialization.json.Json
+import java.net.URLEncoder
 
 sealed class ApiResponse<out T> {
     data class Success<out T>(val data: T) : ApiResponse<T>()
@@ -41,6 +44,55 @@ class MediaApiClient(
         } catch (t: Throwable) {
             ApiResponse.Failure(t)
         }
+    }
+
+    suspend fun getGenres(): ApiResponse<GenresListResponse> {
+        val baseUrl = sanitizeBaseUrl(baseUrlProvider())
+        val endpointUrl = "$baseUrl/genres"
+        return try {
+            val response = transport.get(endpointUrl)
+            parseResponse<GenresListResponse>(response)
+        } catch (t: Throwable) {
+            ApiResponse.Failure(t)
+        }
+    }
+
+    suspend fun getSeries(
+        genre: String? = null,
+        filter: String? = null,
+        page: Int = 1,
+        limit: Int = 20
+    ): ApiResponse<SeriesPageResponse> {
+        val baseUrl = sanitizeBaseUrl(baseUrlProvider())
+        val params = mutableListOf("page=$page", "limit=$limit")
+        if (!genre.isNullOrBlank()) {
+            params.add("genre=${encodeQueryParam(genre)}")
+        }
+        if (!filter.isNullOrBlank() && filter != "all") {
+            params.add("filter=${encodeQueryParam(filter)}")
+        }
+        val endpointUrl = "$baseUrl/api/series?${params.joinToString("&")}"
+        return try {
+            val response = transport.get(endpointUrl)
+            parseResponse<SeriesPageResponse>(response)
+        } catch (t: Throwable) {
+            ApiResponse.Failure(t)
+        }
+    }
+
+    suspend fun searchSeries(query: String, limit: Int = 5): ApiResponse<SeriesPageResponse> {
+        val baseUrl = sanitizeBaseUrl(baseUrlProvider())
+        val endpointUrl = "$baseUrl/api/series?limit=$limit&q=${encodeQueryParam(query)}"
+        return try {
+            val response = transport.get(endpointUrl)
+            parseResponse<SeriesPageResponse>(response)
+        } catch (t: Throwable) {
+            ApiResponse.Failure(t)
+        }
+    }
+
+    private fun encodeQueryParam(value: String): String {
+        return URLEncoder.encode(value, Charsets.UTF_8.name())
     }
 
     private inline fun <reified T> parseResponse(response: HttpResponse): ApiResponse<T> {

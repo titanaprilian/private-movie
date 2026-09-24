@@ -25,8 +25,8 @@ import coil.request.ImageRequest
 fun LogoOrTitleRender(
     logoUrl: String?,
     title: String,
-    baseUrl: String? = null,
     modifier: Modifier = Modifier,
+    baseUrl: String? = null,
     contentDescription: String? = null
 ) {
     val resolvedUrl = remember(logoUrl, baseUrl) {

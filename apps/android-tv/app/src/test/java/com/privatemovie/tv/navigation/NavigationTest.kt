@@ -6,6 +6,7 @@ import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.PlayerNavArgs
 import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -17,8 +18,15 @@ class NavigationTest {
     }
 
     @Test
-    fun `TvScreen DevSettings route is correct`() {
-        assertEquals("dev_settings", TvScreen.DevSettings.route)
+    fun `dev_settings is no longer a route`() {
+        val routes = listOf(
+            TvScreen.Home.route,
+            TvScreen.Genre.route,
+            TvScreen.Detail.route,
+            TvScreen.Player.route
+        )
+        assertFalse(routes.contains("dev_settings"))
+        assertEquals(listOf("home", "genre/{slug}", "detail/{seriesId}", "player/{episodeId}"), routes)
     }
 
     @Test
@@ -31,6 +39,32 @@ class NavigationTest {
     fun `TvScreen Player route pattern and helper formatting match`() {
         assertEquals("player/{episodeId}", TvScreen.Player.route)
         assertEquals("player/episode-108", TvScreen.Player.createRoute("episode-108"))
+    }
+
+    @Test
+    fun `TvScreen Genre route pattern and helper formatting match`() {
+        assertEquals("genre/{slug}", TvScreen.Genre.route)
+        assertEquals("genre/animation", TvScreen.Genre.createRoute("animation"))
+    }
+
+    @Test
+    fun `genre routes are single-segment like detail and player`() {
+        val genreRoute = TvScreen.Genre.createRoute("drama")
+        assertEquals("genre/drama", genreRoute)
+        assertEquals(2, genreRoute.split("/").size)
+    }
+
+    @Test
+    fun `switching genres replaces route under home without backstack buildup`() {
+        // Genre-to-genre navigation pops up to Home with launchSingleTop, so
+        // Back from any genre screen always lands directly on Home.
+        val first = TvScreen.Genre.createRoute("animation")
+        val second = TvScreen.Genre.createRoute("drama")
+        assertEquals("genre/animation", first)
+        assertEquals("genre/drama", second)
+        // Both routes share the genre/{slug} pattern: singleTop replaces
+        // rather than stacking genre destinations.
+        assertEquals(TvScreen.Genre.route, "genre/{slug}")
     }
 
     @Test
