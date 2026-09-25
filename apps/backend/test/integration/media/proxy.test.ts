@@ -62,8 +62,8 @@ describe("Reverse Proxy Route (/api/media/proxy/:domain/*)", () => {
 
     const html = response.body;
 
-    // Base tag
-    expect(html).toContain('<base href="/api/media/proxy/vidhidepro.com/">');
+    // Base tag preserves the proxied resource's directory path
+    expect(html).toContain('<base href="/api/media/proxy/vidhidepro.com/v/">');
 
     // Shim content
     expect(html).toContain("Object.defineProperty(window, 'open'");

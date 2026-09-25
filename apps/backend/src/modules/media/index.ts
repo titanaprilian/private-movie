@@ -11,6 +11,8 @@ export {
   DEBUG_LOGGER_SHIM,
   WEBCRYPTO_INSECURE_POLYFILL_SHIM,
   resolveRelayReferer,
+  buildProxyBaseHref,
+  sanitizeHtmlContent,
   buildRelayInterceptorShim,
   buildServerRenderedEmbedDocument,
   buildEmbedErrorDocument,

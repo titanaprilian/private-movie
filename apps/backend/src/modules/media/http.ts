@@ -492,7 +492,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
 
           if (isHtml) {
             const html = await targetResponse.text();
-            const sanitizedHtml = sanitizeHtmlContent(html, domain);
+            const sanitizedHtml = sanitizeHtmlContent(html, domain, targetUrl);
             return new Response(sanitizedHtml, {
               status: 200,
               headers: {

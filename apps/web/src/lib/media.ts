@@ -1,6 +1,9 @@
 const PROXIED_PROVIDER_DOMAINS = [
-  'desustream.net',
   'onenesuhd.com',
+];
+
+const PATH_PROXIED_PROVIDER_DOMAINS = [
+  'desustream.net',
   'odstream.net',
 ];
 
@@ -16,10 +19,11 @@ const AD_SUPPRESSED_PROVIDER_KEYWORDS = [
  * - Extracts the hash from the URL (e.g., /embed/ZXBpc...)
  * - Returns `/embed/{hash}` to load via the sandbox bootstrap
  *
- * For known popup/ad-heavy provider domains (e.g., vidhide, filedon and their mirrors):
+ * For known popup/ad-heavy provider domains (e.g., vidhide, filedon and their mirrors)
+ * and path-proxied embed providers (e.g., desustream.net, odstream.net):
  * - Returns `/api/media/proxy/:domain/*` for path-based reverse proxying with ad suppression
  *
- * For known problematic provider domains (e.g., desustream.net, onenesuhd.com, odstream.net):
+ * For known problematic provider domains (e.g., onenesuhd.com):
  * - Returns `/api/media/relay?url={encodedUrl}` to bypass CSP frame-ancestors restrictions
  *
  * For other sources (direct URLs):
@@ -51,7 +55,10 @@ export function formatEmbedUrl(url: string): string {
   const isAdSuppressedProvider = AD_SUPPRESSED_PROVIDER_KEYWORDS.some((keyword) =>
     lowerUrl.includes(keyword)
   );
-  if (isAdSuppressedProvider) {
+  const isPathProxiedProvider = PATH_PROXIED_PROVIDER_DOMAINS.some((domain) =>
+    lowerUrl.includes(domain)
+  );
+  if (isAdSuppressedProvider || isPathProxiedProvider) {
     try {
       const parsedUrl = new URL(
         url.startsWith('http://') || url.startsWith('https://')

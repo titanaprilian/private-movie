@@ -38,10 +38,17 @@ describe('formatEmbedUrl', () => {
     );
   });
 
-  it('transforms desustream.net URLs to /api/media/relay?url=...', () => {
+  it('transforms desustream.net URLs to /api/media/proxy/:domain/*', () => {
     const url = 'https://desustream.net/embed/ep-1';
     expect(formatEmbedUrl(url)).toBe(
-      `/api/media/relay?url=${encodeURIComponent(url)}`
+      '/api/media/proxy/desustream.net/embed/ep-1'
+    );
+  });
+
+  it('retains subpaths and query parameters for desustream.net URLs', () => {
+    const url = 'https://desustream.net/embed/sub/ep-1?autoplay=1&muted=1';
+    expect(formatEmbedUrl(url)).toBe(
+      '/api/media/proxy/desustream.net/embed/sub/ep-1?autoplay=1&muted=1'
     );
   });
 
@@ -52,10 +59,17 @@ describe('formatEmbedUrl', () => {
     );
   });
 
-  it('transforms odstream.net URLs to /api/media/relay?url=...', () => {
+  it('transforms odstream.net URLs to /api/media/proxy/:domain/*', () => {
     const url = 'https://odstream.net/v/abc';
     expect(formatEmbedUrl(url)).toBe(
-      `/api/media/relay?url=${encodeURIComponent(url)}`
+      '/api/media/proxy/odstream.net/v/abc'
+    );
+  });
+
+  it('retains subpaths and query parameters for odstream.net URLs', () => {
+    const url = 'https://odstream.net/e/sub/abc?autoplay=1';
+    expect(formatEmbedUrl(url)).toBe(
+      '/api/media/proxy/odstream.net/e/sub/abc?autoplay=1'
     );
   });
 });

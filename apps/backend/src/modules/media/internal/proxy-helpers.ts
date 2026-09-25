@@ -386,7 +386,31 @@ export function resolveRelayReferer(hostname: string): string {
   return RELAY_EMBED_REFERER;
 }
 
-export function sanitizeHtmlContent(html: string, domain: string): string {
+export function buildProxyBaseHref(domain: string, targetPath?: string): string {
+  const root = `/api/media/proxy/${domain}/`;
+  if (!targetPath) return root;
+  let pathname = targetPath;
+  try {
+    // Accept full upstream URLs (https://domain/a/b/page.html) as well as
+    // raw proxy paths (a/b/page.html, /a/b/page.html).
+    if (/^https?:\/\//i.test(pathname)) {
+      pathname = new URL(pathname).pathname;
+    }
+  } catch {
+    return root;
+  }
+  // Strip query string / hash if a raw path with extras was passed.
+  pathname = pathname.split("?")[0].split("#")[0];
+  if (!pathname.startsWith("/")) pathname = `/${pathname}`;
+  if (pathname.endsWith("/")) {
+    return `/api/media/proxy/${domain}${pathname}`;
+  }
+  const lastSlash = pathname.lastIndexOf("/");
+  const directory = lastSlash <= 0 ? "/" : `${pathname.slice(0, lastSlash + 1)}`;
+  return `/api/media/proxy/${domain}${directory}`;
+}
+
+export function sanitizeHtmlContent(html: string, domain: string, targetUrlOrPath?: string): string {
   let processed = html;
 
   // 1. Strip known ad script tags
@@ -467,7 +491,11 @@ export function sanitizeHtmlContent(html: string, domain: string): string {
   processed = processed.replace(/(["'])\/dl\?/g, `$1/api/media/proxy/${domain}/dl?`);
 
   // 6. Inject base tag, hardened shim, and anti-clickjack CSS into <head>
-  const injections = `<base href="/api/media/proxy/${domain}/">\n  ${VIDHIDE_ANTI_CLICKJACK_CSS}\n  ${buildProxyShim(domain)}`;
+  // Path-aware base: preserves the proxied resource's directory so relative
+  // assets (e.g. playerjs.js in a provider sub-path) resolve through the
+  // proxy with their directory hierarchy intact.
+  const baseHref = buildProxyBaseHref(domain, targetUrlOrPath);
+  const injections = `<base href="${baseHref}">\n  ${VIDHIDE_ANTI_CLICKJACK_CSS}\n  ${buildProxyShim(domain)}`;
 
   if (/(<head[^>]*>)/i.test(processed)) {
     processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);
