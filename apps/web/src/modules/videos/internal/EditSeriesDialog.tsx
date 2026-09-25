@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { updateSeries, type SeriesDetails, type SeriesItem } from './api';
@@ -43,18 +43,27 @@ export function EditSeriesDialog({
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editPosterUrl, setEditPosterUrl] = useState('');
+  const [editLogoUrl, setEditLogoUrl] = useState('');
+  const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [editIsFeatured, setEditIsFeatured] = useState<boolean>(false);
   const [editIsOngoingHighlighted, setEditIsOngoingHighlighted] =
     useState<boolean>(false);
   const [selectedGenreIds, setSelectedGenreIds] = useState<string[]>([]);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (open && series) {
-      setEditTitle(series.title ?? '');
-      setEditDescription(series.description ?? '');
-      setEditPosterUrl(series.posterUrl ?? '');
-      setEditIsFeatured(Boolean(series.isFeatured));
-      setEditIsOngoingHighlighted(Boolean(series.isOngoingHighlighted));
+      // Only sync text/flag state on the open transition so fresh inline
+      // `series` object identities on re-render don't wipe user edits.
+      if (!wasOpenRef.current) {
+        setEditTitle(series.title ?? '');
+        setEditDescription(series.description ?? '');
+        setEditPosterUrl(series.posterUrl ?? '');
+        setEditLogoUrl(series.logoUrl ?? '');
+        setLogoPreviewError(false);
+        setEditIsFeatured(Boolean(series.isFeatured));
+        setEditIsOngoingHighlighted(Boolean(series.isOngoingHighlighted));
+      }
 
       let initialGenreIds: string[] = [];
       if ('genreIds' in series && series.genreIds && Array.isArray(series.genreIds) && series.genreIds.length > 0) {
@@ -74,6 +83,7 @@ export function EditSeriesDialog({
         sameIdList(prev, initialGenreIds) ? prev : initialGenreIds
       );
     }
+    wasOpenRef.current = open;
   }, [open, series, genres]);
 
   const updateMutation = useMutation({
@@ -100,6 +110,7 @@ export function EditSeriesDialog({
       title: editTitle,
       description: editDescription || null,
       posterUrl: editPosterUrl || null,
+      logoUrl: editLogoUrl.trim() === '' ? null : editLogoUrl.trim(),
       isFeatured: editIsFeatured,
       isOngoingHighlighted: editIsOngoingHighlighted,
       genreIds: selectedGenreIds,
@@ -108,14 +119,15 @@ export function EditSeriesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-w-[calc(100vw-2rem)] overflow-hidden">
+      <DialogContent className="sm:max-w-lg max-w-[calc(100vw-2rem)] max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Edit Series</DialogTitle>
           <DialogDescription>
             Update series details, featured and highlight flags, and assigned genres.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-2 min-w-0 max-w-full overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 min-w-0 max-w-full overflow-hidden">
+          <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2 min-w-0">
           <div className="space-y-1.5">
             <Label htmlFor="edit-series-title">Title</Label>
             <Input
@@ -139,26 +151,28 @@ export function EditSeriesDialog({
             />
           </div>
 
-          <div className="flex items-center space-x-2 py-1">
-            <Checkbox
-              id="edit-series-featured"
-              checked={editIsFeatured}
-              onCheckedChange={(checked) => setEditIsFeatured(Boolean(checked))}
-            />
-            <Label htmlFor="edit-series-featured" className="cursor-pointer font-medium text-sm">
-              Featured Series
-            </Label>
-          </div>
+          <div className="flex flex-wrap items-center gap-6 py-1">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-series-featured"
+                checked={editIsFeatured}
+                onCheckedChange={(checked) => setEditIsFeatured(Boolean(checked))}
+              />
+              <Label htmlFor="edit-series-featured" className="cursor-pointer font-medium text-sm">
+                Featured Series
+              </Label>
+            </div>
 
-          <div className="flex items-center space-x-2 py-1">
-            <Checkbox
-              id="edit-series-highlighted"
-              checked={editIsOngoingHighlighted}
-              onCheckedChange={(checked) => setEditIsOngoingHighlighted(Boolean(checked))}
-            />
-            <Label htmlFor="edit-series-highlighted" className="cursor-pointer font-medium text-sm">
-              Highlight in Ongoing Feed
-            </Label>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-series-highlighted"
+                checked={editIsOngoingHighlighted}
+                onCheckedChange={(checked) => setEditIsOngoingHighlighted(Boolean(checked))}
+              />
+              <Label htmlFor="edit-series-highlighted" className="cursor-pointer font-medium text-sm">
+                Highlight in Ongoing Feed
+              </Label>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -169,6 +183,33 @@ export function EditSeriesDialog({
               onChange={(e) => setEditPosterUrl(e.target.value)}
               placeholder="https://..."
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-series-logo">Logo URL</Label>
+            <Input
+              id="edit-series-logo"
+              value={editLogoUrl}
+              onChange={(e) => {
+                setEditLogoUrl(e.target.value);
+                setLogoPreviewError(false);
+              }}
+              placeholder="https://..."
+            />
+            {editLogoUrl.trim() !== '' && (
+              <div className="rounded border border-c bg-sidebar p-2">
+                {logoPreviewError ? (
+                  <p className="text-xs text-muted">Failed to load logo preview</p>
+                ) : (
+                  <img
+                    src={editLogoUrl.trim()}
+                    alt="Logo preview"
+                    className="max-h-12 w-auto object-contain"
+                    onError={() => setLogoPreviewError(true)}
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Interactive multi-select for genres */}
@@ -203,6 +244,8 @@ export function EditSeriesDialog({
                 })}
               </div>
             )}
+          </div>
+
           </div>
 
           <DialogFooter className="pt-2">
