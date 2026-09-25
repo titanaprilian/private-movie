@@ -262,5 +262,62 @@ describe("PATCH /series/:id", () => {
       expect(rows[0].posterUrl).toBe(patchPayload.posterUrl);
       expect(rows[0].isFeatured).toBe(true);
     });
+
+    it("successfully updates logoUrl with a valid URL", async () => {
+      const { accessToken } = await registerUser(app);
+      const seriesRow = await insertTestSeries();
+      const newLogoUrl = "https://example.com/custom-logo.png";
+
+      const response = await request(app, {
+        method: "PATCH",
+        path: `/series/${seriesRow.id}`,
+        headers: authHeaders(accessToken),
+        body: {
+          logoUrl: newLogoUrl,
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: { id: string; logoUrl: string | null };
+      };
+
+      expect(body.data.logoUrl).toBe(newLogoUrl);
+
+      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      expect(rows).toHaveLength(1);
+      expect(rows[0].logoUrl).toBe(newLogoUrl);
+    });
+
+    it("successfully clears logoUrl when null is sent", async () => {
+      const { accessToken } = await registerUser(app);
+      const seriesRow = await insertTestSeries();
+      const logoUrl = "https://example.com/existing-logo.png";
+
+      await db
+        .update(series)
+        .set({ logoUrl })
+        .where(eq(series.id, seriesRow.id));
+
+      const response = await request(app, {
+        method: "PATCH",
+        path: `/series/${seriesRow.id}`,
+        headers: authHeaders(accessToken),
+        body: {
+          logoUrl: null,
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: { id: string; logoUrl: string | null };
+      };
+
+      expect(body.data.logoUrl).toBeNull();
+
+      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      expect(rows).toHaveLength(1);
+      expect(rows[0].logoUrl).toBeNull();
+    });
   });
 });

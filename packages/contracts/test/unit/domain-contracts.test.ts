@@ -70,6 +70,7 @@ describe("domain contracts", () => {
       sourceUrl: "https://example.com/series/1",
       source: "otakudesu",
       title: "Test Series",
+      logoUrl: "https://example.com/logo.png",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -86,6 +87,7 @@ describe("domain contracts", () => {
     expect(source.type).toBe("s3");
     expect(season.episodes).toHaveLength(1);
     expect(seriesDetails.title).toBe("Test Series");
+    expect(seriesDetails.logoUrl).toBe("https://example.com/logo.png");
     expect(presignReq.filename).toBe("test.mp4");
   });
 });

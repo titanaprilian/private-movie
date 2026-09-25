@@ -86,6 +86,7 @@ export interface AdminSeriesItem {
   description?: string | null;
   posterUrl?: string | null;
   backdropUrl?: string | null;
+  logoUrl?: string | null;
   isFeatured?: boolean | null;
   isOngoingHighlighted?: boolean | null;
   hasOngoing?: boolean;
@@ -123,6 +124,7 @@ export interface AdminUpdateSeriesRequest {
   title?: string;
   description?: string | null;
   posterUrl?: string | null;
+  logoUrl?: string | null;
   isFeatured?: boolean;
   isOngoingHighlighted?: boolean;
   genreIds?: string[];

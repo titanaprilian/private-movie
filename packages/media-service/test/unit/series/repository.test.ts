@@ -161,3 +161,47 @@ describe("series repository list filtering", () => {
     expect(whereSpy).toHaveBeenCalled();
   });
 });
+
+describe("series repository updateSeries", () => {
+  it("updates logoUrl and returns updated series with logoUrl", async () => {
+    const seriesId = "series-123";
+    const updatedRow = {
+      id: seriesId,
+      title: "Updated Series",
+      logoUrl: "https://example.com/logo.png",
+      updatedAt: new Date(),
+    };
+
+    const setSpy = vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([updatedRow]),
+      }),
+    });
+
+    const mockDb = {
+      update: vi.fn().mockReturnValue({
+        set: setSpy,
+      }),
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      }),
+    };
+
+    const repository = createSeriesRepositoryInternal(mockDb as any);
+    const result = await repository.updateSeries(seriesId, {
+      logoUrl: "https://example.com/logo.png",
+    });
+
+    expect(setSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        logoUrl: "https://example.com/logo.png",
+      })
+    );
+    expect(result.logoUrl).toBe("https://example.com/logo.png");
+  });
+});
+

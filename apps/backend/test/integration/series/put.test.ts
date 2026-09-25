@@ -178,5 +178,30 @@ describe("PUT /series/:id", () => {
 
       expect(mappings3).toHaveLength(0);
     });
+
+    it("successfully updates logoUrl via PUT", async () => {
+      const { accessToken } = await registerUser(app);
+      const s = await insertSeriesRow();
+      const newLogoUrl = "https://example.com/custom-logo.png";
+
+      const response = await request(app, {
+        method: "PUT",
+        path: `/series/${s.id}`,
+        headers: authHeaders(accessToken),
+        body: {
+          logoUrl: newLogoUrl,
+        },
+      });
+
+      expect(response.status).toBe(200);
+      const body = response.body as {
+        data: { id: string; logoUrl: string | null };
+      };
+      expect(body.data.logoUrl).toBe(newLogoUrl);
+
+      const rows = await db.select().from(series).where(eq(series.id, s.id));
+      expect(rows).toHaveLength(1);
+      expect(rows[0].logoUrl).toBe(newLogoUrl);
+    });
   });
 });

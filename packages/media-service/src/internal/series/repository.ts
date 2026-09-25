@@ -72,6 +72,7 @@ export interface UpdateSeriesInput {
   description?: string | null;
   type?: "tv" | "movie";
   posterUrl?: string | null;
+  logoUrl?: string | null;
   backdropUrl?: string | null;
   rating?: string | null;
   tmdbId?: number | null;
@@ -549,6 +550,7 @@ export function createSeriesRepositoryInternal<
       if (input.description !== undefined) updateData.description = input.description;
       if (input.type !== undefined) updateData.type = input.type;
       if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
+      if (input.logoUrl !== undefined) updateData.logoUrl = input.logoUrl;
       if (input.backdropUrl !== undefined) updateData.backdropUrl = input.backdropUrl;
       if (input.rating !== undefined) updateData.rating = input.rating;
       if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
