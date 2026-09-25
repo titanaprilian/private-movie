@@ -1,4 +1,4 @@
-import { renderWithProviders, screen, waitFor } from '../../utils';
+import { renderWithProviders, screen, waitFor, within } from '../../utils';
 import { describe, expect, it, beforeEach, vi, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { CinematicHome } from '@/modules/home';
@@ -447,7 +447,9 @@ describe('CinematicHome component', () => {
 
       const prevBtn = screen.getByRole('button', { name: /previous slide/i });
       const nextBtn = screen.getByRole('button', { name: /next slide/i });
-      const dots = screen.getAllByRole('button', { name: /go to slide/i });
+      const dots = within(screen.getByTestId('hero-pagination-desktop')).getAllByRole('button', {
+        name: /go to slide/i,
+      });
 
       expect(prevBtn).toBeInTheDocument();
       expect(nextBtn).toBeInTheDocument();
@@ -542,7 +544,9 @@ describe('CinematicHome component', () => {
         expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
       });
 
-      const dots = screen.getAllByRole('button', { name: /go to slide/i });
+      const dots = within(screen.getByTestId('hero-pagination-desktop')).getAllByRole('button', {
+        name: /go to slide/i,
+      });
 
       // Click dot 2 (3rd slide) -> Frieren
       await user.click(dots[2]);

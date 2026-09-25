@@ -26,6 +26,7 @@ export interface SeriesItem {
   synopsis: string;
   posterUrl: string;
   bannerUrl: string;
+  logoUrl?: string | null;
   type: string;
   matchScore: string;
   year: number;
@@ -177,6 +178,7 @@ function mapSeriesToSeriesItem(s: MediaSeriesMetadata): SeriesItem {
     synopsis: s.description || 'No description available for this series.',
     posterUrl,
     bannerUrl,
+    logoUrl: s.logoUrl ?? null,
     type,
     matchScore: '98% Match',
     year,
@@ -205,7 +207,7 @@ function HomeFeedHeroSkeleton() {
       data-testid="hero-skeleton"
       aria-busy="true"
       aria-label="Loading featured series"
-      className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 animate-pulse flex items-end p-8 md:p-16"
+      className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-zinc-950 animate-pulse flex items-end p-8 md:p-16"
     >
       <div className="max-w-3xl space-y-4 w-full">
         <div className="h-4 w-32 bg-zinc-800 rounded" />
@@ -269,6 +271,54 @@ function HomeFeedErrorState({ onRetry }: { onRetry: () => void }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function HeroTitle({ title, logoUrl }: { title: string; logoUrl?: string | null }) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  const showLogo = !!logoUrl && !logoFailed;
+
+  return (
+    <h1 className="text-center md:text-left text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+      {showLogo ? (
+        <img
+          src={logoUrl as string}
+          alt={`${title} logo`}
+          data-testid="hero-logo"
+          onError={() => setLogoFailed(true)}
+          className="mx-auto md:mx-0 max-h-24 sm:max-h-28 md:max-h-36 w-auto max-w-full object-contain object-center md:object-left"
+        />
+      ) : (
+        <span data-testid="hero-title-text">{title}</span>
+      )}
+    </h1>
+  );
+}
+
+function PaginationDots({
+  heroes,
+  activeIndex,
+  onSelect,
+}: {
+  heroes: SeriesItem[];
+  activeIndex: number;
+  onSelect: (idx: number) => void;
+}) {
+  return (
+    <>
+      {heroes.map((item, idx) => (
+        <button
+          key={`dot-${item.id}-${idx}`}
+          onClick={() => onSelect(idx)}
+          aria-label={`Go to slide ${idx + 1}`}
+          className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+            idx === activeIndex
+              ? 'w-7 bg-red-600'
+              : 'w-2.5 bg-zinc-600 hover:bg-zinc-400'
+          }`}
+        />
+      ))}
+    </>
   );
 }
 
@@ -482,73 +532,118 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           onMouseLeave={() => setIsPaused(false)}
           onFocus={() => setIsPaused(true)}
           onBlur={() => setIsPaused(false)}
-          className="relative h-[85vh] min-h-[550px] w-full bg-zinc-950 overflow-hidden group/hero"
+          className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-zinc-950 overflow-hidden group/hero"
         >
-          {/* Background Banner Images with Smooth Crossfade */}
+          {/* Background Banner Images with Smooth Crossfade.
+              Mobile renders the portrait poster full-bleed; desktop renders the wide banner. */}
           {heroesList.map((item, idx) => (
-            <div
-              key={item.id}
-              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-                idx === activeIndex ? 'opacity-100 z-0' : 'opacity-0 -z-10'
-              }`}
-              style={{ backgroundImage: `url(${item.bannerUrl})` }}
-            />
+            <div key={item.id} className="absolute inset-0">
+              <div
+                data-testid="hero-bg-mobile"
+                data-hero-id={item.id}
+                className={`absolute inset-0 bg-cover bg-center md:hidden transition-opacity duration-1000 ease-in-out ${
+                  idx === activeIndex ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{ backgroundImage: `url(${item.posterUrl})` }}
+              />
+              <div
+                data-testid="hero-bg-desktop"
+                data-hero-id={item.id}
+                className={`absolute inset-0 bg-cover bg-center hidden md:block transition-opacity duration-1000 ease-in-out ${
+                  idx === activeIndex ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{ backgroundImage: `url(${item.bannerUrl})` }}
+              />
+            </div>
           ))}
 
-          {/* Gradient overlays for cinematic effect */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10 pointer-events-none" />
+          {/* Gradient overlays for cinematic effect.
+              Solid black across the bottom half fading out toward the top, so
+              the text area stays readable even over light artwork. Desktop
+              uses slightly lighter stops. The left-originating overlay is
+              desktop-only. */}
+          <div
+            data-testid="hero-gradient-bottom"
+            className="absolute inset-0 bg-gradient-to-t from-black md:from-black/90 via-black via-[45%] md:via-black/60 to-transparent z-10 pointer-events-none"
+          />
+          <div
+            data-testid="hero-gradient-left"
+            className="hidden md:block absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10 pointer-events-none"
+          />
 
           {/* Hero Content */}
           <div className="absolute bottom-12 left-0 z-20 w-full px-8 md:px-16 text-left">
-            <div className="max-w-3xl space-y-4">
-              {/* Tagline / Badge */}
-              <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-red-500 uppercase">
-                <Sparkles className="w-4 h-4 text-red-500" />
-                <span>Featured Simulcast</span>
-              </div>
+            <div data-testid="hero-content" className="max-w-3xl mx-auto md:mx-0 space-y-4 flex flex-col items-center text-center md:items-start md:text-left">
+              {/* Title (series logo image with text fallback) */}
+              <HeroTitle
+                key={currentHero.id}
+                title={currentHero.title}
+                logoUrl={currentHero.logoUrl}
+              />
 
-              {/* Title */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
-                {currentHero.title}
-              </h1>
-
-              {/* Meta Row */}
-              <div className="flex items-center gap-3 text-sm text-zinc-300 flex-wrap">
-                <span className="text-emerald-400 font-semibold">{currentHero.matchScore}</span>
+              {/* Meta Row (rating first, genres inline) */}
+              <div data-testid="hero-meta" className="flex items-center justify-center md:justify-start gap-3 text-sm text-zinc-300 flex-wrap">
+                <span
+                  data-testid="hero-rating"
+                  className="inline-flex items-center gap-1 font-semibold text-yellow-400"
+                >
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" aria-hidden="true" />
+                  <span>{currentHero.rating}</span>
+                </span>
                 <span>{currentHero.year}</span>
-                <span className="border border-zinc-600 px-1.5 py-0.5 rounded text-xs font-mono bg-black/40">{currentHero.rating}</span>
-                <span className="bg-red-600/80 text-white px-1.5 py-0.5 rounded text-xs font-mono font-bold">{currentHero.subDub}</span>
-                <span>{currentHero.seasons} {currentHero.seasons === 1 ? 'Season' : 'Seasons'}</span>
+                <span data-testid="hero-seasons-episodes">
+                  {currentHero.seasons} {currentHero.seasons === 1 ? 'Season' : 'Seasons'}{' '}
+                  <span data-testid="hero-episodes" className="hidden md:inline">
+                    {currentHero.episodes} {currentHero.episodes === 1 ? 'Episode' : 'Episodes'}
+                  </span>
+                </span>
+                <span data-testid="hero-genres" className="inline-flex items-center gap-2 text-sm text-zinc-300">
+                  {currentHero.genres.slice(0, 3).map((genre, genreIdx) => (
+                    <span key={genre} className="flex items-center gap-2">
+                      {genreIdx > 0 && (
+                        <span aria-hidden="true" className="text-zinc-600">
+                          •
+                        </span>
+                      )}
+                      <span>{genre}</span>
+                    </span>
+                  ))}
+                </span>
               </div>
 
-              {/* Synopsis */}
-              <p className="text-zinc-300 text-base md:text-lg line-clamp-3 leading-relaxed max-w-2xl text-shadow">
+              {/* Synopsis (hidden on mobile, truncated on desktop) */}
+              <p data-testid="hero-synopsis" className="hidden md:line-clamp-3 text-zinc-300 text-base md:text-lg leading-relaxed max-w-2xl text-shadow">
                 {currentHero.synopsis}
               </p>
 
+              {/* Pagination Dots (mobile: in-flow above the Play button) */}
+              {heroCount > 1 && (
+                <div
+                  data-testid="hero-pagination-mobile"
+                  className="flex md:hidden items-center justify-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800/80"
+                >
+                  <PaginationDots
+                    heroes={heroesList}
+                    activeIndex={activeIndex}
+                    onSelect={setActiveIndex}
+                  />
+                </div>
+              )}
+
               {/* Action Buttons */}
-              <div className="flex items-center gap-4 pt-4">
+              <div className="flex items-center justify-center md:justify-start gap-4 pt-4 w-full md:w-auto">
                 <button
+                  data-testid="hero-play"
                   data-nav-row={0}
                   data-nav-item={0}
                   onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: currentHero.id } })}
-                  className={`bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer ${
+                  className={`w-full md:w-auto justify-center bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer ${
                     isSpatialMode && focusedRow === 0 && focusedItem === 0 ? 'ring-2 ring-white' : ''
                   }`}
                 >
                   <Play className="w-5 h-5 fill-black text-black" />
                   <span>Play</span>
                 </button>
-              </div>
-
-              {/* Genre tags */}
-              <div className="flex items-center gap-2 pt-2">
-                {currentHero.genres.map((genre) => (
-                  <span key={genre} className="text-xs text-zinc-400 font-mono flex items-center gap-2 bg-zinc-900/60 px-2 py-1 rounded border border-zinc-800">
-                    {genre}
-                  </span>
-                ))}
               </div>
             </div>
           </div>
@@ -574,20 +669,16 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
                 <ChevronRight className="w-6 h-6" />
               </button>
 
-              {/* Pagination Dots */}
-              <div className="absolute bottom-6 right-8 md:right-16 z-30 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800/80">
-                {heroesList.map((item, idx) => (
-                  <button
-                    key={`dot-${item.id}-${idx}`}
-                    onClick={() => setActiveIndex(idx)}
-                    aria-label={`Go to slide ${idx + 1}`}
-                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                      idx === activeIndex
-                        ? 'w-7 bg-red-600'
-                        : 'w-2.5 bg-zinc-600 hover:bg-zinc-400'
-                    }`}
-                  />
-                ))}
+              {/* Pagination Dots (desktop: bottom-right corner) */}
+              <div
+                data-testid="hero-pagination-desktop"
+                className="hidden md:flex absolute bottom-6 right-8 md:right-16 z-30 items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800/80"
+              >
+                <PaginationDots
+                  heroes={heroesList}
+                  activeIndex={activeIndex}
+                  onSelect={setActiveIndex}
+                />
               </div>
             </>
           )}

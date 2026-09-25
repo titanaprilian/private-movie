@@ -46,7 +46,13 @@ Run typechecking regularly, single test files regularly during development, and 
 - This runs in ~2–5 seconds instead of the full suite (which can take 1–3 minutes).
 - Example: `bun run test:web -- -- test/unit/auth/LoginForm.test.tsx`
 
-**Before handing back — run the full suite once so results are cached for the orchestrator:**
+**Mandatory Pre-Handoff Quality Checks (Non-Negotiable):**
+Before handing back, you **MUST** run the root verification checks across the monorepo regardless of which application or package was modified (whether `apps/android-tv`, `apps/backend`, `apps/web`, or `packages/*`):
+1. `bun run typecheck` — **MANDATORY**. Confirms TypeScript compilation and Android Kotlin compilation (`./gradlew compileDebugKotlin`) pass cleanly across the monorepo.
+2. `bun run lint` — **MANDATORY**. Confirms ESLint and Android Gradle lint pass with zero errors across all workspaces.
+3. Run the full unit test suite for the touched package(s) or `bun run test` so Turbo caches passing results for the orchestrator.
+
+**Package test commands for caching:**
 - `bun run test:web` (or `bunx turbo run test --filter=@repo/web`)
 - `bun run test:backend` (or `bunx turbo run test --filter=@repo/backend`)
 - `bun run test:seed-cli` (or `bunx turbo run test --filter=@repo/seed-cli`)
@@ -55,7 +61,6 @@ Run typechecking regularly, single test files regularly during development, and 
 - `bun run test:db` (or `bunx turbo run test --filter=@repo/db`)
 - `bun run test:contracts` (or `bunx turbo run test --filter=@repo/contracts`)
 - `bun run test` (runs all unit tests via Turbo)
-
 If the ticket touches backend HTTP endpoints (e.g., routes, middleware, CORS, auth guards), also write and run integration tests under `test/integration/` — not just unit tests.
 - **Fast Feedback (Targeted Integration Testing):** Run ONLY the integration test file(s) relevant to your change:
   `bun --filter=@repo/backend run test:integration test/integration/<feature>/<name>.test.ts`

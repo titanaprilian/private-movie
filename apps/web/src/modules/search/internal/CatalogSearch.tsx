@@ -11,6 +11,7 @@ export interface CatalogSearchProps {
   limit?: number;
   onSelectSeries?: (series: SeriesItem) => void;
   className?: string;
+  autoFocus?: boolean;
 }
 
 export function CatalogSearch({
@@ -19,6 +20,7 @@ export function CatalogSearch({
   limit = 5,
   onSelectSeries,
   className = '',
+  autoFocus = false,
 }: CatalogSearchProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -95,6 +97,7 @@ export function CatalogSearch({
         <input
           type="text"
           value={query}
+          autoFocus={autoFocus}
           onChange={(e) => {
             setQuery(e.target.value);
             setIsOpen(true);
