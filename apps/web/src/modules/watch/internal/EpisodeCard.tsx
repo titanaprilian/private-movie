@@ -89,7 +89,7 @@ export function EpisodeCard({
         )}
       </div>
 
-      {/* Episode Details */}
+      {/* Episode Details — streamlined high-density card: title only, no redundant paragraph */}
       <div className="flex flex-col flex-1 p-3">
         <h4
           className={`text-sm font-semibold line-clamp-1 group-hover:text-primary transition-colors ${
@@ -99,16 +99,6 @@ export function EpisodeCard({
         >
           {episode.title}
         </h4>
-
-        {episode.description ? (
-          <p className="mt-1 text-xs text-muted line-clamp-2 leading-relaxed">
-            {episode.description}
-          </p>
-        ) : (
-          <p className="mt-1 text-xs text-muted/60 italic line-clamp-2">
-            No description available for this episode
-          </p>
-        )}
       </div>
     </button>
   );

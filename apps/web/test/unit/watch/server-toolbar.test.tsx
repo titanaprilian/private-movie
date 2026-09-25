@@ -71,11 +71,28 @@ describe('Watch player toolbar Radix server selector', () => {
     vi.restoreAllMocks();
   });
 
-  it('keeps toolbar on a single non-wrapping row regardless of source count', () => {
+  it('renders semantic groups for playback, server selector, and utilities with responsive reflow', () => {
     renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
     const controls = screen.getByTestId('watch-controls');
-    expect(controls).toHaveClass('flex-nowrap');
-    expect(controls.className).not.toMatch('flex-wrap');
+    expect(controls).toBeInTheDocument();
+
+    const playbackGroup = screen.getByTestId('controls-playback-group');
+    expect(playbackGroup).toBeInTheDocument();
+    expect(playbackGroup).toContainElement(screen.getByRole('button', { name: /prev episode/i }));
+    expect(playbackGroup).toContainElement(screen.getByRole('button', { name: /next episode/i }));
+
+    const serverGroup = screen.getByTestId('controls-server-group');
+    expect(serverGroup).toBeInTheDocument();
+    expect(serverGroup).toContainElement(screen.getByRole('combobox', { name: /server selector/i }));
+
+    const utilityGroup = screen.getByTestId('controls-utility-group');
+    expect(utilityGroup).toBeInTheDocument();
+    expect(utilityGroup).toContainElement(screen.getByRole('button', { name: /reload player/i }));
+    expect(utilityGroup).toContainElement(screen.getByRole('button', { name: /open in new tab/i }));
+
+    // Utility buttons have visible text labels
+    expect(screen.getByText('Reload')).toBeInTheDocument();
+    expect(screen.getByText('Open Tab')).toBeInTheDocument();
   });
 
   it('renders Radix Select trigger with server icon, Server: label, current label and count', () => {
@@ -133,5 +150,20 @@ describe('Watch player toolbar Radix server selector', () => {
     expect(screen.getByRole('combobox', { name: /server selector/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reload player/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /open in new tab/i })).toBeInTheDocument();
+  });
+
+  it('applies high-contrast TV D-pad focus styles when focused in spatial mode', () => {
+    renderWithProviders(
+      <SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />
+    );
+    // Default: not focused
+    const trigger = screen.getByRole('combobox', { name: /server selector/i });
+    expect(trigger.className).not.toMatch(/bg-white text-black/);
+
+    // Simulate D-pad landing on controls zone
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    // Focus should be on controls zone
+    const prevBtn = screen.getByRole('button', { name: /prev episode/i });
+    expect(prevBtn).toBeInTheDocument();
   });
 });

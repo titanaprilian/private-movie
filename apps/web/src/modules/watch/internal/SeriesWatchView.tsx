@@ -547,51 +547,107 @@ export function SeriesWatchView({
             )}
           </div>
 
-          {/* Docked Player Toolbar — non-wrapping single row */}
+          {/* Docked Player Toolbar — Semantic Grouping & Responsive Reflow */}
           <div
             data-testid="watch-controls"
-            className="flex flex-nowrap items-center gap-2 border border-c bg-card p-3 rounded-none sm:rounded-md overflow-hidden"
+            className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 border border-zinc-800 bg-zinc-950/80 backdrop-blur-md p-2.5 sm:p-3 rounded-none sm:rounded-md"
           >
-            <Button
-              ref={(el) => {
-                controlsRefs.current[0] = el;
-              }}
-              variant="secondary"
-              size="sm"
-              onClick={handleGoToPrevEpisode}
-              disabled={!hasPrevEpisode}
-              aria-label="Prev episode"
-              className={`shrink-0 ${
-                isSpatialMode && activeZone === 'controls' && focusIndex === 0
-                  ? 'ring-2 ring-white'
-                  : ''
-              }`}
-            >
-              <SkipBack className="h-4 w-4" />
-              Prev
-            </Button>
+            {/* Top row on mobile / outer layout on desktop */}
+            <div className="flex items-center justify-between gap-2 md:contents">
+              {/* Group 1: Playback Controls (Prev / Next) */}
+              <div
+                data-testid="controls-playback-group"
+                className="flex items-center rounded-lg bg-zinc-900/90 p-1 border border-zinc-800 gap-1 shrink-0"
+              >
+                <Button
+                  ref={(el) => {
+                    controlsRefs.current[0] = el;
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGoToPrevEpisode}
+                  disabled={!hasPrevEpisode}
+                  aria-label="Prev episode"
+                  className={`gap-1.5 h-8 px-2.5 sm:px-3 text-xs sm:text-sm shrink-0 font-medium ${
+                    isSpatialMode && activeZone === 'controls' && focusIndex === 0
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
+                      : 'text-zinc-200 hover:text-white hover:bg-zinc-800/80 transition-all duration-150'
+                  }`}
+                >
+                  <SkipBack className="h-3.5 w-3.5" />
+                  <span>Prev</span>
+                </Button>
 
-            <Button
-              ref={(el) => {
-                controlsRefs.current[1] = el;
-              }}
-              variant="secondary"
-              size="sm"
-              onClick={handleGoToNextEpisode}
-              disabled={!hasNextEpisode}
-              aria-label="Next episode"
-              className={`shrink-0 ${
-                isSpatialMode && activeZone === 'controls' && focusIndex === 1
-                  ? 'ring-2 ring-white'
-                  : ''
-              }`}
-            >
-              Next
-              <SkipForward className="h-4 w-4" />
-            </Button>
+                <Button
+                  ref={(el) => {
+                    controlsRefs.current[1] = el;
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGoToNextEpisode}
+                  disabled={!hasNextEpisode}
+                  aria-label="Next episode"
+                  className={`gap-1.5 h-8 px-2.5 sm:px-3 text-xs sm:text-sm shrink-0 font-medium ${
+                    isSpatialMode && activeZone === 'controls' && focusIndex === 1
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
+                      : 'text-zinc-200 hover:text-white hover:bg-zinc-800/80 transition-all duration-150'
+                  }`}
+                >
+                  <span>Next</span>
+                  <SkipForward className="h-3.5 w-3.5" />
+                </Button>
+              </div>
 
-            {/* Server selector — Radix UI Select */}
-            <div className="min-w-0 flex-1 flex justify-center">
+              {/* Group 3: Utility Actions (Reload / Open in Tab) - floated right on mobile, order-3 on desktop */}
+              <div
+                data-testid="controls-utility-group"
+                className="flex items-center rounded-lg bg-zinc-900/90 p-1 border border-zinc-800 gap-1 shrink-0 md:order-3"
+              >
+                <Button
+                  ref={(el) => {
+                    controlsRefs.current[3] = el;
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReloadIframe}
+                  aria-label="Reload player"
+                  title="Reload video player"
+                  className={`gap-1.5 h-8 px-2.5 sm:px-3 text-xs sm:text-sm shrink-0 font-medium ${
+                    isSpatialMode && activeZone === 'controls' && focusIndex === 3
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
+                      : 'text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all duration-150'
+                  }`}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Reload</span>
+                </Button>
+
+                <Button
+                  ref={(el) => {
+                    controlsRefs.current[4] = el;
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleOpenNewTab}
+                  aria-label="Open in new tab"
+                  title="Open stream in new tab"
+                  className={`gap-1.5 h-8 px-2.5 sm:px-3 text-xs sm:text-sm shrink-0 font-medium ${
+                    isSpatialMode && activeZone === 'controls' && focusIndex === 4
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
+                      : 'text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all duration-150'
+                  }`}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Open Tab</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Group 2: Stream Configuration / Server Selector (Full-width on mobile, centered flex-1 on desktop) */}
+            <div
+              data-testid="controls-server-group"
+              className="w-full md:w-auto md:flex-1 md:max-w-md flex justify-center md:order-2"
+            >
               <Select
                 value={String(state.activeSourceIndex)}
                 onValueChange={(v) => selectSource(Number(v))}
@@ -602,36 +658,50 @@ export function SeriesWatchView({
                   }}
                   aria-label="Server selector"
                   data-testid="server-selector"
-                  className={`w-full max-w-[280px] bg-bg border-c text-xs sm:text-sm h-8 sm:h-9 justify-between gap-2 ${
+                  className={`w-full bg-zinc-900/90 border-zinc-800 text-xs sm:text-sm h-9 px-3 justify-between gap-2 rounded-lg ${
                     isSpatialMode && activeZone === 'controls' && focusIndex === 2
-                      ? 'ring-2 ring-white'
-                      : ''
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-[1.02] bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
+                      : 'text-zinc-200 hover:bg-zinc-800/80 transition-all duration-150'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <Server className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden="true" />
-                    <span className="font-medium shrink-0">Server:</span>
+                  <span className="inline-flex items-center gap-2 min-w-0">
+                    <Server
+                      className={`h-3.5 w-3.5 shrink-0 ${
+                        isSpatialMode && activeZone === 'controls' && focusIndex === 2
+                          ? 'text-black'
+                          : 'text-zinc-400'
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span className="font-semibold shrink-0">Server:</span>
                     <span className="truncate min-w-0">
                       <SelectValue placeholder="Select server" />
                     </span>
-                    {sources.length > 1 && (
-                      <span className="mono text-xs text-muted shrink-0">
-                        ({sources.length} available)
-                      </span>
-                    )}
                   </span>
+                  {sources.length > 1 && (
+                    <span
+                      className={`mono text-[11px] px-1.5 py-0.5 rounded shrink-0 ${
+                        isSpatialMode && activeZone === 'controls' && focusIndex === 2
+                          ? 'bg-zinc-200 text-black font-semibold'
+                          : 'bg-zinc-800 text-zinc-300 border border-zinc-700/60'
+                      }`}
+                    >
+                      ({sources.length} available)
+                    </span>
+                  )}
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
                   {sources.map((source, index) => (
                     <SelectItem
                       key={source.id}
                       value={String(index)}
                       data-testid={`server-option-${index}`}
+                      className="focus:bg-white focus:text-black"
                     >
                       <span className="inline-flex items-center gap-2">
-                        <span>{source.label}</span>
+                        <span className="font-medium">{source.label}</span>
                         {source.quality && (
-                          <span className="mono text-xs text-muted">
+                          <span className="mono text-xs opacity-75">
                             · {source.quality}
                           </span>
                         )}
@@ -641,42 +711,6 @@ export function SeriesWatchView({
                 </SelectContent>
               </Select>
             </div>
-
-            <Button
-              ref={(el) => {
-                controlsRefs.current[3] = el;
-              }}
-              variant="ghost"
-              size="sm"
-              onClick={handleReloadIframe}
-              aria-label="Reload player"
-              title="Reload video player"
-              className={`shrink-0 ${
-                isSpatialMode && activeZone === 'controls' && focusIndex === 3
-                  ? 'ring-2 ring-white'
-                  : ''
-              }`}
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-
-            <Button
-              ref={(el) => {
-                controlsRefs.current[4] = el;
-              }}
-              variant="ghost"
-              size="sm"
-              onClick={handleOpenNewTab}
-              aria-label="Open in new tab"
-              title="Open stream in new tab"
-              className={`shrink-0 ${
-                isSpatialMode && activeZone === 'controls' && focusIndex === 4
-                  ? 'ring-2 ring-white'
-                  : ''
-              }`}
-            >
-              <ExternalLink className="h-4 w-4" />
-            </Button>
           </div>
 
           {/* Active Episode Overview Details */}

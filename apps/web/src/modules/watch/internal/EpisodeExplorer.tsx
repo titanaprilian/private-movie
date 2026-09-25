@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -38,6 +38,22 @@ export function EpisodeExplorer({
   focusIndex,
 }: EpisodeExplorerProps) {
   const seasonCount = seasons.length;
+  const activeCardRefMap = useRef<Map<string, HTMLDivElement | null>>(new Map());
+
+  // Smoothly scroll the active episode card into view when playback starts
+  // or when navigating between episodes. Uses block: 'nearest' to keep the
+  // sticky video player anchored without disorienting viewport jumps.
+  useEffect(() => {
+    if (!activeEpisodeId) return;
+    const el = activeCardRefMap.current.get(activeEpisodeId);
+    if (el && typeof el.scrollIntoView === 'function') {
+      try {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch {
+        // ignore — jsdom or older environments may not support options
+      }
+    }
+  }, [activeEpisodeId, episodes]);
 
   const renderSeasonSwitcher = () => {
     if (seasonCount <= 1) {
@@ -120,7 +136,14 @@ export function EpisodeExplorer({
             return (
               <div
                 key={episode.id}
+                data-episode-id={episode.id}
+                data-testid={`episode-card-${episode.id}`}
                 ref={(el) => {
+                  if (el) {
+                    activeCardRefMap.current.set(episode.id, el);
+                  } else {
+                    activeCardRefMap.current.delete(episode.id);
+                  }
                   if (episodeRefs && episodeRefs.current) {
                     episodeRefs.current[idx] = el?.querySelector('button') ?? null;
                   }

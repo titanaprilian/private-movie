@@ -128,6 +128,9 @@ export function useWatchNav(options?: UseWatchNavOptions): UseWatchNavReturn {
             setFocusIndex(0);
             dispatchToIframe(iframeRefRef.current, 'f');
             focusIframe(iframeRefRef.current);
+          } else if (event.key === 'ArrowDown') {
+            setActiveZone('episodes');
+            setFocusIndex(0);
           } else if (event.key === 'ArrowLeft') {
             setFocusIndex(Math.max(0, idx - 1));
           } else if (event.key === 'ArrowRight') {

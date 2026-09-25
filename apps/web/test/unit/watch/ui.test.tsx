@@ -277,11 +277,13 @@ describe('SeriesWatchView', () => {
       expect(screen.getByTestId('episode-grid')).toBeInTheDocument();
 
       expect(screen.getByText('Episode One')).toBeInTheDocument();
-      expect(screen.getByText('First episode description')).toBeInTheDocument();
+      // Streamlined high-density cards: no redundant paragraph descriptions
+      expect(screen.queryByText('First episode description')).not.toBeInTheDocument();
       expect(screen.getByText('EP 1')).toBeInTheDocument();
       expect(screen.getByText('24m')).toBeInTheDocument();
 
       expect(screen.getByText('Episode Two')).toBeInTheDocument();
+      expect(screen.queryByText('Second episode description')).not.toBeInTheDocument();
       expect(screen.getByText('EP 2')).toBeInTheDocument();
       expect(screen.getByText('22m')).toBeInTheDocument();
     });
@@ -454,7 +456,8 @@ describe('SeriesWatchView', () => {
       renderWithProviders(<SeriesWatchView series={seriesWithFallbacks} />);
 
       expect(screen.getByText('No Thumb Episode')).toBeInTheDocument();
-      expect(screen.getByText('No description available for this episode')).toBeInTheDocument();
+      // Streamlined card: no redundant paragraph description even when fallback description is missing
+      expect(screen.queryByText('No description available for this episode')).not.toBeInTheDocument();
       const img = screen.getByRole('img', { name: 'No Thumb Episode' });
       expect(img).toHaveAttribute('src', 'https://fallback-backdrop.jpg');
     });
@@ -489,10 +492,10 @@ describe('SeriesWatchView', () => {
       const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
       expect(iframe).toHaveAttribute('src', '/api/media/proxy/odvidhide.com/v/sample1');
 
-      // Toolbar stays on a clean non-wrapping single row
-      const controls = screen.getByTestId('watch-controls');
-      expect(controls.className).toMatch('flex-nowrap');
-      expect(controls.className).not.toMatch('flex-wrap');
+      // Toolbar contains semantic groups for playback, server selector, and utilities
+      expect(screen.getByTestId('controls-playback-group')).toBeInTheDocument();
+      expect(screen.getByTestId('controls-server-group')).toBeInTheDocument();
+      expect(screen.getByTestId('controls-utility-group')).toBeInTheDocument();
 
       // Trigger shows server icon, "Server:" label, current source and count
       const trigger = screen.getByRole('combobox', { name: /server selector/i });
