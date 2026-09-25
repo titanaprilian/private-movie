@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatEmbedUrl } from '@/lib/media';
+import {
+  BELLOCLOUD_IFRAME_SANDBOX,
+  formatEmbedUrl,
+  getEmbedIframeSandbox,
+  isBelloCloudEmbedUrl,
+} from '@/lib/media';
 
 describe('formatEmbedUrl', () => {
   it('passes through direct video URLs unchanged', () => {
@@ -71,5 +76,51 @@ describe('formatEmbedUrl', () => {
     expect(formatEmbedUrl(url)).toBe(
       '/api/media/proxy/odstream.net/e/sub/abc?autoplay=1'
     );
+  });
+});
+
+describe('isBelloCloudEmbedUrl', () => {
+  it('detects videobello.net embed URLs', () => {
+    expect(
+      isBelloCloudEmbedUrl('https://videobello.net/embed/ZXBpc29kZTE')
+    ).toBe(true);
+  });
+
+  it('is case-insensitive', () => {
+    expect(
+      isBelloCloudEmbedUrl('https://VIDEOBELLO.NET/embed/abc')
+    ).toBe(true);
+  });
+
+  it('returns false for other providers', () => {
+    expect(isBelloCloudEmbedUrl('https://odvidhide.com/v/abcd1234')).toBe(
+      false
+    );
+    expect(isBelloCloudEmbedUrl('https://filedon.co/v/xyz987')).toBe(false);
+    expect(isBelloCloudEmbedUrl('https://embed.com/3')).toBe(false);
+    expect(isBelloCloudEmbedUrl('')).toBe(false);
+  });
+});
+
+describe('getEmbedIframeSandbox', () => {
+  it('returns the restrictive sandbox for BelloCloud embeds', () => {
+    expect(
+      getEmbedIframeSandbox('https://videobello.net/embed/ZXBpc29kZTE')
+    ).toBe(BELLOCLOUD_IFRAME_SANDBOX);
+  });
+
+  it('omits allow-popups and allow-top-navigation', () => {
+    expect(BELLOCLOUD_IFRAME_SANDBOX).not.toContain('allow-popups');
+    expect(BELLOCLOUD_IFRAME_SANDBOX).not.toContain('allow-top-navigation');
+    expect(BELLOCLOUD_IFRAME_SANDBOX).toContain('allow-scripts');
+    expect(BELLOCLOUD_IFRAME_SANDBOX).toContain('allow-same-origin');
+  });
+
+  it('returns undefined for non-BelloCloud providers', () => {
+    expect(
+      getEmbedIframeSandbox('https://odvidhide.com/v/abcd1234')
+    ).toBeUndefined();
+    expect(getEmbedIframeSandbox('https://filedon.co/v/xyz987')).toBeUndefined();
+    expect(getEmbedIframeSandbox('https://embed.com/3')).toBeUndefined();
   });
 });

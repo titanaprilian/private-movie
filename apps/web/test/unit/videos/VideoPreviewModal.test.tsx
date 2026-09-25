@@ -68,7 +68,7 @@ describe('VideoPreviewModal Component', () => {
     expect(video).toBeInTheDocument();
   });
 
-  it('renders iframe for embed video sources without sandbox and with media allow attributes', () => {
+  it('renders iframe for BelloCloud embed sources with restrictive sandbox and media allow attributes', () => {
     const embedSource: VideoSource = {
       id: 'src-embed',
       type: 'embed',
@@ -89,7 +89,10 @@ describe('VideoPreviewModal Component', () => {
     expect(iframe).toBeInTheDocument();
     expect(iframe.tagName.toLowerCase()).toBe('iframe');
     expect(iframe).toHaveAttribute('src', '/embed/ZXBpc29kZTE');
-    expect(iframe).not.toHaveAttribute('sandbox');
+    expect(iframe).toHaveAttribute(
+      'sandbox',
+      'allow-scripts allow-same-origin allow-forms allow-presentation'
+    );
     expect(iframe).toHaveAttribute(
       'allow',
       'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen'

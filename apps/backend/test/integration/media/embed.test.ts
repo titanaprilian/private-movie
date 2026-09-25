@@ -311,7 +311,7 @@ describe('GET /embed/:hash', () => {
     expect(html).toContain('closed: true');
     expect(html).toContain("HTMLAnchorElement.prototype.click");
     expect(html).toContain("['click', 'auxclick', 'touchend']");
-    expect(html).toContain("target.getAttribute('target') === '_blank'");
+    expect(html).toContain("anchor.getAttribute('target') === '_blank'");
     expect(html).toContain('e.preventDefault()');
     expect(html).toContain('e.stopPropagation()');
   });

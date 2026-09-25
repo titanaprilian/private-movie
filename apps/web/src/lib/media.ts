@@ -13,6 +13,44 @@ const AD_SUPPRESSED_PROVIDER_KEYWORDS = [
 ];
 
 /**
+ * Restrictive sandbox policy for BelloCloud/videobello embed iframes.
+ * Strictly omits `allow-popups` and `allow-top-navigation` so browsers
+ * natively block tab-opening and app-switching attempts from ad scripts.
+ */
+export const BELLOCLOUD_IFRAME_SANDBOX =
+  'allow-scripts allow-same-origin allow-forms allow-presentation';
+
+const BELLOCLOUD_PROVIDER_KEYWORDS = [
+  'videobello.net',
+  'bellocloud',
+];
+
+/**
+ * Returns true when a video source URL belongs to the BelloCloud/videobello
+ * embed provider. Only these iframes get the restrictive sandbox attribute;
+ * other providers (Vidhide, Filedon, …) run sandbox detection scripts that
+ * break when sandboxed, so they must remain un-sandboxed.
+ */
+export function isBelloCloudEmbedUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase();
+  return BELLOCLOUD_PROVIDER_KEYWORDS.some((keyword) =>
+    lower.includes(keyword)
+  );
+}
+
+/**
+ * Returns the sandbox attribute value for an embed iframe, or `undefined`
+ * when the provider must remain un-sandboxed. Passing `undefined` to React's
+ * `sandbox` prop omits the attribute entirely.
+ */
+export function getEmbedIframeSandbox(sourceUrl: string): string | undefined {
+  return isBelloCloudEmbedUrl(sourceUrl)
+    ? BELLOCLOUD_IFRAME_SANDBOX
+    : undefined;
+}
+
+/**
  * Formats embed URLs for video sources.
  *
  * For videobello.net sources:

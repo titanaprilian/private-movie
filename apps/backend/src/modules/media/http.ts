@@ -4,7 +4,16 @@ import { MVP_MEDIA_OPENAPI, type AuthenticationService } from "@repo/contracts";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import type { DbClient } from "@repo/db";
-import { AD_SUPPRESSION_SHIM, EMBED_UPSTREAM_ORIGIN, EMBED_USER_AGENT, RELAY_EMBED_REFERER, buildEmbedErrorDocument, buildServerRenderedEmbedDocument, resolveRelayReferer, sanitizeHtmlContent } from "./internal/proxy-helpers";
+import { AD_SUPPRESSION_SHIM, EMBED_UPSTREAM_ORIGIN, EMBED_USER_AGENT, RELAY_EMBED_REFERER, VIDHIDE_ANTI_CLICKJACK_CSS, buildEmbedErrorDocument, buildServerRenderedEmbedDocument, isBlockedAdAsset, resolveRelayReferer, sanitizeHtmlContent, stripKnownAdScripts } from "./internal/proxy-helpers";
+
+export const AD_BLOCK_NOOP_RESPONSE = () =>
+  new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "public, max-age=86400",
+    },
+  });
 
 export const UNTHROTTLED_MEDIA_ROUTE_PREFIXES = [
   "/embed",
@@ -149,6 +158,9 @@ export const embedRoutes = () => {
     "/player/*",
     async ({ params, set }) => {
       const wildcard = params["*"] || "";
+      if (isBlockedAdAsset(wildcard) || isBlockedAdAsset(`/player/${wildcard}`)) {
+        return AD_BLOCK_NOOP_RESPONSE();
+      }
       const targetUrl = `${EMBED_UPSTREAM_ORIGIN}/player/${wildcard}`;
       try {
         const res = await fetch(targetUrl, {
@@ -179,6 +191,9 @@ export const embedRoutes = () => {
     "/_app/*",
     async ({ params, request, set }) => {
       const wildcard = params["*"] || "";
+      if (isBlockedAdAsset(wildcard) || isBlockedAdAsset(`/_app/${wildcard}`)) {
+        return AD_BLOCK_NOOP_RESPONSE();
+      }
       const requestUrl = new URL(request.url);
       const targetUrl = `${EMBED_UPSTREAM_ORIGIN}/_app/${wildcard}${requestUrl.search}`;
       try {
@@ -393,19 +408,20 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             );
           }
           const html = await res.text();
-          let modifiedHtml = html;
+          let modifiedHtml = stripKnownAdScripts(html);
+          const embedInjections = `${VIDHIDE_ANTI_CLICKJACK_CSS}\n  ${AD_SUPPRESSION_SHIM}`;
           if (/(<head[^>]*>)/i.test(modifiedHtml)) {
             modifiedHtml = modifiedHtml.replace(
               /(<head[^>]*>)/i,
-              `$1<base href="${origin}/">\n  ${AD_SUPPRESSION_SHIM}`
+              `$1<base href="${origin}/">\n  ${embedInjections}`
             );
           } else if (/(<html[^>]*>)/i.test(modifiedHtml)) {
             modifiedHtml = modifiedHtml.replace(
               /(<html[^>]*>)/i,
-              `$1<head><base href="${origin}/">\n  ${AD_SUPPRESSION_SHIM}</head>`
+              `$1<head><base href="${origin}/">\n  ${embedInjections}</head>`
             );
           } else {
-            modifiedHtml = `<head><base href="${origin}/">\n  ${AD_SUPPRESSION_SHIM}</head>${modifiedHtml}`;
+            modifiedHtml = `<head><base href="${origin}/">\n  ${embedInjections}</head>${modifiedHtml}`;
           }
           return new Response(modifiedHtml, {
             status: 200,
@@ -441,6 +457,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           const requestUrl = new URL(request.url);
           const searchParams = requestUrl.search;
           const targetUrl = `https://${domain}/${wildcard}${searchParams}`;
+          if (isBlockedAdAsset(targetUrl) || isBlockedAdAsset(`/${wildcard}${searchParams}`)) {
+            return AD_BLOCK_NOOP_RESPONSE();
+          }
 
           // Build headers for outbound request
           const outboundHeaders: Record<string, string> = {
@@ -561,6 +580,10 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
               400,
               new Error("Invalid URL format")
             );
+          }
+
+          if (isBlockedAdAsset(query.url)) {
+            return AD_BLOCK_NOOP_RESPONSE();
           }
 
           const outboundHeaders: Record<string, string> = {

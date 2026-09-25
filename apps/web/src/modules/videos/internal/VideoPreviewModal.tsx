@@ -5,7 +5,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
-import { formatEmbedUrl } from '@/lib/media';
+import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
 import type { VideoSource } from './api';
 
 export interface VideoPreviewModalProps {
@@ -59,6 +59,7 @@ export function VideoPreviewModal({
               src={embedUrl}
               title={source.label || 'Video Source Preview'}
               className="w-full h-full border-0"
+              sandbox={getEmbedIframeSandbox(source.url)}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
               allowFullScreen
             />

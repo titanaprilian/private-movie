@@ -27,7 +27,7 @@ import {
   type WatchEpisode,
   type WatchSeriesDetails,
 } from './api';
-import { formatEmbedUrl } from '@/lib/media';
+import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
 import { useInputMode } from '@/hooks/useInputMode';
 import { useWatchNav } from './useWatchNav';
 import { useAdblockDetector } from './useAdblockDetector';
@@ -516,6 +516,7 @@ export function SeriesWatchView({
                   src={formatEmbedUrl(activeSource.url)}
                   title={activeEpisode?.title ?? 'Video player'}
                   className="relative z-10 h-full w-full"
+                  sandbox={getEmbedIframeSandbox(activeSource.url)}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   allowFullScreen
                   referrerPolicy="no-referrer"
