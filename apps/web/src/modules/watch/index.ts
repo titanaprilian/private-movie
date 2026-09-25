@@ -1,4 +1,4 @@
-export { SeriesWatchView } from './internal/SeriesWatchView';
+export { SeriesWatchView, WatchViewSkeleton, WatchViewErrorState } from './internal/SeriesWatchView';
 export type { SeriesWatchViewProps } from './internal/SeriesWatchView';
 
 export {

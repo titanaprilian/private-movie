@@ -13,14 +13,21 @@ import {
 import { toast } from 'sonner';
 import {
   AlertCircle,
-  ArrowLeft,
   ExternalLink,
   RefreshCw,
   RotateCcw,
+  Server,
   ShieldAlert,
   SkipBack,
   SkipForward,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useWatchState } from './useWatchState';
 import {
   getSeriesWithEpisodesQueryOptions,
@@ -32,6 +39,8 @@ import { useInputMode } from '@/hooks/useInputMode';
 import { useWatchNav } from './useWatchNav';
 import { useAdblockDetector } from './useAdblockDetector';
 import { SeriesHeroBanner } from './SeriesHeroBanner';
+import { WatchTopNav } from './WatchTopNav';
+import { navigateBackToCatalog } from './watchBackNav';
 import { EpisodeExplorer } from './EpisodeExplorer';
 import { formatDuration } from './formatDuration';
 
@@ -46,8 +55,9 @@ export interface SeriesWatchViewProps {
 export function WatchViewSkeleton() {
   return (
     <div
-      className="min-h-screen bg-bg text-fg font-sans animate-pulse"
+      className="dark min-h-screen bg-black text-fg font-sans animate-pulse"
       data-testid="watch-skeleton"
+      style={{ colorScheme: 'dark' }}
     >
       <div className="w-full h-[50vh] sm:h-[60vh] bg-card/60" />
       <div className="px-4 sm:px-8 md:px-12 lg:px-16 py-6 space-y-8">
@@ -78,8 +88,9 @@ export function WatchViewErrorState({
 }) {
   return (
     <div
-      className="min-h-screen bg-bg text-fg font-sans flex items-center justify-center p-4"
+      className="dark min-h-screen bg-black text-fg font-sans flex items-center justify-center p-4"
       data-testid="watch-error"
+      style={{ colorScheme: 'dark' }}
     >
       <div className="max-w-md w-full rounded-md border border-red-500/30 bg-card p-6 text-center space-y-4">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-500">
@@ -109,6 +120,20 @@ export function SeriesWatchView({
   initialSourceIndex,
 }: SeriesWatchViewProps) {
   const navigate = useNavigate();
+
+  // Referrer-safe return to the catalogue: internal visitors (Home,
+  // Genres, Search) go back through browser history so scroll position is
+  // preserved; direct external entries fall back to the home route instead
+  // of being ejected from the app.
+  const handleBackToHome = () => {
+    navigateBackToCatalog(() => {
+      if (navigate) {
+        navigate({ to: '/' });
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    });
+  };
 
   const {
     data: querySeries,
@@ -193,12 +218,9 @@ export function SeriesWatchView({
     () => state.availableEpisodes ?? [],
     [state.availableEpisodes]
   );
-  const sourcesForNav = useMemo(
-    () => state.activeEpisode?.videoSources ?? [],
-    [state.activeEpisode?.videoSources]
-  );
-  const controlsCount = 4 + sourcesForNav.length;
   const episodesCount = availableEpisodesForNav.length || 1;
+  // Toolbar: Prev, Next, Server selector, Reload, Open in new tab — fixed 5 controls
+  const controlsCount = 5;
 
   const { activeZone, focusIndex } = useWatchNav({
     controlsCount: hasSeries ? controlsCount : 2,
@@ -430,26 +452,29 @@ export function SeriesWatchView({
     : null;
 
   return (
-    <div className="min-h-screen bg-bg text-fg font-sans pb-16">
+    <div
+      className="dark min-h-screen bg-black text-fg font-sans pb-16"
+      data-testid="watch-view"
+      style={{ colorScheme: 'dark' }}
+    >
       {!selectedEpisodeId ? (
         /* ================= SERIES OVERVIEW MODE ================= */
         <div className="space-y-8">
+          {/* Hoisted sticky top navigation (shell-level, stays pinned on scroll) */}
+          <WatchTopNav
+            mode="overview"
+            onBackToCatalog={handleBackToHome}
+            isBackFocused={backFocused}
+            isSpatialMode={isSpatialMode}
+            backRef={backRef as unknown as React.Ref<HTMLButtonElement>}
+          />
           {/* Container A: Hero Banner (Full width edge-to-edge) */}
           <SeriesHeroBanner
             series={series}
             onPlay={handlePlayFirstEpisode}
-            onBack={() => {
-              if (navigate) {
-                navigate({ to: '/' });
-              } else if (typeof window !== 'undefined') {
-                window.location.href = '/';
-              }
-            }}
             isPlayDisabled={!firstPlayableEpisode}
             isSpatialMode={isSpatialMode}
             isPlayFocused={isSpatialMode && activeZone === 'controls' && focusIndex === 0}
-            isBackFocused={backFocused}
-            backRef={backRef}
             playRef={playRef}
           />
 
@@ -472,23 +497,16 @@ export function SeriesWatchView({
         </div>
       ) : (
         /* ================= PLAYER MODE ================= */
+        <div>
+          {/* Hoisted sticky top navigation (shell-level, stays pinned on scroll) */}
+          <WatchTopNav
+            mode="player"
+            onBackToOverview={handleBackToOverview}
+            isBackFocused={backFocused}
+            isSpatialMode={isSpatialMode}
+            backRef={backRef as unknown as React.Ref<HTMLButtonElement>}
+          />
         <div className="px-4 sm:px-8 md:px-12 lg:px-16 py-4 lg:py-6 space-y-6">
-          {/* Contextual navigation top bar */}
-          <div className="flex items-center justify-between">
-            <Button
-              ref={backRef as unknown as React.Ref<HTMLButtonElement>}
-              variant="ghost"
-              size="sm"
-              onClick={handleBackToOverview}
-              className={`gap-2 text-muted hover:text-fg ${
-                backFocused ? 'ring-2 ring-white' : ''
-              }`}
-              aria-label="Back to series overview"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Overview</span>
-            </Button>
-          </div>
 
           {/* Video Player Container */}
           <div
@@ -529,10 +547,10 @@ export function SeriesWatchView({
             )}
           </div>
 
-          {/* Docked Player Toolbar */}
+          {/* Docked Player Toolbar — non-wrapping single row */}
           <div
             data-testid="watch-controls"
-            className="flex flex-wrap items-center gap-2 border border-c bg-card p-3 rounded-none sm:rounded-md"
+            className="flex flex-nowrap items-center gap-2 border border-c bg-card p-3 rounded-none sm:rounded-md overflow-hidden"
           >
             <Button
               ref={(el) => {
@@ -543,11 +561,11 @@ export function SeriesWatchView({
               onClick={handleGoToPrevEpisode}
               disabled={!hasPrevEpisode}
               aria-label="Prev episode"
-              className={
+              className={`shrink-0 ${
                 isSpatialMode && activeZone === 'controls' && focusIndex === 0
                   ? 'ring-2 ring-white'
                   : ''
-              }
+              }`}
             >
               <SkipBack className="h-4 w-4" />
               Prev
@@ -562,33 +580,67 @@ export function SeriesWatchView({
               onClick={handleGoToNextEpisode}
               disabled={!hasNextEpisode}
               aria-label="Next episode"
-              className={
+              className={`shrink-0 ${
                 isSpatialMode && activeZone === 'controls' && focusIndex === 1
                   ? 'ring-2 ring-white'
                   : ''
-              }
+              }`}
             >
               Next
               <SkipForward className="h-4 w-4" />
             </Button>
 
-            <Button
-              ref={(el) => {
-                controlsRefs.current[2] = el;
-              }}
-              variant="ghost"
-              size="sm"
-              onClick={handleReloadIframe}
-              aria-label="Reload player"
-              title="Reload video player"
-              className={
-                isSpatialMode && activeZone === 'controls' && focusIndex === 2
-                  ? 'ring-2 ring-white'
-                  : ''
-              }
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
+            {/* Server selector — Radix UI Select */}
+            <div className="min-w-0 flex-1 flex justify-center">
+              <Select
+                value={String(state.activeSourceIndex)}
+                onValueChange={(v) => selectSource(Number(v))}
+              >
+                <SelectTrigger
+                  ref={(el) => {
+                    controlsRefs.current[2] = el as unknown as HTMLButtonElement;
+                  }}
+                  aria-label="Server selector"
+                  data-testid="server-selector"
+                  className={`w-full max-w-[280px] bg-bg border-c text-xs sm:text-sm h-8 sm:h-9 justify-between gap-2 ${
+                    isSpatialMode && activeZone === 'controls' && focusIndex === 2
+                      ? 'ring-2 ring-white'
+                      : ''
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <Server className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden="true" />
+                    <span className="font-medium shrink-0">Server:</span>
+                    <span className="truncate min-w-0">
+                      <SelectValue placeholder="Select server" />
+                    </span>
+                    {sources.length > 1 && (
+                      <span className="mono text-xs text-muted shrink-0">
+                        ({sources.length} available)
+                      </span>
+                    )}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {sources.map((source, index) => (
+                    <SelectItem
+                      key={source.id}
+                      value={String(index)}
+                      data-testid={`server-option-${index}`}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <span>{source.label}</span>
+                        {source.quality && (
+                          <span className="mono text-xs text-muted">
+                            · {source.quality}
+                          </span>
+                        )}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <Button
               ref={(el) => {
@@ -596,46 +648,35 @@ export function SeriesWatchView({
               }}
               variant="ghost"
               size="sm"
-              onClick={handleOpenNewTab}
-              aria-label="Open in new tab"
-              title="Open stream in new tab"
-              className={
+              onClick={handleReloadIframe}
+              aria-label="Reload player"
+              title="Reload video player"
+              className={`shrink-0 ${
                 isSpatialMode && activeZone === 'controls' && focusIndex === 3
                   ? 'ring-2 ring-white'
                   : ''
-              }
+              }`}
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+
+            <Button
+              ref={(el) => {
+                controlsRefs.current[4] = el;
+              }}
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenNewTab}
+              aria-label="Open in new tab"
+              title="Open stream in new tab"
+              className={`shrink-0 ${
+                isSpatialMode && activeZone === 'controls' && focusIndex === 4
+                  ? 'ring-2 ring-white'
+                  : ''
+              }`}
             >
               <ExternalLink className="h-4 w-4" />
             </Button>
-
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              {sources.map((source, index) => {
-                const sourceFocusIndex = 4 + index;
-                const isSourceFocused =
-                  isSpatialMode &&
-                  activeZone === 'controls' &&
-                  focusIndex === sourceFocusIndex;
-                return (
-                  <Button
-                    key={source.id}
-                    ref={(el) => {
-                      controlsRefs.current[sourceFocusIndex] = el;
-                    }}
-                    variant={
-                      state.activeSourceIndex === index
-                        ? 'default'
-                        : 'secondary'
-                    }
-                    size="sm"
-                    onClick={() => selectSource(index)}
-                    aria-label={source.label}
-                    className={isSourceFocused ? 'ring-2 ring-white' : ''}
-                  >
-                    {source.label}
-                  </Button>
-                );
-              })}
-            </div>
           </div>
 
           {/* Active Episode Overview Details */}
@@ -695,6 +736,7 @@ export function SeriesWatchView({
             activeZone={activeZone}
             focusIndex={focusIndex}
           />
+        </div>
         </div>
       )}
 

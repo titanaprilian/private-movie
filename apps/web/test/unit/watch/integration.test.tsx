@@ -251,9 +251,16 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('img', { name: 'Real DB Series Title' })).toBeInTheDocument();
+    expect(screen.getByTestId('hero-bg-mobile')).toHaveAttribute(
+      'src',
+      'https://images.unsplash.com/real-poster.jpg'
+    );
+    expect(screen.getByTestId('hero-bg-desktop')).toHaveAttribute(
+      'src',
+      'https://images.unsplash.com/real-backdrop.jpg'
+    );
     expect(screen.getByText('Real DB Series Description')).toBeInTheDocument();
-    expect(screen.getByText('★ 9.0')).toBeInTheDocument();
+    expect(screen.getByTestId('hero-rating')).toHaveTextContent('9.0');
     expect(screen.getByText('Database Episode One')).toBeInTheDocument();
     expect(screen.getByText('Database Episode Two')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Season 1' })).toBeInTheDocument();
@@ -285,7 +292,7 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('switches server mirror source when server button is clicked in player mode', async () => {
+  it('switches server mirror source via Radix dropdown in player mode', async () => {
     const mockGet = vi.fn().mockResolvedValue({
       data: { data: mockSeriesPayload },
     });
@@ -301,8 +308,10 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     });
 
     expect(getPlayer().src).toBe('https://mirror-a.com/embed1');
+    expect(screen.getByRole('combobox', { name: /server selector/i })).toHaveTextContent('(2 available)');
 
-    await user.click(screen.getByRole('button', { name: /Server Beta/i }));
+    await user.click(screen.getByRole('combobox', { name: /server selector/i }));
+    await user.click(await screen.findByRole('option', { name: /server beta/i }));
 
     expect(getPlayer().src).toBe('https://mirror-b.com/embed1');
     expect(
@@ -357,8 +366,8 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
     });
 
-    // Top back button in overview mode navigates to /
-    const overviewBackBtn = screen.getByRole('button', { name: /back to home catalogue/i });
+    // Top back button in overview mode uses referrer-safe routing (falls back to /)
+    const overviewBackBtn = screen.getByRole('button', { name: 'Back' });
     await user.click(overviewBackBtn);
 
     // Step 2: Transition into player mode via episode card click

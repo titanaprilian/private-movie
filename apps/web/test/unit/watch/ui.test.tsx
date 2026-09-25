@@ -175,12 +175,21 @@ describe('SeriesWatchView', () => {
       renderWithProviders(<SeriesWatchView series={seriesWithLogo} />);
 
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
-      // Backdrop img + Logo img present
+      // Mobile poster img + Desktop backdrop img + Logo img present
       const images = screen.getAllByRole('img', { name: 'Test Series' });
-      expect(images).toHaveLength(2);
+      expect(images).toHaveLength(3);
+      expect(screen.getByTestId('hero-bg-mobile')).toHaveAttribute(
+        'src',
+        mockSeries.posterUrl
+      );
+      expect(screen.getByTestId('hero-bg-desktop')).toHaveAttribute(
+        'src',
+        mockSeries.backdropUrl
+      );
       const logoImg = images.find((img) => img.getAttribute('src') === 'https://images.unsplash.com/logo-1.png');
       expect(logoImg).toBeInTheDocument();
-      expect(logoImg).toHaveClass('drop-shadow-lg');
+      expect(logoImg).toHaveAttribute('data-testid', 'hero-logo');
+      expect(logoImg).toHaveClass('drop-shadow-md');
       expect(logoImg).toHaveClass('max-w-[220px]');
       expect(logoImg).toHaveClass('sm:max-w-[320px]');
       expect(logoImg).toHaveClass('md:max-w-[400px]');
@@ -191,7 +200,8 @@ describe('SeriesWatchView', () => {
       // When logo is present, text title heading is omitted
       expect(screen.queryByRole('heading', { level: 1, name: 'Test Series' })).not.toBeInTheDocument();
 
-      expect(screen.getByText('★ 8.8')).toBeInTheDocument();
+      expect(screen.getByTestId('hero-rating')).toHaveTextContent('8.8');
+      expect(screen.getByTestId('hero-meta')).toHaveTextContent('2026');
       expect(screen.getByText('Action')).toBeInTheDocument();
       expect(screen.getByText('Fantasy')).toBeInTheDocument();
       expect(screen.getByText('Series description')).toBeInTheDocument();
@@ -204,11 +214,18 @@ describe('SeriesWatchView', () => {
       renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
-      // Backdrop img is present, logo img is absent, title heading fallback is rendered
+      // Mobile + desktop artwork present, logo img absent, title heading fallback rendered
       expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
       const images = screen.getAllByRole('img', { name: 'Test Series' });
-      expect(images).toHaveLength(1);
-      expect(images[0]).toHaveAttribute('src', mockSeries.backdropUrl);
+      expect(images).toHaveLength(2);
+      expect(screen.getByTestId('hero-bg-mobile')).toHaveAttribute(
+        'src',
+        mockSeries.posterUrl
+      );
+      expect(screen.getByTestId('hero-bg-desktop')).toHaveAttribute(
+        'src',
+        mockSeries.backdropUrl
+      );
     });
 
     it('gracefully renders text series title as fallback when logo fails to load (onError)', () => {
@@ -226,7 +243,16 @@ describe('SeriesWatchView', () => {
       fireEvent.error(logoImg!);
 
       expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
-      expect(screen.queryByRole('img', { name: 'Test Series' })).toHaveAttribute('src', mockSeries.backdropUrl);
+      const remaining = screen.getAllByRole('img', { name: 'Test Series' });
+      expect(remaining).toHaveLength(2);
+      expect(screen.getByTestId('hero-bg-mobile')).toHaveAttribute(
+        'src',
+        mockSeries.posterUrl
+      );
+      expect(screen.getByTestId('hero-bg-desktop')).toHaveAttribute(
+        'src',
+        mockSeries.backdropUrl
+      );
     });
 
     it('gracefully renders text series title as fallback only when hero artwork and logo are missing', () => {
@@ -455,7 +481,7 @@ describe('SeriesWatchView', () => {
       expect(screen.getByTestId('episode-grid')).toBeInTheDocument();
     });
 
-    it('switches video sources via toolbar buttons', async () => {
+    it('switches video sources via Radix server dropdown', async () => {
       const { user } = renderWithProviders(
         <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
       );
@@ -463,8 +489,37 @@ describe('SeriesWatchView', () => {
       const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
       expect(iframe).toHaveAttribute('src', '/api/media/proxy/odvidhide.com/v/sample1');
 
-      await user.click(screen.getByRole('button', { name: 'Server B' }));
+      // Toolbar stays on a clean non-wrapping single row
+      const controls = screen.getByTestId('watch-controls');
+      expect(controls.className).toMatch('flex-nowrap');
+      expect(controls.className).not.toMatch('flex-wrap');
+
+      // Trigger shows server icon, "Server:" label, current source and count
+      const trigger = screen.getByRole('combobox', { name: /server selector/i });
+      expect(trigger).toBeInTheDocument();
+      expect(trigger).toHaveTextContent('Server:');
+      expect(trigger).toHaveTextContent('Server A');
+      expect(trigger).toHaveTextContent('(2 available)');
+      expect(trigger.querySelector('svg')).toBeInTheDocument();
+
+      await user.click(trigger);
+      const option = await screen.findByRole('option', { name: /server b/i });
+      expect(option).toHaveTextContent('Server B');
+      await user.click(option);
+
       expect(iframe).toHaveAttribute('src', '/api/media/proxy/filedon.co/embed/sample2');
+      expect(screen.getByRole('combobox', { name: /server selector/i })).toHaveTextContent('Server B');
+    });
+
+    it('displays single source cleanly without count badge', () => {
+      renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-2" />
+      );
+
+      const trigger = screen.getByRole('combobox', { name: /server selector/i });
+      expect(trigger).toHaveTextContent('Server:');
+      expect(trigger).toHaveTextContent('Server A');
+      expect(trigger).not.toHaveTextContent('available');
     });
 
     it('navigates next and previous episodes with boundary disabling', async () => {
