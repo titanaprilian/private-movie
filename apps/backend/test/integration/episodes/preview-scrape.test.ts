@@ -546,15 +546,15 @@ describe("POST /preview-scrape", () => {
 
       expect(body.data.episode.videoSources).toEqual([
         {
-          type: "embed",
-          url: "https://odvidhide.com/embed/sylmpeaf3wzs",
-          label: "Server Embed",
-        },
-        {
           type: "direct",
           url: "https://archive.org/download/diri-dari-skenario-yang-telah-ia-program-sendiri.dwa/Otakudesu.io_TSTJ--01_720p.mp4",
           label: "Otakudesu.io_TSTJ--01_720p",
           quality: "720p",
+        },
+        {
+          type: "embed",
+          url: "https://odvidhide.com/embed/sylmpeaf3wzs",
+          label: "Server Embed",
         },
       ]);
       expect(body.data.warnings).toEqual([]);
