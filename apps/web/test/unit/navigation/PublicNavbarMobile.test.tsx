@@ -108,6 +108,9 @@ describe('PublicNavbar mobile', () => {
     const popover = await screen.findByTestId('search-popover');
     expect(popover).toBeInTheDocument();
     expect(popover.className).toContain('rounded-2xl');
+    expect(popover.className).toContain('w-full');
+    expect(popover.parentElement?.className).toContain('px-8');
+    expect(popover.parentElement?.className).toContain('md:px-16');
     expect(
       popover.querySelector('input[aria-label="Search series catalog"]')
     ).toBeInTheDocument();
@@ -117,5 +120,28 @@ describe('PublicNavbar mobile', () => {
       expect(screen.queryByTestId('search-popover')).not.toBeInTheDocument();
     });
     expect(screen.getByTestId('search-toggle')).toBeInTheDocument();
+  });
+
+  it('dismisses search popover when clicking outside or pressing Escape key', async () => {
+    await renderAt('/');
+
+    // 1. Open search popover
+    fireEvent.click(screen.getByTestId('search-toggle'));
+    expect(await screen.findByTestId('search-popover')).toBeInTheDocument();
+
+    // 2. Dismiss via outside pointerdown click
+    fireEvent.pointerDown(document.body);
+    await waitFor(() => {
+      expect(screen.queryByTestId('search-popover')).not.toBeInTheDocument();
+    });
+
+    // 3. Re-open and dismiss via Escape key
+    fireEvent.click(screen.getByTestId('search-toggle'));
+    expect(await screen.findByTestId('search-popover')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByTestId('search-popover')).not.toBeInTheDocument();
+    });
   });
 });

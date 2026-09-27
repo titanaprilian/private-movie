@@ -109,7 +109,18 @@ describe('PublicNavbar component', () => {
     expect(brand.className).toContain('font-display');
     expect(screen.getByText('Private')).toBeInTheDocument();
     expect(screen.getByText('Movie')).toBeInTheDocument();
-    expect(screen.getByTestId('public-navbar').className).toContain('h-[76px]');
+    const navbar = screen.getByTestId('public-navbar');
+    expect(navbar.className).toContain('h-[76px]');
+    expect(navbar.className).toContain('sticky');
+    expect(navbar.className).toContain('top-0');
+    expect(navbar.className).toContain('z-50');
+    expect(navbar.className).toContain('backdrop-blur-md');
+    expect(navbar.className).toContain('bg-[var(--bg)]/90');
+    const container = navbar.querySelector('div');
+    expect(container?.className).toContain('px-8');
+    expect(container?.className).toContain('md:px-16');
+    expect(container?.className).toContain('w-full');
+    expect(container?.className).not.toContain('max-w-7xl');
   });
 
   it('fetches genres and renders Home root link alongside sorted Big Genres', async () => {

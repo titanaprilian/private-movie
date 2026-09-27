@@ -78,25 +78,29 @@ export function Shell({ children }: ShellProps) {
     <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-sidebar border-r border-c shrink-0 transition-all duration-200 ease-in-out ${
+        className={`hidden md:flex flex-col bg-sidebar border-r border-c shrink-0 transition-[width] duration-300 ease-in-out ${
           sidebarCollapsed ? 'w-16' : 'w-60'
         }`}
       >
         {/* Sidebar Header / Logo */}
-        <div className="h-14 flex items-center gap-2 px-4 border-b border-c">
+        <div className="h-14 flex items-center gap-2 px-4 border-b border-c overflow-hidden">
           <div className="w-6 h-6 rounded border border-c bg-primary flex items-center justify-center shrink-0">
             <Film className="w-3.5 h-3.5 text-primary-fg" />
           </div>
-          {!sidebarCollapsed && (
-            <span className="font-semibold text-sm mono whitespace-nowrap">
-              Private Movie
-            </span>
-          )}
+          <span
+            className={`font-semibold text-sm mono whitespace-nowrap transition-all duration-300 ease-in-out ${
+              sidebarCollapsed
+                ? 'opacity-0 -translate-x-2 pointer-events-none max-w-0 overflow-hidden'
+                : 'opacity-100 translate-x-0 max-w-[200px]'
+            }`}
+          >
+            Private Movie
+          </span>
           <button
             onClick={toggleSidebar}
             type="button"
             aria-label="Toggle sidebar"
-            className="ml-auto text-muted hover:text-current transition-colors cursor-pointer"
+            className="ml-auto text-muted hover:text-current transition-colors cursor-pointer shrink-0"
           >
             <svg
               width="14"
@@ -105,7 +109,7 @@ export function Shell({ children }: ShellProps) {
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className={`transition-transform duration-200 ${
+              className={`transition-transform duration-300 ${
                 sidebarCollapsed ? 'rotate-180' : ''
               }`}
             >
@@ -115,7 +119,7 @@ export function Shell({ children }: ShellProps) {
         </div>
 
         {/* Navigation links */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5">
+        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-hidden">
           {navItems.map((item) => (
             <Link
               key={item.to}
@@ -123,55 +127,68 @@ export function Shell({ children }: ShellProps) {
               activeOptions={item.activeOptions}
               activeProps={{
                 className:
-                  'flex items-center gap-2.5 pl-3 pr-2 py-1.5 active-bg font-medium text-primary text-sm rounded-sm',
+                  'flex items-center gap-2.5 pl-3 pr-2 py-1.5 active-bg font-medium text-primary text-sm rounded-sm overflow-hidden',
               }}
               inactiveProps={{
                 className:
-                  'flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current',
+                  'flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current overflow-hidden',
               }}
             >
               {item.icon}
-              {!sidebarCollapsed && <span>{item.label}</span>}
+              <span
+                className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
+                  sidebarCollapsed
+                    ? 'opacity-0 -translate-x-2 pointer-events-none max-w-0 overflow-hidden'
+                    : 'opacity-100 translate-x-0 max-w-[150px]'
+                }`}
+              >
+                {item.label}
+              </span>
             </Link>
           ))}
         </nav>
 
         {/* User Profile at bottom */}
-        <div className="p-3 border-t border-c">
+        <div className="p-3 border-t border-c overflow-hidden">
           <Link
             to="/admin/profile"
-            className="flex items-center gap-3 px-2 py-2 rounded-sm hover-bg transition-colors"
+            className="flex items-center gap-3 px-2 py-2 rounded-sm hover-bg transition-colors overflow-hidden"
           >
             <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 border border-c flex items-center justify-center shrink-0">
               <User className="w-4 h-4 text-muted" aria-label="User avatar" />
             </div>
-            {!sidebarCollapsed && (
-              <div className="leading-tight overflow-hidden">
-                <div className="text-sm font-medium truncate">
-                  {user?.name ?? user?.email?.split('@')[0] ?? 'User Name'}
-                </div>
-                <div className="text-xs text-muted truncate">
-                  {user?.email ?? 'user@email.com'}
-                </div>
+            <div
+              className={`leading-tight overflow-hidden transition-all duration-300 ease-in-out ${
+                sidebarCollapsed
+                  ? 'opacity-0 -translate-x-2 pointer-events-none max-w-0'
+                  : 'opacity-100 translate-x-0 max-w-[160px]'
+              }`}
+            >
+              <div className="text-sm font-medium truncate">
+                {user?.name ?? user?.email?.split('@')[0] ?? 'User Name'}
               </div>
-            )}
+              <div className="text-xs text-muted truncate">
+                {user?.email ?? 'user@email.com'}
+              </div>
+            </div>
           </Link>
         </div>
       </aside>
 
       {/* Mobile Slide-over Overlay */}
-      {isMobileOpen && (
-        <div
-          onClick={() => setIsMobileOpen(false)}
-          data-testid="mobile-overlay"
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
-        />
-      )}
+      <div
+        onClick={() => setIsMobileOpen(false)}
+        data-testid="mobile-overlay"
+        aria-hidden="true"
+        className={`fixed inset-0 bg-black/40 z-30 md:hidden transition-opacity duration-300 ${
+          isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
 
       {/* Mobile Slide-over Sidebar */}
       <aside
         data-testid="mobile-sidebar"
-        className={`fixed z-40 top-0 left-0 h-full w-64 bg-sidebar border-r border-c transition-transform duration-300 md:hidden flex flex-col ${
+        className={`fixed z-40 top-0 left-0 h-full w-64 bg-sidebar border-r border-c transition-transform duration-300 ease-out md:hidden flex flex-col ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

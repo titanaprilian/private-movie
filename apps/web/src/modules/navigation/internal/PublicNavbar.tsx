@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from '@tanstack/react-router';
 import { genresQueryOptions } from '@/modules/genres';
@@ -65,6 +65,41 @@ export function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchToggleRef = useRef<HTMLButtonElement>(null);
+
+  // Close search on outside click / tap and on Escape key
+  useEffect(() => {
+    if (!searchOpen) return;
+
+    const handlePointerDown = (event: PointerEvent | MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+
+      const clickedInsideContainer = searchContainerRef.current?.contains(target);
+      const clickedToggle = searchToggleRef.current?.contains(target);
+
+      if (!clickedInsideContainer && !clickedToggle) {
+        setSearchOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSearchOpen(false);
+        searchToggleRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [searchOpen]);
+
   // Filter active Big Genres and sort by displayOrder asc
   const bigGenres = genres
     .filter((g) => g.isBigGenre)
@@ -96,9 +131,9 @@ export function PublicNavbar() {
     <>
       <header
         data-testid="public-navbar"
-        className="sticky top-0 z-50 h-[76px] border-b-2 border-[var(--border)] bg-[var(--bg)]"
+        className="sticky top-0 z-50 h-[76px] border-b-2 border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-md"
       >
-        <div className="max-w-7xl mx-auto px-6 md:px-12 h-full flex items-center justify-between gap-4">
+        <div className="w-full px-8 md:px-16 h-full flex items-center justify-between gap-4">
           <div className="flex items-center gap-6 sm:gap-8 min-w-0">
             <SafeLink
               to="/"
@@ -139,6 +174,7 @@ export function PublicNavbar() {
           <div className="flex items-center gap-2 shrink-0">
             {/* Unified circular search toggle (desktop + mobile) */}
             <button
+              ref={searchToggleRef}
               type="button"
               aria-label={searchOpen ? 'Close search' : 'Open search'}
               aria-expanded={searchOpen}
@@ -208,12 +244,12 @@ export function PublicNavbar() {
 
         {/* Search popover dialog card */}
         {searchOpen && (
-          <div className="absolute top-[76px] left-0 right-0 z-50 px-4">
+          <div ref={searchContainerRef} className="absolute top-[76px] left-0 right-0 z-50 px-8 md:px-16">
             <div
               role="dialog"
               aria-label="Catalog search"
               data-testid="search-popover"
-              className="max-w-7xl mx-auto rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-4 shadow-2xl"
+              className="w-full rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-4 shadow-2xl"
             >
               <CatalogSearch
                 genre={currentGenreSlug}

@@ -444,7 +444,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans">
+      <div className="min-h-screen bg-black text-white overflow-x-clip font-sans">
         <PublicNavbar />
         <HomeFeedHeroSkeleton />
         <div className="relative z-30 pb-20 -mt-10 space-y-4">
@@ -458,7 +458,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans">
+      <div className="min-h-screen bg-black text-white overflow-x-clip font-sans">
         <PublicNavbar />
         <HomeFeedErrorState onRetry={() => refetch()} />
       </div>
@@ -466,7 +466,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen bg-black text-white overflow-x-clip font-sans selection:bg-red-600 selection:text-white">
       <PublicNavbar />
       {/* Hero Banner / Slider Section */}
       {currentHero ? (

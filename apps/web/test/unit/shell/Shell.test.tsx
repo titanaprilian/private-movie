@@ -140,15 +140,18 @@ describe('Shell layout component', () => {
 
     const toggleBtn = screen.getByRole('button', { name: /toggle sidebar/i });
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
-    expect(screen.getAllByText('Private Movie').length).toBe(2);
+    const desktopTitle = screen.getAllByText('Private Movie')[0];
+    expect(desktopTitle.className).toContain('opacity-100');
+    expect(desktopTitle.className).not.toContain('opacity-0');
 
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(true);
-    expect(screen.getAllByText('Private Movie').length).toBe(1);
+    expect(desktopTitle.className).toContain('opacity-0');
+    expect(desktopTitle.className).toContain('pointer-events-none');
 
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
-    expect(screen.getAllByText('Private Movie').length).toBe(2);
+    expect(desktopTitle.className).toContain('opacity-100');
   });
 
   it('renders anonymous user profile avatar in the sidebar and omits external pravatar placeholder', () => {
@@ -190,16 +193,26 @@ describe('Shell layout component', () => {
       </Shell>
     );
 
+    const overlay = screen.getByTestId('mobile-overlay');
+    expect(overlay.className).toContain('opacity-0');
+    expect(overlay.className).toContain('pointer-events-none');
+    const mobileSidebar = screen.getByTestId('mobile-sidebar');
+    expect(mobileSidebar.className).toContain('-translate-x-full');
+    expect(mobileSidebar.className).toContain('transition-transform');
+    expect(mobileSidebar.className).toContain('duration-300');
+
     const openMenuBtn = screen.getByRole('button', { name: /open menu/i });
     await user.click(openMenuBtn);
 
     const closeMenuBtn = screen.getByRole('button', { name: /close menu/i });
     expect(closeMenuBtn).toBeInTheDocument();
-
-    const overlay = screen.getByTestId('mobile-overlay');
-    expect(overlay).toBeInTheDocument();
+    expect(overlay.className).toContain('opacity-100');
+    expect(overlay.className).toContain('pointer-events-auto');
+    expect(mobileSidebar.className).toContain('translate-x-0');
 
     await user.click(overlay);
-    expect(screen.queryByTestId('mobile-overlay')).not.toBeInTheDocument();
+    expect(overlay.className).toContain('opacity-0');
+    expect(overlay.className).toContain('pointer-events-none');
+    expect(mobileSidebar.className).toContain('-translate-x-full');
   });
 });
