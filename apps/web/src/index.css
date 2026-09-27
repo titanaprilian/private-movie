@@ -16,8 +16,10 @@
   /* Duolingo Brand Palette & Depressed Shadows */
   --green: #58cc02;
   --green-dark: #46a302;
+  --green-soft: rgba(88, 204, 2, 0.15);
   --blue: #1cb0f6;
   --blue-dark: #1899d6;
+  --blue-soft: rgba(28, 176, 246, 0.15);
   --purple: #ce82ff;
   --purple-dark: #a568cc;
   --yellow: #ffc800;
@@ -65,8 +67,10 @@
   /* Duolingo Brand Palette */
   --green: #58cc02;
   --green-dark: #46a302;
+  --green-soft: rgba(88, 204, 2, 0.15);
   --blue: #1cb0f6;
   --blue-dark: #1899d6;
+  --blue-soft: rgba(28, 176, 246, 0.15);
   --purple: #ce82ff;
   --purple-dark: #a568cc;
   --yellow: #ffc800;

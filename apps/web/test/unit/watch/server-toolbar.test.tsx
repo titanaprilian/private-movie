@@ -75,36 +75,57 @@ describe('Watch player toolbar Radix server selector', () => {
     renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
     const controls = screen.getByTestId('watch-controls');
     expect(controls).toBeInTheDocument();
+    expect(controls).toHaveClass('flex-wrap', 'min-[820px]:flex-nowrap');
 
     const playbackGroup = screen.getByTestId('controls-playback-group');
     expect(playbackGroup).toBeInTheDocument();
+    expect(playbackGroup).toHaveClass('order-1');
     expect(playbackGroup).toContainElement(screen.getByRole('button', { name: /prev episode/i }));
     expect(playbackGroup).toContainElement(screen.getByRole('button', { name: /next episode/i }));
 
     const serverGroup = screen.getByTestId('controls-server-group');
     expect(serverGroup).toBeInTheDocument();
+    expect(serverGroup).toHaveClass('order-3', 'w-full', 'min-[820px]:order-2');
     expect(serverGroup).toContainElement(screen.getByRole('combobox', { name: /server selector/i }));
 
     const utilityGroup = screen.getByTestId('controls-utility-group');
     expect(utilityGroup).toBeInTheDocument();
+    expect(utilityGroup).toHaveClass('order-2', 'min-[820px]:order-3');
     expect(utilityGroup).toContainElement(screen.getByRole('button', { name: /reload player/i }));
     expect(utilityGroup).toContainElement(screen.getByRole('button', { name: /open in new tab/i }));
-
     // Utility buttons have visible text labels
     expect(screen.getByText('Reload')).toBeInTheDocument();
     expect(screen.getByText('Open Tab')).toBeInTheDocument();
   });
 
-  it('renders Radix Select trigger with server icon, Server: label, current label and count', () => {
+  it('renders Radix Select trigger with server status dot, current label and count', () => {
     renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
     const trigger = screen.getByRole('combobox', { name: /server selector/i });
     expect(trigger).toBeInTheDocument();
     expect(trigger).toHaveAttribute('data-testid', 'server-selector');
-    expect(trigger).toHaveTextContent('Server:');
     expect(trigger).toHaveTextContent('Server A');
     expect(trigger).toHaveTextContent('(5 available)');
-    // server icon
+    // server status dot and chevron
+    expect(screen.getByTestId('server-status-dot')).toBeInTheDocument();
     expect(trigger.querySelector('svg')).toBeInTheDocument();
+  });
+
+  it('renders Duolingo styling attributes and classes for toolbar elements', () => {
+    renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
+    const playbackGroup = screen.getByTestId('controls-playback-group');
+    expect(playbackGroup).toHaveClass('rounded-full');
+
+    const prevBtn = screen.getByRole('button', { name: /prev episode/i });
+    expect(prevBtn).toHaveClass('rounded-full', 'font-display');
+
+    const reloadBtn = screen.getByRole('button', { name: /reload player/i });
+    expect(reloadBtn).toHaveClass('rounded-full', 'font-display');
+
+    const openTabBtn = screen.getByRole('button', { name: /open in new tab/i });
+    expect(openTabBtn).toHaveClass('rounded-full', 'font-display', 'bg-[var(--blue)]');
+
+    const trigger = screen.getByRole('combobox', { name: /server selector/i });
+    expect(trigger).toHaveClass('rounded-full', 'font-display');
   });
 
   it('switches source via dropdown and updates iframe src', async () => {

@@ -1,5 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronLeft } from 'lucide-react';
 
 export type WatchTopNavMode = 'overview' | 'player';
 
@@ -33,19 +32,18 @@ export function WatchTopNav({
       className="sticky top-0 z-50 px-4 sm:px-8 md:px-12 lg:px-16 py-3 bg-black/60 backdrop-blur-md border-b border-white/10"
     >
       {onClick && (
-        <Button
+        <button
           ref={backRef}
-          variant="ghost"
-          size="sm"
+          type="button"
           onClick={onClick}
           aria-label={ariaLabel}
-          className={`gap-2 rounded-2xl bg-black/50 backdrop-blur-md border-2 border-white/20 text-white font-extrabold shadow-[0_4px_0_rgba(0,0,0,0.35)] active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.35)] hover:bg-black/80 hover:text-white transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-2 rounded-full bg-[var(--surface)] border-2 border-[#58cc02]/60 text-[var(--ink)] hover:border-[#58cc02] font-sans font-bold text-sm px-3.5 py-2 shadow-[0_3px_0_#46a302] active:translate-y-[2px] active:shadow-[0_1px_0_#46a302] transition-all cursor-pointer ${
             isSpatialMode && isBackFocused ? 'ring-2 ring-white' : ''
           }`}
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          <ChevronLeft className="h-4.5 w-4.5 stroke-[2.5]" aria-hidden="true" />
           <span>{label}</span>
-        </Button>
+        </button>
       )}
     </div>
   );

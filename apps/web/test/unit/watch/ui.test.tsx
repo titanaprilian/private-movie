@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, within } from '@testing-library/react';
 import { renderWithProviders } from '../../utils';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -302,13 +302,13 @@ describe('SeriesWatchView', () => {
       expect(epBadge.className).toMatch(/bg-\[var\(--green\)\]/);
     });
 
-    it('styles the top back navigation button with Duolingo 3D press physics', () => {
+    it('styles the top back navigation button with Duolingo 3D press physics and greenish border', () => {
       renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
       const back = screen.getByRole('button', { name: 'Back' });
-      expect(back).toHaveClass('rounded-2xl');
-      expect(back.className).toMatch(/active:translate-y-1/);
-      expect(back.className).toMatch(/shadow-\[0_4px_0/);
+      expect(back).toHaveClass('rounded-full', 'border-[#58cc02]/60');
+      expect(back.className).toMatch(/active:translate-y-\[2px\]/);
+      expect(back.className).toMatch(/shadow-\[0_3px_0/);
     });
 
     it('uses horizontal tabs for series with 2 to 4 seasons and switches episodes', async () => {
@@ -487,7 +487,7 @@ describe('SeriesWatchView', () => {
   });
 
   describe('Player Mode (when ep is selected)', () => {
-    it('mounts the specified episode and renders player, controls, active episode overview, and episode grid', () => {
+    it('mounts the specified episode and renders player, controls, active episode overview, and episode list', () => {
       renderWithProviders(
         <SeriesWatchView series={mockSeries} initialEpisodeId="ep-2" />
       );
@@ -503,8 +503,79 @@ describe('SeriesWatchView', () => {
 
       expect(screen.getByTestId('watch-controls')).toBeInTheDocument();
       expect(screen.getByTestId('active-episode-overview')).toBeInTheDocument();
-      expect(screen.getByText('EP 2 — Episode Two')).toBeInTheDocument();
-      expect(screen.getByTestId('episode-grid')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: /ep 2 — episode two/i })).toBeInTheDocument();
+      expect(screen.getByTestId('episode-list')).toBeInTheDocument();
+    });
+
+    it('renders Duolingo meta-card styling with interactive series tag pill, badges, and fallback description', async () => {
+      const { user } = renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      const metaCard = screen.getByTestId('active-episode-overview');
+      expect(metaCard).toHaveClass('rounded-[20px]', 'border-2');
+
+      // Interactive series tag pill with green accent and background
+      const seriesTag = screen.getByTestId('series-tag-pill');
+      expect(seriesTag).toHaveTextContent('Test Series');
+      expect(seriesTag).toHaveClass('rounded-full', 'font-display', 'text-[#58cc02]', 'bg-[#58cc02]/15');
+      const heading = screen.getByRole('heading', { level: 2, name: /ep 1 — episode one/i });
+      expect(heading).toHaveClass('font-display');
+
+      // Metadata badge row
+      expect(screen.getByTestId('meta-season-badge')).toHaveTextContent('Season 1');
+      expect(screen.getByTestId('meta-duration-badge')).toHaveTextContent('24m');
+      expect(screen.getByTestId('meta-duration-badge')).toHaveClass('bg-[var(--yellow)]/15', 'text-[var(--yellow)]');
+
+      // Description in metaCard
+      expect(within(metaCard).getByText('First episode description')).toBeInTheDocument();
+
+      // Click series tag pill to navigate back to series overview
+      await user.click(seriesTag);
+      expect(screen.queryByTestId('active-episode-overview')).not.toBeInTheDocument();
+      expect(screen.getByTestId('hero-artwork')).toBeInTheDocument();
+    });
+
+    it('renders vertical episode list in Player Mode with index numbers, thumbnails, titles, and descriptions', () => {
+      renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      expect(screen.getByTestId('episode-list')).toBeInTheDocument();
+      expect(screen.queryByTestId('episode-grid')).not.toBeInTheDocument();
+
+      const ep1Row = screen.getByTestId('episode-row-ep-1');
+      expect(ep1Row).toHaveClass('rounded-[16px]', 'border-2');
+      expect(ep1Row.className).toMatch(/hover:-translate-y-0.5/);
+
+      expect(within(ep1Row).getByTestId('episode-row-index')).toHaveTextContent('01');
+      expect(within(ep1Row).getByTestId('episode-row-duration')).toHaveTextContent('24m');
+      expect(within(ep1Row).getByText('Episode One')).toBeInTheDocument();
+      expect(within(ep1Row).getByText('First episode description')).toBeInTheDocument();
+      expect(within(ep1Row).getByTestId('episode-row-active-check')).toBeInTheDocument();
+
+      const ep2Row = screen.getByTestId('episode-row-ep-2');
+      expect(within(ep2Row).getByTestId('episode-row-index')).toHaveTextContent('02');
+      expect(within(ep2Row).getByTestId('episode-row-duration')).toHaveTextContent('22m');
+      expect(within(ep2Row).getByText('Episode Two')).toBeInTheDocument();
+      expect(within(ep2Row).getByText('Second episode description')).toBeInTheDocument();
+      expect(within(ep2Row).queryByTestId('episode-row-active-check')).not.toBeInTheDocument();
+    });
+
+    it('switches the active episode immediately when clicking an episode row in Player Mode', async () => {
+      const { user } = renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      const ep2Row = screen.getByTestId('episode-row-ep-2');
+      await user.click(ep2Row);
+
+      const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
+      expect(iframe.src).toBe('https://embed.com/3');
+      expect(screen.getByRole('heading', { level: 2, name: /ep 2 — episode two/i })).toBeInTheDocument();
+
+      expect(within(screen.getByTestId('episode-row-ep-2')).getByTestId('episode-row-active-check')).toBeInTheDocument();
+      expect(within(screen.getByTestId('episode-row-ep-1')).queryByTestId('episode-row-active-check')).not.toBeInTheDocument();
     });
 
     it('switches video sources via Radix server dropdown', async () => {
@@ -520,14 +591,13 @@ describe('SeriesWatchView', () => {
       expect(screen.getByTestId('controls-server-group')).toBeInTheDocument();
       expect(screen.getByTestId('controls-utility-group')).toBeInTheDocument();
 
-      // Trigger shows server icon, "Server:" label, current source and count
+      // Trigger shows server status dot, current source and count
       const trigger = screen.getByRole('combobox', { name: /server selector/i });
       expect(trigger).toBeInTheDocument();
-      expect(trigger).toHaveTextContent('Server:');
       expect(trigger).toHaveTextContent('Server A');
       expect(trigger).toHaveTextContent('(2 available)');
+      expect(screen.getByTestId('server-status-dot')).toBeInTheDocument();
       expect(trigger.querySelector('svg')).toBeInTheDocument();
-
       await user.click(trigger);
       const option = await screen.findByRole('option', { name: /server b/i });
       expect(option).toHaveTextContent('Server B');
@@ -543,7 +613,6 @@ describe('SeriesWatchView', () => {
       );
 
       const trigger = screen.getByRole('combobox', { name: /server selector/i });
-      expect(trigger).toHaveTextContent('Server:');
       expect(trigger).toHaveTextContent('Server A');
       expect(trigger).not.toHaveTextContent('available');
     });
@@ -571,12 +640,14 @@ describe('SeriesWatchView', () => {
       expect(screen.getByRole('button', { name: /prev/i })).toBeDisabled();
     });
 
-    it('highlights active episode with "Now Playing" badge and sets poster background', () => {
+    it('highlights active episode with active border and green checkmark badge, and sets poster background', () => {
       renderWithProviders(
         <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
       );
 
-      expect(screen.getByText(/now playing/i)).toBeInTheDocument();
+      expect(screen.getByTestId('episode-row-active-check')).toBeInTheDocument();
+      const activeRow = screen.getByTestId('episode-row-ep-1');
+      expect(activeRow).toHaveClass('border-[var(--green)]');
 
       const playerContainer = screen.getByTestId('watch-player-container');
       const playerFrame = playerContainer.firstElementChild;
@@ -585,18 +656,41 @@ describe('SeriesWatchView', () => {
       });
     });
 
-    it('returns to overview when clicking "Back to Overview"', async () => {
-      const { user } = renderWithProviders(
-        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+    it('renders custom VideoPlayer for direct sources and iframe for embeds within rounded 2px shell', () => {
+      const seriesWithMixedSources: WatchSeriesDetails = {
+        ...mockSeries,
+        seasons: [
+          {
+            ...mockSeries.seasons![0]!,
+            episodes: [
+              {
+                ...mockSeries.seasons![0]!.episodes![0]!,
+                id: 'ep-direct',
+                videoSources: [
+                  {
+                    id: 'src-direct',
+                    episodeId: 'ep-direct',
+                    type: 'direct',
+                    url: 'https://example.com/stream.mp4',
+                    label: 'Direct Stream',
+                    quality: '1080p',
+                    createdAt: '2026-01-01T00:00:00.000Z',
+                    updatedAt: '2026-01-01T00:00:00.000Z',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      renderWithProviders(
+        <SeriesWatchView series={seriesWithMixedSources} initialEpisodeId="ep-direct" />
       );
 
-      expect(screen.getByTestId('watch-player')).toBeInTheDocument();
-
-      const backToOverviewBtn = screen.getByRole('button', { name: /back to series overview/i });
-      await user.click(backToOverviewBtn);
-
+      expect(screen.getByTestId('custom-video-element')).toBeInTheDocument();
+      expect(screen.getByTestId('video-control-bar')).toBeInTheDocument();
       expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
-      expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
     });
 
     it('falls back to Series Overview mode when direct link references an unplayable episode (0 video sources)', () => {

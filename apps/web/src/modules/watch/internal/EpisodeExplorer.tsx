@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { EpisodeCard } from './EpisodeCard';
+import { EpisodeRow } from './EpisodeRow';
 import type { WatchEpisode, WatchSeason, WatchSeriesDetails } from './api';
 
 export interface EpisodeExplorerProps {
@@ -22,6 +23,7 @@ export interface EpisodeExplorerProps {
   isSpatialMode?: boolean;
   activeZone?: string;
   focusIndex?: number;
+  layoutMode?: 'grid' | 'list';
 }
 
 export function EpisodeExplorer({
@@ -36,6 +38,7 @@ export function EpisodeExplorer({
   isSpatialMode,
   activeZone,
   focusIndex,
+  layoutMode = 'grid',
 }: EpisodeExplorerProps) {
   const seasonCount = seasons.length;
   const activeCardRefMap = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -120,46 +123,88 @@ export function EpisodeExplorer({
         {renderSeasonSwitcher()}
       </div>
 
-      {/* Responsive Episode Card Grid */}
+      {/* Responsive Episode Grid (Overview Mode) or Vertical Episode List (Player Mode) */}
       {episodes.length > 0 ? (
-        <div
-          data-testid="episode-grid"
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-        >
-          {episodes.map((episode, idx) => {
-            const isNowPlaying = episode.id === activeEpisodeId;
-            const isFocused =
-              isSpatialMode &&
-              activeZone === 'episodes' &&
-              focusIndex === idx;
+        layoutMode === 'list' ? (
+          <div
+            data-testid="episode-list"
+            className="flex flex-col gap-2.5"
+          >
+            {episodes.map((episode, idx) => {
+              const isNowPlaying = episode.id === activeEpisodeId;
+              const isFocused =
+                isSpatialMode &&
+                activeZone === 'episodes' &&
+                focusIndex === idx;
 
-            return (
-              <div
-                key={episode.id}
-                data-episode-id={episode.id}
-                data-testid={`episode-card-${episode.id}`}
-                ref={(el) => {
-                  if (el) {
-                    activeCardRefMap.current.set(episode.id, el);
-                  } else {
-                    activeCardRefMap.current.delete(episode.id);
-                  }
-                  if (episodeRefs && episodeRefs.current) {
-                    episodeRefs.current[idx] = el?.querySelector('button') ?? null;
-                  }
-                }}
-              >
-                <EpisodeCard
-                  episode={episode}
-                  series={series}
-                  onSelect={onSelectEpisode}
-                  isNowPlaying={isNowPlaying}
-                  isFocused={isFocused}
-                />
-              </div>
-            );
-          })}
-        </div>
+              return (
+                <div
+                  key={episode.id}
+                  data-episode-id={episode.id}
+                  data-testid={`episode-card-${episode.id}`}
+                  ref={(el) => {
+                    if (el) {
+                      activeCardRefMap.current.set(episode.id, el);
+                    } else {
+                      activeCardRefMap.current.delete(episode.id);
+                    }
+                    if (episodeRefs && episodeRefs.current) {
+                      episodeRefs.current[idx] = el?.querySelector('button') ?? null;
+                    }
+                  }}
+                >
+                  <EpisodeRow
+                    episode={episode}
+                    index={idx}
+                    series={series}
+                    onSelect={onSelectEpisode}
+                    isNowPlaying={isNowPlaying}
+                    isFocused={isFocused}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            data-testid="episode-grid"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          >
+            {episodes.map((episode, idx) => {
+              const isNowPlaying = episode.id === activeEpisodeId;
+              const isFocused =
+                isSpatialMode &&
+                activeZone === 'episodes' &&
+                focusIndex === idx;
+
+              return (
+                <div
+                  key={episode.id}
+                  data-episode-id={episode.id}
+                  data-testid={`episode-card-${episode.id}`}
+                  ref={(el) => {
+                    if (el) {
+                      activeCardRefMap.current.set(episode.id, el);
+                    } else {
+                      activeCardRefMap.current.delete(episode.id);
+                    }
+                    if (episodeRefs && episodeRefs.current) {
+                      episodeRefs.current[idx] = el?.querySelector('button') ?? null;
+                    }
+                  }}
+                >
+                  <EpisodeCard
+                    episode={episode}
+                    series={series}
+                    onSelect={onSelectEpisode}
+                    isNowPlaying={isNowPlaying}
+                    isFocused={isFocused}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )
       ) : (
         <div className="flex h-36 items-center justify-center rounded-md border border-dashed border-c bg-card/40 p-6 text-center text-muted text-sm">
           No episodes available for this season.

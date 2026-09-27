@@ -13,19 +13,19 @@ import {
 import { toast } from 'sonner';
 import {
   AlertCircle,
+  ChevronDown,
   ExternalLink,
   RefreshCw,
   RotateCcw,
-  Server,
   ShieldAlert,
   SkipBack,
   SkipForward,
 } from 'lucide-react';
+import * as SelectPrimitive from '@radix-ui/react-select';
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
 import { useWatchState } from './useWatchState';
@@ -35,6 +35,7 @@ import {
   type WatchSeriesDetails,
 } from './api';
 import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
+import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { useInputMode } from '@/hooks/useInputMode';
 import { useWatchNav } from './useWatchNav';
 import { useAdblockDetector } from './useAdblockDetector';
@@ -514,194 +515,155 @@ export function SeriesWatchView({
             className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-black"
           >
             {activeSource ? (
-              <div
-                className={`relative aspect-video w-full overflow-hidden rounded-none sm:rounded-md border-y sm:border border-c bg-black ${
-                  playerFocused ? 'ring-2 ring-white' : ''
-                }`}
-                style={{
-                  backgroundImage: activeEpisode?.thumbnailUrl
-                    ? `url(${activeEpisode.thumbnailUrl})`
-                    : series.backdropUrl
-                      ? `url(${series.backdropUrl})`
-                      : undefined,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              >
-                <iframe
-                  ref={iframeRef}
-                  data-testid="watch-player"
-                  src={formatEmbedUrl(activeSource.url)}
-                  title={activeEpisode?.title ?? 'Video player'}
-                  className="relative z-10 h-full w-full"
-                  sandbox={getEmbedIframeSandbox(activeSource.url)}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowFullScreen
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+              activeSource.type === 'embed' ? (
+                <div
+                  className={`relative aspect-video w-full overflow-hidden rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-black ${
+                    playerFocused ? 'ring-2 ring-white' : ''
+                  }`}
+                  style={{
+                    backgroundImage: activeEpisode?.thumbnailUrl
+                      ? `url(${activeEpisode.thumbnailUrl})`
+                      : series.backdropUrl
+                        ? `url(${series.backdropUrl})`
+                        : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                >
+                  <iframe
+                    ref={iframeRef}
+                    data-testid="watch-player"
+                    src={formatEmbedUrl(activeSource.url)}
+                    title={activeEpisode?.title ?? 'Video player'}
+                    className="relative z-10 h-full w-full"
+                    sandbox={getEmbedIframeSandbox(activeSource.url)}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                    allowFullScreen
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              ) : (
+                <div
+                  className={playerFocused ? 'ring-2 ring-white rounded-2xl sm:rounded-[20px]' : ''}
+                >
+                  <VideoPlayer
+                    src={activeSource.url}
+                    title={activeEpisode?.title}
+                    autoPlay
+                    onNextEpisode={hasNextEpisode ? handleGoToNextEpisode : undefined}
+                    hasNextEpisode={hasNextEpisode}
+                  />
+                </div>
+              )
             ) : (
-              <div className="flex aspect-video w-full items-center justify-center rounded-none sm:rounded-md border-y sm:border border-c bg-card text-muted">
+              <div className="flex aspect-video w-full items-center justify-center rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-card text-muted">
                 No video source available
               </div>
             )}
           </div>
 
-          {/* Docked Player Toolbar — Semantic Grouping & Responsive Reflow */}
+          {/* Docked Player Toolbar — Semantic Grouping & Responsive Reflow (Duolingo Nav Row) */}
           <div
             data-testid="watch-controls"
-            className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 border border-zinc-800 bg-zinc-950/80 backdrop-blur-md p-2.5 sm:p-3 rounded-none sm:rounded-md"
+            className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 min-[820px]:flex-nowrap"
           >
-            {/* Top row on mobile / outer layout on desktop */}
-            <div className="flex items-center justify-between gap-2 md:contents">
-              {/* Group 1: Playback Controls (Prev / Next) */}
-              <div
-                data-testid="controls-playback-group"
-                className="flex items-center rounded-lg bg-zinc-900/90 p-1 border border-zinc-800 gap-1 shrink-0"
+            {/* Group 1: Playback Controls (Prev / Next segmented pill group) */}
+            <div
+              data-testid="controls-playback-group"
+              className="inline-flex bg-[var(--surface)] border-2 border-[var(--border)] rounded-full p-0.5 sm:p-1 gap-0.5 sm:gap-1 order-1 shrink-0 max-[360px]:w-full max-[360px]:justify-center"
+            >
+              <button
+                type="button"
+                ref={(el) => {
+                  controlsRefs.current[0] = el;
+                }}
+                onClick={handleGoToPrevEpisode}
+                disabled={!hasPrevEpisode}
+                aria-label="Prev episode"
+                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full font-display font-bold text-xs sm:text-sm transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ${
+                  isSpatialMode && activeZone === 'controls' && focusIndex === 0
+                    ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
+                    : 'text-[var(--ink)] hover:bg-white/10 dark:hover:bg-white/10'
+                }`}
               >
-                <Button
-                  ref={(el) => {
-                    controlsRefs.current[0] = el;
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGoToPrevEpisode}
-                  disabled={!hasPrevEpisode}
-                  aria-label="Prev episode"
-                  className={`gap-1.5 h-8 px-2.5 sm:px-3 text-xs sm:text-sm shrink-0 font-medium ${
-                    isSpatialMode && activeZone === 'controls' && focusIndex === 0
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
-                      : 'text-zinc-200 hover:text-white hover:bg-zinc-800/80 transition-all duration-150'
-                  }`}
-                >
-                  <SkipBack className="h-3.5 w-3.5" />
-                  <span>Prev</span>
-                </Button>
+                <SkipBack className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span>Prev</span>
+              </button>
 
-                <Button
-                  ref={(el) => {
-                    controlsRefs.current[1] = el;
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGoToNextEpisode}
-                  disabled={!hasNextEpisode}
-                  aria-label="Next episode"
-                  className={`gap-1.5 h-8 px-2.5 sm:px-3 text-xs sm:text-sm shrink-0 font-medium ${
-                    isSpatialMode && activeZone === 'controls' && focusIndex === 1
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
-                      : 'text-zinc-200 hover:text-white hover:bg-zinc-800/80 transition-all duration-150'
-                  }`}
-                >
-                  <span>Next</span>
-                  <SkipForward className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-
-              {/* Group 3: Utility Actions (Reload / Open in Tab) - floated right on mobile, order-3 on desktop */}
-              <div
-                data-testid="controls-utility-group"
-                className="flex items-center rounded-lg bg-zinc-900/90 p-1 border border-zinc-800 gap-1 shrink-0 md:order-3"
+              <button
+                type="button"
+                ref={(el) => {
+                  controlsRefs.current[1] = el;
+                }}
+                onClick={handleGoToNextEpisode}
+                disabled={!hasNextEpisode}
+                aria-label="Next episode"
+                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full font-display font-bold text-xs sm:text-sm transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ${
+                  isSpatialMode && activeZone === 'controls' && focusIndex === 1
+                    ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
+                    : 'text-[var(--ink)] hover:bg-white/10 dark:hover:bg-white/10'
+                }`}
               >
-                <Button
-                  ref={(el) => {
-                    controlsRefs.current[3] = el;
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleReloadIframe}
-                  aria-label="Reload player"
-                  title="Reload video player"
-                  className={`gap-1.5 h-8 px-2.5 sm:px-3 text-xs sm:text-sm shrink-0 font-medium ${
-                    isSpatialMode && activeZone === 'controls' && focusIndex === 3
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
-                      : 'text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all duration-150'
-                  }`}
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Reload</span>
-                </Button>
-
-                <Button
-                  ref={(el) => {
-                    controlsRefs.current[4] = el;
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleOpenNewTab}
-                  aria-label="Open in new tab"
-                  title="Open stream in new tab"
-                  className={`gap-1.5 h-8 px-2.5 sm:px-3 text-xs sm:text-sm shrink-0 font-medium ${
-                    isSpatialMode && activeZone === 'controls' && focusIndex === 4
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
-                      : 'text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all duration-150'
-                  }`}
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  <span>Open Tab</span>
-                </Button>
-              </div>
+                <span>Next</span>
+                <SkipForward className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              </button>
             </div>
 
-            {/* Group 2: Stream Configuration / Server Selector (Full-width on mobile, centered flex-1 on desktop) */}
+            {/* Group 2: Stream Configuration / Server Selector Chip */}
             <div
               data-testid="controls-server-group"
-              className="w-full md:w-auto md:flex-1 md:max-w-md flex justify-center md:order-2"
+              className="order-3 w-full flex justify-center pt-0.5 min-[820px]:pt-0 min-[820px]:order-2 min-[820px]:w-auto min-[820px]:flex-1"
             >
               <Select
                 value={String(state.activeSourceIndex)}
                 onValueChange={(v) => selectSource(Number(v))}
               >
-                <SelectTrigger
+                <SelectPrimitive.Trigger
                   ref={(el) => {
                     controlsRefs.current[2] = el as unknown as HTMLButtonElement;
                   }}
                   aria-label="Server selector"
                   data-testid="server-selector"
-                  className={`w-full bg-zinc-900/90 border-zinc-800 text-xs sm:text-sm h-9 px-3 justify-between gap-2 rounded-lg ${
+                  className={`inline-flex items-center justify-between gap-2.5 bg-[var(--surface)] border-2 border-[var(--border)] rounded-full font-display px-3.5 py-1.5 sm:px-4 sm:py-2 text-[var(--ink)] hover:border-[var(--border-strong)] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--blue)] w-60 sm:w-64 shrink-0 shadow-sm ${
                     isSpatialMode && activeZone === 'controls' && focusIndex === 2
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-[1.02] bg-white text-black font-semibold shadow-xl z-10 transition-all duration-150'
-                      : 'text-zinc-200 hover:bg-zinc-800/80 transition-all duration-150'
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-[1.02] bg-white text-black font-semibold shadow-xl z-10'
+                      : ''
                   }`}
                 >
-                  <span className="inline-flex items-center gap-2 min-w-0">
-                    <Server
-                      className={`h-3.5 w-3.5 shrink-0 ${
-                        isSpatialMode && activeZone === 'controls' && focusIndex === 2
-                          ? 'text-black'
-                          : 'text-zinc-400'
-                      }`}
-                      aria-hidden="true"
+                  <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                    <span
+                      className="w-2 h-2 rounded-full bg-[#58cc02] shrink-0 shadow-[0_0_0_3px_rgba(88,204,2,0.25)]"
+                      data-testid="server-status-dot"
                     />
-                    <span className="font-semibold shrink-0">Server:</span>
-                    <span className="truncate min-w-0">
+                    <span className="font-display font-bold text-sm text-[var(--ink)] truncate leading-none">
                       <SelectValue placeholder="Select server" />
                     </span>
-                  </span>
-                  {sources.length > 1 && (
-                    <span
-                      className={`mono text-[11px] px-1.5 py-0.5 rounded shrink-0 ${
-                        isSpatialMode && activeZone === 'controls' && focusIndex === 2
-                          ? 'bg-zinc-200 text-black font-semibold'
-                          : 'bg-zinc-800 text-zinc-300 border border-zinc-700/60'
-                      }`}
-                    >
-                      ({sources.length} available)
-                    </span>
-                  )}
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {sources.length > 1 && (
+                      <span className="font-sans font-bold text-[11px] text-[var(--muted)] bg-white/10 dark:bg-white/10 px-2 py-0.5 rounded-full shrink-0 leading-none">
+                        ({sources.length} available)
+                      </span>
+                    )}
+                    <SelectPrimitive.Icon asChild>
+                      <span className="w-5 h-5 rounded-full bg-white/10 dark:bg-white/10 flex items-center justify-center shrink-0 text-[var(--muted)]">
+                        <ChevronDown className="h-3 w-3 stroke-[2.5]" />
+                      </span>
+                    </SelectPrimitive.Icon>
+                  </div>
+                </SelectPrimitive.Trigger>
+                <SelectContent className="bg-[var(--surface)] border-2 border-[var(--border)] text-[var(--ink)] rounded-2xl p-1.5 shadow-xl">
                   {sources.map((source, index) => (
                     <SelectItem
                       key={source.id}
                       value={String(index)}
                       data-testid={`server-option-${index}`}
-                      className="focus:bg-white focus:text-black"
+                      className="font-display font-bold rounded-xl focus:bg-[var(--surface-raised)] focus:text-[var(--ink)]"
                     >
                       <span className="inline-flex items-center gap-2">
-                        <span className="font-medium">{source.label}</span>
+                        <span>{source.label}</span>
                         {source.quality && (
-                          <span className="mono text-xs opacity-75">
+                          <span className="font-sans font-bold text-xs opacity-75">
                             · {source.quality}
                           </span>
                         )}
@@ -711,33 +673,86 @@ export function SeriesWatchView({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Group 3: Utility Action Buttons (Reload / Open Tab) */}
+            <div
+              data-testid="controls-utility-group"
+              className="order-2 shrink-0 flex items-center gap-1.5 sm:gap-2 min-[820px]:order-3 max-[360px]:w-full max-[360px]:justify-center"
+            >
+              <button
+                type="button"
+                ref={(el) => {
+                  controlsRefs.current[3] = el;
+                }}
+                onClick={handleReloadIframe}
+                aria-label="Reload player"
+                title="Reload video player"
+                className={`inline-flex items-center gap-1.5 sm:gap-2 bg-[var(--surface)] border-2 border-[var(--border)] text-[var(--ink)] font-display font-bold text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full cursor-pointer transition-all duration-150 active:scale-[0.97] hover:border-[var(--border-strong)] ${
+                  isSpatialMode && activeZone === 'controls' && focusIndex === 3
+                    ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
+                    : ''
+                }`}
+              >
+                <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span>Reload</span>
+              </button>
+
+              <button
+                type="button"
+                ref={(el) => {
+                  controlsRefs.current[4] = el;
+                }}
+                onClick={handleOpenNewTab}
+                aria-label="Open in new tab"
+                title="Open stream in new tab"
+                className={`inline-flex items-center gap-1.5 sm:gap-2 bg-[var(--blue)] border-2 border-[var(--blue)] text-white font-display font-bold text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full cursor-pointer shadow-[0_3px_0_var(--blue-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--blue-dark)] transition-all duration-150 ${
+                  isSpatialMode && activeZone === 'controls' && focusIndex === 4
+                    ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
+                    : ''
+                }`}
+              >
+                <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span>Open Tab</span>
+              </button>
+            </div>
           </div>
 
-          {/* Active Episode Overview Details */}
+          {/* Active Episode Overview Details (Duolingo meta-card) */}
           {activeEpisode && (
             <div
               data-testid="active-episode-overview"
-              className="space-y-3 rounded-lg border border-c bg-card p-4 sm:p-6"
+              className="rounded-[20px] border-2 border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6 space-y-3"
             >
               <button
                 type="button"
                 onClick={handleBackToOverview}
-                className="mono text-xs text-primary hover:underline cursor-pointer block text-left"
+                data-testid="series-tag-pill"
+                className="inline-flex items-center bg-[#58cc02]/15 hover:bg-[#58cc02]/25 text-[#58cc02] font-display font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full cursor-pointer transition-all duration-150 active:scale-[0.97]"
               >
                 {series.title}
               </button>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-fg">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 flex-wrap">
+                <h2 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight text-[var(--ink)] leading-snug">
                   {activeEpisode.order !== undefined && activeEpisode.order !== null
                     ? `EP ${activeEpisode.order} — ${activeEpisode.title}`
                     : activeEpisode.title}
                 </h2>
 
-                <div className="flex items-center gap-2 text-xs text-muted mono">
-                  {activeSeason && <span>{activeSeason.title}</span>}
+                <div className="flex items-center gap-2 shrink-0">
+                  {activeSeason && (
+                    <span
+                      data-testid="meta-season-badge"
+                      className="bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--muted)] font-display font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full whitespace-nowrap"
+                    >
+                      {activeSeason.title}
+                    </span>
+                  )}
                   {formattedEpisodeDuration && (
-                    <span className="rounded bg-bg px-2 py-0.5 border border-c">
+                    <span
+                      data-testid="meta-duration-badge"
+                      className="bg-[var(--yellow)]/15 text-[var(--yellow)] font-display font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full whitespace-nowrap"
+                    >
                       {formattedEpisodeDuration}
                     </span>
                   )}
@@ -745,18 +760,18 @@ export function SeriesWatchView({
               </div>
 
               {activeEpisode.description ? (
-                <p className="text-sm leading-relaxed text-muted max-w-4xl">
+                <p className="text-sm sm:text-base leading-relaxed text-[var(--muted)] max-w-4xl pt-1">
                   {activeEpisode.description}
                 </p>
               ) : (
-                <p className="text-sm italic text-muted/60">
+                <p className="text-sm sm:text-base italic text-[var(--muted)]/60 pt-1">
                   No description available for this episode.
                 </p>
               )}
             </div>
           )}
 
-          {/* Episode Explorer Grid below active episode */}
+          {/* Episode Explorer vertical list below active episode in Player Mode */}
           <EpisodeExplorer
             seasons={seasons}
             activeSeasonId={activeSeasonId}
@@ -769,6 +784,7 @@ export function SeriesWatchView({
             isSpatialMode={isSpatialMode}
             activeZone={activeZone}
             focusIndex={focusIndex}
+            layoutMode="list"
           />
         </div>
         </div>

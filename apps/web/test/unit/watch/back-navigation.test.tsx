@@ -110,7 +110,7 @@ describe('SeriesWatchView hoisted sticky top navigation', () => {
     }
   });
 
-  it('renders a sticky top nav with a "Back" button (arrow icon) in Overview mode', () => {
+  it('renders a sticky top nav with a "Back" button (chevron icon and greenish border) in Overview mode', () => {
     mockReferrer('');
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
@@ -121,10 +121,10 @@ describe('SeriesWatchView hoisted sticky top navigation', () => {
     const back = screen.getByRole('button', { name: 'Back' });
     expect(back).toBeInTheDocument();
     expect(back).toHaveTextContent('Back');
-    // Arrow icon rendered (lucide svg)
+    expect(back).toHaveClass('rounded-full', 'border-[#58cc02]/60');
+    // Chevron icon rendered (lucide svg)
     expect(back.querySelector('svg')).toBeInTheDocument();
   });
-
   it('renders a sticky top nav with "Back to Overview" in Player mode', () => {
     mockReferrer('');
     renderWithProviders(
@@ -173,12 +173,19 @@ describe('SeriesWatchView hoisted sticky top navigation', () => {
     expect(navigateMock).toHaveBeenCalledWith({ to: '/' });
   });
 
-  it('sets the mobile hero banner height to 65dvh (min 420px), 85vh on desktop', () => {
+  it('navigates to series overview when clicking the series tag pill on the active episode metadata card', () => {
     mockReferrer('');
-    renderWithProviders(<SeriesWatchView series={mockSeries} />);
+    renderWithProviders(
+      <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+    );
 
-    const artwork = screen.getByTestId('hero-artwork');
-    expect(artwork).toHaveClass('h-[65dvh]', 'min-h-[420px]');
-    expect(artwork).toHaveClass('md:h-[85vh]');
+    const seriesTag = screen.getByTestId('series-tag-pill');
+    expect(seriesTag).toBeInTheDocument();
+    expect(seriesTag).toHaveTextContent('Test Series');
+
+    fireEvent.click(seriesTag);
+
+    expect(screen.queryByTestId('active-episode-overview')).not.toBeInTheDocument();
+    expect(screen.getByTestId('watch-top-nav')).toHaveTextContent('Back');
   });
 });

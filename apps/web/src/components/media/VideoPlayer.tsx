@@ -1,4 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
+  MoreVertical,
+  Check,
+} from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export interface VideoPlayerProps {
   src: string;
@@ -16,6 +27,8 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+const PLAYBACK_SPEEDS = [0.5, 1, 1.25, 1.5, 2];
+
 export function VideoPlayer({
   src,
   title,
@@ -32,8 +45,10 @@ export function VideoPlayer({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [isSpeedOpen, setIsSpeedOpen] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -101,6 +116,19 @@ export function VideoPlayer({
     }
   };
 
+  const handleSeekKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!videoRef.current) return;
+    if (e.key === 'ArrowRight') {
+      const newTime = Math.min(videoRef.current.duration || 100, currentTime + 5);
+      setCurrentTime(newTime);
+      videoRef.current.currentTime = newTime;
+    } else if (e.key === 'ArrowLeft') {
+      const newTime = Math.max(0, currentTime - 5);
+      setCurrentTime(newTime);
+      videoRef.current.currentTime = newTime;
+    }
+  };
+
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     setVolume(val);
@@ -118,6 +146,14 @@ export function VideoPlayer({
     videoRef.current.muted = nextMuted;
   };
 
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackSpeed(speed);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+    }
+    setIsSpeedOpen(false);
+  };
+
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
@@ -131,12 +167,20 @@ export function VideoPlayer({
     }
   };
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   const handleMouseMove = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
-    if (isPlaying) {
+    if (isPlaying && !isSpeedOpen) {
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
       }, 3000);
@@ -151,12 +195,15 @@ export function VideoPlayer({
     };
   }, []);
 
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div
       ref={containerRef}
+      data-testid="video-player-container"
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => isPlaying && setShowControls(false)}
-      className="relative aspect-video w-full rounded border border-c bg-black overflow-hidden group select-none flex flex-col justify-end"
+      onMouseLeave={() => isPlaying && !isSpeedOpen && setShowControls(false)}
+      className="relative aspect-video w-full rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-black overflow-hidden group select-none flex flex-col justify-end"
     >
       <video
         ref={videoRef}
@@ -176,13 +223,13 @@ export function VideoPlayer({
       {countdown !== null && (
         <div
           data-testid="auto-next-countdown-overlay"
-          className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-20 text-white select-none p-4 text-center"
+          className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-30 text-white select-none p-4 text-center"
         >
           <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wider text-zinc-400 mono">
+            <p className="text-xs uppercase tracking-wider text-zinc-400 font-bold font-sans">
               Up Next
             </p>
-            <h3 className="text-base sm:text-lg font-semibold">
+            <h3 className="text-base sm:text-xl font-bold font-display text-[var(--ink)] dark:text-white">
               Next episode in {countdown}s
             </h3>
           </div>
@@ -190,14 +237,14 @@ export function VideoPlayer({
             <button
               type="button"
               onClick={() => setCountdown(null)}
-              className="px-3.5 py-1.5 rounded border border-zinc-700 bg-zinc-900 text-zinc-200 text-xs font-medium hover:bg-zinc-800 transition cursor-pointer"
+              className="px-4 py-2 rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] dark:text-white text-xs font-bold shadow-[0_4px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)] transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={triggerNextNavigation}
-              className="px-3.5 py-1.5 rounded bg-[var(--primary)] text-[var(--primary-fg,white)] text-xs font-medium hover:opacity-90 transition cursor-pointer"
+              className="px-4 py-2 rounded-2xl bg-[var(--green)] text-white text-xs font-bold shadow-[0_4px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition cursor-pointer"
             >
               Play Now
             </button>
@@ -205,14 +252,32 @@ export function VideoPlayer({
         </div>
       )}
 
-      {/* Control bar overlay */}
+      {/* Floating Rounded Pill Control Bar Overlay */}
       <div
-        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-6 transition-opacity duration-200 flex flex-col gap-2 ${
-          showControls || !isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        data-testid="video-control-bar"
+        className={`absolute inset-x-3 sm:inset-x-6 bottom-3 sm:bottom-6 z-20 rounded-full border-2 border-[var(--border-strong)]/80 bg-zinc-950/85 backdrop-blur-md px-3 sm:px-5 py-2 sm:py-2.5 shadow-2xl transition-all duration-300 flex flex-col gap-2 ${
+          showControls || !isPlaying || isSpeedOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
         }`}
       >
-        {/* Progress slider */}
-        <div className="flex items-center gap-2">
+        {/* Progress Scrubber Bar */}
+        <div className="relative flex items-center w-full group/scrubber py-1">
+          {/* Custom Track Background */}
+          <div className="relative w-full h-2 rounded-full bg-zinc-700/80 overflow-hidden pointer-events-none">
+            <div
+              className="h-full bg-[var(--green)] rounded-full transition-all duration-75"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          {/* Scrubber thumb circle */}
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)] border-2 border-[var(--green-dark)] pointer-events-none transition-transform group-hover/scrubber:scale-125"
+            style={{
+              left: `calc(${progressPercent}% - 7px)`,
+            }}
+          />
+
+          {/* Native range input for accessible touch & keyboard control */}
           <input
             type="range"
             min="0"
@@ -220,51 +285,42 @@ export function VideoPlayer({
             step="0.1"
             value={currentTime}
             onChange={handleSeek}
+            onKeyDown={handleSeekKeyDown}
             aria-label="Progress"
-            className="w-full h-1.5 bg-zinc-700 accent-[var(--primary)] rounded-lg appearance-none cursor-pointer focus:outline-none"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           />
         </div>
 
-        {/* Bottom row controls */}
-        <div className="flex items-center justify-between text-xs text-white mono">
-          <div className="flex items-center gap-3">
-            {/* Play / Pause button */}
+        {/* Controls Row */}
+        <div className="flex items-center justify-between gap-2 text-white font-sans text-xs">
+          {/* Left Controls: 3D Play Button, Volume, Time */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Tactile 3D Circular Play/Pause Button */}
             <button
               type="button"
               onClick={togglePlay}
               aria-label={isPlaying ? 'Pause' : 'Play'}
-              className="p-1 text-white hover:text-[var(--primary)] transition cursor-pointer"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[var(--green)] text-white flex items-center justify-center shadow-[0_3px_0_var(--green-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all duration-75 cursor-pointer shrink-0"
             >
               {isPlaying ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
+                <Pause className="w-4 h-4 fill-white stroke-none" />
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
+                <Play className="w-4 h-4 fill-white stroke-none ml-0.5" />
               )}
             </button>
 
-            {/* Volume controls */}
+            {/* Volume toggle + slider */}
             <div className="flex items-center gap-1.5 group/vol">
               <button
                 type="button"
                 onClick={toggleMute}
                 aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
-                className="p-1 text-white hover:text-[var(--primary)] transition cursor-pointer"
+                className="p-1 text-zinc-300 hover:text-white transition cursor-pointer"
               >
                 {isMuted || volume === 0 ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                    <path d="M9 9v6a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                  </svg>
+                  <VolumeX className="w-4 h-4" />
                 ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-                  </svg>
+                  <Volume2 className="w-4 h-4" />
                 )}
               </button>
               <input
@@ -275,34 +331,77 @@ export function VideoPlayer({
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
                 aria-label="Volume"
-                className="w-16 h-1 bg-zinc-700 accent-[var(--primary)] rounded appearance-none cursor-pointer focus:outline-none"
+                className="w-12 sm:w-16 h-1.5 bg-zinc-700 accent-[var(--green)] rounded-full appearance-none cursor-pointer focus:outline-none"
               />
             </div>
 
-            {/* Time display */}
-            <span className="text-zinc-300 text-[11px] ml-1">
+            {/* Elapsed Time / Duration */}
+            <span className="text-zinc-200 font-bold text-[11px] sm:text-xs mono ml-1">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            {title && <span className="text-zinc-400 text-xs truncate max-w-[200px] hidden sm:inline">{title}</span>}
+          {/* Right Controls: Title, Speed Popover, Fullscreen */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {title && (
+              <span className="text-zinc-400 text-xs font-bold truncate max-w-[140px] sm:max-w-[220px] hidden md:inline">
+                {title}
+              </span>
+            )}
 
-            {/* Fullscreen button */}
+            {/* Playback speed popover menu */}
+            <Popover open={isSpeedOpen} onOpenChange={setIsSpeedOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Playback speed"
+                  className="px-2 py-1 rounded-full border border-zinc-700 bg-zinc-900/90 text-zinc-200 hover:text-white hover:bg-zinc-800 text-[11px] font-extrabold flex items-center gap-1 transition cursor-pointer"
+                >
+                  <span>{playbackSpeed}x</span>
+                  <MoreVertical className="w-3 h-3" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="top"
+                align="end"
+                className="w-36 p-1.5 rounded-2xl border-2 border-[var(--border-strong)] bg-zinc-950/95 backdrop-blur-md text-white shadow-xl space-y-1"
+              >
+                <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider px-2 py-1">
+                  Speed
+                </p>
+                {PLAYBACK_SPEEDS.map((speed) => {
+                  const isSelected = playbackSpeed === speed;
+                  return (
+                    <button
+                      key={speed}
+                      type="button"
+                      onClick={() => handleSpeedChange(speed)}
+                      aria-label={`${speed}x`}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        isSelected
+                          ? 'bg-[var(--green)] text-white'
+                          : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                      }`}
+                    >
+                      <span>{speed}x</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </PopoverContent>
+            </Popover>
+
+            {/* Fullscreen Button */}
             <button
               type="button"
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-              className="p-1 text-white hover:text-[var(--primary)] transition cursor-pointer"
+              className="p-1 text-zinc-300 hover:text-white transition cursor-pointer"
             >
               {isFullscreen ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-                </svg>
+                <Minimize className="w-4 h-4" />
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                </svg>
+                <Maximize className="w-4 h-4" />
               )}
             </button>
           </div>
@@ -311,3 +410,4 @@ export function VideoPlayer({
     </div>
   );
 }
+
