@@ -32,6 +32,23 @@ export interface UseWatchStateReturn {
   goToPrevEpisode: () => void;
 }
 
+/**
+ * Resolve the default source index for an episode.
+ * Prefers the first self-hosted (`s3`) source, then the first external
+ * direct stream, and falls back to index 0 (backend returns sources in
+ * canonical priority order, so index 0 is the top-priority source).
+ */
+export function resolveDefaultSourceIndex(
+  sources?: WatchVideoSource[] | null
+): number {
+  if (!sources || sources.length === 0) return 0;
+  const s3Index = sources.findIndex((s) => s.type === 's3');
+  if (s3Index >= 0) return s3Index;
+  const directIndex = sources.findIndex((s) => s.type === 'direct');
+  if (directIndex >= 0) return directIndex;
+  return 0;
+}
+
 export function useWatchState(
   series?: WatchSeriesDetails | null,
   options?: UseWatchStateOptions
@@ -70,7 +87,7 @@ export function useWatchState(
     }
 
     const initialEpId = options?.initialEpisodeId;
-    const initialSourceIdx = options?.initialSourceIndex ?? 0;
+    const hasExplicitSourceIndex = options?.initialSourceIndex !== undefined;
 
     // Check if initialEpisodeId exists and matches a playable episode
     if (initialEpId && allEpisodes.some((ep) => ep.id === initialEpId)) {
@@ -79,7 +96,12 @@ export function useWatchState(
       );
       setActiveSeasonIdState(targetSeason?.id ?? null);
       setActiveEpisodeIdState(initialEpId);
-      setActiveSourceIndexState(initialSourceIdx);
+      if (hasExplicitSourceIndex) {
+        setActiveSourceIndexState(options.initialSourceIndex as number);
+      } else {
+        const targetEp = allEpisodes.find((ep) => ep.id === initialEpId);
+        setActiveSourceIndexState(resolveDefaultSourceIndex(targetEp?.videoSources));
+      }
       return;
     }
 
@@ -91,7 +113,11 @@ export function useWatchState(
       setActiveSeasonIdState(firstSeasonWithPlayableEp.id);
       const firstPlayableEp = (firstSeasonWithPlayableEp.episodes ?? []).find(isPlayableEpisode);
       setActiveEpisodeIdState(firstPlayableEp?.id ?? null);
-      setActiveSourceIndexState(initialSourceIdx);
+      setActiveSourceIndexState(
+        hasExplicitSourceIndex
+          ? (options.initialSourceIndex as number)
+          : resolveDefaultSourceIndex(firstPlayableEp?.videoSources)
+      );
       return;
     }
 
@@ -100,7 +126,11 @@ export function useWatchState(
       const firstPlayableEp = series.episodes.find(isPlayableEpisode);
       setActiveSeasonIdState(null);
       setActiveEpisodeIdState(firstPlayableEp?.id ?? null);
-      setActiveSourceIndexState(initialSourceIdx);
+      setActiveSourceIndexState(
+        hasExplicitSourceIndex
+          ? (options.initialSourceIndex as number)
+          : resolveDefaultSourceIndex(firstPlayableEp?.videoSources)
+      );
       return;
     }
 
@@ -138,17 +168,24 @@ export function useWatchState(
     (seasonId: string) => {
       setActiveSeasonIdState(seasonId);
       const targetSeason = series?.seasons?.find((s) => s.id === seasonId);
-      const firstEpId = (targetSeason?.episodes ?? []).find(isPlayableEpisode)?.id ?? null;
-      setActiveEpisodeIdState(firstEpId);
-      setActiveSourceIndexState(0);
+      const firstEp = (targetSeason?.episodes ?? []).find(isPlayableEpisode) ?? null;
+      setActiveEpisodeIdState(firstEp?.id ?? null);
+      setActiveSourceIndexState(resolveDefaultSourceIndex(firstEp?.videoSources));
     },
     [series?.seasons]
   );
 
   const selectEpisode = useCallback(
     (episodeId: string) => {
+      // Reset to the top-priority source of the newly activated episode.
+      const targetEp =
+        series?.seasons
+          ?.flatMap((s) => s.episodes ?? [])
+          .find((ep) => ep.id === episodeId) ??
+        series?.episodes?.find((ep) => ep.id === episodeId) ??
+        null;
       setActiveEpisodeIdState(episodeId);
-      setActiveSourceIndexState(0);
+      setActiveSourceIndexState(resolveDefaultSourceIndex(targetEp?.videoSources));
 
       if (series?.seasons) {
         const targetSeason = series.seasons.find((s) =>
@@ -159,7 +196,7 @@ export function useWatchState(
         }
       }
     },
-    [series?.seasons]
+    [series?.seasons, series?.episodes]
   );
 
   const selectSource = useCallback((index: number) => {

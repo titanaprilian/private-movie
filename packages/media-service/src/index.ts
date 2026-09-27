@@ -63,6 +63,8 @@ import {
   normalizeVideoSources,
   normalizeVideoSourceSync,
   normalizeVideoSourcesSync,
+  parseVideoQuality,
+  sortVideoSources,
 } from "./internal/playback/normalization";
 export {
   normalizePlaybackUrl,
@@ -70,6 +72,8 @@ export {
   normalizeVideoSources,
   normalizeVideoSourceSync,
   normalizeVideoSourcesSync,
+  parseVideoQuality,
+  sortVideoSources,
 };
 import { createEpisodeRepositoryInternal, EpisodeNotFoundError, type EpisodeWithVideoSources } from "./internal/episodes/repository";
 import { createSeasonsRepositoryInternal, SeasonNotFoundError } from "./internal/seasons/repository";
@@ -607,7 +611,7 @@ export function createMediaService<
           source: input.source,
           title: scraped.title,
           videoType: scraped.videoType ?? null,
-          videoSources: normalizeVideoSourcesSync(videoSources),
+          videoSources: sortVideoSources(normalizeVideoSourcesSync(videoSources)),
           metadata,
         },
         series,

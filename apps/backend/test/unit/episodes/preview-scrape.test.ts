@@ -155,10 +155,12 @@ describe("previewScrape unit service", () => {
     expect(result.episode.source).toBe("otakudesu");
     expect(result.episode.videoSources).toBeInstanceOf(Array);
     expect(result.episode.videoSources.length).toBeGreaterThan(0);
+    // Direct source sorted first due to canonical priority sorting (direct > embed)
     expect(result.episode.videoSources[0]).toMatchObject({
-      type: "embed",
-      url: "https://odvidhide.com/embed/sylmpeaf3wzs",
-      label: "Server Embed",
+      type: "direct",
+      url: "https://archive.org/download/a-menyadari-bahwdaw/Otakudesu.io_MST.S3--02_720p.mp4",
+      label: "Otakudesu.io_MST.S3--02_720p",
+      quality: "720p",
     });
 
     expect(result.series).not.toBeNull();
@@ -423,7 +425,7 @@ describe("previewScrape mirror resolution", () => {
 
     expect(result.episode.videoSources).toHaveLength(6);
     expect(result.episode.videoSources.map((vs) => vs.type)).toEqual([
-      "embed", "embed", "embed", "embed", "embed", "direct"
+      "direct", "embed", "embed", "embed", "embed", "embed"
     ]);
     expect(result.episode.videoSources.find((vs) => vs.type === "direct")).toEqual({
       type: "direct",

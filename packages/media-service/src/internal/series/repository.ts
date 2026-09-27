@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, genres, seasons, series, seriesToGenres, videoSources, type EpisodeRow, type SeasonRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
-import { normalizeVideoSources } from "../playback/normalization";
+import { normalizeVideoSources, sortVideoSources } from "../playback/normalization";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
 import type { S3StorageService } from "../s3/s3-storage-service";
 import type { StorageProviderRegistry } from "../s3/registry";
@@ -228,7 +228,7 @@ export function createSeriesRepositoryInternal<
         seasonNumber: row.season.seasonNumber,
         title: row.season.title,
       },
-      videoSources: sourcesByEpisode.get(row.episode.id) ?? [],
+      videoSources: sortVideoSources(sourcesByEpisode.get(row.episode.id) ?? []),
     }));
   }
 
@@ -360,7 +360,7 @@ export function createSeriesRepositoryInternal<
 
       const episodesWithSources = childEpisodes.map((ep) => ({
         ...ep,
-        videoSources: sourcesMap.get(ep.id) ?? [],
+        videoSources: sortVideoSources(sourcesMap.get(ep.id) ?? []),
       }));
 
       const episodesBySeasonMap = new Map<string, EpisodeWithVideoSources[]>();

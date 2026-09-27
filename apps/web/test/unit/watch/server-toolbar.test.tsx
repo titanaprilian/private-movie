@@ -85,12 +85,12 @@ describe('Watch player toolbar Radix server selector', () => {
 
     const serverGroup = screen.getByTestId('controls-server-group');
     expect(serverGroup).toBeInTheDocument();
-    expect(serverGroup).toHaveClass('order-3', 'w-full', 'min-[820px]:order-2');
+    expect(serverGroup).toHaveClass('order-2', 'min-[820px]:order-3', 'justify-end');
     expect(serverGroup).toContainElement(screen.getByRole('combobox', { name: /server selector/i }));
 
     const utilityGroup = screen.getByTestId('controls-utility-group');
     expect(utilityGroup).toBeInTheDocument();
-    expect(utilityGroup).toHaveClass('order-2', 'min-[820px]:order-3');
+    expect(utilityGroup).toHaveClass('order-3', 'w-full', 'min-[820px]:order-2', 'min-[820px]:flex-1');
     expect(utilityGroup).toContainElement(screen.getByRole('button', { name: /reload player/i }));
     expect(utilityGroup).toContainElement(screen.getByRole('button', { name: /open in new tab/i }));
     // Utility buttons have visible text labels
@@ -186,5 +186,101 @@ describe('Watch player toolbar Radix server selector', () => {
     // Focus should be on controls zone
     const prevBtn = screen.getByRole('button', { name: /prev episode/i });
     expect(prevBtn).toBeInTheDocument();
+  });
+
+  it('renders Direct vs Embed badges in the server selector options', async () => {
+    const mixed: WatchSeriesDetails = {
+      ...baseSeries,
+      seasons: [
+        {
+          ...baseSeries.seasons![0]!,
+          episodes: [
+            {
+              ...baseSeries.seasons![0]!.episodes![0]!,
+              videoSources: [
+                { id: 'src-d', episodeId: 'ep-1', type: 'direct', url: 'https://cdn.com/v.mp4', label: 'Direct Server', quality: '1080p', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+                { id: 'src-e', episodeId: 'ep-1', type: 'embed', url: 'https://embed.com/1', label: 'Embed Server', quality: '720p', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const { user } = renderWithProviders(<SeriesWatchView series={mixed} initialEpisodeId="ep-1" />);
+    await user.click(screen.getByRole('combobox', { name: /server selector/i }));
+    const directBadges = await screen.findAllByTestId('server-badge-0');
+    expect(directBadges.length).toBeGreaterThan(0);
+    expect(directBadges[0]).toHaveTextContent('Direct');
+    const embedBadges = await screen.findAllByTestId('server-badge-1');
+    expect(embedBadges.length).toBeGreaterThan(0);
+    expect(embedBadges[0]).toHaveTextContent('Embed');
+  });
+
+  it('hides Reload/Open Tab utility buttons for direct sources, shows them for embeds', async () => {
+    const mixed: WatchSeriesDetails = {
+      ...baseSeries,
+      seasons: [
+        {
+          ...baseSeries.seasons![0]!,
+          episodes: [
+            {
+              ...baseSeries.seasons![0]!.episodes![0]!,
+              videoSources: [
+                { id: 'src-d', episodeId: 'ep-1', type: 'direct', url: 'https://cdn.com/v.mp4', label: 'Direct Server', quality: '1080p', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+                { id: 'src-e', episodeId: 'ep-1', type: 'embed', url: 'https://embed.com/1', label: 'Embed Server', quality: '720p', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    // Defaults to the direct source → utility buttons hidden
+    const { user } = renderWithProviders(<SeriesWatchView series={mixed} initialEpisodeId="ep-1" />);
+    expect(screen.queryByRole('button', { name: /reload player/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /open in new tab/i })).not.toBeInTheDocument();
+
+    // Switch to the embed source → utility buttons appear
+    await user.click(screen.getByRole('combobox', { name: /server selector/i }));
+    await user.click(await screen.findByRole('option', { name: /embed server/i }));
+    expect(screen.getByRole('button', { name: /reload player/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open in new tab/i })).toBeInTheDocument();
+  });
+
+  it('anchors server selector to the right across both direct and embed modes, placing utility buttons in the center for embeds', async () => {
+    const mixedSeries: WatchSeriesDetails = {
+      ...baseSeries,
+      seasons: [
+        {
+          ...baseSeries.seasons![0]!,
+          episodes: [
+            {
+              ...baseSeries.seasons![0]!.episodes![0]!,
+              videoSources: [
+                { id: 'src-direct', episodeId: 'ep-1', type: 'direct', url: 'https://cdn.com/stream.mp4', label: 'Direct Server', quality: '1080p', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+                { id: 'src-embed', episodeId: 'ep-1', type: 'embed', url: 'https://embed.com/1', label: 'Embed Server', quality: '720p', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    // 1. Initial render with Direct server (2-group layout: playback on left, server docked to the right)
+    const { user } = renderWithProviders(<SeriesWatchView series={mixedSeries} initialEpisodeId="ep-1" />);
+    const serverGroup = screen.getByTestId('controls-server-group');
+
+    expect(serverGroup).toHaveClass('order-2', 'min-[820px]:order-3', 'justify-end');
+    expect(screen.queryByTestId('controls-utility-group')).not.toBeInTheDocument();
+
+    // 2. Switch to Embed server (3-group layout: playback on left, utilities centered, server remains docked to the right)
+    await user.click(screen.getByRole('combobox', { name: /server selector/i }));
+    await user.click(await screen.findByRole('option', { name: /embed server/i }));
+
+    const utilityGroup = screen.getByTestId('controls-utility-group');
+    expect(utilityGroup).toBeInTheDocument();
+    expect(utilityGroup).toHaveClass('order-3', 'w-full', 'min-[820px]:order-2', 'min-[820px]:flex-1');
+
+    // Server selector stays anchored on the right without jumping
+    expect(serverGroup).toHaveClass('order-2', 'min-[820px]:order-3', 'justify-end');
   });
 });

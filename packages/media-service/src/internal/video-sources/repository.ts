@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { videoSources, type VideoSourceRow } from "@repo/db";
-import { normalizeVideoSource, normalizeVideoSources } from "../playback/normalization";
+import { normalizeVideoSource, normalizeVideoSources, sortVideoSources } from "../playback/normalization";
 import { extractS3Key, type S3StorageService } from "../s3/s3-storage-service";
 import type { StorageProviderRegistry } from "../s3/registry";
 
@@ -94,10 +94,11 @@ export function createVideoSourceRepositoryInternal<
         .from(videoSources)
         .where(eq(videoSources.episodeId, episodeId))
         .orderBy(asc(videoSources.createdAt));
-      return await normalizeVideoSources(rows, {
+      const normalized = await normalizeVideoSources(rows, {
         s3StorageService: options?.s3StorageService,
         storageProviderRegistry: options?.storageProviderRegistry,
       });
+      return sortVideoSources(normalized);
     },
 
     async update(

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, count, eq, inArray, isNull, max } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@repo/db";
-import { normalizeVideoSourceSync, normalizeVideoSources } from "../playback/normalization";
+import { normalizeVideoSourceSync, normalizeVideoSources, sortVideoSources } from "../playback/normalization";
 import type { ParsedMetadata } from "@repo/media-scraper";
 import { extractS3Key, type S3StorageService } from "../s3/s3-storage-service";
 import type { StorageProviderRegistry } from "../s3/registry";
@@ -133,7 +133,7 @@ export function createEpisodeRepositoryInternal<
 
       return {
         ...row,
-        videoSources: normalizedSources,
+        videoSources: sortVideoSources(normalizedSources),
       };
     },
 
@@ -195,7 +195,7 @@ export function createEpisodeRepositoryInternal<
 
       const episodesWithSources = rows.map((ep) => ({
         ...ep,
-        videoSources: sourcesMap.get(ep.id) ?? [],
+        videoSources: sortVideoSources(sourcesMap.get(ep.id) ?? []),
       }));
 
       return {
@@ -238,7 +238,7 @@ export function createEpisodeRepositoryInternal<
 
       return {
         ...row,
-        videoSources: normalizedSources,
+        videoSources: sortVideoSources(normalizedSources),
       };
     },
 

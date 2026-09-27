@@ -1368,6 +1368,79 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
     expect(body.data.recentlyAddedEpisodes.length).toBeGreaterThan(0);
   });
 
+  it("returns canonically sorted videoSources for recentlyAddedEpisodes", async () => {
+    const now = new Date();
+    const seriesId = crypto.randomUUID();
+    await db.insert(series).values({
+      id: seriesId,
+      title: "Recently Added Sorting Show",
+      type: "tv",
+      createdAt: now,
+      updatedAt: now,
+    });
+    const seasonId = crypto.randomUUID();
+    await db.insert(seasons).values({
+      id: seasonId,
+      seriesId,
+      title: "Season 1",
+      seasonNumber: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const episodeId = crypto.randomUUID();
+    await db.insert(episodes).values({
+      id: episodeId,
+      title: "Ep 1",
+      order: 1,
+      seasonId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const embedId = crypto.randomUUID();
+    await db.insert(videoSources).values({
+      id: embedId,
+      episodeId,
+      type: "embed",
+      url: "https://embed.com/1",
+      label: "Embed",
+      quality: "1080p",
+      createdAt: new Date(now.getTime() - 2000),
+      updatedAt: new Date(now.getTime() - 2000),
+    });
+
+    const directId = crypto.randomUUID();
+    await db.insert(videoSources).values({
+      id: directId,
+      episodeId,
+      type: "direct",
+      url: "https://cdn.com/1.mp4",
+      label: "Direct 720p",
+      quality: "720p",
+      createdAt: new Date(now.getTime() - 1000),
+      updatedAt: new Date(now.getTime() - 1000),
+    });
+
+    const s3Id = crypto.randomUUID();
+    await db.insert(videoSources).values({
+      id: s3Id,
+      episodeId,
+      type: "s3",
+      url: "episodes/1.mp4",
+      label: "S3 1080p",
+      quality: "1080p",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const response = await request(app, { path: "/series/home-feed" });
+    expect(response.status).toBe(200);
+    const body = response.body as FeedBody;
+    const ep = body.data.recentlyAddedEpisodes.find((e) => e.id === episodeId);
+    expect(ep).toBeDefined();
+    expect(ep?.videoSources.map((s) => s.id)).toEqual([s3Id, directId, embedId]);
+  });
+
   it("ignores the sourceTypes query parameter for recentlyAddedEpisodes", async () => {
     const now = new Date();
 

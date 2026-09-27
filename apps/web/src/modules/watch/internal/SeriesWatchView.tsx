@@ -220,14 +220,25 @@ export function SeriesWatchView({
     [state.availableEpisodes]
   );
   const episodesCount = availableEpisodesForNav.length || 1;
-  // Toolbar: Prev, Next, Server selector, Reload, Open in new tab — fixed 5 controls
-  const controlsCount = 5;
+  // Toolbar adapts: Prev, Next, Server selector always; Reload + Open Tab
+  // only when an embed source is active (hidden for direct/s3 playback).
+  const isEmbedSource = (state.activeSource?.type ?? 'embed') === 'embed';
+  // Toolbar: Prev, Next, Server selector (+ Reload, Open in new tab for embeds)
+  const controlsCount = isEmbedSource ? 5 : 3;
+  const serverControlIndex = isEmbedSource ? 4 : 2;
 
-  const { activeZone, focusIndex } = useWatchNav({
+  const { activeZone, focusIndex, setFocusIndex } = useWatchNav({
     controlsCount: hasSeries ? controlsCount : 2,
     episodesCount: hasSeries ? episodesCount : 1,
     iframeRef,
   });
+
+  // Clamp spatial focus when utility buttons disappear (e.g. switching to direct).
+  useEffect(() => {
+    if (focusIndex >= controlsCount) {
+      setFocusIndex(controlsCount - 1);
+    }
+  }, [focusIndex, controlsCount, setFocusIndex]);
 
   // Programmatic focus + scrollIntoView when activeZone/focusIndex changes (spatial mode only)
   useEffect(() => {
@@ -609,10 +620,56 @@ export function SeriesWatchView({
               </button>
             </div>
 
-            {/* Group 2: Stream Configuration / Server Selector Chip */}
+            {/* Group 2: Utility Action Buttons (Reload / Open Tab) — embed only, centered */}
+            {isEmbedSource && (
+              <div
+                data-testid="controls-utility-group"
+                className="order-3 w-full flex justify-center pt-0.5 min-[820px]:pt-0 min-[820px]:order-2 min-[820px]:w-auto min-[820px]:flex-1"
+              >
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    type="button"
+                    ref={(el) => {
+                      controlsRefs.current[2] = el;
+                    }}
+                    onClick={handleReloadIframe}
+                    aria-label="Reload player"
+                    title="Reload video player"
+                    className={`inline-flex items-center gap-1.5 sm:gap-2 bg-[var(--surface)] border-2 border-[var(--border)] text-[var(--ink)] font-display font-bold text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full cursor-pointer transition-all duration-150 active:scale-[0.97] hover:border-[var(--border-strong)] ${
+                      isSpatialMode && activeZone === 'controls' && focusIndex === 2
+                        ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
+                        : ''
+                    }`}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span>Reload</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    ref={(el) => {
+                      controlsRefs.current[3] = el;
+                    }}
+                    onClick={handleOpenNewTab}
+                    aria-label="Open in new tab"
+                    title="Open stream in new tab"
+                    className={`inline-flex items-center gap-1.5 sm:gap-2 bg-[var(--blue)] border-2 border-[var(--blue)] text-white font-display font-bold text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full cursor-pointer shadow-[0_3px_0_var(--blue-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--blue-dark)] transition-all duration-150 ${
+                      isSpatialMode && activeZone === 'controls' && focusIndex === 3
+                        ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
+                        : ''
+                    }`}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span>Open Tab</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Group 3: Stream Configuration / Server Selector Chip — docked to the right */}
             <div
               data-testid="controls-server-group"
-              className="order-3 w-full flex justify-center pt-0.5 min-[820px]:pt-0 min-[820px]:order-2 min-[820px]:w-auto min-[820px]:flex-1"
+              className="order-2 shrink-0 flex items-center justify-end min-[820px]:order-3 max-[480px]:w-full max-[480px]:justify-center max-[480px]:pt-0.5"
             >
               <Select
                 value={String(state.activeSourceIndex)}
@@ -620,12 +677,12 @@ export function SeriesWatchView({
               >
                 <SelectPrimitive.Trigger
                   ref={(el) => {
-                    controlsRefs.current[2] = el as unknown as HTMLButtonElement;
+                    controlsRefs.current[serverControlIndex] = el as unknown as HTMLButtonElement;
                   }}
                   aria-label="Server selector"
                   data-testid="server-selector"
                   className={`inline-flex items-center justify-between gap-2.5 bg-[var(--surface)] border-2 border-[var(--border)] rounded-full font-display px-3.5 py-1.5 sm:px-4 sm:py-2 text-[var(--ink)] hover:border-[var(--border-strong)] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--blue)] w-60 sm:w-64 shrink-0 shadow-sm ${
-                    isSpatialMode && activeZone === 'controls' && focusIndex === 2
+                    isSpatialMode && activeZone === 'controls' && focusIndex === serverControlIndex
                       ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-[1.02] bg-white text-black font-semibold shadow-xl z-10'
                       : ''
                   }`}
@@ -653,7 +710,9 @@ export function SeriesWatchView({
                   </div>
                 </SelectPrimitive.Trigger>
                 <SelectContent className="bg-[var(--surface)] border-2 border-[var(--border)] text-[var(--ink)] rounded-2xl p-1.5 shadow-xl">
-                  {sources.map((source, index) => (
+                  {sources.map((source, index) => {
+                    const isDirect = source.type === 's3' || source.type === 'direct';
+                    return (
                     <SelectItem
                       key={source.id}
                       value={String(index)}
@@ -667,53 +726,22 @@ export function SeriesWatchView({
                             · {source.quality}
                           </span>
                         )}
+                        <span
+                          data-testid={`server-badge-${index}`}
+                          className={
+                            isDirect
+                              ? 'font-sans font-bold text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#58cc02]/15 text-[#58cc02] leading-none'
+                              : 'font-sans font-bold text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/10 text-[var(--muted)] leading-none'
+                          }
+                        >
+                          {isDirect ? 'Direct' : 'Embed'}
+                        </span>
                       </span>
                     </SelectItem>
-                  ))}
+                    );
+                  })}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Group 3: Utility Action Buttons (Reload / Open Tab) */}
-            <div
-              data-testid="controls-utility-group"
-              className="order-2 shrink-0 flex items-center gap-1.5 sm:gap-2 min-[820px]:order-3 max-[360px]:w-full max-[360px]:justify-center"
-            >
-              <button
-                type="button"
-                ref={(el) => {
-                  controlsRefs.current[3] = el;
-                }}
-                onClick={handleReloadIframe}
-                aria-label="Reload player"
-                title="Reload video player"
-                className={`inline-flex items-center gap-1.5 sm:gap-2 bg-[var(--surface)] border-2 border-[var(--border)] text-[var(--ink)] font-display font-bold text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full cursor-pointer transition-all duration-150 active:scale-[0.97] hover:border-[var(--border-strong)] ${
-                  isSpatialMode && activeZone === 'controls' && focusIndex === 3
-                    ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
-                    : ''
-                }`}
-              >
-                <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                <span>Reload</span>
-              </button>
-
-              <button
-                type="button"
-                ref={(el) => {
-                  controlsRefs.current[4] = el;
-                }}
-                onClick={handleOpenNewTab}
-                aria-label="Open in new tab"
-                title="Open stream in new tab"
-                className={`inline-flex items-center gap-1.5 sm:gap-2 bg-[var(--blue)] border-2 border-[var(--blue)] text-white font-display font-bold text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full cursor-pointer shadow-[0_3px_0_var(--blue-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--blue-dark)] transition-all duration-150 ${
-                  isSpatialMode && activeZone === 'controls' && focusIndex === 4
-                    ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
-                    : ''
-                }`}
-              >
-                <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                <span>Open Tab</span>
-              </button>
             </div>
           </div>
 

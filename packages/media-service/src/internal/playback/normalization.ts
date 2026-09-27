@@ -121,5 +121,49 @@ export async function normalizeVideoSources<
   return sources.map((s) => normalizeVideoSourceSync(s, options));
 }
 
+export function parseVideoQuality(quality?: string | null): number {
+  if (!quality) return 0;
+  const match = quality.match(/(\d+)/);
+  if (!match || !match[1]) return 0;
+  const parsed = parseInt(match[1], 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+const TIER_PRIORITY: Record<string, number> = {
+  s3: 0,
+  direct: 1,
+  embed: 2,
+};
+
+export function sortVideoSources<
+  T extends {
+    type?: string;
+    quality?: string | null;
+    createdAt?: Date | string | null;
+  },
+>(sources: T[]): T[] {
+  return [...sources].sort((a, b) => {
+    const tierA = a.type && a.type in TIER_PRIORITY ? TIER_PRIORITY[a.type] : 99;
+    const tierB = b.type && b.type in TIER_PRIORITY ? TIER_PRIORITY[b.type] : 99;
+
+    if (tierA !== tierB) {
+      return tierA - tierB;
+    }
+
+    const qualityA = parseVideoQuality(a.quality);
+    const qualityB = parseVideoQuality(b.quality);
+
+    if (qualityA !== qualityB) {
+      return qualityB - qualityA;
+    }
+
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    return timeA - timeB;
+  });
+}
+
+
 
 

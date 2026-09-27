@@ -128,7 +128,7 @@ describe("videoSources repository", () => {
   });
 
   describe("findByEpisodeId", () => {
-    it("returns all video sources for given episode ordered by createdAt asc", async () => {
+    it("returns all video sources for given episode sorted by canonical priority", async () => {
       const ep1 = await insertTestEpisode();
       const ep2 = await insertTestEpisode();
 
@@ -155,8 +155,8 @@ describe("videoSources repository", () => {
 
       const sources1 = await repository.findByEpisodeId(ep1.id);
       expect(sources1).toHaveLength(2);
-      expect(sources1[0].id).toBe(src1.id);
-      expect(sources1[1].id).toBe(src2.id);
+      expect(sources1[0].id).toBe(src2.id); // direct before embed
+      expect(sources1[1].id).toBe(src1.id);
 
       const sources2 = await repository.findByEpisodeId(ep2.id);
       expect(sources2).toHaveLength(1);
