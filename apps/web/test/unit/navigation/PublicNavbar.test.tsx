@@ -95,7 +95,7 @@ describe('PublicNavbar component', () => {
     });
   });
 
-  it('renders brand logo and navigation bar', async () => {
+  it('renders brand wordmark with two-tone display font', async () => {
     const history = createMemoryHistory({ initialEntries: ['/'] });
     const router = createRouter({ routeTree, history });
 
@@ -104,7 +104,12 @@ describe('PublicNavbar component', () => {
     await waitFor(() => {
       expect(screen.getByTestId('public-navbar')).toBeInTheDocument();
     });
-    expect(screen.getByText('PRIVATE MOVIE')).toBeInTheDocument();
+    const brand = screen.getByRole('link', { name: 'Private Movie home' });
+    expect(brand).toBeInTheDocument();
+    expect(brand.className).toContain('font-display');
+    expect(screen.getByText('Private')).toBeInTheDocument();
+    expect(screen.getByText('Movie')).toBeInTheDocument();
+    expect(screen.getByTestId('public-navbar').className).toContain('h-[76px]');
   });
 
   it('fetches genres and renders Home root link alongside sorted Big Genres', async () => {
@@ -122,7 +127,7 @@ describe('PublicNavbar component', () => {
     expect(screen.queryByRole('link', { name: 'Action & Adventure' })).not.toBeInTheDocument();
   });
 
-  it('highlights Home as active link when at route /', async () => {
+  it('highlights Home as active pill link when at route /', async () => {
     const history = createMemoryHistory({ initialEntries: ['/'] });
     const router = createRouter({ routeTree, history });
 
@@ -130,16 +135,42 @@ describe('PublicNavbar component', () => {
 
     await waitFor(() => {
       const homeLink = screen.getByRole('link', { name: 'Home' });
-      expect(homeLink).toHaveClass('text-white', 'font-bold');
+      expect(homeLink.className).toContain('rounded-full');
+      expect(homeLink.className).toContain('bg-[#1cb0f6]/15');
+      expect(homeLink.className).toContain('text-[#1cb0f6]');
     });
   });
 
-  it('embeds search input and performs un-scoped global search when on Home route', async () => {
+  it('opens circular search toggle popover with 2px-bordered card', async () => {
     const history = createMemoryHistory({ initialEntries: ['/'] });
     const router = createRouter({ routeTree, history });
 
     renderWithProviders(<RouterProvider router={router} />);
 
+    await waitFor(() => {
+      expect(screen.getByTestId('public-navbar')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('search-popover')).not.toBeInTheDocument();
+    const toggle = screen.getByTestId('search-toggle');
+    expect(toggle.className).toContain('rounded-full');
+    expect(toggle.className).toContain('w-11');
+    fireEvent.click(toggle);
+    const popover = await screen.findByTestId('search-popover');
+    expect(popover).toBeInTheDocument();
+    expect(popover.className).toContain('rounded-2xl');
+    expect(popover.className).toContain('border-2');
+    expect(
+      popover.querySelector('input[aria-label="Search series catalog"]')
+    ).toBeInTheDocument();
+  });
+
+  it('embeds search in popover and performs un-scoped global search when on Home route', async () => {
+    const history = createMemoryHistory({ initialEntries: ['/'] });
+    const router = createRouter({ routeTree, history });
+
+    renderWithProviders(<RouterProvider router={router} />);
+
+    fireEvent.click(await screen.findByTestId('search-toggle'));
     const searchInput = await screen.findByRole('textbox', { name: /search series catalog/i });
     expect(searchInput).toBeInTheDocument();
 
@@ -161,6 +192,7 @@ describe('PublicNavbar component', () => {
 
     renderWithProviders(<RouterProvider router={router} />);
 
+    fireEvent.click(await screen.findByTestId('search-toggle'));
     const searchInput = await screen.findByRole('textbox', { name: /search series catalog/i });
     expect(searchInput).toBeInTheDocument();
 

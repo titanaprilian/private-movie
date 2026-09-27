@@ -25,7 +25,7 @@ const updateDOMTheme = (theme: Theme) => {
 export const useUIStore = create<UIState>()(
   persist(
     (set, get) => ({
-      theme: 'light',
+      theme: 'dark',
       sidebarCollapsed: false,
       setTheme: (theme: Theme) => {
         set({ theme });

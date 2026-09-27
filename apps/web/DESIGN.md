@@ -1,213 +1,186 @@
 # DESIGN.md
 
-Design system reference for the monorepo UI template. This document is the source of truth for any agent generating or modifying UI code in this repo. Follow it exactly — do not invent new tokens, spacing values, or component patterns without updating this file first.
+Design system specification for the Private Movie streaming application. This document is the single source of truth for UI styling, component tokens, and interactions. All agent code generation must strictly conform to these rules.
 
 ---
 
-## 1. Stack
+## 1. Stack & Architecture
 
-- **Styling**: Tailwind CSS (utility classes) + CSS custom properties for theme values. No CSS-in-JS.
-- **Components**: unstyled/copy-paste headless architecture (shadcn/ui pattern). Components live in the app, not in a black-box package — agents should expect to read and edit component source directly.
-- **Fonts**: `Inter` (UI text), `JetBrains Mono` (data, labels, code-adjacent content).
-- **Icons**: inline SVG, `stroke-width="2"`, `stroke="currentColor"`, no icon font.
-
----
-
-## 2. Design direction: "Structured Console"
-
-The product is developer-facing tooling (admin/config surfaces for a monorepo starter), not a consumer SaaS. Visual language should read as a **console, not a marketing app**:
-
-- Visible borders over soft shadows.
-- Monospace for anything that is data, an identifier, a status, or a count.
-- Sans-serif (Inter) for prose, labels, and navigation.
-- Sharp-ish corners (`rounded` / `rounded-md`, 4–6px). Never use `rounded-2xl`/`rounded-3xl` in this direction — that belongs to a different, softer variant not used here.
-- Density is tighter than a typical consumer dashboard: prefer `px-4 py-2` / `py-1.5` over `p-6`.
-
-Do not drift toward "soft/elevated" (large radii, drop shadows, gradients) or "generic SaaS" (marketing-style hero cards, illustration-heavy empty states) — those were explicitly rejected in favor of this direction.
+- **Framework**: TanStack React, Vite / modern bundler.
+- **Styling**: Tailwind CSS (utility classes) + CSS Custom Properties for theme tokens.
+- **Components**: shadcn/ui headless pattern (Radix primitives with local component source in `@/components/ui`).
+- **Typography**:
+  - **Headings & Brand**: `Baloo 2` (weights 600, 700, 800)
+  - **Body, UI & Meta**: `Nunito` (weights 400, 600, 700, 800)
+- **Icons**: Inline Lucide/SVG, 2px stroke, `currentColor`.
 
 ---
 
-## 3. Color tokens
+## 2. Design Direction: "Playful Streaming / Duolingo-Inspired"
 
-All colors are CSS variables on `:root`, overridden under `.dark`. **Never hardcode hex values in components** — always reference the variable.
+The application rejects rigid, flat console aesthetics in favor of a punchy, tactile, gamified streaming visual language:
+
+- **Tactile 3D Buttons**: Thick bottom borders/shadows (`box-shadow: 0 4px/5px 0 var(--border-shade)`) with a physical `:active` depression (`translate-y-[4px]` and reduced shadow).
+- **Chunky Geometries**: Generous corner radiuses (`rounded-2xl` 16px, `rounded-[20px]`, `rounded-full` 9999px). Sharp `rounded-sm` or `rounded-none` are prohibited.
+- **Bold Border Definition**: High-contrast, tactile 2px borders (`border-2`) across cards, inputs, and search dialogs.
+- **Vibrant Gamified Accents**: Feather Green, Sky Blue, Canary Yellow, Vivid Purple, and Coral Red on a dark or clean light canvas.
+
+---
+
+## 3. Color Tokens & CSS Variables
+
+Tokens are declared on `:root` and overridden under `.dark`. Current UI runs primarily dark-first, with built-in light-mode pairings ready for future toggling.
 
 ```css
 :root {
-  --bg: #f4f4f5; /* page background */
-  --card: #ffffff; /* surface background: cards, table, header, dropdowns */
-  --border: #d4d4d8; /* all borders, dividers */
-  --muted: #71717a; /* secondary text */
-  --fg: #18181b; /* primary text */
-  --sidebar: #ffffff; /* sidebar background */
-  --primary: #4f46e5; /* accent: buttons, links, active states, focus rings */
-  --primary-fg: #ffffff; /* text/icon color on top of --primary */
-  --hover: #f4f4f5; /* row/item hover background */
-  --active: #eef2ff; /* active nav item background */
+  /* Canvas & Surfaces */
+  --bg: #f7f9fa;
+  --surface: #ffffff;
+  --surface-raised: #f0f2f5;
+  --ink: #131417;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+
+  /* Duolingo Brand Palette & Depressed Shadows */
+  --green: #58cc02;
+  --green-dark: #46a302;
+  --blue: #1cb0f6;
+  --blue-dark: #1899d6;
+  --purple: #ce82ff;
+  --purple-dark: #a568cc;
+  --yellow: #ffc800;
+  --yellow-dark: #e6a800;
+  --red: #ff4b4b;
+  --red-dark: #e63e3e;
+
+  /* shadcn Semantic Mappings */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--green);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --accent: var(--blue);
+  --accent-foreground: #ffffff;
+  --destructive: var(--red);
+  --destructive-foreground: #ffffff;
 }
+
 .dark {
-  --bg: #101012;
-  --card: #18181b;
-  --border: #3f3f46;
-  --muted: #a1a1aa;
-  --fg: #fafafa;
-  --sidebar: #0a0a0b;
-  --primary: #818cf8;
-  --primary-fg: #0a0a0b;
-  --hover: #232327;
-  --active: #232327;
+  /* Canvas & Surfaces */
+  --bg: #131417;
+  --surface: #1e2024;
+  --surface-raised: #282a2f;
+  --ink: #f2f2ef;
+  --muted: #9a9a93;
+  --border: #2c2e33;
+  --border-strong: #3f4249;
+
+  /* Duolingo Brand Palette */
+  --green: #58cc02;
+  --green-dark: #46a302;
+  --blue: #1cb0f6;
+  --blue-dark: #1899d6;
+  --purple: #ce82ff;
+  --purple-dark: #a568cc;
+  --yellow: #ffc800;
+  --yellow-dark: #e6a800;
+  --red: #ff4b4b;
+  --red-dark: #e63e3e;
+
+  /* shadcn Semantic Mappings */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--green);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --accent: var(--blue);
+  --accent-foreground: #ffffff;
+  --destructive: var(--red);
+  --destructive-foreground: #ffffff;
 }
 ```
-
-Utility classes used throughout components:
-
-```css
-.bg-card {
-  background: var(--card);
-}
-.bg-sidebar {
-  background: var(--sidebar);
-}
-.border-c {
-  border-color: var(--border);
-}
-.text-muted {
-  color: var(--muted);
-}
-.bg-primary {
-  background: var(--primary);
-}
-.text-primary {
-  color: var(--primary);
-}
-.text-primary-fg {
-  color: var(--primary-fg);
-}
-.hover-bg:hover {
-  background: var(--hover);
-}
-.active-bg {
-  background: var(--active);
-  color: var(--primary);
-  border-left: 2px solid var(--primary);
-}
-```
-
-Neutral scale is Tailwind **Zinc**. Accent is **Indigo**. Do not substitute Slate/Gray/Neutral for the neutral scale, and do not substitute Blue/Violet for the accent — this is a locked decision from the base theme.
-
-### Status colors (badges, indicators)
-
-Use Tailwind's semantic palette directly (not custom variables), always paired light/dark:
-
-| Meaning                      | Light                         | Dark                                       |
-| ---------------------------- | ----------------------------- | ------------------------------------------ |
-| Success / Active / Live      | `bg-green-100 text-green-700` | `dark:bg-green-900/30 dark:text-green-400` |
-| Warning / Pending / Building | `bg-amber-100 text-amber-700` | `dark:bg-amber-900/30 dark:text-amber-400` |
-| Error / Failed / Inactive    | `bg-red-100 text-red-700`     | `dark:bg-red-900/30 dark:text-red-400`     |
-
-Dark mode is native and toggled by adding/removing the `.dark` class on `<html>`. Never rely on `prefers-color-scheme` alone — the explicit toggle must work.
 
 ---
 
 ## 4. Typography
 
-- Body/UI: `Inter`, weights 400/500/600/700.
-- Data/mono: `JetBrains Mono`, weights 400/500. Apply via `.mono` class.
+**Display & Headings**: `font-display` / `font-baloo` -> `'Baloo 2', cursive, sans-serif`. Use on hero titles, section titles, modal headers, and the wordmark.
 
-**Use mono for**: table cell values that are identifiers, counts, statuses, timestamps, code, file paths, version numbers, nav "workspace / project" breadcrumbs.
-**Use Inter for**: headings, body copy, button labels, form labels, descriptions.
+**Body & Controls**: `font-sans` / `font-nunito` -> `'Nunito', sans-serif`. Use on descriptions, nav items, button labels, badge chips, and episode metadata.
 
-Type scale (Tailwind classes, don't introduce new sizes):
+**Scale**:
 
-- Page title: `text-lg font-semibold` (dashboard) / `text-xl font-semibold` (auth screens)
-- Section/card header: `font-medium text-sm`
-- Body/table: `text-sm` default, `text-xs` for dense data tables
-- Muted/meta text: `text-xs text-muted`
+- Hero Title: `text-4xl md:text-6xl font-extrabold tracking-tight font-display`
+- Section Title: `text-xl md:text-2xl font-bold font-display`
+- Card Title / Episode: `text-sm font-bold font-sans`
+- Badges & Meta: `text-xs font-extrabold tracking-wide uppercase font-sans`
 
 ---
 
-## 5. Layout architecture
+## 5. Components & Interaction Rules
 
-### Desktop
+### 5.1 Buttons (`@/components/ui/button.tsx`)
 
-- **Sidebar**: fixed width `w-60` (240px) expanded, `64px` collapsed. Collapse toggled via JS, animates `width` over `.2s ease`. Labels (`.nav-label`) are hidden via `display:none` when collapsed, not unmounted.
-- **Header**: `h-14` (56px), `sticky top-0 z-20`, border-bottom, contains: mobile menu button (hidden on desktop), breadcrumb/workspace context, search input, right-aligned icon buttons + theme toggle + avatar.
-- **Content**: scrollable independently of sidebar/header (`flex-1 overflow-y-auto`), padded `p-4 md:p-5`.
+Buttons feature Duolingo-style 3D bottom bevels and depress downward on click.
 
-### Mobile (< md breakpoint)
+```typescript
+// Core button mechanics:
+// Default / Green: bg-[var(--green)] text-white shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)]
+// Secondary / Translucent: bg-white/20 text-white backdrop-blur-sm shadow-[0_5px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.2)]
+// Outline / Card Action: bg-[var(--bg)] border-2 border-[var(--border)] shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)]
+// Added / Success State: Trigger bounce animation + green fill
+```
 
-- Sidebar is `hidden`. A slide-over (`#slideover`) mounts at `fixed top-0 left-0 h-full w-64`, starts `-translate-x-full`, and translates in on open. Backed by a click-to-close overlay (`bg-black/40`).
-- Header shows a hamburger button that calls `openMobile()`.
+### 5.2 Cards & Horizontal Carousels
 
-Do not build a bottom tab bar or a right-side drawer for mobile nav — left slide-over is the locked pattern.
+**Poster Card**: `flex-shrink-0 w-44 rounded-[20px] border-2 border-[var(--border)] overflow-hidden bg-[var(--bg)] transition-transform duration-150 hover:-translate-y-1 hover:border-[var(--blue)] cursor-pointer`.
 
----
+**Episode Card**: `flex-shrink-0 w-72 rounded-[20px] border-2 border-[var(--border)] bg-[var(--bg)] hover:-translate-y-1 hover:border-[var(--blue)]`.
 
-## 6. Component patterns
+**Badges**:
 
-### Buttons
+- Type badge: `rounded-full px-2.5 py-1 text-xs font-extrabold bg-black/50 text-white`.
+- Season/Status: `rounded-full px-2.5 py-1 text-xs font-extrabold bg-[var(--purple)] text-white`.
+- Star rating: `rounded-full px-2.5 py-1 text-xs font-extrabold bg-[var(--yellow)] text-amber-950 flex items-center gap-1`.
+- Episode tag: `rounded-full px-2.5 py-1 text-xs font-extrabold bg-[var(--green)] text-white`.
 
-- Primary: `bg-primary text-primary-fg`, `rounded` (not pill), `text-xs` or `text-sm font-medium`, `px-3 py-1.5` (dense) or `px-4 py-2` (forms).
-- Secondary/outline: `border border-c`, transparent background, same padding as primary.
-- Always include a visible focus ring: `outline:2px solid var(--primary); outline-offset:1-2px` on `:focus-visible`.
+### 5.3 Navigation & Search
 
-### Cards / panels
+- Sticky top bar: `h-[76px] border-b-2 border-[var(--border)] bg-[var(--bg)]`.
+- Wordmark: `font-display text-2xl font-extrabold text-[var(--ink)]`, secondary word colored `text-[var(--green)]`.
+- Nav links: rounded pill tabs (`rounded-full px-4 py-2 text-sm font-extrabold`). Active state: `bg-[#1cb0f6]/15 text-[var(--blue)]`.
+- Search Button & Popover: Circular icon button (`rounded-full border-2 border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--yellow)] hover:border-[var(--yellow-dark)]`). Popover panel: `rounded-2xl border-2 border-[var(--border)] p-4 shadow-2xl`.
 
-`bg-card border border-c rounded` — that's it. No shadow by default. A card is a header row (`px-4 py-3 border-b border-c`) plus body content.
+### 5.4 Hero Banner
 
-### Data tables
+- Height: `h-[65vh] min-h-[420px] rounded-b-[32px] overflow-hidden relative`.
+- Multi-stop gradient overlay from left/bottom to maintain legible text over movie backdrops.
+- Indicator Dots: Pill-shaped dots (`w-6 h-2 rounded-full bg-white/40 [&.active]:bg-white transition-all`).
 
-- Wrapped in a card. Header row: `text-left text-muted border-b border-c uppercase tracking-wide text-xs` (or `text-[10px]`).
-- Sortable columns get a `↕` suffix in the header label — this is a static visual affordance in the template; wire up real sort handlers when integrating.
-- Row: `border-b border-c hover-bg`, last row has no bottom border.
-- Row actions: single `⋯` button, right-aligned, must use the design system's portaled Popover component (`@/components/ui/popover`). Inline absolutely-positioned dropdowns (`absolute right-0 ...`) and manual fixed-overlay dismissal backdrops (`fixed inset-0`) are strictly forbidden, as they clip inside scrollable table containers (`overflow-x-auto`, `overflow-y-auto`). The popover renders via Radix Portal into document root with automatic collision detection and flip behavior.
-- Status is always a pill badge (see status colors above), never plain colored text.
-- Footer: `px-4 py-2.5 border-t border-c flex items-center justify-between text-xs text-muted` with page indicator + Previous/Next buttons (`border border-c rounded`).
-- Tables must be horizontally scrollable on mobile: wrap in a `div.overflow-x-auto`, never let the table force page-level horizontal scroll.
+### 5.5 Detail Modal / Sheet
 
-### Forms
-
-- Stacked layout: `label` above `input`, always.
-- `label`: `text-sm font-medium mb-1.5` (or `text-xs mono uppercase tracking-wide` for the console/mono variant).
-- `input`: `w-full px-3 py-2 rounded border border-c bg-transparent text-sm`.
-- Dropdowns / single-selection inputs: all dropdown inputs across the application must use the design system's Radix UI Select component (`@/components/ui/select`). Native HTML `<select>` elements are strictly forbidden.
-  - **Placeholder / Sentinel values**: Radix UI Select does not permit empty string `value=""` attributes on `SelectItem`. For unselected or optional states (such as "Select option..." or "All"), use an explicit sentinel value (e.g., `"all"`, `"none"`, or `"default"`) and map back to empty string, `undefined`, or `null` in form/filter state handlers. Initial empty states without a selection should use the `placeholder` prop on `SelectValue`.
-- Inline validation errors render directly below the relevant input (not implemented in the static template — reserve space below the input when wiring real forms).
-
-### Overlays
-
-- **Sheets (slide-overs)**: right-aligned, for create/edit forms. Not yet built in the reference files — when built, mirror the mobile-nav slide-over mechanics but anchored right and triggered from row/page actions.
-- **Dialogs (modals)**: centered, reserved strictly for destructive/high-stakes confirmations. Do not use a modal for a create/edit form — that's a sheet's job.
-- **Popovers & Contextual Action Menus**: all table row actions (`⋯`), card action menus, and contextual popups must use `@/components/ui/popover` (`Popover`, `PopoverTrigger`, `PopoverContent`). The popover renders inside a top-level React portal with collision detection and auto-flip mechanics, ensuring menus never clip outside viewport or scrollable containers. Manual `fixed inset-0` click overlays and bespoke toggle wrappers are deprecated in favor of Radix's managed open state and outside-click dismissal.
-
-### Feedback & states
-
-- **Toasts**: global, for success/failure after an action. Not present in static template — add a fixed-position toast container when wiring real interactions.
-- **Loading**: skeleton loaders (`.skeleton` shimmer class) for initial page/data load; spinner + disabled state on the button itself for in-flight actions.
-- **Empty states**: muted icon + one line of text + a single primary CTA. No illustrations.
+- Uses `@/components/ui/dialog` or `@/components/ui/sheet` styled as a fullscreen/high-elevation overlay.
+- Circular close button with 3D drop-action (`shadow-[0_4px_0_rgba(0,0,0,0.15)] active:translate-y-[3px] active:shadow-[0_1px_0_rgba(0,0,0,0.15)]`).
+- List CTA toggle: Bounces on toggle (`@keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }`).
 
 ---
 
-## 7. Spacing & density
+## 6. What NOT to Do
 
-- Base density is "comfortable" per the original brief, but this direction (Structured Console) runs tighter than that baseline: `py-1.5`–`py-2` for nav/table rows, `p-4`–`p-5` for card padding, not `p-6`+.
-- Reserve `p-6`+ for auth screens and one-off empty-space contexts, not for dashboard chrome.
-
----
-
-## 8. Content rules (for template/scaffold screens)
-
-This is a **template**, not a finished product screen. Keep placeholder content generic and swappable:
-
-- Nav labels: generic business-app nouns (Dashboard, Analytics, Customers, Orders, Settings) — not tied to any specific product narrative.
-- Stat cards: `Metric one/two/three/four` style labels with a plausible number and a trend delta, not real KPIs.
-- Table rows: `Item one/two/three…` with generic Status/Assignee/Date columns.
-- Never hardcode a fictional product story (e.g. invented internal tools, fake ticket numbers, fake team members tied to a narrative) into the template — that content should come from whoever integrates the template, not from the template itself.
-
----
-
-## 9. What NOT to do
-
-- Don't mix in the "Soft Elevated" tokens (large radii, `shadow-xl`, gradient blobs) into Structured Console screens.
-- Don't introduce a new neutral or accent color outside Zinc/Indigo.
-- Don't use `localStorage`/`sessionStorage` for theme or UI state inside artifacts/sandboxed previews — use in-memory JS state or a class toggle only.
-- Don't build new nav/layout patterns (top tab bars, right-side nav, bottom nav) without updating this file first.
+- Do NOT use muted zinc/slate gray palettes or thin 1px subtle borders.
+- Do NOT use flat buttons without physical active-click press states (`active:translate-y-*` with box-shadows).
+- Do NOT use square or sharp corners (`rounded-none`, `rounded-sm`, `rounded-md`). Keep radii between 16px and 9999px.
+- Do NOT introduce arbitrary fonts; strictly use Baloo 2 for headings/branding and Nunito for UI elements.

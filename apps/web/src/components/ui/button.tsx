@@ -17,6 +17,13 @@ const buttonVariants = cva(
           'border border-c bg-transparent text-fg hover:bg-[var(--hover)]',
         ghost: 'hover:bg-[var(--hover)] text-fg',
         link: 'text-primary underline-offset-4 hover:underline',
+        duo: 'bg-[var(--green)] text-white font-extrabold rounded-2xl shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105',
+        'duo-green':
+          'bg-[var(--green)] text-white font-extrabold rounded-2xl shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105',
+        'duo-translucent':
+          'bg-white/20 text-white font-extrabold rounded-2xl backdrop-blur-sm shadow-[0_5px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.2)]',
+        'duo-outline':
+          'bg-[var(--bg)] border-2 border-[var(--border)] text-fg font-extrabold rounded-2xl shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)]',
       },
       size: {
         default: 'h-9 px-4 py-2',

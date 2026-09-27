@@ -1,4 +1,10 @@
 export { SeriesGrid } from './internal/SeriesGrid';
+export { SeriesPosterCard } from './internal/SeriesPosterCard';
+export type { SeriesPosterCardProps } from './internal/SeriesPosterCard';
+export { RecentEpisodeCard } from './internal/RecentEpisodeCard';
+export type { RecentEpisodeCardProps } from './internal/RecentEpisodeCard';
+export { SeriesDetailDialog } from './internal/SeriesDetailDialog';
+export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/SeriesDetailDialog';
 export { SeriesDetailView } from './internal/SeriesDetailView';
 export { AddMediaDialog } from './internal/AddMediaDialog';
 export { BulkScrapeModal } from './internal/BulkScrapeModal';

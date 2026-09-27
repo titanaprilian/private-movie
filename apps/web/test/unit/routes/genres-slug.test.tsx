@@ -146,7 +146,7 @@ describe('Genre catalog route (/genres/$slug)', () => {
     renderWithProviders(<RouterProvider router={router} />);
 
     const card = await screen.findByTestId('series-card');
-    expect(card).toHaveAttribute('href', '/watch/s-1');
+    expect(card).toHaveAttribute('data-series-id', 's-1');
     expect(within(card as HTMLElement).getByText('Queen of Tears')).toBeInTheDocument();
   });
 

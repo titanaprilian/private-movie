@@ -215,7 +215,7 @@ describe('SeriesHeroBanner cinematic layout', () => {
     );
   });
 
-  it('renders logo, metadata row, synopsis, and white play CTA overlaid on the artwork', () => {
+  it('renders logo, metadata row, synopsis, and 3D green play CTA overlaid on the artwork', () => {
     const withLogo: WatchSeriesDetails = {
       ...baseSeries,
       logoUrl: 'https://images.unsplash.com/logo-1.png',
@@ -242,9 +242,12 @@ describe('SeriesHeroBanner cinematic layout', () => {
     expect(synopsis).toHaveTextContent('A thrilling series synopsis');
     expect(synopsis).toHaveClass('hidden', 'md:line-clamp-3');
 
-    // High-contrast white play CTA, full-width on mobile
+    // Duolingo 3D green play CTA, full-width on mobile
     const play = screen.getByTestId('hero-play');
-    expect(play).toHaveClass('bg-white', 'text-black', 'w-full', 'md:w-auto');
+    expect(play).toHaveClass('bg-[var(--green)]', 'text-white', 'w-full', 'md:w-auto');
+    expect(play).toHaveClass('rounded-2xl', 'font-extrabold');
+    expect(play.className).toMatch(/shadow-\[0_5px_0_var\(--green-dark\)\]/);
+    expect(play.className).toMatch(/active:translate-y-1/);
     expect(play).toHaveAccessibleName(/play episode 1/i);
   });
 
@@ -327,6 +330,17 @@ describe('SeriesHeroBanner cinematic layout', () => {
     // Sticky top navigation lives in WatchTopNav at the SeriesWatchView shell level
     expect(screen.queryByTestId('hero-back-bar')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /back/i })).not.toBeInTheDocument();
+  });
+
+  it('applies Duolingo curved bottom corners and display typography', () => {
+    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+
+    const banner = screen.getByTestId('series-hero-banner');
+    expect(banner).toHaveClass('rounded-b-[32px]');
+    expect(banner).toHaveClass('overflow-hidden');
+
+    const title = screen.getByTestId('hero-title-text');
+    expect(title.parentElement).toHaveClass('font-display');
   });
 
   it('applies spatial focus rings to the play control', () => {

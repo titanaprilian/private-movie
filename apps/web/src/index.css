@@ -3,33 +3,101 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark light;
-  --bg: #f4f4f5;
-  --panel: #fafafa;
-  --card: #ffffff;
-  --border: #d4d4d8;
-  --muted: #71717a;
-  --fg: #18181b;
-  --sidebar: #ffffff;
-  --primary: #4f46e5;
+  color-scheme: light;
+  /* Canvas & Surfaces */
+  --bg: #f7f9fa;
+  --surface: #ffffff;
+  --surface-raised: #f0f2f5;
+  --ink: #131417;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+
+  /* Duolingo Brand Palette & Depressed Shadows */
+  --green: #58cc02;
+  --green-dark: #46a302;
+  --blue: #1cb0f6;
+  --blue-dark: #1899d6;
+  --purple: #ce82ff;
+  --purple-dark: #a568cc;
+  --yellow: #ffc800;
+  --yellow-dark: #e6a800;
+  --red: #ff4b4b;
+  --red-dark: #e63e3e;
+
+  /* Legacy aliases (backward compatibility) */
+  --panel: var(--surface);
+  --card: var(--surface);
+  --fg: var(--ink);
+  --sidebar: var(--surface);
+  --primary: var(--green);
   --primary-fg: #ffffff;
-  --hover: #f4f4f5;
-  --active: #eef2ff;
+  --hover: var(--surface-raised);
+  --active: var(--surface-raised);
+
+  /* shadcn Semantic Mappings */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --accent: var(--blue);
+  --accent-foreground: #ffffff;
+  --destructive: var(--red);
+  --destructive-foreground: #ffffff;
 }
 
 .dark {
   color-scheme: dark;
-  --bg: #101012;
-  --panel: #0a0a0b;
-  --card: #18181b;
-  --border: #3f3f46;
-  --muted: #a1a1aa;
-  --fg: #fafafa;
-  --sidebar: #0a0a0b;
-  --primary: #818cf8;
-  --primary-fg: #0a0a0b;
-  --hover: #232327;
-  --active: #232327;
+  /* Canvas & Surfaces */
+  --bg: #131417;
+  --surface: #1e2024;
+  --surface-raised: #282a2f;
+  --ink: #f2f2ef;
+  --muted: #9a9a93;
+  --border: #2c2e33;
+  --border-strong: #3f4249;
+
+  /* Duolingo Brand Palette */
+  --green: #58cc02;
+  --green-dark: #46a302;
+  --blue: #1cb0f6;
+  --blue-dark: #1899d6;
+  --purple: #ce82ff;
+  --purple-dark: #a568cc;
+  --yellow: #ffc800;
+  --yellow-dark: #e6a800;
+  --red: #ff4b4b;
+  --red-dark: #e63e3e;
+
+  /* Legacy aliases (backward compatibility) */
+  --panel: var(--surface);
+  --card: var(--surface);
+  --fg: var(--ink);
+  --sidebar: var(--surface);
+  --primary: var(--green);
+  --primary-fg: #ffffff;
+  --hover: var(--surface-raised);
+  --active: var(--surface-raised);
+
+  /* shadcn Semantic Mappings */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --accent: var(--blue);
+  --accent-foreground: #ffffff;
+  --destructive: var(--red);
+  --destructive-foreground: #ffffff;
 }
 
 html,
@@ -41,7 +109,7 @@ body,
 body {
   margin: 0;
   font-family:
-    Inter,
+    Nunito,
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -54,6 +122,19 @@ body {
 
 .mono {
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* Hide native scrollbars on scrollable rows while preserving smooth scrolling */
+.no-scrollbar,
+.scroll-row {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.scroll-row::-webkit-scrollbar {
+  display: none;
 }
 
 .bg-card {

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useInputMode } from '@/hooks/useInputMode';
 import { PublicNavbar } from '@/modules/navigation';
+import { RecentEpisodeCard, SeriesDetailDialog, SeriesPosterCard } from '@/modules/videos';
 import { useHomeFeedNav } from './useHomeFeedNav';
 import {
   homeFeedQueryOptions,
@@ -100,47 +101,22 @@ function RecentlyAddedEpisodesRow({ episodes }: { episodes: MediaRecentlyAddedEp
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {episodes.map((ep) => (
-            <div
+            <RecentEpisodeCard
               key={ep.id}
-              data-testid="episode-card"
-              onClick={() =>
+              episodeId={ep.id}
+              seriesId={ep.series.id}
+              title={ep.title}
+              seriesTitle={ep.series.title}
+              thumbnailUrl={resolveEpisodeThumbnail(ep)}
+              badgeLabel={episodeBadge(ep.season.seasonNumber, ep.order)}
+              onSelect={({ episodeId, seriesId }) =>
                 navigate({
                   to: '/watch/$seriesId',
-                  params: { seriesId: ep.series.id },
-                  search: { ep: ep.id },
+                  params: { seriesId },
+                  search: { ep: episodeId },
                 })
               }
-              className="w-[280px] sm:w-[320px] flex-shrink-0 snap-start group relative rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-300 transform hover:scale-105 z-10 hover:z-30 shadow-md hover:shadow-2xl cursor-pointer overflow-hidden"
-            >
-              {/* Thumbnail / 16:9 Aspect Ratio Box */}
-              <div data-testid="episode-thumbnail" className="relative aspect-video w-full bg-zinc-800 overflow-hidden">
-                <img
-                  data-testid="episode-thumbnail-img"
-                  src={resolveEpisodeThumbnail(ep)}
-                  alt={ep.title}
-                  className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-60" />
-
-                {/* Season/Episode Badge (Top Left) */}
-                <div className="absolute top-2 left-2 z-10">
-                  <span className="bg-black/80 backdrop-blur-md text-zinc-200 font-mono font-bold text-[10px] uppercase px-1.5 py-0.5 rounded border border-zinc-700 shadow">
-                    {episodeBadge(ep.season.seasonNumber, ep.order)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Episode title + series title beneath the thumbnail */}
-              <div className="p-2 sm:p-3 bg-zinc-900 space-y-0.5">
-                <h3 data-testid="episode-title" className="text-sm font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">
-                  {ep.title}
-                </h3>
-                <p data-testid="episode-series-title" className="text-xs text-zinc-400 truncate">
-                  {ep.series.title}
-                </p>
-              </div>
-            </div>
+            />
           ))}
         </div>
 
@@ -279,7 +255,7 @@ function HeroTitle({ title, logoUrl }: { title: string; logoUrl?: string | null 
   const showLogo = !!logoUrl && !logoFailed;
 
   return (
-    <h1 className="text-center md:text-left text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+    <h1 className="font-display text-center md:text-left text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
       {showLogo ? (
         <img
           src={logoUrl as string}
@@ -311,10 +287,10 @@ function PaginationDots({
           key={`dot-${item.id}-${idx}`}
           onClick={() => onSelect(idx)}
           aria-label={`Go to slide ${idx + 1}`}
-          className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+          className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
             idx === activeIndex
-              ? 'w-7 bg-red-600'
-              : 'w-2.5 bg-zinc-600 hover:bg-zinc-400'
+              ? 'w-6 bg-white'
+              : 'w-2 bg-white/40 hover:bg-white/70'
           }`}
         />
       ))}
@@ -372,59 +348,26 @@ function CarouselRowComponent({
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {row.items.map((item, idx) => {
-            const isFirst = idx === 0;
-            const isLast = idx === row.items.length - 1;
-            const transformOrigin = isFirst ? 'origin-left' : isLast ? 'origin-right' : 'origin-center';
             const isFocused = isSpatialMode && focusedRow === rowIndex && focusedItem === idx;
 
             return (
               <div
                 key={`${row.id}-${item.id}-${idx}`}
-                data-testid="series-card"
                 data-nav-row={rowIndex}
                 data-nav-item={idx}
-                onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: item.id } })}
-                className={`w-[160px] sm:w-[180px] flex-shrink-0 snap-start group relative rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-300 transform hover:scale-105 sm:hover:scale-110 ${transformOrigin} z-10 hover:z-30 shadow-md hover:shadow-2xl cursor-pointer overflow-hidden ${
-                  isFocused ? 'ring-2 ring-white' : ''
-                }`}
               >
-                {/* Poster / Aspect Ratio Box */}
-                <div className="relative aspect-[2/3] w-full bg-zinc-800 overflow-hidden">
-                  <img
-                    src={item.posterUrl}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-60" />
-
-                  {/* Type Badge (Top Left) */}
-                  <div className="absolute top-2 left-2 z-10">
-                    <span className="bg-black/80 backdrop-blur-md text-zinc-200 font-mono font-bold text-[10px] uppercase px-1.5 py-0.5 rounded border border-zinc-700 shadow">
-                      {item.type}
-                    </span>
-                  </div>
-
-                  {/* Rating Badge (Bottom Left) */}
-                  <div className="absolute bottom-2.5 left-2.5 z-10 inline-flex items-center gap-1.5 bg-black/80 backdrop-blur-md text-white font-mono font-bold text-xs px-2.5 py-1 rounded border border-zinc-700/80 shadow-md leading-none">
-                    <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
-                    <span className="leading-none">{item.rating}</span>
-                  </div>
-
-                  {/* Season Badge (Top Right) */}
-                  <div className="absolute top-2 right-2 z-10">
-                    <span className="bg-zinc-950/90 text-white font-mono font-bold text-xs px-2 py-0.5 rounded shadow border border-zinc-700">
-                      S{item.seasons}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Title beneath the poster */}
-                <div className="p-2 sm:p-3 bg-zinc-900">
-                  <h3 className="text-sm font-semibold text-zinc-100 truncate group-hover:text-white transition-colors">
-                    {item.title}
-                  </h3>
-                </div>
+                <SeriesPosterCard
+                  seriesId={item.id}
+                  title={item.title}
+                  posterUrl={item.posterUrl}
+                  type={item.type}
+                  seasonsCount={item.seasons}
+                  rating={item.rating}
+                  focused={isFocused}
+                  onSelect={(seriesId) =>
+                    navigate({ to: '/watch/$seriesId', params: { seriesId } })
+                  }
+                />
               </div>
             );
           })}
@@ -457,6 +400,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const heroCount = heroesList.length;
 
@@ -532,7 +476,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           onMouseLeave={() => setIsPaused(false)}
           onFocus={() => setIsPaused(true)}
           onBlur={() => setIsPaused(false)}
-          className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-zinc-950 overflow-hidden group/hero"
+          className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-zinc-950 overflow-hidden rounded-b-[32px] group/hero"
         >
           {/* Background Banner Images with Smooth Crossfade.
               Mobile renders the portrait poster full-bleed; desktop renders the wide banner. */}
@@ -597,9 +541,9 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
                     {currentHero.episodes} {currentHero.episodes === 1 ? 'Episode' : 'Episodes'}
                   </span>
                 </span>
-                <span data-testid="hero-genres" className="inline-flex items-center gap-2 text-sm text-zinc-300">
+                <span data-testid="hero-genres" className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-zinc-300">
                   {currentHero.genres.slice(0, 3).map((genre, genreIdx) => (
-                    <span key={genre} className="flex items-center gap-2">
+                    <span key={genre} className="flex items-center gap-2 uppercase font-bold tracking-wide">
                       {genreIdx > 0 && (
                         <span aria-hidden="true" className="text-zinc-600">
                           •
@@ -631,18 +575,25 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-center md:justify-start gap-4 pt-4 w-full md:w-auto">
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-4 w-full md:w-auto">
                 <button
                   data-testid="hero-play"
                   data-nav-row={0}
                   data-nav-item={0}
                   onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: currentHero.id } })}
-                  className={`w-full md:w-auto justify-center bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors flex items-center gap-2 shadow-lg hover:shadow-white/10 cursor-pointer ${
+                  className={`w-full md:w-auto justify-center bg-[var(--green)] text-white px-7 py-3 rounded-2xl text-base font-extrabold shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all flex items-center gap-2 cursor-pointer ${
                     isSpatialMode && focusedRow === 0 && focusedItem === 0 ? 'ring-2 ring-white' : ''
                   }`}
                 >
-                  <Play className="w-5 h-5 fill-black text-black" />
+                  <Play className="w-5 h-5 fill-white text-white" />
                   <span>Play</span>
+                </button>
+                <button
+                  data-testid="hero-more-info"
+                  onClick={() => setDetailOpen(true)}
+                  className="w-full md:w-auto justify-center bg-white/20 text-white backdrop-blur-sm px-7 py-3 rounded-2xl text-base font-extrabold shadow-[0_5px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.2)] hover:bg-white/30 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <span>More Info</span>
                 </button>
               </div>
             </div>
@@ -709,6 +660,13 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           <RecentlyAddedEpisodesRow episodes={recentlyAddedEpisodes} />
         )}
       </div>
+
+      <SeriesDetailDialog
+        series={currentHero}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onPlay={(seriesId) => navigate({ to: '/watch/$seriesId', params: { seriesId } })}
+      />
     </div>
   );
 }

@@ -49,14 +49,13 @@ describe('PublicNavbar mobile', () => {
     return router;
   }
 
-  it('renders mobile menu + search triggers and hides desktop nav/search on small screens via responsive classes', async () => {
+  it('renders unified circular search toggle and hides desktop nav on small screens via responsive classes', async () => {
     await renderAt('/');
     expect(screen.getByTestId('mobile-menu-button')).toBeInTheDocument();
-    expect(screen.getByTestId('mobile-search-button')).toBeInTheDocument();
+    expect(screen.getByTestId('search-toggle')).toBeInTheDocument();
+    expect(screen.getByTestId('search-toggle').className).toContain('rounded-full');
     expect(screen.getByTestId('desktop-nav')).toHaveClass('hidden', 'md:flex');
-    expect(screen.getByTestId('desktop-search')).toHaveClass('hidden', 'md:block');
     expect(screen.getByTestId('mobile-menu-button')).toHaveClass('md:hidden');
-    expect(screen.getByTestId('mobile-search-button')).toHaveClass('md:hidden');
   });
 
   it('opens drawer with Home + Big Genre links and dismisses on link click and close button', async () => {
@@ -101,22 +100,22 @@ describe('PublicNavbar mobile', () => {
     });
   });
 
-  it('expands mobile search overlay with close action and dismisses it', async () => {
+  it('expands search popover with close action and dismisses it', async () => {
     await renderAt('/');
-    expect(screen.queryByTestId('mobile-search-overlay')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('search-popover')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId('mobile-search-button'));
-    const overlay = await screen.findByTestId('mobile-search-overlay');
-    expect(overlay).toBeInTheDocument();
-    expect(screen.getByTestId('mobile-search-close')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('search-toggle'));
+    const popover = await screen.findByTestId('search-popover');
+    expect(popover).toBeInTheDocument();
+    expect(popover.className).toContain('rounded-2xl');
     expect(
-      overlay.querySelector('input[aria-label="Search series catalog"]')
+      popover.querySelector('input[aria-label="Search series catalog"]')
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId('mobile-search-close'));
+    fireEvent.click(screen.getByTestId('search-toggle'));
     await waitFor(() => {
-      expect(screen.queryByTestId('mobile-search-overlay')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('search-popover')).not.toBeInTheDocument();
     });
-    expect(screen.getByTestId('mobile-search-button')).toBeInTheDocument();
+    expect(screen.getByTestId('search-toggle')).toBeInTheDocument();
   });
 });

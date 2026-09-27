@@ -78,7 +78,7 @@ export function SeriesHeroBanner({
   return (
     <div
       data-testid="series-hero-banner"
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-hidden rounded-b-[32px]"
     >
       {/* Cinematic Hero Artwork Container (Full-bleed edge-to-edge).
           65dvh on mobile for portrait poster breathing room while teasing
@@ -132,7 +132,7 @@ export function SeriesHeroBanner({
                 className="mx-auto md:mx-0 max-w-[220px] sm:max-w-[320px] md:max-w-[400px] max-h-[80px] sm:max-h-[120px] md:max-h-[150px] w-auto h-auto object-contain object-center md:object-left-bottom drop-shadow-md"
               />
             ) : (
-              <h1 className="text-center md:text-left text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+              <h1 className="font-display text-center md:text-left text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
                 <span data-testid="hero-title-text">{series.title}</span>
               </h1>
             )}
@@ -226,13 +226,13 @@ export function SeriesHeroBanner({
                 disabled={isPlayDisabled}
                 data-testid="hero-play"
                 aria-label="Play Episode 1"
-                className={`inline-flex w-full md:w-auto items-center justify-center gap-2 bg-white text-black px-7 py-3 rounded-md text-base font-semibold hover:bg-zinc-200 transition-colors shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`inline-flex w-full md:w-auto items-center justify-center gap-2 bg-[var(--green)] text-white px-7 py-3 rounded-2xl text-base font-extrabold shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0 ${
                   isSpatialMode && isPlayFocused
                     ? 'ring-2 ring-white ring-offset-2 ring-offset-black'
                     : ''
                 }`}
               >
-                <Play className="h-5 w-5 fill-black text-black" aria-hidden="true" />
+                <Play className="h-5 w-5 fill-white text-white" aria-hidden="true" />
                 <span>Play Episode 1</span>
               </button>
             </div>

@@ -24,6 +24,35 @@ describe('Button component', () => {
     expect(button).toHaveClass('border-c');
   });
 
+  it('renders duo 3D tactile variant with press physics', () => {
+    renderWithProviders(<Button variant="duo">Play</Button>);
+    const button = screen.getByRole('button', { name: 'Play' });
+    expect(button.className).toMatch('rounded-2xl');
+    expect(button.className).toMatch('active:translate-y-1');
+    expect(button.className).toMatch('shadow-');
+  });
+
+  it('renders duo-green, duo-translucent and duo-outline variants', () => {
+    const { unmount: u1 } = renderWithProviders(
+      <Button variant="duo-green">Green</Button>
+    );
+    expect(screen.getByRole('button', { name: 'Green' }).className).toMatch(
+      'active:translate-y-1'
+    );
+    u1();
+    const { unmount: u2 } = renderWithProviders(
+      <Button variant="duo-translucent">Info</Button>
+    );
+    expect(screen.getByRole('button', { name: 'Info' }).className).toMatch(
+      'backdrop-blur-sm'
+    );
+    u2();
+    renderWithProviders(<Button variant="duo-outline">Outline3D</Button>);
+    expect(
+      screen.getByRole('button', { name: 'Outline3D' }).className
+    ).toMatch('active:translate-y-1');
+  });
+
   it('handles click events', async () => {
     const handleClick = vi.fn();
     const { user } = renderWithProviders(

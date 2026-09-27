@@ -5,11 +5,11 @@ describe('uiStore', () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.className = '';
-    useUIStore.setState({ theme: 'light', sidebarCollapsed: false });
+    useUIStore.setState({ theme: 'dark', sidebarCollapsed: false });
   });
 
-  it('initializes with default light theme and expanded sidebar', () => {
-    expect(useUIStore.getState().theme).toBe('light');
+  it('initializes with default dark theme and expanded sidebar', () => {
+    expect(useUIStore.getState().theme).toBe('dark');
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
   });
 
@@ -25,12 +25,12 @@ describe('uiStore', () => {
 
   it('toggles theme between light and dark', () => {
     useUIStore.getState().toggleTheme();
-    expect(useUIStore.getState().theme).toBe('dark');
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-
-    useUIStore.getState().toggleTheme();
     expect(useUIStore.getState().theme).toBe('light');
     expect(document.documentElement.classList.contains('dark')).toBe(false);
+
+    useUIStore.getState().toggleTheme();
+    expect(useUIStore.getState().theme).toBe('dark');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 
   it('updates sidebarCollapsed when setSidebarCollapsed is called', () => {

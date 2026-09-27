@@ -39,7 +39,7 @@ export function WatchTopNav({
           size="sm"
           onClick={onClick}
           aria-label={ariaLabel}
-          className={`gap-2 bg-black/50 backdrop-blur-md border border-white/20 text-white hover:bg-black/80 hover:text-white ${
+          className={`gap-2 rounded-2xl bg-black/50 backdrop-blur-md border-2 border-white/20 text-white font-extrabold shadow-[0_4px_0_rgba(0,0,0,0.35)] active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.35)] hover:bg-black/80 hover:text-white transition-all cursor-pointer ${
             isSpatialMode && isBackFocused ? 'ring-2 ring-white' : ''
           }`}
         >

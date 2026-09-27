@@ -246,12 +246,12 @@ describe('GenreSeriesCatalog', () => {
       'src',
       'https://example.com/poster-s-tv.jpg'
     );
-    expect(cards[0]).toHaveAttribute('href', '/watch/s-tv');
+    expect(cards[0]).toHaveAttribute('data-series-id', 's-tv');
 
     const movieCard = within(cards[1] as HTMLElement);
     expect(movieCard.getByText('Movie')).toBeInTheDocument();
     expect(movieCard.getByText('7.4')).toBeInTheDocument();
-    expect(cards[1]).toHaveAttribute('href', '/watch/s-movie');
+    expect(cards[1]).toHaveAttribute('data-series-id', 's-movie');
   });
 
   it('shows skeleton cards while the initial page loads', async () => {

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
-import { Star } from 'lucide-react';
-import { fetchSeries, type SeriesItem } from '@/modules/videos';
+import { useNavigate } from '@tanstack/react-router';
+import { fetchSeries, SeriesPosterCard, type SeriesItem } from '@/modules/videos';
 import { PublicNavbar } from '@/modules/navigation';
 import { genresQueryOptions } from './api';
 
@@ -27,6 +26,7 @@ function formatSlugFallback(slug: string): string {
 }
 
 export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeriesCatalogProps) {
+  const navigate = useNavigate();
   const { data: genres = [] } = useQuery(genresQueryOptions());
   const genreName =
     genres.find((genre) => genre.slug === slug)?.name ?? formatSlugFallback(slug);
@@ -187,45 +187,25 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
           <>
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
               {items.map((item) => (
-                <Link
+                <SeriesPosterCard
                   key={item.id}
-                  to="/watch/$seriesId"
-                  params={{ seriesId: item.id }}
-                  data-testid="series-card"
-                  className="group overflow-hidden rounded-md border border-zinc-800 bg-zinc-900 transition-all duration-300 hover:border-zinc-700 hover:scale-[1.03] cursor-pointer"
-                >
-                  <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-800">
-                    {item.posterUrl ? (
-                      <img
-                        src={item.posterUrl}
-                        alt={item.title}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-zinc-600">
-                        {item.title.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-60" />
-                    <div className="absolute top-2 left-2">
-                      <span className="rounded border border-zinc-700 bg-black/80 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase text-zinc-200">
-                        {item.type === 'movie' ? 'Movie' : 'TV'}
-                      </span>
-                    </div>
-                    {item.rating ? (
-                      <div className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1.5 rounded border border-zinc-700/80 bg-black/80 px-2.5 py-1 font-mono text-xs font-bold leading-none text-white">
-                        <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />
-                        <span className="leading-none">{item.rating}</span>
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="p-2 sm:p-3">
-                    <h3 className="truncate text-sm font-semibold text-zinc-100 transition-colors group-hover:text-white">
-                      {item.title}
-                    </h3>
-                  </div>
-                </Link>
+                  seriesId={item.id}
+                  title={item.title}
+                  posterUrl={
+                    item.posterUrl ||
+                    'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop'
+                  }
+                  type={item.type ?? 'tv'}
+                  seasonsCount={
+                    typeof (item as { seasonsCount?: number | null }).seasonsCount === 'number'
+                      ? (item as { seasonsCount?: number | null }).seasonsCount
+                      : undefined
+                  }
+                  rating={item.rating ?? undefined}
+                  onSelect={(seriesId) =>
+                    navigate({ to: '/watch/$seriesId', params: { seriesId } })
+                  }
+                />
               ))}
             </div>
 

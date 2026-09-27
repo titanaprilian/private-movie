@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from '@tanstack/react-router';
 import { genresQueryOptions } from '@/modules/genres';
@@ -20,6 +20,7 @@ function SafeLink({
   className,
   children,
   onClick,
+  ariaLabel,
 }: {
   to: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,20 +28,21 @@ function SafeLink({
   className?: string;
   children: React.ReactNode;
   onClick?: () => void;
+  ariaLabel?: string;
 }) {
   try {
     useLocation();
     if (params && to.includes('$')) {
       return (
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        <Link to={to as any} params={params as any} className={className} onClick={onClick}>
+        <Link to={to as any} params={params as any} className={className} onClick={onClick} aria-label={ariaLabel}>
           {children}
         </Link>
       );
     }
     return (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      <Link to={to as any} className={className} onClick={onClick}>
+      <Link to={to as any} className={className} onClick={onClick} aria-label={ariaLabel}>
         {children}
       </Link>
     );
@@ -49,7 +51,7 @@ function SafeLink({
       ? Object.entries(params).reduce((acc: string, [k, v]) => acc.replace(`$${k}`, String(v)), to)
       : to;
     return (
-      <a href={href} className={className} onClick={onClick}>
+      <a href={href} className={className} onClick={onClick} aria-label={ariaLabel}>
         {children}
       </a>
     );
@@ -60,17 +62,8 @@ export function PublicNavbar() {
   const { data: genres = [] } = useQuery(genresQueryOptions());
   const pathname = useCurrentPath();
 
-  const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Filter active Big Genres and sort by displayOrder asc
   const bigGenres = genres
@@ -82,124 +75,93 @@ export function PublicNavbar() {
   const currentGenreSlug = genreMatch ? genreMatch[1] : undefined;
 
   const handleSelectSeries = (series: SeriesItem) => {
-    setMobileSearchOpen(false);
+    setSearchOpen(false);
+    setMobileMenuOpen(false);
     if (typeof window !== 'undefined') {
       window.location.href = `/watch/${series.id}`;
     }
   };
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
-  const closeMobileSearch = () => setMobileSearchOpen(false);
+  const closeSearch = () => setSearchOpen(false);
 
   const navLinkClass = (isActive: boolean) =>
-    `text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded px-2 py-1 ${
+    `rounded-full px-4 py-2 font-extrabold text-sm font-sans transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] ${
       isActive
-        ? 'text-white font-bold border-b-2 border-red-600 pb-0.5'
-        : 'text-zinc-400 hover:text-zinc-200'
+        ? 'bg-[#1cb0f6]/15 text-[#1cb0f6]'
+        : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--surface-raised)]'
     }`;
 
   return (
     <>
       <header
         data-testid="public-navbar"
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-black/80 backdrop-blur-md border-b border-zinc-800/80 py-3'
-            : 'bg-gradient-to-b from-black/90 via-black/50 to-transparent py-4'
-        }`}
+        className="sticky top-0 z-50 h-[76px] border-b-2 border-[var(--border)] bg-[var(--bg)]"
       >
-        {/* Mobile search overlay spans the full header bar */}
-        {mobileSearchOpen ? (
-          <div
-            data-testid="mobile-search-overlay"
-            className="max-w-7xl mx-auto px-4 flex items-center gap-2"
-          >
-            <div className="flex-1 min-w-0">
-              <CatalogSearch
-                genre={currentGenreSlug}
-                onSelectSeries={handleSelectSeries}
-                className="w-full"
-                autoFocus
-              />
-            </div>
-            <button
-              type="button"
-              aria-label="Close search"
-              data-testid="mobile-search-close"
-              onClick={closeMobileSearch}
-              className="shrink-0 p-2 rounded text-zinc-300 hover:text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        <div className="max-w-7xl mx-auto px-6 md:px-12 h-full flex items-center justify-between gap-4">
+          <div className="flex items-center gap-6 sm:gap-8 min-w-0">
+            <SafeLink
+              to="/"
+              className="font-display text-2xl font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] rounded-full px-1 shrink-0"
+              ariaLabel="Private Movie home"
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-6 sm:gap-8 min-w-0">
-              <SafeLink
-                to="/"
-                className="flex items-center gap-2 font-black tracking-wider text-red-600 text-lg sm:text-xl uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded px-1 shrink-0"
-              >
-                <span>PRIVATE MOVIE</span>
+              <span className="text-[var(--ink)]">Private</span>{' '}
+              <span className="text-[var(--green)]">Movie</span>
+            </SafeLink>
+
+            <nav
+              aria-label="Main Navigation"
+              data-testid="desktop-nav"
+              className="hidden md:flex items-center gap-2"
+            >
+              <SafeLink to="/" className={navLinkClass(pathname === '/')}>
+                Home
               </SafeLink>
 
-              <nav
-                aria-label="Main Navigation"
-                data-testid="desktop-nav"
-                className="hidden md:flex items-center gap-4 sm:gap-6"
-              >
-                <SafeLink to="/" className={navLinkClass(pathname === '/')}>
-                  Home
-                </SafeLink>
+              {bigGenres.map((genre) => {
+                const targetPath = `/genres/${genre.slug}`;
+                const isActive = pathname === targetPath;
 
-                {bigGenres.map((genre) => {
-                  const targetPath = `/genres/${genre.slug}`;
-                  const isActive = pathname === targetPath;
+                return (
+                  <SafeLink
+                    key={genre.id}
+                    to="/genres/$slug"
+                    params={{ slug: genre.slug }}
+                    className={navLinkClass(isActive)}
+                  >
+                    {genre.name}
+                  </SafeLink>
+                );
+              })}
+            </nav>
+          </div>
 
-                  return (
-                    <SafeLink
-                      key={genre.id}
-                      to="/genres/$slug"
-                      params={{ slug: genre.slug }}
-                      className={navLinkClass(isActive)}
-                    >
-                      {genre.name}
-                    </SafeLink>
-                  );
-                })}
-              </nav>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Desktop search — hidden on mobile */}
-              <div data-testid="desktop-search" className="hidden md:block">
-                <CatalogSearch
-                  genre={currentGenreSlug}
-                  onSelectSeries={handleSelectSeries}
-                  className="w-48 sm:w-64"
-                />
-              </div>
-
-              {/* Mobile triggers — hidden on desktop */}
-              <button
-                type="button"
-                aria-label="Open search"
-                data-testid="mobile-search-button"
-                onClick={() => setMobileSearchOpen(true)}
-                className="md:hidden p-2 rounded text-zinc-300 hover:text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              >
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Unified circular search toggle (desktop + mobile) */}
+            <button
+              type="button"
+              aria-label={searchOpen ? 'Close search' : 'Open search'}
+              aria-expanded={searchOpen}
+              data-testid="search-toggle"
+              onClick={() => setSearchOpen((v) => !v)}
+              className="w-11 h-11 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] flex items-center justify-center font-extrabold shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)] hover:bg-[var(--yellow)] hover:border-[var(--yellow-dark)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
+            >
+              {searchOpen ? (
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ) : (
                 <svg
                   width="20"
                   height="20"
@@ -214,30 +176,59 @@ export function PublicNavbar() {
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-              </button>
+              )}
+            </button>
+            {/* Mobile menu trigger */}
+            <button
+              type="button"
+              aria-label="Open menu"
+              aria-expanded={mobileMenuOpen}
+              data-testid="mobile-menu-button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden w-11 h-11 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] flex items-center justify-center shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Search popover dialog card */}
+        {searchOpen && (
+          <div className="absolute top-[76px] left-0 right-0 z-50 px-4">
+            <div
+              role="dialog"
+              aria-label="Catalog search"
+              data-testid="search-popover"
+              className="max-w-7xl mx-auto rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-4 shadow-2xl"
+            >
+              <CatalogSearch
+                genre={currentGenreSlug}
+                onSelectSeries={handleSelectSeries}
+                className="w-full max-w-none"
+                autoFocus
+              />
               <button
                 type="button"
-                aria-label="Open menu"
-                aria-expanded={mobileMenuOpen}
-                data-testid="mobile-menu-button"
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden p-2 rounded text-zinc-300 hover:text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                aria-label="Close search"
+                data-testid="search-popover-close"
+                onClick={closeSearch}
+                className="sr-only"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
+                Close search
               </button>
             </div>
           </div>
@@ -258,18 +249,19 @@ export function PublicNavbar() {
             aria-modal="true"
             aria-label="Mobile navigation"
             data-testid="mobile-drawer"
-            className="absolute top-0 left-0 bottom-0 w-72 max-w-[80vw] bg-zinc-950 border-r border-zinc-800 p-4 flex flex-col gap-2 overflow-y-auto"
+            className="absolute top-4 left-4 bottom-4 w-72 max-w-[80vw] rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2 overflow-y-auto shadow-2xl"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="font-black tracking-wider text-red-600 text-base uppercase">
-                Private Movie
+              <span className="font-display text-xl font-extrabold">
+                <span className="text-[var(--ink)]">Private</span>{' '}
+                <span className="text-[var(--green)]">Movie</span>
               </span>
               <button
                 type="button"
                 aria-label="Close menu"
                 data-testid="mobile-drawer-close"
                 onClick={closeMobileMenu}
-                className="p-2 rounded text-zinc-300 hover:text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="w-11 h-11 rounded-full border-2 border-[var(--border)] bg-[var(--bg)] text-[var(--ink)] flex items-center justify-center shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
               >
                 <svg
                   width="18"
@@ -287,11 +279,11 @@ export function PublicNavbar() {
                 </svg>
               </button>
             </div>
-            <nav aria-label="Mobile Navigation" className="flex flex-col gap-1">
+            <nav aria-label="Mobile Navigation" className="flex flex-col gap-2">
               <SafeLink
                 to="/"
                 onClick={closeMobileMenu}
-                className={`${navLinkClass(pathname === '/')} block px-3 py-2 text-base`}
+                className={`${navLinkClass(pathname === '/')} block px-4 py-2 text-base`}
               >
                 Home
               </SafeLink>
@@ -304,7 +296,7 @@ export function PublicNavbar() {
                     to="/genres/$slug"
                     params={{ slug: genre.slug }}
                     onClick={closeMobileMenu}
-                    className={`${navLinkClass(isActive)} block px-3 py-2 text-base`}
+                    className={`${navLinkClass(isActive)} block px-4 py-2 text-base`}
                   >
                     {genre.name}
                   </SafeLink>

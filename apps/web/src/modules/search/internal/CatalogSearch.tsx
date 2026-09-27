@@ -105,7 +105,7 @@ export function CatalogSearch({
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
           aria-label="Search series catalog"
-          className="w-full pl-9 pr-8 py-1.5 rounded border border-c bg-card text-xs mono text-foreground placeholder:text-muted focus:outline-none focus:border-primary transition-colors"
+          className="w-full pl-9 pr-8 py-2.5 rounded-2xl border-2 border-[var(--border)] bg-[var(--bg)] text-sm font-sans font-bold text-[var(--ink)] placeholder:text-[var(--muted)] placeholder:font-semibold focus:outline-none focus:border-[var(--blue)] transition-colors"
         />
 
         {/* Clear Button (X) */}
@@ -137,7 +137,7 @@ export function CatalogSearch({
       {showDropdown && (
         <div
           data-testid="search-dropdown"
-          className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-card border border-c rounded-md shadow-lg overflow-hidden max-h-96 overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] shadow-2xl overflow-hidden max-h-96 overflow-y-auto"
         >
           {/* Loading Skeleton State */}
           {isSearching ? (

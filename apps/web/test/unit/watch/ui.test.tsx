@@ -288,6 +288,29 @@ describe('SeriesWatchView', () => {
       expect(screen.getByText('22m')).toBeInTheDocument();
     });
 
+    it('styles episode cards with 2px borders, 20px corners, and green EP pill badges', () => {
+      renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+      const epCard = screen.getByRole('button', { name: /play episode 1: episode one/i });
+      expect(epCard).toHaveClass('rounded-[20px]');
+      expect(epCard.className).toMatch(/border-2/);
+      expect(epCard.className).toMatch(/border-\[var\(--border\)\]/);
+      expect(epCard.className).toMatch(/hover:-translate-y-1/);
+
+      const epBadge = screen.getByText('EP 1');
+      expect(epBadge).toHaveClass('rounded-full');
+      expect(epBadge.className).toMatch(/bg-\[var\(--green\)\]/);
+    });
+
+    it('styles the top back navigation button with Duolingo 3D press physics', () => {
+      renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+      const back = screen.getByRole('button', { name: 'Back' });
+      expect(back).toHaveClass('rounded-2xl');
+      expect(back.className).toMatch(/active:translate-y-1/);
+      expect(back.className).toMatch(/shadow-\[0_4px_0/);
+    });
+
     it('uses horizontal tabs for series with 2 to 4 seasons and switches episodes', async () => {
       const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
