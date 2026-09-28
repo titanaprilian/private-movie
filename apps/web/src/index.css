@@ -455,6 +455,43 @@ body {
   font-size: 13px;
   color: var(--muted);
 }
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.pill.src {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+}
+.pill.status {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.pill.status.ready {
+  color: var(--green);
+  background: var(--green-tint);
+  border: 1px solid rgba(88, 204, 2, 0.4);
+}
+.pill.status.no-stream {
+  color: #ff9600;
+  background: rgba(255, 150, 0, 0.15);
+  border: 1px solid rgba(255, 150, 0, 0.4);
+}
 
 /* Sticky bulk selection bar */
 .bulkbar {

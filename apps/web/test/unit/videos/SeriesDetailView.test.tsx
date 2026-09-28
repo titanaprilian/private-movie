@@ -224,7 +224,7 @@ describe('SeriesDetailView component', () => {
     await user.click(actionMenuButton);
 
     // Test Edit Action opens Episode Detail Drawer
-    const editButton = screen.getByRole('button', { name: /^edit$/i });
+    const editButton = await screen.findByRole('menuitem', { name: /^edit$/i });
     await user.click(editButton);
 
     expect(await screen.findByRole('dialog', { name: `Episode Details: ${firstEpisode.title}` })).toBeInTheDocument();
@@ -241,7 +241,7 @@ describe('SeriesDetailView component', () => {
 
     // Re-open action menu for Delete Dialog
     await user.click(actionMenuButton);
-    const deleteButton = screen.getByRole('button', { name: /^delete$/i });
+    const deleteButton = await screen.findByRole('menuitem', { name: /^delete$/i });
     await user.click(deleteButton);
 
     expect(await screen.findByRole('heading', { name: 'Delete Episode' })).toBeInTheDocument();
@@ -346,7 +346,7 @@ describe('SeriesDetailView component', () => {
     await user.click(actionMenuButton);
 
     // Open manage sources dialog
-    const manageSourcesBtn = screen.getByRole('button', { name: /^sources$/i });
+    const manageSourcesBtn = await screen.findByRole('menuitem', { name: /^sources$/i });
     await user.click(manageSourcesBtn);
 
     expect(await screen.findByRole('heading', { name: 'Manage Sources' })).toBeInTheDocument();

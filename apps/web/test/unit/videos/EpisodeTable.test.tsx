@@ -1,4 +1,4 @@
-import { renderWithProviders, screen, userEvent } from '../../utils';
+import { renderWithProviders, screen, userEvent, within } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
 import { EpisodeTable } from '@/modules/videos/internal/EpisodeTable';
 import type { Episode } from '@/modules/videos/internal/api';
@@ -54,18 +54,25 @@ function renderEpisodeTable(props: Partial<React.ComponentProps<typeof EpisodeTa
 }
 
 describe('EpisodeTable Component', () => {
-  it('renders all table columns: handle, order, title, duration, sources, status, release date, and actions', () => {
-    renderEpisodeTable();
+  it('renders all table columns: checkbox, grip, order, title, duration, sources, status, release date, and kebab action menu', () => {
+    const { container } = renderEpisodeTable();
 
-    // Table headers
-    expect(screen.getByRole('columnheader', { name: /reorder handle/i })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /#/i })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /title/i })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /duration/i })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /sources/i })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /status/i })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /release date/i })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /actions/i })).toBeInTheDocument();
+    // Table header container and items
+    const header = container.querySelector('.ep-head');
+    expect(header).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByRole('checkbox', { name: /select all visible episodes/i })).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('Reorder handle')).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('#')).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('Title')).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('Duration')).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('Sources')).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('Status')).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('Release Date')).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('Actions')).toBeInTheDocument();
+
+    // CSS Grid container
+    const epList = container.querySelector('.ep-list');
+    expect(epList).toBeInTheDocument();
 
     // Episodes rendered
     expect(screen.getByText('Episode 1: The Beginning')).toBeInTheDocument();
@@ -113,13 +120,11 @@ describe('EpisodeTable Component', () => {
 
   it('sorts episodes by Order, Title, Duration, and Release Date upon column header click', async () => {
     const user = userEvent.setup();
-    renderEpisodeTable();
+    const { container } = renderEpisodeTable();
 
     const getRenderedTitles = () =>
-      screen
-        .getAllByRole('row')
-        .slice(1) // exclude header row
-        .map((row) => row.querySelector('.font-medium')?.textContent?.trim())
+      Array.from(container.querySelectorAll('.ep .ep-title'))
+        .map((el) => el.textContent?.trim())
         .filter(Boolean);
 
     // Initial order (order asc)
@@ -229,24 +234,24 @@ describe('EpisodeTable Component', () => {
     await user.click(menuBtn);
 
     // Edit
-    const editBtn = screen.getByRole('button', { name: /^edit$/i });
+    const editBtn = await screen.findByRole('menuitem', { name: /^edit$/i });
     await user.click(editBtn);
     expect(onEditEpisode).toHaveBeenCalledWith(mockEpisodes[0]);
-    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^edit$/i })).not.toBeInTheDocument();
 
     // Manage Sources
     await user.click(menuBtn);
-    const sourcesBtn = screen.getByRole('button', { name: /^sources$/i });
+    const sourcesBtn = await screen.findByRole('menuitem', { name: /^sources$/i });
     await user.click(sourcesBtn);
     expect(onManageSources).toHaveBeenCalledWith(mockEpisodes[0]);
-    expect(screen.queryByRole('button', { name: /^sources$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^sources$/i })).not.toBeInTheDocument();
 
     // Delete
     await user.click(menuBtn);
-    const deleteBtn = screen.getByRole('button', { name: /^delete$/i });
+    const deleteBtn = await screen.findByRole('menuitem', { name: /^delete$/i });
     await user.click(deleteBtn);
     expect(onDeleteEpisode).toHaveBeenCalledWith(mockEpisodes[0]);
-    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
   it('supports selecting individual rows and displays the batch toolbar with selection count', async () => {
@@ -254,7 +259,7 @@ describe('EpisodeTable Component', () => {
     const onBatchDelete = vi.fn();
     const onBatchMoveToSeason = vi.fn();
 
-    renderEpisodeTable({
+    const { container } = renderEpisodeTable({
       onBatchDelete,
       onBatchMoveToSeason,
     });
@@ -269,6 +274,10 @@ describe('EpisodeTable Component', () => {
     // Toolbar appears with count 1
     expect(screen.getByRole('toolbar', { name: /batch actions toolbar/i })).toBeInTheDocument();
     expect(screen.getByText('1 selected')).toBeInTheDocument();
+
+    // First card has .sel class
+    const firstCard = container.querySelector('.ep');
+    expect(firstCard).toHaveClass('sel');
 
     // Select row 2
     const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
@@ -295,28 +304,28 @@ describe('EpisodeTable Component', () => {
     const user = userEvent.setup();
     renderEpisodeTable();
 
-    const headerCheckbox = screen.getByLabelText('Select all visible episodes') as HTMLInputElement;
-    expect(headerCheckbox.checked).toBe(false);
-    expect(headerCheckbox.indeterminate).toBe(false);
+    const headerCheckbox = screen.getByLabelText('Select all visible episodes');
+    expect(headerCheckbox).toHaveAttribute('aria-checked', 'false');
+    expect(headerCheckbox).toHaveAttribute('data-state', 'unchecked');
 
     // Select 1 item (partial selection)
     const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
     await user.click(checkbox1);
 
-    expect(headerCheckbox.checked).toBe(false);
-    expect(headerCheckbox.indeterminate).toBe(true);
+    expect(headerCheckbox).toHaveAttribute('aria-checked', 'mixed');
+    expect(headerCheckbox).toHaveAttribute('data-state', 'indeterminate');
 
     // Click header checkbox -> should select all 3
     await user.click(headerCheckbox);
     expect(screen.getByText('3 selected')).toBeInTheDocument();
-    expect(headerCheckbox.indeterminate).toBe(false);
-    expect(headerCheckbox.checked).toBe(true);
+    expect(headerCheckbox).toHaveAttribute('aria-checked', 'true');
+    expect(headerCheckbox).toHaveAttribute('data-state', 'checked');
 
     // Click header checkbox again -> should unselect all
     await user.click(headerCheckbox);
     expect(screen.queryByRole('toolbar', { name: /batch actions toolbar/i })).not.toBeInTheDocument();
-    expect(headerCheckbox.indeterminate).toBe(false);
-    expect(headerCheckbox.checked).toBe(false);
+    expect(headerCheckbox).toHaveAttribute('aria-checked', 'false');
+    expect(headerCheckbox).toHaveAttribute('data-state', 'unchecked');
   });
 
   it('disables drag-and-drop when multiple rows are selected', async () => {

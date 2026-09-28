@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
+import { Edit2, Link as LinkIcon, Trash2, GripVertical, AlertCircle } from 'lucide-react';
 import { EpisodeBatchToolbar } from './EpisodeBatchToolbar';
 import type { SeriesDetails } from './api';
 
@@ -79,9 +80,6 @@ export function EpisodeTable({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('order');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [openMenuEpisodeId, setOpenMenuEpisodeId] = useState<string | null>(null);
-
-  const headerCheckboxRef = useRef<HTMLInputElement>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -158,12 +156,6 @@ export function EpisodeTable({
   const isIndeterminate =
     selectedVisibleCount > 0 && selectedVisibleCount < visibleEpisodeIds.length;
 
-  useEffect(() => {
-    if (headerCheckboxRef.current) {
-      headerCheckboxRef.current.indeterminate = isIndeterminate;
-    }
-  }, [isIndeterminate]);
-
   const handleToggleSelectAll = (checked: boolean) => {
     if (checked) {
       const merged = Array.from(
@@ -206,10 +198,10 @@ export function EpisodeTable({
           : '';
 
   return (
-    <div className="bg-card border border-c rounded overflow-hidden flex flex-col space-y-0">
+    <div className="flex flex-col space-y-4">
       {/* Batch Action Toolbar */}
       {activeSelectedIds.length > 0 && (
-        <div className="p-2 border-b border-c bg-sidebar/50">
+        <div className="p-2 rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)]">
           <EpisodeBatchToolbar
             selectedCount={activeSelectedIds.length}
             onDeselectAll={handleDeselectAll}
@@ -221,14 +213,14 @@ export function EpisodeTable({
       )}
 
       {/* Search & Status Bar */}
-      <div className="p-3 border-b border-c flex flex-wrap items-center justify-between gap-2.5">
-        <div className="relative flex-1 min-w-[220px] max-w-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+        <div className="relative flex-1 min-w-[220px] max-w-[380px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search episodes by title or description..."
-            className="w-full pl-3 pr-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary placeholder:text-muted"
+            className="w-full h-11 px-4 rounded-xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] text-sm font-bold text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--blue)] transition-all"
             aria-label="Search episodes"
           />
         </div>
@@ -236,389 +228,286 @@ export function EpisodeTable({
         <div className="flex items-center gap-3 ml-auto">
           {isDragDisabled && (
             <div
-              className="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs mono"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-500 text-xs font-extrabold"
               title={dragDisabledTooltip}
             >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="shrink-0"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>Reordering disabled</span>
             </div>
           )}
 
-          <span className="text-xs mono text-muted">
+          <span className="text-xs font-extrabold tracking-wide uppercase text-[var(--muted)]">
             {sortedEpisodes.length}{' '}
             {sortedEpisodes.length === 1 ? 'episode' : 'episodes'}
           </span>
         </div>
       </div>
 
-      {/* Table responsive container */}
-      <div className="overflow-x-auto">
+      {/* Episode Card Grid Container */}
+      <div className="w-full">
+        {/* Header Grid Row */}
+        <div className="ep-head select-none" role="row">
+          {/* Select All Checkbox */}
+          <div className="flex items-center justify-center">
+            <ChunkyCheckbox
+              checked={allVisibleSelected}
+              indeterminate={isIndeterminate}
+              onCheckedChange={handleToggleSelectAll}
+              aria-label="Select all visible episodes"
+              disabled={sortedEpisodes.length === 0}
+            />
+          </div>
+
+          {/* Grip Header placeholder */}
+          <span className="sr-only">Reorder handle</span>
+
+          {/* Order Header */}
+          <span>
+            <button
+              type="button"
+              onClick={() => handleSort('order')}
+              className="flex items-center gap-1 font-extrabold uppercase hover:text-[var(--ink)] cursor-pointer transition-colors"
+            >
+              <span>#</span>
+              <span className="text-[10px]">
+                {sortField === 'order'
+                  ? sortDirection === 'asc'
+                    ? '↑'
+                    : '↓'
+                  : '↕'}
+              </span>
+            </button>
+          </span>
+
+          {/* Title Header */}
+          <span>
+            <button
+              type="button"
+              onClick={() => handleSort('title')}
+              className="flex items-center gap-1 font-extrabold uppercase hover:text-[var(--ink)] cursor-pointer transition-colors"
+            >
+              <span>Title</span>
+              <span className="text-[10px]">
+                {sortField === 'title'
+                  ? sortDirection === 'asc'
+                    ? '↑'
+                    : '↓'
+                  : '↕'}
+              </span>
+            </button>
+          </span>
+
+          {/* Duration Header */}
+          <span>
+            <button
+              type="button"
+              onClick={() => handleSort('duration')}
+              className="flex items-center gap-1 font-extrabold uppercase hover:text-[var(--ink)] cursor-pointer transition-colors"
+            >
+              <span>Duration</span>
+              <span className="text-[10px]">
+                {sortField === 'duration'
+                  ? sortDirection === 'asc'
+                    ? '↑'
+                    : '↓'
+                  : '↕'}
+              </span>
+            </button>
+          </span>
+
+          {/* Sources Header */}
+          <span className="text-center font-extrabold uppercase">Sources</span>
+
+          {/* Status Header */}
+          <span className="font-extrabold uppercase">Status</span>
+
+          {/* Release Date Header */}
+          <span>
+            <button
+              type="button"
+              onClick={() => handleSort('releaseDate')}
+              className="flex items-center gap-1 font-extrabold uppercase hover:text-[var(--ink)] cursor-pointer transition-colors"
+            >
+              <span>Release Date</span>
+              <span className="text-[10px]">
+                {sortField === 'releaseDate'
+                  ? sortDirection === 'asc'
+                    ? '↑'
+                    : '↓'
+                  : '↕'}
+              </span>
+            </button>
+          </span>
+
+          {/* Kebab Header placeholder */}
+          <span className="sr-only">Actions</span>
+        </div>
+
+        {/* List of Episode Cards */}
         <Droppable droppableId="episodes-list" isDropDisabled={isDragDisabled}>
           {(droppableProvided) => (
-            <table
-              className="w-full text-left text-xs border-collapse"
+            <div
+              className="ep-list"
               ref={droppableProvided.innerRef}
               {...droppableProvided.droppableProps}
             >
-              <thead>
-                <tr className="border-b border-c bg-sidebar text-muted uppercase tracking-wide text-[11px] mono select-none">
-                  {/* Select All Checkbox */}
-                  <th className="w-10 px-3 py-2 text-center">
-                    <Checkbox
-                      ref={headerCheckboxRef}
-                      checked={allVisibleSelected}
-                      onCheckedChange={handleToggleSelectAll}
-                      aria-label="Select all visible episodes"
-                      disabled={sortedEpisodes.length === 0}
-                    />
-                  </th>
-                  <th className="w-10 px-3 py-2 text-center">
-                    <span className="sr-only">Reorder handle</span>
-                  </th>
-                  <th className="w-16 px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSort('order')}
-                      className="flex items-center gap-1 font-mono hover:text-current cursor-pointer transition-colors"
-                    >
-                      <span>#</span>
-                      <span className="text-[10px]">
-                        {sortField === 'order'
-                          ? sortDirection === 'asc'
-                            ? '↑'
-                            : '↓'
-                          : '↕'}
-                      </span>
-                    </button>
-                  </th>
-                  <th className="px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSort('title')}
-                      className="flex items-center gap-1 font-mono hover:text-current cursor-pointer transition-colors"
-                    >
-                      <span>Title</span>
-                      <span className="text-[10px]">
-                        {sortField === 'title'
-                          ? sortDirection === 'asc'
-                            ? '↑'
-                            : '↓'
-                          : '↕'}
-                      </span>
-                    </button>
-                  </th>
-                  <th className="w-24 px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSort('duration')}
-                      className="flex items-center gap-1 font-mono hover:text-current cursor-pointer transition-colors"
-                    >
-                      <span>Duration</span>
-                      <span className="text-[10px]">
-                        {sortField === 'duration'
-                          ? sortDirection === 'asc'
-                            ? '↑'
-                            : '↓'
-                          : '↕'}
-                      </span>
-                    </button>
-                  </th>
-                  <th className="w-28 px-3 py-2 text-center">Sources</th>
-                  <th className="w-28 px-3 py-2">Status</th>
-                  <th className="w-32 px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSort('releaseDate')}
-                      className="flex items-center gap-1 font-mono hover:text-current cursor-pointer transition-colors"
-                    >
-                      <span>Release Date</span>
-                      <span className="text-[10px]">
-                        {sortField === 'releaseDate'
-                          ? sortDirection === 'asc'
-                            ? '↑'
-                            : '↓'
-                          : '↕'}
-                      </span>
-                    </button>
-                  </th>
-                  <th className="w-14 px-3 py-2 text-right">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {sortedEpisodes.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={9}
-                      className="p-8 text-center text-xs text-muted mono"
-                    >
-                      {isFiltered
-                        ? 'No episodes match your search.'
-                        : 'No episodes in this season.'}
-                    </td>
-                  </tr>
-                ) : (
-                  sortedEpisodes.map((episode, index) => {
-                    const isSelected = selectedEpisodeId === episode.id;
-                    const isRowChecked = activeSelectedIds.includes(episode.id);
-                    const sourcesCount = episode.videoSources?.length ?? 0;
-                    const isReady = sourcesCount > 0;
-                    const releaseDate = getReleaseDate(episode);
-                    const isMenuOpen = openMenuEpisodeId === episode.id;
+              {sortedEpisodes.length === 0 ? (
+                <div className="p-8 text-center text-sm font-bold text-[var(--muted)] rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)]">
+                  {isFiltered
+                    ? 'No episodes match your search.'
+                    : 'No episodes in this season.'}
+                </div>
+              ) : (
+                sortedEpisodes.map((episode, index) => {
+                  const isSelected = selectedEpisodeId === episode.id;
+                  const isRowChecked = activeSelectedIds.includes(episode.id);
+                  const sourcesCount = episode.videoSources?.length ?? 0;
+                  const isReady = sourcesCount > 0;
+                  const releaseDate = getReleaseDate(episode);
 
-                    return (
-                      <Draggable
-                        key={episode.id}
-                        draggableId={episode.id}
-                        index={index}
-                        isDragDisabled={isDragDisabled}
-                      >
-                        {(draggableProvided, snapshot) => (
-                          <tr
-                            ref={draggableProvided.innerRef}
-                            {...draggableProvided.draggableProps}
-                            onClick={() => onSelectEpisode?.(episode)}
-                            className={`group cursor-pointer transition-colors ${
-                              isRowChecked
-                                ? 'bg-primary/5'
-                                : isSelected
-                                  ? 'bg-[var(--active)] text-primary font-medium'
-                                  : 'hover-bg'
-                            } ${
-                              snapshot.isDragging
-                                ? 'bg-[var(--active)] shadow-md opacity-90'
-                                : ''
-                            }`}
+                  return (
+                    <Draggable
+                      key={episode.id}
+                      draggableId={episode.id}
+                      index={index}
+                      isDragDisabled={isDragDisabled}
+                    >
+                      {(draggableProvided, snapshot) => (
+                        <div
+                          ref={draggableProvided.innerRef}
+                          {...draggableProvided.draggableProps}
+                          onClick={() => onSelectEpisode?.(episode)}
+                          className={`ep ${isRowChecked ? 'sel' : ''} ${
+                            isSelected && !isRowChecked ? 'border-[var(--green)] bg-[var(--surface-raised)]' : ''
+                          } ${
+                            snapshot.isDragging
+                              ? 'shadow-2xl z-20 opacity-90 scale-[1.01]'
+                              : ''
+                          } cursor-pointer`}
+                        >
+                          {/* Checkbox */}
+                          <div
+                            className="flex items-center justify-center"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {/* Checkbox column */}
-                            <td
-                              className="w-10 px-3 py-2 text-center"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Checkbox
-                                checked={isRowChecked}
-                                onCheckedChange={() =>
-                                  handleToggleEpisode(episode.id)
-                                }
-                                aria-label={`Select ${episode.title}`}
-                              />
-                            </td>
+                            <ChunkyCheckbox
+                              checked={isRowChecked}
+                              onCheckedChange={() =>
+                                handleToggleEpisode(episode.id)
+                              }
+                              aria-label={`Select ${episode.title}`}
+                            />
+                          </div>
 
-                            {/* Drag Handle */}
-                            <td
-                              className="w-10 px-3 py-2 text-center"
-                              onClick={(e) => e.stopPropagation()}
+                          {/* Grip Handle */}
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center justify-center"
+                          >
+                            <div
+                              {...draggableProvided.dragHandleProps}
+                              className={`grip p-1 rounded inline-flex items-center justify-center ${
+                                isDragDisabled
+                                  ? 'cursor-not-allowed opacity-30'
+                                  : 'cursor-grab active:cursor-grabbing hover:text-[var(--ink)]'
+                              }`}
+                              title={
+                                isDragDisabled
+                                  ? dragDisabledTooltip
+                                  : 'Drag to reorder'
+                              }
+                              aria-label={`Reorder ${episode.title}`}
                             >
-                              <div
-                                {...draggableProvided.dragHandleProps}
-                                className={`p-1 inline-flex items-center justify-center rounded text-muted hover:text-current ${
-                                  isDragDisabled
-                                    ? 'cursor-not-allowed opacity-30'
-                                    : 'cursor-grab active:cursor-grabbing'
-                                }`}
-                                title={
-                                  isDragDisabled
-                                    ? dragDisabledTooltip
-                                    : 'Drag to reorder'
-                                }
-                                aria-label={`Reorder ${episode.title}`}
-                              >
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <circle cx="9" cy="5" r="1" />
-                                  <circle cx="9" cy="12" r="1" />
-                                  <circle cx="9" cy="19" r="1" />
-                                  <circle cx="15" cy="5" r="1" />
-                                  <circle cx="15" cy="12" r="1" />
-                                  <circle cx="15" cy="19" r="1" />
-                                </svg>
+                              <GripVertical className="w-4 h-4" />
+                            </div>
+                          </div>
+
+                          {/* Episode Number Badge */}
+                          <div className="ep-num">
+                            {episode.order ?? index + 1}
+                          </div>
+
+                          {/* Title & Description */}
+                          <div className="min-w-0 pr-2">
+                            <div className="ep-title text-[var(--ink)] truncate">
+                              {episode.title}
+                            </div>
+                            {episode.description && (
+                              <div className="ep-desc">
+                                {episode.description}
                               </div>
-                            </td>
+                            )}
+                          </div>
 
-                            {/* Order */}
-                            <td className="w-16 px-3 py-2 font-mono text-muted">
-                              {episode.order ?? index + 1}
-                            </td>
+                          {/* Duration */}
+                          <div className="ep-dur">
+                            {episode.duration || '—'}
+                          </div>
 
-                            {/* Title & Description */}
-                            <td className="px-3 py-2">
-                              <div className="font-medium text-fg break-words leading-tight line-clamp-1">
-                                {episode.title}
-                              </div>
-                              {episode.description && (
-                                <div className="text-[11px] text-muted line-clamp-1 mt-0.5 max-w-lg">
-                                  {episode.description}
-                                </div>
-                              )}
-                            </td>
+                          {/* Sources Count Pill */}
+                          <div className="text-center">
+                            <span className="pill src">
+                              <span className="dot" />
+                              <span>{sourcesCount}</span>
+                            </span>
+                          </div>
 
-                            {/* Duration */}
-                            <td className="w-24 px-3 py-2 font-mono text-muted">
-                              {episode.duration || '—'}
-                            </td>
-
-                            {/* Sources Count */}
-                            <td className="w-28 px-3 py-2 text-center">
-                              <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded border border-c bg-sidebar text-muted">
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    isReady ? 'bg-green-500' : 'bg-amber-500'
-                                  }`}
-                                />
-                                <span>{sourcesCount}</span>
-                              </span>
-                            </td>
-
-                            {/* Status */}
-                            <td className="w-28 px-3 py-2">
-                              {isReady ? (
-                                <span className="inline-block text-[10px] mono px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
-                                  Ready
-                                </span>
-                              ) : (
-                                <span className="inline-block text-[10px] mono px-2 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">
-                                  No Stream
-                                </span>
-                              )}
-                            </td>
-
-                            {/* Release Date */}
-                            <td className="w-32 px-3 py-2 font-mono text-muted">
-                              {releaseDate || '—'}
-                            </td>
-
-                            {/* Row Actions */}
-                            <td
-                              className="w-14 px-3 py-2 text-right"
-                              onClick={(e) => e.stopPropagation()}
+                          {/* Status Pill */}
+                          <div>
+                            <span
+                              className={`pill status ${
+                                isReady ? 'ready' : 'no-stream'
+                              }`}
                             >
-                              <Popover
-                                open={isMenuOpen}
-                                onOpenChange={(open) =>
-                                  setOpenMenuEpisodeId(open ? episode.id : null)
-                                }
-                              >
-                                <PopoverTrigger asChild>
-                                  <button
-                                    type="button"
-                                    aria-label={`Actions for ${episode.title}`}
-                                    className="p-1 rounded border border-c hover-bg text-muted hover:text-current transition-colors cursor-pointer"
-                                  >
-                                    <svg
-                                      width="14"
-                                      height="14"
-                                      viewBox="0 0 24 24"
-                                      fill="currentColor"
-                                    >
-                                      <circle cx="12" cy="5" r="2" />
-                                      <circle cx="12" cy="12" r="2" />
-                                      <circle cx="12" cy="19" r="2" />
-                                    </svg>
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                  align="end"
-                                  className="w-36 p-0 divide-y divide-[var(--border)] text-xs text-left"
-                                >
-                                  <div className="py-0.5">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenMenuEpisodeId(null);
-                                        onEditEpisode?.(episode);
-                                      }}
-                                      className="w-full text-left px-3 py-1.5 hover-bg flex items-center gap-2 cursor-pointer text-fg"
-                                    >
-                                      <svg
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                      >
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                      </svg>
-                                      Edit
-                                    </button>
-                                    {onManageSources && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setOpenMenuEpisodeId(null);
-                                          onManageSources(episode);
-                                        }}
-                                        className="w-full text-left px-3 py-1.5 hover-bg flex items-center gap-2 cursor-pointer text-fg"
-                                      >
-                                        <svg
-                                          width="12"
-                                          height="12"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                        >
-                                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                                        </svg>
-                                        Sources
-                                      </button>
-                                    )}
-                                  </div>
-                                  <div className="py-0.5">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenMenuEpisodeId(null);
-                                        onDeleteEpisode?.(episode);
-                                      }}
-                                      className="w-full text-left px-3 py-1.5 hover-bg text-red-600 dark:text-red-400 flex items-center gap-2 cursor-pointer"
-                                    >
-                                      <svg
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                      >
-                                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                                      </svg>
-                                      Delete
-                                    </button>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            </td>
-                          </tr>
-                        )}
-                      </Draggable>
-                    );
-                  })
-                )}
-                {droppableProvided.placeholder}
-              </tbody>
-            </table>
+                              {isReady ? 'Ready' : 'No Stream'}
+                            </span>
+                          </div>
+
+                          {/* Release Date */}
+                          <div className="ep-date">
+                            {releaseDate || '—'}
+                          </div>
+
+                          {/* Kebab Action Menu */}
+                          <div
+                            className="flex items-center justify-end"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ChunkyActionMenu
+                              triggerLabel={`Actions for ${episode.title}`}
+                              className="kebab"
+                              items={[
+                                {
+                                  label: 'Edit',
+                                  icon: <Edit2 className="w-4 h-4" />,
+                                  onSelect: () => onEditEpisode?.(episode),
+                                },
+                                ...(onManageSources
+                                  ? [
+                                      {
+                                        label: 'Sources',
+                                        icon: <LinkIcon className="w-4 h-4" />,
+                                        onSelect: () => onManageSources(episode),
+                                      },
+                                    ]
+                                  : []),
+                                {
+                                  label: 'Delete',
+                                  icon: <Trash2 className="w-4 h-4" />,
+                                  danger: true,
+                                  onSelect: () => onDeleteEpisode?.(episode),
+                                },
+                              ]}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  );
+                })
+              )}
+              {droppableProvided.placeholder}
+            </div>
           )}
         </Droppable>
       </div>
