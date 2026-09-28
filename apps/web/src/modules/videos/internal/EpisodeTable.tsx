@@ -3,7 +3,6 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
 import { Edit2, Link as LinkIcon, Trash2, GripVertical, AlertCircle } from 'lucide-react';
-import { EpisodeBatchToolbar } from './EpisodeBatchToolbar';
 import type { SeriesDetails } from './api';
 
 export type Episode = SeriesDetails['episodes'][number];
@@ -19,12 +18,9 @@ export interface EpisodeTableProps {
   onManageSources?: (episode: Episode) => void;
   selectedEpisodeId?: string | null;
 
-  // Multi-selection & Batch Action props
+  // Multi-selection props (bulk actions render in SeriesDetailView sticky bulkbar)
   selectedEpisodeIds?: string[];
   onSelectedEpisodeIdsChange?: (selectedIds: string[]) => void;
-  onBatchMoveToSeason?: (selectedEpisodes: Episode[]) => void;
-  onBatchDelete?: (selectedEpisodes: Episode[]) => void;
-  disableBatchMove?: boolean;
 }
 
 function parseDurationToSeconds(duration?: number | string | null): number {
@@ -60,9 +56,6 @@ export function EpisodeTable({
   selectedEpisodeId,
   selectedEpisodeIds,
   onSelectedEpisodeIdsChange,
-  onBatchMoveToSeason,
-  onBatchDelete,
-  disableBatchMove = false,
 }: EpisodeTableProps) {
   const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>([]);
   const isControlledSelection = selectedEpisodeIds !== undefined;
@@ -178,15 +171,6 @@ export function EpisodeTable({
     }
   };
 
-  const handleDeselectAll = () => {
-    updateSelectedIds([]);
-  };
-
-  const selectedEpisodesList = useMemo(() => {
-    const idSet = new Set(activeSelectedIds);
-    return episodes.filter((ep) => idSet.has(ep.id));
-  }, [episodes, activeSelectedIds]);
-
   const dragDisabledTooltip = hasMultipleSelected
     ? 'Drag-and-drop is disabled while multiple episodes are selected.'
     : isFiltered && isCustomSorted
@@ -199,19 +183,6 @@ export function EpisodeTable({
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Batch Action Toolbar */}
-      {activeSelectedIds.length > 0 && (
-        <div className="p-2 rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)]">
-          <EpisodeBatchToolbar
-            selectedCount={activeSelectedIds.length}
-            onDeselectAll={handleDeselectAll}
-            onMoveToSeason={() => onBatchMoveToSeason?.(selectedEpisodesList)}
-            onDeleteSelected={() => onBatchDelete?.(selectedEpisodesList)}
-            disableMove={disableBatchMove}
-          />
-        </div>
-      )}
-
       {/* Search & Status Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <div className="relative flex-1 min-w-[220px] max-w-[380px]">
@@ -352,10 +323,17 @@ export function EpisodeTable({
               {...droppableProvided.droppableProps}
             >
               {sortedEpisodes.length === 0 ? (
-                <div className="p-8 text-center text-sm font-bold text-[var(--muted)] rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)]">
-                  {isFiltered
-                    ? 'No episodes match your search.'
-                    : 'No episodes in this season.'}
+                <div className="p-8 text-center rounded-[var(--radius)] border-2 border-b-4 border-[var(--border)] bg-[var(--surface)]">
+                  <p className="text-sm font-extrabold text-[var(--ink)]">
+                    {isFiltered
+                      ? 'No episodes match your search.'
+                      : 'No episodes in this season.'}
+                  </p>
+                  <p className="text-xs font-semibold text-[var(--muted)] mt-1">
+                    {isFiltered
+                      ? 'Try a different title or description keyword.'
+                      : 'Add episodes to this season to get started.'}
+                  </p>
                 </div>
               ) : (
                 sortedEpisodes.map((episode, index) => {

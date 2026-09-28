@@ -35,7 +35,6 @@ import { buildCrossSeasonMove } from './crossSeasonMove';
 import { BulkScrapeModal } from './BulkScrapeModal';
 import { BulkIngestModal } from './BulkIngestModal';
 import { EpisodeTable } from './EpisodeTable';
-import { BatchMoveSeasonDialog } from './BatchMoveSeasonDialog';
 import { BatchDeleteDialog } from './BatchDeleteDialog';
 import { EpisodeDetailDrawer } from './EpisodeDetailDrawer';
 import {
@@ -273,10 +272,10 @@ export function SeriesDetailView({
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
   const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
   const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
-  const [isBatchMoveOpen, setIsBatchMoveOpen] = useState(false);
   const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
   const [selectedEpisodeIds, setSelectedEpisodeIds] = useState<string[]>([]);
   const [isBatchOperating, setIsBatchOperating] = useState(false);
+  const [bulkScrapeEpisodeIds, setBulkScrapeEpisodeIds] = useState<string[] | null>(null);
 
   const [editTitle, setEditTitle] = useState('');
   const [editVideoType, setEditVideoType] = useState('');
@@ -321,6 +320,11 @@ export function SeriesDetailView({
             </div>
           </div>
         </div>
+        <div className="flex flex-col gap-3" aria-label="Loading episodes">
+          <ChunkySkeleton className="h-[68px] w-full rounded-[var(--radius)]" />
+          <ChunkySkeleton className="h-[68px] w-full rounded-[var(--radius)]" />
+          <ChunkySkeleton className="h-[68px] w-full rounded-[var(--radius)]" />
+        </div>
       </div>
     );
   }
@@ -329,11 +333,17 @@ export function SeriesDetailView({
     return (
       <div className="space-y-4">
         <BackButton />
-        <div className="bg-[var(--surface)] border-2 border-b-4 border-[var(--border)] rounded-[var(--radius)] p-6">
+        <div className="bg-[var(--surface)] border-2 border-b-4 border-[var(--border)] rounded-[var(--radius)] p-6 text-center">
           <h1 className="text-xl font-extrabold text-[var(--ink)]">Series not found</h1>
           <p className="text-sm font-semibold text-[var(--muted)] mt-1">
             No series matches <span className="font-mono text-[var(--ink)]">{seriesId}</span>.
           </p>
+          <a
+            href="/admin/videos"
+            className="inline-flex items-center justify-center gap-2 h-11 px-4 mt-4 rounded-[14px] border-2 border-b-4 border-[var(--green)] bg-[var(--green-tint)] text-[var(--green)] font-extrabold text-[13px] uppercase tracking-[0.7px]"
+          >
+            Back to catalog
+          </a>
         </div>
       </div>
     );
@@ -468,63 +478,6 @@ export function SeriesDetailView({
     setIsDeleteDialogOpen(false);
   };
 
-  const handleBatchMoveToSeason = async (targetSeasonId: string) => {
-    if (selectedEpisodeIds.length === 0) return;
-    setIsBatchOperating(true);
-
-    const previousEpisodes = [...localEpisodes];
-    // Calculate new states sequentially
-    let currentEpisodes = [...localEpisodes];
-    const allOrders: { id: string; order: number; seasonId?: string }[] = [];
-
-    for (const epId of selectedEpisodeIds) {
-      const move = buildCrossSeasonMove(currentEpisodes, epId, targetSeasonId);
-      if (move) {
-        currentEpisodes = move.episodes;
-        // Merge or replace orders for changed episodes
-        for (const orderItem of move.orders) {
-          const existingIdx = allOrders.findIndex((o) => o.id === orderItem.id);
-          if (existingIdx >= 0) {
-            allOrders[existingIdx] = orderItem;
-          } else {
-            allOrders.push(orderItem);
-          }
-        }
-      }
-    }
-
-    setLocalEpisodes(currentEpisodes);
-    queryClient.setQueryData(
-      ['series', seriesId],
-      (old: SeriesDetails | undefined) =>
-        old ? { ...old, episodes: currentEpisodes } : old
-    );
-
-    try {
-      await updateEpisodeOrders(seriesId, allOrders);
-      await queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
-      toast.success(
-        `Successfully moved ${selectedEpisodeIds.length} ${
-          selectedEpisodeIds.length === 1 ? 'episode' : 'episodes'
-        }`
-      );
-      setSelectedEpisodeIds([]);
-      setIsBatchMoveOpen(false);
-    } catch (error) {
-      setLocalEpisodes(previousEpisodes);
-      queryClient.setQueryData(
-        ['series', seriesId],
-        (old: SeriesDetails | undefined) =>
-          old ? { ...old, episodes: previousEpisodes } : old
-      );
-      toast.error('video.move', {
-        description: `Failed to move episodes: ${(error as Error).message}`,
-      });
-    } finally {
-      setIsBatchOperating(false);
-    }
-  };
-
   const handleBatchDelete = async () => {
     if (selectedEpisodeIds.length === 0) return;
     setIsBatchOperating(true);
@@ -633,7 +586,10 @@ export function SeriesDetailView({
 
               <ChunkyChip
                 variant="blue"
-                onClick={() => setIsBulkScrapeOpen(true)}
+                onClick={() => {
+                  setBulkScrapeEpisodeIds(null);
+                  setIsBulkScrapeOpen(true);
+                }}
                 type="button"
               >
                 <Plus className="size-4" />
@@ -797,9 +753,6 @@ export function SeriesDetailView({
         selectedEpisodeId={selectedEpisodeId}
         selectedEpisodeIds={selectedEpisodeIds}
         onSelectedEpisodeIdsChange={setSelectedEpisodeIds}
-        onBatchMoveToSeason={() => setIsBatchMoveOpen(true)}
-        onBatchDelete={() => setIsBatchDeleteOpen(true)}
-        disableBatchMove={!series.seasons || series.seasons.length <= 1}
         onSelectEpisode={handleOpenEpisodeDrawer}
         onEditEpisode={handleOpenEpisodeDrawer}
         onDeleteEpisode={(ep) => {
@@ -811,6 +764,33 @@ export function SeriesDetailView({
           setIsManageSourcesOpen(true);
         }}
       />
+      {selectedEpisodeIds.length > 0 && (
+        <div className="bulkbar show" role="toolbar" aria-label="Bulk selection actions">
+          <b>
+            {selectedEpisodeIds.length} selected
+          </b>
+          <span className="sp" />
+          <ChunkyChip
+            variant="blue"
+            type="button"
+            onClick={() => {
+              setBulkScrapeEpisodeIds([...selectedEpisodeIds]);
+              setIsBulkScrapeOpen(true);
+            }}
+          >
+            <Plus className="size-4" />
+            Add sources
+          </ChunkyChip>
+          <ChunkyChip
+            variant="danger"
+            type="button"
+            onClick={() => setIsBatchDeleteOpen(true)}
+          >
+            <Trash2 className="size-4" />
+            Delete
+          </ChunkyChip>
+        </div>
+      )}
       {/* Slide-Out Episode Detail Drawer */}
       <EpisodeDetailDrawer
         open={isDrawerOpen}
@@ -822,15 +802,6 @@ export function SeriesDetailView({
           setManageSourcesInitialTab(tab);
           setIsManageSourcesOpen(true);
         }}
-      />
-      <BatchMoveSeasonDialog
-        open={isBatchMoveOpen}
-        onOpenChange={setIsBatchMoveOpen}
-        selectedEpisodeCount={selectedEpisodeIds.length}
-        seasons={series.seasons ?? []}
-        currentSeasonId={activeSeason?.id ?? null}
-        onConfirmMove={handleBatchMoveToSeason}
-        isPending={isBatchOperating}
       />
       <BatchDeleteDialog
         open={isBatchDeleteOpen}
@@ -851,9 +822,16 @@ export function SeriesDetailView({
       />
       <BulkScrapeModal
         open={isBulkScrapeOpen}
-        onOpenChange={setIsBulkScrapeOpen}
+        onOpenChange={(open) => {
+          setIsBulkScrapeOpen(open);
+          if (!open) setBulkScrapeEpisodeIds(null);
+        }}
         seriesId={seriesId}
-        localEpisodes={localEpisodes}
+        localEpisodes={
+          bulkScrapeEpisodeIds
+            ? localEpisodes.filter((ep) => bulkScrapeEpisodeIds.includes(ep.id))
+            : localEpisodes
+        }
         seasons={series.seasons ?? []}
       />
       <BulkIngestModal

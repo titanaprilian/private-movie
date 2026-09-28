@@ -254,55 +254,36 @@ describe('EpisodeTable Component', () => {
     expect(screen.queryByRole('menuitem', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
-  it('supports selecting individual rows and displays the batch toolbar with selection count', async () => {
+  it('supports selecting individual rows with green highlight and header indeterminate state', async () => {
     const user = userEvent.setup();
-    const onBatchDelete = vi.fn();
-    const onBatchMoveToSeason = vi.fn();
 
-    const { container } = renderEpisodeTable({
-      onBatchDelete,
-      onBatchMoveToSeason,
-    });
-
-    // Initially no toolbar
-    expect(screen.queryByRole('toolbar', { name: /batch actions toolbar/i })).not.toBeInTheDocument();
+    const { container } = renderEpisodeTable();
 
     // Select row 1
     const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
     await user.click(checkbox1);
 
-    // Toolbar appears with count 1
-    expect(screen.getByRole('toolbar', { name: /batch actions toolbar/i })).toBeInTheDocument();
-    expect(screen.getByText('1 selected')).toBeInTheDocument();
-
     // First card has .sel class
     const firstCard = container.querySelector('.ep');
     expect(firstCard).toHaveClass('sel');
 
+    // Header shows indeterminate state
+    const headerCheckbox = screen.getByLabelText('Select all visible episodes');
+    expect(headerCheckbox).toHaveAttribute('aria-checked', 'mixed');
+
     // Select row 2
     const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
     await user.click(checkbox2);
-    expect(screen.getByText('2 selected')).toBeInTheDocument();
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(2);
 
-    // Trigger batch move action
-    const moveBtn = screen.getByRole('button', { name: /move to season/i });
-    await user.click(moveBtn);
-    expect(onBatchMoveToSeason).toHaveBeenCalledWith([mockEpisodes[0], mockEpisodes[1]]);
-
-    // Trigger batch delete action
-    const deleteBatchBtn = screen.getByRole('button', { name: /delete selected/i });
-    await user.click(deleteBatchBtn);
-    expect(onBatchDelete).toHaveBeenCalledWith([mockEpisodes[0], mockEpisodes[1]]);
-
-    // Click Deselect All
-    const deselectBtn = screen.getByRole('button', { name: /deselect all/i });
-    await user.click(deselectBtn);
-    expect(screen.queryByRole('toolbar', { name: /batch actions toolbar/i })).not.toBeInTheDocument();
+    // Deselect row 1
+    await user.click(checkbox1);
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(1);
   });
 
   it('handles select all and partial selection indeterminate state on the table header checkbox', async () => {
     const user = userEvent.setup();
-    renderEpisodeTable();
+    const { container } = renderEpisodeTable();
 
     const headerCheckbox = screen.getByLabelText('Select all visible episodes');
     expect(headerCheckbox).toHaveAttribute('aria-checked', 'false');
@@ -317,13 +298,13 @@ describe('EpisodeTable Component', () => {
 
     // Click header checkbox -> should select all 3
     await user.click(headerCheckbox);
-    expect(screen.getByText('3 selected')).toBeInTheDocument();
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(3);
     expect(headerCheckbox).toHaveAttribute('aria-checked', 'true');
     expect(headerCheckbox).toHaveAttribute('data-state', 'checked');
 
     // Click header checkbox again -> should unselect all
     await user.click(headerCheckbox);
-    expect(screen.queryByRole('toolbar', { name: /batch actions toolbar/i })).not.toBeInTheDocument();
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(0);
     expect(headerCheckbox).toHaveAttribute('aria-checked', 'false');
     expect(headerCheckbox).toHaveAttribute('data-state', 'unchecked');
   });

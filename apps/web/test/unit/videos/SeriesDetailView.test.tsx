@@ -1027,82 +1027,31 @@ describe('SeriesDetailView component', () => {
     expect(screen.getByRole('menuitem', { name: /Delete Season/i })).toBeInTheDocument();
   });
 
-  it('handles batch cross-season move execution via confirmation dialog', async () => {
-    const mockSeasonSeries: SeriesDetails = {
-      ...mockSeries,
-      seasons: [
-        {
-          id: 'dm-season-1',
-          seriesId: 'deep-modules',
-          sourceUrl: 'https://otakudesu.cloud/anime/deep-modules',
-          source: 'otakudesu',
-          title: 'Season 1',
-          description: 'First season',
-          createdAt: '2026-08-10',
-          updatedAt: '2026-08-10',
-          episodes: mockSeries.episodes.map((e) => ({
-            ...e,
-            seasonId: 'dm-season-1',
-          })),
-        },
-        {
-          id: 'dm-season-2',
-          seriesId: 'deep-modules',
-          sourceUrl: 'https://otakudesu.cloud/anime/deep-modules-s2',
-          source: 'otakudesu',
-          title: 'Season 2',
-          description: 'Second season',
-          createdAt: '2026-08-10',
-          updatedAt: '2026-08-10',
-          episodes: [],
-        },
-      ],
-      episodes: mockSeries.episodes.map((e) => ({
-        ...e,
-        seasonId: 'dm-season-1',
-      })),
-    };
-
-    let reorderCalled = false;
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-      if (url.includes('/series/deep-modules/episodes/order') && init?.method === 'PATCH') {
-        reorderCalled = true;
-        return new Response(JSON.stringify({ data: { success: true } }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      if (url.includes('/series/deep-modules')) {
-        return new Response(JSON.stringify({ data: mockSeasonSeries }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
-    });
-
+  it('shows sticky bulk bar on selection and opens BulkScrapeModal via Add sources targeting selected episodes', async () => {
     const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    // No bulkbar when nothing is selected
+    expect(screen.queryByRole('toolbar', { name: /bulk selection actions/i })).not.toBeInTheDocument();
 
     // Select row 1
     const checkbox1 = screen.getByLabelText('Select Intro to Deep Modules');
     await user.click(checkbox1);
 
-    // Open Batch Move Modal
-    const moveBtn = screen.getByRole('button', { name: /move to season/i });
-    await user.click(moveBtn);
+    // Sticky bulk bar appears with count
+    const bulkbar = screen.getByRole('toolbar', { name: /bulk selection actions/i });
+    expect(bulkbar).toBeInTheDocument();
+    expect(bulkbar).toHaveClass('bulkbar', 'show');
+    expect(within(bulkbar).getByText('1 selected')).toBeInTheDocument();
+    expect(within(bulkbar).getByRole('button', { name: /add sources/i })).toBeInTheDocument();
+    expect(within(bulkbar).getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
 
-    expect(screen.getByRole('heading', { name: /move episodes to season/i })).toBeInTheDocument();
+    // Deprecated Move to Season batch button is gone
+    expect(screen.queryByRole('button', { name: /move to season/i })).not.toBeInTheDocument();
 
-    // Confirm Move
-    const confirmMoveBtn = screen.getByRole('button', { name: /^move episodes$/i });
-    await user.click(confirmMoveBtn);
-
-    expect(reorderCalled).toBe(true);
+    // Click Add sources opens BulkScrapeModal
+    await user.click(within(bulkbar).getByRole('button', { name: /add sources/i }));
+    expect(await screen.findByRole('heading', { name: 'Bulk Add Sources' })).toBeInTheDocument();
   });
 
   it('handles batch delete execution via confirmation dialog', async () => {
@@ -1135,8 +1084,12 @@ describe('SeriesDetailView component', () => {
     const headerCheckbox = screen.getByLabelText('Select all visible episodes');
     await user.click(headerCheckbox);
 
-    // Click delete selected in toolbar
-    const deleteBatchBtn = screen.getByRole('button', { name: /delete selected/i });
+    // Sticky bulk bar appears with count and Delete chip
+    const bulkbar = screen.getByRole('toolbar', { name: /bulk selection actions/i });
+    expect(within(bulkbar).getByText('4 selected')).toBeInTheDocument();
+
+    // Click Delete in bulkbar
+    const deleteBatchBtn = within(bulkbar).getByRole('button', { name: /^delete$/i });
     await user.click(deleteBatchBtn);
 
     expect(screen.getByRole('heading', { name: /delete selected episodes/i })).toBeInTheDocument();
@@ -1146,6 +1099,19 @@ describe('SeriesDetailView component', () => {
     await user.click(confirmDeleteBtn);
 
     expect(deletedCount).toBe(4);
+  });
+
+  it('renders loading skeletons and styled not-found card with catalog link', async () => {
+    renderWithProviders(<SeriesDetailView seriesId="unknown-series" />);
+
+    // Loading state uses ChunkySkeleton pulse cards
+    expect(screen.getAllByTestId('chunky-skeleton').length).toBeGreaterThan(0);
+
+    // Not found state renders styled chunky error card with catalog link
+    expect(await screen.findByText('Series not found')).toBeInTheDocument();
+    const catalogLink = await screen.findByRole('link', { name: /back to catalog/i });
+    expect(catalogLink).toBeInTheDocument();
+    expect(catalogLink).toHaveAttribute('href', '/admin/videos');
   });
 
   it('opens slide-out drawer on episode row click or edit click and closes via close button', async () => {
