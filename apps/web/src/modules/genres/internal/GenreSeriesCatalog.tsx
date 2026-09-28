@@ -101,17 +101,17 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
   const hasLoadedPages = items.length > 0;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
       <PublicNavbar />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <h1 className="text-2xl md:text-3xl font-bold">{genreName}</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-[var(--muted)]">
           {filter === 'ongoing'
             ? 'Currently airing series in this genre.'
             : 'Browse every series in this genre.'}
         </p>
 
-        <div role="tablist" aria-label="Filter series by status" className="mt-5 inline-flex rounded-full border border-zinc-800 bg-zinc-900 p-1">
+        <div role="tablist" aria-label="Filter series by status" className="mt-5 inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
           {(
             [
               { value: 'all', label: 'All Series' },
@@ -130,8 +130,8 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
               }}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
                 filter === tab.value
-                  ? 'bg-zinc-100 text-zinc-950'
-                  : 'text-zinc-400 hover:text-zinc-100'
+                  ? 'bg-[var(--ink)] text-[var(--bg)]'
+                  : 'text-[var(--muted)] hover:text-[var(--ink)]'
               }`}
             >
               {tab.label}
@@ -145,9 +145,9 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
               <div
                 key={index}
                 data-testid="series-card-skeleton"
-                className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-900"
+                className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface)]"
               >
-                <div className="aspect-[2/3] w-full animate-pulse bg-zinc-800" />
+                <div className="aspect-[2/3] w-full animate-pulse bg-[var(--surface-raised)]" />
                 <div className="space-y-2 p-3">
                   <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-800" />
                   <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-800" />
@@ -156,19 +156,19 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
             ))}
           </div>
         ) : isError && !hasLoadedPages ? (
-          <div className="mt-6 rounded-md border border-zinc-800 bg-zinc-900 p-8 text-center">
-            <p className="text-sm text-zinc-300">Failed to load series. Please try again.</p>
+          <div className="mt-6 rounded-md border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
+            <p className="text-sm text-[var(--muted)]">Failed to load series. Please try again.</p>
             <button
               type="button"
               onClick={() => void refetch()}
-              className="mt-4 rounded-full bg-zinc-100 px-4 py-1.5 text-sm font-medium text-zinc-950 cursor-pointer hover:bg-white transition-colors"
+              className="mt-4 rounded-full bg-[var(--ink)] px-4 py-1.5 text-sm font-medium text-[var(--bg)] cursor-pointer hover:brightness-110 transition-colors"
             >
               Retry
             </button>
           </div>
         ) : total === 0 ? (
-          <div className="mt-6 rounded-md border border-zinc-800 bg-zinc-900 p-8 text-center">
-            <p className="text-sm text-zinc-300">
+          <div className="mt-6 rounded-md border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
+            <p className="text-sm text-[var(--muted)]">
               {filter === 'ongoing'
                 ? `No ongoing series found in ${genreName}.`
                 : `No series found in ${genreName}.`}
@@ -177,7 +177,7 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
               <button
                 type="button"
                 onClick={() => onFilterChange('all')}
-                className="mt-4 rounded-full bg-zinc-100 px-4 py-1.5 text-sm font-medium text-zinc-950 cursor-pointer hover:bg-white transition-colors"
+                className="mt-4 rounded-full bg-[var(--ink)] px-4 py-1.5 text-sm font-medium text-[var(--bg)] cursor-pointer hover:brightness-110 transition-colors"
               >
                 Show All Series
               </button>
@@ -217,9 +217,9 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
                   <div
                     key={index}
                     data-testid="series-card-skeleton"
-                    className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-900"
+                    className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface)]"
                   >
-                    <div className="aspect-[2/3] w-full animate-pulse bg-zinc-800" />
+                    <div className="aspect-[2/3] w-full animate-pulse bg-[var(--surface-raised)]" />
                     <div className="p-3">
                       <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-800" />
                     </div>
@@ -233,7 +233,7 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
                 <button
                   type="button"
                   onClick={handleFetchNextPage}
-                  className="rounded-full border border-zinc-700 px-4 py-1.5 text-sm font-medium text-zinc-200 cursor-pointer hover:border-zinc-500 transition-colors"
+                  className="rounded-full border border-[var(--border-strong)] px-4 py-1.5 text-sm font-medium text-[var(--ink)] cursor-pointer hover:border-[var(--muted)] transition-colors"
                 >
                   Retry
                 </button>

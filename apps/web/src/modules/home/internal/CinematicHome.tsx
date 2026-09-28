@@ -79,16 +79,16 @@ function RecentlyAddedEpisodesRow({ episodes }: { episodes: MediaRecentlyAddedEp
 
   return (
     <div className="relative group/row my-6">
-      <h2 className="text-xl md:text-2xl font-bold mb-3 text-zinc-100 flex items-center gap-2 px-8 md:px-16">
+      <h2 className="text-xl md:text-2xl font-bold mb-3 text-[var(--ink)] flex items-center gap-2 px-8 md:px-16">
         <span>Recently Added Episodes</span>
-        <ChevronRight className="w-5 h-5 text-zinc-500 opacity-0 group-hover/row:opacity-100 transition-opacity" />
+        <ChevronRight className="w-5 h-5 text-[var(--muted)] opacity-0 group-hover/row:opacity-100 transition-opacity" />
       </h2>
 
       <div className="relative px-8 md:px-16">
         {/* Left Scroll Button */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-40 w-12 bg-black/60 hover:bg-black/90 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          className="absolute left-0 top-0 bottom-0 z-40 w-12 bg-[color-mix(in_srgb,var(--bg)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
           aria-label="Scroll Recently Added Episodes left"
         >
           <ChevronLeft className="w-8 h-8" />
@@ -123,7 +123,7 @@ function RecentlyAddedEpisodesRow({ episodes }: { episodes: MediaRecentlyAddedEp
         {/* Right Scroll Button */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-40 w-12 bg-black/60 hover:bg-black/90 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          className="absolute right-0 top-0 bottom-0 z-40 w-12 bg-[color-mix(in_srgb,var(--bg)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
           aria-label="Scroll Recently Added Episodes right"
         >
           <ChevronRight className="w-8 h-8" />
@@ -183,20 +183,20 @@ function HomeFeedHeroSkeleton() {
       data-testid="hero-skeleton"
       aria-busy="true"
       aria-label="Loading featured series"
-      className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-zinc-950 animate-pulse flex items-end p-8 md:p-16"
+      className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-[var(--bg)] animate-pulse flex items-end p-8 md:p-16"
     >
       <div className="max-w-3xl space-y-4 w-full">
-        <div className="h-4 w-32 bg-zinc-800 rounded" />
-        <div className="h-12 w-3/4 bg-zinc-800 rounded" />
+        <div className="h-4 w-32 bg-[var(--surface-raised)] rounded" />
+        <div className="h-12 w-3/4 bg-[var(--surface-raised)] rounded" />
         <div className="flex gap-3">
-          <div className="h-4 w-20 bg-zinc-800 rounded" />
-          <div className="h-4 w-16 bg-zinc-800 rounded" />
-          <div className="h-4 w-24 bg-zinc-800 rounded" />
+          <div className="h-4 w-20 bg-[var(--surface-raised)] rounded" />
+          <div className="h-4 w-16 bg-[var(--surface-raised)] rounded" />
+          <div className="h-4 w-24 bg-[var(--surface-raised)] rounded" />
         </div>
-        <div className="h-16 w-full max-w-xl bg-zinc-800 rounded" />
+        <div className="h-16 w-full max-w-xl bg-[var(--surface-raised)] rounded" />
         <div className="flex gap-4 pt-2">
-          <div className="h-12 w-28 bg-zinc-800 rounded-md" />
-          <div className="h-12 w-32 bg-zinc-800 rounded-md" />
+          <div className="h-12 w-28 bg-[var(--surface-raised)] rounded-md" />
+          <div className="h-12 w-32 bg-[var(--surface-raised)] rounded-md" />
         </div>
       </div>
     </div>
@@ -211,12 +211,12 @@ function HomeFeedRowSkeleton() {
       aria-label="Loading catalog rows"
       className="my-6 px-8 md:px-16 space-y-3"
     >
-      <div className="h-7 w-48 bg-zinc-800 rounded animate-pulse" />
+      <div className="h-7 w-48 bg-[var(--surface-raised)] rounded animate-pulse" />
       <div className="flex gap-4 overflow-hidden py-2">
         {Array.from({ length: 5 }).map((_, idx) => (
           <div
             key={idx}
-            className="w-[160px] sm:w-[180px] aspect-[2/3] flex-shrink-0 bg-zinc-900 border border-zinc-800 rounded-md animate-pulse"
+            className="w-[160px] sm:w-[180px] aspect-[2/3] flex-shrink-0 bg-[var(--surface)] border border-[var(--border)] rounded-md animate-pulse"
           />
         ))}
       </div>
@@ -228,14 +228,14 @@ function HomeFeedErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div
       data-testid="home-feed-error"
-      className="min-h-screen bg-black text-white flex items-center justify-center p-6"
+      className="min-h-screen bg-[var(--bg)] text-[var(--ink)] flex items-center justify-center p-6"
     >
-      <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-lg p-8 text-center space-y-4 shadow-2xl">
+      <div className="max-w-md w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg p-8 text-center space-y-4 shadow-2xl">
         <div className="w-12 h-12 rounded-full bg-red-950/80 border border-red-800 text-red-500 flex items-center justify-center mx-auto">
           <AlertTriangle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-bold text-zinc-100">Unable to Load Home Feed</h2>
-        <p className="text-sm text-zinc-400 leading-relaxed">
+        <h2 className="text-xl font-bold text-[var(--ink)]">Unable to Load Home Feed</h2>
+        <p className="text-sm text-[var(--muted)] leading-relaxed">
           We encountered an issue connecting to the backend server. Please check your network connection or try again.
         </p>
         <button
@@ -326,16 +326,16 @@ function CarouselRowComponent({
 
   return (
     <div className="relative group/row my-6">
-      <h2 className="text-xl md:text-2xl font-bold mb-3 text-zinc-100 flex items-center gap-2 px-8 md:px-16">
+      <h2 className="text-xl md:text-2xl font-bold mb-3 text-[var(--ink)] flex items-center gap-2 px-8 md:px-16">
         <span>{row.title}</span>
-        <ChevronRight className="w-5 h-5 text-zinc-500 opacity-0 group-hover/row:opacity-100 transition-opacity" />
+        <ChevronRight className="w-5 h-5 text-[var(--muted)] opacity-0 group-hover/row:opacity-100 transition-opacity" />
       </h2>
 
       <div className="relative px-8 md:px-16">
         {/* Left Scroll Button */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-40 w-12 bg-black/60 hover:bg-black/90 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          className="absolute left-0 top-0 bottom-0 z-40 w-12 bg-[color-mix(in_srgb,var(--bg)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
           aria-label={`Scroll ${row.title} left`}
         >
           <ChevronLeft className="w-8 h-8" />
@@ -376,7 +376,7 @@ function CarouselRowComponent({
         {/* Right Scroll Button */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-40 w-12 bg-black/60 hover:bg-black/90 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          className="absolute right-0 top-0 bottom-0 z-40 w-12 bg-[color-mix(in_srgb,var(--bg)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
           aria-label={`Scroll ${row.title} right`}
         >
           <ChevronRight className="w-8 h-8" />
@@ -444,7 +444,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black text-white overflow-x-clip font-sans">
+      <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)] overflow-x-clip font-sans">
         <PublicNavbar />
         <HomeFeedHeroSkeleton />
         <div className="relative z-30 pb-20 -mt-10 space-y-4">
@@ -458,7 +458,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-black text-white overflow-x-clip font-sans">
+      <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)] overflow-x-clip font-sans">
         <PublicNavbar />
         <HomeFeedErrorState onRetry={() => refetch()} />
       </div>
@@ -466,7 +466,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-clip font-sans selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)] overflow-x-clip font-sans selection:bg-red-600 selection:text-white">
       <PublicNavbar />
       {/* Hero Banner / Slider Section */}
       {currentHero ? (
@@ -476,7 +476,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           onMouseLeave={() => setIsPaused(false)}
           onFocus={() => setIsPaused(true)}
           onBlur={() => setIsPaused(false)}
-          className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-zinc-950 overflow-hidden rounded-b-[32px] group/hero"
+          className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-[var(--bg)] overflow-hidden rounded-b-[32px] group/hero"
         >
           {/* Background Banner Images with Smooth Crossfade.
               Mobile renders the portrait poster full-bleed; desktop renders the wide banner. */}
@@ -508,11 +508,11 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
               desktop-only. */}
           <div
             data-testid="hero-gradient-bottom"
-            className="absolute inset-0 bg-gradient-to-t from-black md:from-black/90 via-black via-[45%] md:via-black/60 to-transparent z-10 pointer-events-none"
+            className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] md:from-[color-mix(in_srgb,var(--bg)_95%,transparent)] via-[color-mix(in_srgb,var(--bg)_75%,black)] via-[35%] md:via-[color-mix(in_srgb,var(--bg)_75%,transparent)] to-transparent z-10 pointer-events-none"
           />
           <div
             data-testid="hero-gradient-left"
-            className="hidden md:block absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10 pointer-events-none"
+            className="hidden md:block absolute inset-0 bg-gradient-to-r from-[color-mix(in_srgb,var(--bg)_92%,transparent)] via-[color-mix(in_srgb,var(--bg)_65%,transparent)] to-transparent z-10 pointer-events-none"
           />
 
           {/* Hero Content */}
@@ -635,11 +635,11 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           )}
         </div>
       ) : (
-        <div data-testid="hero-empty" className="relative h-[40vh] min-h-[300px] w-full bg-zinc-950 flex items-center justify-center text-center p-8">
+        <div data-testid="hero-empty" className="relative h-[40vh] min-h-[300px] w-full bg-[var(--bg)] flex items-center justify-center text-center p-8">
           <div className="space-y-3">
-            <Sparkles className="w-8 h-8 text-zinc-600 mx-auto" />
-            <h2 className="text-xl font-semibold text-zinc-400">No Featured Series Available</h2>
-            <p className="text-sm text-zinc-500 max-w-md">Check back soon for new anime releases and home feed updates.</p>
+            <Sparkles className="w-8 h-8 text-[var(--muted)] mx-auto" />
+            <h2 className="text-xl font-semibold text-[var(--ink)]">No Featured Series Available</h2>
+            <p className="text-sm text-[var(--muted)] max-w-md">Check back soon for new anime releases and home feed updates.</p>
           </div>
         </div>
       )}

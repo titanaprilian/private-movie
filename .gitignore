@@ -6,3 +6,7 @@ coverage/
 .env
 backup_*.sql
 *.dump
+
+# Prompt & shell scratch references
+private-movie-shell/
+PROMPT.md

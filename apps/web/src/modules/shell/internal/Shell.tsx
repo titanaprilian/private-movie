@@ -1,8 +1,19 @@
 import { useState, type ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
-import { Film, User } from 'lucide-react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import {
+  Bell,
+  List,
+  LogOut,
+  Moon,
+  PanelLeft,
+  Server,
+  Sun,
+  User,
+  Video,
+  X,
+} from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
-import { useAuth, LogoutButton } from '@/modules/auth';
+import { useAuth } from '@/modules/auth';
 
 export interface ShellProps {
   children: ReactNode;
@@ -13,166 +24,176 @@ const navItems = [
     to: '/admin/videos' as const,
     label: 'Series',
     activeOptions: { exact: false },
-    icon: (
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className="shrink-0"
-      >
-        <polygon points="23 7 16 12 23 17 23 7" />
-        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-      </svg>
-    ),
+    Icon: Video,
   },
   {
     to: '/admin/genres' as const,
     label: 'Genres',
     activeOptions: { exact: false },
-    icon: (
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className="shrink-0"
-      >
-        <path d="M4 6h16M4 12h16M4 18h7" />
-      </svg>
-    ),
+    Icon: List,
   },
   {
     to: '/admin/storage' as const,
     label: 'Storage',
     activeOptions: { exact: false },
-    icon: (
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className="shrink-0"
-      >
-        <rect x="2" y="2" width="20" height="8" rx="2" />
-        <rect x="2" y="14" width="20" height="8" rx="2" />
-        <line x1="6" y1="6" x2="6.01" y2="6" strokeWidth="3" />
-        <line x1="6" y1="18" x2="6.01" y2="18" strokeWidth="3" />
-      </svg>
-    ),
+    Icon: Server,
   },
 ];
 
+/** Chunky Duolingo-style 3D button: 2px border, 4px bottom border, presses down 2px. */
+const chunkyButtonClass =
+  'inline-flex items-center justify-center gap-2 h-11 min-w-11 px-3.5 rounded-[14px] border-2 border-[var(--border)] border-b-4 bg-[var(--bg)] text-[var(--muted)] font-extrabold text-[13px] uppercase tracking-[0.7px] transition-all hover:bg-[var(--surface)] active:border-b-2 active:translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] cursor-pointer';
+
+const navBaseClass =
+  'flex items-center gap-3.5 h-[52px] px-4 rounded-[14px] border-2 font-extrabold text-sm uppercase tracking-[0.8px] whitespace-nowrap overflow-hidden transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]';
+const navActiveClass = `${navBaseClass} bg-[var(--green-soft)] border-[var(--green)] text-[var(--green)]`;
+const navInactiveClass = `${navBaseClass} border-transparent text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--ink)]`;
+
+/** Picks the readable logo variant: dark ink on light backgrounds, light ink on dark. */
+function brandLogoSrc(theme: 'light' | 'dark', variant: 'full' | 'collapsed') {
+  if (variant === 'collapsed') {
+    return theme === 'light' ? '/assets/logo-collapsed-dark.png' : '/assets/logo-collapsed.png';
+  }
+  return theme === 'light' ? '/assets/logo-full-dark.png' : '/assets/logo-full.png';
+}
+
+function BrandCell({ collapsed }: { collapsed: boolean }) {
+  const theme = useUIStore((s) => s.theme);
+  return (
+    <div className="h-20 flex items-center justify-center px-5 border-b-2 border-[var(--border)] overflow-hidden shrink-0">
+      {collapsed ? (
+        <img
+          src={brandLogoSrc(theme, 'collapsed')}
+          alt="Private Movie collapsed logo"
+          className="w-14 h-auto"
+        />
+      ) : (
+        <img
+          src={brandLogoSrc(theme, 'full')}
+          alt="Private Movie"
+          className="h-[52px] w-auto"
+        />
+      )}
+    </div>
+  );
+}
+
+function NavLinks({
+  collapsed,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav aria-label="Admin navigation" className="flex-1 px-3 py-4 space-y-1.5 overflow-hidden">
+      {navItems.map(({ to, label, activeOptions, Icon }) => (
+        <Link
+          key={to}
+          to={to}
+          activeOptions={activeOptions}
+          onClick={onNavigate}
+          title={label}
+          aria-label={label}
+          activeProps={{ className: `${navActiveClass}${collapsed ? ' justify-center px-0' : ''}` }}
+          inactiveProps={{
+            className: `${navInactiveClass}${collapsed ? ' justify-center px-0' : ''}`,
+          }}
+        >
+          <Icon className="w-6 h-6 shrink-0" strokeWidth={2} aria-hidden="true" />
+          {!collapsed && <span>{label}</span>}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function ProfileCard({
+  collapsed,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
+  const { user } = useAuth();
+  const displayName = user?.name ?? user?.email?.split('@')[0] ?? 'User Name';
+  const displayEmail = user?.email ?? 'user@email.com';
+
+  if (collapsed) {
+    return (
+      <div className="mx-3 mb-4 flex justify-center">
+        <Link
+          to="/admin/profile"
+          onClick={onNavigate}
+          aria-label={`Profile for ${displayName}`}
+          activeOptions={{ exact: false }}
+          activeProps={{
+            className:
+              'w-[38px] h-[38px] rounded-full bg-[var(--blue)] border-b-[3px] border-[var(--blue-dark)] grid place-items-center text-white shrink-0 ring-2 ring-[var(--green)] ring-offset-2 ring-offset-[var(--surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]',
+          }}
+          inactiveProps={{
+            className:
+              'w-[38px] h-[38px] rounded-full bg-[var(--blue)] border-b-[3px] border-[var(--blue-dark)] grid place-items-center text-white shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]',
+          }}
+        >
+          <User className="w-5 h-5" aria-label="User avatar" />
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-3 mb-4 overflow-hidden">
+      <Link
+        to="/admin/profile"
+        onClick={onNavigate}
+        activeOptions={{ exact: false }}
+        activeProps={{
+          className:
+            'flex items-center gap-2.5 p-2.5 rounded-[14px] border-2 border-[var(--green)] border-b-4 bg-[var(--green-soft)] overflow-hidden transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]',
+        }}
+        inactiveProps={{
+          className:
+            'flex items-center gap-2.5 p-2.5 rounded-[14px] border-2 border-[var(--border)] border-b-4 bg-transparent overflow-hidden transition-colors hover:bg-[var(--surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]',
+        }}
+      >
+        <div className="w-[38px] h-[38px] rounded-full bg-[var(--blue)] border-b-[3px] border-[var(--blue-dark)] grid place-items-center text-white shrink-0">
+          <User className="w-5 h-5" aria-label="User avatar" />
+        </div>
+        <div className="leading-tight overflow-hidden min-w-0">
+          <div className="text-sm font-extrabold truncate">{displayName}</div>
+          <div className="text-xs font-semibold text-[var(--muted)] truncate">
+            {displayEmail}
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
 export function Shell({ children }: ShellProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { sidebarCollapsed, toggleSidebar, toggleTheme } = useUIStore();
-  const { user } = useAuth();
+  const { sidebarCollapsed, toggleSidebar, toggleTheme, theme } = useUIStore();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate({ to: '/login' });
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-sidebar border-r border-c shrink-0 transition-[width] duration-300 ease-in-out ${
-          sidebarCollapsed ? 'w-16' : 'w-60'
+        data-testid="desktop-sidebar"
+        className={`hidden md:flex flex-col bg-[var(--bg)] border-r-2 border-[var(--border)] shrink-0 transition-[width] duration-200 ease-in-out ${
+          sidebarCollapsed ? 'w-[92px]' : 'w-[224px]'
         }`}
       >
-        {/* Sidebar Header / Logo */}
-        <div className="h-14 flex items-center gap-2 px-4 border-b border-c overflow-hidden">
-          <div className="w-6 h-6 rounded border border-c bg-primary flex items-center justify-center shrink-0">
-            <Film className="w-3.5 h-3.5 text-primary-fg" />
-          </div>
-          <span
-            className={`font-semibold text-sm mono whitespace-nowrap transition-all duration-300 ease-in-out ${
-              sidebarCollapsed
-                ? 'opacity-0 -translate-x-2 pointer-events-none max-w-0 overflow-hidden'
-                : 'opacity-100 translate-x-0 max-w-[200px]'
-            }`}
-          >
-            Private Movie
-          </span>
-          <button
-            onClick={toggleSidebar}
-            type="button"
-            aria-label="Toggle sidebar"
-            className="ml-auto text-muted hover:text-current transition-colors cursor-pointer shrink-0"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className={`transition-transform duration-300 ${
-                sidebarCollapsed ? 'rotate-180' : ''
-              }`}
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Navigation links */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-hidden">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={item.activeOptions}
-              activeProps={{
-                className:
-                  'flex items-center gap-2.5 pl-3 pr-2 py-1.5 active-bg font-medium text-primary text-sm rounded-sm overflow-hidden',
-              }}
-              inactiveProps={{
-                className:
-                  'flex items-center gap-2.5 pl-3 pr-2 py-1.5 hover-bg text-sm rounded-sm text-muted hover:text-current overflow-hidden',
-              }}
-            >
-              {item.icon}
-              <span
-                className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
-                  sidebarCollapsed
-                    ? 'opacity-0 -translate-x-2 pointer-events-none max-w-0 overflow-hidden'
-                    : 'opacity-100 translate-x-0 max-w-[150px]'
-                }`}
-              >
-                {item.label}
-              </span>
-            </Link>
-          ))}
-        </nav>
-
-        {/* User Profile at bottom */}
-        <div className="p-3 border-t border-c overflow-hidden">
-          <Link
-            to="/admin/profile"
-            className="flex items-center gap-3 px-2 py-2 rounded-sm hover-bg transition-colors overflow-hidden"
-          >
-            <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 border border-c flex items-center justify-center shrink-0">
-              <User className="w-4 h-4 text-muted" aria-label="User avatar" />
-            </div>
-            <div
-              className={`leading-tight overflow-hidden transition-all duration-300 ease-in-out ${
-                sidebarCollapsed
-                  ? 'opacity-0 -translate-x-2 pointer-events-none max-w-0'
-                  : 'opacity-100 translate-x-0 max-w-[160px]'
-              }`}
-            >
-              <div className="text-sm font-medium truncate">
-                {user?.name ?? user?.email?.split('@')[0] ?? 'User Name'}
-              </div>
-              <div className="text-xs text-muted truncate">
-                {user?.email ?? 'user@email.com'}
-              </div>
-            </div>
-          </Link>
-        </div>
+        <BrandCell collapsed={sidebarCollapsed} />
+        <NavLinks collapsed={sidebarCollapsed} />
+        <ProfileCard collapsed={sidebarCollapsed} />
       </aside>
 
       {/* Mobile Slide-over Overlay */}
@@ -188,138 +209,90 @@ export function Shell({ children }: ShellProps) {
       {/* Mobile Slide-over Sidebar */}
       <aside
         data-testid="mobile-sidebar"
-        className={`fixed z-40 top-0 left-0 h-full w-64 bg-sidebar border-r border-c transition-transform duration-300 ease-out md:hidden flex flex-col ${
+        role="dialog"
+        aria-modal="true"
+        aria-label="Admin navigation"
+        className={`fixed z-40 top-0 left-0 h-full w-[224px] bg-[var(--bg)] border-r-2 border-[var(--border)] transition-transform duration-300 ease-out md:hidden flex flex-col ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="h-14 flex items-center gap-2 px-4 border-b border-c">
-          <div className="w-6 h-6 rounded border border-c bg-primary flex items-center justify-center shrink-0">
-            <Film className="w-3.5 h-3.5 text-primary-fg" />
-          </div>
-          <span className="font-semibold text-sm mono">Private Movie</span>
+        <div className="h-20 flex items-center justify-center px-5 border-b-2 border-[var(--border)] shrink-0 relative">
+          <img src={brandLogoSrc(theme, 'full')} alt="Private Movie" className="h-[52px] w-auto" />
           <button
             onClick={() => setIsMobileOpen(false)}
             type="button"
             aria-label="Close menu"
-            className="ml-auto text-muted hover:text-current cursor-pointer"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full border-2 border-[var(--border)] text-[var(--muted)] grid place-items-center hover:text-[var(--ink)] cursor-pointer"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
-        <nav className="flex-1 px-2 py-3 space-y-0.5 text-sm">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={item.activeOptions}
-              onClick={() => setIsMobileOpen(false)}
-              activeProps={{
-                className:
-                  'block pl-3 pr-2 py-1.5 active-bg font-medium text-primary rounded-sm',
-              }}
-              inactiveProps={{
-                className:
-                  'block pl-3 pr-2 py-1.5 hover-bg rounded-sm text-muted hover:text-current',
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="p-3 border-t border-c">
-          <Link
-            to="/admin/profile"
-            onClick={() => setIsMobileOpen(false)}
-            className="flex items-center gap-3 px-2 py-2 rounded-sm hover-bg transition-colors"
-          >
-            <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 border border-c flex items-center justify-center shrink-0">
-              <User className="w-4 h-4 text-muted" aria-label="User avatar" />
-            </div>
-            <div className="leading-tight overflow-hidden">
-              <div className="text-sm font-medium truncate">
-                {user?.name ?? user?.email?.split('@')[0] ?? 'User Name'}
-              </div>
-              <div className="text-xs text-muted truncate">
-                {user?.email ?? 'user@email.com'}
-              </div>
-            </div>
-          </Link>
-        </div>
+        <NavLinks collapsed={false} onNavigate={() => setIsMobileOpen(false)} />
+        <ProfileCard collapsed={false} onNavigate={() => setIsMobileOpen(false)} />
       </aside>
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-14 border-b border-c bg-card flex items-center gap-3 px-4 sticky top-0 z-20">
+        <header className="h-20 border-b-2 border-[var(--border)] bg-[var(--bg)] flex items-center gap-3 px-6 sticky top-0 z-20 shrink-0">
+          {/* Mobile: open slide-over */}
           <button
             onClick={() => setIsMobileOpen(true)}
             type="button"
             aria-label="Open menu"
-            className="md:hidden text-muted hover:text-current cursor-pointer"
+            className={`${chunkyButtonClass} md:hidden`}
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M3 12h18M3 6h18M3 18h18" />
-            </svg>
+            <PanelLeft className="w-6 h-6" aria-hidden="true" />
           </button>
 
-          <div className="relative ml-2 hidden sm:block max-w-xs w-full">
-            <input
-              placeholder="Search…"
-              className="w-full pl-3 pr-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
-            />
-          </div>
+          {/* Desktop: collapse/expand sidebar */}
+          <button
+            onClick={toggleSidebar}
+            type="button"
+            aria-label="Toggle sidebar"
+            aria-expanded={!sidebarCollapsed}
+            className={`${chunkyButtonClass} hidden md:inline-flex`}
+          >
+            <PanelLeft className="w-6 h-6" aria-hidden="true" />
+          </button>
 
           <div className="ml-auto flex items-center gap-3">
             <button
               type="button"
               aria-label="Notifications"
-              className="relative text-muted hover:text-current cursor-pointer"
+              className={`${chunkyButtonClass} relative`}
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+              <Bell className="w-6 h-6" aria-hidden="true" />
+              <span
+                aria-label="3 unread notifications"
+                className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-[5px] grid place-items-center bg-[var(--red)] border-2 border-[var(--surface)] rounded-[11px] text-white text-[11px] font-extrabold tracking-normal"
               >
-                <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 01-3.46 0" />
-              </svg>
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
+                3
+              </span>
             </button>
 
             <button
               onClick={toggleTheme}
               type="button"
-              className="text-xs px-2 py-1 rounded border border-c text-muted mono cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition"
+              aria-label="Toggle theme"
+              className={chunkyButtonClass}
             >
-              theme
+              {theme === 'dark' ? (
+                <Sun className="w-6 h-6" aria-hidden="true" />
+              ) : (
+                <Moon className="w-6 h-6" aria-hidden="true" />
+              )}
             </button>
 
-            {user?.email && (
-              <span className="text-xs mono text-muted hidden md:inline-block border-l border-c pl-3">
-                {user.email}
-              </span>
-            )}
-
-            <LogoutButton />
+            <button
+              onClick={handleLogout}
+              type="button"
+              aria-label="Logout"
+              className={`${chunkyButtonClass} text-[var(--blue)]`}
+            >
+              <LogOut className="w-6 h-6" aria-hidden="true" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </header>
 

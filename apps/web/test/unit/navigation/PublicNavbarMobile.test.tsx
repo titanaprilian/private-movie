@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRouter, createMemoryHistory, RouterProvider } from '@tanstack/react-router';
 import { routeTree } from '@/routeTree.gen';
 import { setAccessToken } from '@/lib/api';
+import { useUIStore } from '@/store/uiStore';
 
 const mockGenres = [
   { id: 'g-2', name: 'Animation', slug: 'animation', isBigGenre: true, displayOrder: 1 },
@@ -13,6 +14,7 @@ describe('PublicNavbar mobile', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     setAccessToken('mock-access-token');
+    useUIStore.setState({ theme: 'dark' });
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url =
         typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
@@ -56,6 +58,19 @@ describe('PublicNavbar mobile', () => {
     expect(screen.getByTestId('search-toggle').className).toContain('rounded-full');
     expect(screen.getByTestId('desktop-nav')).toHaveClass('hidden', 'md:flex');
     expect(screen.getByTestId('mobile-menu-button')).toHaveClass('md:hidden');
+  });
+
+  it('renders brand logo image in top bar and mobile drawer', async () => {
+    await renderAt('/');
+    const logos = screen.getAllByAltText('Private Movie');
+    expect(logos.length).toBeGreaterThanOrEqual(1);
+    expect(logos[0].tagName).toBe('IMG');
+    expect(logos[0].getAttribute('src')).toContain('/assets/logo-full.png');
+
+    fireEvent.click(screen.getByTestId('mobile-menu-button'));
+    await screen.findByTestId('mobile-drawer');
+    const drawerLogos = screen.getAllByAltText('Private Movie');
+    expect(drawerLogos.length).toBeGreaterThanOrEqual(2);
   });
 
   it('opens drawer with Home + Big Genre links and dismisses on link click and close button', async () => {

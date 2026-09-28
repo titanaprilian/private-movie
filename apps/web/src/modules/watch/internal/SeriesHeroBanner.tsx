@@ -85,7 +85,7 @@ export function SeriesHeroBanner({
           the episode explorer below the fold; full cinematic height on desktop. */}
       <div
         data-testid="hero-artwork"
-        className="relative h-[65dvh] md:h-[85vh] min-h-[420px] md:min-h-[550px] w-full bg-zinc-950 overflow-hidden"
+        className="relative h-[65dvh] md:h-[85vh] min-h-[420px] md:min-h-[550px] w-full bg-[var(--bg)] overflow-hidden"
       >
         {mobileImage ? (
           <img
@@ -109,11 +109,11 @@ export function SeriesHeroBanner({
         {/* Multi-stop dark vignette gradients (home feed aesthetic) */}
         <div
           data-testid="hero-gradient-bottom"
-          className="absolute inset-0 bg-gradient-to-t from-black md:from-black/90 via-black via-[45%] md:via-black/60 to-transparent z-10 pointer-events-none"
+          className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] md:from-[color-mix(in_srgb,var(--bg)_95%,transparent)] via-[color-mix(in_srgb,var(--bg)_75%,black)] via-[35%] md:via-[color-mix(in_srgb,var(--bg)_75%,transparent)] to-transparent z-10 pointer-events-none"
         />
         <div
           data-testid="hero-gradient-left"
-          className="hidden md:block absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10 pointer-events-none"
+          className="hidden md:block absolute inset-0 bg-gradient-to-r from-[color-mix(in_srgb,var(--bg)_92%,transparent)] via-[color-mix(in_srgb,var(--bg)_65%,transparent)] to-transparent z-10 pointer-events-none"
         />
 
         {/* Overlay content: centered on mobile, left-aligned on desktop */}

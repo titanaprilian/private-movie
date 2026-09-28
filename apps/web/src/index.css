@@ -55,19 +55,19 @@
 
 .dark {
   color-scheme: dark;
-  /* Canvas & Surfaces */
-  --bg: #131417;
-  --surface: #1e2024;
-  --surface-raised: #282a2f;
+  /* Canvas & Surfaces (Duolingo slate-teal) */
+  --bg: #131f24;
+  --surface: #202f36;
+  --surface-raised: #2b3d46;
   --ink: #f2f2ef;
   --muted: #9a9a93;
-  --border: #2c2e33;
-  --border-strong: #3f4249;
+  --border: #37464f;
+  --border-strong: #4e616c;
 
   /* Duolingo Brand Palette */
   --green: #58cc02;
   --green-dark: #46a302;
-  --green-soft: rgba(88, 204, 2, 0.15);
+  --green-soft: #1b2f1a;
   --blue: #1cb0f6;
   --blue-dark: #1899d6;
   --blue-soft: rgba(28, 176, 246, 0.15);

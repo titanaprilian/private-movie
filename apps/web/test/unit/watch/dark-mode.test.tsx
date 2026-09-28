@@ -120,7 +120,7 @@ describe('watch cinematic dark mode', () => {
 
     const view = screen.getByTestId('watch-view');
     expect(view).toHaveClass('dark');
-    expect(view).toHaveClass('bg-black');
+    expect(view).toHaveClass('bg-[var(--bg)]');
     expect(view).toHaveStyle({ colorScheme: 'dark' });
   });
 
@@ -131,10 +131,10 @@ describe('watch cinematic dark mode', () => {
 
     const view = screen.getByTestId('watch-view');
     expect(view).toHaveClass('dark');
-    expect(view).toHaveClass('bg-black');
+    expect(view).toHaveClass('bg-[var(--bg)]');
 
     const playerContainer = screen.getByTestId('watch-player-container');
-    expect(playerContainer).toHaveClass('bg-black');
+    expect(playerContainer).toHaveClass('bg-[var(--bg)]');
     expect(screen.getByTestId('watch-controls')).toBeInTheDocument();
     expect(screen.getByTestId('episode-explorer')).toBeInTheDocument();
   });
@@ -144,7 +144,7 @@ describe('watch cinematic dark mode', () => {
 
     const skeleton = screen.getByTestId('watch-skeleton');
     expect(skeleton).toHaveClass('dark');
-    expect(skeleton).toHaveClass('bg-black');
+    expect(skeleton).toHaveClass('bg-[var(--bg)]');
     expect(skeleton).toHaveStyle({ colorScheme: 'dark' });
   });
 
@@ -153,7 +153,7 @@ describe('watch cinematic dark mode', () => {
 
     const error = screen.getByTestId('watch-error');
     expect(error).toHaveClass('dark');
-    expect(error).toHaveClass('bg-black');
+    expect(error).toHaveClass('bg-[var(--bg)]');
     expect(error).toHaveStyle({ colorScheme: 'dark' });
   });
 });

@@ -109,11 +109,11 @@ describe('SeriesHeroBanner cinematic layout', () => {
 
     const bottom = screen.getByTestId('hero-gradient-bottom');
     expect(bottom.className).toMatch('bg-gradient-to-t');
-    expect(bottom.className).toMatch('from-black');
+    expect(bottom.className).toContain('from-[var(--bg)]');
 
     const left = screen.getByTestId('hero-gradient-left');
     expect(left.className).toMatch('bg-gradient-to-r');
-    expect(left.className).toMatch('from-black/80');
+    expect(left.className).toContain('from-[color-mix(in_srgb,var(--bg)_92%,transparent)]');
   });
 
   it('keeps mobile height at 65dvh so the portrait poster has breathing room', () => {

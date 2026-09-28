@@ -1,4 +1,4 @@
-import { renderWithProviders, screen } from '../../utils';
+import { renderWithProviders, screen, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { Shell } from '@/modules/shell';
 import { useUIStore } from '@/store/uiStore';
@@ -14,6 +14,8 @@ vi.mock('@tanstack/react-router', () => ({
     inactiveProps,
     activeOptions,
     onClick,
+    title,
+    ...rest
   }: {
     children: React.ReactNode;
     to: string;
@@ -22,6 +24,7 @@ vi.mock('@tanstack/react-router', () => ({
     inactiveProps?: { className?: string };
     activeOptions?: { exact?: boolean };
     onClick?: () => void;
+    title?: string;
   }) => {
     const isExact = activeOptions?.exact ?? false;
     const isActive = isExact
@@ -33,7 +36,7 @@ vi.mock('@tanstack/react-router', () => ({
       : inactiveProps?.className ?? className;
 
     return (
-      <a href={to} className={dynamicClass} onClick={onClick}>
+      <a href={to} className={dynamicClass} onClick={onClick} title={title} {...rest}>
         {children}
       </a>
     );
@@ -47,7 +50,8 @@ describe('Shell layout component', () => {
     useUIStore.setState({ theme: 'light', sidebarCollapsed: false });
   });
 
-  it('renders children content within Shell layout and displays Private Movie branding', () => {
+  it('renders children content within Shell layout and displays the full brand logo', () => {
+    useUIStore.setState({ theme: 'dark' });
     renderWithProviders(
       <Shell>
         <div data-testid="test-child">Hello Dashboard</div>
@@ -56,10 +60,34 @@ describe('Shell layout component', () => {
 
     expect(screen.getByTestId('test-child')).toBeInTheDocument();
     expect(screen.getByText('Hello Dashboard')).toBeInTheDocument();
-    expect(screen.getAllByText('Private Movie').length).toBeGreaterThan(0);
+    const logos = screen.getAllByAltText('Private Movie');
+    expect(logos.length).toBeGreaterThan(0);
+    expect(logos[0].tagName).toBe('IMG');
+    expect(logos[0].getAttribute('src')).toContain('/assets/logo-full.png');
     expect(screen.queryByText('monoRepo')).not.toBeInTheDocument();
     expect(screen.queryByText(/workspace/i)).not.toBeInTheDocument();
     expect(screen.getAllByText('Series').length).toBeGreaterThan(0);
+  });
+
+  it('uses the dark logo variants in light mode', async () => {
+    useUIStore.setState({ theme: 'light', sidebarCollapsed: false });
+    renderWithProviders(
+      <Shell>
+        <div>Content</div>
+      </Shell>
+    );
+
+    const sidebar = screen.getByTestId('desktop-sidebar');
+    expect(sidebar.querySelector('img[alt="Private Movie"]')?.getAttribute('src')).toContain(
+      '/assets/logo-full-dark.png'
+    );
+
+    useUIStore.setState({ sidebarCollapsed: true });
+    await waitFor(() => {
+      expect(
+        sidebar.querySelector('img[alt="Private Movie collapsed logo"]')?.getAttribute('src')
+      ).toContain('/assets/logo-collapsed-dark.png');
+    });
   });
 
   it('renders primary navigation links and omits deprecated template links', () => {
@@ -103,10 +131,10 @@ describe('Shell layout component', () => {
       name: /genres/i,
     })[0];
 
-    expect(desktopSeriesLink.className).toContain('active-bg');
-    expect(desktopSeriesLink.className).toContain('text-primary');
-    expect(desktopGenresLink.className).not.toContain('active-bg');
-    expect(desktopGenresLink.className).toContain('text-muted');
+    expect(desktopSeriesLink.className).toContain('border-[var(--green)]');
+    expect(desktopSeriesLink.className).toContain('text-[var(--green)]');
+    expect(desktopGenresLink.className).not.toContain('border-[var(--green)]');
+    expect(desktopGenresLink.className).toContain('text-[var(--muted)]');
 
     unmount();
 
@@ -125,13 +153,14 @@ describe('Shell layout component', () => {
       name: /genres/i,
     })[0];
 
-    expect(nestedSeriesLink.className).toContain('active-bg');
-    expect(nestedSeriesLink.className).toContain('text-primary');
-    expect(nestedGenresLink.className).not.toContain('active-bg');
-    expect(nestedGenresLink.className).toContain('text-muted');
+    expect(nestedSeriesLink.className).toContain('border-[var(--green)]');
+    expect(nestedSeriesLink.className).toContain('text-[var(--green)]');
+    expect(nestedGenresLink.className).not.toContain('border-[var(--green)]');
+    expect(nestedGenresLink.className).toContain('text-[var(--muted)]');
   });
 
-  it('toggles sidebar collapse state and updates desktop sidebar width and label visibility', async () => {
+  it('toggles sidebar collapse state, resizing between 224px and 92px and swapping the logo', async () => {
+    useUIStore.setState({ theme: 'dark', sidebarCollapsed: false });
     const { user } = renderWithProviders(
       <Shell>
         <div>Content</div>
@@ -139,19 +168,29 @@ describe('Shell layout component', () => {
     );
 
     const toggleBtn = screen.getByRole('button', { name: /toggle sidebar/i });
+    const sidebar = screen.getByTestId('desktop-sidebar');
+    const desktopLogo = () =>
+      sidebar.querySelector('img[alt="Private Movie"], img[alt="Private Movie collapsed logo"]');
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
-    const desktopTitle = screen.getAllByText('Private Movie')[0];
-    expect(desktopTitle.className).toContain('opacity-100');
-    expect(desktopTitle.className).not.toContain('opacity-0');
+    expect(sidebar.className).toContain('w-[224px]');
+    expect(desktopLogo()?.getAttribute('src')).toContain('/assets/logo-full.png');
+    expect(desktopLogo()?.getAttribute('alt')).toBe('Private Movie');
 
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(true);
-    expect(desktopTitle.className).toContain('opacity-0');
-    expect(desktopTitle.className).toContain('pointer-events-none');
+    expect(sidebar.className).toContain('w-[92px]');
+    expect(sidebar.className).not.toContain('w-[224px]');
+    expect(desktopLogo()?.getAttribute('src')).toContain('/assets/logo-collapsed.png');
+    expect(desktopLogo()?.getAttribute('alt')).toBe('Private Movie collapsed logo');
+
+    // Collapsed nav items render icon-only with title tooltips
+    const collapsedSeriesLink = screen.getAllByRole('link', { name: /series/i })[0];
+    expect(collapsedSeriesLink).toHaveAttribute('title', 'Series');
 
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
-    expect(desktopTitle.className).toContain('opacity-100');
+    expect(sidebar.className).toContain('w-[224px]');
+    expect(desktopLogo()?.getAttribute('src')).toContain('/assets/logo-full.png');
   });
 
   it('renders anonymous user profile avatar in the sidebar and omits external pravatar placeholder', () => {
@@ -169,6 +208,56 @@ describe('Shell layout component', () => {
     ).toBeGreaterThan(0);
   });
 
+  it('highlights the profile card with a green border on the /admin/profile route', () => {
+    useUIStore.setState({ theme: 'dark', sidebarCollapsed: false });
+
+    mockCurrentPath = '/admin/videos';
+    const { unmount } = renderWithProviders(
+      <Shell>
+        <div>Content</div>
+      </Shell>
+    );
+    // Desktop sidebar renders first; the mobile slide-over duplicates the card.
+    const inactiveProfileLink = screen.getAllByRole('link', { name: /user name/i })[0];
+    expect(inactiveProfileLink).toHaveAttribute('href', '/admin/profile');
+    expect(inactiveProfileLink.className).toContain('border-[var(--border)]');
+    expect(inactiveProfileLink.className).not.toContain('border-[var(--green)]');
+    unmount();
+
+    mockCurrentPath = '/admin/profile';
+    renderWithProviders(
+      <Shell>
+        <div>Content</div>
+      </Shell>
+    );
+    const profileLink = screen.getAllByRole('link', { name: /user name/i })[0];
+    expect(profileLink).toHaveAttribute('href', '/admin/profile');
+    expect(profileLink.className).toContain('border-[var(--green)]');
+    expect(profileLink.className).toContain('bg-[var(--green-soft)]');
+  });
+
+  it('renders an 80px navbar with chunky buttons and no search bar', () => {
+    renderWithProviders(
+      <Shell>
+        <div>Content</div>
+      </Shell>
+    );
+
+    const header = screen.getByRole('banner');
+    expect(header.className).toContain('h-20');
+
+    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+
+    const notificationsBtn = screen.getByRole('button', { name: 'Notifications' });
+    expect(notificationsBtn.className).toContain('border-b-4');
+    expect(screen.getByLabelText('3 unread notifications')).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: 'Toggle theme' })).toBeInTheDocument();
+    const logoutBtn = screen.getByRole('button', { name: 'Logout' });
+    expect(logoutBtn.className).toContain('border-b-4');
+  });
+
   it('toggles theme when theme button in header is clicked', async () => {
     const { user } = renderWithProviders(
       <Shell>
@@ -176,7 +265,7 @@ describe('Shell layout component', () => {
       </Shell>
     );
 
-    const themeButton = screen.getByRole('button', { name: /theme/i });
+    const themeButton = screen.getByRole('button', { name: /toggle theme/i });
     expect(useUIStore.getState().theme).toBe('light');
 
     await user.click(themeButton);
@@ -200,6 +289,9 @@ describe('Shell layout component', () => {
     expect(mobileSidebar.className).toContain('-translate-x-full');
     expect(mobileSidebar.className).toContain('transition-transform');
     expect(mobileSidebar.className).toContain('duration-300');
+    expect(mobileSidebar).toHaveAttribute('role', 'dialog');
+    expect(mobileSidebar).toHaveAttribute('aria-modal', 'true');
+    expect(mobileSidebar).toHaveAttribute('aria-label', 'Admin navigation');
 
     const openMenuBtn = screen.getByRole('button', { name: /open menu/i });
     await user.click(openMenuBtn);

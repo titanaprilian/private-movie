@@ -4,6 +4,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { genresQueryOptions } from '@/modules/genres';
 import { CatalogSearch } from '@/modules/search';
 import type { SeriesItem } from '@/modules/videos';
+import { useUIStore } from '@/store/uiStore';
 
 function useCurrentPath() {
   try {
@@ -64,6 +65,11 @@ export function PublicNavbar() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Dark logo variant keeps the wordmark readable on light backgrounds.
+  const theme = useUIStore((s) => s.theme);
+  const brandLogoSrc =
+    theme === 'light' ? '/assets/logo-full-dark.png' : '/assets/logo-full.png';
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchToggleRef = useRef<HTMLButtonElement>(null);
@@ -137,11 +143,10 @@ export function PublicNavbar() {
           <div className="flex items-center gap-6 sm:gap-8 min-w-0">
             <SafeLink
               to="/"
-              className="font-display text-2xl font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] rounded-full px-1 shrink-0"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] rounded-full px-1 shrink-0"
               ariaLabel="Private Movie home"
             >
-              <span className="text-[var(--ink)]">Private</span>{' '}
-              <span className="text-[var(--green)]">Movie</span>
+              <img src={brandLogoSrc} alt="Private Movie" className="h-10 w-auto" />
             </SafeLink>
 
             <nav
@@ -288,10 +293,7 @@ export function PublicNavbar() {
             className="absolute top-4 left-4 bottom-4 w-72 max-w-[80vw] rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2 overflow-y-auto shadow-2xl"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="font-display text-xl font-extrabold">
-                <span className="text-[var(--ink)]">Private</span>{' '}
-                <span className="text-[var(--green)]">Movie</span>
-              </span>
+              <img src={brandLogoSrc} alt="Private Movie" className="h-9 w-auto" />
               <button
                 type="button"
                 aria-label="Close menu"

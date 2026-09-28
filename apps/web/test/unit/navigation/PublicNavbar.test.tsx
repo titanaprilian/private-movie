@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRouter, createMemoryHistory, RouterProvider } from '@tanstack/react-router';
 import { routeTree } from '@/routeTree.gen';
 import { setAccessToken } from '@/lib/api';
+import { useUIStore } from '@/store/uiStore';
 
 const mockGenres = [
   {
@@ -55,6 +56,7 @@ describe('PublicNavbar component', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     setAccessToken('mock-access-token');
+    useUIStore.setState({ theme: 'dark' });
     requestedUrls = [];
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -95,7 +97,7 @@ describe('PublicNavbar component', () => {
     });
   });
 
-  it('renders brand wordmark with two-tone display font', async () => {
+  it('renders brand logo image linking home', async () => {
     const history = createMemoryHistory({ initialEntries: ['/'] });
     const router = createRouter({ routeTree, history });
 
@@ -106,9 +108,10 @@ describe('PublicNavbar component', () => {
     });
     const brand = screen.getByRole('link', { name: 'Private Movie home' });
     expect(brand).toBeInTheDocument();
-    expect(brand.className).toContain('font-display');
-    expect(screen.getByText('Private')).toBeInTheDocument();
-    expect(screen.getByText('Movie')).toBeInTheDocument();
+    const logo = screen.getByAltText('Private Movie');
+    expect(logo).toBeInTheDocument();
+    expect(logo.tagName).toBe('IMG');
+    expect(logo.getAttribute('src')).toContain('/assets/logo-full.png');
     const navbar = screen.getByTestId('public-navbar');
     expect(navbar.className).toContain('h-[76px]');
     expect(navbar.className).toContain('sticky');
@@ -121,6 +124,17 @@ describe('PublicNavbar component', () => {
     expect(container?.className).toContain('md:px-16');
     expect(container?.className).toContain('w-full');
     expect(container?.className).not.toContain('max-w-7xl');
+  });
+
+  it('uses the dark logo variant in light mode', async () => {
+    useUIStore.setState({ theme: 'light' });
+    const history = createMemoryHistory({ initialEntries: ['/'] });
+    const router = createRouter({ routeTree, history });
+
+    renderWithProviders(<RouterProvider router={router} />);
+
+    const logo = await screen.findByAltText('Private Movie');
+    expect(logo.getAttribute('src')).toContain('/assets/logo-full-dark.png');
   });
 
   it('fetches genres and renders Home root link alongside sorted Big Genres', async () => {

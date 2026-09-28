@@ -65,7 +65,7 @@ export function EpisodeRow({
       </span>
 
       {/* Thumbnail container with fallback and duration overlay */}
-      <div className="relative h-14 w-24 sm:h-16 sm:w-28 rounded-xl overflow-hidden bg-zinc-900 shrink-0 flex items-center justify-center">
+      <div className="relative h-14 w-24 sm:h-16 sm:w-28 rounded-xl overflow-hidden bg-[var(--surface)] shrink-0 flex items-center justify-center">
         {activeImage ? (
           <img
             src={activeImage}
@@ -76,7 +76,7 @@ export function EpisodeRow({
           />
         ) : (
           <div className="flex items-center justify-center text-muted">
-            <Play className="h-5 w-5 text-zinc-600 group-hover:text-primary transition-colors" />
+            <Play className="h-5 w-5 text-[var(--muted)] group-hover:text-primary transition-colors" />
           </div>
         )}
 

@@ -45,7 +45,7 @@ export function EpisodeCard({
       aria-label={`Play Episode ${episode.order ?? ''}: ${episode.title}`}
     >
       {/* 16:9 Thumbnail Box */}
-      <div className="relative aspect-video w-full overflow-hidden bg-zinc-900 flex items-center justify-center">
+      <div className="relative aspect-video w-full overflow-hidden bg-[var(--surface)] flex items-center justify-center">
         {activeImage ? (
           <img
             src={activeImage}
@@ -56,7 +56,7 @@ export function EpisodeCard({
           />
         ) : (
           <div className="flex flex-col items-center justify-center gap-1 text-muted">
-            <Play className="h-8 w-8 text-zinc-600 group-hover:text-primary transition-colors" />
+            <Play className="h-8 w-8 text-[var(--muted)] group-hover:text-primary transition-colors" />
           </div>
         )}
 

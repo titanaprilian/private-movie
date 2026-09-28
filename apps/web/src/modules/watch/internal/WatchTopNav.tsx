@@ -29,7 +29,7 @@ export function WatchTopNav({
   return (
     <div
       data-testid="watch-top-nav"
-      className="sticky top-0 z-50 px-4 sm:px-8 md:px-12 lg:px-16 py-3 bg-black/60 backdrop-blur-md border-b border-white/10"
+      className="sticky top-0 z-50 px-4 sm:px-8 md:px-12 lg:px-16 py-3 bg-[var(--bg)]/60 backdrop-blur-md border-b border-[var(--border)]"
     >
       {onClick && (
         <button

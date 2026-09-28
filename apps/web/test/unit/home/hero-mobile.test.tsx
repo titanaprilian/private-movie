@@ -131,12 +131,12 @@ describe('CinematicHome mobile-optimized hero', () => {
 
     const bottom = screen.getByTestId('hero-gradient-bottom');
     expect(bottom.className).toMatch(/bg-gradient-to-t/);
-    // solid black across the bottom half, fading out toward the top
-    expect(bottom.className).toContain('via-black');
-    expect(bottom.className).toContain('via-[45%]');
+    // dark theme scrim across the bottom, fading out toward the top
+    expect(bottom.className).toContain('via-[color-mix(in_srgb,var(--bg)_75%,black)]');
+    expect(bottom.className).toContain('via-[35%]');
     // desktop uses slightly lighter stops
-    expect(bottom.className).toContain('md:via-black/60');
-    expect(bottom.className).toContain('md:from-black/90');
+    expect(bottom.className).toContain('md:via-[color-mix(in_srgb,var(--bg)_75%,transparent)]');
+    expect(bottom.className).toContain('md:from-[color-mix(in_srgb,var(--bg)_95%,transparent)]');
     expect(bottom.className).not.toMatch(/hidden/);
 
     const left = screen.getByTestId('hero-gradient-left');

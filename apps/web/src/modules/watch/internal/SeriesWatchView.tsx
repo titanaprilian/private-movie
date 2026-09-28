@@ -56,7 +56,7 @@ export interface SeriesWatchViewProps {
 export function WatchViewSkeleton() {
   return (
     <div
-      className="dark min-h-screen bg-black text-fg font-sans animate-pulse"
+      className="dark min-h-screen bg-[var(--bg)] text-fg font-sans animate-pulse"
       data-testid="watch-skeleton"
       style={{ colorScheme: 'dark' }}
     >
@@ -89,7 +89,7 @@ export function WatchViewErrorState({
 }) {
   return (
     <div
-      className="dark min-h-screen bg-black text-fg font-sans flex items-center justify-center p-4"
+      className="dark min-h-screen bg-[var(--bg)] text-fg font-sans flex items-center justify-center p-4"
       data-testid="watch-error"
       style={{ colorScheme: 'dark' }}
     >
@@ -465,7 +465,7 @@ export function SeriesWatchView({
 
   return (
     <div
-      className="dark min-h-screen bg-black text-fg font-sans pb-16"
+      className="dark min-h-screen bg-[var(--bg)] text-fg font-sans pb-16"
       data-testid="watch-view"
       style={{ colorScheme: 'dark' }}
     >
@@ -523,12 +523,12 @@ export function SeriesWatchView({
           {/* Video Player Container */}
           <div
             data-testid="watch-player-container"
-            className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-black"
+            className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-[var(--bg)]"
           >
             {activeSource ? (
               activeSource.type === 'embed' ? (
                 <div
-                  className={`relative aspect-video w-full overflow-hidden rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-black ${
+                  className={`relative aspect-video w-full overflow-hidden rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-[var(--bg)] ${
                     playerFocused ? 'ring-2 ring-white' : ''
                   }`}
                   style={{
