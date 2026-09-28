@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { SeriesGrid, seriesListQueryOptions } from '@/modules/videos';
+import { SeriesGrid, seriesListQueryOptions, SERIES_PAGE_LIMIT } from '@/modules/videos';
 import { genresQueryOptions } from '@/modules/genres';
 import { queryClient } from '@/lib/queryClient';
 
@@ -46,7 +46,9 @@ export const Route = createFileRoute('/admin/videos/')({
   loader: ({ deps }: { deps?: SeriesListSearch } = {}) =>
     Promise.all([
       queryClient.ensureQueryData(genresQueryOptions()),
-      queryClient.ensureQueryData(seriesListQueryOptions(deps)),
+      queryClient.ensureQueryData(
+        seriesListQueryOptions({ ...deps, limit: SERIES_PAGE_LIMIT })
+      ),
     ]),
   component: VideosIndexPage,
 });

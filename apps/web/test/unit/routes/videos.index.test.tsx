@@ -66,7 +66,7 @@ describe('videos.index route loader', () => {
     expect(queryKeys).toContainEqual([
       'series',
       'list',
-      { page: 2, q: 'naruto', genre: 'sci-fi', tab: 'featured' },
+      { page: 2, q: 'naruto', genre: 'sci-fi', tab: 'featured', limit: 12 },
     ]);
 
     ensureQueryDataSpy.mockRestore();

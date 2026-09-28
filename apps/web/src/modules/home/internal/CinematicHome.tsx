@@ -11,6 +11,7 @@ import {
   Star,
 } from 'lucide-react';
 import { useInputMode } from '@/hooks/useInputMode';
+import { ChunkyButton } from '@/components/ui/chunky-button';
 import { PublicNavbar } from '@/modules/navigation';
 import { RecentEpisodeCard, SeriesDetailDialog, SeriesPosterCard } from '@/modules/videos';
 import { useHomeFeedNav } from './useHomeFeedNav';
@@ -576,25 +577,26 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-4 w-full md:w-auto">
-                <button
+                <ChunkyButton
                   data-testid="hero-play"
                   data-nav-row={0}
                   data-nav-item={0}
                   onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: currentHero.id } })}
-                  className={`w-full md:w-auto justify-center bg-[var(--green)] text-white px-7 py-3 rounded-2xl text-base font-extrabold shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`w-full md:w-auto ${
                     isSpatialMode && focusedRow === 0 && focusedItem === 0 ? 'ring-2 ring-white' : ''
                   }`}
                 >
                   <Play className="w-5 h-5 fill-white text-white" />
                   <span>Play</span>
-                </button>
-                <button
+                </ChunkyButton>
+                <ChunkyButton
+                  variant="translucent"
                   data-testid="hero-more-info"
                   onClick={() => setDetailOpen(true)}
-                  className="w-full md:w-auto justify-center bg-white/20 text-white backdrop-blur-sm px-7 py-3 rounded-2xl text-base font-extrabold shadow-[0_5px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.2)] hover:bg-white/30 transition-all flex items-center gap-2 cursor-pointer"
+                  className="w-full md:w-auto"
                 >
                   <span>More Info</span>
-                </button>
+                </ChunkyButton>
               </div>
             </div>
           </div>

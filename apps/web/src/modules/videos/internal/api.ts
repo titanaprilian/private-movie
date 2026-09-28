@@ -45,6 +45,9 @@ import { parseIngestUrl, type ParsedIngestUrl } from './parseIngestUrl';
 export { parseIngestUrl };
 export type { ParsedIngestUrl };
 
+/** Fixed page size for the admin series catalog grid (3 full 4-column rows). */
+export const SERIES_PAGE_LIMIT = 12;
+
 // Canonical Contracts & Legacy Aliases
 export type VideoSource = AdminVideoSourceItem;
 export type VideoSourceInput = AdminVideoSourceInput;

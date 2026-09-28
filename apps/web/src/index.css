@@ -26,6 +26,10 @@
   --yellow-dark: #e6a800;
   --red: #ff4b4b;
   --red-dark: #e63e3e;
+  --gold: #ffc800;
+  --gold-dark: #e5a600;
+  --gold-tint: #2b2a14;
+  --gold-tint-hover: #363415;
 
   /* Legacy aliases (backward compatibility) */
   --panel: var(--surface);
@@ -77,6 +81,10 @@
   --yellow-dark: #e6a800;
   --red: #ff4b4b;
   --red-dark: #e63e3e;
+  --gold: #ffc800;
+  --gold-dark: #e5a600;
+  --gold-tint: #2b2a14;
+  --gold-tint-hover: #363415;
 
   /* Legacy aliases (backward compatibility) */
   --panel: var(--surface);
@@ -184,4 +192,22 @@ body {
     linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 32px 32px;
+}
+
+/* Featured star hover reveal: hidden until card hover/focus on desktop, */
+.featured-star {
+  transition:
+    opacity 150ms ease,
+    transform 100ms ease,
+    background-color 150ms ease;
+}
+@media (hover: none) {
+  .featured-star {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .featured-star {
+    transition: none;
+  }
 }

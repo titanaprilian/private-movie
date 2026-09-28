@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { ChunkyButton } from '@/components/ui/chunky-button';
 import { renderWithProviders, screen } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -75,5 +76,25 @@ describe('Button component', () => {
     expect(button).toBeDisabled();
     await user.click(button);
     expect(handleClick).not.toHaveBeenCalled();
+  });
+});
+
+describe('Button tactile variants (migrated to ChunkyButton shared primitive)', () => {
+  it.each([
+    ['primary', 'bg-[var(--green)]'],
+    ['blue', 'bg-[var(--blue)]'],
+    ['danger', 'bg-[var(--red)]'],
+    ['translucent', 'bg-white/20'],
+    ['outline', 'bg-[var(--bg)]'],
+    ['gold', 'bg-[var(--gold)]'],
+  ] as const)('chunky %s variant renders shared tactile styling', (variant, token) => {
+    const { unmount } = renderWithProviders(
+      <ChunkyButton variant={variant}>Label</ChunkyButton>
+    );
+    const button = screen.getByRole('button', { name: 'Label' });
+    expect(button.className).toMatch(token);
+    expect(button.className).toMatch('border-b-4');
+    expect(button.className).toMatch('active:translate-y-[2px]');
+    unmount();
   });
 });

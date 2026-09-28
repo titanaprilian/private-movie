@@ -242,12 +242,13 @@ describe('SeriesHeroBanner cinematic layout', () => {
     expect(synopsis).toHaveTextContent('A thrilling series synopsis');
     expect(synopsis).toHaveClass('hidden', 'md:line-clamp-3');
 
-    // Duolingo 3D green play CTA, full-width on mobile
+    // Chunky shared-primitive green play CTA, full-width on mobile
     const play = screen.getByTestId('hero-play');
     expect(play).toHaveClass('bg-[var(--green)]', 'text-white', 'w-full', 'md:w-auto');
     expect(play).toHaveClass('rounded-2xl', 'font-extrabold');
-    expect(play.className).toMatch(/shadow-\[0_5px_0_var\(--green-dark\)\]/);
-    expect(play.className).toMatch(/active:translate-y-1/);
+    expect(play.className).toMatch('border-b-4');
+    expect(play.className).toMatch(/active:translate-y-\[2px\]/);
+    expect(play.className).toMatch('active:border-b-2');
     expect(play).toHaveAccessibleName(/play episode 1/i);
   });
 

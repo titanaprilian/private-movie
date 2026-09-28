@@ -4,6 +4,7 @@ import {
   DialogClose,
   DialogContent,
 } from '@/components/ui/dialog';
+import { ChunkyButton } from '@/components/ui/chunky-button';
 
 export interface SeriesDetailDialogSeries {
   id: string;
@@ -52,9 +53,12 @@ export function SeriesDetailDialog({ series, open, onOpenChange, onPlay }: Serie
               <DialogClose
                 data-testid="series-detail-close"
                 aria-label="Close details"
-                className="absolute right-4 top-4 w-11 h-11 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] flex items-center justify-center cursor-pointer shadow-[0_4px_0_rgba(0,0,0,0.35)] active:translate-y-[3px] active:shadow-[0_1px_0_rgba(0,0,0,0.35)] hover:bg-[var(--yellow)] hover:border-[#e6a800] transition-colors"
+                className="absolute right-4 top-4"
+                asChild
               >
-                <X className="w-5 h-5" />
+                <ChunkyButton variant="outline" size="icon">
+                  <X className="w-5 h-5" />
+                </ChunkyButton>
               </DialogClose>
             </div>
 
@@ -81,18 +85,17 @@ export function SeriesDetailDialog({ series, open, onOpenChange, onPlay }: Serie
               </p>
 
               <div className="flex items-center gap-3 pt-2">
-                <button
+                <ChunkyButton
                   type="button"
                   data-testid="series-detail-play"
                   onClick={() => {
                     onPlay?.(series.id);
                     onOpenChange(false);
                   }}
-                  className="inline-flex items-center gap-2 bg-[var(--green)] text-white font-extrabold rounded-2xl px-7 py-3 shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all cursor-pointer"
                 >
                   <Play className="w-5 h-5 fill-white text-white" />
                   <span>Play Now</span>
-                </button>
+                </ChunkyButton>
               </div>
             </div>
           </div>

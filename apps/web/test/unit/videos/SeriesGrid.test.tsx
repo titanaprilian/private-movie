@@ -1,10 +1,11 @@
-import { createTestQueryClient, renderWithProviders, screen, fireEvent, within } from '../../utils';
+import { createTestQueryClient, renderWithProviders, screen, fireEvent, within, waitFor } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
 import {
   SeriesGrid,
   seriesListQueryOptions,
   updateSeries,
   deleteSeries,
+  SERIES_PAGE_LIMIT,
   type SeriesListResponse,
 } from '@/modules/videos';
 import { genresQueryOptions, type Genre } from '@/modules/genres';
@@ -119,7 +120,7 @@ const mockSeriesResponse = {
   meta: {
     total: 2,
     page: 1,
-    limit: 20,
+    limit: SERIES_PAGE_LIMIT,
   },
 };
 
@@ -142,7 +143,10 @@ function renderSeriesGrid(
       staleTime: Infinity,
     },
   });
-  queryClient.setQueryData(seriesListQueryOptions(searchState).queryKey, customResponse as SeriesListResponse);
+  queryClient.setQueryData(
+    seriesListQueryOptions({ ...searchState, limit: SERIES_PAGE_LIMIT }).queryKey,
+    customResponse as SeriesListResponse
+  );
   queryClient.setQueryData(genresQueryOptions().queryKey, genresList);
   return renderWithProviders(<SeriesGrid />, { queryClient });
 }
@@ -200,7 +204,7 @@ describe('SeriesGrid component', () => {
           updatedAt: '2025-01-10T00:00:00.000Z',
         },
       ],
-      meta: { total: 1, page: 1, limit: 20 },
+      meta: { total: 1, page: 1, limit: SERIES_PAGE_LIMIT },
     };
     const { container } = renderSeriesGrid(noPosterResponse);
 
@@ -219,7 +223,7 @@ describe('SeriesGrid component', () => {
 
     expect(mockNavigate).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(500);
+    vi.advanceTimersByTime(250);
 
     expect(mockNavigate).toHaveBeenCalledWith({
       search: expect.any(Function),
@@ -232,21 +236,42 @@ describe('SeriesGrid component', () => {
     vi.useRealTimers();
   });
 
-  it('renders pagination bar when total exceeds page limit', () => {
+  it('renders chunky pagination bar with Page indicator and disabled Previous on page 1', () => {
     const paginatedResponse = {
       ...mockSeriesResponse,
       meta: {
         total: 25,
         page: 1,
-        limit: 20,
+        limit: SERIES_PAGE_LIMIT,
       },
     };
     renderSeriesGrid(paginatedResponse);
 
-    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
-    expect(screen.getByText('Previous')).toHaveClass('opacity-50');
-    const nextLink = screen.getByText('Next').closest('a');
-    expect(nextLink).toHaveAttribute('href', '/admin/videos?page=2');
+    expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next page' })).not.toBeDisabled();
+  });
+
+  it('navigates to the next page via chunky Next chip and disables Next on the final page', async () => {
+    const { user } = renderSeriesGrid(
+      {
+        ...mockSeriesResponse,
+        meta: { total: 25, page: 3, limit: SERIES_PAGE_LIMIT },
+      },
+      { page: 3, q: undefined, genre: undefined, tab: undefined }
+    );
+
+    expect(screen.getByText('Page 3 of 3')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Previous page' })).not.toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Previous page' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(searchFn({ page: 3 })).toEqual({ page: 2 });
   });
 
   it('navigates to /admin/videos/$seriesId when clicking a series card', () => {
@@ -265,16 +290,41 @@ describe('SeriesGrid component', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Add Series' })).toBeInTheDocument();
   });
 
-  it('renders compact genre filter trigger button and active genre badges when genre param is set', () => {
-    renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined, genre: 'sci-fi' });
-
-    expect(screen.getByRole('combobox', { name: 'Filter by genre' })).toHaveTextContent('Genres (1)');
-    expect(screen.getByText('Sci-Fi')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Remove Sci-Fi filter' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Clear all' })).toBeInTheDocument();
+  it('renders GenreFilter trigger with empty, single, and multi labels from URL state', () => {
+    renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined, genre: undefined });
+    expect(screen.getByRole('combobox', { name: 'Filter by genre' })).toHaveTextContent(
+      'Filter by genre'
+    );
   });
 
-  it('opens combobox popover, filters genres by search, and navigates with multi-select ?genre= value', async () => {
+  it('restores combined URL state (tab, search, genre, page) into toolbar controls', () => {
+    renderSeriesGrid(mockSeriesResponse, {
+      page: 2,
+      q: 'leveling',
+      genre: 'action',
+      tab: 'featured',
+    });
+
+    expect(screen.getByPlaceholderText('Filter series...')).toHaveValue('leveling');
+    expect(screen.getByRole('tab', { name: 'Featured' })).toHaveAttribute(
+      'data-state',
+      'active'
+    );
+    expect(screen.getByRole('combobox', { name: 'Action' })).toHaveTextContent('Action');
+    expect(screen.getByText('2 series')).toBeInTheDocument();
+  });
+
+  it('shows multi-genre count label when several genre slugs are in the URL', () => {
+    renderSeriesGrid(mockSeriesResponse, {
+      page: 1,
+      q: undefined,
+      genre: 'action,sci-fi',
+    });
+
+    expect(screen.getByRole('combobox', { name: '2 genres' })).toHaveTextContent('2 genres');
+  });
+
+  it('opens genre popover, filters genres by search, and navigates with multi-select ?genre= value', async () => {
     const { user } = renderSeriesGrid();
 
     const trigger = screen.getByRole('combobox', { name: 'Filter by genre' });
@@ -285,12 +335,12 @@ describe('SeriesGrid component', () => {
     expect(genreInput).toBeInTheDocument();
 
     // Filter genre list by query
-    fireEvent.change(genreInput, { target: { value: 'Action' } });
-    expect(screen.getByText('Action')).toBeInTheDocument();
-    expect(screen.queryByText('Sci-Fi')).not.toBeInTheDocument();
+    await user.type(genreInput, 'Action');
+    expect(screen.getByRole('option', { name: 'Action' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Sci-Fi' })).not.toBeInTheDocument();
 
     // Select Action
-    await user.click(screen.getByText('Action'));
+    await user.click(screen.getByRole('option', { name: 'Action' }));
 
     expect(mockNavigate).toHaveBeenCalledWith({
       search: expect.any(Function),
@@ -300,38 +350,29 @@ describe('SeriesGrid component', () => {
     expect(searchFn({})).toEqual({ genre: 'action', page: 1 });
   });
 
-  it('removes genre via badge (x) button or clears all via Clear all button', async () => {
-    const { user } = renderSeriesGrid(mockSeriesResponse, {
+  it('clears genre selection via the popover Clear button and resets page to 1', async () => {
+    const pagedResponse = {
+      ...mockSeriesResponse,
+      meta: { total: 25, page: 2, limit: SERIES_PAGE_LIMIT },
+    };
+    const { user } = renderSeriesGrid(pagedResponse, {
       page: 2,
       q: undefined,
       genre: 'action,sci-fi',
     });
 
-    expect(screen.getByRole('combobox', { name: 'Filter by genre' })).toHaveTextContent('Genres (2)');
-    expect(screen.getByText('Action')).toBeInTheDocument();
-    expect(screen.getByText('Sci-Fi')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '2 genres' })).toBeInTheDocument();
 
-    // Click (x) on Action badge
-    const removeActionBtn = screen.getByRole('button', { name: 'Remove Action filter' });
-    await user.click(removeActionBtn);
+    await user.click(screen.getByRole('combobox', { name: '2 genres' }));
+    expect(await screen.findByPlaceholderText('Search genres...')).toBeInTheDocument();
 
-    expect(mockNavigate).toHaveBeenCalledWith({
-      search: expect.any(Function),
-    });
-    const searchFn1 = mockNavigate.mock.calls[0][0].search;
-    expect(searchFn1({ genre: 'action,sci-fi', page: 2 })).toEqual({ genre: 'sci-fi', page: 1 });
-
-    mockNavigate.mockReset();
-
-    // Click Clear all
-    const clearAllBtn = screen.getByRole('button', { name: 'Clear all' });
-    await user.click(clearAllBtn);
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
 
     expect(mockNavigate).toHaveBeenCalledWith({
       search: expect.any(Function),
     });
-    const searchFn2 = mockNavigate.mock.calls[0][0].search;
-    expect(searchFn2({ genre: 'action,sci-fi', page: 2 })).toEqual({ genre: undefined, page: 1 });
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(searchFn({ genre: 'action,sci-fi', page: 2 })).toEqual({ genre: undefined, page: 1 });
   });
 
   it('renders Edit and Delete buttons on each series card', () => {
@@ -387,7 +428,7 @@ describe('SeriesGrid component', () => {
           genreIds: ['g-1', 'g-2'],
         },
       ],
-      meta: { total: 1, page: 1, limit: 20 },
+      meta: { total: 1, page: 1, limit: SERIES_PAGE_LIMIT },
     };
     const { user } = renderSeriesGrid(seriesWithGenresResponse);
 
@@ -478,8 +519,12 @@ describe('SeriesGrid component', () => {
   });
 
   it('switches tab to Featured, updates tab search param, resets page to 1, and preserves q and genre', async () => {
-    const { user } = renderSeriesGrid(mockSeriesResponse, {
-      page: 3,
+    const pagedResponse = {
+      ...mockSeriesResponse,
+      meta: { total: 25, page: 2, limit: SERIES_PAGE_LIMIT },
+    };
+    const { user } = renderSeriesGrid(pagedResponse, {
+      page: 2,
       q: 'leveling',
       genre: 'action',
       tab: undefined,
@@ -494,7 +539,7 @@ describe('SeriesGrid component', () => {
 
     const searchFn = mockNavigate.mock.calls[0][0].search;
     expect(
-      searchFn({ page: 3, q: 'leveling', genre: 'action', tab: undefined })
+      searchFn({ page: 2, q: 'leveling', genre: 'action', tab: undefined })
     ).toEqual({
       page: 1,
       q: 'leveling',
@@ -504,7 +549,11 @@ describe('SeriesGrid component', () => {
   });
 
   it('switches tab to Ongoing, updates tab search param, resets page to 1, and preserves q and genre', async () => {
-    const { user } = renderSeriesGrid(mockSeriesResponse, {
+    const pagedResponse = {
+      ...mockSeriesResponse,
+      meta: { total: 25, page: 2, limit: SERIES_PAGE_LIMIT },
+    };
+    const { user } = renderSeriesGrid(pagedResponse, {
       page: 2,
       q: 'hunter',
       genre: 'action',
@@ -530,7 +579,11 @@ describe('SeriesGrid component', () => {
   });
 
   it('switches tab to All, clears tab search param, resets page to 1, and preserves q and genre', async () => {
-    const { user } = renderSeriesGrid(mockSeriesResponse, {
+    const pagedResponse = {
+      ...mockSeriesResponse,
+      meta: { total: 25, page: 2, limit: SERIES_PAGE_LIMIT },
+    };
+    const { user } = renderSeriesGrid(pagedResponse, {
       page: 2,
       q: 'hunter',
       genre: 'action',
@@ -565,7 +618,7 @@ describe('SeriesGrid component', () => {
         },
         mockSeriesResponse.series[1],
       ],
-      meta: { total: 2, page: 1, limit: 20 },
+      meta: { total: 2, page: 1, limit: SERIES_PAGE_LIMIT },
     };
     renderSeriesGrid(badgeResponse);
 
@@ -587,10 +640,79 @@ describe('SeriesGrid component', () => {
   it('renders accurate total count in filter bar matching backend meta', () => {
     renderSeriesGrid({
       series: mockSeriesResponse.series,
-      meta: { total: 42, page: 1, limit: 20 },
+      meta: { total: 42, page: 1, limit: SERIES_PAGE_LIMIT },
     });
 
     expect(screen.getByText('42 series')).toBeInTheDocument();
+  });
+
+  it('hides pagination and shows empty state when no series match the filter', () => {
+    renderSeriesGrid({
+      series: [],
+      meta: { total: 0, page: 1, limit: SERIES_PAGE_LIMIT },
+    });
+
+    expect(screen.getByText('No series match your filter.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Previous page' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next page' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('series-grid')).not.toBeInTheDocument();
+  });
+
+  it('clamps out-of-bounds page params back to the last valid page', () => {
+    renderSeriesGrid(
+      {
+        series: mockSeriesResponse.series,
+        meta: { total: 2, page: 5, limit: SERIES_PAGE_LIMIT },
+      },
+      { page: 5, q: undefined, genre: undefined, tab: undefined }
+    );
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+      replace: true,
+    });
+    const searchFn = mockNavigate.mock.calls[0][0].search;
+    expect(searchFn({ page: 5 })).toEqual({ page: 1 });
+  });
+
+  it('steps back to page - 1 when deleting the sole item on page > 1', async () => {
+    const { user } = renderSeriesGrid(
+      {
+        series: [mockSeriesResponse.series[0]],
+        meta: { total: 13, page: 2, limit: SERIES_PAGE_LIMIT },
+      },
+      { page: 2, q: undefined, genre: undefined, tab: undefined }
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete Solo Leveling' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() => expect(deleteSeries).toHaveBeenCalledWith('series-1'));
+
+    const navigations = mockNavigate.mock.calls.map((call) => call[0].search({ page: 2 }));
+    expect(navigations).toContainEqual({ page: 1 });
+  });
+
+  it('preserves pagination page and filters when toggling the featured star', async () => {
+    const pagedResponse = {
+      ...mockSeriesResponse,
+      meta: { total: 25, page: 2, limit: SERIES_PAGE_LIMIT },
+    };
+    const { user } = renderSeriesGrid(pagedResponse, {
+      page: 2,
+      q: 'leveling',
+      genre: 'action',
+      tab: undefined,
+    });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Mark Solo Leveling as featured' })
+    );
+
+    await waitFor(() =>
+      expect(updateSeries).toHaveBeenCalledWith('series-1', { isFeatured: true })
+    );
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('does not revert or overwrite typed input when search.q changes from in-flight debounced navigation', () => {
@@ -603,7 +725,7 @@ describe('SeriesGrid component', () => {
     expect(input.value).toBe('Solo');
 
     // Debounce timer fires
-    vi.advanceTimersByTime(500);
+    vi.advanceTimersByTime(250);
     expect(mockNavigate).toHaveBeenCalledWith({
       search: expect.any(Function),
       replace: true,
@@ -615,7 +737,10 @@ describe('SeriesGrid component', () => {
 
     // Route finishes updating and search.q becomes 'Solo'
     const newSearch = { page: 1, q: 'Solo' };
-    queryClient.setQueryData(seriesListQueryOptions(newSearch).queryKey, mockSeriesResponse);
+    queryClient.setQueryData(
+      seriesListQueryOptions({ ...newSearch, limit: SERIES_PAGE_LIMIT }).queryKey,
+      mockSeriesResponse
+    );
     mockSearchState = newSearch;
     rerender(<SeriesGrid />);
 
@@ -625,45 +750,120 @@ describe('SeriesGrid component', () => {
     vi.useRealTimers();
   });
 
-  it('preserves search input and pending debounce when switching tabs or toggling genres', () => {
-    vi.useFakeTimers();
-    renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined, genre: 'sci-fi' });
+  it('preserves search input and pending debounce when switching tabs', async () => {
+    const pagedResponse = {
+      ...mockSeriesResponse,
+      meta: { total: 25, page: 1, limit: SERIES_PAGE_LIMIT },
+    };
+    const { user } = renderSeriesGrid(pagedResponse, { page: 1, q: undefined, genre: 'sci-fi' });
     const input = screen.getByPlaceholderText('Filter series...') as HTMLInputElement;
 
     // User types 'hunter'
-    fireEvent.change(input, { target: { value: 'hunter' } });
+    await user.type(input, 'hunter');
+    expect(input).toHaveValue('hunter');
 
-    // User removes genre filter 'sci-fi' at 200ms (timer still pending)
-    const removeSciFiBtn = screen.getByRole('button', { name: 'Remove Sci-Fi filter' });
-    fireEvent.click(removeSciFiBtn);
+    // User switches to the Featured tab while the debounce is pending
+    await user.click(screen.getByRole('tab', { name: 'Featured' }));
 
-    // Genre navigate called
+    // Tab navigate called (page reset, filters preserved)
     expect(mockNavigate).toHaveBeenCalledWith({
       search: expect.any(Function),
     });
-    const genreSearchFn = mockNavigate.mock.calls[0][0].search;
-    expect(genreSearchFn({ genre: 'sci-fi', page: 1 })).toEqual({ genre: undefined, page: 1 });
+    const tabSearchFn = mockNavigate.mock.calls[0][0].search;
+    expect(
+      tabSearchFn({ genre: 'sci-fi', page: 1, tab: undefined })
+    ).toEqual({ genre: 'sci-fi', page: 1, tab: 'featured' });
 
-    mockNavigate.mockReset();
-
-    // Advance timer to 500ms
-    vi.advanceTimersByTime(500);
-
-    // Debounce timer fires with replace: true
-    expect(mockNavigate).toHaveBeenCalledWith({
-      search: expect.any(Function),
-      replace: true,
+    // Debounce fires after typing settles, spreading current search state
+    await waitFor(() => {
+      const replaceCalls = mockNavigate.mock.calls.filter((call) => call[0].replace);
+      expect(replaceCalls.length).toBeGreaterThan(0);
     });
-
-    // The search updater function receives current search state (which has genre cleared)
-    const debouncedSearchFn = mockNavigate.mock.calls[0][0].search;
-    expect(debouncedSearchFn({ genre: undefined, page: 1 })).toEqual({
-      genre: undefined,
-      q: 'hunter',
+    const replaceCalls = mockNavigate.mock.calls.filter((call) => call[0].replace);
+    const debouncedSearchFn = replaceCalls[0][0].search;
+    expect(debouncedSearchFn({ genre: 'sci-fi', page: 1, tab: 'featured' })).toEqual({
+      genre: 'sci-fi',
       page: 1,
+      tab: 'featured',
+      q: 'hunter',
     });
+  });
 
-    vi.useRealTimers();
+  it('renders centered pagination nav with chevron icons and accessible labels', () => {
+    const paginatedResponse = {
+      ...mockSeriesResponse,
+      meta: { total: 25, page: 1, limit: SERIES_PAGE_LIMIT },
+    };
+    renderSeriesGrid(paginatedResponse);
+
+    const nav = screen.getByRole('navigation', { name: 'Pagination' });
+    expect(nav.tagName).toBe('NAV');
+    expect(nav.className).toContain('mt-7');
+    expect(nav.className).toContain('flex');
+    expect(nav.className).toContain('items-center');
+    expect(nav.className).toContain('justify-center');
+    expect(nav.className).toContain('gap-4');
+
+    const prevBtn = screen.getByRole('button', { name: 'Previous page' });
+    const nextBtn = screen.getByRole('button', { name: 'Next page' });
+    expect(prevBtn).toHaveTextContent('Previous');
+    expect(nextBtn).toHaveTextContent('Next');
+    // Lucide chevron icons render as svg inside each button
+    expect(prevBtn.querySelector('svg')).not.toBeNull();
+    expect(nextBtn.querySelector('svg')).not.toBeNull();
+
+    // Chevron order: leading icon on Previous, trailing icon on Next
+    const prevChildren = Array.from(prevBtn.childNodes);
+    const prevSvgIndex = prevChildren.findIndex(
+      (n) => n instanceof Element && n.tagName.toLowerCase() === 'svg'
+    );
+    expect(prevSvgIndex).toBe(0);
+    const nextChildren = Array.from(nextBtn.childNodes);
+    const nextSvgIndex = nextChildren.findIndex(
+      (n) => n instanceof Element && n.tagName.toLowerCase() === 'svg'
+    );
+    expect(nextSvgIndex).toBe(nextChildren.length - 1);
+
+    // Center indicator typography
+    const indicator = screen.getByText('Page 1 of 3');
+    expect(indicator).toHaveAttribute('aria-live', 'polite');
+    expect(indicator.className).toContain('font-extrabold');
+    expect(indicator.className).toContain('text-[14px]');
+    expect(indicator.className).toContain('min-w-[120px]');
+    expect(indicator.className).toContain('text-center');
+  });
+
+  it('suppresses press physics and dims boundary pagination buttons', () => {
+    const paginatedResponse = {
+      ...mockSeriesResponse,
+      meta: { total: 25, page: 1, limit: SERIES_PAGE_LIMIT },
+    };
+    renderSeriesGrid(paginatedResponse);
+
+    const prevBtn = screen.getByRole('button', { name: 'Previous page' });
+    expect(prevBtn).toBeDisabled();
+    expect(prevBtn.className).toContain('disabled:opacity-40');
+    expect(prevBtn.className).toContain('disabled:cursor-not-allowed');
+    expect(prevBtn.className).toContain('disabled:active:translate-y-0');
+  });
+
+  it('scrolls back to the first row of the grid when changing pages', async () => {
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+    const { user } = renderSeriesGrid(
+      {
+        ...mockSeriesResponse,
+        meta: { total: 25, page: 3, limit: SERIES_PAGE_LIMIT },
+      },
+      { page: 3, q: undefined, genre: undefined, tab: undefined }
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Previous page' }));
+
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    });
   });
 
   it('updates search input when search.q changes externally (e.g. back button navigation)', () => {
@@ -673,7 +873,10 @@ describe('SeriesGrid component', () => {
 
     // External URL change (e.g. Back button)
     const externalSearch = { page: 1, q: 'Frieren' };
-    queryClient.setQueryData(seriesListQueryOptions(externalSearch).queryKey, mockSeriesResponse);
+    queryClient.setQueryData(
+      seriesListQueryOptions({ ...externalSearch, limit: SERIES_PAGE_LIMIT }).queryKey,
+      mockSeriesResponse
+    );
     mockSearchState = externalSearch;
     rerender(<SeriesGrid />);
 

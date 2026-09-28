@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
+import { SERIES_PAGE_LIMIT } from './api';
 import { genresQueryOptions } from '@/modules/genres';
 import {
   seriesListQueryOptions,
@@ -11,6 +17,8 @@ import {
 } from './api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
+import { SeriesCard } from './SeriesCard';
+import { GenreFilter } from './GenreFilter';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
 import {
   Dialog,
@@ -20,44 +28,57 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyChip } from '@/components/ui/chunky-chip';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import { Checkbox } from '@/components/ui/checkbox';
+  ChunkyTabs,
+  ChunkyTabsList,
+  ChunkyTabsTrigger,
+} from '@/components/ui/chunky-tabs';
+
+const SEARCH_DEBOUNCE_MS = 250;
+
+type SeriesSearch = {
+  page?: number;
+  q?: string;
+  genre?: string;
+  tab?: 'all' | 'featured' | 'ongoing';
+  highlighted?: boolean;
+};
 
 export function SeriesGrid() {
-  const search = useSearch({ from: '/admin/videos/' }) as {
-    page?: number;
-    q?: string;
-    genre?: string;
-    tab?: 'all' | 'featured' | 'ongoing';
-    highlighted?: boolean;
-  };
+  const search = useSearch({ from: '/admin/videos/' }) as SeriesSearch;
   const navigate = useNavigate({ from: '/admin/videos/' });
   const openDialog = useScrapeWorkerStore((state) => state.openDialog);
   const queryClient = useQueryClient();
 
-  const { data } = useSuspenseQuery(seriesListQueryOptions(search));
-  const { data: genres = [] } = useQuery(genresQueryOptions());
+  const currentPage =
+    Number.isInteger(search.page) && (search.page as number) > 0
+      ? (search.page as number)
+      : 1;
 
-  const searchQ = search.q ?? '';
-  const [inputValue, setInputValue] = useState(searchQ);
-  const lastSyncedQRef = useRef(searchQ);
-  const [editingSeries, setEditingSeries] = useState<SeriesItem | null>(null);
-  const [deletingSeries, setDeletingSeries] = useState<SeriesItem | null>(null);
+  const queryParams = {
+    page: currentPage,
+    q: search.q,
+    genre: search.genre,
+    tab: search.tab,
+    highlighted: search.highlighted,
+    limit: SERIES_PAGE_LIMIT,
+  };
+
+  const { data } = useQuery({
+    ...seriesListQueryOptions(queryParams),
+    placeholderData: keepPreviousData,
+  });
 
   const activeTab =
     search.tab === 'featured' || search.tab === 'ongoing' ? search.tab : 'all';
 
   const highlightedOnly = search.highlighted === true;
+
+  const { data: genres = [] } = useQuery(genresQueryOptions());
+
   const bigGenres = genres.filter((genre) => Boolean(genre.isBigGenre));
 
   const highlightedCountsQuery = useQuery({
@@ -79,6 +100,12 @@ export function SeriesGrid() {
       }
     }
   }
+
+  const searchQ = search.q ?? '';
+  const [inputValue, setInputValue] = useState(searchQ);
+  const lastSyncedQRef = useRef(searchQ);
+  const [editingSeries, setEditingSeries] = useState<SeriesItem | null>(null);
+  const [deletingSeries, setDeletingSeries] = useState<SeriesItem | null>(null);
 
   const handleToggleHighlightedOnly = () => {
     navigate({
@@ -107,38 +134,21 @@ export function SeriesGrid() {
         .filter(Boolean)
     : [];
 
+  const handleGenreSelectionChange = (next: string[]) => {
+    navigate({
+      search: (old: Record<string, unknown>) => ({
+        ...old,
+        genre: next.length > 0 ? next.join(',') : undefined,
+        page: 1,
+      }),
+    });
+  };
+
   const handleToggleGenre = (slug: string) => {
     const next = selectedSlugs.includes(slug)
       ? selectedSlugs.filter((s) => s !== slug)
       : [...selectedSlugs, slug];
-    navigate({
-      search: (old: Record<string, unknown>) => ({
-        ...old,
-        genre: next.length > 0 ? next.join(',') : undefined,
-        page: 1,
-      }),
-    });
-  };
-
-  const handleRemoveGenre = (slug: string) => {
-    const next = selectedSlugs.filter((s) => s !== slug);
-    navigate({
-      search: (old: Record<string, unknown>) => ({
-        ...old,
-        genre: next.length > 0 ? next.join(',') : undefined,
-        page: 1,
-      }),
-    });
-  };
-
-  const handleClearAllGenres = () => {
-    navigate({
-      search: (old: Record<string, unknown>) => ({
-        ...old,
-        genre: undefined,
-        page: 1,
-      }),
-    });
+    handleGenreSelectionChange(next);
   };
 
   useEffect(() => {
@@ -164,19 +174,54 @@ export function SeriesGrid() {
         }),
         replace: true,
       });
-    }, 500);
+    }, SEARCH_DEBOUNCE_MS);
 
     return () => {
       clearTimeout(handler);
     };
   }, [inputValue, navigate]);
 
-  const deleteMutation = useMutation({    mutationFn: (id: string) => deleteSeries(id),
-    onSuccess: () => {
+  const seriesList = data?.series ?? [];
+  const meta = data?.meta ?? {
+    total: seriesList.length,
+    page: currentPage,
+    limit: SERIES_PAGE_LIMIT,
+  };
+  const limit = meta.limit || SERIES_PAGE_LIMIT;
+  const totalPages = Math.max(1, Math.ceil(meta.total / limit));
+
+  // Clamp out-of-bounds page params to valid ranges.
+  useEffect(() => {
+    if (meta.total > 0 && currentPage > totalPages) {
+      navigate({
+        search: (old: Record<string, unknown>) => ({
+          ...old,
+          page: totalPages,
+        }),
+        replace: true,
+      });
+    }
+  }, [currentPage, totalPages, meta.total, navigate]);
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteSeries(id),
+    onSuccess: (_deleted, id) => {
       queryClient.invalidateQueries({ queryKey: ['series'] });
       toast.success('series.delete', {
         description: 'Successfully deleted series',
       });
+      // If the deleted card was the sole item on page > 1, step back.
+      const wasLastOnPage =
+        seriesList.length === 1 &&
+        seriesList.some((item) => item.id === id);
+      if (wasLastOnPage && currentPage > 1) {
+        navigate({
+          search: (old: Record<string, unknown>) => ({
+            ...old,
+            page: currentPage - 1,
+          }),
+        });
+      }
       setDeletingSeries(null);
     },
     onError: (error: Error) => {
@@ -187,6 +232,71 @@ export function SeriesGrid() {
   });
 
   type SeriesListQueryData = { series: SeriesItem[]; meta: { total: number; page: number; limit: number } };
+
+  const featuredMutation = useMutation({
+    mutationFn: ({ id, featured }: { id: string; featured: boolean }) =>
+      updateSeries(id, { isFeatured: featured }),
+    onMutate: async ({ id, featured }) => {
+      await queryClient.cancelQueries({ queryKey: ['series'] });
+      const previous = queryClient.getQueriesData<SeriesListQueryData>({
+        queryKey: ['series'],
+      });
+      queryClient.setQueriesData<SeriesListQueryData>(
+        { queryKey: ['series'] },
+        (old) => {
+          if (!old || !Array.isArray(old.series)) return old;
+          if (activeTab === 'featured' && !featured) {
+            const nextSeries = old.series.filter((item) => item.id !== id);
+            return {
+              ...old,
+              series: nextSeries,
+              meta: {
+                ...old.meta,
+                total: Math.max(0, (old.meta?.total ?? nextSeries.length) - 1),
+              },
+            };
+          }
+          return {
+            ...old,
+            series: old.series.map((item) =>
+              item.id === id ? { ...item, isFeatured: featured } : item
+            ),
+          };
+        }
+      );
+      return { previous };
+    },
+    onError: (error: Error, _vars, context) => {
+      context?.previous.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error('series.featured', {
+        description: `Failed to update featured status: ${error.message}`,
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['series'] });
+    },
+  });
+
+  const handleToggleFeatured = (item: SeriesItem) => {
+    featuredMutation.mutate({
+      id: item.id,
+      featured: !item.isFeatured,
+    });
+  };
+
+  const handleOpenEdit = (item: SeriesItem, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingSeries(item);
+  };
+
+  const handleOpenDelete = (item: SeriesItem, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeletingSeries(item);
+  };
 
   const highlightMutation = useMutation({
     mutationFn: ({ id, highlighted }: { id: string; highlighted: boolean }) =>
@@ -237,36 +347,32 @@ export function SeriesGrid() {
     });
   };
 
-  const handleOpenEdit = (item: SeriesItem, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setEditingSeries(item);
-  };
+  const isFirstPage = currentPage <= 1;
+  const isLastPage = currentPage >= totalPages;
 
-  const handleOpenDelete = (item: SeriesItem, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDeletingSeries(item);
-  };
+  const gridTopRef = useRef<HTMLDivElement>(null);
 
-  const seriesList = data?.series ?? [];
-  const meta = data?.meta ?? { total: seriesList.length, page: 1, limit: 20 };
-  const totalPages = Math.max(1, Math.ceil(meta.total / (meta.limit || 20)));
+  const goToPage = (page: number) => {
+    navigate({
+      search: (old: Record<string, unknown>) => ({ ...old, page }),
+    });
+    gridTopRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="space-y-4">
       {/* Header section */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold">Series</h1>
-          <p className="text-xs text-muted">
+          <h1 className="text-[28px] font-extrabold leading-tight">Series</h1>
+          <p className="text-[15px] font-semibold text-[var(--muted)]">
             Manage and browse your series catalog.
           </p>
         </div>
-        <button
+        <ChunkyButton
           type="button"
+          variant="primary"
           onClick={openDialog}
-          className="px-3 py-1.5 rounded bg-primary text-primary-fg text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity flex items-center gap-1.5"
         >
           <svg
             width="14"
@@ -275,29 +381,30 @@ export function SeriesGrid() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            aria-hidden="true"
           >
             <path d="M12 5v14M5 12h14" />
           </svg>
-          Add Series
-        </button>
+          Add series
+        </ChunkyButton>
       </div>
 
-      {/* Top-level Filter Tabs: All, Featured, Ongoing */}
-      <Tabs
+      {/* Chunky Filter Tabs: All, Featured, Ongoing */}
+      <ChunkyTabs
         value={activeTab}
         onValueChange={handleTabChange}
         className="w-full sm:w-auto"
       >
-        <TabsList className="grid grid-cols-3 sm:inline-flex w-full sm:w-auto">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="featured">Featured</TabsTrigger>
-          <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
-        </TabsList>
-      </Tabs>
+        <ChunkyTabsList className="grid grid-cols-3 sm:inline-flex w-full sm:w-auto">
+          <ChunkyTabsTrigger value="all">All</ChunkyTabsTrigger>
+          <ChunkyTabsTrigger value="featured">Featured</ChunkyTabsTrigger>
+          <ChunkyTabsTrigger value="ongoing">Ongoing</ChunkyTabsTrigger>
+        </ChunkyTabsList>
+      </ChunkyTabs>
 
       {/* Big Genre quick-filter chips + Highlighted Only toggle (ongoing tab) */}
       {activeTab === 'ongoing' && (
-        <div className="bg-card border border-c rounded p-3 space-y-2.5">
+        <div className="bg-[var(--surface)] border-2 border-[var(--border)] rounded-[16px] p-3 space-y-2.5">
           {bigGenres.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap" aria-label="Filter by big genre">
               {bigGenres.map((genre) => {
@@ -305,16 +412,12 @@ export function SeriesGrid() {
                 const highlightedCount =
                   highlightedCountByGenreSlug.get(genre.slug) ?? 0;
                 return (
-                  <button
+                  <ChunkyChip
                     key={genre.id}
                     type="button"
+                    variant={isActive ? 'active' : 'default'}
+                    pressed={isActive}
                     onClick={() => handleToggleGenre(genre.slug)}
-                    aria-pressed={isActive}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs mono font-medium border transition-colors cursor-pointer ${
-                      isActive
-                        ? 'bg-primary text-primary-fg border-primary'
-                        : 'border-c hover-bg text-muted bg-card'
-                    }`}
                   >
                     <span>{genre.name}</span>
                     <span
@@ -322,358 +425,131 @@ export function SeriesGrid() {
                       title={`${highlightedCount} highlighted`}
                       className={`inline-flex items-center justify-center min-w-5 h-4 px-1 rounded text-[10px] font-semibold ${
                         isActive
-                          ? 'bg-primary-fg/20 text-primary-fg'
-                          : 'bg-primary/10 text-primary'
+                          ? 'bg-[var(--green-dark)]/20 text-[var(--green)]'
+                          : 'bg-[var(--green)]/10 text-[var(--green)]'
                       }`}
                     >
                       {highlightedCount}
                     </span>
-                  </button>
+                  </ChunkyChip>
                 );
               })}
             </div>
           )}
           <div className="flex items-center gap-2">
-            <button
+            <ChunkyChip
               type="button"
+              variant={highlightedOnly ? 'gold' : 'default'}
+              pressed={highlightedOnly}
               role="switch"
               aria-checked={highlightedOnly}
               aria-label="Highlighted Only"
               onClick={handleToggleHighlightedOnly}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs mono font-medium border transition-colors cursor-pointer ${
-                highlightedOnly
-                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40'
-                  : 'border-c hover-bg text-muted bg-card'
-              }`}
             >
               <svg
-                width="12"
-                height="12"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill={highlightedOnly ? 'currentColor' : 'none'}
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
               >
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
               <span>★ Highlighted Only</span>
-            </button>
+            </ChunkyChip>
           </div>
         </div>
       )}
 
-      {/* Filter bar & Genre Combobox */}
-      <div className="bg-card border border-c rounded p-3 space-y-3">
+      {/* Toolbar: debounced search, genre filter, result count */}
+      <div className="bg-[var(--surface)] border-2 border-[var(--border)] rounded-[16px] p-3">
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-          <div className="flex items-center gap-2 w-full max-w-sm">
+          <div className="flex items-center gap-2">
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Filter series..."
-              className="w-full max-w-xs px-3 py-1.5 rounded border border-c bg-transparent text-xs mono focus:outline-none focus:border-primary"
+              aria-label="Search series"
+              className="w-[300px] shrink-0 h-11 px-3.5 rounded-[14px] border-2 border-[var(--border)] bg-[var(--bg)] font-bold text-[14px] text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--blue)]"
             />
-            {genres.length > 0 && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    role="combobox"
-                    aria-label="Filter by genre"
-                    className="px-3 py-1.5 rounded border border-c bg-transparent text-xs mono font-medium hover-bg flex items-center gap-1.5 cursor-pointer text-foreground shrink-0"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                    </svg>
-                    <span>
-                      {selectedSlugs.length === 0
-                        ? 'Filter by genre'
-                        : `Genres (${selectedSlugs.length})`}
-                    </span>
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-56 p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search genres..." />
-                    <CommandList>
-                      <CommandEmpty>No genres found.</CommandEmpty>
-                      <CommandGroup>
-                        {genres.map((genre) => {
-                          const isChecked = selectedSlugs.includes(genre.slug);
-                          return (
-                            <CommandItem
-                              key={genre.id}
-                              value={genre.name}
-                              onSelect={() => handleToggleGenre(genre.slug)}
-                              className="flex items-center gap-2 px-2 py-1.5 cursor-pointer"
-                            >
-                              <Checkbox
-                                checked={isChecked}
-                                onCheckedChange={() => handleToggleGenre(genre.slug)}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              <span className="text-xs mono">{genre.name}</span>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            )}
+            <GenreFilter
+              selectedSlugs={selectedSlugs}
+              onSelectionChange={handleGenreSelectionChange}
+            />
           </div>
-          <span className="text-xs text-muted mono">
-            {meta.total} {meta.total === 1 ? 'series' : 'series'}
+          <span className="ml-auto font-extrabold text-[14px] text-[var(--muted)]" aria-live="polite">
+            {meta.total} series
           </span>
         </div>
-
-        {selectedSlugs.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-c">
-            {selectedSlugs.map((slug) => {
-              const genreObj = genres.find((g) => g.slug === slug);
-              const name = genreObj ? genreObj.name : slug;
-              return (
-                <span
-                  key={slug}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs mono font-medium bg-primary/10 text-primary border border-primary/20"
-                >
-                  <span>{name}</span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${name} filter`}
-                    onClick={() => handleRemoveGenre(slug)}
-                    className="hover:opacity-75 focus:outline-none cursor-pointer"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                  </button>
-                </span>
-              );
-            })}
-            <button
-              type="button"
-              onClick={handleClearAllGenres}
-              className="text-xs text-muted hover:text-fg mono transition-colors underline cursor-pointer ml-1"
-            >
-              Clear all
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Grid view */}
+      <div ref={gridTopRef} className="scroll-mt-20">
       {seriesList.length === 0 ? (
         <div className="bg-card border border-c rounded p-8 text-center text-xs text-muted mono">
-          No series found matching filter.
+          No series match your filter.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {seriesList.map((item: SeriesItem & { episodes?: unknown[]; episodeCount?: number }) => {
-            const epCount = item.episodes?.length ?? item.episodeCount ?? 0;
-            const isFeatured = Boolean(item.isFeatured);
-            const isOngoing = Boolean(
-              item.hasOngoing || item.seasons?.some((s) => s.status === 'ongoing')
-            );
-            const isHighlighted = Boolean(item.isOngoingHighlighted);
-
-            return (
-              <div
-                key={item.id}
-                className="group bg-card border border-c rounded overflow-hidden flex flex-col hover:border-primary transition-colors"
-              >
-                <Link
-                  to="/admin/videos/$seriesId"
-                  params={{ seriesId: item.id }}
-                  className="flex flex-col flex-1 cursor-pointer"
-                >
-                  {/* Poster / Thumbnail */}
-                  <div className="relative aspect-[3/4] overflow-hidden bg-black/10 dark:bg-white/5 flex items-center justify-center">
-                    {item.posterUrl ? (
-                      <img
-                        src={item.posterUrl}
-                        alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded border border-c bg-muted/20 flex items-center justify-center text-sm font-mono text-muted">
-                        {item.title.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-
-                    {/* Status Badges Overlay */}
-                    {(isFeatured || isOngoing || isHighlighted) && (
-                      <div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
-                        {isFeatured && (
-                          <span className="text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-primary/30 bg-card/90 backdrop-blur-xs text-primary shadow-xs">
-                            Featured
-                          </span>
-                        )}
-                        {isOngoing && (
-                          <span className="text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-amber-500/40 bg-card/90 backdrop-blur-xs text-amber-600 dark:text-amber-400 shadow-xs">
-                            Ongoing
-                          </span>
-                        )}
-                        {isHighlighted && (
-                          <span className="text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-yellow-500/50 bg-card/90 backdrop-blur-xs text-yellow-600 dark:text-yellow-400 shadow-xs">
-                            Highlighted Ongoing
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {/* 1-click highlight star toggle */}
-                    <button
-                      type="button"
-                      aria-label={`${isHighlighted ? 'Unhighlight' : 'Highlight'} ${item.title}`}
-                      aria-pressed={isHighlighted}
-                      onClick={(e) => handleToggleHighlight(item, e)}
-                      className={`absolute top-2 right-2 z-10 w-7 h-7 rounded flex items-center justify-center border backdrop-blur-xs shadow-xs transition-colors cursor-pointer ${
-                        isHighlighted
-                          ? 'border-yellow-500/50 bg-card/90 text-yellow-500'
-                          : 'border-c bg-card/90 text-muted hover:text-yellow-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
-                      }`}
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill={isHighlighted ? 'currentColor' : 'none'}
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-3 flex flex-col flex-1 justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium leading-snug line-clamp-1 group-hover:text-primary transition-colors">
-                        {item.title}
-                      </h3>
-                      <p className="text-xs text-muted mt-1 line-clamp-2 leading-relaxed">
-                        {item.description || 'No description available.'}
-                      </p>
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-c flex items-center justify-between text-xs">
-                      <span className="mono text-muted">{item.source}</span>
-                      <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
-                        {epCount} {epCount === 1 ? 'episode' : 'episodes'}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-
-                {/* Card Action Buttons: Edit & Delete */}
-                <div className="px-3 pb-3 pt-1 flex items-center gap-2">
-                  <button
-                    type="button"
-                    aria-label={`Edit ${item.title}`}
-                    onClick={(e) => handleOpenEdit(item, e)}
-                    className="flex-1 px-2 py-1 rounded text-xs font-medium border border-c hover-bg cursor-pointer text-foreground flex items-center justify-center gap-1 transition-colors"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Delete ${item.title}`}
-                    onClick={(e) => handleOpenDelete(item, e)}
-                    className="flex-1 px-2 py-1 rounded text-xs font-medium border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer flex items-center justify-center gap-1 transition-colors"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                    </svg>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        <div
+          data-testid="series-grid"
+          className="grid gap-4"
+          style={{
+            gridTemplateColumns:
+              'repeat(auto-fill, minmax(max(210px, calc((100% - 60px) / 4)), 1fr))',
+          }}
+        >
+          {seriesList.map((item: SeriesItem & { episodes?: unknown[]; episodeCount?: number }) => (
+            <SeriesCard
+              key={item.id}
+              item={item}
+              onToggleFeatured={handleToggleFeatured}
+              onEdit={handleOpenEdit}
+              onDelete={handleOpenDelete}
+              onToggleHighlight={handleToggleHighlight}
+            />
+          ))}
         </div>
       )}
+      </div>
 
       {/* Pagination Bar */}
-      {(meta.total > meta.limit * meta.page || meta.page > 1) && (
-        <div className="bg-card border border-c rounded px-4 py-2.5 flex items-center justify-between text-xs text-muted">
-          <span className="mono">
-            Page {meta.page} of {totalPages}
+      {meta.total > 0 && (
+        <nav
+          aria-label="Pagination"
+          className="mt-7 flex items-center justify-center gap-4"
+        >
+          <ChunkyChip
+            type="button"
+            variant="default"
+            disabled={isFirstPage}
+            onClick={() => goToPage(currentPage - 1)}
+            aria-label="Previous page"
+            className="disabled:cursor-not-allowed disabled:opacity-40 disabled:active:translate-y-0 disabled:active:border-b-4"
+          >
+            <ChevronLeft aria-hidden="true" />
+            Previous
+          </ChunkyChip>
+          <span
+            aria-live="polite"
+            className="font-extrabold text-[14px] text-[var(--muted)] min-w-[120px] text-center"
+          >
+            Page {Math.min(currentPage, totalPages)} of {totalPages}
           </span>
-          <div className="flex items-center gap-2">
-            {meta.page > 1 ? (
-              <Link
-                to="/admin/videos"
-                search={(old: Record<string, unknown>) => ({ ...old, page: meta.page - 1 })}
-                className="px-2.5 py-1 rounded border border-c hover-bg cursor-pointer text-foreground"
-              >
-                Previous
-              </Link>
-            ) : (
-              <span className="px-2.5 py-1 rounded border border-c opacity-50 cursor-not-allowed">
-                Previous
-              </span>
-            )}
-            {meta.total > meta.limit * meta.page ? (
-              <Link
-                to="/admin/videos"
-                search={(old: Record<string, unknown>) => ({ ...old, page: meta.page + 1 })}
-                className="px-2.5 py-1 rounded border border-c hover-bg cursor-pointer text-foreground"
-              >
-                Next
-              </Link>
-            ) : (
-              <span className="px-2.5 py-1 rounded border border-c opacity-50 cursor-not-allowed">
-                Next
-              </span>
-            )}
-          </div>
-        </div>
+          <ChunkyChip
+            type="button"
+            variant="default"
+            disabled={isLastPage}
+            onClick={() => goToPage(currentPage + 1)}
+            aria-label="Next page"
+            className="disabled:cursor-not-allowed disabled:opacity-40 disabled:active:translate-y-0 disabled:active:border-b-4"
+          >
+            Next
+            <ChevronRight aria-hidden="true" />
+          </ChunkyChip>
+        </nav>
       )}
 
       {/* Edit Series Dialog */}
@@ -695,17 +571,20 @@ export function SeriesGrid() {
               Are you sure you want to delete {deletingSeries?.title ? `"${deletingSeries.title}"` : 'this series'}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
-            <Button
+          <DialogFooter className="gap-2 sm:gap-2 pt-2">
+            <ChunkyButton
               type="button"
-              variant="secondary"
+              variant="outline"
+              size="sm"
               onClick={() => setDeletingSeries(null)}
             >
               Cancel
-            </Button>
-            <Button
+            </ChunkyButton>
+            <ChunkyButton
               type="button"
-              variant="destructive"
+              variant="danger"
+              size="sm"
+              disabled={deleteMutation.isPending}
               onClick={() => {
                 if (deletingSeries) {
                   deleteMutation.mutate(deletingSeries.id);
@@ -713,7 +592,7 @@ export function SeriesGrid() {
               }}
             >
               Delete
-            </Button>
+            </ChunkyButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

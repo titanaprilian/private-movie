@@ -4,6 +4,7 @@ import {
   SeriesGrid,
   seriesListQueryOptions,
   updateSeries,
+  SERIES_PAGE_LIMIT,
   type SeriesListResponse,
 } from '@/modules/videos';
 import { genresQueryOptions, type Genre } from '@/modules/genres';
@@ -118,7 +119,7 @@ function renderOngoingGrid(
   const queryClient = createTestQueryClient();
   queryClient.setDefaultOptions({ queries: { retry: false, staleTime: Infinity } });
   queryClient.setQueryData(
-    seriesListQueryOptions(searchState).queryKey,
+    seriesListQueryOptions({ ...searchState, limit: SERIES_PAGE_LIMIT }).queryKey,
     customResponse as SeriesListResponse
   );
   queryClient.setQueryData(genresQueryOptions().queryKey, mockGenres);

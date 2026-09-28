@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from '@tanstack/react-router';
 import { genresQueryOptions } from '@/modules/genres';
 import { CatalogSearch } from '@/modules/search';
+import { ChunkyButton } from '@/components/ui/chunky-button';
 import type { SeriesItem } from '@/modules/videos';
 import { useUIStore } from '@/store/uiStore';
 
@@ -178,14 +179,16 @@ export function PublicNavbar() {
 
           <div className="flex items-center gap-2 shrink-0">
             {/* Unified circular search toggle (desktop + mobile) */}
-            <button
+            <ChunkyButton
               ref={searchToggleRef}
+              variant="outline"
+              size="icon"
               type="button"
               aria-label={searchOpen ? 'Close search' : 'Open search'}
               aria-expanded={searchOpen}
               data-testid="search-toggle"
               onClick={() => setSearchOpen((v) => !v)}
-              className="w-11 h-11 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] flex items-center justify-center font-extrabold shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)] hover:bg-[var(--yellow)] hover:border-[var(--yellow-dark)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
+              className="hover:bg-[var(--yellow)] hover:border-[var(--yellow-dark)]"
             >
               {searchOpen ? (
                 <svg
@@ -218,15 +221,17 @@ export function PublicNavbar() {
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
               )}
-            </button>
+            </ChunkyButton>
             {/* Mobile menu trigger */}
-            <button
+            <ChunkyButton
+              variant="outline"
+              size="icon"
               type="button"
               aria-label="Open menu"
               aria-expanded={mobileMenuOpen}
               data-testid="mobile-menu-button"
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden w-11 h-11 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] flex items-center justify-center shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
+              className="md:hidden"
             >
               <svg
                 width="20"
@@ -243,7 +248,7 @@ export function PublicNavbar() {
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
-            </button>
+            </ChunkyButton>
           </div>
         </div>
 
@@ -294,12 +299,13 @@ export function PublicNavbar() {
           >
             <div className="flex items-center justify-between mb-2">
               <img src={brandLogoSrc} alt="Private Movie" className="h-9 w-auto" />
-              <button
+              <ChunkyButton
+                variant="outline"
+                size="icon"
                 type="button"
                 aria-label="Close menu"
                 data-testid="mobile-drawer-close"
                 onClick={closeMobileMenu}
-                className="w-11 h-11 rounded-full border-2 border-[var(--border)] bg-[var(--bg)] text-[var(--ink)] flex items-center justify-center shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
               >
                 <svg
                   width="18"
@@ -315,7 +321,7 @@ export function PublicNavbar() {
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
-              </button>
+              </ChunkyButton>
             </div>
             <nav aria-label="Mobile Navigation" className="flex flex-col gap-2">
               <SafeLink

@@ -1,6 +1,12 @@
 export { SeriesGrid } from './internal/SeriesGrid';
+export { SeriesCard } from './internal/SeriesCard';
+export type { SeriesCardProps } from './internal/SeriesCard';
+export { FeaturedStar } from './internal/FeaturedStar';
+export type { FeaturedStarProps } from './internal/FeaturedStar';
 export { SeriesPosterCard } from './internal/SeriesPosterCard';
 export type { SeriesPosterCardProps } from './internal/SeriesPosterCard';
+export { GenreFilter } from './internal/GenreFilter';
+export type { GenreFilterProps } from './internal/GenreFilter';
 export { RecentEpisodeCard } from './internal/RecentEpisodeCard';
 export type { RecentEpisodeCardProps } from './internal/RecentEpisodeCard';
 export { SeriesDetailDialog } from './internal/SeriesDetailDialog';
@@ -46,6 +52,7 @@ export {
   fetchSeriesTmdbSyncPreview,
   getMaxUploadSizeMb,
   getMaxUploadSizeBytes,
+  SERIES_PAGE_LIMIT,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
 export type {

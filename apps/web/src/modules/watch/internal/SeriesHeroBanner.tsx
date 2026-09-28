@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Play, Star } from 'lucide-react';
+import { ChunkyButton } from '@/components/ui/chunky-button';
 import type { WatchSeriesDetails } from './api';
 
 export interface SeriesHeroBannerProps {
@@ -219,14 +220,14 @@ export function SeriesHeroBanner({
 
             {/* Primary Call To Action: full-width on mobile, auto on desktop */}
             <div className="pt-2 w-full md:w-auto">
-              <button
+              <ChunkyButton
                 ref={playRef}
                 type="button"
                 onClick={onPlay}
                 disabled={isPlayDisabled}
                 data-testid="hero-play"
                 aria-label="Play Episode 1"
-                className={`inline-flex w-full md:w-auto items-center justify-center gap-2 bg-[var(--green)] text-white px-7 py-3 rounded-2xl text-base font-extrabold shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0 ${
+                className={`w-full md:w-auto disabled:active:translate-y-0 ${
                   isSpatialMode && isPlayFocused
                     ? 'ring-2 ring-white ring-offset-2 ring-offset-black'
                     : ''
@@ -234,7 +235,7 @@ export function SeriesHeroBanner({
               >
                 <Play className="h-5 w-5 fill-white text-white" aria-hidden="true" />
                 <span>Play Episode 1</span>
-              </button>
+              </ChunkyButton>
             </div>
           </div>
         </div>
