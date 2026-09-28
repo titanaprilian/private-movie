@@ -342,9 +342,10 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
 
     await screen.findByRole('heading', { level: 1, name: 'Single Season Title' });
 
-    // Verify season bar is rendered
+    // Verify season bar is rendered without duplicate status badge
+    // (status lives in the hero header only)
     expect(screen.getByRole('button', { name: 'Season 1' })).toBeInTheDocument();
-    expect(screen.getByTestId('season-status-badge')).toHaveTextContent('completed');
+    expect(screen.queryByTestId('season-status-badge')).not.toBeInTheDocument();
 
     // Open season actions menu
     await user.click(screen.getByRole('button', { name: /season actions/i }));

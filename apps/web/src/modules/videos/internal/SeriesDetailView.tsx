@@ -302,21 +302,19 @@ export function SeriesDetailView({
         <div className="hero">
           <ChunkySkeleton className="w-[104px] aspect-[3/4] rounded-xl flex-none" />
           <div className="hero-body">
-            <div className="hero-top">
-              <div className="hero-title">
-                <ChunkySkeleton className="h-7 w-48 rounded-lg" />
-                <ChunkySkeleton className="h-8 w-24 rounded-full" />
-                <ChunkySkeleton className="h-8 w-24 rounded-full" />
-              </div>
-              <div className="hero-actions">
-                <ChunkySkeleton className="h-11 w-28 rounded-[14px]" />
-                <ChunkySkeleton className="h-11 w-32 rounded-[14px]" />
-                <ChunkySkeleton className="h-11 w-36 rounded-[14px]" />
-                <ChunkySkeleton className="h-11 w-36 rounded-2xl" />
-              </div>
+            <div className="hero-title">
+              <ChunkySkeleton className="h-7 w-48 rounded-lg" />
+              <ChunkySkeleton className="h-8 w-24 rounded-full" />
+              <ChunkySkeleton className="h-8 w-24 rounded-full" />
             </div>
             <div className="hero-desc-wrap">
               <ChunkySkeleton className="h-12 w-full rounded-lg" />
+            </div>
+            <div className="hero-actions">
+              <ChunkySkeleton className="h-11 w-28 rounded-[14px]" />
+              <ChunkySkeleton className="h-11 w-32 rounded-[14px]" />
+              <ChunkySkeleton className="h-11 w-36 rounded-[14px]" />
+              <ChunkySkeleton className="h-11 w-36 rounded-2xl" />
             </div>
           </div>
         </div>
@@ -537,74 +535,29 @@ export function SeriesDetailView({
           </div>
         )}
         <div className="hero-body">
-          <div className="hero-top">
-            <div className="hero-title">
-              <h1 className="text-[28px] font-extrabold text-[var(--ink)] leading-none">
-                {series.title}
-              </h1>
-              <span className="pill rounded-full bg-[var(--surface)] border-2 border-[var(--border)] text-[var(--ink)] font-extrabold text-[12px]">
-                <Play className="size-3.5 fill-current" />
-                {localEpisodes.length} {localEpisodes.length === 1 ? 'Episode' : 'Episodes'}
+          <div className="hero-title">
+            <h1 className="text-[28px] font-extrabold text-[var(--ink)] leading-none">
+              {series.title}
+            </h1>
+            <span className="pill ep-count rounded-full bg-[var(--surface)] border-0 text-[var(--blue)] font-extrabold text-[12px]">
+              <Play className="size-3.5 fill-current" />
+              {localEpisodes.length} {localEpisodes.length === 1 ? 'Episode' : 'Episodes'}
+            </span>
+            <span
+              className={`pill rounded-full font-extrabold text-[12px] border-0 ${
+                activeSeason?.status === 'ongoing'
+                  ? 'bg-amber-500/15 text-amber-500'
+                  : 'pill ok bg-[var(--green-tint)] text-[var(--green)]'
+              }`}
+            >
+              {activeSeason?.status !== 'ongoing' && <Check className="size-3.5 stroke-[3]" />}
+              {activeSeason?.status || 'completed'}
+            </span>
+            {series.isFeatured && (
+              <span className="pill rounded-full border-2 border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] font-extrabold text-[12px]">
+                Featured
               </span>
-              <span
-                className={`pill rounded-full font-extrabold text-[12px] border-2 ${
-                  activeSeason?.status === 'ongoing'
-                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-500'
-                    : 'pill ok border-[var(--green)]/40 bg-[var(--green-tint)] text-[var(--green)]'
-                }`}
-              >
-                {activeSeason?.status !== 'ongoing' && <Check className="size-3.5 stroke-[3]" />}
-                {activeSeason?.status || 'completed'}
-              </span>
-              {series.isFeatured && (
-                <span className="pill rounded-full border-2 border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] font-extrabold text-[12px]">
-                  Featured
-                </span>
-              )}
-            </div>
-
-            <div className="hero-actions">
-              <ChunkyChip
-                variant="blue"
-                onClick={() => setIsEditSeriesOpen(true)}
-                type="button"
-              >
-                <Edit2 className="size-4" />
-                Edit Series
-              </ChunkyChip>
-
-              <ChunkyChip
-                variant="blue"
-                onClick={() => setIsSyncTmdbOpen(true)}
-                type="button"
-                disabled={!series.tmdbId}
-                title={!series.tmdbId ? 'Link TMDB in Edit Series to enable sync' : undefined}
-              >
-                <RefreshCw className="size-4" />
-                Sync with TMDB
-              </ChunkyChip>
-
-              <ChunkyChip
-                variant="blue"
-                onClick={() => {
-                  setBulkScrapeEpisodeIds(null);
-                  setIsBulkScrapeOpen(true);
-                }}
-                type="button"
-              >
-                <Plus className="size-4" />
-                Bulk Add Sources
-              </ChunkyChip>
-
-              <ChunkyButton
-                variant="green"
-                onClick={() => setIsBulkIngestOpen(true)}
-                type="button"
-              >
-                <ArrowDownToLine className="size-5" />
-                Bulk Ingest URLs
-              </ChunkyButton>
-            </div>
+            )}
           </div>
 
           <div className="hero-desc-wrap">
@@ -633,6 +586,49 @@ export function SeriesDetailView({
                 )}
               </>
             )}
+          </div>
+
+          <div className="hero-actions">
+            <ChunkyChip
+              variant="blue"
+              onClick={() => setIsEditSeriesOpen(true)}
+              type="button"
+            >
+              <Edit2 className="size-4" />
+              Edit Series
+            </ChunkyChip>
+
+            <ChunkyChip
+              variant="blue"
+              onClick={() => setIsSyncTmdbOpen(true)}
+              type="button"
+              disabled={!series.tmdbId}
+              title={!series.tmdbId ? 'Link TMDB in Edit Series to enable sync' : undefined}
+            >
+              <RefreshCw className="size-4" />
+              Sync with TMDB
+            </ChunkyChip>
+
+            <ChunkyChip
+              variant="blue"
+              onClick={() => {
+                setBulkScrapeEpisodeIds(null);
+                setIsBulkScrapeOpen(true);
+              }}
+              type="button"
+            >
+              <Plus className="size-4" />
+              Bulk Add Sources
+            </ChunkyChip>
+
+            <ChunkyButton
+              variant="green"
+              onClick={() => setIsBulkIngestOpen(true)}
+              type="button"
+            >
+              <ArrowDownToLine className="size-5" />
+              Bulk Ingest URLs
+            </ChunkyButton>
           </div>
         </div>
       </div>
@@ -673,18 +669,6 @@ export function SeriesDetailView({
                 </Droppable>
               );
             })}
-            {activeSeason && (
-              <span
-                data-testid="season-status-badge"
-                className={`pill rounded-full font-extrabold text-[11px] h-7 px-3 border-2 uppercase tracking-[0.6px] ${
-                  activeSeason.status === 'ongoing'
-                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-500'
-                    : 'border-[var(--green)]/40 bg-[var(--green-tint)] text-[var(--green)]'
-                }`}
-              >
-                {activeSeason.status || 'completed'}
-              </span>
-            )}
           </div>
 
           {activeSeason && (

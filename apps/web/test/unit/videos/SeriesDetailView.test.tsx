@@ -606,7 +606,7 @@ describe('SeriesDetailView component', () => {
     );
   });
 
-  it('renders season navigation bar, status badge, and disabled delete action for single-season series', async () => {
+  it('renders season navigation bar without duplicate status badge, and disabled delete action for single-season series', async () => {
     const mockSingleSeasonSeries: SeriesDetails = {
       id: 'single-season-series',
       sourceUrl: 'https://otakudesu.cloud/anime/single-season',
@@ -676,7 +676,11 @@ describe('SeriesDetailView component', () => {
 
     // Season tab for "Season 1" IS rendered when series has 1 season
     expect(screen.getByRole('button', { name: 'Season 1' })).toBeInTheDocument();
-    expect(screen.getByTestId('season-status-badge')).toHaveTextContent('ongoing');
+    // Duplicate season status badge was removed from the season-bar;
+    // status is represented only in the hero header.
+    expect(screen.queryByTestId('season-status-badge')).not.toBeInTheDocument();
+    const heroTitle = screen.getByRole('heading', { level: 1, name: 'Single Season Movie' }).closest('.hero-title')!;
+    expect(within(heroTitle as HTMLElement).getByText('ongoing')).toBeInTheDocument();
     expect(screen.getAllByText('Movie Main Stream').length).toBeGreaterThan(0);
 
     // 3-dot Season Actions menu is rendered and accessible
@@ -1320,9 +1324,20 @@ describe('SeriesDetailView component', () => {
       const epPill = within(heroTitle as HTMLElement).getByText(new RegExp(`${mockSeries.episodes.length}\\s+Episodes`, 'i'));
       expect(epPill.closest('.pill')).toBeInTheDocument();
       expect(epPill.closest('.pill')?.querySelector('svg')).toBeInTheDocument();
+      // Episode count pill: blue text on surface background without border
+      expect(epPill.closest('.pill')).toHaveClass('border-0', 'text-[var(--blue)]', 'bg-[var(--surface)]');
 
       const statusPill = within(heroTitle as HTMLElement).getByText('completed');
       expect(statusPill.closest('.pill')).toHaveClass('ok');
+      // Status pill: clean tinted background without shiny borders
+      expect(statusPill.closest('.pill')).toHaveClass('border-0', 'bg-[var(--green-tint)]');
+
+      // Hero body layout sequence: title row, description, then actions at the bottom
+      const heroBody = title.closest('.hero-body')!;
+      const children = Array.from(heroBody.children).map((el) =>
+        el.className.split(' ').find((c) => c.startsWith('hero-'))
+      );
+      expect(children).toEqual(['hero-title', 'hero-desc-wrap', 'hero-actions']);
     });
 
     it('renders gold Featured badge when series.isFeatured is true', async () => {

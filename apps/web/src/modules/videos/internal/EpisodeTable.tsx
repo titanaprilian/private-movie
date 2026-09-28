@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
+import { formatEpisodeDuration } from './formatEpisodeDuration';
 import { Edit2, Link as LinkIcon, Trash2, GripVertical, AlertCircle } from 'lucide-react';
 import type { SeriesDetails } from './api';
 
@@ -184,14 +185,14 @@ export function EpisodeTable({
   return (
     <div className="flex flex-col space-y-4">
       {/* Search & Status Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+      <div className="bg-[var(--surface)] border-2 border-[var(--border)] rounded-[16px] p-3 flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 min-w-[220px] max-w-[380px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search episodes by title or description..."
-            className="w-full h-11 px-4 rounded-xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] text-sm font-bold text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--blue)] transition-all"
+            className="w-full h-11 px-4 rounded-xl border-2 border-b-4 border-[var(--border)] bg-[var(--bg)] text-sm font-bold text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--blue)] transition-all"
             aria-label="Search episodes"
           />
         </div>
@@ -229,8 +230,8 @@ export function EpisodeTable({
             />
           </div>
 
-          {/* Grip Header placeholder */}
-          <span className="sr-only">Reorder handle</span>
+          {/* Grip Header placeholder (layout-only: keeps column aligned with body rows) */}
+          <span aria-hidden="true" />
 
           {/* Order Header */}
           <span>
@@ -310,8 +311,8 @@ export function EpisodeTable({
             </button>
           </span>
 
-          {/* Kebab Header placeholder */}
-          <span className="sr-only">Actions</span>
+          {/* Kebab Header placeholder (layout-only: keeps column aligned with body rows) */}
+          <span aria-hidden="true" />
         </div>
 
         {/* List of Episode Cards */}
@@ -419,7 +420,7 @@ export function EpisodeTable({
 
                           {/* Duration */}
                           <div className="ep-dur">
-                            {episode.duration || '—'}
+                            {formatEpisodeDuration(episode.duration)}
                           </div>
 
                           {/* Sources Count Pill */}

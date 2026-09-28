@@ -61,14 +61,20 @@ describe('EpisodeTable Component', () => {
     const header = container.querySelector('.ep-head');
     expect(header).toBeInTheDocument();
     expect(within(header as HTMLElement).getByRole('checkbox', { name: /select all visible episodes/i })).toBeInTheDocument();
-    expect(within(header as HTMLElement).getByText('Reorder handle')).toBeInTheDocument();
     expect(within(header as HTMLElement).getByText('#')).toBeInTheDocument();
     expect(within(header as HTMLElement).getByText('Title')).toBeInTheDocument();
     expect(within(header as HTMLElement).getByText('Duration')).toBeInTheDocument();
     expect(within(header as HTMLElement).getByText('Sources')).toBeInTheDocument();
     expect(within(header as HTMLElement).getByText('Status')).toBeInTheDocument();
     expect(within(header as HTMLElement).getByText('Release Date')).toBeInTheDocument();
-    expect(within(header as HTMLElement).getByText('Actions')).toBeInTheDocument();
+
+    // Header must have 9 in-flow columns matching each body row
+    // (grip + kebab placeholders stay in grid flow via aria-hidden spans,
+    // never sr-only which would collapse the tracks)
+    expect(header!.children).toHaveLength(9);
+    const firstRow = container.querySelector('.ep-list .ep');
+    expect(firstRow).toBeInTheDocument();
+    expect(firstRow!.children).toHaveLength(9);
 
     // CSS Grid container
     const epList = container.querySelector('.ep-list');
@@ -80,9 +86,9 @@ describe('EpisodeTable Component', () => {
     expect(screen.getByText('Episode 3: The Climax')).toBeInTheDocument();
 
     // Sources and Status Badges
-    expect(screen.getByText('24:15')).toBeInTheDocument();
-    expect(screen.getByText('22:30')).toBeInTheDocument();
-    expect(screen.getByText('01:05:00')).toBeInTheDocument();
+    expect(screen.getByText('24 min')).toBeInTheDocument();
+    expect(screen.getByText('22 min')).toBeInTheDocument();
+    expect(screen.getByText('1h 5 min')).toBeInTheDocument();
 
     expect(screen.getAllByText('Ready')).toHaveLength(2);
     expect(screen.getByText('No Stream')).toBeInTheDocument();

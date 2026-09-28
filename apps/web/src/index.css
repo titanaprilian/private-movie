@@ -293,6 +293,18 @@ body {
 .pill.ok {
   color: var(--green);
   background: var(--green-tint);
+  border: 0;
+}
+.hero-title .pill {
+  border: 0;
+}
+.hero-title .pill.ep-count {
+  color: var(--blue);
+  background: var(--surface);
+  border: 0;
+}
+.hero-title .pill.ep-count svg {
+  color: var(--blue);
 }
 .hero-actions {
   display: flex;
