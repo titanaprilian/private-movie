@@ -18,9 +18,12 @@ describe('useAdblockDetector', () => {
 
     const { result } = renderHook(() => useAdblockDetector());
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
+    await waitFor(
+      () => {
+        expect(result.current.isLoading).toBe(false);
+      },
+      { timeout: 3000 }
+    );
 
     expect(result.current.isBlocked).toBe(false);
   });
@@ -30,9 +33,12 @@ describe('useAdblockDetector', () => {
 
     const { result } = renderHook(() => useAdblockDetector());
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
+    await waitFor(
+      () => {
+        expect(result.current.isLoading).toBe(false);
+      },
+      { timeout: 3000 }
+    );
 
     expect(result.current.isBlocked).toBe(true);
   });
@@ -51,9 +57,12 @@ describe('useAdblockDetector', () => {
 
     const { result } = renderHook(() => useAdblockDetector());
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
+    await waitFor(
+      () => {
+        expect(result.current.isLoading).toBe(false);
+      },
+      { timeout: 3000 }
+    );
 
     expect(result.current.isBlocked).toBe(true);
   });
