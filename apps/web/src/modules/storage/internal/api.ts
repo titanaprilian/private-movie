@@ -21,6 +21,9 @@ import type {
   UpdateStorageProviderRequest,
   TestStorageProviderRequest,
   TestStorageProviderResponseData,
+  MinioStatusResponseData,
+  MinioSpinUpRequest,
+  MinioSpinUpResponseData,
 } from '@repo/contracts';
 
 export type {
@@ -44,6 +47,9 @@ export type {
   UpdateStorageProviderRequest,
   TestStorageProviderRequest,
   TestStorageProviderResponseData,
+  MinioStatusResponseData,
+  MinioSpinUpRequest,
+  MinioSpinUpResponseData,
 };
 
 // Backward compatibility aliases
@@ -439,6 +445,82 @@ export async function testStorageProviderConnection(
   const data = (res.data as any)?.data as TestStorageProviderResponseData | undefined;
   if (res.error || !data) {
     throw new Error(extractErrorMessage(res.error, 'Connection test failed'));
+  }
+
+  return data;
+}
+
+export type MinioStatusState = 'ready' | 'stopped' | 'not-configured' | 'unavailable';
+
+export function resolveMinioStatusState(status: MinioStatusResponseData): MinioStatusState {
+  if (!status.isAvailable) return 'unavailable';
+  if (status.isRunning && status.isConfigured) return 'ready';
+  if (status.isRunning && !status.isConfigured) return 'not-configured';
+  if (!status.isRunning && status.isConfigured) return 'stopped';
+  return 'not-configured';
+}
+
+export async function fetchMinioStatus(): Promise<MinioStatusResponseData> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage as any).minio.status.get();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as MinioStatusResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch MinIO status'));
+  }
+
+  return data;
+}
+
+export function minioStatusQueryOptions() {
+  return queryOptions({
+    queryKey: ['storage', 'minio', 'status'],
+    queryFn: fetchMinioStatus,
+  });
+}
+
+export const DEFAULT_MINIO_BUCKET = 'private-movie-videos';
+export const DEFAULT_MINIO_PORT = 9000;
+
+export function deriveMinioEndpoint(port: number = DEFAULT_MINIO_PORT): string {
+  const hostname =
+    typeof window !== 'undefined' && window.location?.hostname
+      ? window.location.hostname
+      : 'localhost';
+  return `http://${hostname}:${port}`;
+}
+
+const MINIO_SECRET_ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+export function generateMinioSecret(length = 24): string {
+  const cryptoObj =
+    typeof globalThis !== 'undefined'
+      ? (globalThis as { crypto?: Crypto }).crypto
+      : undefined;
+  if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
+    const bytes = new Uint32Array(length);
+    cryptoObj.getRandomValues(bytes);
+    return Array.from(bytes, (b) => MINIO_SECRET_ALPHABET[b % MINIO_SECRET_ALPHABET.length]).join('');
+  }
+  let out = '';
+  for (let i = 0; i < length; i += 1) {
+    out += MINIO_SECRET_ALPHABET[Math.floor(Math.random() * MINIO_SECRET_ALPHABET.length)];
+  }
+  return out;
+}
+
+export async function spinMinioUp(
+  input: MinioSpinUpRequest = {}
+): Promise<MinioSpinUpResponseData> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage as any).minio['spin-up'].post(input);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as MinioSpinUpResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to spin up MinIO'));
   }
 
   return data;

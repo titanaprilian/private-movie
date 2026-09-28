@@ -5,9 +5,23 @@ export {
   StorageProviderNotFoundError,
   StorageProviderInUseError,
 } from "./internal/storage-service";
-export { autoSeedDefaultProviderAndBackfill } from "./internal/startup-migration";
 
 export type {
   StorageService,
   StorageServiceOptions,
 } from "./internal/storage-service";
+export type {
+  MinioContainerInspector,
+  MinioContainerState,
+} from "./internal/minio-status";
+export {
+  MinioCredentialsRejectedError,
+  MinioDockerUnavailableError,
+  MinioHealthTimeoutError,
+  startMinioContainerViaDockerSocket,
+} from "./internal/minio-orchestrator";
+export type {
+  MinioContainerStarter,
+  MinioHealthChecker,
+} from "./internal/minio-orchestrator";
+export type { MinioBucketProvisioner } from "./internal/storage-service";

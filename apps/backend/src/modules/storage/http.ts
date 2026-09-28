@@ -7,18 +7,34 @@ import type { S3StorageService, StorageProviderRegistry } from "@repo/media-serv
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import { createStorageService } from "./internal/storage-service";
+import type { MinioContainerInspector } from "./internal/minio-status";
+import type {
+  MinioContainerStarter,
+  MinioHealthChecker,
+} from "./internal/minio-orchestrator";
+import type { StorageServiceOptions } from "./internal/storage-service";
+
+type MinioBucketProvisioner = NonNullable<StorageServiceOptions["minioBucketProvisioner"]>;
 
 export interface StorageRoutesOptions {
   db: Parameters<typeof createStorageService>[0];
   authService: AuthenticationService;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  minioInspector?: MinioContainerInspector;
+  minioContainerStarter?: MinioContainerStarter;
+  minioHealthChecker?: MinioHealthChecker;
+  minioBucketProvisioner?: MinioBucketProvisioner;
 }
 
 export const storageRoutes = (options: StorageRoutesOptions) => {
   const storageService = createStorageService(options.db, {
     s3StorageService: options.s3StorageService,
     storageProviderRegistry: options.storageProviderRegistry,
+    minioInspector: options.minioInspector,
+    minioContainerStarter: options.minioContainerStarter,
+    minioHealthChecker: options.minioHealthChecker,
+    minioBucketProvisioner: options.minioBucketProvisioner,
   });
   const auth = authGuard(options.authService);
 
@@ -147,6 +163,30 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                   accessKeyId: t.Optional(t.String()),
                   secretAccessKey: t.Optional(t.String()),
                   forcePathStyle: t.Optional(t.Boolean()),
+                })
+              ),
+            }
+          )
+          .get("/minio/status", async () => {
+            const status = await storageService.getMinioStatus();
+            return successResponse(status);
+          })
+          .post(
+            "/minio/spin-up",
+            async ({ body }) => {
+              const result = await storageService.spinUpMinio(body ?? {});
+              return successResponse(result);
+            },
+            {
+              body: t.Optional(
+                t.Object({
+                  endpoint: t.Optional(t.String()),
+                  port: t.Optional(t.Number()),
+                  consolePort: t.Optional(t.Number()),
+                  bucket: t.Optional(t.String()),
+                  accessKeyId: t.Optional(t.String()),
+                  secretAccessKey: t.Optional(t.String()),
+                  isDefault: t.Optional(t.Boolean()),
                 })
               ),
             }

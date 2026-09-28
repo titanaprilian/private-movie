@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   episodes,
   seasons,
@@ -19,6 +19,8 @@ import {
   maskAccessKeyId,
   createS3StorageService,
   createStorageProviderRegistry,
+  ensureMinioBucketWithCors,
+  MINIO_DEFAULT_BUCKET,
   type S3ObjectSummary,
   type S3StorageService,
   type StorageProviderRegistry,
@@ -33,7 +35,30 @@ import type {
   UpdateStorageProviderRequest,
   TestStorageProviderRequest,
   TestStorageProviderResponseData,
+  MinioStatusResponseData,
+  MinioSpinUpRequest,
+  MinioSpinUpResponseData,
 } from "@repo/contracts";
+import {
+  buildMinioStatusResponse,
+  createDefaultMinioInspector,
+  MINIO_CONTAINER_NAME,
+  type MinioContainerInspector,
+} from "./minio-status";
+import {
+  isS3AuthError,
+  MINIO_DEFAULT_ROOT_PASSWORD,
+  MINIO_DEFAULT_ROOT_USER,
+  MinioCredentialsRejectedError,
+  resolveMinioAccessKey,
+  resolveMinioConsoleUrlFromInput,
+  resolveMinioEndpoint,
+  resolveMinioSecretKey,
+  startMinioContainerViaDockerSocket,
+  waitForMinioHealthy,
+  type MinioContainerStarter,
+  type MinioHealthChecker,
+} from "./minio-orchestrator";
 
 export class EpisodeNotFoundError extends Error {
   constructor(message = "Episode not found") {
@@ -63,10 +88,27 @@ export class StorageProviderInUseError extends Error {
   }
 }
 
+export interface MinioBucketProvisionerInput {
+  endpoint: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  forcePathStyle: boolean;
+}
+
+export type MinioBucketProvisioner = (
+  input: MinioBucketProvisionerInput
+) => Promise<void>;
+
 export interface StorageServiceOptions {
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
   cacheTtlMs?: number;
+  minioInspector?: MinioContainerInspector;
+  minioContainerStarter?: MinioContainerStarter;
+  minioHealthChecker?: MinioHealthChecker;
+  minioBucketProvisioner?: MinioBucketProvisioner;
 }
 
 export interface StorageService {
@@ -108,6 +150,8 @@ export interface StorageService {
   updateProvider(id: string, input: UpdateStorageProviderRequest): Promise<StorageProviderItem>;
   deleteProvider(id: string): Promise<void>;
   testProvider(input: TestStorageProviderRequest): Promise<TestStorageProviderResponseData>;
+  getMinioStatus(): Promise<MinioStatusResponseData>;
+  spinUpMinio(input: MinioSpinUpRequest): Promise<MinioSpinUpResponseData>;
 }
 
 const DEFAULT_LIMIT_GB = 50;
@@ -125,6 +169,15 @@ export function createStorageService<
     options?.storageProviderRegistry ??
     createStorageProviderRegistry(db, defaultS3);
   const cacheTtlMs = options?.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
+  const minioInspector = options?.minioInspector ?? createDefaultMinioInspector();
+  const minioContainerStarter: MinioContainerStarter =
+    options?.minioContainerStarter ??
+    ((containerName = MINIO_CONTAINER_NAME) =>
+      startMinioContainerViaDockerSocket(containerName));
+  const minioHealthChecker: MinioHealthChecker =
+    options?.minioHealthChecker ?? ((endpoint) => waitForMinioHealthy(endpoint));
+  const minioBucketProvisioner =
+    options?.minioBucketProvisioner ?? ensureMinioBucketWithCors;
 
   // Per-provider cache
   const cachedS3ObjectsMap = new Map<string, S3ObjectSummary[]>();
@@ -919,6 +972,169 @@ export function createStorageService<
           latencyMs: (err as { latencyMs?: number })?.latencyMs ?? 0,
         };
       }
+    },
+
+    async getMinioStatus(): Promise<MinioStatusResponseData> {
+      const container = await minioInspector();
+      const rows = await db
+        .select({
+          id: storageProviders.id,
+          endpoint: storageProviders.endpoint,
+          bucket: storageProviders.bucket,
+          isDefault: storageProviders.isDefault,
+          isEnabled: storageProviders.isEnabled,
+        })
+        .from(storageProviders)
+        .where(eq(storageProviders.providerType, "minio"));
+      const provider =
+        rows.find((r) => r.isDefault && r.isEnabled) ??
+        rows.find((r) => r.isEnabled) ??
+        rows[0] ??
+        null;
+      return buildMinioStatusResponse(container, provider);
+    },
+
+    async spinUpMinio(input: MinioSpinUpRequest): Promise<MinioSpinUpResponseData> {
+      const endpoint = resolveMinioEndpoint(input);
+      const bucket = input.bucket?.trim() || MINIO_DEFAULT_BUCKET;
+      const region = "us-east-1";
+      const consoleUrl = resolveMinioConsoleUrlFromInput(input);
+
+      const container = await minioInspector();
+      if (!container.isRunning) {
+        await minioContainerStarter();
+      }
+
+      await minioHealthChecker(endpoint);
+
+      // The MinIO server only accepts the root credentials it was initialized
+      // with (baked into minio_data on first boot). Freshly generated or
+      // reconfigured keys are unknown to a pre-existing server and fail with
+      // SignatureDoesNotMatch — so try candidates in order and keep whichever
+      // the server actually accepts: requested keys first, then the stored
+      // provider credentials, then the configured root env, then MinIO's own
+      // defaults.
+      const [match] = await db
+        .select()
+        .from(storageProviders)
+        .where(
+          and(
+            eq(storageProviders.providerType, "minio"),
+            eq(storageProviders.endpoint, endpoint),
+            eq(storageProviders.bucket, bucket)
+          )
+        );
+
+      const candidates: { accessKeyId: string; secretAccessKey: string }[] = [
+        {
+          accessKeyId: resolveMinioAccessKey(input.accessKeyId),
+          secretAccessKey: resolveMinioSecretKey(input.secretAccessKey),
+        },
+      ];
+      if (match) {
+        try {
+          candidates.push({
+            accessKeyId: decryptCredential(match.accessKeyIdEnc),
+            secretAccessKey: decryptCredential(match.secretAccessKeyEnc),
+          });
+        } catch {
+          // Corrupt stored ciphertext — fall through to remaining candidates.
+        }
+      }
+      candidates.push({
+        accessKeyId:
+          process.env.MINIO_ROOT_USER?.trim() ||
+          process.env.MINIO_ACCESS_KEY?.trim() ||
+          MINIO_DEFAULT_ROOT_USER,
+        secretAccessKey:
+          process.env.MINIO_ROOT_PASSWORD?.trim() ||
+          process.env.MINIO_SECRET_KEY?.trim() ||
+          MINIO_DEFAULT_ROOT_PASSWORD,
+      });
+
+      const seen = new Set<string>();
+      let workingCreds: { accessKeyId: string; secretAccessKey: string } | null = null;
+      for (const candidate of candidates) {
+        const key = `${candidate.accessKeyId}\n${candidate.secretAccessKey}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        try {
+          await minioBucketProvisioner({
+            endpoint,
+            region,
+            bucket,
+            accessKeyId: candidate.accessKeyId,
+            secretAccessKey: candidate.secretAccessKey,
+            forcePathStyle: true,
+          });
+          workingCreds = candidate;
+          break;
+        } catch (err) {
+          if (!isS3AuthError(err)) throw err;
+          // Wrong credentials for this server — try the next candidate.
+        }
+      }
+      if (!workingCreds) {
+        throw new MinioCredentialsRejectedError();
+      }
+      const { accessKeyId, secretAccessKey } = workingCreds;
+
+      const now = new Date();
+      if (input.isDefault) {
+        await db
+          .update(storageProviders)
+          .set({ isDefault: false, updatedAt: now })
+          .where(eq(storageProviders.isDefault, true));
+      }
+
+      const accessKeyIdEnc = encryptCredential(accessKeyId);
+      const secretAccessKeyEnc = encryptCredential(secretAccessKey);
+
+      let row: StorageProviderRow;
+      if (match) {
+        const [updated] = await db
+          .update(storageProviders)
+          .set({
+            endpoint,
+            region,
+            bucket,
+            accessKeyIdEnc,
+            secretAccessKeyEnc,
+            forcePathStyle: true,
+            isEnabled: true,
+            ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
+            updatedAt: now,
+          })
+          .where(eq(storageProviders.id, match.id))
+          .returning();
+        row = updated!;
+      } else {
+        const [created] = await db
+          .insert(storageProviders)
+          .values({
+            id: randomUUID(),
+            name: "Local MinIO",
+            providerType: "minio",
+            endpoint,
+            region,
+            bucket,
+            accessKeyIdEnc,
+            secretAccessKeyEnc,
+            publicBaseUrl: null,
+            forcePathStyle: true,
+            storageLimitGb: DEFAULT_LIMIT_GB,
+            isDefault: input.isDefault ?? false,
+            isEnabled: true,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .returning();
+        row = created!;
+      }
+
+      invalidateCache(row.id);
+      const provider = formatProviderItem(row, 0);
+      return { provider, consoleUrl, accessKeyId, secretAccessKey };
     },
   };
 }

@@ -195,3 +195,34 @@ export type StoragePreviewUrlResponse = StorageSuccessEnvelope<StoragePreviewUrl
 export type StorageProvidersResponse = StorageSuccessEnvelope<StorageProviderItem[]>;
 export type StorageProviderResponse = StorageSuccessEnvelope<StorageProviderItem>;
 export type TestStorageProviderResponse = StorageSuccessEnvelope<TestStorageProviderResponseData>;
+
+export interface MinioStatusResponseData {
+  isAvailable: boolean;
+  isRunning: boolean;
+  isConfigured: boolean;
+  consoleUrl?: string;
+  providerId?: string;
+  endpoint?: string;
+  bucket?: string;
+}
+
+export type MinioStatusResponse = StorageSuccessEnvelope<MinioStatusResponseData>;
+
+export interface MinioSpinUpRequest {
+  endpoint?: string;
+  port?: number;
+  consolePort?: number;
+  bucket?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  isDefault?: boolean;
+}
+
+export interface MinioSpinUpResponseData {
+  provider: StorageProviderItem;
+  consoleUrl: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+}
+
+export type MinioSpinUpResponse = StorageSuccessEnvelope<MinioSpinUpResponseData>;

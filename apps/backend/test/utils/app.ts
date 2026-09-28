@@ -1,5 +1,11 @@
 import type { createApp } from "@/app";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  MinioBucketProvisioner,
+  MinioContainerInspector,
+  MinioContainerStarter,
+  MinioHealthChecker,
+} from "@/modules/storage";
 
 export type App = ReturnType<typeof createApp>;
 
@@ -28,6 +34,10 @@ export async function buildApp(options?: {
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  minioInspector?: MinioContainerInspector;
+  minioContainerStarter?: MinioContainerStarter;
+  minioHealthChecker?: MinioHealthChecker;
+  minioBucketProvisioner?: MinioBucketProvisioner;
 }): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
@@ -59,6 +69,10 @@ export async function buildApp(options?: {
     browserFn: options?.browserFn ?? defaultBrowserFn,
     s3StorageService: options?.s3StorageService,
     storageProviderRegistry: options?.storageProviderRegistry,
+    minioInspector: options?.minioInspector,
+    minioContainerStarter: options?.minioContainerStarter,
+    minioHealthChecker: options?.minioHealthChecker,
+    minioBucketProvisioner: options?.minioBucketProvisioner,
   });
 }
 

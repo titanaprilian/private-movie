@@ -43,6 +43,14 @@ export {
   createStorageProviderRegistry,
   type StorageProviderRegistry,
 } from "./internal/s3/registry";
+export {
+  ensureMinioBucketWithCors,
+  isBucketCorsNotImplementedError,
+  MINIO_DEFAULT_BUCKET,
+  MINIO_DEFAULT_REGION,
+  MINIO_VIDEO_CORS_RULE,
+  type EnsureMinioBucketInput,
+} from "./internal/s3/minio-provision";
 export type {
   S3StorageService,
   S3StorageServiceOptions,

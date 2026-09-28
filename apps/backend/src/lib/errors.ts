@@ -43,6 +43,12 @@ export function getDomainErrorStatus(error: unknown): number | null {
 
   if (name === "S3NotConfiguredError") return 503;
 
+  if (name === "MinioDockerUnavailableError") return 503;
+
+  if (name === "MinioHealthTimeoutError") return 504;
+
+  if (name === "MinioCredentialsRejectedError") return 502;
+
   if (name === "TmdbFetchError") {
     const status = (error as { status?: number }).status;
     return status === 404 ? 404 : 400;

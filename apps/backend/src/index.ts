@@ -4,7 +4,6 @@ import { createMediaService, createS3StorageService } from "@repo/media-service"
 import { createApp } from "./app";
 import { createAuthenticationService, validateJwtSecret } from "./modules/authentication";
 import { createOngoingSeasonScheduler } from "./modules/media";
-import { autoSeedDefaultProviderAndBackfill } from "./modules/storage";
 
 validateJwtSecret();
 
@@ -17,13 +16,6 @@ const mediaService = createMediaService(db, {
   browserFn,
   s3StorageService,
 });
-
-// Run legacy migration & auto-seed before starting HTTP server listener
-try {
-  await autoSeedDefaultProviderAndBackfill(db);
-} catch (err) {
-  console.error("[startup] Failed to auto-seed default storage provider:", err);
-}
 
 // Initialize background scheduler for ongoing seasons (runs immediately on startup, then every 30 minutes)
 const scheduler = createOngoingSeasonScheduler({

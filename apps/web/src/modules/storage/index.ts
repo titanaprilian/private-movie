@@ -1,4 +1,6 @@
 export { StorageView } from './internal/StorageView';
+export { MinioSpinUpModal } from './internal/MinioSpinUpModal';
+export type { MinioSpinUpModalProps } from './internal/MinioSpinUpModal';
 export {
   fetchStorageMetrics,
   storageMetricsQueryOptions,
@@ -19,6 +21,14 @@ export {
   updateStorageProvider,
   deleteStorageProvider,
   testStorageProviderConnection,
+  fetchMinioStatus,
+  minioStatusQueryOptions,
+  resolveMinioStatusState,
+  spinMinioUp,
+  deriveMinioEndpoint,
+  generateMinioSecret,
+  DEFAULT_MINIO_BUCKET,
+  DEFAULT_MINIO_PORT,
 } from './internal/api';
 export type {
   StorageMetrics,
@@ -50,6 +60,10 @@ export type {
   UpdateStorageProviderRequest,
   TestStorageProviderRequest,
   TestStorageProviderResponseData,
+  MinioStatusResponseData,
+  MinioStatusState,
+  MinioSpinUpRequest,
+  MinioSpinUpResponseData,
   FormatBytesOptions,
 } from './internal/api';
 

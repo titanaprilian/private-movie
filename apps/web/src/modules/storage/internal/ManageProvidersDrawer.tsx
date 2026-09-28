@@ -19,6 +19,7 @@ import {
   Star,
   ToggleLeft,
   ToggleRight,
+  Rocket,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,6 +30,7 @@ export interface ManageProvidersDrawerProps {
   selectedProviderId?: string | null;
   onSelectProvider?: (id: string) => void;
   onProvidersUpdated: () => void;
+  onSpinUpMinio?: () => void;
 }
 
 export function ManageProvidersDrawer({
@@ -38,6 +40,7 @@ export function ManageProvidersDrawer({
   selectedProviderId,
   onSelectProvider,
   onProvidersUpdated,
+  onSpinUpMinio,
 }: ManageProvidersDrawerProps) {
   const [viewMode, setViewMode] = useState<'list' | 'create' | 'edit'>('list');
   const [editingProvider, setEditingProvider] = useState<StorageProviderItem | null>(null);
@@ -187,7 +190,20 @@ export function ManageProvidersDrawer({
 
             <div className="flex items-center gap-2">
               {viewMode === 'list' && (
-                <Button
+                <>
+                  {onSpinUpMinio && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={onSpinUpMinio}
+                      data-testid="drawer-spin-up-minio-btn"
+                      className="h-7 text-xs gap-1"
+                    >
+                      <Rocket className="w-3.5 h-3.5" />
+                      Spin Up MinIO
+                    </Button>
+                  )}
+                  <Button
                   size="sm"
                   variant="default"
                   onClick={() => setViewMode('create')}
@@ -197,6 +213,7 @@ export function ManageProvidersDrawer({
                   <Plus className="w-3.5 h-3.5" />
                   Add Provider
                 </Button>
+                </>
               )}
               <Button
                 variant="ghost"

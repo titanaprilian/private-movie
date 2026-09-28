@@ -23,6 +23,10 @@ export interface CreateAppDeps {
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  minioInspector?: Parameters<typeof storageRoutes>[0]["minioInspector"];
+  minioContainerStarter?: Parameters<typeof storageRoutes>[0]["minioContainerStarter"];
+  minioHealthChecker?: Parameters<typeof storageRoutes>[0]["minioHealthChecker"];
+  minioBucketProvisioner?: Parameters<typeof storageRoutes>[0]["minioBucketProvisioner"];
 }
 
 function getAllowedOrigins(): string[] {
@@ -164,6 +168,10 @@ export const createApp = (deps: CreateAppDeps) => {
             authService: auth,
             s3StorageService: deps.s3StorageService,
             storageProviderRegistry: deps.storageProviderRegistry,
+            minioInspector: deps.minioInspector,
+            minioContainerStarter: deps.minioContainerStarter,
+            minioHealthChecker: deps.minioHealthChecker,
+            minioBucketProvisioner: deps.minioBucketProvisioner,
           })
         )
     );

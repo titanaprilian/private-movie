@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { AlertTriangle, Server } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Rocket, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -14,6 +14,7 @@ import {
   storageMetricsQueryOptions,
   storageResourcesQueryOptions,
   storageProvidersQueryOptions,
+  minioStatusQueryOptions,
   updateStorageLimit,
   refreshStorageScan,
   updateSourceMetadata,
@@ -33,6 +34,7 @@ import { AttachOrphanDialog } from './AttachOrphanDialog';
 import { DeleteConfirmDialog, type DeleteTargetType } from './DeleteConfirmDialog';
 import { VideoPreviewModal } from './VideoPreviewModal';
 import { ManageProvidersDrawer } from './ManageProvidersDrawer';
+import { MinioSpinUpModal } from './MinioSpinUpModal';
 
 export function StorageView() {
   const queryClient = useQueryClient();
@@ -81,9 +83,14 @@ export function StorageView() {
   const resources = resourcesData?.data ?? [];
   const activeError = metricsError || resourcesError;
 
+  // MinIO status query (for spin-up / console header action)
+  const { data: minioStatus } = useQuery(minioStatusQueryOptions());
+  const isMinioActive = Boolean(minioStatus?.isRunning && minioStatus?.consoleUrl);
+
   // Dialog & Drawer States
   const [isLimitDialogOpen, setIsLimitDialogOpen] = useState(false);
   const [isProvidersDrawerOpen, setIsProvidersDrawerOpen] = useState(false);
+  const [isSpinUpModalOpen, setIsSpinUpModalOpen] = useState(false);
   const [previewResource, setPreviewResource] = useState<StorageResource | null>(null);
   const [editingSource, setEditingSource] = useState<(VideoSourceMetadata & { key?: string }) | null>(null);
   const [attachingResource, setAttachingResource] = useState<StorageResource | null>(null);
@@ -218,6 +225,33 @@ export function StorageView() {
             </div>
           )}
 
+          {/* MinIO Console link when active, otherwise Spin Up action */}
+          {isMinioActive && minioStatus?.consoleUrl ? (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              data-testid="minio-console-link-btn"
+              className="text-xs h-8 gap-1.5 mono"
+            >
+              <a href={minioStatus.consoleUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="w-3.5 h-3.5" />
+                MinIO Console
+              </a>
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setIsSpinUpModalOpen(true)}
+              data-testid="spin-up-minio-btn"
+              className="text-xs h-8 gap-1.5 mono"
+            >
+              <Rocket className="w-3.5 h-3.5" />
+              Spin Up MinIO
+            </Button>
+          )}
+
           {/* Manage Providers Action Button */}
           <Button
             variant="outline"
@@ -246,6 +280,42 @@ export function StorageView() {
                 ? activeError.message
                 : 'S3 storage service is unavailable or unconfigured.'}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Empty-state hero: no providers connected */}
+      {providers.length === 0 && (
+        <div
+          data-testid="minio-empty-state-hero"
+          className="rounded border border-c bg-card p-6 text-center space-y-3"
+        >
+          <div className="mx-auto w-10 h-10 rounded bg-primary/10 text-primary border border-primary/20 flex items-center justify-center">
+            <Rocket className="w-5 h-5" />
+          </div>
+          <h2 className="text-sm font-semibold text-fg">No storage connected yet</h2>
+          <p className="text-xs text-muted max-w-md mx-auto">
+            Connect an S3-compatible provider or spin up a local MinIO object storage
+            instance with one click — no cloud account required.
+          </p>
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <Button
+              size="sm"
+              onClick={() => setIsSpinUpModalOpen(true)}
+              data-testid="minio-empty-state-spinup-btn"
+              className="text-xs h-8 gap-1.5"
+            >
+              <Rocket className="w-3.5 h-3.5" />
+              Spin Up MinIO
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsProvidersDrawerOpen(true)}
+              className="text-xs h-8"
+            >
+              Manage Providers
+            </Button>
           </div>
         </div>
       )}
@@ -286,6 +356,12 @@ export function StorageView() {
       />
 
       {/* Dialogs & Drawer */}
+      <MinioSpinUpModal
+        open={isSpinUpModalOpen}
+        onOpenChange={setIsSpinUpModalOpen}
+        providerCount={providers.length}
+      />
+
       <ManageProvidersDrawer
         open={isProvidersDrawerOpen}
         onOpenChange={setIsProvidersDrawerOpen}
@@ -298,6 +374,10 @@ export function StorageView() {
         onProvidersUpdated={() => {
           refetchProviders();
           queryClient.invalidateQueries({ queryKey: ['storage'] });
+        }}
+        onSpinUpMinio={() => {
+          setIsProvidersDrawerOpen(false);
+          setIsSpinUpModalOpen(true);
         }}
       />
 
