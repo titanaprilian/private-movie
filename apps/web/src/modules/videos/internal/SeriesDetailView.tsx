@@ -3,6 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import {
+  Play,
+  Check,
+  Edit2,
+  RefreshCw,
+  Plus,
+  ArrowDownToLine,
+  Trash2,
+  Copy,
+} from 'lucide-react';
+import {
   DragDropContext,
   Droppable,
   type DropResult,
@@ -36,10 +46,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { BackButton } from '@/components/ui/back-button';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyChip } from '@/components/ui/chunky-chip';
+import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
+import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
+import { useClampedText } from '@/hooks/useClampedText';
 
 type Episode = SeriesDetails['episodes'][number];
 
@@ -254,7 +269,6 @@ export function SeriesDetailView({
   >(undefined);
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
-  const [isSeasonMenuOpen, setIsSeasonMenuOpen] = useState(false);
   const [isSyncTmdbOpen, setIsSyncTmdbOpen] = useState(false);
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
   const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
@@ -268,10 +282,45 @@ export function SeriesDetailView({
   const [editVideoType, setEditVideoType] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
+  const activeSeason =
+    series?.seasons && series.seasons.length > 0
+      ? (selectedSeasonId ? series.seasons.find((s) => s.id === selectedSeasonId) : series.seasons[0]) ?? series.seasons[0]
+      : null;
+
+  const currentDescription = activeSeason?.description || series?.description || '';
+  const currentPosterUrl = activeSeason?.posterUrl || series?.posterUrl || null;
+
+  const isDescriptionEmpty = !currentDescription || !currentDescription.trim();
+  const clampedText = useClampedText(currentDescription, {
+    seriesId,
+    seasonId: activeSeason?.id,
+    contentId: 'series-hero-description',
+  });
+
   if (isLoading) {
     return (
-      <div className="space-y-4 p-4 text-xs text-muted mono">
-        Loading series...
+      <div className="space-y-4">
+        <div className="hero">
+          <ChunkySkeleton className="w-[104px] aspect-[3/4] rounded-xl flex-none" />
+          <div className="hero-body">
+            <div className="hero-top">
+              <div className="hero-title">
+                <ChunkySkeleton className="h-7 w-48 rounded-lg" />
+                <ChunkySkeleton className="h-8 w-24 rounded-full" />
+                <ChunkySkeleton className="h-8 w-24 rounded-full" />
+              </div>
+              <div className="hero-actions">
+                <ChunkySkeleton className="h-11 w-28 rounded-[14px]" />
+                <ChunkySkeleton className="h-11 w-32 rounded-[14px]" />
+                <ChunkySkeleton className="h-11 w-36 rounded-[14px]" />
+                <ChunkySkeleton className="h-11 w-36 rounded-2xl" />
+              </div>
+            </div>
+            <div className="hero-desc-wrap">
+              <ChunkySkeleton className="h-12 w-full rounded-lg" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -279,23 +328,16 @@ export function SeriesDetailView({
   if (!series) {
     return (
       <div className="space-y-4">
-        <div className="bg-card border border-c rounded p-4">
-          <h1 className="text-lg font-semibold">Series not found</h1>
-          <p className="text-xs text-muted mt-0.5">
-            No series matches <span className="mono">{seriesId}</span>.
+        <BackButton />
+        <div className="bg-[var(--surface)] border-2 border-b-4 border-[var(--border)] rounded-[var(--radius)] p-6">
+          <h1 className="text-xl font-extrabold text-[var(--ink)]">Series not found</h1>
+          <p className="text-sm font-semibold text-[var(--muted)] mt-1">
+            No series matches <span className="font-mono text-[var(--ink)]">{seriesId}</span>.
           </p>
         </div>
       </div>
     );
   }
-
-  const activeSeason =
-    series?.seasons && series.seasons.length > 0
-      ? (selectedSeasonId ? series.seasons.find((s) => s.id === selectedSeasonId) : series.seasons[0]) ?? series.seasons[0]
-      : null;
-
-  const currentDescription = activeSeason?.description || series.description;
-  const currentPosterUrl = activeSeason?.posterUrl || series.posterUrl;
 
   const seasonEpisodes = (() => {
     if (!series?.seasons || series.seasons.length === 0 || !activeSeason) {
@@ -522,153 +564,166 @@ export function SeriesDetailView({
 
   return (
     <div className="space-y-4">
+      {/* Top navigation */}
+      <div>
+        <BackButton />
+      </div>
+
       <DragDropContext onDragEnd={handleDragEnd}>
-      {/* Header section */}
-      <div className="flex gap-4 items-start">
-        {currentPosterUrl && (
+      {/* Hero section */}
+      <div className="hero">
+        {currentPosterUrl ? (
           <img
             src={currentPosterUrl}
             alt={series.title}
-            className="w-20 h-28 object-cover rounded border border-c shrink-0"
+            className="hero-poster object-cover bg-[var(--surface)] border-2 border-[var(--border)]"
           />
+        ) : (
+          <div className="hero-poster bg-[var(--surface)] border-2 border-[var(--border)] text-[var(--muted)] flex items-center justify-center font-bold">
+            No Poster
+          </div>
         )}
-        <div className="space-y-2 flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-semibold tracking-tight">
+        <div className="hero-body">
+          <div className="hero-top">
+            <div className="hero-title">
+              <h1 className="text-[28px] font-extrabold text-[var(--ink)] leading-none">
                 {series.title}
               </h1>
-              <span className="text-xs mono px-2 py-0.5 rounded border border-c bg-sidebar text-muted">
-                {localEpisodes.length} episodes
+              <span className="pill rounded-full bg-[var(--surface)] border-2 border-[var(--border)] text-[var(--ink)] font-extrabold text-[12px]">
+                <Play className="size-3.5 fill-current" />
+                {localEpisodes.length} {localEpisodes.length === 1 ? 'Episode' : 'Episodes'}
               </span>
-              <span className={`text-xs mono px-2 py-0.5 rounded border ${
-                activeSeason?.status === 'ongoing'
-                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                  : 'border-c bg-sidebar text-muted'
-              } capitalize`}>
+              <span
+                className={`pill rounded-full font-extrabold text-[12px] border-2 ${
+                  activeSeason?.status === 'ongoing'
+                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-500'
+                    : 'pill ok border-[var(--green)]/40 bg-[var(--green-tint)] text-[var(--green)]'
+                }`}
+              >
+                {activeSeason?.status !== 'ongoing' && <Check className="size-3.5 stroke-[3]" />}
                 {activeSeason?.status || 'completed'}
               </span>
               {series.isFeatured && (
-                <span className="text-xs mono px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <span className="pill rounded-full border-2 border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] font-extrabold text-[12px]">
                   Featured
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <button
+            <div className="hero-actions">
+              <ChunkyChip
+                variant="blue"
                 onClick={() => setIsEditSeriesOpen(true)}
                 type="button"
-                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
+                <Edit2 className="size-4" />
                 Edit Series
-              </button>
+              </ChunkyChip>
 
-              <button
+              <ChunkyChip
+                variant="blue"
                 onClick={() => setIsSyncTmdbOpen(true)}
                 type="button"
                 disabled={!series.tmdbId}
                 title={!series.tmdbId ? 'Link TMDB in Edit Series to enable sync' : undefined}
-                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                </svg>
+                <RefreshCw className="size-4" />
                 Sync with TMDB
-              </button>
+              </ChunkyChip>
 
-              <button
+              <ChunkyChip
+                variant="blue"
                 onClick={() => setIsBulkScrapeOpen(true)}
                 type="button"
-                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
               >
+                <Plus className="size-4" />
                 Bulk Add Sources
-              </button>
+              </ChunkyChip>
 
-              <button
+              <ChunkyButton
+                variant="green"
                 onClick={() => setIsBulkIngestOpen(true)}
                 type="button"
-                className="border border-c hover-bg px-3 py-1.5 rounded text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shrink-0"
               >
+                <ArrowDownToLine className="size-5" />
                 Bulk Ingest URLs
-              </button>
+              </ChunkyButton>
             </div>
           </div>
 
-          {currentDescription && (
-            <p className="text-xs text-muted leading-relaxed break-words">{currentDescription}</p>
-          )}
+          <div className="hero-desc-wrap">
+            {isDescriptionEmpty ? (
+              <div className="hero-desc empty">
+                No description available.
+              </div>
+            ) : (
+              <>
+                <p
+                  id="series-hero-description"
+                  ref={clampedText.contentRef as React.RefObject<HTMLParagraphElement>}
+                  className={`hero-desc${clampedText.isExpanded ? ' expanded' : ''}`}
+                >
+                  {currentDescription}
+                </p>
+                {clampedText.showToggle && (
+                  <button
+                    type="button"
+                    onClick={clampedText.toggleExpanded}
+                    className="desc-toggle"
+                    {...clampedText.toggleProps}
+                  >
+                    {clampedText.toggleLabel}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Season Navigation Bar */}
       {series.seasons && series.seasons.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded border border-c bg-card">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium mono uppercase tracking-wider text-muted mr-1">
-              Season:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {series.seasons.map((season, index) => {
-                const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
-                const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
-                return (
-                  <Droppable
-                    key={season.id}
-                    droppableId={`season-tab-${season.id}`}
-                  >
-                    {(tabProvided, tabSnapshot) => (
-                      <div
-                        ref={tabProvided.innerRef}
-                        {...tabProvided.droppableProps}
-                        className={`rounded ${
-                          tabSnapshot.isDraggingOver
-                            ? 'ring-2 ring-[var(--primary)]'
-                            : ''
-                        }`}
+        <div className="season-bar">
+          <span className="lbl">SEASON:</span>
+          <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+            {series.seasons.map((season, index) => {
+              const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
+              const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
+              return (
+                <Droppable
+                  key={season.id}
+                  droppableId={`season-tab-${season.id}`}
+                >
+                  {(tabProvided, tabSnapshot) => (
+                    <div
+                      ref={tabProvided.innerRef}
+                      {...tabProvided.droppableProps}
+                      className={
+                        tabSnapshot.isDraggingOver
+                          ? 'ring-2 ring-[var(--green)] rounded-[14px]'
+                          : undefined
+                      }
+                    >
+                      <ChunkyChip
+                        variant={isActive ? 'active' : 'default'}
+                        pressed={isActive}
+                        onClick={() => setSelectedSeasonId(season.id)}
+                        type="button"
                       >
-                        <button
-                          type="button"
-                          onClick={() => setSelectedSeasonId(season.id)}
-                          className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors border ${
-                            isActive
-                              ? 'bg-primary text-primary-fg border-primary'
-                              : 'bg-card text-fg border-c hover-bg'
-                          }`}
-                        >
-                          {title}
-                        </button>
-                      </div>
-                    )}
-                  </Droppable>
-                );
-              })}
-            </div>
+                        {title}
+                      </ChunkyChip>
+                    </div>
+                  )}
+                </Droppable>
+              );
+            })}
             {activeSeason && (
               <span
                 data-testid="season-status-badge"
-                className={`text-xs mono px-2 py-0.5 rounded border capitalize ${
+                className={`pill rounded-full font-extrabold text-[11px] h-7 px-3 border-2 uppercase tracking-[0.6px] ${
                   activeSeason.status === 'ongoing'
-                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                    : 'border-c bg-sidebar text-muted'
+                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-500'
+                    : 'border-[var(--green)]/40 bg-[var(--green-tint)] text-[var(--green)]'
                 }`}
               >
                 {activeSeason.status || 'completed'}
@@ -677,142 +732,60 @@ export function SeriesDetailView({
           </div>
 
           {activeSeason && (
-            <div className="ml-auto">
-              <Popover open={isSeasonMenuOpen} onOpenChange={setIsSeasonMenuOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Season actions"
-                    className="p-1.5 rounded border border-c bg-card text-muted hover:text-current hover-bg cursor-pointer transition-colors flex items-center justify-center"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <circle cx="12" cy="5" r="2" />
-                      <circle cx="12" cy="12" r="2" />
-                      <circle cx="12" cy="19" r="2" />
-                    </svg>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  className="w-48 p-0 divide-y divide-[var(--border)] shadow-sm"
-                >
-                  {activeSeason.status === 'ongoing' && activeSeason.scraperUrl && (
-                    <div className="py-0.5">
-                      <button
-                        type="button"
-                        disabled={scrapeOngoingMutation.isPending}
-                        onClick={() => {
-                          scrapeOngoingMutation.mutate(activeSeason.id);
-                        }}
-                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
-                          scrapeOngoingMutation.isPending
-                            ? 'opacity-50 cursor-not-allowed text-muted'
-                            : 'hover-bg text-amber-600 dark:text-amber-400 cursor-pointer'
-                        }`}
-                      >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          className={scrapeOngoingMutation.isPending ? 'animate-spin' : ''}
-                        >
-                          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                        </svg>
-                        {scrapeOngoingMutation.isPending ? 'Scraping...' : 'Run Auto-Scrape Now'}
-                      </button>
-                    </div>
-                  )}
-                  <div className="py-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSeasonMenuOpen(false);
-                        setIsEditSeasonOpen(true);
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors flex items-center gap-2 cursor-pointer"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                      </svg>
-                      Edit Season
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSeasonMenuOpen(false);
-                        if (activeSeason) {
-                          if (navigator.clipboard?.writeText) {
-                            navigator.clipboard.writeText(activeSeason.id);
-                          }
-                          toast.success('Season ID copied to clipboard');
+            <div className="ml-auto flex-none">
+              <ChunkyActionMenu
+                triggerLabel="Season actions"
+                align="end"
+                items={[
+                  ...(activeSeason.status === 'ongoing' && activeSeason.scraperUrl
+                    ? [
+                        {
+                          label: scrapeOngoingMutation.isPending
+                            ? 'Scraping...'
+                            : 'Run Auto-Scrape Now',
+                          icon: (
+                            <RefreshCw
+                              className={`size-4 ${
+                                scrapeOngoingMutation.isPending ? 'animate-spin' : ''
+                              }`}
+                            />
+                          ),
+                          disabled: scrapeOngoingMutation.isPending,
+                          onSelect: () => {
+                            scrapeOngoingMutation.mutate(activeSeason.id);
+                          },
+                        },
+                      ]
+                    : []),
+                  {
+                    label: 'Edit Season',
+                    icon: <Edit2 className="size-4" />,
+                    onSelect: () => setIsEditSeasonOpen(true),
+                  },
+                  {
+                    label: 'Copy Season ID',
+                    icon: <Copy className="size-4" />,
+                    onSelect: () => {
+                      if (activeSeason) {
+                        if (navigator.clipboard?.writeText) {
+                          navigator.clipboard.writeText(activeSeason.id);
                         }
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-xs hover-bg transition-colors flex items-center gap-2 cursor-pointer"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                      </svg>
-                      Copy Season ID
-                    </button>
-                  </div>
-                  <div className="py-0.5">
-                    <button
-                      type="button"
-                      disabled={series.seasons.length <= 1}
-                      title={
-                        series.seasons.length <= 1
-                          ? 'Cannot delete the only season in a series'
-                          : undefined
+                        toast.success('Season ID copied to clipboard');
                       }
-                      onClick={() => {
-                        if (series.seasons && series.seasons.length <= 1) return;
-                        setIsSeasonMenuOpen(false);
-                        setIsDeleteSeasonOpen(true);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 ${
-                        series.seasons.length <= 1
-                          ? 'opacity-50 cursor-not-allowed text-muted'
-                          : 'hover-bg text-red-600 dark:text-red-400 cursor-pointer'
-                      }`}
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                      </svg>
-                      Delete Season
-                    </button>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                    },
+                  },
+                  {
+                    label: 'Delete Season',
+                    icon: <Trash2 className="size-4" />,
+                    danger: true,
+                    disabled: series.seasons.length <= 1,
+                    onSelect: () => {
+                      if (series.seasons && series.seasons.length <= 1) return;
+                      setIsDeleteSeasonOpen(true);
+                    },
+                  },
+                ]}
+              />
             </div>
           )}
         </div>

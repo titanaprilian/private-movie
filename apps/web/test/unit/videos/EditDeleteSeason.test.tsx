@@ -153,7 +153,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     await screen.findByRole('heading', { level: 1, name: 'Edit Season Anime' });
 
     await user.click(screen.getByRole('button', { name: /season actions/i }));
-    await user.click(screen.getByRole('button', { name: /edit season/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /edit season/i }));
 
     expect(
       await screen.findByRole('heading', { name: 'Edit Season' })
@@ -202,7 +202,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     await screen.findByRole('heading', { level: 1, name: 'Edit Season Anime' });
 
     await user.click(screen.getByRole('button', { name: /season actions/i }));
-    await user.click(screen.getByRole('button', { name: /copy season id/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /copy season id/i }));
 
     expect(writeTextSpy).toHaveBeenCalledWith('season-1-id');
     expect(await screen.findByText('Season ID copied to clipboard')).toBeInTheDocument();
@@ -221,7 +221,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     await screen.findByRole('heading', { level: 1, name: 'Edit Season Anime' });
 
     await user.click(screen.getByRole('button', { name: /season actions/i }));
-    await user.click(screen.getByRole('button', { name: /delete season/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /delete season/i }));
 
     expect(
       await screen.findByRole('heading', { name: 'Delete Season' })
@@ -259,7 +259,7 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     await screen.findByRole('heading', { level: 1, name: 'Edit Season Anime' });
 
     await user.click(screen.getByRole('button', { name: /season actions/i }));
-    await user.click(screen.getByRole('button', { name: /delete season/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /delete season/i }));
     await screen.findByRole('heading', { name: 'Delete Season' });
     await user.click(screen.getByRole('button', { name: /^delete$/i }));
 
@@ -350,11 +350,11 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
     await user.click(screen.getByRole('button', { name: /season actions/i }));
 
     // Verify Delete Season is disabled
-    const deleteBtn = screen.getByRole('button', { name: /delete season/i });
+    const deleteBtn = await screen.findByRole('menuitem', { name: /delete season/i });
     expect(deleteBtn).toBeDisabled();
 
     // Open Edit Season
-    await user.click(screen.getByRole('button', { name: /edit season/i }));
+    await user.click(screen.getByRole('menuitem', { name: /edit season/i }));
     expect(await screen.findByRole('heading', { name: 'Edit Season' })).toBeInTheDocument();
 
     const titleInput = screen.getByLabelText('Title');

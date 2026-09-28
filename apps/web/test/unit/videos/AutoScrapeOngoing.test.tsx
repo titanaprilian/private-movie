@@ -135,7 +135,7 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
     expect(menuBtn).toBeInTheDocument();
     await user.click(menuBtn);
 
-    const autoScrapeBtn = screen.getByRole('button', { name: /run auto-scrape now/i });
+    const autoScrapeBtn = await screen.findByRole('menuitem', { name: /run auto-scrape now/i });
     expect(autoScrapeBtn).toBeInTheDocument();
   });
 
@@ -166,7 +166,7 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    expect(screen.queryByRole('button', { name: /run auto-scrape now/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /run auto-scrape now/i })).not.toBeInTheDocument();
   });
 
   it('does NOT render "Run Auto-Scrape Now" when active season lacks scraperUrl', async () => {
@@ -196,7 +196,7 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    expect(screen.queryByRole('button', { name: /run auto-scrape now/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /run auto-scrape now/i })).not.toBeInTheDocument();
   });
 
   it('triggers scrape-ongoing endpoint, disables button while in progress, and displays success toast', async () => {
@@ -249,7 +249,7 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    const autoScrapeBtn = screen.getByRole('button', { name: /run auto-scrape now/i });
+    const autoScrapeBtn = await screen.findByRole('menuitem', { name: /run auto-scrape now/i });
     await user.click(autoScrapeBtn);
 
     expect(scrapeEndpointCalled).toBe(true);
@@ -297,7 +297,7 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    const autoScrapeBtn = screen.getByRole('button', { name: /run auto-scrape now/i });
+    const autoScrapeBtn = await screen.findByRole('menuitem', { name: /run auto-scrape now/i });
     await user.click(autoScrapeBtn);
 
     expect(await screen.findByText(/Failed to fetch provider HTML: Cloudflare challenge/i)).toBeInTheDocument();

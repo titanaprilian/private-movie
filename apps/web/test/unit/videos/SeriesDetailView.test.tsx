@@ -1,4 +1,4 @@
-import { renderWithProviders, screen, userEvent } from '../../utils';
+import { renderWithProviders, screen, userEvent, within } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SeriesDetailView } from '@/modules/videos/internal/SeriesDetailView';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
@@ -685,11 +685,11 @@ describe('SeriesDetailView component', () => {
     await user.click(seasonActionsBtn);
 
     // Edit Season is available
-    const editSeasonBtn = screen.getByRole('button', { name: /edit season/i });
+    const editSeasonBtn = await screen.findByRole('menuitem', { name: /edit season/i });
     expect(editSeasonBtn).toBeInTheDocument();
 
     // Delete Season is disabled for single-season series
-    const deleteSeasonBtn = screen.getByRole('button', { name: /delete season/i });
+    const deleteSeasonBtn = screen.getByRole('menuitem', { name: /delete season/i });
     expect(deleteSeasonBtn).toBeDisabled();
   });
 
@@ -1022,9 +1022,9 @@ describe('SeriesDetailView component', () => {
 
     await user.click(menuBtn);
 
-    expect(screen.getByRole('button', { name: /Edit Season/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Copy Season ID/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Delete Season/i })).toBeInTheDocument();
+    expect(await screen.findByRole('menuitem', { name: /Edit Season/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /Copy Season ID/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /Delete Season/i })).toBeInTheDocument();
   });
 
   it('handles batch cross-season move execution via confirmation dialog', async () => {
@@ -1301,5 +1301,113 @@ describe('SeriesDetailView component', () => {
     await user.click(syncBtn);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Sync with TMDB' })).toBeInTheDocument();
+  });
+
+  describe('Hero Card, Description Edge Cases & BackButton', () => {
+    it('renders BackButton alone that points to /admin/videos by default', async () => {
+      renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+      await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+      const backBtn = screen.getByRole('button', { name: 'Back' });
+      expect(backBtn).toBeInTheDocument();
+      expect(backBtn).toHaveClass('rounded-full');
+    });
+
+    it('renders hero poster with 104px 3:4 aspect ratio without stretching', async () => {
+      const mockWithPoster: SeriesDetails = {
+        ...mockSeries,
+        posterUrl: 'https://image.tmdb.org/t/p/w500/test-poster.jpg',
+      };
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+        return new Response(JSON.stringify({ data: mockWithPoster }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      });
+
+      renderWithProviders(<SeriesDetailView seriesId="poster-series" />);
+      await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+      const img = screen.getByAltText(mockSeries.title) as HTMLImageElement;
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveClass('hero-poster', 'object-cover');
+      expect(img.src).toBe('https://image.tmdb.org/t/p/w500/test-poster.jpg');
+    });
+
+    it('renders fallback poster box when posterUrl is null', async () => {
+      renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+      await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+      expect(screen.getByText('No Poster')).toBeInTheDocument();
+      expect(screen.getByText('No Poster')).toHaveClass('hero-poster');
+    });
+
+    it('renders title, episode count pill with play icon, and completed status pill vertically aligned', async () => {
+      renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+      await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+      const title = screen.getByRole('heading', { level: 1, name: mockSeries.title });
+      expect(title).toHaveClass('text-[28px]', 'font-extrabold');
+
+      const heroTitle = title.closest('.hero-title')!;
+      expect(heroTitle).toBeInTheDocument();
+      const epPill = within(heroTitle as HTMLElement).getByText(new RegExp(`${mockSeries.episodes.length}\\s+Episodes`, 'i'));
+      expect(epPill.closest('.pill')).toBeInTheDocument();
+      expect(epPill.closest('.pill')?.querySelector('svg')).toBeInTheDocument();
+
+      const statusPill = within(heroTitle as HTMLElement).getByText('completed');
+      expect(statusPill.closest('.pill')).toHaveClass('ok');
+    });
+
+    it('renders gold Featured badge when series.isFeatured is true', async () => {
+      const featuredSeries: SeriesDetails = {
+        ...mockSeries,
+        isFeatured: true,
+      };
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+        return new Response(JSON.stringify({ data: featuredSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      });
+
+      renderWithProviders(<SeriesDetailView seriesId="featured-series" />);
+      await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+      const featuredBadge = screen.getByText('Featured');
+      expect(featuredBadge).toBeInTheDocument();
+      expect(featuredBadge).toHaveClass('pill');
+    });
+
+    it('renders empty description dashed placeholder box when description is whitespace or empty', async () => {
+      const emptyDescSeries: SeriesDetails = {
+        ...mockSeries,
+        description: '   ',
+      };
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+        return new Response(JSON.stringify({ data: emptyDescSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      });
+
+      renderWithProviders(<SeriesDetailView seriesId="empty-desc-series" />);
+      await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+      const placeholder = screen.getByText('No description available.');
+      expect(placeholder).toBeInTheDocument();
+      expect(placeholder).toHaveClass('hero-desc', 'empty');
+      expect(screen.queryByRole('button', { name: /show more|show less/i })).not.toBeInTheDocument();
+    });
+
+    it('renders chunky action chips and chunky primary button', async () => {
+      renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+      await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+      expect(screen.getByRole('button', { name: /Edit Series/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Sync with TMDB/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Bulk Add Sources/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Bulk Ingest URLs/i })).toBeInTheDocument();
+    });
   });
 });
