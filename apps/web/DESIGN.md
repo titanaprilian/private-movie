@@ -1,35 +1,45 @@
-# DESIGN.md
+# DESIGN.md — Chunky UI Design System
 
-Design system specification for the Private Movie streaming application. This document is the single source of truth for UI styling, component tokens, and interactions. All agent code generation must strictly conform to these rules.
+Design system specification for the Private Movie streaming application. This document is the **single source of truth** for all UI styling, component tokens, and interactions. All agent code generation must strictly conform to these rules.
 
 ---
 
-## 1. Stack & Architecture
+## 1. Core Rule for All UI Work
 
-- **Framework**: TanStack React, Vite / modern bundler.
-- **Styling**: Tailwind CSS (utility classes) + CSS Custom Properties for theme tokens.
-- **Components**: shadcn/ui headless pattern (Radix primitives with local component source in `@/components/ui`).
+> **Mandatory Chunky UI Policy:**
+> 1. **Always use the Chunky UI primitives** (`@/components/ui/chunky-*`) for any new feature, page, modal, or refactored view.
+> 2. **Never introduce legacy flat / raw shadcn components** (`button.tsx`, `dialog.tsx`, `input.tsx`, `checkbox.tsx`, `select.tsx`, raw `<input>`, raw `<textarea>`).
+> 3. **If a needed component does not yet exist in chunky style**: You **must build the chunky component first** in `apps/web/src/components/ui/` (following the 3D border geometry, theme tokens, and accessible headless Radix pattern) before consuming it in features.
+
+---
+
+## 2. Stack & Architecture
+
+- **Framework**: TanStack React, Vite bundler.
+- **Styling**: Tailwind CSS utility classes + CSS Custom Properties for theme tokens.
+- **Component Pattern**: Headless Radix UI primitives wrapped in tactile, chunky components in `@/components/ui/`.
 - **Typography**:
-  - **Headings & Brand**: `Baloo 2` (weights 600, 700, 800)
-  - **Body, UI & Meta**: `Nunito` (weights 400, 600, 700, 800)
-- **Icons**: Inline Lucide/SVG, 2px stroke, `currentColor`.
+  - **Headings & Display**: `font-display` / `font-baloo` -> `'Baloo 2', cursive, sans-serif` (weights 600, 700, 800).
+  - **Body, UI & Meta**: `font-sans` / `font-nunito` -> `'Nunito', sans-serif` (weights 400, 600, 700, 800).
+  - **Code & Identifiers**: `mono` -> `'JetBrains Mono', monospace`.
+- **Icons**: Lucide icons (`lucide-react`), 2px stroke, `currentColor`.
 
 ---
 
-## 2. Design Direction: "Playful Streaming / Duolingo-Inspired"
+## 3. Design Language: "Duolingo-Inspired Chunky UI"
 
-The application rejects rigid, flat console aesthetics in favor of a punchy, tactile, gamified streaming visual language:
+The interface rejects flat, sterile dashboards in favor of a punchy, tactile, gamified visual language:
 
-- **Tactile 3D Buttons**: Thick bottom borders/shadows (`box-shadow: 0 4px/5px 0 var(--border-shade)`) with a physical `:active` depression (`translate-y-[4px]` and reduced shadow).
-- **Chunky Geometries**: Generous corner radiuses (`rounded-2xl` 16px, `rounded-[20px]`, `rounded-full` 9999px). Sharp `rounded-sm` or `rounded-none` are prohibited.
-- **Bold Border Definition**: High-contrast, tactile 2px borders (`border-2`) across cards, inputs, and search dialogs.
-- **Vibrant Gamified Accents**: Feather Green, Sky Blue, Canary Yellow, Vivid Purple, and Coral Red on a dark or clean light canvas.
+- **Tactile 3D Buttons & Controls**: Thick 3D bottom bevels (`border-2 border-b-4`) that physically depress on click (`active:translate-y-[2px] active:border-b-2`).
+- **Generous Corner Radii**: Curving geometry (`rounded-2xl` 16px, `rounded-[20px]`, `rounded-[24px]`, `rounded-full` 9999px). Sharp `rounded-none`, `rounded-sm`, or `rounded-md` are prohibited.
+- **High-Contrast Border Definition**: Crisp 2px borders (`border-2`) using `var(--border)` and `var(--border-strong)`.
+- **Vibrant Gamified Accents**: Duolingo brand palette (Feather Green `#58cc02`, Sky Blue `#1cb0f6`, Canary Yellow/Gold `#ffc800`, Vivid Purple `#ce82ff`, Coral Red `#ff4b4b`).
 
 ---
 
-## 3. Color Tokens & CSS Variables
+## 4. Color Tokens & CSS Variables
 
-Tokens are declared on `:root` and overridden under `.dark`. Current UI runs primarily dark-first, with built-in light-mode pairings ready for future toggling.
+Tokens are declared on `:root` and overridden under `.dark`.
 
 ```css
 :root {
@@ -42,145 +52,118 @@ Tokens are declared on `:root` and overridden under `.dark`. Current UI runs pri
   --border: #e5e7eb;
   --border-strong: #d1d5db;
 
-  /* Duolingo Brand Palette & Depressed Shadows */
+  /* Duolingo Brand Palette */
   --green: #58cc02;
   --green-dark: #46a302;
+  --green-soft: rgba(88, 204, 2, 0.15);
   --blue: #1cb0f6;
   --blue-dark: #1899d6;
+  --blue-soft: rgba(28, 176, 246, 0.15);
   --purple: #ce82ff;
   --purple-dark: #a568cc;
   --yellow: #ffc800;
   --yellow-dark: #e6a800;
   --red: #ff4b4b;
   --red-dark: #e63e3e;
-
-  /* shadcn Semantic Mappings */
-  --background: var(--bg);
-  --foreground: var(--ink);
-  --card: var(--surface);
-  --card-foreground: var(--ink);
-  --popover: var(--surface);
-  --popover-foreground: var(--ink);
-  --primary: var(--green);
-  --primary-foreground: #ffffff;
-  --secondary: var(--surface-raised);
-  --secondary-foreground: var(--ink);
-  --muted-foreground: var(--muted);
-  --accent: var(--blue);
-  --accent-foreground: #ffffff;
-  --destructive: var(--red);
-  --destructive-foreground: #ffffff;
+  --gold: #ffc800;
+  --gold-dark: #e5a600;
+  --gold-tint: #2b2a14;
+  --gold-tint-hover: #363415;
 }
 
 .dark {
-  /* Canvas & Surfaces */
-  --bg: #131417;
-  --surface: #1e2024;
-  --surface-raised: #282a2f;
+  /* Canvas & Surfaces (Duolingo slate-teal) */
+  --bg: #131f24;
+  --surface: #202f36;
+  --surface-raised: #2b3d46;
   --ink: #f2f2ef;
   --muted: #9a9a93;
-  --border: #2c2e33;
-  --border-strong: #3f4249;
+  --border: #37464f;
+  --border-strong: #4e616c;
 
   /* Duolingo Brand Palette */
   --green: #58cc02;
   --green-dark: #46a302;
+  --green-soft: #1b2f1a;
   --blue: #1cb0f6;
   --blue-dark: #1899d6;
+  --blue-soft: rgba(28, 176, 246, 0.15);
   --purple: #ce82ff;
   --purple-dark: #a568cc;
   --yellow: #ffc800;
   --yellow-dark: #e6a800;
   --red: #ff4b4b;
   --red-dark: #e63e3e;
-
-  /* shadcn Semantic Mappings */
-  --background: var(--bg);
-  --foreground: var(--ink);
-  --card: var(--surface);
-  --card-foreground: var(--ink);
-  --popover: var(--surface);
-  --popover-foreground: var(--ink);
-  --primary: var(--green);
-  --primary-foreground: #ffffff;
-  --secondary: var(--surface-raised);
-  --secondary-foreground: var(--ink);
-  --muted-foreground: var(--muted);
-  --accent: var(--blue);
-  --accent-foreground: #ffffff;
-  --destructive: var(--red);
-  --destructive-foreground: #ffffff;
+  --gold: #ffc800;
+  --gold-dark: #e5a600;
+  --gold-tint: #2b2a14;
+  --gold-tint-hover: #363415;
 }
 ```
 
 ---
 
-## 4. Typography
+## 5. Official Chunky Component Catalog
 
-**Display & Headings**: `font-display` / `font-baloo` -> `'Baloo 2', cursive, sans-serif`. Use on hero titles, section titles, modal headers, and the wordmark.
+All components reside in `apps/web/src/components/ui/`.
 
-**Body & Controls**: `font-sans` / `font-nunito` -> `'Nunito', sans-serif`. Use on descriptions, nav items, button labels, badge chips, and episode metadata.
+### 5.1 Buttons & Interactive Chips
 
-**Scale**:
+- **`ChunkyButton` (`chunky-button.tsx`)**:
+  - 3D bottom bevel with depression: `border-2 border-b-4 active:translate-y-[2px] active:border-b-2 font-extrabold uppercase tracking-[0.8px] text-[13px] rounded-2xl`.
+  - Variants: `primary` (green), `blue`, `danger` (red), `gold`, `outline`, `translucent`.
+  - Sizes: `default` (h-11), `sm` (h-9), `lg` (h-14), `icon` (w-11 h-11 circular).
+- **`ChunkyChip` (`chunky-chip.tsx`)**:
+  - Tactile filter & toggle chips (`h-11 min-h-11 px-3.5 rounded-[14px] border-2 border-b-4 font-extrabold text-[13px] uppercase tracking-[0.7px]`).
+  - Variants: `default`, `active` (green), `blue`, `gold`, `danger`. Includes `pressed={boolean}` for ARIA state.
+- **`BackButton` (`back-button.tsx`)**:
+  - Standard chunky return button with chevron, green pill border, and `hover:bg-[var(--surface-raised)]`.
 
-- Hero Title: `text-4xl md:text-6xl font-extrabold tracking-tight font-display`
-- Section Title: `text-xl md:text-2xl font-bold font-display`
-- Card Title / Episode: `text-sm font-bold font-sans`
-- Badges & Meta: `text-xs font-extrabold tracking-wide uppercase font-sans`
+### 5.2 Form Controls
 
----
+- **`ChunkyInput` (`chunky-input.tsx`)**:
+  - Text/number input: `h-11 w-full rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] px-4 py-2 font-sans text-sm font-bold text-[var(--ink)]`.
+  - Focus: `focus-visible:border-[var(--blue)] focus-visible:ring-2 focus-visible:ring-[var(--blue)]/40 outline-none`.
+- **`ChunkyTextarea` (`chunky-textarea.tsx`)**:
+  - Multiline text input: `min-h-[96px] w-full rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] px-4 py-2 font-sans text-sm font-bold text-[var(--ink)]`.
+- **`ChunkySelect` (`chunky-select.tsx`)**:
+  - Radix Select wrapper with `ChunkySelectTrigger` (`border-2 border-b-4 rounded-2xl h-11 font-bold text-sm`), `ChunkySelectContent` (`rounded-2xl border-2 shadow-2xl p-1.5`), and `ChunkySelectItem` (`rounded-xl py-2.5 pl-8`).
+- **`ChunkyCheckbox` (`chunky-checkbox.tsx`)**:
+  - Custom 24x24 checkbox: `h-6 w-6 rounded-[8px] border-2 border-b-4 active:translate-y-[2px] active:border-b-2`. Checked state uses `bg-[var(--green)] border-[var(--green-dark)] text-white`.
 
-## 5. Components & Interaction Rules
+### 5.3 Modals, Drawers & Overlays
 
-### 5.1 Buttons (`@/components/ui/button.tsx`)
+- **`ChunkyDialog` (`chunky-dialog.tsx`)**:
+  - Centered modal dialog: `rounded-[24px] border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] shadow-2xl overflow-hidden`.
+  - Subcomponents: `ChunkyDialogHeader` (with 3D circular close button), `ChunkyDialogTitle` (font-display 20px bold), `ChunkyDialogDescription`, `ChunkyDialogBody` (scrollable flex-1), `ChunkyDialogFooter` (docked with border-t-2).
+- **`ChunkyConfirmDialog` (`chunky-confirm-dialog.tsx`)**:
+  - Standard confirmation modal with 3D danger badge (`TriangleAlert`), customizable title/description/labels, and pending loading spinner state.
+- **`ChunkyDrawer` (`chunky-drawer.tsx`)**:
+  - Right-aligned slide-out sheet: `w-full max-w-md md:max-w-xl rounded-l-[20px] border-l-2 border-y-2 border-[var(--border)] bg-[var(--surface)] shadow-2xl`.
+  - Subcomponents: `ChunkyDrawerHeader`, `ChunkyDrawerTitle`, `ChunkyDrawerDescription`, `ChunkyDrawerBody`, `ChunkyDrawerFooter`.
+- **`ChunkyTooltip` (`chunky-tooltip.tsx`)**:
+  - Branded floating tooltip: `bg-[var(--surface-raised)] border-2 border-[var(--border)] text-[var(--ink)] font-sans font-bold text-xs rounded-xl shadow-lg px-2.5 py-1.5`.
+  - Dual API: Convenient shorthand `<ChunkyTooltip content="...">...</ChunkyTooltip>` or composable primitives.
 
-Buttons feature Duolingo-style 3D bottom bevels and depress downward on click.
+### 5.4 Cards, Menus & Navigation
 
-```typescript
-// Core button mechanics:
-// Default / Green: bg-[var(--green)] text-white shadow-[0_5px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)]
-// Secondary / Translucent: bg-white/20 text-white backdrop-blur-sm shadow-[0_5px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.2)]
-// Outline / Card Action: bg-[var(--bg)] border-2 border-[var(--border)] shadow-[0_5px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)]
-// Added / Success State: Trigger bounce animation + green fill
-```
-
-### 5.2 Cards & Horizontal Carousels
-
-**Poster Card**: `flex-shrink-0 w-44 rounded-[20px] border-2 border-[var(--border)] overflow-hidden bg-[var(--bg)] transition-transform duration-150 hover:-translate-y-1 hover:border-[var(--blue)] cursor-pointer`.
-
-**Episode Card**: `flex-shrink-0 w-72 rounded-[20px] border-2 border-[var(--border)] bg-[var(--bg)] hover:-translate-y-1 hover:border-[var(--blue)]`.
-
-**Badges**:
-
-- Type badge: `rounded-full px-2.5 py-1 text-xs font-extrabold bg-black/50 text-white`.
-- Season/Status: `rounded-full px-2.5 py-1 text-xs font-extrabold bg-[var(--purple)] text-white`.
-- Star rating: `rounded-full px-2.5 py-1 text-xs font-extrabold bg-[var(--yellow)] text-amber-950 flex items-center gap-1`.
-- Episode tag: `rounded-full px-2.5 py-1 text-xs font-extrabold bg-[var(--green)] text-white`.
-
-### 5.3 Navigation & Search
-
-- Sticky top bar: `h-[76px] border-b-2 border-[var(--border)] bg-[var(--bg)]`.
-- Wordmark: `font-display text-2xl font-extrabold text-[var(--ink)]`, secondary word colored `text-[var(--green)]`.
-- Nav links: rounded pill tabs (`rounded-full px-4 py-2 text-sm font-extrabold`). Active state: `bg-[#1cb0f6]/15 text-[var(--blue)]`.
-- Search Button & Popover: Circular icon button (`rounded-full border-2 border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--yellow)] hover:border-[var(--yellow-dark)]`). Popover panel: `rounded-2xl border-2 border-[var(--border)] p-4 shadow-2xl`.
-
-### 5.4 Hero Banner
-
-- Height: `h-[65vh] min-h-[420px] rounded-b-[32px] overflow-hidden relative`.
-- Multi-stop gradient overlay from left/bottom to maintain legible text over movie backdrops.
-- Indicator Dots: Pill-shaped dots (`w-6 h-2 rounded-full bg-white/40 [&.active]:bg-white transition-all`).
-
-### 5.5 Detail Modal / Sheet
-
-- Uses `@/components/ui/dialog` or `@/components/ui/sheet` styled as a fullscreen/high-elevation overlay.
-- Circular close button with 3D drop-action (`shadow-[0_4px_0_rgba(0,0,0,0.15)] active:translate-y-[3px] active:shadow-[0_1px_0_rgba(0,0,0,0.15)]`).
-- List CTA toggle: Bounces on toggle (`@keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }`).
+- **`ChunkyCard` (`chunky-card.tsx`)**:
+  - Tactile content panel: `rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)]`.
+  - Optional `interactive` hover lift (`hover:-translate-y-[2px] hover:shadow-lg`) and `selected` green tint state.
+- **`ChunkyTabs` (`chunky-tabs.tsx`)**:
+  - 3D segmented control: `ChunkyTabsList` (`rounded-2xl border-2 border-[var(--border)] bg-[var(--surface-raised)] p-1`) and `ChunkyTabsTrigger` (`rounded-xl font-extrabold text-[13px] data-[state=active]:bg-[var(--surface)] data-[state=active]:shadow-md data-[state=active]:border-2 data-[state=active]:border-[var(--border)]`).
+- **`ChunkyActionMenu` (`chunky-action-menu.tsx`)**:
+  - Portaled kebab / 3-dot dropdown menu: 40x40 3D trigger with rounded-2xl chunky popover sheet.
+- **`ChunkySkeleton` (`chunky-skeleton.tsx`)**:
+  - Tactile pulse placeholder: `rounded-2xl border-2 border-[var(--border)] bg-[var(--surface-raised)] animate-pulse`.
 
 ---
 
 ## 6. What NOT to Do
 
-- Do NOT use muted zinc/slate gray palettes or thin 1px subtle borders.
-- Do NOT use flat buttons without physical active-click press states (`active:translate-y-*` with box-shadows).
-- Do NOT use square or sharp corners (`rounded-none`, `rounded-sm`, `rounded-md`). Keep radii between 16px and 9999px.
-- Do NOT introduce arbitrary fonts; strictly use Baloo 2 for headings/branding and Nunito for UI elements.
+- **NEVER** use flat buttons without physical 3D active-click depression (`active:translate-y-[2px] active:border-b-2`).
+- **NEVER** use native browser tooltips (`title="..."`) on interactive buttons. Always wrap with `<ChunkyTooltip>`.
+- **NEVER** import or introduce legacy shadcn components (`button.tsx`, `dialog.tsx`, `input.tsx`, `checkbox.tsx`, `select.tsx`).
+- **NEVER** use thin 1px subtle borders or sharp corners (`rounded-none`, `rounded-sm`, `rounded-md`). Minimum corner radius is 14px–16px (`rounded-2xl`).
+- **NEVER** introduce arbitrary font families. Strictly use `Baloo 2` (`font-display`) for headings/branding and `Nunito` (`font-sans`) for body/controls.
+EOF
