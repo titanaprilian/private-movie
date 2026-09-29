@@ -157,6 +157,28 @@ All components reside in `apps/web/src/components/ui/`.
 - **`ChunkySkeleton` (`chunky-skeleton.tsx`)**:
   - Tactile pulse placeholder: `rounded-2xl border-2 border-[var(--border)] bg-[var(--surface-raised)] animate-pulse`.
 
+
+### 5.5 Chunky Tables & Data Grids (Card-Row Pattern)
+
+When implementing a tabular dataset (as seen in `@apps/web/src/modules/videos/internal/EpisodeTable.tsx`), **do NOT use flat unstyled HTML `<table>` elements**. Instead, follow the **Chunky Card-Row Grid pattern**:
+
+1. **Header Row**:
+   - CSS Grid layout aligned with body row columns (`grid gap-3.5 items-center px-4 pb-2`).
+   - Column labels: `text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]`.
+   - Select-all control: `ChunkyCheckbox` centered in the first column with `indeterminate` support.
+   - Sortable columns: `<button type="button" className="flex items-center gap-1 font-extrabold uppercase hover:text-[var(--ink)] cursor-pointer">` with direction indicators (`↑`, `↓`, `↕`).
+2. **List Container (`ChunkyCardList`)**:
+   - Vertical flex stack: `flex flex-col gap-3` (`apps/web/src/components/ui/chunky-card.tsx`).
+3. **Data Row Cards (`ChunkyCard`)**:
+   - Tactile card item: `rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] p-3 items-center`.
+   - Interactive hover lift: `interactive` prop or `hover:-translate-y-[2px] transition-all hover:border-[var(--border-strong)] cursor-pointer`.
+   - Selected state: `selected` prop or `border-[var(--green)] bg-[var(--green-soft)]` with checked `ChunkyCheckbox`.
+   - Order / Index badge: 40x40 3D box (`rounded-xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] font-extrabold text-[var(--blue)] text-[15px] flex items-center justify-center`).
+   - Primary text: `font-extrabold text-[15px] text-[var(--ink)] leading-snug`.
+   - Secondary subtext: `font-semibold text-[13px] text-[var(--muted)] truncate`.
+   - Row Actions: `ChunkyActionMenu` (40x40 3D kebab trigger with portaled popover items) in the trailing column.
+4. **Empty State**:
+   - 3D tactile empty container: `p-8 text-center rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)]` with bold title and muted explanation text.
 ---
 
 ## 6. What NOT to Do
@@ -165,5 +187,5 @@ All components reside in `apps/web/src/components/ui/`.
 - **NEVER** use native browser tooltips (`title="..."`) on interactive buttons. Always wrap with `<ChunkyTooltip>`.
 - **NEVER** import or introduce legacy shadcn components (`button.tsx`, `dialog.tsx`, `input.tsx`, `checkbox.tsx`, `select.tsx`).
 - **NEVER** use thin 1px subtle borders or sharp corners (`rounded-none`, `rounded-sm`, `rounded-md`). Minimum corner radius is 14px–16px (`rounded-2xl`).
+- **NEVER** use flat unstyled `<table>` elements or generic gray HTML tables. Always adopt the Chunky Card-Row Grid pattern for tabular datasets.
 - **NEVER** introduce arbitrary font families. Strictly use `Baloo 2` (`font-display`) for headings/branding and `Nunito` (`font-sans`) for body/controls.
-EOF
