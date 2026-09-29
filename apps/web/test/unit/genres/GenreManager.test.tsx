@@ -101,13 +101,14 @@ describe('GenreManager component', () => {
               name: body.name,
               slug: body.slug,
               isBigGenre: body.isBigGenre ?? genresState[index].isBigGenre,
-              displayOrder: body.displayOrder ?? genresState[index].displayOrder,
+              displayOrder:
+                body.displayOrder ?? genresState[index].displayOrder,
               updatedAt: new Date().toISOString(),
             };
-            return new Response(
-              JSON.stringify({ data: genresState[index] }),
-              { status: 200, headers: { 'Content-Type': 'application/json' } }
-            );
+            return new Response(JSON.stringify({ data: genresState[index] }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            });
           }
         }
 
@@ -132,25 +133,30 @@ describe('GenreManager component', () => {
     });
   });
 
-  it('renders header, title, and data table with genres', async () => {
+  it('renders header, title, and card-row grid with genres', async () => {
     renderWithProviders(<GenreManager />);
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Genre Management' })
     ).toBeInTheDocument();
+    expect(await screen.findByTestId('genre-card-grid')).toBeInTheDocument();
     expect(await screen.findByText('Action & Adventure')).toBeInTheDocument();
     expect(screen.getByText('action-and-adventure')).toBeInTheDocument();
     expect(screen.getByText('Comedy')).toBeInTheDocument();
     expect(screen.getByText('Sci-Fi & Fantasy')).toBeInTheDocument();
+    // Card-row action menu kebab triggers
+    expect(
+      screen.getByRole('button', { name: 'Actions for Comedy' })
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('genre-count')).toHaveTextContent('3 genres');
   });
 
   it('renders empty state when no genres exist', async () => {
     genresState = [];
     renderWithProviders(<GenreManager />);
 
-    expect(
-      await screen.findByText(/no genres found/i)
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId('genre-empty-state')).toBeInTheDocument();
+    expect(await screen.findByText(/no genres yet/i)).toBeInTheDocument();
   });
 
   it('filters genre list based on search term', async () => {
@@ -208,8 +214,13 @@ describe('GenreManager component', () => {
 
     await screen.findByText('Comedy');
 
-    const editBtns = screen.getAllByRole('button', { name: /edit genre/i });
-    await user.click(editBtns[1]); // Edit 'Comedy'
+    const menuTrigger = screen.getByRole('button', {
+      name: 'Actions for Comedy',
+    });
+    await user.click(menuTrigger);
+
+    const editBtn = await screen.findByRole('menuitem', { name: /^edit$/i });
+    await user.click(editBtn);
 
     expect(
       await screen.findByRole('heading', { name: 'Edit Genre' })
@@ -240,8 +251,15 @@ describe('GenreManager component', () => {
 
     await screen.findByText('Comedy');
 
-    const deleteBtns = screen.getAllByRole('button', { name: /delete genre/i });
-    await user.click(deleteBtns[1]); // Delete 'Comedy'
+    const deleteTrigger = screen.getByRole('button', {
+      name: 'Actions for Comedy',
+    });
+    await user.click(deleteTrigger);
+
+    const deleteBtn = await screen.findByRole('menuitem', {
+      name: /^delete$/i,
+    });
+    await user.click(deleteBtn);
 
     expect(
       await screen.findByRole('heading', { name: 'Delete Genre' })
@@ -315,13 +333,19 @@ describe('GenreManager component', () => {
       expect(screen.getByText('Korean Drama')).toBeInTheDocument();
     });
 
-    // 1 header + 1 badge = 2 elements
-    expect(screen.getAllByText('Big Genre')).toHaveLength(2);
-    expect(screen.getByText('2')).toBeInTheDocument();
+    // Only the card badge renders 'Big Genre' (no table header anymore)
+    expect(screen.getAllByText('Big Genre')).toHaveLength(1);
+    expect(screen.getAllByText('2').length).toBeGreaterThanOrEqual(1);
 
     // Edit Genre to update Big Genre toggle and display order
-    const editBtns = screen.getAllByRole('button', { name: /edit genre/i });
-    await user.click(editBtns[0]); // Edit Action & Adventure
+    const editTrigger = screen.getByRole('button', {
+      name: 'Actions for Action & Adventure',
+    });
+    await user.click(editTrigger);
+    const editMenuItem = await screen.findByRole('menuitem', {
+      name: /^edit$/i,
+    });
+    await user.click(editMenuItem);
 
     const editBigGenreCheckbox = screen.getByLabelText(/set as big genre/i);
     await user.click(editBigGenreCheckbox);
@@ -334,9 +358,9 @@ describe('GenreManager component', () => {
     await user.click(saveBtn);
 
     await waitFor(() => {
-      // 1 header + 2 badges = 3 elements
-      expect(screen.getAllByText('Big Genre')).toHaveLength(3);
+      // 2 badges total after edit
+      expect(screen.getAllByText('Big Genre')).toHaveLength(2);
     });
-    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1);
   });
 });
