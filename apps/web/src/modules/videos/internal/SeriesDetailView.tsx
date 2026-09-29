@@ -52,6 +52,7 @@ import { BackButton } from '@/components/ui/back-button';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { useClampedText } from '@/hooks/useClampedText';
 
@@ -598,16 +599,30 @@ export function SeriesDetailView({
               Edit Series
             </ChunkyChip>
 
-            <ChunkyChip
-              variant="blue"
-              onClick={() => setIsSyncTmdbOpen(true)}
-              type="button"
-              disabled={!series.tmdbId}
-              title={!series.tmdbId ? 'Link TMDB in Edit Series to enable sync' : undefined}
-            >
-              <RefreshCw className="size-4" />
-              Sync with TMDB
-            </ChunkyChip>
+            {!series.tmdbId ? (
+              <ChunkyTooltip content="Link TMDB in Edit Series to enable sync">
+                <span className="inline-flex" tabIndex={0}>
+                  <ChunkyChip
+                    variant="blue"
+                    onClick={() => setIsSyncTmdbOpen(true)}
+                    type="button"
+                    disabled
+                  >
+                    <RefreshCw className="size-4" />
+                    Sync with TMDB
+                  </ChunkyChip>
+                </span>
+              </ChunkyTooltip>
+            ) : (
+              <ChunkyChip
+                variant="blue"
+                onClick={() => setIsSyncTmdbOpen(true)}
+                type="button"
+              >
+                <RefreshCw className="size-4" />
+                Sync with TMDB
+              </ChunkyChip>
+            )}
 
             <ChunkyChip
               variant="blue"

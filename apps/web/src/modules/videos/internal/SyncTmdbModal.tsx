@@ -11,16 +11,17 @@ import {
 } from './api';
 import { computeSyncDiff } from './computeSyncDiff';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogDescription,
+  ChunkyDialogBody,
+  ChunkyDialogFooter,
+} from '@/components/ui/chunky-dialog';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 
 export interface SyncTmdbModalProps {
   open?: boolean;
@@ -28,6 +29,44 @@ export interface SyncTmdbModalProps {
   onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
   series: SeriesDetails;
+}
+
+function MetaBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]">
+      {children}
+    </span>
+  );
+}
+
+function CountBadge({
+  children,
+  tone = 'green',
+}: {
+  children: React.ReactNode;
+  tone?: 'green' | 'blue' | 'amber';
+}) {
+  const toneClasses =
+    tone === 'green'
+      ? 'border-[var(--green)] bg-[var(--green-soft)] text-[var(--green)]'
+      : tone === 'blue'
+        ? 'border-[var(--blue)] bg-[var(--blue-soft)] text-[var(--blue)]'
+        : 'border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)]';
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-xs font-extrabold border-2 ${toneClasses}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function FieldBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--blue)] bg-[var(--blue-soft)] text-[var(--blue)]">
+      {children}
+    </span>
+  );
 }
 
 export function SyncTmdbModal({
@@ -171,9 +210,9 @@ export function SyncTmdbModal({
   });
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="max-w-2xl max-h-[85vh] flex flex-col"
+    <ChunkyDialog open={isModalOpen} onOpenChange={handleOpenChange}>
+      <ChunkyDialogContent
+        className="max-w-2xl"
         onPointerDownOutside={(e) => {
           if (syncMutation.isPending) e.preventDefault();
         }}
@@ -181,21 +220,22 @@ export function SyncTmdbModal({
           if (syncMutation.isPending) e.preventDefault();
         }}
       >
-        <DialogHeader>
-          <DialogTitle>Sync with TMDB</DialogTitle>
-          <DialogDescription>
+        <ChunkyDialogHeader>
+          <ChunkyDialogTitle>Sync with TMDB</ChunkyDialogTitle>
+          <ChunkyDialogDescription>
             Preview and sync latest episodes, seasons, and metadata from TMDB.
-          </DialogDescription>
-        </DialogHeader>
+          </ChunkyDialogDescription>
+        </ChunkyDialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
+        <ChunkyDialogBody className="space-y-4">
           {isLoadingPreview && (
-            <div className="flex items-center justify-center py-12 text-muted text-xs mono gap-2">
+            <div className="flex items-center justify-center py-12 font-sans text-xs font-bold text-[var(--muted)] gap-2">
               <svg
                 className="animate-spin w-4 h-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
+                aria-hidden="true"
               >
                 <circle
                   className="opacity-25"
@@ -216,13 +256,14 @@ export function SyncTmdbModal({
           )}
 
           {previewError && (
-            <div className="p-3 rounded border border-red-200 dark:border-red-900/50 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs mono flex items-center gap-2">
+            <div className="p-3 rounded-2xl border-2 border-[var(--red)] bg-[var(--red)]/10 text-[var(--red)] text-sm font-bold flex items-center gap-2">
               <svg
                 className="w-4 h-4 shrink-0"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
               >
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
@@ -235,14 +276,14 @@ export function SyncTmdbModal({
           {!isLoadingPreview && tmdbPreviewData && (
             <>
               {/* TMDB Snapshot Overview Card */}
-              <div className="bg-card border border-c rounded p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-c pb-2">
-                  <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+              <ChunkyCard className="p-4 space-y-3">
+                <div className="flex items-center justify-between border-b-2 border-[var(--border)] pb-2">
+                  <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
                     TMDB Snapshot Overview
                   </span>
-                  <span className="text-[10px] mono px-2 py-0.5 rounded bg-muted/20 border border-c text-muted uppercase">
+                  <MetaBadge>
                     {seriesType} • ID #{tmdbId}
-                  </span>
+                  </MetaBadge>
                 </div>
 
                 <div className="flex gap-4">
@@ -250,40 +291,34 @@ export function SyncTmdbModal({
                     <img
                       src={tmdbPreviewData.posterUrl}
                       alt={tmdbPreviewData.title}
-                      className="w-20 h-28 object-cover rounded border border-c shrink-0"
+                      className="w-20 h-28 object-cover rounded-2xl border-2 border-[var(--border)] shrink-0"
                     />
                   )}
                   <div className="flex-1 min-w-0 space-y-2">
-                    <h3 className="text-sm font-semibold text-current">
+                    <h3 className="font-display text-xl font-bold text-[var(--ink)]">
                       {tmdbPreviewData.title}
                     </h3>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {tmdbPreviewData.releaseDate && (
-                        <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
-                          {tmdbPreviewData.releaseDate}
-                        </span>
+                        <MetaBadge>{tmdbPreviewData.releaseDate}</MetaBadge>
                       )}
                       {seriesType === 'movie' && typeof tmdbPreviewData.runtime === 'number' && (
-                        <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
-                          {tmdbPreviewData.runtime} mins
-                        </span>
+                        <MetaBadge>{tmdbPreviewData.runtime} mins</MetaBadge>
                       )}
                       {seriesType === 'tv' && (
                         <>
                           {tmdbPreviewData.status && (
-                            <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
-                              {tmdbPreviewData.status}
-                            </span>
+                            <MetaBadge>{tmdbPreviewData.status}</MetaBadge>
                           )}
                           {typeof tmdbPreviewData.totalSeasons === 'number' && (
-                            <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                            <MetaBadge>
                               {tmdbPreviewData.totalSeasons} Seasons
-                            </span>
+                            </MetaBadge>
                           )}
                           {typeof tmdbPreviewData.totalEpisodes === 'number' && (
-                            <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+                            <MetaBadge>
                               {tmdbPreviewData.totalEpisodes} Episodes
-                            </span>
+                            </MetaBadge>
                           )}
                         </>
                       )}
@@ -291,59 +326,54 @@ export function SyncTmdbModal({
                     {tmdbPreviewData.genres && tmdbPreviewData.genres.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {tmdbPreviewData.genres.map((genre) => (
-                          <span
-                            key={genre}
-                            className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-card text-muted"
-                          >
-                            {genre}
-                          </span>
+                          <MetaBadge key={genre}>{genre}</MetaBadge>
                         ))}
                       </div>
                     )}
-                    <p className="text-xs text-muted leading-relaxed line-clamp-3">
+                    <p className="text-sm font-semibold text-[var(--muted)] leading-relaxed line-clamp-3">
                       {tmdbPreviewData.overview || 'No overview available.'}
                     </p>
                   </div>
                 </div>
-              </div>
+              </ChunkyCard>
 
               {/* Include Specials Checkbox (for TV) */}
               {seriesType === 'tv' && (
-                <div className="flex items-center space-x-2 py-1">
-                  <Checkbox
+                <div className="flex items-center gap-2 py-1">
+                  <ChunkyCheckbox
                     id="sync-include-specials"
                     checked={includeSpecials}
                     onCheckedChange={(checked) => setIncludeSpecials(Boolean(checked))}
                     disabled={syncMutation.isPending || isLoadingPreview}
                   />
-                  <Label
+                  <label
                     htmlFor="sync-include-specials"
-                    className="text-xs font-normal cursor-pointer select-none"
+                    className="text-sm font-bold text-[var(--muted)] select-none cursor-pointer"
                   >
                     Include Specials (Season 0)
-                  </Label>
+                  </label>
                 </div>
               )}
 
               {/* Sync Diff Summary */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+                  <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
                     Sync Diff Summary
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] mono px-2 py-0.5 rounded border border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400 font-medium">
+                    <CountBadge tone="green">
                       +{totalNewEpisodes} new {totalNewEpisodes === 1 ? 'episode' : 'episodes'}
-                    </span>
+                    </CountBadge>
                     {seriesType === 'tv' && (
-                      <span className="text-[11px] mono px-2 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400 font-medium">
+                      <CountBadge tone="blue">
                         +{totalNewSeasons} new {totalNewSeasons === 1 ? 'season' : 'seasons'}
-                      </span>
+                      </CountBadge>
                     )}
                     {syncPreviewData && syncPreviewData.totalUpdatedEpisodes > 0 && (
-                      <span className="text-[11px] mono px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">
+                      <CountBadge tone="amber">
                         {syncPreviewData.totalUpdatedEpisodes} updated {syncPreviewData.totalUpdatedEpisodes === 1 ? 'episode' : 'episodes'}
-                      </span>
+                      </CountBadge>
                     )}
                   </div>
                 </div>
@@ -351,28 +381,26 @@ export function SyncTmdbModal({
                 {seriesType === 'tv' && seasonDiffs.length > 0 && (
                   <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
                     {seasonDiffs.map((diffItem) => (
-                      <div
+                      <ChunkyCard
                         key={diffItem.seasonNumber}
-                        className="flex items-center justify-between p-2 rounded border border-c bg-card text-xs"
+                        className="flex items-center justify-between p-2 text-sm"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="mono text-muted text-[11px] font-medium">
+                          <span className="font-sans text-[13px] font-extrabold text-[var(--muted)]">
                             S{diffItem.seasonNumber}
                           </span>
-                          <span className="font-medium text-fg">{diffItem.name}</span>
+                          <span className="font-bold text-[var(--ink)]">{diffItem.name}</span>
                         </div>
-                        <span
-                          className={`mono text-[10px] px-2 py-0.5 rounded border ${
-                            diffItem.badgeType === 'new-eps'
-                              ? 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400'
-                              : diffItem.badgeType === 'new-season'
-                              ? 'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400'
-                              : 'border-c bg-sidebar text-muted'
-                          }`}
-                        >
-                          {diffItem.badgeText}
-                        </span>
-                      </div>
+                        {diffItem.badgeType === 'existing' ? (
+                          <MetaBadge>{diffItem.badgeText}</MetaBadge>
+                        ) : (
+                          <CountBadge
+                            tone={diffItem.badgeType === 'new-eps' ? 'green' : 'blue'}
+                          >
+                            {diffItem.badgeText}
+                          </CountBadge>
+                        )}
+                      </ChunkyCard>
                     ))}
                   </div>
                 )}
@@ -382,69 +410,62 @@ export function SyncTmdbModal({
               {syncPreviewData?.episodeChanges && syncPreviewData.episodeChanges.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] mono uppercase tracking-wider font-semibold text-muted">
+                    <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
                       Episode Metadata Updates ({syncPreviewData.episodeChanges.length})
                     </span>
                   </div>
                   <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto pr-1">
                     {syncPreviewData.episodeChanges.map((change) => (
-                      <div
+                      <ChunkyCard
                         key={`${change.seasonNumber}-${change.episodeNumber}`}
-                        className="p-2 rounded border border-c bg-card text-xs space-y-1"
+                        className="p-2 text-sm space-y-1"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="mono font-medium text-[11px] text-muted">
+                          <span className="font-sans font-extrabold text-[13px] text-[var(--muted)]">
                             S{change.seasonNumber}E{change.episodeNumber}
                           </span>
                           <div className="flex gap-1">
                             {change.titleChanged && (
-                              <span className="text-[9px] mono px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400">
-                                Title
-                              </span>
+                              <FieldBadge>Title</FieldBadge>
                             )}
                             {change.overviewChanged && (
-                              <span className="text-[9px] mono px-1.5 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                                Overview
-                              </span>
+                              <FieldBadge>Overview</FieldBadge>
                             )}
                             {change.thumbnailChanged && (
-                              <span className="text-[9px] mono px-1.5 py-0.5 rounded border border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-400">
-                                Thumbnail
-                              </span>
+                              <FieldBadge>Thumbnail</FieldBadge>
                             )}
                             {change.airDateChanged && (
-                              <span className="text-[9px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
-                                Air Date
-                              </span>
+                              <MetaBadge>Air Date</MetaBadge>
                             )}
                           </div>
                         </div>
                         {change.titleChanged && (
-                          <div className="text-[11px] text-muted">
+                          <div className="text-[13px] font-semibold text-[var(--muted)]">
                             <span className="line-through">{change.oldTitle}</span> →{' '}
-                            <span className="font-medium text-fg">{change.newTitle}</span>
+                            <span className="font-bold text-[var(--ink)]">{change.newTitle}</span>
                           </div>
                         )}
-                      </div>
+                      </ChunkyCard>
                     ))}
                   </div>
                 </div>
               )}
             </>
           )}
-        </div>
+        </ChunkyDialogBody>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-c">
-          <Button
+        <ChunkyDialogFooter>
+          <ChunkyButton
             type="button"
-            variant="secondary"
+            variant="outline"
             onClick={() => handleOpenChange(false)}
             disabled={syncMutation.isPending}
           >
             Cancel
-          </Button>
-          <Button
+          </ChunkyButton>
+          <ChunkyButton
             type="button"
+            variant="primary"
             onClick={() => syncMutation.mutate()}
             disabled={
               syncMutation.isPending ||
@@ -455,10 +476,11 @@ export function SyncTmdbModal({
           >
             {syncMutation.isPending && (
               <svg
-                className="animate-spin w-3.5 h-3.5 mr-1.5"
+                className="animate-spin w-3.5 h-3.5"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
+                aria-hidden="true"
               >
                 <circle
                   className="opacity-25"
@@ -476,9 +498,9 @@ export function SyncTmdbModal({
               </svg>
             )}
             {syncMutation.isPending ? 'Syncing...' : 'Confirm & Sync'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </ChunkyButton>
+        </ChunkyDialogFooter>
+      </ChunkyDialogContent>
+    </ChunkyDialog>
   );
 }

@@ -1,22 +1,24 @@
 import { useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogDescription,
+  ChunkyDialogBody,
+  ChunkyDialogFooter,
+} from '@/components/ui/chunky-dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 import { useBulkIngestSources } from './useBulkIngestSources';
 import { TargetEpisodeCombobox } from './TargetEpisodeCombobox';
 import { formatBytes } from './parseIngestUrl';
@@ -33,6 +35,56 @@ export interface BulkIngestModalProps {
   seasons?: SeasonGroupOption[];
   onSuccess?: () => void;
 }
+
+function PillBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]">
+      {children}
+    </span>
+  );
+}
+
+function WarningBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)]">
+      {children}
+    </span>
+  );
+}
+
+function ProviderBadge({
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement>) {
+  return (
+    <span
+      className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--purple)] bg-[var(--purple)]/10 text-[var(--purple)]"
+      {...props}
+    >
+      {children}
+    </span>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const tone =
+    status === 'completed'
+      ? 'border-[var(--green)] bg-[var(--green-soft)] text-[var(--green)]'
+      : status === 'ingesting'
+        ? 'border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] animate-pulse'
+        : status === 'failed'
+          ? 'border-[var(--red)] bg-[var(--red)]/10 text-[var(--red)]'
+          : 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]';
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide border-2 ${tone}`}
+    >
+      {status}
+    </span>
+  );
+}
+
+const labelClassName = 'mb-1.5 block text-sm font-bold text-[var(--ink)]';
 
 export function BulkIngestModal({
   open,
@@ -98,9 +150,9 @@ export function BulkIngestModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="max-w-3xl max-h-[85vh] flex flex-col"
+    <ChunkyDialog open={open} onOpenChange={handleOpenChange}>
+      <ChunkyDialogContent
+        className="max-w-3xl"
         onPointerDownOutside={(e) => {
           if (isProcessing) e.preventDefault();
         }}
@@ -108,422 +160,410 @@ export function BulkIngestModal({
           if (isProcessing) e.preventDefault();
         }}
       >
-        <DialogHeader>
-          <DialogTitle>Bulk Remote Video Ingest</DialogTitle>
-          <DialogDescription>
+        <ChunkyDialogHeader>
+          <ChunkyDialogTitle>Bulk Remote Video Ingest</ChunkyDialogTitle>
+          <ChunkyDialogDescription>
             {step === 1
               ? 'Paste multi-line video stream URLs for season ingestion to Backblaze B2/S3 storage.'
               : step === 2
                 ? 'Review matched episodes, manually assign unmatched URLs, and customize labels/qualities.'
                 : 'Sequential ingestion progress and transfer status log.'}
-          </DialogDescription>
-        </DialogHeader>
+          </ChunkyDialogDescription>
+        </ChunkyDialogHeader>
 
         {/* STEP 1: Input URLs & Defaults */}
         {step === 1 && (
           <form
             onSubmit={handleStep1Submit}
-            className="space-y-4 py-2 flex-1 overflow-y-auto pr-1"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
           >
-            <div className="space-y-2">
-              <Label htmlFor="bulk-ingest-urls">
-                Video URLs (One per line)
-              </Label>
-              <textarea
-                id="bulk-ingest-urls"
-                data-testid="bulk-ingest-urls-textarea"
-                rows={6}
-                placeholder={`https://example.com/videos/Teach.You.a.Lesson.E01.1080p.mp4\nhttps://example.com/videos/Teach.You.a.Lesson.E02.1080p.mp4`}
-                value={rawUrlsText}
-                onChange={(e) => setRawUrlsText(e.target.value)}
-                required
-                className="flex w-full rounded border border-c bg-transparent px-3 py-2 text-xs mono shadow-sm transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bulk-ingest-target-season">Target Season</Label>
-                <Select
-                  value={selectedSeasonId || (seasonOptions.length === 0 ? 'empty' : undefined)}
-                  onValueChange={(val) => {
-                    if (val !== 'empty') {
-                      setSelectedSeasonId(val);
-                    }
-                  }}
-                  disabled={seasonOptions.length === 0}
-                >
-                  <SelectTrigger
-                    id="bulk-ingest-target-season"
-                    aria-label="Target Season"
-                  >
-                    <SelectValue placeholder="Select target season" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {seasonOptions.length > 0 ? (
-                      seasonOptions.map((season) => (
-                        <SelectItem key={season.id} value={season.id}>
-                          {season.label}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="empty">-- Default Season --</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bulk-ingest-default-quality">
-                  Default Quality
-                </Label>
-                <Select
-                  value={defaultQuality || 'auto'}
-                  onValueChange={(val) => setDefaultQuality(val === 'auto' ? '' : val)}
-                >
-                  <SelectTrigger
-                    id="bulk-ingest-default-quality"
-                    aria-label="Default Quality"
-                  >
-                    <SelectValue placeholder="Select default quality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">Auto / Extracted</SelectItem>
-                    <SelectItem value="2160p">2160p (4K)</SelectItem>
-                    <SelectItem value="1080p">1080p</SelectItem>
-                    <SelectItem value="720p">720p</SelectItem>
-                    <SelectItem value="480p">480p</SelectItem>
-                    <SelectItem value="360p">360p</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Target S3 Storage Provider (Conditional) */}
-            {storageProviders.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="bulk-ingest-storage-provider">
-                  Target S3 Storage Provider
-                </Label>
-                <Select
-                  value={selectedStorageProviderId}
-                  onValueChange={(val) => setSelectedStorageProviderId(val)}
-                  disabled={isProcessing}
-                >
-                  <SelectTrigger
-                    id="bulk-ingest-storage-provider"
-                    data-testid="bulk-ingest-storage-provider-select"
-                    aria-label="Target S3 Storage Provider"
-                  >
-                    <SelectValue placeholder="Select storage provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {storageProviders.map((provider) => (
-                      <SelectItem key={provider.id} value={provider.id}>
-                        {provider.name}
-                        {provider.isDefault ? ' (Default)' : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bulk-ingest-default-label">
-                  Default Source Label
-                </Label>
-                <Input
-                  id="bulk-ingest-default-label"
-                  type="text"
-                  placeholder="S3 Video"
-                  value={defaultLabel}
-                  onChange={(e) => setDefaultLabel(e.target.value)}
+            <ChunkyDialogBody className="space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="bulk-ingest-urls" className={labelClassName}>
+                  Video URLs (One per line)
+                </label>
+                <ChunkyTextarea
+                  id="bulk-ingest-urls"
+                  data-testid="bulk-ingest-urls-textarea"
+                  rows={6}
+                  placeholder={`https://example.com/videos/Teach.You.a.Lesson.E01.1080p.mp4\nhttps://example.com/videos/Teach.You.a.Lesson.E02.1080p.mp4`}
+                  value={rawUrlsText}
+                  onChange={(e) => setRawUrlsText(e.target.value)}
+                  required
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="bulk-ingest-referer">
-                  Shared HTTP Referer{' '}
-                  <span className="text-muted font-normal">(Optional)</span>
-                </Label>
-                <Input
-                  id="bulk-ingest-referer"
-                  type="text"
-                  placeholder="https://referer-site.com"
-                  value={sharedReferer}
-                  onChange={(e) => setSharedReferer(e.target.value)}
-                />
-              </div>
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="bulk-ingest-target-season" className={labelClassName}>
+                    Target Season
+                  </label>
+                  <ChunkySelect
+                    value={selectedSeasonId || (seasonOptions.length === 0 ? 'empty' : undefined)}
+                    onValueChange={(val) => {
+                      if (val !== 'empty') {
+                        setSelectedSeasonId(val);
+                      }
+                    }}
+                    disabled={seasonOptions.length === 0}
+                  >
+                    <ChunkySelectTrigger
+                      id="bulk-ingest-target-season"
+                      aria-label="Target Season"
+                    >
+                      <ChunkySelectValue placeholder="Select target season" />
+                    </ChunkySelectTrigger>
+                    <ChunkySelectContent>
+                      {seasonOptions.length > 0 ? (
+                        seasonOptions.map((season) => (
+                          <ChunkySelectItem key={season.id} value={season.id}>
+                            {season.label}
+                          </ChunkySelectItem>
+                        ))
+                      ) : (
+                        <ChunkySelectItem value="empty">-- Default Season --</ChunkySelectItem>
+                      )}
+                    </ChunkySelectContent>
+                  </ChunkySelect>
+                </div>
 
-            <DialogFooter className="pt-4">
-              <Button
+                <div className="space-y-1.5">
+                  <label htmlFor="bulk-ingest-default-quality" className={labelClassName}>
+                    Default Quality
+                  </label>
+                  <ChunkySelect
+                    value={defaultQuality || 'auto'}
+                    onValueChange={(val) => setDefaultQuality(val === 'auto' ? '' : val)}
+                  >
+                    <ChunkySelectTrigger
+                      id="bulk-ingest-default-quality"
+                      aria-label="Default Quality"
+                    >
+                      <ChunkySelectValue placeholder="Select default quality" />
+                    </ChunkySelectTrigger>
+                    <ChunkySelectContent>
+                      <ChunkySelectItem value="auto">Auto / Extracted</ChunkySelectItem>
+                      <ChunkySelectItem value="2160p">2160p (4K)</ChunkySelectItem>
+                      <ChunkySelectItem value="1080p">1080p</ChunkySelectItem>
+                      <ChunkySelectItem value="720p">720p</ChunkySelectItem>
+                      <ChunkySelectItem value="480p">480p</ChunkySelectItem>
+                      <ChunkySelectItem value="360p">360p</ChunkySelectItem>
+                    </ChunkySelectContent>
+                  </ChunkySelect>
+                </div>
+              </div>
+
+              {/* Target S3 Storage Provider (Conditional) */}
+              {storageProviders.length > 0 && (
+                <div className="space-y-1.5">
+                  <label htmlFor="bulk-ingest-storage-provider" className={labelClassName}>
+                    Target S3 Storage Provider
+                  </label>
+                  <ChunkySelect
+                    value={selectedStorageProviderId}
+                    onValueChange={(val) => setSelectedStorageProviderId(val)}
+                    disabled={isProcessing}
+                  >
+                    <ChunkySelectTrigger
+                      id="bulk-ingest-storage-provider"
+                      data-testid="bulk-ingest-storage-provider-select"
+                      aria-label="Target S3 Storage Provider"
+                    >
+                      <ChunkySelectValue placeholder="Select storage provider" />
+                    </ChunkySelectTrigger>
+                    <ChunkySelectContent>
+                      {storageProviders.map((provider) => (
+                        <ChunkySelectItem key={provider.id} value={provider.id}>
+                          {provider.name}
+                          {provider.isDefault ? ' (Default)' : ''}
+                        </ChunkySelectItem>
+                      ))}
+                    </ChunkySelectContent>
+                  </ChunkySelect>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="bulk-ingest-default-label" className={labelClassName}>
+                    Default Source Label
+                  </label>
+                  <ChunkyInput
+                    id="bulk-ingest-default-label"
+                    type="text"
+                    placeholder="S3 Video"
+                    value={defaultLabel}
+                    onChange={(e) => setDefaultLabel(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="bulk-ingest-referer" className={labelClassName}>
+                    Shared HTTP Referer{' '}
+                    <span className="text-[var(--muted)] font-semibold">(Optional)</span>
+                  </label>
+                  <ChunkyInput
+                    id="bulk-ingest-referer"
+                    type="text"
+                    placeholder="https://referer-site.com"
+                    value={sharedReferer}
+                    onChange={(e) => setSharedReferer(e.target.value)}
+                  />
+                </div>
+              </div>
+            </ChunkyDialogBody>
+
+            <ChunkyDialogFooter>
+              <ChunkyButton
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
-              </Button>
-              <Button type="submit" data-testid="bulk-ingest-parse-btn">
+              </ChunkyButton>
+              <ChunkyButton type="submit" variant="primary" data-testid="bulk-ingest-parse-btn">
                 Parse & Review URLs
-              </Button>
-            </DialogFooter>
+              </ChunkyButton>
+            </ChunkyDialogFooter>
           </form>
         )}
 
         {/* STEP 2: Review & Manual Episode Combobox Matching */}
         {step === 2 && (
-          <div className="space-y-4 py-2 overflow-y-auto flex-1 pr-1">
-            {/* Header counters */}
-            <div className="flex items-center justify-between gap-2 flex-wrap text-xs mono p-2.5 rounded border border-c bg-sidebar">
-              <div className="flex items-center gap-4 flex-wrap">
-                <span>
-                  Total URLs: <strong>{totalCount}</strong>
-                </span>
-                <span>
-                  Matched:{' '}
-                  <strong className="text-green-600 dark:text-green-400">
-                    {matchedCount}
-                  </strong>
-                </span>
-                <span>
-                  Needs Review:{' '}
-                  <strong className="text-amber-600 dark:text-amber-400">
-                    {needsReviewCount}
-                  </strong>
-                </span>
-              </div>
-              {selectedProviderName && (
-                <span
-                  data-testid="bulk-ingest-target-provider-badge"
-                  className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-300 dark:border-purple-800"
-                >
-                  Target: {selectedProviderName}
-                </span>
-              )}
-            </div>
-
-            {/* List of URLs for matching & editing */}
-            <div className="divide-y divide-[var(--border)] border border-c rounded max-h-[380px] overflow-y-auto bg-card">
-              {items.map((item, index) => (
-                <div
-                  key={item.id}
-                  data-testid={`bulk-ingest-row-${index}`}
-                  className={`p-3 flex flex-col gap-2.5 text-xs ${
-                    item.isIgnored ? 'opacity-50 bg-muted/20' : 'hover-bg'
-                  }`}
-                >
-                  {/* Top line: Filename & Status Badges */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
-                      <span
-                        className="font-medium text-current truncate max-w-sm"
-                        title={item.url}
-                      >
-                        {item.filename}
-                      </span>
-                      {item.detectedEpisodeNumber !== null && (
-                        <span className="mono text-[10px] px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
-                          Detected Ep #{item.detectedEpisodeNumber}
-                        </span>
-                      )}
-                      {item.needsReview && !item.isIgnored && (
-                        <span className="mono text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-semibold">
-                          Needs Review
-                        </span>
-                      )}
-                      {item.isIgnored && (
-                        <span className="mono text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                          Ignored
-                        </span>
-                      )}
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant={item.isIgnored ? 'outline' : 'secondary'}
-                      size="sm"
-                      onClick={() => toggleIgnore(index)}
-                      className="shrink-0 text-xs h-7 px-2.5"
-                    >
-                      {item.isIgnored ? 'Include' : 'Ignore'}
-                    </Button>
-                  </div>
-
-                  {/* Bottom line: Target Episode Combobox + Label + Quality */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                    <div>
-                      <TargetEpisodeCombobox
-                        scrapedTitle={item.filename}
-                        value={item.matchedLocalEpisodeId}
-                        disabled={item.isIgnored}
-                        onValueChange={(newId) => updateMapping(index, newId)}
-                        seasons={seasons}
-                        localEpisodes={localEpisodes}
-                      />
-                    </div>
-
-                    <div>
-                      <Input
-                        type="text"
-                        aria-label={`Label for ${item.filename}`}
-                        placeholder="Label"
-                        value={item.label}
-                        onChange={(e) => updateLabel(index, e.target.value)}
-                        disabled={item.isIgnored}
-                        className="h-8 text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <Input
-                        type="text"
-                        aria-label={`Quality for ${item.filename}`}
-                        placeholder="Quality (e.g. 1080p)"
-                        value={item.quality || ''}
-                        onChange={(e) => updateQuality(index, e.target.value)}
-                        disabled={item.isIgnored}
-                        className="h-8 text-xs"
-                      />
-                    </div>
-                  </div>
+          <>
+            <ChunkyDialogBody className="space-y-4">
+              {/* Header counters */}
+              <ChunkyCard className="flex items-center justify-between gap-2 flex-wrap p-3 text-sm font-bold text-[var(--muted)]">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span>
+                    Total URLs: <strong className="text-[var(--ink)]">{totalCount}</strong>
+                  </span>
+                  <span>
+                    Matched:{' '}
+                    <strong className="text-[var(--green)]">
+                      {matchedCount}
+                    </strong>
+                  </span>
+                  <span>
+                    Needs Review:{' '}
+                    <strong className="text-[var(--gold)]">
+                      {needsReviewCount}
+                    </strong>
+                  </span>
                 </div>
-              ))}
-            </div>
+                {selectedProviderName && (
+                  <ProviderBadge data-testid="bulk-ingest-target-provider-badge">
+                    Target: {selectedProviderName}
+                  </ProviderBadge>
+                )}
+              </ChunkyCard>
 
-            <DialogFooter className="pt-4">
-              <Button
+              {/* List of URLs for matching & editing */}
+              <div className="grid grid-cols-1 gap-2 max-h-[380px] overflow-y-auto pr-1">
+                {items.map((item, index) => (
+                  <ChunkyCard
+                    key={item.id}
+                    data-testid={`bulk-ingest-row-${index}`}
+                    className={`p-3 flex flex-col gap-2.5 text-sm ${
+                      item.isIgnored ? 'opacity-50' : ''
+                    }`}
+                  >
+                    {/* Top line: Filename & Status Badges */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+                        <span
+                          className="font-bold text-[var(--ink)] truncate max-w-sm"
+                          title={item.url}
+                        >
+                          {item.filename}
+                        </span>
+                        {item.detectedEpisodeNumber !== null && (
+                          <PillBadge>
+                            Detected Ep #{item.detectedEpisodeNumber}
+                          </PillBadge>
+                        )}
+                        {item.needsReview && !item.isIgnored && (
+                          <WarningBadge>Needs Review</WarningBadge>
+                        )}
+                        {item.isIgnored && (
+                          <PillBadge>Ignored</PillBadge>
+                        )}
+                      </div>
+
+                      <ChunkyButton
+                        type="button"
+                        variant={item.isIgnored ? 'outline' : 'blue'}
+                        size="sm"
+                        onClick={() => toggleIgnore(index)}
+                        className="shrink-0"
+                      >
+                        {item.isIgnored ? 'Include' : 'Ignore'}
+                      </ChunkyButton>
+                    </div>
+
+                    {/* Bottom line: Target Episode Combobox + Label + Quality */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+                      <div>
+                        <TargetEpisodeCombobox
+                          scrapedTitle={item.filename}
+                          value={item.matchedLocalEpisodeId}
+                          disabled={item.isIgnored}
+                          onValueChange={(newId) => updateMapping(index, newId)}
+                          seasons={seasons}
+                          localEpisodes={localEpisodes}
+                        />
+                      </div>
+
+                      <div>
+                        <ChunkyInput
+                          type="text"
+                          aria-label={`Label for ${item.filename}`}
+                          placeholder="Label"
+                          value={item.label}
+                          onChange={(e) => updateLabel(index, e.target.value)}
+                          disabled={item.isIgnored}
+                        />
+                      </div>
+
+                      <div>
+                        <ChunkyInput
+                          type="text"
+                          aria-label={`Quality for ${item.filename}`}
+                          placeholder="Quality (e.g. 1080p)"
+                          value={item.quality || ''}
+                          onChange={(e) => updateQuality(index, e.target.value)}
+                          disabled={item.isIgnored}
+                        />
+                      </div>
+                    </div>
+                  </ChunkyCard>
+                ))}
+              </div>
+            </ChunkyDialogBody>
+
+            <ChunkyDialogFooter>
+              <ChunkyButton
                 type="button"
                 variant="outline"
                 onClick={() => setStep(1)}
               >
                 Back
-              </Button>
-              <Button
+              </ChunkyButton>
+              <ChunkyButton
                 type="button"
+                variant="primary"
                 data-testid="bulk-ingest-start-btn"
                 onClick={startIngestQueue}
               >
                 Start Bulk Ingestion ({matchedCount})
-              </Button>
-            </DialogFooter>
-          </div>
+              </ChunkyButton>
+            </ChunkyDialogFooter>
+          </>
         )}
 
         {/* STEP 3: Sequential Processing Queue */}
         {step === 3 && (
-          <div className="space-y-4 py-2 overflow-y-auto flex-1 pr-1">
-            {/* Progress Bar & Counter */}
-            <div className="space-y-2 p-3 rounded border border-c bg-sidebar">
-              <div className="flex items-center justify-between text-xs mono">
-                <span>
-                  Processing: Item <strong>{completedCount}</strong> of{' '}
-                  {totalCount} ({progressPercentage}%)
-                </span>
-                <span className="font-semibold text-primary">
-                  {progressPercentage}%
-                </span>
-              </div>
-              <div
-                className="w-full bg-card border border-c rounded-full h-3 overflow-hidden p-0.5"
-                role="progressbar"
-                aria-valuenow={progressPercentage}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                <div
-                  className="bg-primary h-full rounded-full transition-all duration-300"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-
-              {/* Target Provider & Active Transfer Details */}
-              <div className="flex items-center justify-between gap-2 flex-wrap pt-1 text-[11px] mono text-muted">
-                {selectedProviderName && (
-                  <span data-testid="bulk-ingest-progress-provider">
-                    Target Provider:{' '}
-                    <strong className="text-current font-medium">
-                      {selectedProviderName}
-                    </strong>
+          <>
+            <ChunkyDialogBody className="space-y-4">
+              {/* Progress Bar & Counter */}
+              <ChunkyCard className="space-y-2 p-3">
+                <div className="flex items-center justify-between font-sans text-sm font-bold text-[var(--muted)]">
+                  <span>
+                    Processing: Item <strong className="text-[var(--ink)]">{completedCount}</strong> of{' '}
+                    {totalCount} ({progressPercentage}%)
                   </span>
-                )}
-                {activeItem?.progress && (
-                  <span className="ml-auto">
-                    {activeItem.progress.percent}% -{' '}
-                    {formatBytes(activeItem.progress.loaded)}{' '}
-                    {activeItem.progress.total > 0
-                      ? `/ ${formatBytes(activeItem.progress.total)}`
-                      : ''}
+                  <span className="font-extrabold text-[var(--green)]">
+                    {progressPercentage}%
                   </span>
-                )}
-              </div>
-              {activeItem?.progress && (
-                <div className="text-[11px] mono text-muted truncate max-w-md">
-                  Ingesting: {activeItem.filename}
                 </div>
-              )}
-            </div>
-
-            {/* Status Log Table */}
-            <div className="space-y-2">
-              <Label className="text-xs mono uppercase tracking-wide text-muted">
-                Transfer Queue Log
-              </Label>
-              <div
-                className="border border-c rounded p-3 bg-card max-h-[300px] overflow-y-auto space-y-2 mono text-xs"
-                data-testid="bulk-ingest-logs"
-              >
-                {items.map((item) => (
+                <div
+                  className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-5 overflow-hidden p-1 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
+                  role="progressbar"
+                  aria-valuenow={progressPercentage}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
                   <div
-                    key={item.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1.5 border-b border-c last:border-0"
-                  >
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="font-medium text-current truncate">
-                        {item.filename}
-                      </span>
-                      {item.errorMessage && (
-                        <span className="text-[10px] text-red-500 truncate">
-                          {item.errorMessage}
-                        </span>
-                      )}
-                    </div>
+                    className="bg-[var(--green)] h-full rounded-full border-r-2 border-[var(--green-dark)] shadow-[0_2px_0_var(--green-dark)] transition-all duration-300"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                          item.status === 'completed'
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : item.status === 'ingesting'
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 animate-pulse'
-                              : item.status === 'failed'
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </div>
+                {/* Target Provider & Active Transfer Details */}
+                <ChunkyCard className="flex items-center justify-between gap-2 flex-wrap p-2 font-sans text-xs font-bold text-[var(--muted)]">
+                  {selectedProviderName && (
+                    <span data-testid="bulk-ingest-progress-provider">
+                      Target Provider:{' '}
+                      <strong className="text-[var(--ink)]">
+                        {selectedProviderName}
+                      </strong>
+                    </span>
+                  )}
+                  {activeItem?.progress && (
+                    <span className="ml-auto">
+                      {activeItem.progress.percent}% -{' '}
+                      {formatBytes(activeItem.progress.loaded)}{' '}
+                      {activeItem.progress.total > 0
+                        ? `/ ${formatBytes(activeItem.progress.total)}`
+                        : ''}
+                    </span>
+                  )}
+                </ChunkyCard>
+                {activeItem?.progress && (
+                  <div className="font-sans text-xs font-bold text-[var(--muted)] truncate max-w-md">
+                    Ingesting: {activeItem.filename}
                   </div>
-                ))}
-              </div>
-            </div>
+                )}
+              </ChunkyCard>
 
-            <DialogFooter className="pt-4">
+              {/* Status Log Table */}
+              <div className="space-y-2">
+                <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+                  Transfer Queue Log
+                </span>
+                <ChunkyCard
+                  className="p-3 max-h-[300px] overflow-y-auto space-y-2 font-sans text-sm font-bold"
+                  data-testid="bulk-ingest-logs"
+                >
+                  {items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1.5 border-b-2 border-[var(--border)] last:border-0"
+                    >
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="font-bold text-[var(--ink)] truncate">
+                          {item.filename}
+                        </span>
+                        {item.errorMessage && (
+                          <span className="text-xs font-bold text-[var(--red)] truncate">
+                            {item.errorMessage}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <StatusBadge status={item.status} />
+                      </div>
+                    </div>
+                  ))}
+                </ChunkyCard>
+              </div>
+            </ChunkyDialogBody>
+
+            <ChunkyDialogFooter>
               {isProcessing ? (
-                <Button
+                <ChunkyButton
                   type="button"
-                  variant="destructive"
+                  variant="danger"
                   data-testid="cancel-queue-btn"
                   onClick={cancelQueue}
                 >
                   Cancel Queue
-                </Button>
+                </ChunkyButton>
               ) : (
-                <Button
+                <ChunkyButton
                   type="button"
+                  variant="primary"
                   data-testid="bulk-ingest-close-btn"
                   onClick={() => {
                     onOpenChange(false);
@@ -531,12 +571,12 @@ export function BulkIngestModal({
                   }}
                 >
                   Close
-                </Button>
+                </ChunkyButton>
               )}
-            </DialogFooter>
-          </div>
+            </ChunkyDialogFooter>
+          </>
         )}
-      </DialogContent>
-    </Dialog>
+      </ChunkyDialogContent>
+    </ChunkyDialog>
   );
 }

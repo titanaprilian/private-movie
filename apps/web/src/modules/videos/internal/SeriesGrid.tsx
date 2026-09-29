@@ -20,14 +20,8 @@ import { EditSeriesDialog } from './EditSeriesDialog';
 import { SeriesCard } from './SeriesCard';
 import { GenreFilter } from './GenreFilter';
 import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
@@ -420,17 +414,20 @@ export function SeriesGrid() {
                     onClick={() => handleToggleGenre(genre.slug)}
                   >
                     <span>{genre.name}</span>
-                    <span
-                      aria-label={`${highlightedCount} highlighted in ${genre.name}`}
-                      title={`${highlightedCount} highlighted`}
-                      className={`inline-flex items-center justify-center min-w-5 h-4 px-1 rounded text-[10px] font-semibold ${
-                        isActive
-                          ? 'bg-[var(--green-dark)]/20 text-[var(--green)]'
-                          : 'bg-[var(--green)]/10 text-[var(--green)]'
-                      }`}
+                    <ChunkyTooltip
+                      content={`${highlightedCount} highlighted in ${genre.name}`}
                     >
-                      {highlightedCount}
-                    </span>
+                      <span
+                        aria-label={`${highlightedCount} highlighted in ${genre.name}`}
+                        className={`inline-flex items-center justify-center min-w-5 h-4 px-1 rounded text-[10px] font-semibold ${
+                          isActive
+                            ? 'bg-[var(--green-dark)]/20 text-[var(--green)]'
+                            : 'bg-[var(--green)]/10 text-[var(--green)]'
+                        }`}
+                      >
+                        {highlightedCount}
+                      </span>
+                    </ChunkyTooltip>
                   </ChunkyChip>
                 );
               })}
@@ -563,39 +560,25 @@ export function SeriesGrid() {
       )}
 
       {/* Delete Series Confirmation Dialog */}
-      <Dialog open={!!deletingSeries} onOpenChange={(open) => !open && setDeletingSeries(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Series</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {deletingSeries?.title ? `"${deletingSeries.title}"` : 'this series'}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-2 pt-2">
-            <ChunkyButton
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setDeletingSeries(null)}
-            >
-              Cancel
-            </ChunkyButton>
-            <ChunkyButton
-              type="button"
-              variant="danger"
-              size="sm"
-              disabled={deleteMutation.isPending}
-              onClick={() => {
-                if (deletingSeries) {
-                  deleteMutation.mutate(deletingSeries.id);
-                }
-              }}
-            >
-              Delete
-            </ChunkyButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ChunkyConfirmDialog
+        open={!!deletingSeries}
+        onOpenChange={(open) => !open && setDeletingSeries(null)}
+        title="Delete Series"
+        description={
+          deletingSeries?.title
+            ? `Are you sure you want to delete "${deletingSeries.title}"? This action cannot be undone.`
+            : 'Are you sure you want to delete this series? This action cannot be undone.'
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (deletingSeries) {
+            deleteMutation.mutate(deletingSeries.id);
+          }
+        }}
+      />
 
       <AddMediaDialog />
     </div>

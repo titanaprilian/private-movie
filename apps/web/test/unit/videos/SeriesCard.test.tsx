@@ -158,26 +158,62 @@ describe('FeaturedStar', () => {
     vi.clearAllMocks();
   });
 
-  it('renders accessible toggle with aria-pressed, title, and gold active styling', () => {
-    const { rerender } = renderWithProviders(
+  it('renders accessible toggle with aria-pressed and chunky tooltip content', async () => {
+    const { user } = renderWithProviders(
       <FeaturedStar featured={false} title="Solo Leveling" onToggle={vi.fn()} />
     );
     const btn = screen.getByRole('button', { name: 'Mark Solo Leveling as featured' });
     expect(btn).toHaveAttribute('aria-pressed', 'false');
-    expect(btn).toHaveAttribute('title', 'Mark as featured');
+    expect(btn).not.toHaveAttribute('title');
     // inactive: hidden until hover/focus
     expect(btn.className).toContain('opacity-0');
     expect(btn.className).toContain('group-hover:opacity-100');
 
-    rerender(<FeaturedStar featured title="Solo Leveling" onToggle={vi.fn()} />);
+    // hover reveals the chunky "Mark as featured" tooltip
+    await user.hover(btn);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Mark as featured'
+    );
+  });
+
+  it('shows "Remove from featured" tooltip with gold styling when active', async () => {
+    const { user } = renderWithProviders(
+      <FeaturedStar featured title="Solo Leveling" onToggle={vi.fn()} />
+    );
     const active = screen.getByRole('button', { name: /Remove .* from featured/ });
     expect(active).toHaveAttribute('aria-pressed', 'true');
-    expect(active).toHaveAttribute('title', 'Remove from featured');
+    expect(active).not.toHaveAttribute('title');
     // 44px chunky + gold tint
     expect(active.className).toContain('w-11');
     expect(active.className).toContain('h-11');
     expect(active.className).toContain('bg-[var(--gold-tint)]');
     expect(active.className).toContain('opacity-100');
+
+    await user.hover(active);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Remove from featured'
+    );
+  });
+
+  it('shows highlight tooltips on the ongoing star button', async () => {
+    const item = makeItem();
+    const { user } = renderWithProviders(
+      <SeriesCard
+        item={item}
+        onToggleFeatured={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onToggleHighlight={vi.fn()}
+      />
+    );
+    const highlightBtn = screen.getByRole('button', {
+      name: 'Highlight Solo Leveling',
+    });
+    expect(highlightBtn).not.toHaveAttribute('title');
+    await user.hover(highlightBtn);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Highlight in ongoing feed'
+    );
   });
 
   it('respects touch (hover:none always visible) and prefers-reduced-motion via CSS', async () => {

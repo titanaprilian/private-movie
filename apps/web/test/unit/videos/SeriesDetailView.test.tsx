@@ -941,12 +941,12 @@ describe('SeriesDetailView component', () => {
 
     expect(screen.queryByLabelText('Status')).not.toBeInTheDocument();
 
-    const featuredCheckbox = screen.getByLabelText('Featured Series') as HTMLInputElement;
+    const featuredCheckbox = screen.getByLabelText('Featured Series');
     expect(featuredCheckbox).toBeInTheDocument();
-    expect(featuredCheckbox.checked).toBe(false);
+    expect(featuredCheckbox).not.toBeChecked();
 
     await user.click(featuredCheckbox);
-    expect(featuredCheckbox.checked).toBe(true);
+    expect(featuredCheckbox).toBeChecked();
 
     const saveBtn = screen.getByRole('button', { name: 'Save Changes' });
     await user.click(saveBtn);
@@ -1198,6 +1198,32 @@ describe('SeriesDetailView component', () => {
     const syncBtn = screen.getByRole('button', { name: /Sync with TMDB/i });
     expect(syncBtn).toBeInTheDocument();
     expect(syncBtn).toBeDisabled();
+    expect(syncBtn).not.toHaveAttribute('title');
+  });
+
+  it('explains the disabled "Sync with TMDB" button via chunky tooltip', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/deep-modules')) {
+        return new Response(JSON.stringify({ data: { ...mockSeries, tmdbId: null } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    await screen.findByRole('heading', { level: 1, name: mockSeries.title });
+
+    const syncBtn = screen.getByRole('button', { name: /Sync with TMDB/i });
+    await user.hover(syncBtn);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Link TMDB in Edit Series to enable sync'
+    );
   });
 
   it('clicking "Sync with TMDB" opens SyncTmdbModal when series has tmdbId', async () => {

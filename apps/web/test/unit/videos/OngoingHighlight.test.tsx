@@ -148,6 +148,18 @@ describe('Ongoing highlight curation (admin videos)', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows a chunky tooltip explaining the highlighted count on genre badges', async () => {
+    const { user } = renderOngoingGrid();
+
+    const chipRegion = screen.getByLabelText('Filter by big genre');
+    const badge = within(chipRegion).getByLabelText('1 highlighted in Anime');
+    expect(badge).not.toHaveAttribute('title');
+
+    await user.hover(badge);
+    const tooltip = await screen.findByRole('tooltip');
+    expect(tooltip).toHaveTextContent('1 highlighted in Anime');
+  });
+
   it('does not render Big Genre chips outside the ongoing tab', () => {
     renderOngoingGrid({ page: 1, tab: 'all' });
 

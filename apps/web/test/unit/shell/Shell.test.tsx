@@ -183,9 +183,12 @@ describe('Shell layout component', () => {
     expect(desktopLogo()?.getAttribute('src')).toContain('/assets/logo-collapsed.png');
     expect(desktopLogo()?.getAttribute('alt')).toBe('Private Movie collapsed logo');
 
-    // Collapsed nav items render icon-only with title tooltips
+    // Collapsed nav items render icon-only with chunky tooltips (no native title)
     const collapsedSeriesLink = screen.getAllByRole('link', { name: /series/i })[0];
-    expect(collapsedSeriesLink).toHaveAttribute('title', 'Series');
+    expect(collapsedSeriesLink).not.toHaveAttribute('title');
+
+    await user.hover(collapsedSeriesLink);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Series');
 
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);

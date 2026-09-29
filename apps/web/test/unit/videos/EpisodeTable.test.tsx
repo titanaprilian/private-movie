@@ -186,22 +186,35 @@ describe('EpisodeTable Component', () => {
     ]);
   });
 
-  it('disables drag-and-drop and shows warning indicator with tooltip when sorting or filtering is active', async () => {
+  it('disables drag-and-drop and shows warning indicator with chunky tooltip when sorting or filtering is active', async () => {
     const user = userEvent.setup();
     renderEpisodeTable();
 
     // Default state: not disabled
     expect(screen.queryByText('Reordering disabled')).not.toBeInTheDocument();
     const handle1 = screen.getByLabelText('Reorder Episode 1: The Beginning');
-    expect(handle1).toHaveAttribute('title', 'Drag to reorder');
+    expect(handle1).not.toHaveAttribute('title');
     expect(handle1).not.toHaveClass('cursor-not-allowed');
+
+    // Hovering the grip reveals the chunky "Drag to reorder" tooltip
+    await user.hover(handle1);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Drag to reorder'
+    );
+    await user.unhover(handle1);
 
     // Activate sorting
     const titleHeaderBtn = screen.getByRole('button', { name: /title/i });
     await user.click(titleHeaderBtn);
 
     expect(screen.getByText('Reordering disabled')).toBeInTheDocument();
-    expect(screen.getAllByTitle(/custom sorting/i).length).toBeGreaterThan(0);
+    const badge = screen.getByText('Reordering disabled');
+    expect(badge.closest('div')).not.toHaveAttribute('title');
+    // Hovering the badge explains why reordering is disabled
+    await user.hover(badge);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      /custom sorting/i
+    );
     expect(screen.getByLabelText('Reorder Episode 1: The Beginning')).toHaveClass('cursor-not-allowed');
 
     // Reset sort back to order asc
@@ -213,7 +226,10 @@ describe('EpisodeTable Component', () => {
     const searchInput = screen.getByRole('textbox', { name: /search episodes/i });
     await user.type(searchInput, 'Episode');
     expect(screen.getByText('Reordering disabled')).toBeInTheDocument();
-    expect(screen.getAllByTitle(/search filter is active/i).length).toBeGreaterThan(0);
+    await user.hover(screen.getByText('Reordering disabled'));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      /search filter is active/i
+    );
   });
 
   it('triggers onSelectEpisode, onEditEpisode, onManageSources, and onDeleteEpisode callbacks', async () => {
@@ -332,7 +348,10 @@ describe('EpisodeTable Component', () => {
     await user.click(checkbox2);
 
     expect(screen.getByText('Reordering disabled')).toBeInTheDocument();
-    expect(screen.getAllByTitle(/multiple episodes are selected/i).length).toBeGreaterThan(0);
+    await user.hover(screen.getByText('Reordering disabled'));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      /multiple episodes are selected/i
+    );
     expect(handle1).toHaveClass('cursor-not-allowed');
   });
 });

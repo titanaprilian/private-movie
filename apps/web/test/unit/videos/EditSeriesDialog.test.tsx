@@ -109,13 +109,11 @@ describe('EditSeriesDialog component', () => {
       await screen.findByRole('heading', { name: 'Edit Series' })
     ).toBeInTheDocument();
 
-    const featuredCheckbox = screen.getByLabelText(
-      'Featured Series'
-    ) as HTMLInputElement;
-    expect(featuredCheckbox.checked).toBe(false);
+    const featuredCheckbox = screen.getByLabelText('Featured Series');
+    expect(featuredCheckbox).not.toBeChecked();
 
     await user.click(featuredCheckbox);
-    expect(featuredCheckbox.checked).toBe(true);
+    expect(featuredCheckbox).toBeChecked();
 
     await user.click(screen.getByRole('button', { name: 'Save Changes' }));
 
@@ -166,7 +164,7 @@ describe('EditSeriesDialog component', () => {
       screen.getByRole('heading', { name: 'Edit Series' })
     ).toBeInTheDocument();
     expect(
-      screen.getByLabelText('Featured Series') as HTMLInputElement
+      screen.getByLabelText('Featured Series')
     ).toBeInTheDocument();
   });
 });
@@ -262,12 +260,8 @@ describe('EditSeriesDialog sizing, flags, and logo URL', () => {
       />
     );
 
-    const featured = (await screen.findByLabelText(
-      'Featured Series'
-    )) as HTMLInputElement;
-    const highlighted = screen.getByLabelText(
-      'Highlight in Ongoing Feed'
-    ) as HTMLInputElement;
+    const featured = await screen.findByLabelText('Featured Series');
+    const highlighted = screen.getByLabelText('Highlight in Ongoing Feed');
 
     expect(featured.parentElement?.parentElement?.className).toContain(
       'flex'
@@ -279,16 +273,16 @@ describe('EditSeriesDialog sizing, flags, and logo URL', () => {
       featured.parentElement?.parentElement
     );
 
-    expect(featured.checked).toBe(false);
-    expect(highlighted.checked).toBe(false);
+    expect(featured).not.toBeChecked();
+    expect(highlighted).not.toBeChecked();
 
     await user.click(featured);
-    expect(featured.checked).toBe(true);
-    expect(highlighted.checked).toBe(false);
+    expect(featured).toBeChecked();
+    expect(highlighted).not.toBeChecked();
 
     await user.click(highlighted);
-    expect(featured.checked).toBe(true);
-    expect(highlighted.checked).toBe(true);
+    expect(featured).toBeChecked();
+    expect(highlighted).toBeChecked();
   });
 
   it('prefills logo URL, shows live preview, and submits the new URL', async () => {
@@ -390,5 +384,183 @@ describe('EditSeriesDialog sizing, flags, and logo URL', () => {
     await waitFor(() => {
       expect(patchedBody).toEqual(expect.objectContaining({ logoUrl: null }));
     });
+  });
+});
+
+describe('EditSeriesDialog chunky UI integration', () => {
+  const genresPayload = {
+    data: [
+      { id: 'g-1', name: 'Action', slug: 'action' },
+      { id: 'g-2', name: 'Sci-Fi', slug: 'sci-fi' },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setAccessToken('test-token');
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : (input as Request).url;
+
+      if (url.includes('/genres')) {
+        return new Response(JSON.stringify(genresPayload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
+    });
+  });
+
+  it('renders inside the ChunkyDialog 3D card shell with docked header, body, and footer', async () => {
+    renderWithProviders(
+      <EditSeriesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        series={mockSeries}
+      />
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Edit Series' })
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-dialog-overlay')).toBeInTheDocument();
+
+    const content = screen.getByTestId('chunky-dialog-content');
+    expect(content).toHaveClass('rounded-[24px]', 'border-2', 'border-b-4');
+    expect(screen.getByTestId('chunky-dialog-header')).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-dialog-body')).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-dialog-footer')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Close' })
+    ).toBeInTheDocument();
+  });
+
+  it('uses ChunkyInput geometry for text fields and ChunkyTextarea for description', async () => {
+    renderWithProviders(
+      <EditSeriesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        series={mockSeries}
+      />
+    );
+
+    for (const name of ['Title', 'Poster URL', 'Logo URL']) {
+      expect(screen.getByLabelText(name)).toHaveClass(
+        'rounded-2xl',
+        'border-2',
+        'border-b-4'
+      );
+    }
+
+    const description = screen.getByLabelText('Description');
+    expect(description).toHaveAttribute('data-testid', 'chunky-textarea');
+    expect(description).toHaveClass('rounded-2xl', 'border-2', 'border-b-4');
+  });
+
+  it('uses ChunkyCheckbox primitives with accessible label associations', async () => {
+    renderWithProviders(
+      <EditSeriesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        series={mockSeries}
+      />
+    );
+
+    for (const name of ['Featured Series', 'Highlight in Ongoing Feed']) {
+      const checkbox = await screen.findByLabelText(name);
+      expect(checkbox).toHaveAttribute('role', 'checkbox');
+      expect(checkbox).toHaveAttribute('aria-checked', 'false');
+    }
+  });
+
+  it('renders assigned genres as ChunkyChip toggles with aria-pressed states', async () => {
+    const { user } = renderWithProviders(
+      <EditSeriesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        series={{ ...mockSeries, genreIds: ['g-1'] } as SeriesItem}
+      />
+    );
+
+    const actionChip = await screen.findByRole('button', { name: 'Action' });
+    const sciFiChip = screen.getByRole('button', { name: 'Sci-Fi' });
+
+    expect(actionChip).toHaveAttribute('aria-pressed', 'true');
+    expect(sciFiChip).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(sciFiChip);
+    expect(sciFiChip).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(actionChip);
+    expect(actionChip).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('uses 3D pressable ChunkyButtons with a loading spinner on save', async () => {
+    let resolvePatch!: (value: Response) => void;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : (input as Request).url;
+      const method = init?.method?.toUpperCase() ?? 'GET';
+
+      if (url.includes('/genres')) {
+        return new Response(JSON.stringify(genresPayload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (url.includes('/series/series-1') && method === 'PATCH') {
+        return new Promise<Response>((resolve) => {
+          resolvePatch = resolve;
+        });
+      }
+
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
+    });
+
+    const onOpenChange = vi.fn();
+    const { user } = renderWithProviders(
+      <EditSeriesDialog
+        open={true}
+        onOpenChange={onOpenChange}
+        series={mockSeries}
+      />
+    );
+
+    const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
+    expect(cancelBtn).toHaveClass('border-b-4');
+
+    const saveBtn = screen.getByRole('button', { name: 'Save Changes' });
+    expect(saveBtn).toHaveClass('border-b-4');
+
+    await user.click(saveBtn);
+
+    const savingBtn = await screen.findByRole('button', {
+      name: 'Saving...',
+    });
+    expect(savingBtn).toBeDisabled();
+    expect(savingBtn.querySelector('.animate-spin')).not.toBeNull();
+
+    resolvePatch(
+      new Response(JSON.stringify({ data: mockSeries }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
 });

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
 import { formatEpisodeDuration } from './formatEpisodeDuration';
 import { Edit2, Link as LinkIcon, Trash2, GripVertical, AlertCircle } from 'lucide-react';
@@ -199,13 +200,15 @@ export function EpisodeTable({
 
         <div className="flex items-center gap-3 ml-auto">
           {isDragDisabled && (
-            <div
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-500 text-xs font-extrabold"
-              title={dragDisabledTooltip}
-            >
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>Reordering disabled</span>
-            </div>
+            <ChunkyTooltip content={dragDisabledTooltip}>
+              <div
+                tabIndex={0}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-500 text-xs font-extrabold"
+              >
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>Reordering disabled</span>
+              </div>
+            </ChunkyTooltip>
           )}
 
           <span className="text-xs font-extrabold tracking-wide uppercase text-[var(--muted)]">
@@ -383,22 +386,25 @@ export function EpisodeTable({
                             onClick={(e) => e.stopPropagation()}
                             className="flex items-center justify-center"
                           >
-                            <div
-                              {...draggableProvided.dragHandleProps}
-                              className={`grip p-1 rounded inline-flex items-center justify-center ${
-                                isDragDisabled
-                                  ? 'cursor-not-allowed opacity-30'
-                                  : 'cursor-grab active:cursor-grabbing hover:text-[var(--ink)]'
-                              }`}
-                              title={
+                            <ChunkyTooltip
+                              content={
                                 isDragDisabled
                                   ? dragDisabledTooltip
                                   : 'Drag to reorder'
                               }
-                              aria-label={`Reorder ${episode.title}`}
                             >
-                              <GripVertical className="w-4 h-4" />
-                            </div>
+                              <div
+                                {...draggableProvided.dragHandleProps}
+                                className={`grip p-1 rounded inline-flex items-center justify-center ${
+                                  isDragDisabled
+                                    ? 'cursor-not-allowed opacity-30'
+                                    : 'cursor-grab active:cursor-grabbing hover:text-[var(--ink)]'
+                                }`}
+                                aria-label={`Reorder ${episode.title}`}
+                              >
+                                <GripVertical className="w-4 h-4" />
+                              </div>
+                            </ChunkyTooltip>
                           </div>
 
                           {/* Episode Number Badge */}

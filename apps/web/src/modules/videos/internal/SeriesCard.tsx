@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { FeaturedStar } from './FeaturedStar';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import type { SeriesItem } from './api';
 
 export interface SeriesCardProps {
@@ -138,6 +139,13 @@ export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleH
           </div>
         )}
         {onToggleHighlight && (
+          <ChunkyTooltip
+            content={
+              isHighlighted
+                ? 'Remove ongoing highlight'
+                : 'Highlight in ongoing feed'
+            }
+          >
           <button
             type="button"
             aria-label={`${isHighlighted ? 'Unhighlight' : 'Highlight'} ${item.title}`}
@@ -173,6 +181,7 @@ export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleH
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
           </button>
+          </ChunkyTooltip>
         )}
       </div>
 

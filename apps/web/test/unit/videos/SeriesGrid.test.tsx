@@ -1,5 +1,5 @@
 import { createTestQueryClient, renderWithProviders, screen, fireEvent, within, waitFor } from '../../utils';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   SeriesGrid,
   seriesListQueryOptions,
@@ -9,6 +9,7 @@ import {
   type SeriesListResponse,
 } from '@/modules/videos';
 import { genresQueryOptions, type Genre } from '@/modules/genres';
+import { useScrapeWorkerStore } from '@/modules/videos/internal/store/useScrapeWorkerStore';
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@/modules/videos/internal/api')>();
@@ -152,6 +153,13 @@ function renderSeriesGrid(
 }
 
 describe('SeriesGrid component', () => {
+  beforeEach(() => {
+    // The embedded AddMediaDialog is a Radix modal: if a previous test leaves
+    // the scrape-worker store open, the modal aria-hides the grid content.
+    useScrapeWorkerStore.getState().reset();
+    useScrapeWorkerStore.setState({ isOpen: false });
+  });
+
   it('renders page heading, add series button, subtitle and filter placeholder', () => {
     renderSeriesGrid();
 
@@ -441,8 +449,10 @@ describe('SeriesGrid component', () => {
     const actionGenreBtn = dialogWithin.getByRole('button', { name: 'Action' });
     const sciFiGenreBtn = dialogWithin.getByRole('button', { name: 'Sci-Fi' });
 
-    expect(actionGenreBtn.className).toContain('bg-primary');
-    expect(sciFiGenreBtn.className).toContain('bg-primary');
+    expect(actionGenreBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(sciFiGenreBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(actionGenreBtn.className).toContain('border-[var(--green)]');
+    expect(sciFiGenreBtn.className).toContain('border-[var(--green)]');
 
     // Toggle off Sci-Fi
     fireEvent.click(sciFiGenreBtn);

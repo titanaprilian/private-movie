@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 
 export interface FeaturedStarProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'onToggle'> {
@@ -16,11 +17,13 @@ export function FeaturedStar({
   ...props
 }: FeaturedStarProps) {
   return (
-    <button
-      type="button"
-      aria-pressed={featured}
-      title={featured ? 'Remove from featured' : 'Mark as featured'}
-      aria-label={
+    <ChunkyTooltip
+      content={featured ? 'Remove from featured' : 'Mark as featured'}
+    >
+      <button
+        type="button"
+        aria-pressed={featured}
+        aria-label={
         props['aria-label'] ??
         (featured ? `Remove ${title ?? 'series'} from featured` : `Mark ${title ?? 'series'} as featured`)
       }
@@ -55,6 +58,7 @@ export function FeaturedStar({
       >
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
       </svg>
-    </button>
+      </button>
+    </ChunkyTooltip>
   );
 }

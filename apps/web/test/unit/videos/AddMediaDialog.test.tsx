@@ -304,3 +304,95 @@ describe('AddMediaDialog component', () => {
     expect(useScrapeWorkerStore.getState().tmdbId).toBe('');
   });
 });
+
+describe('AddMediaDialog chunky integration', () => {
+  beforeEach(() => {
+    useScrapeWorkerStore.getState().reset();
+    useScrapeWorkerStore.setState({ isOpen: false });
+    vi.clearAllMocks();
+  });
+
+  it('renders inside a ChunkyDrawer with header, scrollable body, and docked footer regions', () => {
+    useScrapeWorkerStore.getState().openDialog();
+    renderWithProviders(<AddMediaDialog />);
+
+    expect(screen.getByRole('dialog', { name: /add series/i })).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-drawer-overlay')).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-drawer-content')).toHaveClass('right-0');
+    expect(screen.getByTestId('chunky-drawer-header')).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-drawer-body')).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-drawer-footer')).toBeInTheDocument();
+    // Header close button from the chunky drawer
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+  });
+
+  it('uses chunky form controls with 3D border geometry on Step 1', async () => {
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    const trigger = screen.getByRole('combobox', { name: /media type/i });
+    expect(trigger).toHaveClass('rounded-2xl', 'border-2', 'border-b-4');
+
+    const tmdbIdInput = screen.getByLabelText(/TMDB ID/i);
+    expect(tmdbIdInput).toHaveClass('rounded-2xl', 'border-2', 'border-b-4');
+
+    const specials = screen.getByLabelText(/Include Specials/i);
+    expect(specials).toHaveAttribute('role', 'checkbox');
+
+    // Chunky checkbox toggles via click
+    expect(specials).toHaveAttribute('aria-checked', 'false');
+    await user.click(specials);
+    expect(specials).toHaveAttribute('aria-checked', 'true');
+
+    // Chunky 3D pressable footer buttons
+    expect(screen.getByRole('button', { name: /Cancel/i })).toHaveClass('border-b-4');
+    expect(screen.getByRole('button', { name: /^Next$/i })).toHaveClass('border-b-4');
+  });
+
+  it('renders Step 2 preview inside chunky cards and transitions back to Step 1', async () => {
+    const mockTmdbPreview: apiModule.TmdbPreviewResult = {
+      title: 'Chunky Preview',
+      overview: 'A chunky overview.',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/chunky.jpg',
+      releaseDate: '2026-01-01',
+      genres: ['Drama'],
+      status: 'Returning',
+      totalSeasons: 1,
+      totalEpisodes: 10,
+      seasons: [
+        { seasonNumber: 1, name: 'Season 1', episodeCount: 10, posterUrl: null },
+      ],
+    };
+
+    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
+      mockTmdbPreview
+    );
+
+    useScrapeWorkerStore.getState().openDialog();
+    const { user } = renderWithProviders(<AddMediaDialog />);
+
+    await user.type(screen.getByLabelText(/TMDB ID/i), '9999');
+    await user.click(screen.getByRole('button', { name: /^Next$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Chunky Preview')).toBeInTheDocument();
+    });
+
+    // Preview snapshot + season rows render as chunky cards (rounded-2xl, border-b-4)
+    const cards = screen
+      .getByText('TMDB Snapshot Overview')
+      .closest('div[class*="rounded-2xl"]');
+    expect(cards).not.toBeNull();
+    expect(cards?.className).toMatch('border-b-4');
+
+    // Drawer stays mounted across the step transition with updated badge
+    expect(screen.getByText(/Step 2 of 2/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Import Series/i })).toHaveClass(
+      'border-b-4'
+    );
+
+    await user.click(screen.getByRole('button', { name: /← Back to Edit/i }));
+    expect(screen.getByText(/Step 1 of 2/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/TMDB ID/i)).toHaveValue('9999');
+  });
+});

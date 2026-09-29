@@ -1,20 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { updateSeries, type SeriesDetails, type SeriesItem } from './api';
 import { genresQueryOptions } from '@/modules/genres';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogDescription,
+  ChunkyDialogBody,
+  ChunkyDialogFooter,
+} from '@/components/ui/chunky-dialog';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
+import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import { ChunkyChip } from '@/components/ui/chunky-chip';
 
 export interface EditSeriesDialogProps {
   open: boolean;
@@ -118,19 +121,21 @@ export function EditSeriesDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-w-[calc(100vw-2rem)] max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Edit Series</DialogTitle>
-          <DialogDescription>
+    <ChunkyDialog open={open} onOpenChange={onOpenChange}>
+      <ChunkyDialogContent className="max-h-[90vh] sm:max-w-lg">
+        <ChunkyDialogHeader>
+          <ChunkyDialogTitle>Edit Series</ChunkyDialogTitle>
+          <ChunkyDialogDescription>
             Update series details, featured and highlight flags, and assigned genres.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 min-w-0 max-w-full overflow-hidden">
-          <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2 min-w-0">
+          </ChunkyDialogDescription>
+        </ChunkyDialogHeader>
+        <form onSubmit={handleSubmit} className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden">
+          <ChunkyDialogBody className="min-w-0 space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="edit-series-title">Title</Label>
-            <Input
+            <label htmlFor="edit-series-title" className="mb-1.5 block text-sm font-bold text-[var(--ink)]">
+              Title
+            </label>
+            <ChunkyInput
               id="edit-series-title"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
@@ -140,44 +145,47 @@ export function EditSeriesDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-series-description">Description</Label>
-            <textarea
+            <label htmlFor="edit-series-description" className="mb-1.5 block text-sm font-bold text-[var(--ink)]">
+              Description
+            </label>
+            <ChunkyTextarea
               id="edit-series-description"
               rows={3}
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               placeholder="Series description"
-              className="flex w-full rounded border border-c bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-6 py-1">
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <ChunkyCheckbox
                 id="edit-series-featured"
                 checked={editIsFeatured}
-                onCheckedChange={(checked) => setEditIsFeatured(Boolean(checked))}
+                onCheckedChange={setEditIsFeatured}
               />
-              <Label htmlFor="edit-series-featured" className="cursor-pointer font-medium text-sm">
+              <label htmlFor="edit-series-featured" className="cursor-pointer select-none text-sm font-bold text-[var(--muted)]">
                 Featured Series
-              </Label>
+              </label>
             </div>
 
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <ChunkyCheckbox
                 id="edit-series-highlighted"
                 checked={editIsOngoingHighlighted}
-                onCheckedChange={(checked) => setEditIsOngoingHighlighted(Boolean(checked))}
+                onCheckedChange={setEditIsOngoingHighlighted}
               />
-              <Label htmlFor="edit-series-highlighted" className="cursor-pointer font-medium text-sm">
+              <label htmlFor="edit-series-highlighted" className="cursor-pointer select-none text-sm font-bold text-[var(--muted)]">
                 Highlight in Ongoing Feed
-              </Label>
+              </label>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-series-poster">Poster URL</Label>
-            <Input
+            <label htmlFor="edit-series-poster" className="mb-1.5 block text-sm font-bold text-[var(--ink)]">
+              Poster URL
+            </label>
+            <ChunkyInput
               id="edit-series-poster"
               value={editPosterUrl}
               onChange={(e) => setEditPosterUrl(e.target.value)}
@@ -186,8 +194,10 @@ export function EditSeriesDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-series-logo">Logo URL</Label>
-            <Input
+            <label htmlFor="edit-series-logo" className="mb-1.5 block text-sm font-bold text-[var(--ink)]">
+              Logo URL
+            </label>
+            <ChunkyInput
               id="edit-series-logo"
               value={editLogoUrl}
               onChange={(e) => {
@@ -197,14 +207,14 @@ export function EditSeriesDialog({
               placeholder="https://..."
             />
             {editLogoUrl.trim() !== '' && (
-              <div className="rounded border border-c bg-sidebar p-2">
+              <div className="rounded-2xl border-2 border-[var(--border)] bg-[var(--bg)] p-2">
                 {logoPreviewError ? (
-                  <p className="text-xs text-muted">Failed to load logo preview</p>
+                  <p className="text-xs font-bold text-[var(--muted)]">Failed to load logo preview</p>
                 ) : (
                   <img
                     src={editLogoUrl.trim()}
                     alt="Logo preview"
-                    className="max-h-12 w-auto object-contain"
+                    className="max-h-12 w-auto rounded-xl object-contain"
                     onError={() => setLogoPreviewError(true)}
                   />
                 )}
@@ -214,54 +224,56 @@ export function EditSeriesDialog({
 
           {/* Interactive multi-select for genres */}
           <div className="space-y-1.5">
-            <Label>Genres</Label>
+            <span className="mb-1.5 block text-sm font-bold text-[var(--ink)]">Genres</span>
             {genres.length === 0 ? (
-              <p className="text-xs text-muted mono">No genres available.</p>
+              <p className="mono text-xs text-muted">No genres available.</p>
             ) : (
-              <div className="flex flex-wrap gap-1.5 p-2 rounded border border-c bg-sidebar max-h-36 overflow-y-auto">
-                {genres.map((genre) => {
-                  const isSelected = selectedGenreIds.includes(genre.id);
-                  return (
-                    <button
-                      key={genre.id}
-                      type="button"
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedGenreIds(selectedGenreIds.filter((id) => id !== genre.id));
-                        } else {
-                          setSelectedGenreIds([...selectedGenreIds, genre.id]);
-                        }
-                      }}
-                      className={`px-2.5 py-1 rounded text-xs mono font-medium border transition-colors cursor-pointer ${
-                        isSelected
-                          ? 'bg-primary text-primary-fg border-primary'
-                          : 'border-c hover-bg text-muted bg-card'
-                      }`}
-                    >
-                      {genre.name}
-                    </button>
-                  );
-                })}
+              <div className="max-h-36 overflow-y-auto rounded-2xl border-2 border-[var(--border)] bg-[var(--bg)] p-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {genres.map((genre) => {
+                    const isSelected = selectedGenreIds.includes(genre.id);
+                    return (
+                      <ChunkyChip
+                        key={genre.id}
+                        type="button"
+                        variant={isSelected ? 'active' : 'default'}
+                        pressed={isSelected}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedGenreIds(selectedGenreIds.filter((id) => id !== genre.id));
+                          } else {
+                            setSelectedGenreIds([...selectedGenreIds, genre.id]);
+                          }
+                        }}
+                      >
+                        {genre.name}
+                      </ChunkyChip>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
 
-          </div>
+          </ChunkyDialogBody>
 
-          <DialogFooter className="pt-2">
-            <Button
+          <ChunkyDialogFooter>
+            <ChunkyButton
               type="button"
-              variant="secondary"
+              variant="outline"
               onClick={() => onOpenChange(false)}
             >
               Cancel
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
+            </ChunkyButton>
+            <ChunkyButton type="submit" variant="primary" disabled={updateMutation.isPending}>
+              {updateMutation.isPending && (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              )}
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
+            </ChunkyButton>
+          </ChunkyDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ChunkyDialogContent>
+    </ChunkyDialog>
   );
 }

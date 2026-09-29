@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useAuth } from '@/modules/auth';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 
 export interface ShellProps {
   children: ReactNode;
@@ -87,23 +88,32 @@ function NavLinks({
 }) {
   return (
     <nav aria-label="Admin navigation" className="flex-1 px-3 py-4 space-y-1.5 overflow-hidden">
-      {navItems.map(({ to, label, activeOptions, Icon }) => (
-        <Link
-          key={to}
-          to={to}
-          activeOptions={activeOptions}
-          onClick={onNavigate}
-          title={label}
-          aria-label={label}
-          activeProps={{ className: `${navActiveClass}${collapsed ? ' justify-center px-0' : ''}` }}
-          inactiveProps={{
-            className: `${navInactiveClass}${collapsed ? ' justify-center px-0' : ''}`,
-          }}
-        >
-          <Icon className="w-6 h-6 shrink-0" strokeWidth={2} aria-hidden="true" />
-          {!collapsed && <span>{label}</span>}
-        </Link>
-      ))}
+      {navItems.map(({ to, label, activeOptions, Icon }) => {
+        const link = (
+          <Link
+            key={to}
+            to={to}
+            activeOptions={activeOptions}
+            onClick={onNavigate}
+            aria-label={label}
+            activeProps={{ className: `${navActiveClass}${collapsed ? ' justify-center px-0' : ''}` }}
+            inactiveProps={{
+              className: `${navInactiveClass}${collapsed ? ' justify-center px-0' : ''}`,
+            }}
+          >
+            <Icon className="w-6 h-6 shrink-0" strokeWidth={2} aria-hidden="true" />
+            {!collapsed && <span>{label}</span>}
+          </Link>
+        );
+        // Collapsed sidebar shows icon-only links: explain them via chunky
+        // tooltip instead of a native browser title.
+        if (!collapsed) return link;
+        return (
+          <ChunkyTooltip key={to} content={label} side="right">
+            {link}
+          </ChunkyTooltip>
+        );
+      })}
     </nav>
   );
 }
