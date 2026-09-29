@@ -1,4 +1,6 @@
 import { Star } from 'lucide-react';
+import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 
 export interface SeriesPosterCardProps {
   seriesId: string;
@@ -28,11 +30,12 @@ export function SeriesPosterCard({
   onSelect,
 }: SeriesPosterCardProps) {
   return (
-    <div
+    <ChunkyCard
       data-testid="series-card"
       data-series-id={seriesId}
       onClick={() => onSelect?.(seriesId)}
-      className={`w-44 shrink-0 rounded-[20px] border-2 border-[var(--border)] bg-[var(--bg)] overflow-hidden transition-all duration-150 hover:-translate-y-1 hover:border-[#1cb0f6] cursor-pointer group relative ${
+      interactive
+      className={`w-44 shrink-0 overflow-hidden hover:-translate-y-1 hover:border-[var(--border-strong)] cursor-pointer group relative ${
         focused ? 'ring-2 ring-white' : ''
       }`}
     >
@@ -46,14 +49,14 @@ export function SeriesPosterCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />
 
         <div className="absolute top-2 left-2 z-10">
-          <span className="rounded-full px-2.5 py-1 text-xs font-extrabold bg-black/50 text-white">
+          <span className="rounded-xl border-2 border-b-4 border-black/20 bg-black/50 px-2.5 py-1 text-xs font-extrabold text-white">
             {formatTypeLabel(type)}
           </span>
         </div>
 
         {typeof seasonsCount === 'number' ? (
           <div className="absolute top-2 right-2 z-10">
-            <span className="rounded-full px-2.5 py-1 text-xs font-extrabold bg-[#ce82ff] text-white">
+            <span className="rounded-xl border-2 border-b-4 border-[var(--purple-dark)] bg-[var(--purple)] px-2.5 py-1 text-xs font-extrabold text-white">
               S{seasonsCount}
             </span>
           </div>
@@ -61,19 +64,24 @@ export function SeriesPosterCard({
 
         {rating ? (
           <div className="absolute bottom-2 left-2 z-10">
-            <span className="rounded-full px-2.5 py-1 text-xs font-extrabold bg-[#ffc800] text-amber-950 flex items-center gap-1">
-              <Star className="w-3.5 h-3.5 fill-amber-950 text-amber-950 shrink-0" aria-hidden="true" />
+            <span className="rounded-xl border-2 border-b-4 border-[var(--gold-dark)] bg-[var(--gold)] px-2.5 py-1 text-xs font-extrabold text-[#201a00] flex items-center gap-1">
+              <Star
+                className="w-3.5 h-3.5 fill-[#201a00] text-[#201a00] shrink-0"
+                aria-hidden="true"
+              />
               <span className="leading-none">{rating}</span>
             </span>
           </div>
         ) : null}
       </div>
 
-      <div className="p-2 sm:p-3 bg-[var(--bg)]">
-        <h3 className="text-sm font-bold font-sans text-[var(--ink)] truncate line-clamp-2 group-hover:text-[var(--blue)] transition-colors">
-          {title}
-        </h3>
+      <div className="p-2 sm:p-3">
+        <ChunkyTooltip content={title}>
+          <h3 className="text-sm font-bold font-sans text-[var(--ink)] truncate line-clamp-2 group-hover:text-[var(--blue)] transition-colors">
+            {title}
+          </h3>
+        </ChunkyTooltip>
       </div>
-    </div>
+    </ChunkyCard>
   );
 }

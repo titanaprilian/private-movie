@@ -1,3 +1,6 @@
+import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
+
 export interface RecentEpisodeCardProps {
   episodeId: string;
   seriesId: string;
@@ -18,13 +21,17 @@ export function RecentEpisodeCard({
   onSelect,
 }: RecentEpisodeCardProps) {
   return (
-    <div
+    <ChunkyCard
       data-testid="episode-card"
       data-episode-id={episodeId}
       onClick={() => onSelect?.({ episodeId, seriesId })}
-      className="w-72 shrink-0 rounded-[20px] border-2 border-[var(--border)] bg-[var(--bg)] overflow-hidden transition-all duration-150 hover:-translate-y-1 hover:border-[#1cb0f6] cursor-pointer group relative snap-start"
+      interactive
+      className="w-72 shrink-0 overflow-hidden hover:-translate-y-1 hover:border-[var(--border-strong)] cursor-pointer group relative snap-start"
     >
-      <div data-testid="episode-thumbnail" className="relative aspect-video w-full bg-[var(--surface-raised)] overflow-hidden">
+      <div
+        data-testid="episode-thumbnail"
+        className="relative aspect-video w-full bg-[var(--surface-raised)] overflow-hidden"
+      >
         <img
           data-testid="episode-thumbnail-img"
           src={thumbnailUrl}
@@ -34,20 +41,30 @@ export function RecentEpisodeCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />
         <div className="absolute bottom-2 left-2 z-10">
-          <span className="rounded-full px-2.5 py-1 text-xs font-extrabold bg-[var(--green)] text-white">
+          <span className="rounded-xl border-2 border-b-4 border-[var(--green-dark)] bg-[var(--green)] px-2.5 py-1 text-xs font-extrabold text-white">
             {badgeLabel}
           </span>
         </div>
       </div>
 
-      <div className="p-2 sm:p-3 bg-[var(--bg)] space-y-0.5">
-        <h3 data-testid="episode-title" className="text-sm font-bold font-sans text-[var(--ink)] truncate group-hover:text-[var(--blue)] transition-colors">
-          {title}
-        </h3>
-        <p data-testid="episode-series-title" className="text-xs font-sans text-[var(--muted)] truncate">
-          {seriesTitle}
-        </p>
+      <div className="p-2 sm:p-3 space-y-0.5">
+        <ChunkyTooltip content={title}>
+          <h3
+            data-testid="episode-title"
+            className="text-sm font-bold font-sans text-[var(--ink)] truncate group-hover:text-[var(--blue)] transition-colors"
+          >
+            {title}
+          </h3>
+        </ChunkyTooltip>
+        <ChunkyTooltip content={seriesTitle}>
+          <p
+            data-testid="episode-series-title"
+            className="text-xs font-sans text-[var(--muted)] truncate"
+          >
+            {seriesTitle}
+          </p>
+        </ChunkyTooltip>
       </div>
-    </div>
+    </ChunkyCard>
   );
 }

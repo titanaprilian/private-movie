@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -12,9 +12,16 @@ import {
 } from 'lucide-react';
 import { useInputMode } from '@/hooks/useInputMode';
 import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { PublicNavbar } from '@/modules/navigation';
-import { RecentEpisodeCard, SeriesDetailDialog, SeriesPosterCard } from '@/modules/videos';
+import {
+  RecentEpisodeCard,
+  SeriesDetailDialog,
+  SeriesPosterCard,
+} from '@/modules/videos';
 import { useHomeFeedNav } from './useHomeFeedNav';
+import { useDragScroll } from './useDragScroll';
 import {
   homeFeedQueryOptions,
   type MediaRecentlyAddedEpisode,
@@ -64,9 +71,14 @@ function resolveEpisodeThumbnail(ep: MediaRecentlyAddedEpisode): string {
   );
 }
 
-function RecentlyAddedEpisodesRow({ episodes }: { episodes: MediaRecentlyAddedEpisode[] }) {
+function RecentlyAddedEpisodesRow({
+  episodes,
+}: {
+  episodes: MediaRecentlyAddedEpisode[];
+}) {
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { containerRef, dragHandlers, isDragging } =
+    useDragScroll<HTMLDivElement>();
 
   const scroll = (direction: 'left' | 'right') => {
     if (!containerRef.current) return;
@@ -80,25 +92,33 @@ function RecentlyAddedEpisodesRow({ episodes }: { episodes: MediaRecentlyAddedEp
 
   return (
     <div className="relative group/row my-6">
-      <h2 className="text-xl md:text-2xl font-bold mb-3 text-[var(--ink)] flex items-center gap-2 px-8 md:px-16">
+      <h2 className="font-display text-xl md:text-2xl font-bold mb-3 text-[var(--ink)] flex items-center gap-2 px-8 md:px-16">
         <span>Recently Added Episodes</span>
         <ChevronRight className="w-5 h-5 text-[var(--muted)] opacity-0 group-hover/row:opacity-100 transition-opacity" />
       </h2>
 
       <div className="relative px-8 md:px-16">
         {/* Left Scroll Button */}
-        <button
+        <ChunkyButton
+          size="icon"
+          variant="translucent"
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-40 w-12 bg-[color-mix(in_srgb,var(--bg)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-40 opacity-0 group-hover/row:opacity-100 transition-all duration-200"
           aria-label="Scroll Recently Added Episodes left"
         >
           <ChevronLeft className="w-8 h-8" />
-        </button>
+        </ChunkyButton>
 
         {/* Horizontal Carousel Container */}
         <div
           ref={containerRef}
-          className="flex gap-4 overflow-x-auto py-4 scrollbar-none scroll-smooth snap-x snap-mandatory"
+          data-testid="carousel-track"
+          {...dragHandlers}
+          className={`flex gap-4 overflow-x-auto py-4 scrollbar-none select-none ${
+            isDragging
+              ? 'snap-none !cursor-grabbing [&_*]:!cursor-grabbing'
+              : 'scroll-smooth snap-x snap-mandatory cursor-grab active:cursor-grabbing'
+          }`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {episodes.map((ep) => (
@@ -122,23 +142,28 @@ function RecentlyAddedEpisodesRow({ episodes }: { episodes: MediaRecentlyAddedEp
         </div>
 
         {/* Right Scroll Button */}
-        <button
+        <ChunkyButton
+          size="icon"
+          variant="translucent"
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-40 w-12 bg-[color-mix(in_srgb,var(--bg)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-40 opacity-0 group-hover/row:opacity-100 transition-all duration-200"
           aria-label="Scroll Recently Added Episodes right"
         >
           <ChevronRight className="w-8 h-8" />
-        </button>
+        </ChunkyButton>
       </div>
     </div>
   );
 }
 
 function mapSeriesToSeriesItem(s: MediaSeriesMetadata): SeriesItem {
-  const genres = s.genres && s.genres.length > 0 ? s.genres.map((g) => g.name) : [];
+  const genres =
+    s.genres && s.genres.length > 0 ? s.genres.map((g) => g.name) : [];
   const year = s.createdAt ? new Date(s.createdAt).getFullYear() : 2026;
   const rawRating = s.rating || (s.type === 'movie' ? '7.5' : '8.0');
-  const rating = !isNaN(Number(rawRating)) ? Number(rawRating).toFixed(1) : rawRating;
+  const rating = !isNaN(Number(rawRating))
+    ? Number(rawRating).toFixed(1)
+    : rawRating;
   const type = (s.type || 'tv').toUpperCase();
   const posterUrl =
     s.posterUrl ||
@@ -184,20 +209,20 @@ function HomeFeedHeroSkeleton() {
       data-testid="hero-skeleton"
       aria-busy="true"
       aria-label="Loading featured series"
-      className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-[var(--bg)] animate-pulse flex items-end p-8 md:p-16"
+      className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-[var(--bg)] flex items-end p-8 md:p-16"
     >
       <div className="max-w-3xl space-y-4 w-full">
-        <div className="h-4 w-32 bg-[var(--surface-raised)] rounded" />
-        <div className="h-12 w-3/4 bg-[var(--surface-raised)] rounded" />
+        <ChunkySkeleton className="h-4 w-32" />
+        <ChunkySkeleton className="h-12 w-3/4" />
         <div className="flex gap-3">
-          <div className="h-4 w-20 bg-[var(--surface-raised)] rounded" />
-          <div className="h-4 w-16 bg-[var(--surface-raised)] rounded" />
-          <div className="h-4 w-24 bg-[var(--surface-raised)] rounded" />
+          <ChunkySkeleton className="h-4 w-20" />
+          <ChunkySkeleton className="h-4 w-16" />
+          <ChunkySkeleton className="h-4 w-24" />
         </div>
-        <div className="h-16 w-full max-w-xl bg-[var(--surface-raised)] rounded" />
+        <ChunkySkeleton className="h-16 w-full max-w-xl" />
         <div className="flex gap-4 pt-2">
-          <div className="h-12 w-28 bg-[var(--surface-raised)] rounded-md" />
-          <div className="h-12 w-32 bg-[var(--surface-raised)] rounded-md" />
+          <ChunkySkeleton className="h-12 w-28" />
+          <ChunkySkeleton className="h-12 w-32" />
         </div>
       </div>
     </div>
@@ -212,12 +237,12 @@ function HomeFeedRowSkeleton() {
       aria-label="Loading catalog rows"
       className="my-6 px-8 md:px-16 space-y-3"
     >
-      <div className="h-7 w-48 bg-[var(--surface-raised)] rounded animate-pulse" />
+      <ChunkySkeleton className="h-7 w-48" />
       <div className="flex gap-4 overflow-hidden py-2">
         {Array.from({ length: 5 }).map((_, idx) => (
-          <div
+          <ChunkySkeleton
             key={idx}
-            className="w-[160px] sm:w-[180px] aspect-[2/3] flex-shrink-0 bg-[var(--surface)] border border-[var(--border)] rounded-md animate-pulse"
+            className="w-[160px] sm:w-[180px] aspect-[2/3] flex-shrink-0"
           />
         ))}
       </div>
@@ -231,27 +256,33 @@ function HomeFeedErrorState({ onRetry }: { onRetry: () => void }) {
       data-testid="home-feed-error"
       className="min-h-screen bg-[var(--bg)] text-[var(--ink)] flex items-center justify-center p-6"
     >
-      <div className="max-w-md w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg p-8 text-center space-y-4 shadow-2xl">
-        <div className="w-12 h-12 rounded-full bg-red-950/80 border border-red-800 text-red-500 flex items-center justify-center mx-auto">
+      <ChunkyCard className="max-w-md w-full p-8 text-center space-y-4 shadow-2xl">
+        <div className="w-12 h-12 rounded-2xl border-2 border-b-4 border-[var(--red-dark)] bg-[var(--red)] text-white flex items-center justify-center mx-auto">
           <AlertTriangle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-bold text-[var(--ink)]">Unable to Load Home Feed</h2>
+        <h2 className="font-display text-xl font-bold text-[var(--ink)]">
+          Unable to Load Home Feed
+        </h2>
         <p className="text-sm text-[var(--muted)] leading-relaxed">
-          We encountered an issue connecting to the backend server. Please check your network connection or try again.
+          We encountered an issue connecting to the backend server. Please check
+          your network connection or try again.
         </p>
-        <button
-          onClick={onRetry}
-          className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2.5 rounded-md transition-colors shadow-md text-sm cursor-pointer"
-        >
+        <ChunkyButton variant="danger" size="sm" onClick={onRetry}>
           <RefreshCw className="w-4 h-4" />
           <span>Retry Connection</span>
-        </button>
-      </div>
+        </ChunkyButton>
+      </ChunkyCard>
     </div>
   );
 }
 
-function HeroTitle({ title, logoUrl }: { title: string; logoUrl?: string | null }) {
+function HeroTitle({
+  title,
+  logoUrl,
+}: {
+  title: string;
+  logoUrl?: string | null;
+}) {
   const [logoFailed, setLogoFailed] = useState(false);
   const showLogo = !!logoUrl && !logoFailed;
 
@@ -313,7 +344,8 @@ function CarouselRowComponent({
   isSpatialMode: boolean;
 }) {
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { containerRef, dragHandlers, isDragging } =
+    useDragScroll<HTMLDivElement>();
 
   const scroll = (direction: 'left' | 'right') => {
     if (!containerRef.current) return;
@@ -327,29 +359,38 @@ function CarouselRowComponent({
 
   return (
     <div className="relative group/row my-6">
-      <h2 className="text-xl md:text-2xl font-bold mb-3 text-[var(--ink)] flex items-center gap-2 px-8 md:px-16">
+      <h2 className="font-display text-xl md:text-2xl font-bold mb-3 text-[var(--ink)] flex items-center gap-2 px-8 md:px-16">
         <span>{row.title}</span>
         <ChevronRight className="w-5 h-5 text-[var(--muted)] opacity-0 group-hover/row:opacity-100 transition-opacity" />
       </h2>
 
       <div className="relative px-8 md:px-16">
         {/* Left Scroll Button */}
-        <button
+        <ChunkyButton
+          size="icon"
+          variant="translucent"
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-40 w-12 bg-[color-mix(in_srgb,var(--bg)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-40 opacity-0 group-hover/row:opacity-100 transition-all duration-200"
           aria-label={`Scroll ${row.title} left`}
         >
           <ChevronLeft className="w-8 h-8" />
-        </button>
+        </ChunkyButton>
 
         {/* Horizontal Carousel Container */}
         <div
           ref={containerRef}
-          className="flex gap-4 overflow-x-auto py-4 scrollbar-none scroll-smooth snap-x snap-mandatory"
+          data-testid="carousel-track"
+          {...dragHandlers}
+          className={`flex gap-4 overflow-x-auto py-4 scrollbar-none select-none ${
+            isDragging
+              ? 'snap-none !cursor-grabbing [&_*]:!cursor-grabbing'
+              : 'scroll-smooth snap-x snap-mandatory cursor-grab active:cursor-grabbing'
+          }`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {row.items.map((item, idx) => {
-            const isFocused = isSpatialMode && focusedRow === rowIndex && focusedItem === idx;
+            const isFocused =
+              isSpatialMode && focusedRow === rowIndex && focusedItem === idx;
 
             return (
               <div
@@ -375,13 +416,15 @@ function CarouselRowComponent({
         </div>
 
         {/* Right Scroll Button */}
-        <button
+        <ChunkyButton
+          size="icon"
+          variant="translucent"
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-40 w-12 bg-[color-mix(in_srgb,var(--bg)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-all duration-200"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-40 opacity-0 group-hover/row:opacity-100 transition-all duration-200"
           aria-label={`Scroll ${row.title} right`}
         >
           <ChevronRight className="w-8 h-8" />
-        </button>
+        </ChunkyButton>
       </div>
     </div>
   );
@@ -391,13 +434,16 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
   const navigate = useNavigate();
   const { isSpatialMode } = useInputMode();
 
-  const { data, isLoading, isError, refetch } = useQuery(homeFeedQueryOptions(genreSlug));
+  const { data, isLoading, isError, refetch } = useQuery(
+    homeFeedQueryOptions(genreSlug)
+  );
 
-  const heroesList: SeriesItem[] = data?.heroes && data.heroes.length > 0
-    ? data.heroes.map(mapHeroToSeriesItem)
-    : data?.hero
-      ? [mapHeroToSeriesItem(data.hero)]
-      : [];
+  const heroesList: SeriesItem[] =
+    data?.heroes && data.heroes.length > 0
+      ? data.heroes.map(mapHeroToSeriesItem)
+      : data?.hero
+        ? [mapHeroToSeriesItem(data.hero)]
+        : [];
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -440,7 +486,8 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
   const { focusedRow, focusedItem } = useHomeFeedNav({
     heroSeriesId: currentHero?.id,
     rows: carouselRows,
-    onSelectSeries: (seriesId) => navigate({ to: '/watch/$seriesId', params: { seriesId } }),
+    onSelectSeries: (seriesId) =>
+      navigate({ to: '/watch/$seriesId', params: { seriesId } }),
   });
 
   if (isLoading) {
@@ -518,7 +565,10 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
 
           {/* Hero Content */}
           <div className="absolute bottom-12 left-0 z-20 w-full px-8 md:px-16 text-left">
-            <div data-testid="hero-content" className="max-w-3xl mx-auto md:mx-0 space-y-4 flex flex-col items-center text-center md:items-start md:text-left">
+            <div
+              data-testid="hero-content"
+              className="max-w-3xl mx-auto md:mx-0 space-y-4 flex flex-col items-center text-center md:items-start md:text-left"
+            >
               {/* Title (series logo image with text fallback) */}
               <HeroTitle
                 key={currentHero.id}
@@ -527,24 +577,41 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
               />
 
               {/* Meta Row (rating first, genres inline) */}
-              <div data-testid="hero-meta" className="flex items-center justify-center md:justify-start gap-3 text-sm text-zinc-300 flex-wrap">
+              <div
+                data-testid="hero-meta"
+                className="flex items-center justify-center md:justify-start gap-3 text-sm text-zinc-300 flex-wrap"
+              >
                 <span
                   data-testid="hero-rating"
                   className="inline-flex items-center gap-1 font-semibold text-yellow-400"
                 >
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" aria-hidden="true" />
+                  <Star
+                    className="w-4 h-4 fill-yellow-400 text-yellow-400"
+                    aria-hidden="true"
+                  />
                   <span>{currentHero.rating}</span>
                 </span>
                 <span>{currentHero.year}</span>
                 <span data-testid="hero-seasons-episodes">
-                  {currentHero.seasons} {currentHero.seasons === 1 ? 'Season' : 'Seasons'}{' '}
-                  <span data-testid="hero-episodes" className="hidden md:inline">
-                    {currentHero.episodes} {currentHero.episodes === 1 ? 'Episode' : 'Episodes'}
+                  {currentHero.seasons}{' '}
+                  {currentHero.seasons === 1 ? 'Season' : 'Seasons'}{' '}
+                  <span
+                    data-testid="hero-episodes"
+                    className="hidden md:inline"
+                  >
+                    {currentHero.episodes}{' '}
+                    {currentHero.episodes === 1 ? 'Episode' : 'Episodes'}
                   </span>
                 </span>
-                <span data-testid="hero-genres" className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-zinc-300">
+                <span
+                  data-testid="hero-genres"
+                  className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-zinc-300"
+                >
                   {currentHero.genres.slice(0, 3).map((genre, genreIdx) => (
-                    <span key={genre} className="flex items-center gap-2 uppercase font-bold tracking-wide">
+                    <span
+                      key={genre}
+                      className="flex items-center gap-2 uppercase font-bold tracking-wide"
+                    >
                       {genreIdx > 0 && (
                         <span aria-hidden="true" className="text-zinc-600">
                           •
@@ -557,7 +624,10 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
               </div>
 
               {/* Synopsis (hidden on mobile, truncated on desktop) */}
-              <p data-testid="hero-synopsis" className="hidden md:line-clamp-3 text-zinc-300 text-base md:text-lg leading-relaxed max-w-2xl text-shadow">
+              <p
+                data-testid="hero-synopsis"
+                className="hidden md:line-clamp-3 text-zinc-300 text-base md:text-lg leading-relaxed max-w-2xl text-shadow"
+              >
                 {currentHero.synopsis}
               </p>
 
@@ -581,9 +651,16 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
                   data-testid="hero-play"
                   data-nav-row={0}
                   data-nav-item={0}
-                  onClick={() => navigate({ to: '/watch/$seriesId', params: { seriesId: currentHero.id } })}
+                  onClick={() =>
+                    navigate({
+                      to: '/watch/$seriesId',
+                      params: { seriesId: currentHero.id },
+                    })
+                  }
                   className={`w-full md:w-auto ${
-                    isSpatialMode && focusedRow === 0 && focusedItem === 0 ? 'ring-2 ring-white' : ''
+                    isSpatialMode && focusedRow === 0 && focusedItem === 0
+                      ? 'ring-2 ring-white'
+                      : ''
                   }`}
                 >
                   <Play className="w-5 h-5 fill-white text-white" />
@@ -605,22 +682,26 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           {heroCount > 1 && (
             <>
               {/* Left Navigation Arrow */}
-              <button
+              <ChunkyButton
+                size="icon"
+                variant="translucent"
                 onClick={prevSlide}
                 aria-label="Previous slide"
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white border border-zinc-700/50 backdrop-blur-md opacity-0 group-hover/hero:opacity-100 transition-all duration-300 cursor-pointer"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover/hero:opacity-100 transition-all duration-300"
               >
                 <ChevronLeft className="w-6 h-6" />
-              </button>
+              </ChunkyButton>
 
               {/* Right Navigation Arrow */}
-              <button
+              <ChunkyButton
+                size="icon"
+                variant="translucent"
                 onClick={nextSlide}
                 aria-label="Next slide"
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white border border-zinc-700/50 backdrop-blur-md opacity-0 group-hover/hero:opacity-100 transition-all duration-300 cursor-pointer"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover/hero:opacity-100 transition-all duration-300"
               >
                 <ChevronRight className="w-6 h-6" />
-              </button>
+              </ChunkyButton>
 
               {/* Pagination Dots (desktop: bottom-right corner) */}
               <div
@@ -637,12 +718,19 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           )}
         </div>
       ) : (
-        <div data-testid="hero-empty" className="relative h-[40vh] min-h-[300px] w-full bg-[var(--bg)] flex items-center justify-center text-center p-8">
-          <div className="space-y-3">
+        <div
+          data-testid="hero-empty"
+          className="relative h-[40vh] min-h-[300px] w-full bg-[var(--bg)] flex items-center justify-center text-center p-8"
+        >
+          <ChunkyCard className="p-8 space-y-3 max-w-md">
             <Sparkles className="w-8 h-8 text-[var(--muted)] mx-auto" />
-            <h2 className="text-xl font-semibold text-[var(--ink)]">No Featured Series Available</h2>
-            <p className="text-sm text-[var(--muted)] max-w-md">Check back soon for new anime releases and home feed updates.</p>
-          </div>
+            <h2 className="font-display text-xl font-semibold text-[var(--ink)]">
+              No Featured Series Available
+            </h2>
+            <p className="text-sm text-[var(--muted)] max-w-md">
+              Check back soon for new anime releases and home feed updates.
+            </p>
+          </ChunkyCard>
         </div>
       )}
 
@@ -667,7 +755,9 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
         series={currentHero}
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        onPlay={(seriesId) => navigate({ to: '/watch/$seriesId', params: { seriesId } })}
+        onPlay={(seriesId) =>
+          navigate({ to: '/watch/$seriesId', params: { seriesId } })
+        }
       />
     </div>
   );

@@ -5,7 +5,8 @@ import { setAccessToken } from '@/lib/api';
 
 const mockNavigate = vi.fn();
 vi.mock('@tanstack/react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  const actual =
+    await importOriginal<typeof import('@tanstack/react-router')>();
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -44,7 +45,7 @@ function mockFetch() {
     if (url.includes('/auth/refresh')) {
       return new Response(
         JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
-        { status: 200 },
+        { status: 200 }
       );
     }
     if (url.includes('/series/home-feed')) {
@@ -87,10 +88,14 @@ describe('Home hero showcase & series detail dialog', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+      ).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveClass('font-display');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveClass(
+      'font-display'
+    );
     const genres = screen.getByTestId('hero-genres');
     expect(genres.className).toMatch(/uppercase/);
     expect(genres.className).toMatch(/font-bold/);
@@ -125,7 +130,9 @@ describe('Home hero showcase & series detail dialog', () => {
       expect(screen.getByTestId('hero-pagination-desktop')).toBeInTheDocument();
     });
 
-    const dots = within(screen.getByTestId('hero-pagination-desktop')).getAllByRole('button', {
+    const dots = within(
+      screen.getByTestId('hero-pagination-desktop')
+    ).getAllByRole('button', {
       name: /go to slide/i,
     });
     for (const dot of dots) {
@@ -157,25 +164,34 @@ describe('Home hero showcase & series detail dialog', () => {
       expect(screen.getByTestId('hero-more-info')).toBeInTheDocument();
     });
 
-    expect(screen.queryByTestId('series-detail-dialog')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('series-detail-dialog')
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId('hero-more-info'));
 
     const dialog = await screen.findByTestId('series-detail-dialog');
     expect(dialog).toBeInTheDocument();
-    expect(dialog.className).toMatch(/rounded-\[20px\]/);
+    expect(dialog.className).toMatch(/rounded-\[24px\]/);
+    expect(dialog.className).toMatch(/border-b-4/);
     expect(dialog.className).toMatch(/border-2/);
     expect(screen.getByTestId('series-detail-backdrop')).toHaveAttribute(
       'src',
-      'https://example.com/banner.jpg',
+      'https://example.com/banner.jpg'
     );
-    expect(screen.getByTestId('series-detail-title')).toHaveClass('font-display');
-    expect(screen.getByTestId('series-detail-title')).toHaveTextContent('Attack on Titan');
+    expect(screen.getByTestId('series-detail-title')).toHaveClass(
+      'font-display'
+    );
+    expect(screen.getByTestId('series-detail-title')).toHaveTextContent(
+      'Attack on Titan'
+    );
     const badges = screen.getByTestId('series-detail-badges');
     expect(badges.textContent).toMatch(/TV/);
     expect(badges.textContent).toMatch(/4 Seasons/);
     expect(badges.textContent).toMatch(/9.1/);
-    expect(screen.getByTestId('series-detail-close')).toHaveClass('rounded-full');
+    expect(screen.getByTestId('series-detail-close')).toHaveClass(
+      'rounded-full'
+    );
   });
 
   it('routes to playback from the dialog Play Now action', async () => {
