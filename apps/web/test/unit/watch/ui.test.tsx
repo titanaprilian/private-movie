@@ -186,7 +186,10 @@ describe('SeriesWatchView', () => {
         'src',
         mockSeries.backdropUrl
       );
-      const logoImg = images.find((img) => img.getAttribute('src') === 'https://images.unsplash.com/logo-1.png');
+      const logoImg = images.find(
+        (img) =>
+          img.getAttribute('src') === 'https://images.unsplash.com/logo-1.png'
+      );
       expect(logoImg).toBeInTheDocument();
       expect(logoImg).toHaveAttribute('data-testid', 'hero-logo');
       expect(logoImg).toHaveClass('drop-shadow-md');
@@ -198,7 +201,9 @@ describe('SeriesWatchView', () => {
       expect(logoImg).toHaveClass('md:max-h-[150px]');
 
       // When logo is present, text title heading is omitted
-      expect(screen.queryByRole('heading', { level: 1, name: 'Test Series' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('heading', { level: 1, name: 'Test Series' })
+      ).not.toBeInTheDocument();
 
       expect(screen.getByTestId('hero-rating')).toHaveTextContent('8.8');
       expect(screen.getByTestId('hero-meta')).toHaveTextContent('2026');
@@ -215,7 +220,9 @@ describe('SeriesWatchView', () => {
 
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
       // Mobile + desktop artwork present, logo img absent, title heading fallback rendered
-      expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Test Series' })
+      ).toBeInTheDocument();
       const images = screen.getAllByRole('img', { name: 'Test Series' });
       expect(images).toHaveLength(2);
       expect(screen.getByTestId('hero-bg-mobile')).toHaveAttribute(
@@ -237,12 +244,18 @@ describe('SeriesWatchView', () => {
       renderWithProviders(<SeriesWatchView series={seriesWithLogo} />);
 
       const images = screen.getAllByRole('img', { name: 'Test Series' });
-      const logoImg = images.find((img) => img.getAttribute('src') === 'https://images.unsplash.com/broken-logo.png');
+      const logoImg = images.find(
+        (img) =>
+          img.getAttribute('src') ===
+          'https://images.unsplash.com/broken-logo.png'
+      );
       expect(logoImg).toBeInTheDocument();
 
       fireEvent.error(logoImg!);
 
-      expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Test Series' })
+      ).toBeInTheDocument();
       const remaining = screen.getAllByRole('img', { name: 'Test Series' });
       expect(remaining).toHaveLength(2);
       expect(screen.getByTestId('hero-bg-mobile')).toHaveAttribute(
@@ -266,8 +279,12 @@ describe('SeriesWatchView', () => {
       renderWithProviders(<SeriesWatchView series={seriesWithoutArtwork} />);
 
       expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: 'Test Series' })).toBeInTheDocument();
-      expect(screen.queryByRole('img', { name: 'Test Series' })).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Test Series' })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('img', { name: 'Test Series' })
+      ).not.toBeInTheDocument();
     });
 
     it('renders episode explorer grid with cards showing 16:9 thumbnail, duration, order, and title', () => {
@@ -278,24 +295,30 @@ describe('SeriesWatchView', () => {
 
       expect(screen.getByText('Episode One')).toBeInTheDocument();
       // Streamlined high-density cards: no redundant paragraph descriptions
-      expect(screen.queryByText('First episode description')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('First episode description')
+      ).not.toBeInTheDocument();
       expect(screen.getByText('EP 1')).toBeInTheDocument();
       expect(screen.getByText('24m')).toBeInTheDocument();
 
       expect(screen.getByText('Episode Two')).toBeInTheDocument();
-      expect(screen.queryByText('Second episode description')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Second episode description')
+      ).not.toBeInTheDocument();
       expect(screen.getByText('EP 2')).toBeInTheDocument();
       expect(screen.getByText('22m')).toBeInTheDocument();
     });
 
-    it('styles episode cards with 2px borders, 20px corners, and green EP pill badges', () => {
+    it('styles episode cards with chunky 3D bevel, 16px corners, and green EP pill badges', () => {
       renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
-      const epCard = screen.getByRole('button', { name: /play episode 1: episode one/i });
-      expect(epCard).toHaveClass('rounded-[20px]');
+      const epCard = screen.getByRole('button', {
+        name: /play episode 1: episode one/i,
+      });
+      expect(epCard).toHaveClass('rounded-2xl');
       expect(epCard.className).toMatch(/border-2/);
-      expect(epCard.className).toMatch(/border-\[var\(--border\)\]/);
-      expect(epCard.className).toMatch(/hover:-translate-y-1/);
+      expect(epCard.className).toMatch(/border-b-4/);
+      expect(epCard.className).toMatch(/hover:-translate-y-\[2px\]/);
 
       const epBadge = screen.getByText('EP 1');
       expect(epBadge).toHaveClass('rounded-full');
@@ -312,7 +335,9 @@ describe('SeriesWatchView', () => {
     });
 
     it('uses horizontal tabs for series with 2 to 4 seasons and switches episodes', async () => {
-      const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+      const { user } = renderWithProviders(
+        <SeriesWatchView series={mockSeries} />
+      );
 
       const season1Tab = screen.getByRole('tab', { name: 'Season 1' });
       const season2Tab = screen.getByRole('tab', { name: 'Season 2' });
@@ -368,9 +393,13 @@ describe('SeriesWatchView', () => {
         })),
       };
 
-      const { user } = renderWithProviders(<SeriesWatchView series={multiSeasonSeries} />);
+      const { user } = renderWithProviders(
+        <SeriesWatchView series={multiSeasonSeries} />
+      );
 
-      const seasonSelect = screen.getByRole('combobox', { name: /season selector/i });
+      const seasonSelect = screen.getByRole('combobox', {
+        name: /season selector/i,
+      });
       expect(seasonSelect).toBeInTheDocument();
 
       await user.click(seasonSelect);
@@ -388,28 +417,43 @@ describe('SeriesWatchView', () => {
 
       renderWithProviders(<SeriesWatchView series={singleSeasonSeries} />);
 
-      expect(screen.queryByRole('tab', { name: /season/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('combobox', { name: /season/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('tab', { name: /season/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('combobox', { name: /season/i })
+      ).not.toBeInTheDocument();
     });
 
     it('transitions to Player Mode when clicking "Play Episode 1" in hero banner', async () => {
-      const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+      const { user } = renderWithProviders(
+        <SeriesWatchView series={mockSeries} />
+      );
 
       expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
 
-      const playFirstBtn = screen.getByRole('button', { name: /^play episode 1$/i });
+      const playFirstBtn = screen.getByRole('button', {
+        name: /^play episode 1$/i,
+      });
       await user.click(playFirstBtn);
 
       expect(screen.getByTestId('watch-player')).toBeInTheDocument();
       const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
-      expect(iframe).toHaveAttribute('src', '/api/media/proxy/odvidhide.com/v/sample1');
+      expect(iframe).toHaveAttribute(
+        'src',
+        '/api/media/proxy/odvidhide.com/v/sample1'
+      );
       expect(screen.getByTestId('active-episode-overview')).toBeInTheDocument();
     });
 
     it('transitions to Player Mode when clicking an episode card', async () => {
-      const { user } = renderWithProviders(<SeriesWatchView series={mockSeries} />);
+      const { user } = renderWithProviders(
+        <SeriesWatchView series={mockSeries} />
+      );
 
-      const ep2Card = screen.getByRole('button', { name: /play episode 2: episode two/i });
+      const ep2Card = screen.getByRole('button', {
+        name: /play episode 2: episode two/i,
+      });
       await user.click(ep2Card);
 
       expect(screen.getByTestId('watch-player')).toBeInTheDocument();
@@ -480,7 +524,9 @@ describe('SeriesWatchView', () => {
 
       expect(screen.getByText('No Thumb Episode')).toBeInTheDocument();
       // Streamlined card: no redundant paragraph description even when fallback description is missing
-      expect(screen.queryByText('No description available for this episode')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('No description available for this episode')
+      ).not.toBeInTheDocument();
       const img = screen.getByRole('img', { name: 'No Thumb Episode' });
       expect(img).toHaveAttribute('src', 'https://fallback-backdrop.jpg');
     });
@@ -503,7 +549,9 @@ describe('SeriesWatchView', () => {
 
       expect(screen.getByTestId('watch-controls')).toBeInTheDocument();
       expect(screen.getByTestId('active-episode-overview')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 2, name: /ep 2 — episode two/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 2, name: /ep 2 — episode two/i })
+      ).toBeInTheDocument();
       expect(screen.getByTestId('episode-list')).toBeInTheDocument();
     });
 
@@ -518,21 +566,40 @@ describe('SeriesWatchView', () => {
       // Interactive series tag pill with green accent and background
       const seriesTag = screen.getByTestId('series-tag-pill');
       expect(seriesTag).toHaveTextContent('Test Series');
-      expect(seriesTag).toHaveClass('rounded-full', 'font-display', 'text-[#58cc02]', 'bg-[#58cc02]/15');
-      const heading = screen.getByRole('heading', { level: 2, name: /ep 1 — episode one/i });
+      expect(seriesTag).toHaveClass(
+        'rounded-full',
+        'font-display',
+        'text-[#58cc02]',
+        'bg-[#58cc02]/15'
+      );
+      const heading = screen.getByRole('heading', {
+        level: 2,
+        name: /ep 1 — episode one/i,
+      });
       expect(heading).toHaveClass('font-display');
 
       // Metadata badge row
-      expect(screen.getByTestId('meta-season-badge')).toHaveTextContent('Season 1');
-      expect(screen.getByTestId('meta-duration-badge')).toHaveTextContent('24m');
-      expect(screen.getByTestId('meta-duration-badge')).toHaveClass('bg-[var(--yellow)]/15', 'text-[var(--yellow)]');
+      expect(screen.getByTestId('meta-season-badge')).toHaveTextContent(
+        'Season 1'
+      );
+      expect(screen.getByTestId('meta-duration-badge')).toHaveTextContent(
+        '24m'
+      );
+      expect(screen.getByTestId('meta-duration-badge')).toHaveClass(
+        'bg-[var(--yellow)]/15',
+        'text-[var(--yellow)]'
+      );
 
       // Description in metaCard
-      expect(within(metaCard).getByText('First episode description')).toBeInTheDocument();
+      expect(
+        within(metaCard).getByText('First episode description')
+      ).toBeInTheDocument();
 
       // Click series tag pill to navigate back to series overview
       await user.click(seriesTag);
-      expect(screen.queryByTestId('active-episode-overview')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('active-episode-overview')
+      ).not.toBeInTheDocument();
       expect(screen.getByTestId('hero-artwork')).toBeInTheDocument();
     });
 
@@ -545,21 +612,37 @@ describe('SeriesWatchView', () => {
       expect(screen.queryByTestId('episode-grid')).not.toBeInTheDocument();
 
       const ep1Row = screen.getByTestId('episode-row-ep-1');
-      expect(ep1Row).toHaveClass('rounded-[16px]', 'border-2');
-      expect(ep1Row.className).toMatch(/hover:-translate-y-0.5/);
+      expect(ep1Row).toHaveClass('rounded-2xl', 'border-2', 'border-b-4');
+      expect(ep1Row.className).toMatch(/hover:-translate-y-\[2px\]/);
 
-      expect(within(ep1Row).getByTestId('episode-row-index')).toHaveTextContent('01');
-      expect(within(ep1Row).getByTestId('episode-row-duration')).toHaveTextContent('24m');
+      expect(within(ep1Row).getByTestId('episode-row-index')).toHaveTextContent(
+        '01'
+      );
+      expect(
+        within(ep1Row).getByTestId('episode-row-duration')
+      ).toHaveTextContent('24m');
       expect(within(ep1Row).getByText('Episode One')).toBeInTheDocument();
-      expect(within(ep1Row).getByText('First episode description')).toBeInTheDocument();
-      expect(within(ep1Row).getByTestId('episode-row-active-check')).toBeInTheDocument();
+      expect(
+        within(ep1Row).getByText('First episode description')
+      ).toBeInTheDocument();
+      expect(
+        within(ep1Row).getByTestId('episode-row-active-check')
+      ).toBeInTheDocument();
 
       const ep2Row = screen.getByTestId('episode-row-ep-2');
-      expect(within(ep2Row).getByTestId('episode-row-index')).toHaveTextContent('02');
-      expect(within(ep2Row).getByTestId('episode-row-duration')).toHaveTextContent('22m');
+      expect(within(ep2Row).getByTestId('episode-row-index')).toHaveTextContent(
+        '02'
+      );
+      expect(
+        within(ep2Row).getByTestId('episode-row-duration')
+      ).toHaveTextContent('22m');
       expect(within(ep2Row).getByText('Episode Two')).toBeInTheDocument();
-      expect(within(ep2Row).getByText('Second episode description')).toBeInTheDocument();
-      expect(within(ep2Row).queryByTestId('episode-row-active-check')).not.toBeInTheDocument();
+      expect(
+        within(ep2Row).getByText('Second episode description')
+      ).toBeInTheDocument();
+      expect(
+        within(ep2Row).queryByTestId('episode-row-active-check')
+      ).not.toBeInTheDocument();
     });
 
     it('switches the active episode immediately when clicking an episode row in Player Mode', async () => {
@@ -572,10 +655,20 @@ describe('SeriesWatchView', () => {
 
       const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
       expect(iframe.src).toBe('https://embed.com/3');
-      expect(screen.getByRole('heading', { level: 2, name: /ep 2 — episode two/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 2, name: /ep 2 — episode two/i })
+      ).toBeInTheDocument();
 
-      expect(within(screen.getByTestId('episode-row-ep-2')).getByTestId('episode-row-active-check')).toBeInTheDocument();
-      expect(within(screen.getByTestId('episode-row-ep-1')).queryByTestId('episode-row-active-check')).not.toBeInTheDocument();
+      expect(
+        within(screen.getByTestId('episode-row-ep-2')).getByTestId(
+          'episode-row-active-check'
+        )
+      ).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId('episode-row-ep-1')).queryByTestId(
+          'episode-row-active-check'
+        )
+      ).not.toBeInTheDocument();
     });
 
     it('switches video sources via Radix server dropdown', async () => {
@@ -584,7 +677,10 @@ describe('SeriesWatchView', () => {
       );
 
       const iframe = screen.getByTestId('watch-player') as HTMLIFrameElement;
-      expect(iframe).toHaveAttribute('src', '/api/media/proxy/odvidhide.com/v/sample1');
+      expect(iframe).toHaveAttribute(
+        'src',
+        '/api/media/proxy/odvidhide.com/v/sample1'
+      );
 
       // Toolbar contains semantic groups for playback, server selector, and utilities
       expect(screen.getByTestId('controls-playback-group')).toBeInTheDocument();
@@ -592,7 +688,9 @@ describe('SeriesWatchView', () => {
       expect(screen.getByTestId('controls-utility-group')).toBeInTheDocument();
 
       // Trigger shows server status dot, current source and count
-      const trigger = screen.getByRole('combobox', { name: /server selector/i });
+      const trigger = screen.getByRole('combobox', {
+        name: /server selector/i,
+      });
       expect(trigger).toBeInTheDocument();
       expect(trigger).toHaveTextContent('Server A');
       expect(trigger).toHaveTextContent('(2 available)');
@@ -603,8 +701,13 @@ describe('SeriesWatchView', () => {
       expect(option).toHaveTextContent('Server B');
       await user.click(option);
 
-      expect(iframe).toHaveAttribute('src', '/api/media/proxy/filedon.co/embed/sample2');
-      expect(screen.getByRole('combobox', { name: /server selector/i })).toHaveTextContent('Server B');
+      expect(iframe).toHaveAttribute(
+        'src',
+        '/api/media/proxy/filedon.co/embed/sample2'
+      );
+      expect(
+        screen.getByRole('combobox', { name: /server selector/i })
+      ).toHaveTextContent('Server B');
     });
 
     it('displays single source cleanly without count badge', () => {
@@ -612,7 +715,9 @@ describe('SeriesWatchView', () => {
         <SeriesWatchView series={mockSeries} initialEpisodeId="ep-2" />
       );
 
-      const trigger = screen.getByRole('combobox', { name: /server selector/i });
+      const trigger = screen.getByRole('combobox', {
+        name: /server selector/i,
+      });
       expect(trigger).toHaveTextContent('Server A');
       expect(trigger).not.toHaveTextContent('available');
     });
@@ -645,7 +750,9 @@ describe('SeriesWatchView', () => {
         <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
       );
 
-      expect(screen.getByTestId('episode-row-active-check')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('episode-row-active-check')
+      ).toBeInTheDocument();
       const activeRow = screen.getByTestId('episode-row-ep-1');
       expect(activeRow).toHaveClass('border-[var(--green)]');
 
@@ -685,7 +792,10 @@ describe('SeriesWatchView', () => {
       };
 
       renderWithProviders(
-        <SeriesWatchView series={seriesWithMixedSources} initialEpisodeId="ep-direct" />
+        <SeriesWatchView
+          series={seriesWithMixedSources}
+          initialEpisodeId="ep-direct"
+        />
       );
 
       expect(screen.getByTestId('custom-video-element')).toBeInTheDocument();
@@ -749,7 +859,10 @@ describe('SeriesWatchView', () => {
       };
 
       renderWithProviders(
-        <SeriesWatchView series={seriesWithUnplayable} initialEpisodeId="ep-unplayable" />
+        <SeriesWatchView
+          series={seriesWithUnplayable}
+          initialEpisodeId="ep-unplayable"
+        />
       );
 
       // Should fall back to overview mode instead of player mode
@@ -795,7 +908,9 @@ describe('SeriesWatchView', () => {
 
       const playBtn = screen.getByRole('button', { name: /^play episode 1$/i });
       expect(playBtn).toBeDisabled();
-      expect(screen.getByText('No episodes available for this season.')).toBeInTheDocument();
+      expect(
+        screen.getByText('No episodes available for this season.')
+      ).toBeInTheDocument();
       expect(screen.getByText('0 Episodes')).toBeInTheDocument();
     });
   });

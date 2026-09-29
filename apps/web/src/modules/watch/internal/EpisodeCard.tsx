@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Play } from 'lucide-react';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 import { formatDuration } from './formatDuration';
 import type { WatchEpisode, WatchSeriesDetails } from './api';
 
@@ -35,17 +36,32 @@ export function EpisodeCard({
 
   const formattedDuration = formatDuration(episode.duration);
 
+  const handleActivate = () => {
+    onSelect(episode.id);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(episode.id);
+    }
+  };
+
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(episode.id)}
-      className={`group relative flex flex-col w-full text-left rounded-[20px] border-2 border-[var(--border)] bg-[var(--bg)] overflow-hidden transition-all duration-150 hover:-translate-y-1 hover:border-[var(--blue)] active:translate-y-0 cursor-pointer ${
-        isNowPlaying ? 'border-[var(--green)] ring-2 ring-[var(--green)]' : ''
-      } ${isFocused ? 'ring-2 ring-white outline-none' : ''}`}
+    <ChunkyCard
+      interactive
+      selected={isNowPlaying}
+      role="button"
+      tabIndex={0}
+      onClick={handleActivate}
+      onKeyDown={handleKeyDown}
       aria-label={`Play Episode ${episode.order ?? ''}: ${episode.title}`}
+      className={`group relative flex flex-col w-full overflow-hidden text-left cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] ${
+        isNowPlaying ? 'ring-2 ring-[var(--green)]' : ''
+      } ${isFocused ? 'ring-2 ring-white outline-none' : ''}`}
     >
       {/* 16:9 Thumbnail Box */}
-      <div className="relative aspect-video w-full overflow-hidden bg-[var(--surface)] flex items-center justify-center">
+      <div className="relative aspect-video w-full overflow-hidden bg-[var(--surface-raised)] flex items-center justify-center">
         {activeImage ? (
           <img
             src={activeImage}
@@ -100,6 +116,6 @@ export function EpisodeCard({
           {episode.title}
         </h4>
       </div>
-    </button>
+    </ChunkyCard>
   );
 }

@@ -1,12 +1,17 @@
 import React, { useEffect, useRef } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ChunkyTabs,
+  ChunkyTabsList,
+  ChunkyTabsTrigger,
+} from '@/components/ui/chunky-tabs';
+import {
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
 import { EpisodeCard } from './EpisodeCard';
 import { EpisodeRow } from './EpisodeRow';
 import type { WatchEpisode, WatchSeason, WatchSeriesDetails } from './api';
@@ -41,7 +46,9 @@ export function EpisodeExplorer({
   layoutMode = 'grid',
 }: EpisodeExplorerProps) {
   const seasonCount = seasons.length;
-  const activeCardRefMap = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const activeCardRefMap = useRef<Map<string, HTMLDivElement | null>>(
+    new Map()
+  );
 
   // Smoothly scroll the active episode card into view when playback starts
   // or when navigating between episodes. Uses block: 'nearest' to keep the
@@ -65,44 +72,40 @@ export function EpisodeExplorer({
 
     if (seasonCount >= 2 && seasonCount <= 4) {
       return (
-        <Tabs
+        <ChunkyTabs
           value={activeSeasonId ?? seasons[0]?.id}
           onValueChange={onSelectSeason}
           className="w-full sm:w-auto"
         >
-          <TabsList className="flex flex-wrap h-auto gap-1 bg-card/60 p-1 border border-c rounded-md">
+          <ChunkyTabsList className="flex flex-wrap h-auto gap-2">
             {seasons.map((season) => (
-              <TabsTrigger
-                key={season.id}
-                value={season.id}
-                className="px-3 py-1.5 text-xs font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-fg"
-              >
+              <ChunkyTabsTrigger key={season.id} value={season.id}>
                 {season.title}
-              </TabsTrigger>
+              </ChunkyTabsTrigger>
             ))}
-          </TabsList>
-        </Tabs>
+          </ChunkyTabsList>
+        </ChunkyTabs>
       );
     }
 
-    // seasonCount > 4: Radix UI Select dropdown
+    // seasonCount > 4: ChunkySelect dropdown
     return (
       <div className="w-full sm:w-64">
-        <Select
+        <ChunkySelect
           value={activeSeasonId ?? seasons[0]?.id}
           onValueChange={onSelectSeason}
         >
-          <SelectTrigger aria-label="Season selector" className="w-full bg-card border-c">
-            <SelectValue placeholder="Select Season" />
-          </SelectTrigger>
-          <SelectContent>
+          <ChunkySelectTrigger aria-label="Season selector" className="w-full">
+            <ChunkySelectValue placeholder="Select Season" />
+          </ChunkySelectTrigger>
+          <ChunkySelectContent>
             {seasons.map((season) => (
-              <SelectItem key={season.id} value={season.id}>
+              <ChunkySelectItem key={season.id} value={season.id}>
                 {season.title}
-              </SelectItem>
+              </ChunkySelectItem>
             ))}
-          </SelectContent>
-        </Select>
+          </ChunkySelectContent>
+        </ChunkySelect>
       </div>
     );
   };
@@ -110,12 +113,12 @@ export function EpisodeExplorer({
   return (
     <section className="space-y-4" data-testid="episode-explorer">
       {/* Section Header & Season Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-c pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-[var(--border)] pb-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-base sm:text-lg font-semibold tracking-tight text-fg">
+          <h3 className="font-display text-base sm:text-lg font-extrabold tracking-tight text-[var(--ink)]">
             Episodes
           </h3>
-          <span className="mono text-xs text-muted px-2 py-0.5 rounded bg-card border border-c">
+          <span className="mono rounded-xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 text-xs font-bold text-[var(--muted)]">
             {episodes.length} {episodes.length === 1 ? 'Episode' : 'Episodes'}
           </span>
         </div>
@@ -126,10 +129,7 @@ export function EpisodeExplorer({
       {/* Responsive Episode Grid (Overview Mode) or Vertical Episode List (Player Mode) */}
       {episodes.length > 0 ? (
         layoutMode === 'list' ? (
-          <div
-            data-testid="episode-list"
-            className="flex flex-col gap-2.5"
-          >
+          <div data-testid="episode-list" className="flex flex-col gap-2.5">
             {episodes.map((episode, idx) => {
               const isNowPlaying = episode.id === activeEpisodeId;
               const isFocused =
@@ -149,7 +149,10 @@ export function EpisodeExplorer({
                       activeCardRefMap.current.delete(episode.id);
                     }
                     if (episodeRefs && episodeRefs.current) {
-                      episodeRefs.current[idx] = el?.querySelector('button') ?? null;
+                      episodeRefs.current[idx] =
+                        (el?.querySelector(
+                          '[role="button"]'
+                        ) as HTMLButtonElement | null) ?? null;
                     }
                   }}
                 >
@@ -189,7 +192,10 @@ export function EpisodeExplorer({
                       activeCardRefMap.current.delete(episode.id);
                     }
                     if (episodeRefs && episodeRefs.current) {
-                      episodeRefs.current[idx] = el?.querySelector('button') ?? null;
+                      episodeRefs.current[idx] =
+                        (el?.querySelector(
+                          '[role="button"]'
+                        ) as HTMLButtonElement | null) ?? null;
                     }
                   }}
                 >
@@ -206,9 +212,9 @@ export function EpisodeExplorer({
           </div>
         )
       ) : (
-        <div className="flex h-36 items-center justify-center rounded-md border border-dashed border-c bg-card/40 p-6 text-center text-muted text-sm">
+        <ChunkyCard className="flex h-36 items-center justify-center border-dashed p-6 text-center text-sm font-bold text-[var(--muted)]">
           No episodes available for this season.
-        </div>
+        </ChunkyCard>
       )}
     </section>
   );
