@@ -1,8 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { fetchSeries, SeriesPosterCard, type SeriesItem } from '@/modules/videos';
+import {
+  fetchSeries,
+  SeriesPosterCard,
+  type SeriesItem,
+} from '@/modules/videos';
 import { PublicNavbar } from '@/modules/navigation';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
+import {
+  ChunkyTabs,
+  ChunkyTabsList,
+  ChunkyTabsTrigger,
+} from '@/components/ui/chunky-tabs';
 import { genresQueryOptions } from './api';
 
 export type GenreCatalogFilter = 'all' | 'ongoing';
@@ -25,11 +37,23 @@ function formatSlugFallback(slug: string): string {
     .join(' ');
 }
 
-export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeriesCatalogProps) {
+function formatRating(rating?: string | null): string | undefined {
+  if (rating == null || rating === '') return undefined;
+  const parsed = Number(rating);
+  if (!Number.isFinite(parsed)) return rating;
+  return parsed.toFixed(1);
+}
+
+export function GenreSeriesCatalog({
+  slug,
+  filter,
+  onFilterChange,
+}: GenreSeriesCatalogProps) {
   const navigate = useNavigate();
   const { data: genres = [] } = useQuery(genresQueryOptions());
   const genreName =
-    genres.find((genre) => genre.slug === slug)?.name ?? formatSlugFallback(slug);
+    genres.find((genre) => genre.slug === slug)?.name ??
+    formatSlugFallback(slug);
 
   const {
     data,
@@ -42,7 +66,12 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
   } = useInfiniteQuery({
     queryKey: ['series', 'infinite', { genre: slug, filter }],
     queryFn: ({ pageParam = 1 }) =>
-      fetchSeries({ genre: slug, filter, page: pageParam, limit: GENRE_CATALOG_PAGE_LIMIT }),
+      fetchSeries({
+        genre: slug,
+        filter,
+        page: pageParam,
+        limit: GENRE_CATALOG_PAGE_LIMIT,
+      }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.meta.page * lastPage.meta.limit < lastPage.meta.total
@@ -103,125 +132,126 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
       <PublicNavbar />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pt-24">
-        <h1 className="text-2xl md:text-3xl font-bold">{genreName}</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
+      <div className="w-full px-8 md:px-16 py-8 pt-24">
+        <h1 className="text-2xl md:text-3xl font-display font-extrabold">
+          {genreName}
+        </h1>
+        <p className="mt-1 text-sm font-sans font-semibold text-[var(--muted)]">
           {filter === 'ongoing'
             ? 'Currently airing series in this genre.'
             : 'Browse every series in this genre.'}
         </p>
 
-        <div role="tablist" aria-label="Filter series by status" className="mt-5 inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
-          {(
-            [
-              { value: 'all', label: 'All Series' },
-              { value: 'ongoing', label: 'Ongoing' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              role="tab"
-              aria-selected={filter === tab.value}
-              onClick={() => {
-                if (filter !== tab.value) {
-                  onFilterChange(tab.value);
-                }
-              }}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
-                filter === tab.value
-                  ? 'bg-[var(--ink)] text-[var(--bg)]'
-                  : 'text-[var(--muted)] hover:text-[var(--ink)]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <ChunkyTabs
+          value={filter}
+          onValueChange={(value) => {
+            if (value !== filter) {
+              onFilterChange(value as GenreCatalogFilter);
+            }
+          }}
+          className="mt-5"
+        >
+          <ChunkyTabsList aria-label="Filter series by status">
+            <ChunkyTabsTrigger value="all">All Series</ChunkyTabsTrigger>
+            <ChunkyTabsTrigger value="ongoing">Ongoing</ChunkyTabsTrigger>
+          </ChunkyTabsList>
+        </ChunkyTabs>
 
         {isPending ? (
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
             {Array.from({ length: 12 }).map((_, index) => (
               <div
                 key={index}
                 data-testid="series-card-skeleton"
-                className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface)]"
+                className="overflow-hidden rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)]"
               >
-                <div className="aspect-[2/3] w-full animate-pulse bg-[var(--surface-raised)]" />
+                <ChunkySkeleton className="aspect-[2/3] w-full rounded-2xl border-0" />
                 <div className="space-y-2 p-3">
-                  <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-800" />
-                  <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-800" />
+                  <ChunkySkeleton className="h-4 w-3/4 rounded-2xl" />
+                  <ChunkySkeleton className="h-3 w-1/2 rounded-2xl" />
                 </div>
               </div>
             ))}
           </div>
         ) : isError && !hasLoadedPages ? (
-          <div className="mt-6 rounded-md border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
-            <p className="text-sm text-[var(--muted)]">Failed to load series. Please try again.</p>
-            <button
+          <ChunkyCard className="mt-6 p-8 text-center">
+            <p className="text-sm text-[var(--muted)]">
+              Failed to load series. Please try again.
+            </p>
+            <ChunkyButton
               type="button"
               onClick={() => void refetch()}
-              className="mt-4 rounded-full bg-[var(--ink)] px-4 py-1.5 text-sm font-medium text-[var(--bg)] cursor-pointer hover:brightness-110 transition-colors"
+              className="mt-4"
             >
               Retry
-            </button>
-          </div>
+            </ChunkyButton>
+          </ChunkyCard>
         ) : total === 0 ? (
-          <div className="mt-6 rounded-md border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
+          <ChunkyCard className="mt-6 p-8 text-center">
             <p className="text-sm text-[var(--muted)]">
               {filter === 'ongoing'
                 ? `No ongoing series found in ${genreName}.`
                 : `No series found in ${genreName}.`}
             </p>
             {filter === 'ongoing' && (
-              <button
+              <ChunkyButton
                 type="button"
                 onClick={() => onFilterChange('all')}
-                className="mt-4 rounded-full bg-[var(--ink)] px-4 py-1.5 text-sm font-medium text-[var(--bg)] cursor-pointer hover:brightness-110 transition-colors"
+                className="mt-4"
               >
                 Show All Series
-              </button>
+              </ChunkyButton>
             )}
-          </div>
+          </ChunkyCard>
         ) : (
           <>
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
               {items.map((item) => (
-                <SeriesPosterCard
+                <div
                   key={item.id}
-                  seriesId={item.id}
-                  title={item.title}
-                  posterUrl={
-                    item.posterUrl ||
-                    'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop'
-                  }
-                  type={item.type ?? 'tv'}
-                  seasonsCount={
-                    typeof (item as { seasonsCount?: number | null }).seasonsCount === 'number'
-                      ? (item as { seasonsCount?: number | null }).seasonsCount
-                      : undefined
-                  }
-                  rating={item.rating ?? undefined}
-                  onSelect={(seriesId) =>
-                    navigate({ to: '/watch/$seriesId', params: { seriesId } })
-                  }
-                />
+                  className="min-w-0 [&>[data-testid='series-card']]:w-full"
+                >
+                  <SeriesPosterCard
+                    seriesId={item.id}
+                    title={item.title}
+                    posterUrl={
+                      item.posterUrl ||
+                      'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop'
+                    }
+                    type={item.type ?? 'tv'}
+                    seasonsCount={
+                      typeof (item as { seasonsCount?: number | null })
+                        .seasonsCount === 'number'
+                        ? (item as { seasonsCount?: number | null })
+                            .seasonsCount
+                        : undefined
+                    }
+                    rating={formatRating(item.rating)}
+                    onSelect={(seriesId) =>
+                      navigate({ to: '/watch/$seriesId', params: { seriesId } })
+                    }
+                  />
+                </div>
               ))}
             </div>
 
-            <div ref={sentinelRef} data-testid="infinite-sentinel" className="h-4 w-full" />
+            <div
+              ref={sentinelRef}
+              data-testid="infinite-sentinel"
+              className="h-4 w-full"
+            />
 
             {isFetchingNextPage && (
-              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div
                     key={index}
                     data-testid="series-card-skeleton"
-                    className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface)]"
+                    className="overflow-hidden rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)]"
                   >
-                    <div className="aspect-[2/3] w-full animate-pulse bg-[var(--surface-raised)]" />
+                    <ChunkySkeleton className="aspect-[2/3] w-full rounded-2xl border-0" />
                     <div className="p-3">
-                      <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-800" />
+                      <ChunkySkeleton className="h-4 w-3/4 rounded-2xl" />
                     </div>
                   </div>
                 ))}
@@ -230,13 +260,13 @@ export function GenreSeriesCatalog({ slug, filter, onFilterChange }: GenreSeries
 
             {isNextPageError && (
               <div className="mt-4 text-center">
-                <button
+                <ChunkyButton
                   type="button"
+                  variant="outline"
                   onClick={handleFetchNextPage}
-                  className="rounded-full border border-[var(--border-strong)] px-4 py-1.5 text-sm font-medium text-[var(--ink)] cursor-pointer hover:border-[var(--muted)] transition-colors"
                 >
                   Retry
-                </button>
+                </ChunkyButton>
               </div>
             )}
           </>
