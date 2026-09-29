@@ -24,6 +24,10 @@ export interface ChunkyConfirmDialogProps {
   isPending?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
+  /** Optional test id for the confirm button. */
+  confirmButtonTestId?: string;
+  /** Optional test id for the cancel button. */
+  cancelButtonTestId?: string;
 }
 
 export function ChunkyConfirmDialog({
@@ -38,6 +42,8 @@ export function ChunkyConfirmDialog({
   isPending = false,
   onConfirm,
   onCancel,
+  confirmButtonTestId,
+  cancelButtonTestId,
 }: ChunkyConfirmDialogProps) {
   const handleCancel = () => {
     if (isPending) return;
@@ -87,6 +93,7 @@ export function ChunkyConfirmDialog({
             variant="outline"
             onClick={handleCancel}
             disabled={isPending}
+            data-testid={cancelButtonTestId}
           >
             {cancelLabel}
           </ChunkyButton>
@@ -96,6 +103,7 @@ export function ChunkyConfirmDialog({
             onClick={handleConfirm}
             disabled={isPending}
             aria-busy={isPending || undefined}
+            data-testid={confirmButtonTestId}
           >
             {isPending && (
               <Loader2

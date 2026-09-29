@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogDescription,
+  ChunkyDialogBody,
+} from '@/components/ui/chunky-dialog';
+import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { getStoragePreviewUrl } from './api';
 
@@ -39,7 +42,11 @@ export function VideoPreviewModal({
         })
         .catch((err) => {
           if (isMounted) {
-            setError(err instanceof Error ? err.message : 'Failed to generate preview URL');
+            setError(
+              err instanceof Error
+                ? err.message
+                : 'Failed to generate preview URL'
+            );
             setIsLoading(false);
           }
         });
@@ -56,36 +63,48 @@ export function VideoPreviewModal({
   if (!fileKey) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-3xl w-[95vw] p-4 bg-card border-c rounded sm:rounded"
-        aria-describedby={undefined}
+    <ChunkyDialog open={open} onOpenChange={onOpenChange}>
+      <ChunkyDialogContent
+        className="max-w-3xl"
+        aria-label={`Preview video ${filename || fileKey}`}
       >
-        <DialogHeader className="space-y-1 pb-2 border-b border-c">
-          <DialogTitle className="text-sm font-semibold truncate text-fg">
+        <ChunkyDialogHeader>
+          <ChunkyDialogTitle className="truncate">
             Preview Video: {filename || fileKey}
-          </DialogTitle>
-          <p className="text-[11px] mono text-muted truncate">{fileKey}</p>
-        </DialogHeader>
+          </ChunkyDialogTitle>
+          <ChunkyDialogDescription className="font-mono truncate">
+            {fileKey}
+          </ChunkyDialogDescription>
+        </ChunkyDialogHeader>
 
-        <div className="relative aspect-video w-full overflow-hidden rounded border border-c bg-black mt-2 flex items-center justify-center">
-          {isLoading ? (
-            <div className="text-xs mono text-muted animate-pulse" data-testid="preview-loading">
-              Generating presigned playback URL...
-            </div>
-          ) : error ? (
-            <div className="text-xs text-red-400 p-4 text-center mono" data-testid="preview-error">
-              {error}
-            </div>
-          ) : previewUrl ? (
-            <VideoPlayer
-              src={previewUrl}
-              title={filename || fileKey}
-              autoPlay={false}
-            />
-          ) : null}
-        </div>
-      </DialogContent>
-    </Dialog>
+        <ChunkyDialogBody>
+          <div className="relative aspect-video w-full overflow-hidden rounded-2xl border-2 border-[var(--border)] bg-black flex items-center justify-center">
+            {isLoading ? (
+              <ChunkySkeleton
+                className="absolute inset-0 rounded-none border-0"
+                data-testid="preview-loading"
+              >
+                <span className="sr-only">
+                  Generating presigned playback URL...
+                </span>
+              </ChunkySkeleton>
+            ) : error ? (
+              <div
+                className="font-mono text-xs font-bold text-[var(--red)] p-4 text-center"
+                data-testid="preview-error"
+              >
+                {error}
+              </div>
+            ) : previewUrl ? (
+              <VideoPlayer
+                src={previewUrl}
+                title={filename || fileKey}
+                autoPlay={false}
+              />
+            ) : null}
+          </div>
+        </ChunkyDialogBody>
+      </ChunkyDialogContent>
+    </ChunkyDialog>
   );
 }

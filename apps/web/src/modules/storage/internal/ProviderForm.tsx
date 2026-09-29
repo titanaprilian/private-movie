@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useEffect, useMemo } from 'react';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
 import {
   type StorageProviderItem,
   type StorageProviderType,
@@ -23,7 +23,9 @@ import { toast } from 'sonner';
 
 export interface ProviderFormProps {
   initialProvider?: StorageProviderItem | null;
-  onSave: (data: CreateStorageProviderRequest | UpdateStorageProviderRequest) => Promise<void>;
+  onSave: (
+    data: CreateStorageProviderRequest | UpdateStorageProviderRequest
+  ) => Promise<void>;
   onCancel: () => void;
   isSaving?: boolean;
 }
@@ -74,6 +76,18 @@ const PROVIDER_PRESETS: Record<StorageProviderType, ProviderPreset> = {
   },
 };
 
+const PROVIDER_TYPE_LABELS: Record<StorageProviderType, string> = {
+  backblaze: 'Backblaze B2',
+  cloudflare_r2: 'Cloudflare R2',
+  aws_s3: 'AWS S3',
+  wasabi: 'Wasabi',
+  minio: 'MinIO',
+  custom: 'Custom S3',
+};
+
+const labelClassName =
+  'font-sans text-[11px] font-extrabold uppercase tracking-wider text-[var(--ink)]';
+
 export function ProviderForm({
   initialProvider,
   onSave,
@@ -91,13 +105,21 @@ export function ProviderForm({
   const [bucket, setBucket] = useState(initialProvider?.bucket || '');
   const [accessKeyId, setAccessKeyId] = useState('');
   const [secretAccessKey, setSecretAccessKey] = useState('');
-  const [publicBaseUrl, setPublicBaseUrl] = useState(initialProvider?.publicBaseUrl || '');
-  const [forcePathStyle, setForcePathStyle] = useState(initialProvider?.forcePathStyle || false);
+  const [publicBaseUrl, setPublicBaseUrl] = useState(
+    initialProvider?.publicBaseUrl || ''
+  );
+  const [forcePathStyle, setForcePathStyle] = useState(
+    initialProvider?.forcePathStyle || false
+  );
   const [storageLimitGb, setStorageLimitGb] = useState<number>(
     initialProvider?.storageLimitGb ?? 50
   );
-  const [isDefault, setIsDefault] = useState(initialProvider?.isDefault || false);
-  const [isEnabled, setIsEnabled] = useState(initialProvider?.isEnabled ?? true);
+  const [isDefault, setIsDefault] = useState(
+    initialProvider?.isDefault || false
+  );
+  const [isEnabled, setIsEnabled] = useState(
+    initialProvider?.isEnabled ?? true
+  );
 
   // Test connection state
   const [isTesting, setIsTesting] = useState(false);
@@ -106,6 +128,12 @@ export function ProviderForm({
     message?: string;
   } | null>(null);
 
+  // Region options always include the current value plus every preset region
+  const regionOptions = useMemo(() => {
+    const presetRegions = Object.values(PROVIDER_PRESETS).map((p) => p.region);
+    return Array.from(new Set([region, ...presetRegions].filter(Boolean)));
+  }, [region]);
+
   // Set default values when preset changes (only when creating or explicitly changed)
   const handlePresetChange = (newType: StorageProviderType) => {
     setProviderType(newType);
@@ -113,10 +141,16 @@ export function ProviderForm({
     if (!name || Object.values(PROVIDER_PRESETS).some((p) => p.name === name)) {
       setName(preset.name);
     }
-    if (!endpoint || Object.values(PROVIDER_PRESETS).some((p) => p.endpoint === endpoint)) {
+    if (
+      !endpoint ||
+      Object.values(PROVIDER_PRESETS).some((p) => p.endpoint === endpoint)
+    ) {
       setEndpoint(preset.endpoint);
     }
-    if (!region || Object.values(PROVIDER_PRESETS).some((p) => p.region === region)) {
+    if (
+      !region ||
+      Object.values(PROVIDER_PRESETS).some((p) => p.region === region)
+    ) {
       setRegion(preset.region);
     }
     setForcePathStyle(preset.forcePathStyle);
@@ -159,7 +193,8 @@ export function ProviderForm({
           message: res.message || 'Failed to connect to S3 bucket',
         });
         toast.error('Connection test failed', {
-          description: res.message || 'Check endpoint, credentials, and bucket name.',
+          description:
+            res.message || 'Check endpoint, credentials, and bucket name.',
         });
       }
     } catch (err) {
@@ -184,7 +219,9 @@ export function ProviderForm({
     }
 
     if (!isEditing && (!accessKeyId.trim() || !secretAccessKey.trim())) {
-      toast.error('Access Key ID and Secret Access Key are required for new providers');
+      toast.error(
+        'Access Key ID and Secret Access Key are required for new providers'
+      );
       return;
     }
 
@@ -207,262 +244,307 @@ export function ProviderForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 text-xs" data-testid="provider-form">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      data-testid="provider-form"
+    >
       {/* Preset Selector */}
-      <div className="space-y-1">
-        <Label htmlFor="provider-preset" className="text-[11px] font-medium text-fg">
+      <div className="space-y-1.5">
+        <label htmlFor="provider-preset" className={labelClassName}>
           Provider Preset
-        </Label>
-        <Select
+        </label>
+        <ChunkySelect
           value={providerType}
-          onValueChange={(val) => handlePresetChange(val as StorageProviderType)}
+          onValueChange={(val) =>
+            handlePresetChange(val as StorageProviderType)
+          }
         >
-          <SelectTrigger
+          <ChunkySelectTrigger
             id="provider-preset"
             data-testid="provider-preset-select"
-            className="w-full h-8 px-2 bg-card text-xs mono"
+            className="font-mono"
           >
-            <SelectValue placeholder="Select preset" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="backblaze" className="text-xs mono">Backblaze B2</SelectItem>
-            <SelectItem value="cloudflare_r2" className="text-xs mono">Cloudflare R2</SelectItem>
-            <SelectItem value="aws_s3" className="text-xs mono">AWS S3</SelectItem>
-            <SelectItem value="wasabi" className="text-xs mono">Wasabi</SelectItem>
-            <SelectItem value="minio" className="text-xs mono">MinIO</SelectItem>
-            <SelectItem value="custom" className="text-xs mono">Custom S3</SelectItem>
-          </SelectContent>
-        </Select>
+            <ChunkySelectValue placeholder="Select preset" />
+          </ChunkySelectTrigger>
+          <ChunkySelectContent>
+            {(Object.keys(PROVIDER_TYPE_LABELS) as StorageProviderType[]).map(
+              (type) => (
+                <ChunkySelectItem key={type} value={type} className="font-mono">
+                  {PROVIDER_TYPE_LABELS[type]}
+                </ChunkySelectItem>
+              )
+            )}
+          </ChunkySelectContent>
+        </ChunkySelect>
       </div>
 
       {/* Provider Name */}
-      <div className="space-y-1">
-        <Label htmlFor="provider-name" className="text-[11px] font-medium text-fg">
+      <div className="space-y-1.5">
+        <label htmlFor="provider-name" className={labelClassName}>
           Friendly Name *
-        </Label>
-        <Input
+        </label>
+        <ChunkyInput
           id="provider-name"
           data-testid="provider-name-input"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Backblaze B2 Main"
-          className="h-8 text-xs"
           required
         />
       </div>
 
       {/* Endpoint & Region */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label htmlFor="provider-endpoint" className="text-[11px] font-medium text-fg">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label htmlFor="provider-endpoint" className={labelClassName}>
             Endpoint URL *
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="provider-endpoint"
             data-testid="provider-endpoint-input"
             value={endpoint}
             onChange={(e) => setEndpoint(e.target.value)}
             placeholder="https://s3.us-west-002.backblazeb2.com"
-            className="h-8 text-xs mono"
+            className="font-mono"
             required
           />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="provider-region" className="text-[11px] font-medium text-fg">
+        <div className="space-y-1.5">
+          <label htmlFor="provider-region" className={labelClassName}>
             Region *
-          </Label>
-          <Input
-            id="provider-region"
-            data-testid="provider-region-input"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            placeholder="us-west-002"
-            className="h-8 text-xs mono"
-            required
-          />
+          </label>
+          <ChunkySelect value={region} onValueChange={setRegion}>
+            <ChunkySelectTrigger
+              id="provider-region"
+              data-testid="provider-region-select"
+              className="font-mono"
+            >
+              <ChunkySelectValue placeholder="Select region" />
+            </ChunkySelectTrigger>
+            <ChunkySelectContent>
+              {regionOptions.map((r) => (
+                <ChunkySelectItem key={r} value={r} className="font-mono">
+                  {r}
+                </ChunkySelectItem>
+              ))}
+            </ChunkySelectContent>
+          </ChunkySelect>
         </div>
       </div>
 
       {/* Bucket & Quota */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label htmlFor="provider-bucket" className="text-[11px] font-medium text-fg">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label htmlFor="provider-bucket" className={labelClassName}>
             Bucket Name *
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="provider-bucket"
             data-testid="provider-bucket-input"
             value={bucket}
             onChange={(e) => setBucket(e.target.value)}
             placeholder="my-media-bucket"
-            className="h-8 text-xs mono"
+            className="font-mono"
             required
           />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="provider-quota" className="text-[11px] font-medium text-fg">
+        <div className="space-y-1.5">
+          <label htmlFor="provider-quota" className={labelClassName}>
             Quota Limit (GB)
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="provider-quota"
             data-testid="provider-quota-input"
             type="number"
             min={1}
             value={storageLimitGb}
             onChange={(e) => setStorageLimitGb(Number(e.target.value))}
-            className="h-8 text-xs mono"
+            className="font-mono"
           />
         </div>
       </div>
 
       {/* Public CDN Base URL */}
-      <div className="space-y-1">
-        <Label htmlFor="provider-cdn" className="text-[11px] font-medium text-fg">
+      <div className="space-y-1.5">
+        <label htmlFor="provider-cdn" className={labelClassName}>
           Public CDN / Streaming Domain (optional)
-        </Label>
-        <Input
+        </label>
+        <ChunkyInput
           id="provider-cdn"
           data-testid="provider-cdn-input"
           value={publicBaseUrl}
           onChange={(e) => setPublicBaseUrl(e.target.value)}
           placeholder="https://cdn.example.com"
-          className="h-8 text-xs mono"
+          className="font-mono"
         />
-        <p className="text-[10px] text-muted">
-          If set, videos from this provider stream directly through this CDN base URL.
+        <p className="font-sans text-[11px] font-semibold text-[var(--muted)]">
+          If set, videos from this provider stream directly through this CDN
+          base URL.
         </p>
       </div>
 
       {/* Credentials */}
-      <div className="space-y-2 p-3 border border-c rounded bg-sidebar/50">
-        <div className="text-[11px] font-semibold text-fg">Authentication Credentials</div>
-        <div className="space-y-1">
-          <Label htmlFor="provider-key" className="text-[10px] text-muted">
-            Access Key ID {isEditing ? `(current: ${initialProvider?.accessKeyIdMasked})` : '*'}
-          </Label>
-          <Input
+      <ChunkyCard className="p-4 space-y-3">
+        <div className="font-display font-bold text-sm text-[var(--ink)]">
+          Authentication Credentials
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="provider-key" className={labelClassName}>
+            Access Key ID{' '}
+            {isEditing
+              ? `(current: ${initialProvider?.accessKeyIdMasked})`
+              : '*'}
+          </label>
+          <ChunkyInput
             id="provider-key"
             data-testid="provider-access-key-input"
             value={accessKeyId}
             onChange={(e) => setAccessKeyId(e.target.value)}
-            placeholder={isEditing ? 'Leave blank to keep unchanged' : 'AKIA...'}
-            className="h-8 text-xs mono"
+            placeholder={
+              isEditing ? 'Leave blank to keep unchanged' : 'AKIA...'
+            }
+            className="font-mono"
             required={!isEditing}
           />
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="provider-secret" className="text-[10px] text-muted">
+        <div className="space-y-1.5">
+          <label htmlFor="provider-secret" className={labelClassName}>
             Secret Access Key {isEditing ? '(hidden / encrypted)' : '*'}
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="provider-secret"
             data-testid="provider-secret-key-input"
             type="password"
             value={secretAccessKey}
             onChange={(e) => setSecretAccessKey(e.target.value)}
-            placeholder={isEditing ? 'Leave blank to keep unchanged' : '••••••••'}
-            className="h-8 text-xs mono"
+            placeholder={
+              isEditing ? 'Leave blank to keep unchanged' : '••••••••'
+            }
+            className="font-mono"
             required={!isEditing}
           />
         </div>
-      </div>
+      </ChunkyCard>
 
       {/* Toggles */}
-      <div className="space-y-2 pt-1">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <Checkbox
+      <div className="space-y-2.5 pt-1">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <ChunkyCheckbox
             checked={forcePathStyle}
-            onCheckedChange={(c) => setForcePathStyle(Boolean(c))}
+            onCheckedChange={(c) => setForcePathStyle(c)}
             data-testid="provider-path-style-toggle"
+            aria-label="Force path-style addressing"
           />
-          <span className="text-xs text-fg">Force Path-Style Addressing (required for MinIO/Local S3)</span>
+          <span className="font-sans text-sm font-bold text-[var(--ink)]">
+            Force Path-Style Addressing (required for MinIO/Local S3)
+          </span>
         </label>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <Checkbox
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <ChunkyCheckbox
             checked={isDefault}
-            onCheckedChange={(c) => setIsDefault(Boolean(c))}
+            onCheckedChange={(c) => setIsDefault(c)}
             data-testid="provider-default-toggle"
+            aria-label="Designate as default storage provider"
           />
-          <span className="text-xs text-fg">Designate as Default Storage Provider</span>
+          <span className="font-sans text-sm font-bold text-[var(--ink)]">
+            Designate as Default Storage Provider
+          </span>
         </label>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <Checkbox
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <ChunkyCheckbox
             checked={isEnabled}
-            onCheckedChange={(c) => setIsEnabled(Boolean(c))}
+            onCheckedChange={(c) => setIsEnabled(c)}
             data-testid="provider-enabled-toggle"
+            aria-label="Enable provider for uploads and ingests"
           />
-          <span className="text-xs text-fg">Enable Provider for Uploads & Ingests</span>
+          <span className="font-sans text-sm font-bold text-[var(--ink)]">
+            Enable Provider for Uploads & Ingests
+          </span>
         </label>
       </div>
 
       {/* Test Connection Feedback */}
       {testResult && (
-        <div
+        <ChunkyCard
           data-testid="connection-test-result"
-          className={`p-2.5 rounded border text-xs flex items-start gap-2 ${
+          className={`p-3.5 flex items-start gap-3 ${
             testResult.success
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800'
-              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800'
+              ? 'border-[var(--green-dark)] bg-[var(--green-soft)]'
+              : 'border-[var(--red-dark)] bg-[var(--red)]/10'
           }`}
         >
-          {testResult.success ? (
-            <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
-          ) : (
-            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-          )}
+          <span
+            className={`w-11 h-11 rounded-2xl border-2 border-b-4 flex items-center justify-center shrink-0 ${
+              testResult.success
+                ? 'border-[var(--green-dark)] bg-[var(--green)] text-white'
+                : 'border-[var(--red-dark)] bg-[var(--red)] text-white'
+            }`}
+          >
+            {testResult.success ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+          </span>
           <div>
-            <div className="font-semibold">
-              {testResult.success ? 'Connection Successful' : 'Connection Failed'}
+            <div className="font-display font-bold text-sm text-[var(--ink)]">
+              {testResult.success
+                ? 'Connection Successful'
+                : 'Connection Failed'}
             </div>
-            <div className="text-[11px] mt-0.5">{testResult.message}</div>
+            <div className="font-sans text-xs font-semibold text-[var(--muted)] mt-0.5">
+              {testResult.message}
+            </div>
           </div>
-        </div>
+        </ChunkyCard>
       )}
 
       {/* Form Action Buttons */}
-      <div className="flex items-center justify-between pt-2 border-t border-c gap-2">
-        <Button
+      <div className="flex items-center justify-between pt-3 border-t-2 border-[var(--border)] gap-2 flex-wrap">
+        <ChunkyButton
           type="button"
           variant="outline"
           size="sm"
           onClick={handleTestConnection}
           disabled={isTesting || (!endpoint && !initialProvider?.endpoint)}
           data-testid="test-connection-btn"
-          className="text-xs h-8"
         >
           {isTesting ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+              <Loader2 className="w-4 h-4 animate-spin" />
               Testing...
             </>
           ) : (
             'Test Connection'
           )}
-        </Button>
+        </ChunkyButton>
 
         <div className="flex items-center gap-2">
-          <Button
+          <ChunkyButton
             type="button"
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={onCancel}
             disabled={isSaving}
-            className="text-xs h-8"
           >
             Cancel
-          </Button>
-          <Button
+          </ChunkyButton>
+          <ChunkyButton
             type="submit"
             size="sm"
             disabled={isSaving}
             data-testid="save-provider-btn"
-            className="text-xs h-8"
           >
-            {isSaving ? 'Saving...' : isEditing ? 'Update Provider' : 'Create Provider'}
-          </Button>
+            {isSaving
+              ? 'Saving...'
+              : isEditing
+                ? 'Update Provider'
+                : 'Create Provider'}
+          </ChunkyButton>
         </div>
       </div>
     </form>

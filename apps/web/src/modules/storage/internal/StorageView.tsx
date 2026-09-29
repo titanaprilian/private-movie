@@ -2,14 +2,15 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AlertTriangle, ExternalLink, Rocket, Server } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
 import {
   storageMetricsQueryOptions,
   storageResourcesQueryOptions,
@@ -31,7 +32,10 @@ import { StorageResourceTable } from './StorageResourceTable';
 import { StorageLimitDialog } from './StorageLimitDialog';
 import { EditSourceModal } from './EditSourceModal';
 import { AttachOrphanDialog } from './AttachOrphanDialog';
-import { DeleteConfirmDialog, type DeleteTargetType } from './DeleteConfirmDialog';
+import {
+  DeleteConfirmDialog,
+  type DeleteTargetType,
+} from './DeleteConfirmDialog';
 import { VideoPreviewModal } from './VideoPreviewModal';
 import { ManageProvidersDrawer } from './ManageProvidersDrawer';
 import { MinioSpinUpModal } from './MinioSpinUpModal';
@@ -49,11 +53,14 @@ export function StorageView() {
   );
 
   // Selected provider ID state (defaulting to default provider or first provider)
-  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     if (providers.length > 0 && !selectedProviderId) {
-      const defaultProvider = providers.find((p) => p.isDefault) || providers[0];
+      const defaultProvider =
+        providers.find((p) => p.isDefault) || providers[0];
       if (defaultProvider) {
         setSelectedProviderId(defaultProvider.id);
       }
@@ -61,7 +68,8 @@ export function StorageView() {
   }, [providers, selectedProviderId]);
 
   // Find active provider object
-  const activeProvider = providers.find((p) => p.id === selectedProviderId) || null;
+  const activeProvider =
+    providers.find((p) => p.id === selectedProviderId) || null;
 
   // Scoped Queries based on selectedProviderId
   const {
@@ -85,20 +93,30 @@ export function StorageView() {
 
   // MinIO status query (for spin-up / console header action)
   const { data: minioStatus } = useQuery(minioStatusQueryOptions());
-  const isMinioActive = Boolean(minioStatus?.isRunning && minioStatus?.consoleUrl);
+  const isMinioActive = Boolean(
+    minioStatus?.isRunning && minioStatus?.consoleUrl
+  );
 
   // Dialog & Drawer States
   const [isLimitDialogOpen, setIsLimitDialogOpen] = useState(false);
   const [isProvidersDrawerOpen, setIsProvidersDrawerOpen] = useState(false);
   const [isSpinUpModalOpen, setIsSpinUpModalOpen] = useState(false);
-  const [previewResource, setPreviewResource] = useState<StorageResource | null>(null);
-  const [editingSource, setEditingSource] = useState<(VideoSourceMetadata & { key?: string }) | null>(null);
-  const [attachingResource, setAttachingResource] = useState<StorageResource | null>(null);
+  const [previewResource, setPreviewResource] =
+    useState<StorageResource | null>(null);
+  const [editingSource, setEditingSource] = useState<
+    (VideoSourceMetadata & { key?: string }) | null
+  >(null);
+  const [attachingResource, setAttachingResource] =
+    useState<StorageResource | null>(null);
 
   // Deletion Dialog State
-  const [deleteTargetType, setDeleteTargetType] = useState<DeleteTargetType | null>(null);
-  const [deleteSingleResource, setDeleteSingleResource] = useState<StorageResource | null>(null);
-  const [deleteBatchResources, setDeleteBatchResources] = useState<StorageResource[]>([]);
+  const [deleteTargetType, setDeleteTargetType] =
+    useState<DeleteTargetType | null>(null);
+  const [deleteSingleResource, setDeleteSingleResource] =
+    useState<StorageResource | null>(null);
+  const [deleteBatchResources, setDeleteBatchResources] = useState<
+    StorageResource[]
+  >([]);
 
   // Refresh Scan Mutation
   const refreshScanMutation = useMutation({
@@ -108,7 +126,8 @@ export function StorageView() {
       toast.success('S3 bucket scan refreshed successfully');
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : 'Failed to refresh bucket scan';
+      const msg =
+        err instanceof Error ? err.message : 'Failed to refresh bucket scan';
       toast.error(msg);
     },
   });
@@ -146,13 +165,18 @@ export function StorageView() {
     if (deleteTargetType === 'single' && deleteSingleResource) {
       await deleteStorageResources([deleteSingleResource.key], provId);
       toast.success(`Deleted file: ${deleteSingleResource.filename}`);
-    } else if (deleteTargetType === 'batch' && deleteBatchResources.length > 0) {
+    } else if (
+      deleteTargetType === 'batch' &&
+      deleteBatchResources.length > 0
+    ) {
       const keys = deleteBatchResources.map((r) => r.key);
       const res = await deleteStorageResources(keys, provId);
       toast.success(`Deleted ${res.deletedKeys?.length ?? keys.length} files`);
     } else if (deleteTargetType === 'purge') {
       const res = await purgeOrphanFiles(provId);
-      toast.success(`Purged ${res.deletedKeys?.length ?? 'all'} orphaned files`);
+      toast.success(
+        `Purged ${res.deletedKeys?.length ?? 'all'} orphaned files`
+      );
     }
     queryClient.invalidateQueries({ queryKey: ['storage'] });
   };
@@ -160,164 +184,144 @@ export function StorageView() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Title and Provider Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-c">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b-2 border-[var(--border)]">
         <div>
-          <h1 className="text-xl font-semibold text-fg">Storage Management</h1>
-          <p className="text-xs text-muted mt-0.5">
-            Monitor S3 capacity, inspect bucket object inventory, link orphans, and manage video files.
+          <h1 className="font-display text-3xl font-extrabold tracking-tight text-[var(--ink)]">
+            Storage Management
+          </h1>
+          <p className="font-sans text-sm font-semibold text-[var(--muted)] mt-1">
+            Monitor S3 capacity, inspect bucket object inventory, link orphans,
+            and manage video files.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Provider Tabs / Dropdown Selector */}
+          {/* Provider Selector (ChunkySelect scales to any provider count) */}
           {providers.length > 0 && (
-            <div className="flex items-center gap-1 bg-card border border-c rounded p-0.5" data-testid="provider-selector-container">
-              {/* Desktop/Tablet Quick Tabs if <= 3 providers */}
-              <div className="hidden md:flex items-center gap-0.5" data-testid="provider-tabs">
-                {providers.map((p) => {
-                  const isSelected = p.id === selectedProviderId;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setSelectedProviderId(p.id)}
-                      data-testid={`provider-tab-${p.id}`}
-                      className={`px-2.5 py-1 text-xs mono rounded transition-colors flex items-center gap-1.5 ${
-                        isSelected
-                          ? 'bg-primary text-primary-fg font-medium'
-                          : 'text-muted hover:text-fg hover-bg'
-                      }`}
-                    >
-                      <span>{p.name}</span>
-                      {p.isDefault && (
-                        <span className={`text-[9px] px-1 py-0.2 rounded uppercase ${
-                          isSelected ? 'bg-primary-fg/20 text-primary-fg' : 'bg-sidebar text-muted border border-c'
-                        }`}>
-                          Def
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Mobile / Compact Selector Dropdown */}
-              <div className="md:hidden">
-                <Select
-                  value={selectedProviderId || undefined}
-                  onValueChange={(val) => setSelectedProviderId(val)}
+            <div
+              className="flex items-center"
+              data-testid="provider-selector-container"
+            >
+              <ChunkySelect
+                value={selectedProviderId || undefined}
+                onValueChange={(val) => setSelectedProviderId(val)}
+              >
+                <ChunkySelectTrigger
+                  data-testid="provider-selector-dropdown"
+                  className="w-[220px] font-mono"
                 >
-                  <SelectTrigger
-                    data-testid="provider-selector-dropdown"
-                    className="h-7 px-2 border-none bg-card text-xs mono text-fg w-[140px]"
-                  >
-                    <SelectValue placeholder="Select provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providers.map((p) => (
-                      <SelectItem key={p.id} value={p.id} className="text-xs mono">
-                        {p.name} {p.isDefault ? '(Default)' : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <ChunkySelectValue placeholder="Select provider" />
+                </ChunkySelectTrigger>
+                <ChunkySelectContent>
+                  {providers.map((p) => (
+                    <ChunkySelectItem
+                      key={p.id}
+                      value={p.id}
+                      className="font-mono"
+                    >
+                      {p.name} {p.isDefault ? '(Default)' : ''}
+                    </ChunkySelectItem>
+                  ))}
+                </ChunkySelectContent>
+              </ChunkySelect>
             </div>
           )}
 
           {/* MinIO Console link when active, otherwise Spin Up action */}
           {isMinioActive && minioStatus?.consoleUrl ? (
-            <Button
+            <ChunkyButton
               variant="outline"
               size="sm"
               asChild
               data-testid="minio-console-link-btn"
-              className="text-xs h-8 gap-1.5 mono"
             >
               <a href={minioStatus.consoleUrl} target="_blank" rel="noreferrer">
-                <ExternalLink className="w-3.5 h-3.5" />
+                <ExternalLink className="w-4 h-4" />
                 MinIO Console
               </a>
-            </Button>
+            </ChunkyButton>
           ) : (
-            <Button
-              variant="default"
+            <ChunkyButton
+              variant="blue"
               size="sm"
               onClick={() => setIsSpinUpModalOpen(true)}
               data-testid="spin-up-minio-btn"
-              className="text-xs h-8 gap-1.5 mono"
             >
-              <Rocket className="w-3.5 h-3.5" />
+              <Rocket className="w-4 h-4" />
               Spin Up MinIO
-            </Button>
+            </ChunkyButton>
           )}
 
           {/* Manage Providers Action Button */}
-          <Button
+          <ChunkyButton
             variant="outline"
             size="sm"
             onClick={() => setIsProvidersDrawerOpen(true)}
             data-testid="manage-providers-btn"
-            className="text-xs h-8 gap-1.5 mono"
           >
-            <Server className="w-3.5 h-3.5" />
+            <Server className="w-4 h-4" />
             Manage Providers
-          </Button>
+          </ChunkyButton>
         </div>
       </div>
 
       {/* S3 Configuration / Error Alert Banner */}
       {activeError && (
-        <div
-          className="bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 rounded p-4 flex items-start gap-3"
+        <ChunkyCard
+          className="p-4 flex items-start gap-3 border-[var(--gold-dark)] bg-[var(--gold)]/10"
           data-testid="storage-error-alert"
         >
-          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <span className="w-11 h-11 rounded-2xl border-2 border-b-4 border-[var(--gold-dark)] bg-[var(--gold)]/20 text-[var(--gold-dark)] flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5" />
+          </span>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-fg">Storage Warning</h3>
-            <p className="text-xs text-muted">
+            <h3 className="font-display font-bold text-sm text-[var(--ink)]">
+              Storage Warning
+            </h3>
+            <p className="font-sans text-xs font-semibold text-[var(--muted)]">
               {activeError instanceof Error
                 ? activeError.message
                 : 'S3 storage service is unavailable or unconfigured.'}
             </p>
           </div>
-        </div>
+        </ChunkyCard>
       )}
 
       {/* Empty-state hero: no providers connected */}
       {providers.length === 0 && (
-        <div
+        <ChunkyCard
           data-testid="minio-empty-state-hero"
-          className="rounded border border-c bg-card p-6 text-center space-y-3"
+          className="p-8 text-center space-y-3"
         >
-          <div className="mx-auto w-10 h-10 rounded bg-primary/10 text-primary border border-primary/20 flex items-center justify-center">
-            <Rocket className="w-5 h-5" />
+          <div className="mx-auto w-14 h-14 rounded-2xl border-2 border-b-4 border-[var(--green-dark)] bg-[var(--green-soft)] text-[var(--green)] flex items-center justify-center">
+            <Rocket className="w-6 h-6" />
           </div>
-          <h2 className="text-sm font-semibold text-fg">No storage connected yet</h2>
-          <p className="text-xs text-muted max-w-md mx-auto">
-            Connect an S3-compatible provider or spin up a local MinIO object storage
-            instance with one click — no cloud account required.
+          <h2 className="font-display font-extrabold text-xl text-[var(--ink)]">
+            No storage connected yet
+          </h2>
+          <p className="font-sans text-sm font-semibold text-[var(--muted)] max-w-md mx-auto">
+            Connect an S3-compatible provider or spin up a local MinIO object
+            storage instance with one click — no cloud account required.
           </p>
-          <div className="flex items-center justify-center gap-2 pt-1">
-            <Button
+          <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+            <ChunkyButton
               size="sm"
+              variant="primary"
               onClick={() => setIsSpinUpModalOpen(true)}
               data-testid="minio-empty-state-spinup-btn"
-              className="text-xs h-8 gap-1.5"
             >
-              <Rocket className="w-3.5 h-3.5" />
+              <Rocket className="w-4 h-4" />
               Spin Up MinIO
-            </Button>
-            <Button
+            </ChunkyButton>
+            <ChunkyButton
               variant="outline"
               size="sm"
               onClick={() => setIsProvidersDrawerOpen(true)}
-              className="text-xs h-8"
             >
               Manage Providers
-            </Button>
+            </ChunkyButton>
           </div>
-        </div>
+        </ChunkyCard>
       )}
 
       {/* Metrics Section */}
@@ -385,7 +389,9 @@ export function StorageView() {
         open={isLimitDialogOpen}
         onOpenChange={setIsLimitDialogOpen}
         currentLimitGb={
-          metrics ? Math.round(metrics.limitBytes / (1024 * 1024 * 1024)) : (activeProvider?.storageLimitGb ?? 50)
+          metrics
+            ? Math.round(metrics.limitBytes / (1024 * 1024 * 1024))
+            : (activeProvider?.storageLimitGb ?? 50)
         }
         onSave={handleSaveLimit}
       />
@@ -422,11 +428,9 @@ export function StorageView() {
         targetResource={deleteSingleResource}
         selectedResources={deleteBatchResources}
         allOrphansCount={metrics?.orphanCount ?? 0}
-        allOrphansSizeBytes={
-          resources
-            .filter((r) => r.status === 'orphaned')
-            .reduce((acc, r) => acc + (r.sizeBytes || 0), 0)
-        }
+        allOrphansSizeBytes={resources
+          .filter((r) => r.status === 'orphaned')
+          .reduce((acc, r) => acc + (r.sizeBytes || 0), 0)}
         onConfirm={handleConfirmDelete}
       />
 

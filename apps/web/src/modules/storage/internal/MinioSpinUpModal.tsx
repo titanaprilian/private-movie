@@ -2,18 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AlertTriangle, Eye, EyeOff, Loader2, Rocket } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogDescription,
+  ChunkyDialogFooter,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogBody,
+} from '@/components/ui/chunky-dialog';
 import {
   DEFAULT_MINIO_BUCKET,
   deriveMinioEndpoint,
@@ -29,13 +30,20 @@ export interface MinioSpinUpModalProps {
   onSuccess?: (data: MinioSpinUpResponseData) => void;
 }
 
-const SPIN_UP_STAGES = ['Starting container', 'Verifying health', 'Ready'] as const;
+const SPIN_UP_STAGES = [
+  'Starting container',
+  'Verifying health',
+  'Ready',
+] as const;
 
 function stageIndex(isPending: boolean, isSuccess: boolean): number {
   if (isSuccess) return 2;
   if (isPending) return 1;
   return 0;
 }
+
+const labelClassName =
+  'font-sans text-[11px] font-extrabold uppercase tracking-wider text-[var(--ink)]';
 
 export function MinioSpinUpModal({
   open,
@@ -47,7 +55,9 @@ export function MinioSpinUpModal({
   const [endpoint, setEndpoint] = useState(() => deriveMinioEndpoint());
   const [bucket, setBucket] = useState(DEFAULT_MINIO_BUCKET);
   const [accessKeyId, setAccessKeyId] = useState('minioadmin');
-  const [secretAccessKey, setSecretAccessKey] = useState(() => generateMinioSecret());
+  const [secretAccessKey, setSecretAccessKey] = useState(() =>
+    generateMinioSecret()
+  );
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [isDefault, setIsDefault] = useState(providerCount === 0);
 
@@ -68,7 +78,9 @@ export function MinioSpinUpModal({
       queryClient.invalidateQueries({ queryKey: ['storage', 'metrics'] });
       queryClient.invalidateQueries({ queryKey: ['storage', 'providers'] });
       queryClient.invalidateQueries({ queryKey: ['storage', 'resources'] });
-      queryClient.invalidateQueries({ queryKey: ['storage', 'minio', 'status'] });
+      queryClient.invalidateQueries({
+        queryKey: ['storage', 'minio', 'status'],
+      });
       toast.success(`MinIO is ready — console: ${data.consoleUrl}`);
       onOpenChange(false);
       onSuccess?.(data);
@@ -99,175 +111,198 @@ export function MinioSpinUpModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !mutation.isPending && onOpenChange(next)}>
-      <DialogContent data-testid="minio-spinup-modal" className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-sm">
-            <Rocket className="w-4 h-4 text-primary" />
-            Spin Up Local MinIO
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            Review the auto-generated settings below, then confirm to provision a local
-            MinIO object storage container.
-          </DialogDescription>
-        </DialogHeader>
+    <ChunkyDialog
+      open={open}
+      onOpenChange={(next) => !mutation.isPending && onOpenChange(next)}
+    >
+      <ChunkyDialogContent
+        data-testid="minio-spinup-modal"
+        aria-label="Spin up local MinIO"
+      >
+        <ChunkyDialogHeader>
+          <span className="flex items-center gap-2.5">
+            <span className="w-11 h-11 rounded-2xl border-2 border-b-4 border-[var(--blue-dark)] bg-[var(--blue-soft)] text-[var(--blue)] flex items-center justify-center shrink-0">
+              <Rocket className="w-5 h-5" />
+            </span>
+            <span>
+              <ChunkyDialogTitle>Spin Up Local MinIO</ChunkyDialogTitle>
+              <ChunkyDialogDescription>
+                Review the auto-generated settings below, then confirm to
+                provision a local MinIO object storage container.
+              </ChunkyDialogDescription>
+            </span>
+          </span>
+        </ChunkyDialogHeader>
 
-        <div className="space-y-3">
+        <ChunkyDialogBody className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="minio-endpoint" className="text-xs">
+            <label htmlFor="minio-endpoint" className={labelClassName}>
               S3 Endpoint
-            </Label>
-            <Input
+            </label>
+            <ChunkyInput
               id="minio-endpoint"
               data-testid="minio-endpoint-input"
               value={endpoint}
               onChange={(e) => setEndpoint(e.target.value)}
               disabled={mutation.isPending}
-              className="h-8 text-xs mono"
+              className="font-mono"
               placeholder="http://localhost:9000"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="minio-bucket" className="text-xs">
+            <label htmlFor="minio-bucket" className={labelClassName}>
               Bucket Name
-            </Label>
-            <Input
+            </label>
+            <ChunkyInput
               id="minio-bucket"
               data-testid="minio-bucket-input"
               value={bucket}
               onChange={(e) => setBucket(e.target.value)}
               disabled={mutation.isPending}
-              className="h-8 text-xs mono"
+              className="font-mono"
               placeholder={DEFAULT_MINIO_BUCKET}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="minio-access-key" className="text-xs">
+              <label htmlFor="minio-access-key" className={labelClassName}>
                 Access Key
-              </Label>
-              <Input
+              </label>
+              <ChunkyInput
                 id="minio-access-key"
                 data-testid="minio-access-key-input"
                 value={accessKeyId}
                 onChange={(e) => setAccessKeyId(e.target.value)}
                 disabled={mutation.isPending}
-                className="h-8 text-xs mono"
+                className="font-mono"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="minio-secret-key" className="text-xs">
+              <label htmlFor="minio-secret-key" className={labelClassName}>
                 Secret Key
-              </Label>
+              </label>
               <div className="relative">
-                <Input
+                <ChunkyInput
                   id="minio-secret-key"
                   data-testid="minio-secret-key-input"
                   value={secretAccessKey}
                   onChange={(e) => setSecretAccessKey(e.target.value)}
                   disabled={mutation.isPending}
-                  className="h-8 text-xs mono pr-8"
+                  className="font-mono pr-12"
                   type={showSecretKey ? 'text' : 'password'}
                 />
-                <Button
+                <ChunkyButton
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowSecretKey((v) => !v)}
                   disabled={mutation.isPending}
                   data-testid="minio-toggle-secret-visibility-btn"
-                  aria-label={showSecretKey ? 'Hide secret key' : 'Show secret key'}
-                  className="absolute right-0.5 top-1/2 h-7 w-7 -translate-y-1/2 px-0"
+                  aria-label={
+                    showSecretKey ? 'Hide secret key' : 'Show secret key'
+                  }
+                  className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 p-0"
                 >
-                  {showSecretKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </Button>
+                  {showSecretKey ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </ChunkyButton>
               </div>
             </div>
           </div>
 
-          <Button
+          <ChunkyButton
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={handleRegenerateSecret}
             disabled={mutation.isPending}
             data-testid="minio-regenerate-secret-btn"
-            className="h-7 text-[11px] px-2"
           >
             Regenerate secret key
-          </Button>
+          </ChunkyButton>
 
-          <label className="flex items-center gap-2 text-xs text-muted cursor-pointer">
-            <Checkbox
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <ChunkyCheckbox
               checked={isDefault}
-              onCheckedChange={(checked) => setIsDefault(checked === true)}
+              onCheckedChange={(checked) => setIsDefault(checked)}
               disabled={mutation.isPending}
               data-testid="minio-default-checkbox"
+              aria-label="Set as default storage provider"
             />
-            Set as default storage provider
+            <span className="font-sans text-xs font-bold text-[var(--muted)]">
+              Set as default storage provider
+            </span>
           </label>
 
           {mutation.isPending && (
-            <div data-testid="minio-spinup-progress" className="space-y-1.5 rounded border border-c bg-sidebar p-3">
+            <ChunkyCard
+              data-testid="minio-spinup-progress"
+              className="p-3 space-y-1.5"
+            >
               {SPIN_UP_STAGES.map((stage, i) => (
                 <div
                   key={stage}
                   data-testid={`minio-spinup-stage-${i}`}
                   data-active={i <= currentStage}
-                  className={`flex items-center gap-2 text-[11px] ${
-                    i <= currentStage ? 'text-fg font-medium' : 'text-muted'
+                  className={`flex items-center gap-2 font-sans text-[11px] font-bold ${
+                    i <= currentStage
+                      ? 'text-[var(--ink)]'
+                      : 'text-[var(--muted)]'
                   }`}
                 >
                   {i < currentStage || (i === 2 && mutation.isSuccess) ? (
-                    <span className="text-green-600">✓</span>
+                    <span className="text-[var(--green)]">✓</span>
                   ) : i === currentStage ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
-                    <span className="text-muted">○</span>
+                    <span>○</span>
                   )}
                   {stage}
                   {i === currentStage && i < 2 ? '…' : ''}
                 </div>
               ))}
-            </div>
+            </ChunkyCard>
           )}
 
           {errorMessage && (
-            <div
+            <ChunkyCard
               data-testid="minio-spinup-error"
-              className="flex items-start gap-2 rounded border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-3 text-[11px] text-red-800 dark:text-red-300"
+              className="p-3 flex items-start gap-2.5 border-[var(--red-dark)] bg-[var(--red)]/10"
             >
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
-            </div>
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--red)]" />
+              <span className="font-sans text-[11px] font-bold text-[var(--red)]">
+                {errorMessage}
+              </span>
+            </ChunkyCard>
           )}
-        </div>
+        </ChunkyDialogBody>
 
-        <DialogFooter className="gap-2">
-          <Button
+        <ChunkyDialogFooter>
+          <ChunkyButton
             variant="outline"
             size="sm"
             onClick={() => onOpenChange(false)}
             disabled={mutation.isPending}
             data-testid="minio-spinup-cancel-btn"
-            className="h-8 text-xs"
           >
             Cancel
-          </Button>
-          <Button
+          </ChunkyButton>
+          <ChunkyButton
             size="sm"
             onClick={handleSubmit}
             disabled={mutation.isPending}
             data-testid="minio-spinup-submit-btn"
-            className="h-8 text-xs gap-1.5"
           >
-            {mutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {mutation.isPending ? 'Provisioning…' : 'Spin Up MinIO'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </ChunkyButton>
+        </ChunkyDialogFooter>
+      </ChunkyDialogContent>
+    </ChunkyDialog>
   );
 }

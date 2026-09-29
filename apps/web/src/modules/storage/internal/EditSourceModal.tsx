@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogDescription,
+  ChunkyDialogBody,
+  ChunkyDialogFooter,
+} from '@/components/ui/chunky-dialog';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
 import type { VideoSourceMetadata } from './api';
 
 export interface EditSourceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   videoSource: (VideoSourceMetadata & { key?: string }) | null;
-  onSave: (sourceId: string, input: { label: string; quality: string }) => Promise<void>;
+  onSave: (
+    sourceId: string,
+    input: { label: string; quality: string }
+  ) => Promise<void>;
 }
 
 export function EditSourceModal({
@@ -55,7 +59,8 @@ export function EditSourceModal({
       });
       onOpenChange(false);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to update video source';
+      const msg =
+        err instanceof Error ? err.message : 'Failed to update video source';
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -63,55 +68,65 @@ export function EditSourceModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[95vw] bg-card border-c rounded sm:rounded p-5">
-        <DialogHeader className="pb-2 border-b border-c">
-          <DialogTitle className="text-base font-semibold text-fg">
-            Edit Video Source Metadata
-          </DialogTitle>
+    <ChunkyDialog open={open} onOpenChange={onOpenChange}>
+      <ChunkyDialogContent aria-label="Edit video source metadata">
+        <ChunkyDialogHeader>
+          <ChunkyDialogTitle>Edit Video Source Metadata</ChunkyDialogTitle>
           {videoSource.key && (
-            <p className="text-xs mono text-muted truncate mt-0.5" title={videoSource.key}>
+            <ChunkyDialogDescription
+              className="font-mono truncate"
+              title={videoSource.key}
+            >
               Key: {videoSource.key}
-            </p>
+            </ChunkyDialogDescription>
           )}
-        </DialogHeader>
+        </ChunkyDialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-source-label" className="text-xs font-medium">
-              Source Label
-            </Label>
-            <Input
-              id="edit-source-label"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. S3 Primary 1080p"
-              className="text-sm"
-              autoFocus
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <ChunkyDialogBody className="space-y-4">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="edit-source-label"
+                className="font-sans text-[11px] font-extrabold uppercase tracking-wider text-[var(--ink)]"
+              >
+                Source Label
+              </label>
+              <ChunkyInput
+                id="edit-source-label"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="e.g. S3 Primary 1080p"
+                autoFocus
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-source-quality" className="text-xs font-medium">
-              Quality Rating
-            </Label>
-            <Input
-              id="edit-source-quality"
-              value={quality}
-              onChange={(e) => setQuality(e.target.value)}
-              placeholder="e.g. 1080p, 4K, 720p"
-              className="text-sm"
-            />
-          </div>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="edit-source-quality"
+                className="font-sans text-[11px] font-extrabold uppercase tracking-wider text-[var(--ink)]"
+              >
+                Quality Rating
+              </label>
+              <ChunkyInput
+                id="edit-source-quality"
+                value={quality}
+                onChange={(e) => setQuality(e.target.value)}
+                placeholder="e.g. 1080p, 4K, 720p"
+              />
+            </div>
 
-          {error && (
-            <p className="text-xs text-red-600 dark:text-red-400 font-medium" data-testid="edit-source-error">
-              {error}
-            </p>
-          )}
+            {error && (
+              <p
+                className="font-sans text-xs font-bold text-[var(--red)]"
+                data-testid="edit-source-error"
+              >
+                {error}
+              </p>
+            )}
+          </ChunkyDialogBody>
 
-          <DialogFooter className="pt-2 gap-2 flex justify-end">
-            <Button
+          <ChunkyDialogFooter>
+            <ChunkyButton
               type="button"
               variant="outline"
               size="sm"
@@ -119,13 +134,18 @@ export function EditSourceModal({
               disabled={isSubmitting}
             >
               Cancel
-            </Button>
-            <Button type="submit" size="sm" disabled={isSubmitting} data-testid="save-source-btn">
+            </ChunkyButton>
+            <ChunkyButton
+              type="submit"
+              size="sm"
+              disabled={isSubmitting}
+              data-testid="save-source-btn"
+            >
               {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
+            </ChunkyButton>
+          </ChunkyDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ChunkyDialogContent>
+    </ChunkyDialog>
   );
 }

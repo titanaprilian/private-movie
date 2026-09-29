@@ -1,8 +1,12 @@
 import { useState, useMemo } from 'react';
 import { formatBytes, type StorageResource } from './api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import { ChunkyChip } from '@/components/ui/chunky-chip';
+import { ChunkyCard, ChunkyCardList } from '@/components/ui/chunky-card';
+import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
+import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
 import {
   Search,
   RefreshCw,
@@ -11,9 +15,6 @@ import {
   Edit2,
   Link as LinkIcon,
   AlertTriangle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ExternalLink,
 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
@@ -71,16 +72,26 @@ export function StorageResourceTable({
       .filter((r) => {
         // Status filter
         if (statusFilter === 'linked' && r.status !== 'linked') return false;
-        if (statusFilter === 'orphaned' && r.status !== 'orphaned') return false;
+        if (statusFilter === 'orphaned' && r.status !== 'orphaned')
+          return false;
 
         // Search filter (filename, S3 key, or series title)
         if (search.trim()) {
           const query = search.toLowerCase();
           const matchesFilename = r.filename.toLowerCase().includes(query);
           const matchesKey = r.key.toLowerCase().includes(query);
-          const matchesSeries = r.episode?.seriesTitle?.toLowerCase().includes(query);
-          const matchesEpisode = r.episode?.title?.toLowerCase().includes(query);
-          if (!matchesFilename && !matchesKey && !matchesSeries && !matchesEpisode) {
+          const matchesSeries = r.episode?.seriesTitle
+            ?.toLowerCase()
+            .includes(query);
+          const matchesEpisode = r.episode?.title
+            ?.toLowerCase()
+            .includes(query);
+          if (
+            !matchesFilename &&
+            !matchesKey &&
+            !matchesSeries &&
+            !matchesEpisode
+          ) {
             return false;
           }
         }
@@ -106,8 +117,7 @@ export function StorageResourceTable({
   const isAllSelected =
     allProcessedKeys.length > 0 &&
     allProcessedKeys.every((key) => selectedKeys.includes(key));
-  const isSomeSelected =
-    selectedKeys.length > 0 && !isAllSelected;
+  const isSomeSelected = selectedKeys.length > 0 && !isAllSelected;
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
@@ -127,332 +137,364 @@ export function StorageResourceTable({
     return resources.filter((r) => selectedKeys.includes(r.key));
   }, [resources, selectedKeys]);
 
-  const RenderSortIcon = ({ field }: { field: SortByField }) => {
-    if (sortBy !== field) return <ArrowUpDown className="w-3 h-3 ml-1 text-muted inline opacity-60" />;
-    return sortOrder === 'asc' ? (
-      <ArrowUp className="w-3 h-3 ml-1 text-primary inline" />
-    ) : (
-      <ArrowDown className="w-3 h-3 ml-1 text-primary inline" />
-    );
+  const sortIndicator = (field: SortByField) => {
+    if (sortBy !== field) return '↕';
+    return sortOrder === 'asc' ? '↑' : '↓';
   };
 
   return (
-    <div className="bg-card border border-c rounded space-y-0 overflow-hidden" data-testid="storage-table-container">
-      {/* Header Controls Bar */}
-      <div className="p-3 sm:p-4 border-b border-c flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1 bg-sidebar border border-c p-1 rounded">
-          <button
+    <div className="space-y-4" data-testid="storage-table-container">
+      {/* Toolbar: filter chips, search & actions */}
+      <ChunkyCard className="p-3 sm:p-4 flex flex-col gap-3">
+        {/* Status Filter Chips */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <ChunkyChip
             type="button"
+            variant={statusFilter === 'all' ? 'active' : 'default'}
+            pressed={statusFilter === 'all'}
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-              statusFilter === 'all'
-                ? 'bg-card text-primary font-semibold border border-c'
-                : 'text-muted hover:text-fg'
-            }`}
             data-testid="filter-tab-all"
           >
             All
-          </button>
-          <button
+          </ChunkyChip>
+          <ChunkyChip
             type="button"
+            variant={statusFilter === 'linked' ? 'active' : 'default'}
+            pressed={statusFilter === 'linked'}
             onClick={() => setStatusFilter('linked')}
-            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-              statusFilter === 'linked'
-                ? 'bg-card text-primary font-semibold border border-c'
-                : 'text-muted hover:text-fg'
-            }`}
             data-testid="filter-tab-linked"
           >
             Linked
-          </button>
-          <button
+          </ChunkyChip>
+          <ChunkyChip
             type="button"
+            variant={statusFilter === 'orphaned' ? 'active' : 'default'}
+            pressed={statusFilter === 'orphaned'}
             onClick={() => setStatusFilter('orphaned')}
-            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-              statusFilter === 'orphaned'
-                ? 'bg-card text-primary font-semibold border border-c'
-                : 'text-muted hover:text-fg'
-            }`}
             data-testid="filter-tab-orphaned"
           >
             Orphaned ({orphanedCount})
-          </button>
+          </ChunkyChip>
         </div>
 
         {/* Search & Actions */}
-        <div className="flex items-center gap-2 flex-1 sm:max-w-xs">
-          <div className="relative w-full">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted" />
-            <Input
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
+            <ChunkyInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search filename or series..."
-              className="pl-8 text-xs h-8 mono bg-transparent"
+              className="pl-10 font-mono"
               data-testid="storage-search-input"
             />
           </div>
+
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <ChunkyButton
+              variant="outline"
+              size="sm"
+              onClick={onRefreshScan}
+              disabled={isRefreshing || isLoading}
+              data-testid="refresh-scan-btn"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
+              Refresh Scan
+            </ChunkyButton>
+
+            <ChunkyButton
+              variant="gold"
+              size="sm"
+              onClick={onPurgeOrphans}
+              disabled={isLoading || orphanedCount === 0}
+              data-testid="purge-orphans-btn"
+            >
+              <Trash2 className="w-4 h-4" />
+              Purge All Orphans
+            </ChunkyButton>
+          </div>
         </div>
+      </ChunkyCard>
 
-        <div className="flex items-center gap-2 justify-end">
-          {/* Refresh Scan Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefreshScan}
-            disabled={isRefreshing || isLoading}
-            className="text-xs h-8 gap-1.5"
-            data-testid="refresh-scan-btn"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh Scan
-          </Button>
-
-          {/* Purge All Orphans Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onPurgeOrphans}
-            disabled={isLoading || orphanedCount === 0}
-            className="text-xs h-8 gap-1.5 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-            data-testid="purge-orphans-btn"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Purge All Orphans
-          </Button>
-        </div>
-      </div>
-
-      {/* Selection Batch Toolbar */}
+      {/* Sticky 3D batch selection toolbar */}
       {selectedKeys.length > 0 && (
-        <div
-          className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex items-center justify-between text-xs"
+        <ChunkyCard
+          className="sticky top-2 z-10 px-4 py-3 flex items-center justify-between gap-2 border-[var(--green)] bg-[var(--green-soft)]"
           data-testid="batch-toolbar"
         >
-          <span className="mono font-medium text-fg">
-            {selectedKeys.length} file{selectedKeys.length > 1 ? 's' : ''} selected
+          <span className="font-sans text-sm font-extrabold text-[var(--ink)]">
+            {selectedKeys.length} file{selectedKeys.length > 1 ? 's' : ''}{' '}
+            selected
           </span>
-          <Button
-            variant="destructive"
+          <ChunkyButton
+            variant="danger"
             size="sm"
             onClick={() => onDeleteBatch(selectedResources)}
-            className="text-xs h-7 gap-1.5"
             data-testid="delete-selected-btn"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-4 h-4" />
             Delete Selected ({selectedKeys.length})
-          </Button>
-        </div>
+          </ChunkyButton>
+        </ChunkyCard>
       )}
 
-      {/* Data Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm border-collapse">
-          <thead>
-            <tr className="border-b border-c bg-sidebar text-muted text-xs uppercase tracking-wide mono">
-              <th className="p-3 w-10 text-center">
-                <Checkbox
-                  checked={isAllSelected || isSomeSelected}
-                  onCheckedChange={toggleSelectAll}
-                  aria-label="Select all files"
-                  data-testid="select-all-checkbox"
-                />
-              </th>
-              <th
-                onClick={() => handleSort('name')}
-                className="p-3 cursor-pointer hover:text-fg select-none"
-                data-testid="sort-header-name"
-              >
-                Filename / Key <RenderSortIcon field="name" />
-              </th>
-              <th className="p-3">Association Status</th>
-              <th
-                onClick={() => handleSort('size')}
-                className="p-3 cursor-pointer hover:text-fg select-none"
-                data-testid="sort-header-size"
-              >
-                Size <RenderSortIcon field="size" />
-              </th>
-              <th
-                onClick={() => handleSort('date')}
-                className="p-3 cursor-pointer hover:text-fg select-none"
-                data-testid="sort-header-date"
-              >
-                Last Modified <RenderSortIcon field="date" />
-              </th>
-              <th className="p-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--border)]">
-            {isLoading ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-xs text-muted mono animate-pulse">
-                  Scanning S3 object bucket inventory...
-                </td>
-              </tr>
-            ) : processedResources.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-xs text-muted mono">
-                  No S3 storage resources found.
-                </td>
-              </tr>
-            ) : (
-              processedResources.map((resource) => {
-                const isSelected = selectedKeys.includes(resource.key);
-                const isVideo = /\.(mp4|mkv|webm|mov|avi)$/i.test(resource.filename);
+      {/* Grid Header Row */}
+      <div className="hidden lg:grid gap-3.5 items-center px-4 pb-2 grid-cols-[36px_minmax(0,2fr)_minmax(0,1.4fr)_130px_170px_48px]">
+        <span className="flex justify-center">
+          <ChunkyCheckbox
+            checked={isAllSelected}
+            indeterminate={isSomeSelected}
+            onCheckedChange={toggleSelectAll}
+            aria-label="Select all files"
+            data-testid="select-all-checkbox"
+          />
+        </span>
+        <button
+          type="button"
+          onClick={() => handleSort('name')}
+          data-testid="sort-header-name"
+          className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer text-left"
+        >
+          Filename / Key <span aria-hidden="true">{sortIndicator('name')}</span>
+        </button>
+        <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+          Status
+        </span>
+        <button
+          type="button"
+          onClick={() => handleSort('size')}
+          data-testid="sort-header-size"
+          className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer text-left"
+        >
+          Size <span aria-hidden="true">{sortIndicator('size')}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSort('date')}
+          data-testid="sort-header-date"
+          className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer text-left"
+        >
+          Modified <span aria-hidden="true">{sortIndicator('date')}</span>
+        </button>
+        <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] text-right">
+          Actions
+        </span>
+      </div>
 
-                return (
-                  <tr
-                    key={resource.key}
-                    className={`hover-bg transition-colors ${
-                      isSelected ? 'bg-primary/5' : ''
-                    }`}
-                    data-testid={`row-${resource.key}`}
+      {/* Mobile select-all row */}
+      <div className="flex lg:hidden items-center gap-2 px-1">
+        <ChunkyCheckbox
+          checked={isAllSelected}
+          indeterminate={isSomeSelected}
+          onCheckedChange={toggleSelectAll}
+          aria-label="Select all files"
+          data-testid="select-all-checkbox-mobile"
+        />
+        <button
+          type="button"
+          onClick={() => handleSort('name')}
+          data-testid="sort-header-name-mobile"
+          className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+        >
+          Sort by name <span aria-hidden="true">{sortIndicator('name')}</span>
+        </button>
+      </div>
+
+      {/* Data Row Cards */}
+      {isLoading ? (
+        <ChunkyCardList data-testid="storage-loading-list">
+          {[1, 2, 3].map((i) => (
+            <ChunkySkeleton key={i} className="p-4">
+              <div className="h-4 bg-[var(--border)] rounded-xl w-2/3 mb-2" />
+              <div className="h-3 bg-[var(--border)] rounded-xl w-1/3" />
+            </ChunkySkeleton>
+          ))}
+          <p className="text-center font-sans text-xs font-bold text-[var(--muted)]">
+            Scanning S3 object bucket inventory...
+          </p>
+        </ChunkyCardList>
+      ) : processedResources.length === 0 ? (
+        <ChunkyCard
+          className="p-8 text-center"
+          data-testid="storage-empty-state"
+        >
+          <p className="font-display font-bold text-lg text-[var(--ink)]">
+            No files found
+          </p>
+          <p className="font-sans text-sm font-semibold text-[var(--muted)] mt-1">
+            No S3 storage resources found.
+          </p>
+        </ChunkyCard>
+      ) : (
+        <ChunkyCardList>
+          {processedResources.map((resource) => {
+            const isSelected = selectedKeys.includes(resource.key);
+            const isVideo = /\.(mp4|mkv|webm|mov|avi)$/i.test(
+              resource.filename
+            );
+
+            return (
+              <ChunkyCard
+                key={resource.key}
+                selected={isSelected}
+                className="p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_minmax(0,1.4fr)_130px_170px_48px]"
+                data-testid={`row-${resource.key}`}
+              >
+                {/* Row selection */}
+                <span className="flex justify-center">
+                  <ChunkyCheckbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleSelectRow(resource.key)}
+                    aria-label={`Select ${resource.filename}`}
+                    data-testid={`checkbox-${resource.key}`}
+                  />
+                </span>
+
+                {/* Filename & S3 Key */}
+                <div className="min-w-0">
+                  <div
+                    className="font-sans font-extrabold text-[15px] text-[var(--ink)] leading-snug truncate"
+                    title={resource.filename}
                   >
-                    {/* Checkbox */}
-                    <td className="p-3 text-center">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleSelectRow(resource.key)}
-                        aria-label={`Select ${resource.filename}`}
-                        data-testid={`checkbox-${resource.key}`}
-                      />
-                    </td>
+                    {resource.filename}
+                  </div>
+                  <div
+                    className="font-mono font-semibold text-[13px] text-[var(--muted)] truncate"
+                    title={resource.key}
+                  >
+                    {resource.key}
+                  </div>
+                  {/* Stacked meta for compact viewports */}
+                  <div className="lg:hidden mt-1 font-mono text-xs font-bold text-[var(--ink)]">
+                    {formatBytes(resource.sizeBytes)}
+                    <span className="text-[11px] font-semibold text-[var(--muted)]">
+                      {' '}
+                      (
+                      {formatBytes(resource.sizeBytes, {
+                        decimals: 2,
+                        standard: 'decimal',
+                      })}
+                      )
+                    </span>
+                  </div>
+                </div>
 
-                    {/* Filename & S3 Key */}
-                    <td className="p-3 max-w-xs">
-                      <div className="font-medium text-xs text-fg truncate" title={resource.filename}>
-                        {resource.filename}
+                {/* Association Status */}
+                <div className="col-span-2 lg:col-span-1 min-w-0">
+                  {resource.status === 'linked' && resource.episode ? (
+                    <div className="space-y-1">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl border-2 border-[var(--green-dark)] bg-[var(--green-soft)] text-[11px] font-sans font-extrabold uppercase tracking-wider text-[var(--green)]">
+                        <LinkIcon className="w-3 h-3" /> Linked
+                      </span>
+                      <div className="font-sans text-sm font-bold text-[var(--ink)] truncate">
+                        <Link
+                          to="/admin/videos/$seriesId"
+                          params={{ seriesId: resource.episode.seriesId }}
+                          className="hover:underline inline-flex items-center gap-1"
+                        >
+                          {resource.episode.seriesTitle}
+                          <ExternalLink className="w-3 h-3 opacity-60" />
+                        </Link>
                       </div>
-                      <div className="text-[11px] mono text-muted truncate mt-0.5" title={resource.key}>
-                        {resource.key}
+                      <div className="font-mono text-[11px] font-semibold text-[var(--muted)]">
+                        S{resource.episode.seasonNumber ?? 1}E
+                        {resource.episode.episodeNumber ?? 1} —{' '}
+                        {resource.episode.title}
                       </div>
-                    </td>
-
-                    {/* Association Status */}
-                    <td className="p-3">
-                      {resource.status === 'linked' && resource.episode ? (
-                        <div className="space-y-1">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                            <LinkIcon className="w-3 h-3" /> Linked
-                          </span>
-                          <div className="text-xs text-fg">
-                            <Link
-                              to="/admin/videos/$seriesId"
-                              params={{ seriesId: resource.episode.seriesId }}
-                              className="font-medium hover:underline inline-flex items-center gap-1"
-                            >
-                              {resource.episode.seriesTitle}
-                              <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-                            </Link>
-                          </div>
-                          <div className="text-[11px] mono text-muted">
-                            S{resource.episode.seasonNumber ?? 1}E{resource.episode.episodeNumber ?? 1} — {resource.episode.title}
-                          </div>
-                          {resource.videoSource && (
-                            <div className="text-[10px] mono text-muted">
-                              [{resource.videoSource.label} • {resource.videoSource.quality}]
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                            <AlertTriangle className="w-3 h-3" /> Orphaned
-                          </span>
-                          <div className="text-[11px] text-muted italic">
-                            Unlinked S3 file
-                          </div>
+                      {resource.videoSource && (
+                        <div className="font-mono text-[10px] font-semibold text-[var(--muted)]">
+                          [{resource.videoSource.label} •{' '}
+                          {resource.videoSource.quality}]
                         </div>
                       )}
-                    </td>
-
-                    {/* Formatted Size */}
-                    <td className="p-3 mono text-xs text-fg font-medium">
-                      {formatBytes(resource.sizeBytes)}
-                      <span className="text-[10px] text-muted block font-normal">
-                        {formatBytes(resource.sizeBytes, { decimals: 2, standard: 'decimal' })}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl border-2 border-[var(--gold-dark)] bg-[var(--gold)]/15 text-[11px] font-sans font-extrabold uppercase tracking-wider text-[var(--gold-dark)]">
+                        <AlertTriangle className="w-3 h-3" /> Orphaned
                       </span>
-                    </td>
-
-                    {/* Last Modified Date */}
-                    <td className="p-3 mono text-xs text-muted">
-                      {resource.lastModified
-                        ? new Date(resource.lastModified).toLocaleDateString(undefined, {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : '—'}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {/* Video Preview Button */}
-                        {isVideo && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onPreview(resource)}
-                            title="Preview video playback"
-                            className="h-7 w-7 p-0"
-                            data-testid={`preview-btn-${resource.key}`}
-                          >
-                            <Play className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-
-                        {/* Edit metadata (Linked) */}
-                        {resource.status === 'linked' && resource.videoSource && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onEditSource(resource)}
-                            title="Edit label & quality"
-                            className="h-7 w-7 p-0"
-                            data-testid={`edit-btn-${resource.key}`}
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-
-                        {/* Attach orphan (Orphaned) */}
-                        {resource.status === 'orphaned' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onAttachOrphan(resource)}
-                            title="Attach to episode"
-                            className="h-7 px-2 text-xs gap-1 text-primary border-primary/30"
-                            data-testid={`attach-btn-${resource.key}`}
-                          >
-                            <LinkIcon className="w-3 h-3" /> Attach
-                          </Button>
-                        )}
-
-                        {/* Delete Single File */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDeleteSingle(resource)}
-                          title="Delete S3 file"
-                          className="h-7 w-7 p-0 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 border-c"
-                          data-testid={`delete-btn-${resource.key}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                      <div className="font-sans text-[11px] font-semibold text-[var(--muted)] italic">
+                        Unlinked S3 file
                       </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Formatted Size (dual display) */}
+                <div className="hidden lg:block font-mono text-sm font-extrabold text-[var(--ink)]">
+                  {formatBytes(resource.sizeBytes)}
+                  <span className="text-[11px] font-semibold text-[var(--muted)] block">
+                    {formatBytes(resource.sizeBytes, {
+                      decimals: 2,
+                      standard: 'decimal',
+                    })}
+                  </span>
+                </div>
+
+                {/* Last Modified Date */}
+                <div className="hidden lg:block font-mono text-xs font-semibold text-[var(--muted)]">
+                  {resource.lastModified
+                    ? new Date(resource.lastModified).toLocaleDateString(
+                        undefined,
+                        {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      )
+                    : '—'}
+                </div>
+
+                {/* Row Actions kebab */}
+                <span className="flex justify-end">
+                  <ChunkyActionMenu
+                    triggerLabel={`Actions for ${resource.filename}`}
+                    items={[
+                      ...(isVideo
+                        ? [
+                            {
+                              label: 'Preview',
+                              onSelect: () => onPreview(resource),
+                              icon: <Play className="w-4 h-4" />,
+                            },
+                          ]
+                        : []),
+                      ...(resource.status === 'linked' && resource.videoSource
+                        ? [
+                            {
+                              label: 'Edit metadata',
+                              onSelect: () => onEditSource(resource),
+                              icon: <Edit2 className="w-4 h-4" />,
+                            },
+                          ]
+                        : []),
+                      ...(resource.status === 'orphaned'
+                        ? [
+                            {
+                              label: 'Attach orphan',
+                              onSelect: () => onAttachOrphan(resource),
+                              icon: <LinkIcon className="w-4 h-4" />,
+                            },
+                          ]
+                        : []),
+                      {
+                        label: 'Delete',
+                        onSelect: () => onDeleteSingle(resource),
+                        icon: <Trash2 className="w-4 h-4" />,
+                        danger: true,
+                      },
+                    ]}
+                  />
+                </span>
+              </ChunkyCard>
+            );
+          })}
+        </ChunkyCardList>
+      )}
     </div>
   );
 }
