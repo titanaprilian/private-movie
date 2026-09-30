@@ -2,37 +2,31 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { updateSeason, type SeasonDetails } from './api';
+import { detectProviderFromUrl } from './seasonUtils';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogDescription,
+  ChunkyDialogBody,
+  ChunkyDialogFooter,
+} from '@/components/ui/chunky-dialog';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
 
 export interface EditSeasonDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   season: SeasonDetails;
-}
-
-function detectProviderFromUrl(url: string): 'otakudesu' | 'dramula' | null {
-  if (!url) return null;
-  const lower = url.toLowerCase();
-  if (lower.includes('otakudesu')) return 'otakudesu';
-  if (lower.includes('dramula')) return 'dramula';
-  return null;
 }
 
 export function EditSeasonDialog({
@@ -106,125 +100,159 @@ export function EditSeasonDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Season</DialogTitle>
-          <DialogDescription>
+    <ChunkyDialog open={open} onOpenChange={onOpenChange}>
+      <ChunkyDialogContent className="max-w-md">
+        <ChunkyDialogHeader>
+          <ChunkyDialogTitle>Edit Season</ChunkyDialogTitle>
+          <ChunkyDialogDescription>
             Update this season&apos;s metadata to correct scraped data or configure ongoing automated scraping.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-season-title">Title</Label>
-            <Input
-              id="edit-season-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Season 1"
-              required
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-season-description">Description</Label>
-            <textarea
-              id="edit-season-description"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description"
-              className="flex w-full rounded border border-c bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-season-status">Status</Label>
-            <Select
-              value={status}
-              onValueChange={(val) => setStatus(val as 'completed' | 'ongoing' | 'pending')}
-            >
-              <SelectTrigger id="edit-season-status">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="ongoing">Ongoing</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="pt-2 border-t border-c space-y-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">Scraper Configuration</h4>
+          </ChunkyDialogDescription>
+        </ChunkyDialogHeader>
+        <ChunkyDialogBody>
+          <form id="edit-season-form" onSubmit={handleSubmit} className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-season-scraper-url">Scraper URL</Label>
-              <Input
-                id="edit-season-scraper-url"
-                type="url"
-                value={scraperUrl}
-                onChange={(e) => handleScraperUrlChange(e.target.value)}
-                placeholder="https://otakudesu.cloud/anime/... or https://dramula.com/watch/..."
+              <label
+                htmlFor="edit-season-title"
+                className="text-sm font-extrabold text-[var(--ink)]"
+              >
+                Title
+              </label>
+              <ChunkyInput
+                id="edit-season-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Season 1"
+                required
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-season-source">Provider Source</Label>
-                <Select
-                  value={source}
-                  onValueChange={(val) => setSource(val)}
-                >
-                  <SelectTrigger id="edit-season-source">
-                    <SelectValue placeholder="Select provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="otakudesu">Otakudesu</SelectItem>
-                    <SelectItem value="dramula">Dramula</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-season-episode-offset">Episode Offset</Label>
-                <Input
-                  id="edit-season-episode-offset"
-                  type="number"
-                  value={episodeOffset}
-                  onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
-                  placeholder="0"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="edit-season-description"
+                className="text-sm font-extrabold text-[var(--ink)]"
+              >
+                Description
+              </label>
+              <ChunkyTextarea
+                id="edit-season-description"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Optional description"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="edit-season-status"
+                className="text-sm font-extrabold text-[var(--ink)]"
+              >
+                Status
+              </label>
+              <ChunkySelect
+                value={status}
+                onValueChange={(val) => setStatus(val as 'completed' | 'ongoing' | 'pending')}
+              >
+                <ChunkySelectTrigger id="edit-season-status" aria-label="Status">
+                  <ChunkySelectValue placeholder="Select status" />
+                </ChunkySelectTrigger>
+                <ChunkySelectContent>
+                  <ChunkySelectItem value="completed">Completed</ChunkySelectItem>
+                  <ChunkySelectItem value="ongoing">Ongoing</ChunkySelectItem>
+                  <ChunkySelectItem value="pending">Pending</ChunkySelectItem>
+                </ChunkySelectContent>
+              </ChunkySelect>
             </div>
 
-            {(season.lastScrapedAt || season.lastScrapeError) && (
-              <div className="rounded border border-c bg-muted/20 p-2.5 space-y-1 text-xs">
-                {season.lastScrapedAt && (
-                  <div className="text-muted">
-                    <span className="font-medium text-foreground">Last Scraped:</span>{' '}
-                    {new Date(season.lastScrapedAt).toLocaleString()}
-                  </div>
-                )}
-                {season.lastScrapeError && (
-                  <div className="text-destructive font-mono text-[11px] break-words">
-                    <span className="font-semibold">Last Error:</span> {season.lastScrapeError}
-                  </div>
-                )}
+            <div className="pt-2 border-t-2 border-[var(--border)] space-y-3">
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">Scraper Configuration</h4>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="edit-season-scraper-url"
+                  className="text-sm font-extrabold text-[var(--ink)]"
+                >
+                  Scraper URL
+                </label>
+                <ChunkyInput
+                  id="edit-season-scraper-url"
+                  type="url"
+                  value={scraperUrl}
+                  onChange={(e) => handleScraperUrlChange(e.target.value)}
+                  placeholder="https://otakudesu.cloud/anime/... or https://dramula.com/watch/..."
+                />
               </div>
-            )}
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="edit-season-source"
+                    className="text-sm font-extrabold text-[var(--ink)]"
+                  >
+                    Provider Source
+                  </label>
+                  <ChunkySelect
+                    value={source}
+                    onValueChange={(val) => setSource(val)}
+                  >
+                    <ChunkySelectTrigger id="edit-season-source" aria-label="Provider Source">
+                      <ChunkySelectValue placeholder="Select provider" />
+                    </ChunkySelectTrigger>
+                    <ChunkySelectContent>
+                      <ChunkySelectItem value="none">None</ChunkySelectItem>
+                      <ChunkySelectItem value="otakudesu">Otakudesu</ChunkySelectItem>
+                      <ChunkySelectItem value="dramula">Dramula</ChunkySelectItem>
+                    </ChunkySelectContent>
+                  </ChunkySelect>
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="edit-season-episode-offset"
+                    className="text-sm font-extrabold text-[var(--ink)]"
+                  >
+                    Episode Offset
+                  </label>
+                  <ChunkyInput
+                    id="edit-season-episode-offset"
+                    type="number"
+                    value={episodeOffset}
+                    onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
 
-          <DialogFooter className="pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!title.trim() || updateMutation.isPending}>
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+              {(season.lastScrapedAt || season.lastScrapeError) && (
+                <div className="rounded-2xl border-2 border-[var(--border)] bg-[var(--bg)] p-2.5 space-y-1 text-xs">
+                  {season.lastScrapedAt && (
+                    <div className="text-[var(--muted)]">
+                      <span className="font-extrabold text-[var(--ink)]">Last Scraped:</span>{' '}
+                      {new Date(season.lastScrapedAt).toLocaleString()}
+                    </div>
+                  )}
+                  {season.lastScrapeError && (
+                    <div className="text-[var(--red)] font-mono text-[11px] break-words">
+                      <span className="font-semibold">Last Error:</span> {season.lastScrapeError}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </form>
+        </ChunkyDialogBody>
+        <ChunkyDialogFooter>
+          <ChunkyButton
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </ChunkyButton>
+          <ChunkyButton
+            type="submit"
+            form="edit-season-form"
+            disabled={!title.trim() || updateMutation.isPending}
+          >
+            {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+          </ChunkyButton>
+        </ChunkyDialogFooter>
+      </ChunkyDialogContent>
+    </ChunkyDialog>
   );
 }

@@ -55,6 +55,11 @@ export {
   SERIES_PAGE_LIMIT,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
+export { AddSeasonDialog } from './internal/AddSeasonDialog';
+export type { AddSeasonDialogProps } from './internal/AddSeasonDialog';
+export { EditSeasonDialog } from './internal/EditSeasonDialog';
+export type { EditSeasonDialogProps } from './internal/EditSeasonDialog';
+export { getSeasonNumber, getNextSeasonNumber } from './internal/seasonUtils';
 export type {
   Episode,
   Episode as ApiEpisode,
@@ -72,6 +77,7 @@ export type {
   SeasonDetails,
   UpdateSeriesParams,
   UpdateSeasonParams,
+  CreateSeasonParams,
   PreviewScrapeParams,
   PreviewScrapeResult,
   SaveMediaParams,
@@ -97,6 +103,7 @@ export type {
   AdminSeriesListResponseData,
   AdminUpdateSeriesRequest,
   AdminUpdateSeasonRequest,
+  AdminCreateSeasonRequest,
   AdminScrapeOngoingSeasonResponseData,
   AdminEpisodesListQuery,
   AdminEpisodesListResponseData,

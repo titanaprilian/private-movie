@@ -28,6 +28,8 @@ import {
   type UpdateEpisodeData,
 } from './api';
 import { EditSeasonDialog } from './EditSeasonDialog';
+import { AddSeasonDialog } from './AddSeasonDialog';
+import { getSeasonNumber } from './seasonUtils';
 import { EditSeriesDialog } from './EditSeriesDialog';
 import { SyncTmdbModal } from './SyncTmdbModal';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
@@ -268,6 +270,7 @@ export function SeriesDetailView({
     'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing' | undefined
   >(undefined);
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
+  const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
   const [isDeleteSeasonOpen, setIsDeleteSeasonOpen] = useState(false);
   const [isSyncTmdbOpen, setIsSyncTmdbOpen] = useState(false);
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
@@ -649,13 +652,13 @@ export function SeriesDetailView({
       </div>
 
       {/* Season Navigation Bar */}
-      {series.seasons && series.seasons.length > 0 && (
-        <div className="season-bar">
-          <span className="lbl">SEASON:</span>
-          <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-            {series.seasons.map((season, index) => {
+      <div className="season-bar">
+        <span className="lbl">SEASON:</span>
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+          {series.seasons && series.seasons.length > 0 ? (
+            series.seasons.map((season, index) => {
               const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
-              const title = season.title || `Season ${season.tmdbSeason ?? index + 1}`;
+              const title = season.title || `Season ${getSeasonNumber(season, index)}`;
               return (
                 <Droppable
                   key={season.id}
@@ -683,8 +686,23 @@ export function SeriesDetailView({
                   )}
                 </Droppable>
               );
-            })}
-          </div>
+            })
+          ) : (
+            <span className="text-sm font-semibold text-[var(--muted)]">
+              No seasons yet
+            </span>
+          )}
+          <ChunkyButton
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAddSeasonOpen(true)}
+            aria-label="Add season"
+            title="Add season"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+          </ChunkyButton>
+        </div>
 
           {activeSeason && (
             <div className="ml-auto flex-none">
@@ -733,7 +751,7 @@ export function SeriesDetailView({
                     label: 'Delete Season',
                     icon: <Trash2 className="size-4" />,
                     danger: true,
-                    disabled: series.seasons.length <= 1,
+                    disabled: (series.seasons?.length ?? 0) <= 1,
                     onSelect: () => {
                       if (series.seasons && series.seasons.length <= 1) return;
                       setIsDeleteSeasonOpen(true);
@@ -743,6 +761,29 @@ export function SeriesDetailView({
               />
             </div>
           )}
+        </div>
+
+      {(!series.seasons || series.seasons.length === 0) && (
+        <div
+          className="bg-[var(--surface)] border-2 border-b-4 border-[var(--border)] rounded-[var(--radius)] p-6 text-center"
+          role="region"
+          aria-label="No seasons"
+        >
+          <h2 className="text-lg font-extrabold text-[var(--ink)]">
+            No seasons yet
+          </h2>
+          <p className="text-sm font-semibold text-[var(--muted)] mt-1">
+            This series has no seasons. Create the first season to start
+            organizing episodes.
+          </p>
+          <ChunkyButton
+            type="button"
+            onClick={() => setIsAddSeasonOpen(true)}
+            className="mt-4"
+          >
+            <Plus className="size-5" aria-hidden="true" />
+            Create First Season
+          </ChunkyButton>
         </div>
       )}
 
@@ -847,6 +888,12 @@ export function SeriesDetailView({
           onOpenChange={setIsEditSeasonOpen}
         />
       )}
+      <AddSeasonDialog
+        open={isAddSeasonOpen}
+        onOpenChange={setIsAddSeasonOpen}
+        seriesId={seriesId}
+        seasons={series.seasons ?? []}
+      />
 
       {/* Delete Season Confirmation Dialog */}
       <Dialog open={isDeleteSeasonOpen} onOpenChange={setIsDeleteSeasonOpen}>

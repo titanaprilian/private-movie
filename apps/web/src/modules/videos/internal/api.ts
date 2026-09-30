@@ -39,6 +39,7 @@ import type {
   AdminPresignUploadRequest,
   AdminPresignUploadResponseData,
   AdminUploadProgressResponseData,
+  AdminCreateSeasonRequest,
 } from '@repo/contracts';
 import { parseIngestUrl, type ParsedIngestUrl } from './parseIngestUrl';
 
@@ -68,6 +69,7 @@ export type UpdateVideoSourceInput = AdminUpdateVideoSourceRequest;
 export type ReorderEpisodeItem = AdminReorderEpisodesRequestItem;
 export type UpdateSeriesParams = AdminUpdateSeriesRequest;
 export type UpdateSeasonParams = AdminUpdateSeasonRequest;
+export type CreateSeasonParams = AdminCreateSeasonRequest;
 export type ImportTmdbParams = AdminTmdbImportRequest;
 export type SyncTmdbParams = AdminTmdbSyncRequest;
 export type FetchSeriesTmdbSyncPreviewParams = AdminTmdbSyncPreviewQuery;
@@ -113,6 +115,7 @@ export type {
   AdminPresignUploadRequest,
   AdminPresignUploadResponseData,
   AdminUploadProgressResponseData,
+  AdminCreateSeasonRequest,
 };
 
 export async function fetchSeries(
@@ -530,6 +533,20 @@ export async function updateSeason(
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
     throw new Error(extractErrorMessage(res.error, 'Failed to update season'));
+  }
+
+  return res.data.data as unknown as SeasonDetails;
+}
+
+export async function createSeason(
+  seriesId: string,
+  params: CreateSeasonParams
+): Promise<SeasonDetails> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.series as any)[seriesId].seasons.post(params);
+
+  if (res.error || !res.data || !('data' in res.data) || !res.data.data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to create season'));
   }
 
   return res.data.data as unknown as SeasonDetails;

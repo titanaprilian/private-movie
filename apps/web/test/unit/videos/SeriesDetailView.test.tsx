@@ -742,7 +742,7 @@ describe('SeriesDetailView component', () => {
     expect(screen.getAllByText('Special Episode').length).toBeGreaterThan(0);
   });
 
-  it('does not render "Merge Seasons" or "Add Season" buttons when multiple seasons exist', async () => {
+  it('renders an "Add season" button when multiple seasons exist (and no "Merge Seasons")', async () => {
     const mockMultiSeasonSeries: SeriesDetails = {
       id: 'merge-seasons-series',
       sourceUrl: 'https://otakudesu.cloud/anime/merge-seasons',
@@ -795,7 +795,7 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: 'Attack on Titan' });
 
     expect(screen.queryByRole('button', { name: /Merge Seasons/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Add Season/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Add season/i })).toBeInTheDocument();
   });
 
   it('does not render "Sync Episodes" button in season toolbar', async () => {
