@@ -1050,8 +1050,8 @@ describe('SeriesDetailView component', () => {
     expect(within(bulkbar).getByRole('button', { name: /add sources/i })).toBeInTheDocument();
     expect(within(bulkbar).getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
 
-    // Deprecated Move to Season batch button is gone
-    expect(screen.queryByRole('button', { name: /move to season/i })).not.toBeInTheDocument();
+    // Bulk Move to Season action is available (#626)
+    expect(within(bulkbar).getByRole('button', { name: /move to season/i })).toBeInTheDocument();
 
     // Click Add sources opens BulkScrapeModal
     await user.click(within(bulkbar).getByRole('button', { name: /add sources/i }));

@@ -59,6 +59,9 @@ export { AddSeasonDialog } from './internal/AddSeasonDialog';
 export type { AddSeasonDialogProps } from './internal/AddSeasonDialog';
 export { EditSeasonDialog } from './internal/EditSeasonDialog';
 export type { EditSeasonDialogProps } from './internal/EditSeasonDialog';
+export { MoveEpisodesDialog } from './internal/MoveEpisodesDialog';
+export type { MoveEpisodesDialogProps } from './internal/MoveEpisodesDialog';
+export { buildCrossSeasonMove, buildBulkCrossSeasonMove } from './internal/crossSeasonMove';
 export { getSeasonNumber, getNextSeasonNumber } from './internal/seasonUtils';
 export type {
   Episode,

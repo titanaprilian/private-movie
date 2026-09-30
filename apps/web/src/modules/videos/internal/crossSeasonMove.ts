@@ -52,3 +52,56 @@ export function buildCrossSeasonMove(
 
   return { episodes, orders };
 }
+
+export function buildBulkCrossSeasonMove(
+  allEpisodes: Episode[],
+  selectedEpisodeIds: string[],
+  targetSeasonId: string
+): CrossSeasonMove | null {
+  const selectedSet = new Set(selectedEpisodeIds);
+  const toMove = allEpisodes
+    .filter((ep) => selectedSet.has(ep.id) && ep.seasonId !== targetSeasonId)
+    .sort((a, b) => (a.order ?? 1) - (b.order ?? 1));
+  if (toMove.length === 0) {
+    return null;
+  }
+  const movedIds = new Set(toMove.map((ep) => ep.id));
+
+  // Re-index remaining episodes in every affected source season to 1..N.
+  const sourceSeasonIds = [...new Set(toMove.map((ep) => ep.seasonId))];
+  const updates = new Map<string, Episode>();
+  const orders: ReorderEpisodeItem[] = [];
+
+  for (const sourceSeasonId of sourceSeasonIds) {
+    const remaining = allEpisodes
+      .filter((ep) => ep.seasonId === sourceSeasonId && !movedIds.has(ep.id))
+      .sort((a, b) => (a.order ?? 1) - (b.order ?? 1));
+    remaining.forEach((ep, idx) => {
+      const next = { ...ep, order: idx + 1 };
+      updates.set(ep.id, next);
+      orders.push({ id: ep.id, order: idx + 1 });
+    });
+  }
+
+  // Append moved episodes sequentially after the current max target order,
+  // preserving their relative selection order.
+  const targetOrders = allEpisodes
+    .filter((ep) => ep.seasonId === targetSeasonId && !movedIds.has(ep.id))
+    .map((ep) => ep.order ?? 0);
+  let nextTargetOrder =
+    (targetOrders.length > 0 ? Math.max(...targetOrders) : 0) + 1;
+
+  for (const ep of toMove) {
+    const moved: Episode = {
+      ...ep,
+      seasonId: targetSeasonId,
+      order: nextTargetOrder,
+    };
+    updates.set(ep.id, moved);
+    orders.push({ id: ep.id, order: nextTargetOrder, seasonId: targetSeasonId });
+    nextTargetOrder += 1;
+  }
+
+  const episodes = allEpisodes.map((ep) => updates.get(ep.id) ?? ep);
+  return { episodes, orders };
+}

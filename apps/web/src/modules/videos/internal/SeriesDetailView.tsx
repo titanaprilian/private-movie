@@ -33,7 +33,8 @@ import { getSeasonNumber } from './seasonUtils';
 import { EditSeriesDialog } from './EditSeriesDialog';
 import { SyncTmdbModal } from './SyncTmdbModal';
 import { ManageSourcesDialog } from './ManageSourcesDialog';
-import { buildCrossSeasonMove } from './crossSeasonMove';
+import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from './crossSeasonMove';
+import { MoveEpisodesDialog } from './MoveEpisodesDialog';
 import { BulkScrapeModal } from './BulkScrapeModal';
 import { BulkIngestModal } from './BulkIngestModal';
 import { EpisodeTable } from './EpisodeTable';
@@ -277,6 +278,7 @@ export function SeriesDetailView({
   const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
   const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
   const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
+  const [isMoveEpisodesOpen, setIsMoveEpisodesOpen] = useState(false);
   const [selectedEpisodeIds, setSelectedEpisodeIds] = useState<string[]>([]);
   const [isBatchOperating, setIsBatchOperating] = useState(false);
   const [bulkScrapeEpisodeIds, setBulkScrapeEpisodeIds] = useState<string[] | null>(null);
@@ -460,6 +462,55 @@ export function SeriesDetailView({
     });
   };
 
+  const handleBulkMoveEpisodes = (targetSeasonId: string) => {
+    const move = buildBulkCrossSeasonMove(
+      localEpisodes,
+      selectedEpisodeIds,
+      targetSeasonId
+    );
+    if (!move) {
+      setIsMoveEpisodesOpen(false);
+      return;
+    }
+
+    const previousEpisodes = [...localEpisodes];
+    setLocalEpisodes(move.episodes);
+    queryClient.setQueryData(
+      ['series', seriesId],
+      (old: SeriesDetails | undefined) =>
+        old ? { ...old, episodes: move.episodes } : old
+    );
+
+    reorderMutation.mutate(move.orders, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+        setSelectedEpisodeIds([]);
+        setIsMoveEpisodesOpen(false);
+        toast.success(`Moved ${move.orders.filter((o) => o.seasonId).length} episodes`);
+      },
+      onError: (error) => {
+        setLocalEpisodes(previousEpisodes);
+        queryClient.setQueryData(
+          ['series', seriesId],
+          (old: SeriesDetails | undefined) =>
+            old ? { ...old, episodes: previousEpisodes } : old
+        );
+        toast.error('video.reorder', {
+          description: `Failed to move episodes: ${error.message}`,
+        });
+      },
+    });
+  };
+
+  const episodeCountBySeason = (() => {
+    const counts: Record<string, number> = {};
+    for (const ep of localEpisodes) {
+      if (ep.seasonId == null) continue;
+      const key: string = ep.seasonId;
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    return counts;
+  })();
   const handleConfirmEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEpisode) return;
@@ -822,6 +873,14 @@ export function SeriesDetailView({
             Add sources
           </ChunkyChip>
           <ChunkyChip
+            variant="blue"
+            type="button"
+            onClick={() => setIsMoveEpisodesOpen(true)}
+          >
+            <Copy className="size-4" />
+            Move to Season
+          </ChunkyChip>
+          <ChunkyChip
             variant="danger"
             type="button"
             onClick={() => setIsBatchDeleteOpen(true)}
@@ -842,6 +901,16 @@ export function SeriesDetailView({
           setManageSourcesInitialTab(tab);
           setIsManageSourcesOpen(true);
         }}
+      />
+      <MoveEpisodesDialog
+        open={isMoveEpisodesOpen}
+        onOpenChange={setIsMoveEpisodesOpen}
+        seasons={series.seasons ?? []}
+        currentSeasonId={activeSeason?.id ?? null}
+        selectedCount={selectedEpisodeIds.length}
+        episodeCountBySeason={episodeCountBySeason}
+        isPending={reorderMutation.isPending}
+        onConfirm={handleBulkMoveEpisodes}
       />
       <BatchDeleteDialog
         open={isBatchDeleteOpen}
