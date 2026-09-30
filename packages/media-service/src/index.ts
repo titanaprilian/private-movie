@@ -1107,6 +1107,17 @@ export function createMediaService<
         }
       }
 
+      // Scraper-first placeholders: episodes created by the ongoing scraper
+      // ahead of TMDB carry NULL passports. They are enriched in place by
+      // the next TMDB sync (UPDATE only — video_sources rows are untouched).
+      const unclaimedPlaceholders = (localEpisodes as any[]).filter(
+        (e) =>
+          e.tmdbSeasonNumber == null &&
+          e.tmdbEpisodeNumber == null &&
+          !(e as any).__claimed &&
+          (!ongoingSeason || e.seasonId === (ongoingSeason as any).id)
+      );
+
       await db.transaction(async (tx: any) => {
         await tx
           .update(series)
@@ -1239,6 +1250,24 @@ export function createMediaService<
             // Newly discovered TMDB episode: route to the active ongoing
             // season (sequential append) or to the canonical season flagged
             // as unassigned when the series is completed.
+            // Prefer enriching a scraper-first placeholder in place so
+            // attached video sources survive (episodes UPDATE only).
+            const placeholderIdx = unclaimedPlaceholders.findIndex(
+              (p) => !(p as any).__claimed
+            );
+            if (ongoingSeason && placeholderIdx >= 0) {
+              const placeholder = unclaimedPlaceholders[placeholderIdx] as any;
+              placeholder.__claimed = true;
+              await tx
+                .update(episodes)
+                .set({
+                  ...meta,
+                  tmdbSeasonNumber: season.seasonNumber,
+                  tmdbEpisodeNumber: episode.episode_number,
+                })
+                .where(eq(episodes.id, placeholder.id));
+              continue;
+            }
             let targetSeasonId = canonicalSeasonId ?? seasonRow?.id;
             let targetOrder = episode.episode_number;
             let isUnassigned = false;
@@ -1381,9 +1410,20 @@ export function createMediaService<
           }
 
           const targetOrder = epNum + offset;
-          const matchedEpisode = seasonEpisodes.find((e) => e.order === targetOrder);
+          let matchedEpisode = seasonEpisodes.find((e) => e.order === targetOrder);
           if (!matchedEpisode) {
-            continue;
+            // Scraper-first ingestion: the provider released an episode TMDB
+            // hasn't indexed yet. Create a placeholder so sources attach
+            // immediately; a later TMDB sync enriches it in place.
+            // Note: episodes table has no tmdbSyncStatus column (only
+            // series/seasons do), so PENDING is implied by NULL passports.
+            const created = await episodeRepository.upsert({
+              seasonId,
+              title: `Episode ${targetOrder}`,
+              order: targetOrder,
+            });
+            matchedEpisode = { ...created, videoSources: [] } as typeof seasonEpisodes[number];
+            seasonEpisodes.push(matchedEpisode);
           }
 
           // Only scrape if the matched episode currently has ZERO video sources
