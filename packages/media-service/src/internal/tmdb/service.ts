@@ -622,6 +622,9 @@ export async function saveTmdbSeries(
             rating: episode.vote_average ? String(episode.vote_average) : null,
             airDate: episode.air_date ? new Date(episode.air_date) : null,
             duration: episode.runtime || null,
+            tmdbSeasonNumber: season.seasonNumber,
+            tmdbEpisodeNumber: episode.episode_number,
+            isUnassigned: false,
             createdAt: new Date(),
             updatedAt: new Date(),
           })
@@ -634,6 +637,8 @@ export async function saveTmdbSeries(
               rating: episode.vote_average ? String(episode.vote_average) : null,
               airDate: episode.air_date ? new Date(episode.air_date) : null,
               duration: episode.runtime || null,
+              tmdbSeasonNumber: season.seasonNumber,
+              tmdbEpisodeNumber: episode.episode_number,
               updatedAt: new Date(),
             },
           });

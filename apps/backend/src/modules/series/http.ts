@@ -7,6 +7,7 @@ import type { DbClient } from "@repo/db";
 import {
   createEpisodeRepositoryInternal,
   createMediaService,
+  createSeasonsRepositoryInternal,
   createSeriesRepositoryInternal,
   createStorageProviderRegistry,
   SeriesNotFoundError,
@@ -65,6 +66,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
     s3StorageService: options.s3StorageService,
     storageProviderRegistry: storageRegistry,
   });
+  const seasonsRepository = createSeasonsRepositoryInternal(options.db);
   const mediaService =
     options.mediaService ??
     createMediaService(options.db, {
@@ -315,6 +317,49 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
           episodeOffset: t.Optional(t.Number()),
           seasonId: t.Optional(t.String()),
           html: t.Optional(t.String()),
+        }),
+      }
+    )
+    .post(
+      "/series/:id/seasons",
+      async ({ params, body }) => {
+        const seriesRow = await seriesRepository.findById(params.id);
+        if (!seriesRow) {
+          throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
+        }
+        const created = await seasonsRepository.create({
+          seriesId: params.id,
+          title: body.title,
+          seasonNumber: body.seasonNumber,
+          ...(body.description !== undefined ? { description: body.description } : {}),
+          ...(body.posterUrl !== undefined ? { posterUrl: body.posterUrl } : {}),
+          status: body.status ?? "completed",
+          ...(body.scraperUrl !== undefined ? { scraperUrl: body.scraperUrl } : {}),
+          ...(body.source !== undefined ? { source: body.source } : {}),
+          episodeOffset: body.episodeOffset ?? 0,
+        });
+        return successResponse(created);
+      },
+      {
+        beforeHandle: auth,
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          title: t.String({ minLength: 1 }),
+          seasonNumber: t.Integer(),
+          description: t.Optional(t.Nullable(t.String())),
+          posterUrl: t.Optional(t.Nullable(t.String())),
+          status: t.Optional(
+            t.Union([
+              t.Literal("completed"),
+              t.Literal("ongoing"),
+              t.Literal("pending"),
+            ])
+          ),
+          scraperUrl: t.Optional(t.Nullable(t.String())),
+          source: t.Optional(t.Nullable(t.String())),
+          episodeOffset: t.Optional(t.Integer()),
         }),
       }
     )

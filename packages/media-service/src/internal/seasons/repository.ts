@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, count, eq, isNotNull } from "drizzle-orm";
+import { and, count, eq, isNotNull, ne } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { episodes, seasons, type SeasonRow } from "@repo/db";
 
@@ -30,6 +30,13 @@ export class SeasonNotEmptyError extends Error {
     super(`Season still contains ${episodeCount} episode(s) and cannot be deleted`);
     this.name = "SeasonNotEmptyError";
     this.episodeCount = episodeCount;
+  }
+}
+
+export class SeasonAlreadyExistsError extends Error {
+  constructor(message = "Season number already exists for this series") {
+    super(message);
+    this.name = "SeasonAlreadyExistsError";
   }
 }
 
@@ -145,6 +152,14 @@ export function createSeasonsRepositoryInternal<
 
     async updateSeason(id: string, input: UpdateSeasonInput): Promise<SeasonRow> {
       const now = new Date();
+      const [existing] = await db
+        .select()
+        .from(seasons)
+        .where(eq(seasons.id, id));
+      if (!existing) {
+        throw new SeasonNotFoundError(`Season with id ${id} not found`);
+      }
+
       const updateData: Record<string, unknown> = {
         updatedAt: now,
       };
@@ -160,6 +175,31 @@ export function createSeasonsRepositoryInternal<
       if (input.lastScrapedAt !== undefined) updateData.lastScrapedAt = input.lastScrapedAt;
       if (input.lastScrapeError !== undefined) updateData.lastScrapeError = input.lastScrapeError;
       if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
+
+      // Enforce single-ongoing invariant atomically with the status change.
+      if (input.status === "ongoing") {
+        return await db.transaction(async (tx) => {
+          await tx
+            .update(seasons)
+            .set({ status: "completed", updatedAt: now })
+            .where(
+              and(
+                eq(seasons.seriesId, existing.seriesId),
+                eq(seasons.status, "ongoing"),
+                ne(seasons.id, id)
+              )
+            );
+          const [row] = await tx
+            .update(seasons)
+            .set(updateData)
+            .where(eq(seasons.id, id))
+            .returning();
+          if (!row) {
+            throw new SeasonNotFoundError(`Season with id ${id} not found`);
+          }
+          return row;
+        });
+      }
 
       const [row] = await db
         .update(seasons)
@@ -212,25 +252,61 @@ export function createSeasonsRepositoryInternal<
     async create(input: CreateSeasonInput): Promise<SeasonRow> {
       const now = new Date();
       const id = randomUUID();
-      const [row] = await db
-        .insert(seasons)
-        .values({
-          id,
-          seriesId: input.seriesId,
-          title: input.title,
-          description: input.description ?? null,
-          posterUrl: input.posterUrl ?? null,
-          seasonNumber: input.seasonNumber ?? null,
-          ...(input.status !== undefined ? { status: input.status } : {}),
-          ...(input.scraperUrl !== undefined ? { scraperUrl: input.scraperUrl } : {}),
-          ...(input.source !== undefined ? { source: input.source } : {}),
-          ...(input.episodeOffset !== undefined ? { episodeOffset: input.episodeOffset } : {}),
-          tmdbSyncStatus: "PENDING",
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning();
-      return row;
+
+      return await db.transaction(async (tx) => {
+        // Enforce unique (seriesId, seasonNumber) with a domain error
+        // instead of leaking a raw Postgres unique-violation.
+        if (input.seasonNumber !== undefined && input.seasonNumber !== null) {
+          const [conflict] = await tx
+            .select({ id: seasons.id })
+            .from(seasons)
+            .where(
+              and(
+                eq(seasons.seriesId, input.seriesId),
+                eq(seasons.seasonNumber, input.seasonNumber)
+              )
+            );
+          if (conflict) {
+            throw new SeasonAlreadyExistsError(
+              `Season number ${input.seasonNumber} already exists for this series`
+            );
+          }
+        }
+
+        // Enforce single-ongoing invariant: demote any existing ongoing
+        // season in the same series before inserting the new ongoing one.
+        if (input.status === "ongoing") {
+          await tx
+            .update(seasons)
+            .set({ status: "completed", updatedAt: now })
+            .where(
+              and(
+                eq(seasons.seriesId, input.seriesId),
+                eq(seasons.status, "ongoing")
+              )
+            );
+        }
+
+        const [row] = await tx
+          .insert(seasons)
+          .values({
+            id,
+            seriesId: input.seriesId,
+            title: input.title,
+            description: input.description ?? null,
+            posterUrl: input.posterUrl ?? null,
+            seasonNumber: input.seasonNumber ?? null,
+            ...(input.status !== undefined ? { status: input.status } : {}),
+            ...(input.scraperUrl !== undefined ? { scraperUrl: input.scraperUrl } : {}),
+            ...(input.source !== undefined ? { source: input.source } : {}),
+            ...(input.episodeOffset !== undefined ? { episodeOffset: input.episodeOffset } : {}),
+            tmdbSyncStatus: "PENDING",
+            createdAt: now,
+            updatedAt: now,
+          })
+          .returning();
+        return row;
+      });
     },
   };
 }

@@ -38,6 +38,9 @@ export interface AdminEpisodeItem {
   seriesId?: string | null;
   seasonId?: string | null;
   tmdbId?: number | null;
+  tmdbSeasonNumber?: number | null;
+  tmdbEpisodeNumber?: number | null;
+  isUnassigned?: boolean;
   thumbnailUrl?: string | null;
   rating?: string | null;
   airDate?: Date | string | null;
@@ -131,6 +134,17 @@ export interface AdminUpdateSeriesRequest {
 }
 
 // Season requests / responses
+export interface AdminCreateSeasonRequest {
+  title: string;
+  seasonNumber: number;
+  description?: string | null;
+  posterUrl?: string | null;
+  status?: "completed" | "ongoing" | "pending";
+  scraperUrl?: string | null;
+  source?: string | null;
+  episodeOffset?: number;
+}
+
 export interface AdminUpdateSeasonRequest {
   title?: string;
   description?: string | null;

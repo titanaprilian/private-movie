@@ -155,7 +155,7 @@ export type {
   RecentlyAddedEpisode,
 } from "./internal/series/repository";
 export { EpisodeNotFoundError, createEpisodeRepositoryInternal } from "./internal/episodes/repository";
-export { SeasonNotFoundError, SeasonNotEmptyError, SeasonNotOngoingError, SeasonMissingScraperUrlError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
+export { SeasonNotFoundError, SeasonNotEmptyError, SeasonNotOngoingError, SeasonMissingScraperUrlError, SeasonAlreadyExistsError, createSeasonsRepositoryInternal } from "./internal/seasons/repository";
 export type { SeasonUpsertInput, CreateSeasonInput, UpdateSeasonInput } from "./internal/seasons/repository";
 export { SeriesNotFoundError, createSeriesRepositoryInternal } from "./internal/series/repository";
 export { VideoSourceNotFoundError, createVideoSourceRepositoryInternal } from "./internal/video-sources/repository";
@@ -1069,6 +1069,44 @@ export function createMediaService<
         includeSpecials: input.includeSpecials,
       });
 
+      // Snapshot local layout before the transaction so passport matching and
+      // incoming-episode routing can be computed without extra in-tx queries
+      // (keeps the logic testable with mocked tx objects).
+      const localSnapshot = await seriesRepository
+        .findByIdWithEpisodes(seriesId)
+        .catch(() => null);
+      const localSeasons = localSnapshot?.seasons ?? [];
+      const localEpisodes = localSnapshot?.episodes ?? [];
+      const ongoingSeason =
+        localSeasons.find((s) => s.status === "ongoing") ?? null;
+      // Track running max order per season for sequential appends of new eps.
+      const maxOrderBySeasonId = new Map<string, number>();
+      for (const s of localSeasons) {
+        const maxInSeason = (localEpisodes as any[])
+          .filter((e) => (e as any).seasonId === (s as any).id)
+          .reduce((m, e) => Math.max(m, (e as any).order ?? 0), 0);
+        maxOrderBySeasonId.set((s as any).id, maxInSeason);
+      }
+      const passportIndex = new Map<string, any>();
+      for (const e of localEpisodes as any[]) {
+        if (e.tmdbSeasonNumber != null && e.tmdbEpisodeNumber != null) {
+          passportIndex.set(`${e.tmdbSeasonNumber}:${e.tmdbEpisodeNumber}`, e);
+        }
+      }
+      // Fallback: episodes synced before passport tracking carry NULL
+      // passports. Match them by canonical (seasonNumber, order) once, then
+      // stamp the passport in-place.
+      const fallbackIndex = new Map<string, any>();
+      const seasonNumberById = new Map<string, number | null>(
+        localSeasons.map((s: any) => [s.id, s.seasonNumber ?? null])
+      );
+      for (const e of localEpisodes as any[]) {
+        if (e.tmdbSeasonNumber == null || e.tmdbEpisodeNumber == null) {
+          const sn = seasonNumberById.get(e.seasonId);
+          if (sn != null) fallbackIndex.set(`${sn}:${e.order}`, e);
+        }
+      }
+
       await db.transaction(async (tx: any) => {
         await tx
           .update(series)
@@ -1153,6 +1191,14 @@ export function createMediaService<
               },
             })
             .returning();
+          // On mocked tx objects .returning() may resolve to undefined;
+          // fall back to the canonical local season row if present.
+          const canonicalSeasonId =
+            seasonRow?.id ??
+            (localSeasons as any[]).find(
+              (s) => s.seasonNumber === season.seasonNumber
+            )?.id ??
+            null;
 
           for (const episode of season.episodes) {
             const thumbnailUrl = episode.still_path
@@ -1160,32 +1206,88 @@ export function createMediaService<
                 ? episode.still_path
                 : `https://image.tmdb.org/t/p/w500${episode.still_path}`
               : null;
+            const title = episode.name || `Episode ${episode.episode_number}`;
+            const meta = {
+              title,
+              description: episode.overview,
+              thumbnailUrl,
+              rating: episode.vote_average ? String(episode.vote_average) : null,
+              airDate: episode.air_date ? new Date(episode.air_date) : null,
+              duration: episode.runtime || null,
+              updatedAt: new Date(),
+            };
+            const passportKey = `${season.seasonNumber}:${episode.episode_number}`;
+            let matched =
+              passportIndex.get(passportKey) ??
+              fallbackIndex.get(passportKey) ??
+              null;
+            // Avoid double-matching the same local row for two TMDB eps.
+            if (matched && (matched as any).__claimed) matched = null;
+            if (matched) {
+              (matched as any).__claimed = true;
+              await tx
+                .update(episodes)
+                .set({
+                  ...meta,
+                  tmdbSeasonNumber: season.seasonNumber,
+                  tmdbEpisodeNumber: episode.episode_number,
+                })
+                .where(eq(episodes.id, (matched as any).id));
+              continue;
+            }
+
+            // Newly discovered TMDB episode: route to the active ongoing
+            // season (sequential append) or to the canonical season flagged
+            // as unassigned when the series is completed.
+            let targetSeasonId = canonicalSeasonId ?? seasonRow?.id;
+            let targetOrder = episode.episode_number;
+            let isUnassigned = false;
+            if (ongoingSeason) {
+              targetSeasonId = (ongoingSeason as any).id;
+              const next =
+                (maxOrderBySeasonId.get(targetSeasonId) ?? 0) + 1;
+              maxOrderBySeasonId.set(targetSeasonId, next);
+              targetOrder = next;
+            } else {
+              const next =
+                (maxOrderBySeasonId.get(targetSeasonId) ?? 0) + 1;
+              // Only flag unassigned when appending beyond canonical size;
+              // canonical backfills keep their natural order unflagged.
+              if (targetOrder > next && canonicalSeasonId) {
+                maxOrderBySeasonId.set(targetSeasonId, targetOrder);
+              } else if (targetOrder <= next && canonicalSeasonId) {
+                maxOrderBySeasonId.set(
+                  targetSeasonId,
+                  Math.max(next, targetOrder)
+                );
+              }
+              isUnassigned = true;
+            }
 
             await tx
               .insert(episodes)
               .values({
                 id: randomUUID(),
-                seasonId: seasonRow.id,
-                order: episode.episode_number,
-                title: episode.name || `Episode ${episode.episode_number}`,
+                seasonId: targetSeasonId,
+                order: targetOrder,
+                title,
                 description: episode.overview,
                 thumbnailUrl,
                 rating: episode.vote_average ? String(episode.vote_average) : null,
                 airDate: episode.air_date ? new Date(episode.air_date) : null,
                 duration: episode.runtime || null,
+                tmdbSeasonNumber: season.seasonNumber,
+                tmdbEpisodeNumber: episode.episode_number,
+                isUnassigned,
                 createdAt: new Date(),
                 updatedAt: new Date(),
               })
               .onConflictDoUpdate({
                 target: [episodes.seasonId, episodes.order],
                 set: {
-                  title: episode.name || `Episode ${episode.episode_number}`,
-                  description: episode.overview,
-                  thumbnailUrl,
-                  rating: episode.vote_average ? String(episode.vote_average) : null,
-                  airDate: episode.air_date ? new Date(episode.air_date) : null,
-                  duration: episode.runtime || null,
-                  updatedAt: new Date(),
+                  ...meta,
+                  tmdbSeasonNumber: season.seasonNumber,
+                  tmdbEpisodeNumber: episode.episode_number,
                 },
               });
           }

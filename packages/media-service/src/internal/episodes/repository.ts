@@ -46,6 +46,9 @@ export interface EpisodeUpsertInput {
   description?: string | null;
   duration?: number | null;
   tmdbId?: number | null;
+  tmdbSeasonNumber?: number | null;
+  tmdbEpisodeNumber?: number | null;
+  isUnassigned?: boolean;
   thumbnailUrl?: string | null;
   rating?: string | null;
   airDate?: Date | null;
@@ -87,6 +90,15 @@ export function createEpisodeRepositoryInternal<
           thumbnailUrl: input.thumbnailUrl ?? null,
           rating: input.rating ?? null,
           airDate: input.airDate ?? null,
+          ...(input.tmdbSeasonNumber !== undefined
+            ? { tmdbSeasonNumber: input.tmdbSeasonNumber }
+            : {}),
+          ...(input.tmdbEpisodeNumber !== undefined
+            ? { tmdbEpisodeNumber: input.tmdbEpisodeNumber }
+            : {}),
+          ...(input.isUnassigned !== undefined
+            ? { isUnassigned: input.isUnassigned }
+            : {}),
           createdAt: now,
           updatedAt: now,
         })
