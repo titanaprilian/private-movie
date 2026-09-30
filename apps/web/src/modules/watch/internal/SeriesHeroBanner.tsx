@@ -60,9 +60,11 @@ export function SeriesHeroBanner({
 
   const seasons = series.seasons ?? [];
   const seasonCount = seasons.length;
+  const flatEpisodeCount = series.episodes?.length ?? 0;
   const episodeCount =
-    seasons.reduce((total, s) => total + (s.episodes?.length ?? 0), 0) +
-    (series.episodes?.length ?? 0);
+    flatEpisodeCount > 0
+      ? flatEpisodeCount
+      : seasons.reduce((total, s) => total + (s.episodes?.length ?? 0), 0);
 
   const releaseYear = (() => {
     if (!series.createdAt) return null;

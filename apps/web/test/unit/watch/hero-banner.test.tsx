@@ -359,6 +359,49 @@ describe('SeriesHeroBanner cinematic layout', () => {
     expect(screen.getByTestId('hero-play')).toHaveClass('ring-2', 'ring-white');
   });
 
+  it('uses the flat episode list when both episodes and seasons are populated (no double-count)', () => {
+    const flatEpisodes = [
+      ...baseSeries.seasons[0].episodes,
+      ...baseSeries.seasons[1].episodes,
+    ];
+    render(
+      <SeriesHeroBanner
+        series={{ ...baseSeries, episodes: flatEpisodes as typeof flatEpisodes }}
+        onPlay={onPlay}
+        onBack={onBack}
+      />
+    );
+
+    // 3 unique episodes — must not sum to 6 by counting both collections
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('3 Episodes');
+  });
+
+  it('sums episodes across seasons when the flat episode list is missing', () => {
+    const { episodes: _episodes, ...withoutFlat } = baseSeries;
+    void _episodes;
+    render(
+      <SeriesHeroBanner
+        series={withoutFlat as WatchSeriesDetails}
+        onPlay={onPlay}
+        onBack={onBack}
+      />
+    );
+
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('3 Episodes');
+  });
+
+  it('displays the true total for a single season with a dual-populated payload', () => {
+    const singleSeason = {
+      ...baseSeries,
+      seasons: [baseSeries.seasons[0]],
+      episodes: baseSeries.seasons[0].episodes,
+    } as WatchSeriesDetails;
+    render(<SeriesHeroBanner series={singleSeason} onPlay={onPlay} onBack={onBack} />);
+
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('1 Season');
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('2 Episodes');
+  });
+
   it('omits focus rings outside spatial mode', () => {
     render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
 
