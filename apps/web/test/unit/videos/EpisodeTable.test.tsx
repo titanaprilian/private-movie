@@ -1,4 +1,4 @@
-import { renderWithProviders, screen, userEvent, within } from '../../utils';
+import { renderWithProviders, fireEvent, screen, userEvent, within } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
 import { EpisodeTable } from '@/modules/videos/internal/EpisodeTable';
 import type { Episode } from '@/modules/videos/internal/api';
@@ -353,5 +353,103 @@ describe('EpisodeTable Component', () => {
       /multiple episodes are selected/i
     );
     expect(handle1).toHaveClass('cursor-not-allowed');
+  });
+
+  it('selects a top-to-bottom range with Shift-click', async () => {
+    const user = userEvent.setup();
+    const onSelectedEpisodeIdsChange = vi.fn();
+    const { container } = renderEpisodeTable({ onSelectedEpisodeIdsChange });
+
+    const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
+    await user.click(checkbox1);
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(1);
+
+    const checkbox3 = screen.getByLabelText('Select Episode 3: The Climax');
+    fireEvent.click(checkbox3, { shiftKey: true });
+
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(3);
+    expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith(['ep-1', 'ep-2', 'ep-3']);
+  });
+
+  it('selects a bottom-to-top range with Shift-click', async () => {
+    const user = userEvent.setup();
+    const { container } = renderEpisodeTable();
+
+    const checkbox3 = screen.getByLabelText('Select Episode 3: The Climax');
+    await user.click(checkbox3);
+
+    const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
+    fireEvent.click(checkbox1, { shiftKey: true });
+
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(3);
+  });
+
+  it('Shift-click with no prior anchor selects only the clicked episode', async () => {
+    const { container } = renderEpisodeTable();
+
+    const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
+    fireEvent.click(checkbox2, { shiftKey: true });
+
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(1);
+    // Header reflects partial selection
+    expect(screen.getByLabelText('Select all visible episodes')).toHaveAttribute('aria-checked', 'mixed');
+  });
+
+  it('Shift-click deselects the range when the clicked row is already selected', async () => {
+    const user = userEvent.setup();
+    const { container } = renderEpisodeTable();
+
+    // Select all three first
+    const headerCheckbox = screen.getByLabelText('Select all visible episodes');
+    await user.click(headerCheckbox);
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(3);
+
+    // Normal click on row 1 deselects it and sets the anchor
+    const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
+    await user.click(checkbox1);
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(2);
+
+    // Shift-click row 3 (currently selected) deselects the whole range
+    const checkbox3 = screen.getByLabelText('Select Episode 3: The Climax');
+    fireEvent.click(checkbox3, { shiftKey: true });
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(0);
+  });
+
+  it('range selection follows the visible sort order', async () => {
+    const user = userEvent.setup();
+    const onSelectedEpisodeIdsChange = vi.fn();
+    const { container } = renderEpisodeTable({ onSelectedEpisodeIdsChange });
+
+    // Sort order desc: visible rows are ep-3, ep-2, ep-1
+    const orderHeaderBtn = screen.getByRole('button', { name: /#.*↑/i });
+    await user.click(orderHeaderBtn);
+
+    const checkbox3 = screen.getByLabelText('Select Episode 3: The Climax');
+    await user.click(checkbox3);
+
+    const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
+    fireEvent.click(checkbox2, { shiftKey: true });
+
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(2);
+    expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith(['ep-3', 'ep-2']);
+  });
+
+  it('range selection only affects rows visible under the active filter', async () => {
+    const user = userEvent.setup();
+    const onSelectedEpisodeIdsChange = vi.fn();
+    const { container } = renderEpisodeTable({ onSelectedEpisodeIdsChange });
+
+    // Filter down to a single visible row
+    const searchInput = screen.getByRole('textbox', { name: /search episodes/i });
+    await user.type(searchInput, 'Challenge');
+    expect(screen.queryByText('Episode 1: The Beginning')).not.toBeInTheDocument();
+
+    const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
+    await user.click(checkbox2);
+
+    // Shift-click the same (only) visible row toggles just it off
+    fireEvent.click(checkbox2, { shiftKey: true });
+    expect(container.querySelectorAll('.ep.sel')).toHaveLength(0);
+    expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith([]);
   });
 });

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
@@ -171,6 +171,34 @@ export function EpisodeTable({
     } else {
       updateSelectedIds([...activeSelectedIds, episodeId]);
     }
+  };
+
+  // Anchor index (into the visible sorted list) of the most recently toggled
+  // row checkbox. Used for Shift-click range selection.
+  const lastToggledIndexRef = useRef<number | null>(null);
+
+  const handleRowCheckboxClick = (
+    e: React.MouseEvent,
+    episodeId: string,
+    visibleIndex: number
+  ) => {
+    const anchorIndex = lastToggledIndexRef.current;
+    if (e.shiftKey && anchorIndex !== null && anchorIndex !== visibleIndex) {
+      const start = Math.min(anchorIndex, visibleIndex);
+      const end = Math.max(anchorIndex, visibleIndex);
+      const rangeIds = sortedEpisodes.slice(start, end + 1).map((ep) => ep.id);
+      // Target state follows the clicked row: selecting when it is currently
+      // unselected, deselecting when it is currently selected.
+      if (activeSelectedIds.includes(episodeId)) {
+        const rangeSet = new Set(rangeIds);
+        updateSelectedIds(activeSelectedIds.filter((id) => !rangeSet.has(id)));
+      } else {
+        updateSelectedIds(Array.from(new Set([...activeSelectedIds, ...rangeIds])));
+      }
+    } else {
+      handleToggleEpisode(episodeId);
+    }
+    lastToggledIndexRef.current = visibleIndex;
   };
 
   const dragDisabledTooltip = hasMultipleSelected
@@ -374,8 +402,8 @@ export function EpisodeTable({
                           >
                             <ChunkyCheckbox
                               checked={isRowChecked}
-                              onCheckedChange={() =>
-                                handleToggleEpisode(episode.id)
+                              onClick={(e) =>
+                                handleRowCheckboxClick(e, episode.id, index)
                               }
                               aria-label={`Select ${episode.title}`}
                             />
