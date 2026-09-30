@@ -16,16 +16,16 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ChunkyInput } from '@/components/ui/chunky-input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
 import {
   type Episode,
   type VideoSource,
@@ -42,6 +42,12 @@ export interface SourceManagementTableProps {
   episode: Episode;
   onOpenAdvancedIngest?: (tab: 'remote-ingest' | 'upload-s3') => void;
 }
+
+const SOURCE_TYPES = [
+  { value: 'direct', label: 'Direct' },
+  { value: 'embed', label: 'Embed' },
+  { value: 's3', label: 'S3 Storage' },
+] as const;
 
 export function SourceManagementTable({
   episode,
@@ -177,172 +183,186 @@ export function SourceManagementTable({
   const sources = episode.videoSources ?? [];
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-3">
       {/* Table Header Section */}
-      <div className="flex items-center justify-between gap-2 border-b border-c pb-2">
+      <div className="flex items-center justify-between gap-2 border-b-2 border-[var(--border)] pb-2">
         <div className="flex items-center gap-2">
-          <span className="font-medium mono text-[11px] uppercase tracking-wider text-muted">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
             Video Sources
           </span>
-          <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+          <span className="rounded-xl border-2 border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 font-mono text-[11px] font-extrabold text-[var(--muted)]">
             {sources.length}
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {onOpenAdvancedIngest && (
             <>
-              <Button
+              <ChunkyButton
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => onOpenAdvancedIngest('remote-ingest')}
-                className="h-7 px-2 text-[11px] mono border-c hover-bg text-muted hover:text-fg"
                 title="Remote Ingest to S3"
               >
-                <Layers className="h-3 w-3 mr-1" />
+                <Layers aria-hidden="true" />
                 Ingest
-              </Button>
-              <Button
+              </ChunkyButton>
+              <ChunkyButton
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => onOpenAdvancedIngest('upload-s3')}
-                className="h-7 px-2 text-[11px] mono border-c hover-bg text-muted hover:text-fg"
                 title="Upload Video File to S3"
               >
-                <UploadCloud className="h-3 w-3 mr-1" />
+                <UploadCloud aria-hidden="true" />
                 Upload
-              </Button>
+              </ChunkyButton>
             </>
           )}
 
           {!isAddingSource && (
-            <Button
+            <ChunkyButton
               type="button"
-              variant="secondary"
               size="sm"
               onClick={() => setIsAddingSource(true)}
-              className="h-7 px-2 text-[11px] font-medium"
             >
-              <Plus className="h-3 w-3 mr-1" />
+              <Plus aria-hidden="true" />
               Add Source
-            </Button>
+            </ChunkyButton>
           )}
         </div>
       </div>
 
       {/* Inline Add Source Form */}
       {isAddingSource && (
-        <form
-          onSubmit={handleSaveNewSource}
-          className="p-3 border border-primary/30 rounded bg-card/60 space-y-3 animate-in fade-in duration-150"
-        >
-          <div className="flex items-center justify-between text-xs font-semibold">
-            <span>New Video Source</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsAddingSource(false)}
-              className="h-6 w-6 p-0 text-muted hover:text-fg"
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted">Type</Label>
-              <Select
-                value={newType}
-                onValueChange={(val) =>
-                  setNewType(val as 'direct' | 'embed' | 's3')
-                }
+        <ChunkyCard className="p-4 space-y-3">
+          <form onSubmit={handleSaveNewSource} className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-extrabold text-[var(--ink)]">New Video Source</span>
+              <ChunkyButton
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddingSource(false)}
+                aria-label="Close add source form"
               >
-                <SelectTrigger className="w-full h-7 px-2 text-xs mono">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="direct">Direct</SelectItem>
-                  <SelectItem value="embed">Embed</SelectItem>
-                  <SelectItem value="s3">S3 Storage</SelectItem>
-                </SelectContent>
-              </Select>
+                <X aria-hidden="true" />
+              </ChunkyButton>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted">Label</Label>
-              <Input
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                placeholder="e.g. Server 1 or 1080p Stream"
-                className="h-7 text-xs"
-                required
-              />
-            </div>
-          </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="add-source-type"
+                  className="text-xs font-extrabold text-[var(--ink)]"
+                >
+                  Type
+                </label>
+                <ChunkySelect
+                  value={newType}
+                  onValueChange={(val) =>
+                    setNewType(val as 'direct' | 'embed' | 's3')
+                  }
+                >
+                  <ChunkySelectTrigger id="add-source-type" aria-label="Type">
+                    <ChunkySelectValue placeholder="Select type" />
+                  </ChunkySelectTrigger>
+                  <ChunkySelectContent>
+                    {SOURCE_TYPES.map((t) => (
+                      <ChunkySelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </ChunkySelectItem>
+                    ))}
+                  </ChunkySelectContent>
+                </ChunkySelect>
+              </div>
 
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="col-span-2 space-y-1">
-              <Label className="text-[10px] text-muted">URL / Embed / Key</Label>
-              <Input
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-                placeholder="https://... or S3 key"
-                className="h-7 text-xs mono"
-                required
-              />
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="add-source-label"
+                  className="text-xs font-extrabold text-[var(--ink)]"
+                >
+                  Label
+                </label>
+                <ChunkyInput
+                  id="add-source-label"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  placeholder="e.g. Server 1 or 1080p Stream"
+                  required
+                />
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted">Quality</Label>
-              <Input
-                value={newQuality}
-                onChange={(e) => setNewQuality(e.target.value)}
-                placeholder="1080p, 720p"
-                className="h-7 text-xs mono"
-              />
-            </div>
-          </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-2 space-y-1.5">
+                <label
+                  htmlFor="add-source-url"
+                  className="text-xs font-extrabold text-[var(--ink)]"
+                >
+                  URL / Embed / Key
+                </label>
+                <ChunkyInput
+                  id="add-source-url"
+                  value={newUrl}
+                  onChange={(e) => setNewUrl(e.target.value)}
+                  placeholder="https://... or S3 key"
+                  required
+                />
+              </div>
 
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsAddingSource(false)}
-              className="h-7 text-xs"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={addMutation.isPending}
-              className="h-7 text-xs"
-            >
-              {addMutation.isPending ? 'Saving...' : 'Add Source'}
-            </Button>
-          </div>
-        </form>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="add-source-quality"
+                  className="text-xs font-extrabold text-[var(--ink)]"
+                >
+                  Quality
+                </label>
+                <ChunkyInput
+                  id="add-source-quality"
+                  value={newQuality}
+                  onChange={(e) => setNewQuality(e.target.value)}
+                  placeholder="1080p, 720p"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <ChunkyButton
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddingSource(false)}
+              >
+                Cancel
+              </ChunkyButton>
+              <ChunkyButton
+                type="submit"
+                size="sm"
+                disabled={addMutation.isPending}
+              >
+                {addMutation.isPending ? 'Saving...' : 'Add Source'}
+              </ChunkyButton>
+            </div>
+          </form>
+        </ChunkyCard>
       )}
 
       {/* Sources List / Empty State */}
       {sources.length === 0 && !isAddingSource ? (
-        <div className="p-4 rounded border border-dashed border-c text-center text-muted space-y-2">
-          <p className="text-xs">No video sources configured for this episode.</p>
-          <Button
+        <ChunkyCard className="p-4 text-center space-y-2 border-dashed">
+          <p className="text-xs font-bold text-[var(--muted)]">No video sources configured for this episode.</p>
+          <ChunkyButton
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setIsAddingSource(true)}
-            className="h-7 text-xs"
           >
-            <Plus className="h-3 w-3 mr-1" />
+            <Plus aria-hidden="true" />
             Add First Source
-          </Button>
-        </div>
+          </ChunkyButton>
+        </ChunkyCard>
       ) : (
         <div className="space-y-2">
           {sources.map((source) => (
@@ -431,6 +451,72 @@ interface SourceRowItemProps {
   onManualTestEnd: () => void;
 }
 
+function SourceTypeBadge({ type }: { type: VideoSource['type'] }) {
+  return (
+    <span
+      className={`rounded-xl border-2 border-b-4 px-2 py-0.5 font-mono text-[11px] font-extrabold uppercase ${
+        type === 's3'
+          ? 'border-[var(--purple-dark)] bg-[var(--purple)] text-white'
+          : type === 'direct'
+            ? 'border-[var(--green-dark)] bg-[var(--green)] text-white'
+            : 'border-[var(--blue-dark)] bg-[var(--blue)] text-white'
+      }`}
+    >
+      {type}
+    </span>
+  );
+}
+
+function SourceHealthBadge({
+  status,
+  title,
+}: {
+  status: 'working' | 'broken' | 'testing' | 'unknown';
+  title?: string;
+}) {
+  if (status === 'testing') {
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-xl border-2 border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 font-mono text-[11px] font-extrabold text-[var(--muted)]"
+        title={title ?? 'Testing source health...'}
+      >
+        <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+        Testing
+      </span>
+    );
+  }
+  if (status === 'working') {
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-xl border-2 border-b-4 border-[var(--green-dark)] bg-[var(--green)] px-2 py-0.5 font-mono text-[11px] font-extrabold text-white"
+        title={title ?? 'Working'}
+      >
+        <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+        Working
+      </span>
+    );
+  }
+  if (status === 'broken') {
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-xl border-2 border-b-4 border-[var(--red-dark)] bg-[var(--red)] px-2 py-0.5 font-mono text-[11px] font-extrabold text-white"
+        title={title ?? 'Source probe failed'}
+      >
+        <AlertCircle className="h-3 w-3" aria-hidden="true" />
+        Broken
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-xl border-2 border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 font-mono text-[11px] font-extrabold text-[var(--muted)]"
+      title={title ?? 'Health check pending or unknown'}
+    >
+      Unknown
+    </span>
+  );
+}
+
 function SourceRowItem({
   source,
   isEditing,
@@ -485,16 +571,21 @@ function SourceRowItem({
   // Render inline edit form if active
   if (isEditing) {
     return (
-      <div className="p-3 border border-primary/40 rounded bg-card space-y-2 text-xs animate-in fade-in duration-100">
+      <ChunkyCard className="p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-xs text-fg">Edit Source</span>
-          <span className="mono text-[10px] text-muted">{source.id}</span>
+          <span className="text-sm font-extrabold text-[var(--ink)]">Edit Source</span>
+          <span className="font-mono text-[10px] font-bold text-[var(--muted)]">{source.id}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted">Type</Label>
-            <Select
+          <div className="space-y-1.5">
+            <label
+              htmlFor={`edit-source-type-${source.id}`}
+              className="text-xs font-extrabold text-[var(--ink)]"
+            >
+              Type
+            </label>
+            <ChunkySelect
               value={editState.type}
               onValueChange={(val) =>
                 onEditStateChange.setType(
@@ -502,266 +593,241 @@ function SourceRowItem({
                 )
               }
             >
-              <SelectTrigger className="w-full h-7 px-2 text-xs mono">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="direct">Direct</SelectItem>
-                <SelectItem value="embed">Embed</SelectItem>
-                <SelectItem value="s3">S3 Storage</SelectItem>
-              </SelectContent>
-            </Select>
+              <ChunkySelectTrigger id={`edit-source-type-${source.id}`} aria-label="Type">
+                <ChunkySelectValue placeholder="Select type" />
+              </ChunkySelectTrigger>
+              <ChunkySelectContent>
+                {SOURCE_TYPES.map((t) => (
+                  <ChunkySelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </ChunkySelectItem>
+                ))}
+              </ChunkySelectContent>
+            </ChunkySelect>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted">Label</Label>
-            <Input
+          <div className="space-y-1.5">
+            <label
+              htmlFor={`edit-source-label-${source.id}`}
+              className="text-xs font-extrabold text-[var(--ink)]"
+            >
+              Label
+            </label>
+            <ChunkyInput
+              id={`edit-source-label-${source.id}`}
               value={editState.label}
               onChange={(e) => onEditStateChange.setLabel(e.target.value)}
-              className="h-7 text-xs"
               required
             />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="col-span-2 space-y-1">
-            <Label className="text-[10px] text-muted">URL</Label>
-            <Input
+          <div className="col-span-2 space-y-1.5">
+            <label
+              htmlFor={`edit-source-url-${source.id}`}
+              className="text-xs font-extrabold text-[var(--ink)]"
+            >
+              URL
+            </label>
+            <ChunkyInput
+              id={`edit-source-url-${source.id}`}
               value={editState.url}
               onChange={(e) => onEditStateChange.setUrl(e.target.value)}
-              className="h-7 text-xs mono"
               required
             />
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted">Quality</Label>
-            <Input
+          <div className="space-y-1.5">
+            <label
+              htmlFor={`edit-source-quality-${source.id}`}
+              className="text-xs font-extrabold text-[var(--ink)]"
+            >
+              Quality
+            </label>
+            <ChunkyInput
+              id={`edit-source-quality-${source.id}`}
               value={editState.quality}
               onChange={(e) => onEditStateChange.setQuality(e.target.value)}
               placeholder="e.g. 1080p"
-              className="h-7 text-xs mono"
             />
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-1">
-          <Button
+          <ChunkyButton
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={onCancelEdit}
-            className="h-7 text-xs"
           >
             Cancel
-          </Button>
-          <Button
+          </ChunkyButton>
+          <ChunkyButton
             type="button"
             size="sm"
             onClick={onSaveEdit}
             disabled={isSavingEdit}
-            className="h-7 text-xs"
           >
             {isSavingEdit ? 'Saving...' : 'Save'}
-          </Button>
+          </ChunkyButton>
         </div>
-      </div>
+      </ChunkyCard>
     );
   }
 
   // Render delete confirmation mode if active
   if (isDeleting) {
     return (
-      <div className="p-3 border border-red-500/40 rounded bg-red-500/5 text-xs flex items-center justify-between gap-3 animate-in fade-in duration-100">
+      <ChunkyCard className="p-4 border-[var(--red)] bg-[var(--red)]/5 text-xs flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium text-red-600 dark:text-red-400">
+          <p className="font-extrabold text-[var(--red)]">
             Remove "{source.label}"?
           </p>
-          <p className="text-[11px] mono text-muted truncate">{source.url}</p>
+          <p className="font-mono text-[11px] text-[var(--muted)] truncate">{source.url}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <Button
+          <ChunkyButton
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={onCancelDelete}
             disabled={isDeletePending}
-            className="h-7 px-2 text-xs"
           >
             Cancel
-          </Button>
-          <Button
+          </ChunkyButton>
+          <ChunkyButton
             type="button"
-            variant="destructive"
+            variant="danger"
             size="sm"
             onClick={onConfirmDelete}
             disabled={isDeletePending}
-            className="h-7 px-2 text-xs"
           >
             {isDeletePending ? 'Removing...' : 'Delete'}
-          </Button>
+          </ChunkyButton>
         </div>
-      </div>
+      </ChunkyCard>
     );
   }
 
+  const healthStatus = isTesting
+    ? 'testing'
+    : healthResult?.status === 'working'
+      ? 'working'
+      : healthResult?.status === 'broken'
+        ? 'broken'
+        : 'unknown';
+
   return (
-    <div className="p-2.5 rounded border border-c bg-card hover:border-c-hover transition-colors space-y-2 text-xs">
-      {/* Top Row: Provider/Type Pill, Quality, Health Badge, Actions */}
+    <ChunkyCard className="p-3 space-y-2">
+      {/* Top Row: Provider/Type Badge, Quality, Health Badge */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-          {/* Provider / Type pill */}
-          <span
-            className={`text-[10px] mono uppercase font-medium px-1.5 py-0.5 rounded border ${
-              source.type === 's3'
-                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-300 dark:border-purple-800'
-                : source.type === 'direct'
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
-                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
-            }`}
-          >
-            {source.type}
-          </span>
+          <SourceTypeBadge type={source.type} />
 
-          {/* Quality Pill */}
           {source.quality && (
-            <span className="text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted">
+            <span className="rounded-xl border-2 border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 font-mono text-[11px] font-extrabold text-[var(--muted)]">
               {source.quality}
             </span>
           )}
 
-          {/* Label */}
-          <span className="font-semibold text-fg truncate text-xs">
+          <span className="font-extrabold text-[var(--ink)] truncate text-xs">
             {source.label}
           </span>
         </div>
 
-        {/* Health Status Badge */}
         <div className="shrink-0 flex items-center gap-1">
-          {isTesting ? (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted"
-              title="Testing source health..."
-            >
-              <Loader2 className="h-3 w-3 animate-spin text-muted" />
-              Testing
-            </span>
-          ) : healthResult?.status === 'working' ? (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-              title={
-                healthResult.latencyMs
-                  ? `Status 200 OK (${healthResult.latencyMs}ms)`
-                  : 'Working'
-              }
-            >
-              <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-              Working
-            </span>
-          ) : healthResult?.status === 'broken' ? (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] mono font-medium px-1.5 py-0.5 rounded border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
-              title={healthResult.error || 'Source probe failed or returned 404'}
-            >
-              <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
-              Broken
-            </span>
-          ) : (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] mono px-1.5 py-0.5 rounded border border-c bg-sidebar text-muted"
-              title="Health check pending or unknown"
-            >
-              Unknown
-            </span>
-          )}
+          <SourceHealthBadge
+            status={healthStatus}
+            title={
+              healthStatus === 'working' && healthResult?.latencyMs
+                ? `Status 200 OK (${healthResult.latencyMs}ms)`
+                : healthStatus === 'broken'
+                  ? healthResult?.error || 'Source probe failed or returned 404'
+                  : undefined
+            }
+          />
         </div>
       </div>
 
       {/* URL / Key Row with Copy Option */}
-      <div className="flex items-center justify-between gap-2 bg-sidebar/50 px-2 py-1 rounded border border-c">
+      <div className="flex items-center justify-between gap-2 rounded-2xl border-2 border-[var(--border)] bg-[var(--bg)] px-3 py-1.5">
         <span
-          className="mono text-[11px] text-muted truncate select-all flex-1 min-w-0"
+          className="font-mono text-[11px] font-bold text-[var(--muted)] truncate select-all flex-1 min-w-0"
           title={source.url}
         >
           {source.url}
         </span>
-        <Button
+        <ChunkyButton
           type="button"
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={onCopy}
-          className="h-5 w-5 p-0 text-muted hover:text-fg shrink-0"
+          className="h-7 w-7 shrink-0 px-0"
           title={copied ? 'Copied to clipboard' : 'Copy URL'}
           aria-label={copied ? 'Copied' : `Copy URL for ${source.label}`}
         >
           {copied ? (
-            <Check className="h-3 w-3 text-emerald-500" />
+            <Check className="text-[var(--green)]" aria-hidden="true" />
           ) : (
-            <Copy className="h-3 w-3" />
+            <Copy aria-hidden="true" />
           )}
-        </Button>
+        </ChunkyButton>
       </div>
 
       {/* Actions Strip: Preview, Test, Edit, Delete */}
-      <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-c/50">
-        <div className="flex items-center gap-1">
-          {/* Preview button */}
-          <Button
+      <div className="flex items-center justify-between gap-1 pt-2 border-t-2 border-[var(--border)]">
+        <div className="flex items-center gap-1.5">
+          <ChunkyButton
             type="button"
-            variant="secondary"
+            variant="blue"
             size="sm"
             onClick={onPreview}
-            className="h-6 px-2 text-[11px] mono flex items-center gap-1"
             title="Preview stream playback in modal"
           >
-            <Play className="h-2.5 w-2.5 fill-current" />
+            <Play aria-hidden="true" />
             Preview
-          </Button>
+          </ChunkyButton>
 
-          {/* Test button */}
-          <Button
+          <ChunkyButton
             type="button"
             variant="outline"
             size="sm"
             onClick={handleTestProbe}
             disabled={isTesting}
-            className="h-6 px-2 text-[11px] mono border-c hover-bg flex items-center gap-1"
             title="Run on-demand health probe"
           >
-            <Activity className="h-2.5 w-2.5" />
+            <Activity aria-hidden="true" />
             {isTesting ? 'Probing...' : 'Test'}
-          </Button>
+          </ChunkyButton>
         </div>
 
-        <div className="flex items-center gap-1">
-          {/* Edit button */}
-          <Button
+        <div className="flex items-center gap-1.5">
+          <ChunkyButton
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={onStartEdit}
-            className="h-6 w-6 p-0 text-muted hover:text-fg"
+            className="px-2.5"
             title="Edit source details"
             aria-label={`Edit ${source.label}`}
           >
-            <Edit2 className="h-3 w-3" />
-          </Button>
+            <Edit2 aria-hidden="true" />
+          </ChunkyButton>
 
-          {/* Delete button */}
-          <Button
+          <ChunkyButton
             type="button"
-            variant="ghost"
+            variant="danger"
             size="sm"
             onClick={onRequestDelete}
-            className="h-6 w-6 p-0 text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-500/10"
+            className="px-2.5"
             title="Remove source"
             aria-label={`Delete ${source.label}`}
           >
-            <Trash2 className="h-3 w-3" />
-          </Button>
+            <Trash2 aria-hidden="true" />
+          </ChunkyButton>
         </div>
       </div>
-    </div>
+    </ChunkyCard>
   );
 }
