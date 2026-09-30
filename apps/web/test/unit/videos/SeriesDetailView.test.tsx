@@ -227,7 +227,7 @@ describe('SeriesDetailView component', () => {
     const editButton = await screen.findByRole('menuitem', { name: /^edit$/i });
     await user.click(editButton);
 
-    expect(await screen.findByRole('dialog', { name: `Episode Details: ${firstEpisode.title}` })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: firstEpisode.title })).toBeInTheDocument();
     
     const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
     const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
@@ -236,7 +236,7 @@ describe('SeriesDetailView component', () => {
     expect(descInput.value).toBe(firstEpisode.description);
 
     // Close drawer
-    const closeBtn = screen.getByRole('button', { name: /close drawer/i });
+    const closeBtn = screen.getByRole('button', { name: /^close$/i });
     await user.click(closeBtn);
 
     // Re-open action menu for Delete Dialog
@@ -1137,21 +1137,21 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     // Drawer is closed initially
-    expect(screen.queryByRole('dialog', { name: /Episode Details:/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     // Click episode row
     const epRow = screen.getByText('Intro to Deep Modules');
     await user.click(epRow);
 
     // Drawer is now open
-    expect(screen.getByRole('dialog', { name: 'Episode Details: Intro to Deep Modules' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Intro to Deep Modules' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Intro to Deep Modules')).toBeInTheDocument();
 
     // Close drawer via close button
-    const closeBtn = screen.getByRole('button', { name: /close drawer/i });
+    const closeBtn = screen.getByRole('button', { name: /^close$/i });
     await user.click(closeBtn);
 
-    expect(screen.queryByRole('dialog', { name: /Episode Details:/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('automatically opens drawer on initial render when initialOrder or initialEpisodeId is provided', async () => {
@@ -1174,7 +1174,7 @@ describe('SeriesDetailView component', () => {
     );
 
     // Drawer automatically opens for dm-01
-    expect(await screen.findByRole('dialog', { name: 'Episode Details: Intro to Deep Modules' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Intro to Deep Modules' })).toBeInTheDocument();
   });
 
   it('renders "Sync with TMDB" button in disabled state when series has no tmdbId', async () => {

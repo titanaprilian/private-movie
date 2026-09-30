@@ -42,7 +42,7 @@ describe('EpisodeDetailDrawer Component', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('renders all general and technical metadata fields populated with episode data', () => {
+  it('renders chunky drawer structure with retained fields populated with episode data', () => {
     renderWithProviders(
       <EpisodeDetailDrawer
         open={true}
@@ -52,15 +52,22 @@ describe('EpisodeDetailDrawer Component', () => {
       />
     );
 
-    expect(screen.getByRole('dialog', { name: 'Episode Details: Pilot Episode' })).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-drawer-content')).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-drawer-header')).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-drawer-body')).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-drawer-footer')).toBeInTheDocument();
+
+    expect(screen.getByRole('dialog', { name: 'Pilot Episode' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Pilot Episode')).toBeInTheDocument();
     expect(screen.getByDisplayValue('An exciting start to our series adventure.')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('mp4')).toBeInTheDocument();
     expect(screen.getByDisplayValue('24:10')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('1080p')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('MP4')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('450 MB')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Action, Drama')).toBeInTheDocument();
+
+    // Pruned fields must not render
+    expect(screen.queryByLabelText(/video type/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/resolution/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^format$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/file size/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/tags/i)).not.toBeInTheDocument();
 
     // Clean initial state: buttons disabled
     const saveBtn = screen.getByRole('button', { name: /save changes/i });
@@ -103,7 +110,7 @@ describe('EpisodeDetailDrawer Component', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('submits updated metadata when Save Changes is clicked', async () => {
+  it('submits only retained metadata fields when Save Changes is clicked', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn().mockResolvedValue(undefined);
 
@@ -117,15 +124,12 @@ describe('EpisodeDetailDrawer Component', () => {
     );
 
     const titleInput = screen.getByLabelText(/^title$/i);
-    const resolutionInput = screen.getByLabelText(/resolution/i);
-    const tagsInput = screen.getByLabelText(/tags/i);
+    const durationInput = screen.getByLabelText(/duration/i);
 
     await user.clear(titleInput);
     await user.type(titleInput, 'New Episode Title');
-    await user.clear(resolutionInput);
-    await user.type(resolutionInput, '4K');
-    await user.clear(tagsInput);
-    await user.type(tagsInput, 'Sci-Fi, Adventure');
+    await user.clear(durationInput);
+    await user.type(durationInput, '25:00');
 
     const saveBtn = screen.getByRole('button', { name: /save changes/i });
     await user.click(saveBtn);
@@ -133,16 +137,11 @@ describe('EpisodeDetailDrawer Component', () => {
     expect(onSave).toHaveBeenCalledWith('ep-101', {
       title: 'New Episode Title',
       description: 'An exciting start to our series adventure.',
-      videoType: 'mp4',
-      duration: '24:10',
-      resolution: '4K',
-      format: 'MP4',
-      size: '450 MB',
-      tags: ['Sci-Fi', 'Adventure'],
+      duration: '25:00',
     });
   });
 
-  it('closes via close button, backdrop click, and Escape key', async () => {
+  it('closes via close button, overlay click, and Escape key', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
 
@@ -156,14 +155,14 @@ describe('EpisodeDetailDrawer Component', () => {
     );
 
     // Close button
-    const closeBtn = screen.getByRole('button', { name: /close drawer/i });
+    const closeBtn = screen.getByRole('button', { name: /^close$/i });
     await user.click(closeBtn);
     expect(onOpenChange).toHaveBeenCalledWith(false);
 
-    // Backdrop click
+    // Overlay click
     onOpenChange.mockClear();
-    const backdrop = screen.getByTestId('drawer-backdrop');
-    await user.click(backdrop);
+    const overlay = screen.getByTestId('chunky-drawer-overlay');
+    await user.click(overlay);
     expect(onOpenChange).toHaveBeenCalledWith(false);
 
     // Escape key
