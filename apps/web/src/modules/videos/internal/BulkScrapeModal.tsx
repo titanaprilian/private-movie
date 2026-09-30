@@ -91,9 +91,6 @@ export function BulkScrapeModal({
     selectedSeasonId,
     selectSeason,
     seasonOptions,
-    episodeOffset,
-    setEpisodeOffset,
-    seasonOffsetHelperText,
     previewItems,
     fetchPreview,
     saveBulkSources,
@@ -106,6 +103,8 @@ export function BulkScrapeModal({
     totalCount,
     updateMapping,
     toggleIgnore,
+    targetSeasonEpisodes,
+    autoAlignSequentially,
     reset,
     isEpisodeHasSources,
     hasOverwriteConflicts,
@@ -153,6 +152,14 @@ export function BulkScrapeModal({
     }
   };
 
+  const handleAutoAlign = () => {
+    autoAlignSequentially();
+    const mappedCount = Math.min(previewItems.length, targetSeasonEpisodes.length);
+    toast.success('Auto-aligned sequentially', {
+      description: `Mapped ${mappedCount} scraped episode${mappedCount === 1 ? '' : 's'} 1:1 down the target season.`,
+    });
+  };
+
   return (
     <>
       <ChunkyDialog open={open} onOpenChange={handleOpenChange}>
@@ -169,7 +176,7 @@ export function BulkScrapeModal({
             <ChunkyDialogTitle>Bulk Add Sources</ChunkyDialogTitle>
             <ChunkyDialogDescription>
               {step === 1
-                ? 'Enter season source URL and optional offset to match scraped episodes with local TMDB episodes.'
+                ? 'Enter season source URL to match scraped episodes with local TMDB episodes in the selected season.'
                 : step === 2
                 ? 'Review matched scraped episodes, assign target local episodes, or ignore items before saving.'
                 : 'Sequential batch processing progress and status log.'}
@@ -250,29 +257,7 @@ export function BulkScrapeModal({
                         )}
                       </ChunkySelectContent>
                     </ChunkySelect>
-                    {seasonOffsetHelperText && (
-                      <p
-                        className="text-xs font-bold text-[var(--muted)]"
-                        data-testid="bulk-scrape-offset-helper"
-                      >
-                        {seasonOffsetHelperText}
-                      </p>
-                    )}
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="bulk-scrape-offset" className={labelClassName}>
-                    Episode Offset
-                  </label>
-                  <ChunkyInput
-                    id="bulk-scrape-offset"
-                    type="number"
-                    placeholder="0"
-                    value={episodeOffset}
-                    onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
-                    disabled={isFetchingPreview}
-                  />
                 </div>
               </ChunkyDialogBody>
 
@@ -295,10 +280,7 @@ export function BulkScrapeModal({
           {step === 2 && (
             <>
               <ChunkyDialogBody className="space-y-4">
-                <ChunkyCard className="flex items-center justify-between gap-2 p-3 text-sm font-bold text-[var(--muted)]">
-                  <span>
-                    Offset: <strong className="text-[var(--green)]">{episodeOffset}</strong>
-                  </span>
+                <ChunkyCard className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm font-bold text-[var(--muted)]">
                   <span>
                     Total Scraped: <strong className="text-[var(--ink)]">{previewItems.length}</strong>
                   </span>
@@ -308,6 +290,15 @@ export function BulkScrapeModal({
                       {previewItems.filter((i) => i.needsReview && !i.isIgnored).length}
                     </strong>
                   </span>
+                  <ChunkyButton
+                    type="button"
+                    variant="blue"
+                    size="sm"
+                    onClick={handleAutoAlign}
+                    disabled={isSaving || previewItems.length === 0 || targetSeasonEpisodes.length === 0}
+                  >
+                    Auto-align sequentially (1..{targetSeasonEpisodes.length})
+                  </ChunkyButton>
                 </ChunkyCard>
 
                 <div className="space-y-2">
@@ -353,6 +344,7 @@ export function BulkScrapeModal({
                               onValueChange={(newId) => updateMapping(index, newId)}
                               seasons={seasons}
                               localEpisodes={localEpisodes}
+                              targetSeasonId={selectedSeasonId}
                             />
                           </div>
 
@@ -467,7 +459,7 @@ export function BulkScrapeModal({
           <ChunkyDialogHeader>
             <ChunkyDialogTitle>Overwrite Existing Sources?</ChunkyDialogTitle>
             <ChunkyDialogDescription>
-              One or more mapped local episodes already contain video sources. Proceeding will overwrite their existing video sources. Please double-check your episode offset and target mappings before confirming.
+              One or more mapped local episodes already contain video sources. Proceeding will overwrite their existing video sources. Please double-check your target mappings before confirming.
             </ChunkyDialogDescription>
           </ChunkyDialogHeader>
           <ChunkyDialogFooter>

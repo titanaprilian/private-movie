@@ -5,6 +5,7 @@ import {
   previewBulkSources as apiPreviewBulkSources,
   scrapeEpisodeSources,
 } from './api';
+import { detectProviderFromUrl } from './seasonUtils';
 
 export interface SeasonGroupOption {
   id: string;
@@ -62,8 +63,7 @@ export interface UseBulkScrapeSourcesOptions {
   localEpisodes?: LocalEpisodeItem[];
 }
 
-export function getSeasonOptions(
-  seasons?: SeasonGroupOption[],
+export function getSeasonOptions(  seasons?: SeasonGroupOption[],
   localEpisodes?: LocalEpisodeItem[]
 ): Array<{ id: string; label: string }> {
   if (seasons && seasons.length > 0) {
@@ -89,78 +89,65 @@ export function getSeasonOptions(
   return [];
 }
 
-export interface SeasonOffsetInfo {
-  offset: number;
-  totalEpisodes: number;
-  filledEpisodes: number;
-  targetEpisodeOrder: number | null;
-  helperText: string | null;
-}
-
-export function getSeasonOffsetInfo(
-  seasonId: string,
+/**
+ * Episodes of the target season in ascending order — the single source of
+ * truth for combobox scoping, sequential fallback, and 1-click auto-align.
+ */
+export function getTargetSeasonEpisodes(
   seasons?: SeasonGroupOption[],
-  localEpisodes?: LocalEpisodeItem[]
-): SeasonOffsetInfo {
-  const emptyInfo: SeasonOffsetInfo = {
-    offset: 0,
-    totalEpisodes: 0,
-    filledEpisodes: 0,
-    targetEpisodeOrder: null,
-    helperText: null,
-  };
-
-  if (!seasonId) return emptyInfo;
-
-  let epList: Array<{ id: string; order?: number; hasSources?: boolean; videoSources?: unknown[] }> = [];
-
-  if (seasons && seasons.length > 0) {
-    const seasonObj = seasons.find((s) => s.id === seasonId);
-    if (seasonObj?.episodes && seasonObj.episodes.length > 0) {
-      epList = seasonObj.episodes;
+  localEpisodes?: LocalEpisodeItem[],
+  seasonId?: string
+): LocalEpisodeItem[] {
+  if (seasonId && seasons && seasons.length > 0) {
+    const season = seasons.find((s) => s.id === seasonId);
+    if (season?.episodes) {
+      return [...season.episodes]
+        .map((ep) => ({ ...ep, seasonId } as LocalEpisodeItem))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
   }
-
-  if (epList.length === 0 && localEpisodes && localEpisodes.length > 0) {
-    epList = localEpisodes.filter((ep) => ep.seasonId === seasonId);
+  if (seasonId && localEpisodes && localEpisodes.length > 0) {
+    const filtered = localEpisodes.filter((ep) => ep.seasonId === seasonId);
+    if (filtered.length > 0) {
+      return [...filtered].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
   }
-
-  const validEpisodes = epList.filter(
-    (ep): ep is typeof ep & { order: number } =>
-      typeof ep.order === 'number' && !isNaN(ep.order)
-  );
-
-  if (validEpisodes.length === 0) return emptyInfo;
-
-  validEpisodes.sort((a, b) => a.order - b.order);
-
-  const totalEpisodes = epList.length;
-  const filledEpisodes = epList.filter((ep) => checkEpisodeHasSources(ep)).length;
-
-  const emptyEpisode = validEpisodes.find((ep) => !checkEpisodeHasSources(ep));
-  const firstEpisode = validEpisodes[0];
-  const targetEpisode = emptyEpisode ?? firstEpisode;
-
-  const offset = targetEpisode.order - 1;
-  const targetEpisodeOrder = targetEpisode.order;
-
-  const helperText = `${filledEpisodes}/${totalEpisodes} episodes already have sources. Auto-offsetting to start from Episode ${targetEpisodeOrder}.`;
-
-  return {
-    offset,
-    totalEpisodes,
-    filledEpisodes,
-    targetEpisodeOrder,
-    helperText,
-  };
+  return [];
 }
 
-export function calculateSeasonOffset(
-  seasonId: string,
-  seasons?: SeasonGroupOption[],
-  localEpisodes?: LocalEpisodeItem[]
-): number {
-  return getSeasonOffsetInfo(seasonId, seasons, localEpisodes).offset;
+/**
+ * Sequential fallback: unmatched scraped items carrying an integer episode
+ * number default to the next unclaimed target-season episode in order.
+ * Non-integer (decimals/specials) and excess items stay unmapped.
+ */
+export function applyPreviewSequentialFallback(
+  items: ScrapedEpisodePreviewItem[],
+  targets: Array<{ id: string; order?: number }>
+): ScrapedEpisodePreviewItem[] {
+  const sorted = [...targets].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const claimed = new Set<string>();
+  for (const item of items) {
+    if (item.matchedLocalEpisodeId) claimed.add(item.matchedLocalEpisodeId);
+  }
+  let cursor = 0;
+  return items.map((item) => {
+    const num =
+      typeof item.calculatedOrder === 'number' && Number.isInteger(item.calculatedOrder)
+        ? item.calculatedOrder
+        : null;
+    if (item.matchedLocalEpisodeId || num === null) return item;
+    while (cursor < sorted.length && claimed.has(sorted[cursor].id)) cursor++;
+    const target = sorted[cursor];
+    if (!target) return item;
+    claimed.add(target.id);
+    cursor++;
+    return {
+      ...item,
+      calculatedOrder: target.order ?? num,
+      matchedLocalEpisodeId: target.id,
+      needsReview: false,
+    };
+  });
 }
 
 export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
@@ -169,10 +156,20 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   useEffect(() => {
     optionsRef.current = options;
   });
-
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourceUrl, setSourceUrlState] = useState('');
   const [sourceType, setSourceType] = useState(options?.initialSourceType ?? 'otakudesu');
+
+  /**
+   * Setting the URL auto-selects otakudesu/dramula when the URL identifies
+   * the provider. Other URLs leave the current selection untouched, and the
+   * Source Type select always remains the final manual authority.
+   */
+  const setSourceUrl = useCallback((url: string) => {
+    setSourceUrlState(url);
+    const detected = detectProviderFromUrl(url);
+    if (detected) setSourceType(detected);
+  }, []);
 
   const seasonOptions = useMemo(
     () => getSeasonOptions(options?.seasons, options?.localEpisodes),
@@ -182,45 +179,28 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>(
     () => seasonOptions[0]?.id ?? ''
   );
+  const selectedSeasonIdRef = useRef(selectedSeasonId);
+  useEffect(() => {
+    selectedSeasonIdRef.current = selectedSeasonId;
+  }, [selectedSeasonId]);
 
-  const [episodeOffset, setEpisodeOffset] = useState<number>(() => {
-    const defaultId = seasonOptions[0]?.id;
-    return defaultId
-      ? calculateSeasonOffset(defaultId, options?.seasons, options?.localEpisodes)
-      : 0;
-  });
-
-  const selectSeason = useCallback(
-    (
-      seasonId: string,
-      seasonsParam?: SeasonGroupOption[],
-      localEpisodesParam?: LocalEpisodeItem[]
-    ) => {
-      setSelectedSeasonId(seasonId);
-      const activeSeasons = seasonsParam ?? options?.seasons;
-      const activeLocalEps = localEpisodesParam ?? options?.localEpisodes;
-      const offset = calculateSeasonOffset(seasonId, activeSeasons, activeLocalEps);
-      setEpisodeOffset(offset);
-    },
-    [options?.seasons, options?.localEpisodes]
-  );
+  const selectSeason = useCallback((seasonId: string) => {
+    setSelectedSeasonId(seasonId);
+  }, []);
 
   useEffect(() => {
     if (seasonOptions.length > 0) {
       if (!selectedSeasonId || !seasonOptions.some((s) => s.id === selectedSeasonId)) {
-        const defaultId = seasonOptions[0].id;
-        setSelectedSeasonId(defaultId);
-        const offset = calculateSeasonOffset(
-          defaultId,
-          options?.seasons,
-          options?.localEpisodes
-        );
-        setEpisodeOffset(offset);
+        setSelectedSeasonId(seasonOptions[0].id);
       }
     }
-  }, [seasonOptions, selectedSeasonId, options?.seasons, options?.localEpisodes]);
+  }, [seasonOptions, selectedSeasonId]);
   const [previewItems, setPreviewItems] = useState<ScrapedEpisodePreviewItem[]>([]);
   const [fetchedLocalEpisodes, setFetchedLocalEpisodes] = useState<LocalEpisodeItem[]>([]);
+  const fetchedLocalEpisodesRef = useRef<LocalEpisodeItem[]>([]);
+  useEffect(() => {
+    fetchedLocalEpisodesRef.current = fetchedLocalEpisodes;
+  }, [fetchedLocalEpisodes]);
 
   // Step 3 Processing States
   const [isProcessing, setIsProcessing] = useState(false);
@@ -260,7 +240,12 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
         ];
 
         const localEpisodes = params?.localEpisodes ?? [];
-        const processed: ScrapedEpisodePreviewItem[] = rawMockItems.map((item, idx) => {
+        const activeSeasonId = selectedSeasonIdRef.current;
+        const scopedLocalEpisodes =
+          activeSeasonId && localEpisodes.length > 0 && localEpisodes.some((ep) => ep.seasonId)
+            ? localEpisodes.filter((ep) => ep.seasonId === activeSeasonId)
+            : localEpisodes;
+        const initial: ScrapedEpisodePreviewItem[] = rawMockItems.map((item, idx) => {
           const rawNum = item.rawEpisodeNumber ?? idx + 1;
           const isNumInteger = typeof rawNum === 'number' ? Number.isInteger(rawNum) : /^\d+$/.test(String(rawNum).trim());
           const parsedInt = typeof rawNum === 'number' ? Math.floor(rawNum) : parseInt(String(rawNum), 10);
@@ -270,8 +255,8 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
           let needsReview = false;
 
           if (isNumInteger && !isNaN(parsedInt)) {
-            calculatedOrder = parsedInt + episodeOffset;
-            const match = localEpisodes.find((ep) => ep.order === calculatedOrder);
+            calculatedOrder = parsedInt;
+            const match = scopedLocalEpisodes.find((ep) => ep.order === calculatedOrder);
             if (match) {
               matchedLocalEpisodeId = match.id;
             } else {
@@ -295,6 +280,15 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
           };
         });
 
+        const seasonTargets = getTargetSeasonEpisodes(
+          options?.seasons,
+          localEpisodes.length > 0 ? localEpisodes : undefined,
+          activeSeasonId
+        );
+        const fallbackTargets =
+          seasonTargets.length > 0 ? seasonTargets : scopedLocalEpisodes;
+        const processed = applyPreviewSequentialFallback(initial, fallbackTargets);
+
         return {
           scrapedItems: processed,
           localEpisodes,
@@ -305,7 +299,7 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
         seriesId: targetSeriesId,
         sourceUrl,
         source: (sourceType as 'otakudesu' | 'dramula') || 'otakudesu',
-        episodeOffset,
+        episodeOffset: 0,
         seasonId: selectedSeasonId || undefined,
       });
 
@@ -537,17 +531,13 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     const currentSeasonOptions = getSeasonOptions(currentSeasons, currentLocalEps);
     const defaultSeasonId = currentSeasonOptions[0]?.id ?? '';
     setSelectedSeasonId(defaultSeasonId);
-    const initialOffset = defaultSeasonId
-      ? calculateSeasonOffset(defaultSeasonId, currentSeasons, currentLocalEps)
-      : 0;
-    setEpisodeOffset(initialOffset);
     setPreviewItems([]);
     setFetchedLocalEpisodes([]);
     setProcessingLogs([]);
     setIsProcessing(false);
     setCompletedCount(0);
     resetPreviewRef.current();
-  }, []);
+  }, [setSourceUrl]);
 
   const totalCount = previewItems.length;
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -593,12 +583,45 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     });
   }, [previewItems, isEpisodeHasSources]);
 
-  const seasonOffsetInfo = useMemo(
-    () => getSeasonOffsetInfo(selectedSeasonId, options?.seasons, options?.localEpisodes),
-    [selectedSeasonId, options?.seasons, options?.localEpisodes]
+  const targetSeasonEpisodes = useMemo(
+    () =>
+      getTargetSeasonEpisodes(
+        options?.seasons,
+        [...(options?.localEpisodes ?? []), ...fetchedLocalEpisodes],
+        selectedSeasonId
+      ),
+    [options?.seasons, options?.localEpisodes, fetchedLocalEpisodes, selectedSeasonId]
   );
 
-  const seasonOffsetHelperText = seasonOffsetInfo.helperText;
+  /**
+   * 1-click sequential auto-align: map scraped items 1:1 down the target
+   * season's episodes in order (Scraped 1 → Target Ep 1, ...). Excess items
+   * beyond the season length stay unmapped.
+   */
+  const autoAlignSequentially = useCallback(() => {
+    const targets = getTargetSeasonEpisodes(
+      optionsRef.current?.seasons,
+      [
+        ...(optionsRef.current?.localEpisodes ?? []),
+        ...fetchedLocalEpisodesRef.current,
+      ],
+      selectedSeasonIdRef.current
+    );
+    setPreviewItems((prev) =>
+      prev.map((item, idx) => {
+        const target = targets[idx];
+        if (!target) {
+          return { ...item, matchedLocalEpisodeId: null, needsReview: true };
+        }
+        return {
+          ...item,
+          calculatedOrder: target.order ?? item.calculatedOrder,
+          matchedLocalEpisodeId: target.id,
+          needsReview: false,
+        };
+      })
+    );
+  }, []);
 
   return {
     step,
@@ -611,9 +634,6 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     setSelectedSeasonId,
     selectSeason,
     seasonOptions,
-    episodeOffset,
-    setEpisodeOffset,
-    seasonOffsetHelperText,
     previewItems,
     fetchedLocalEpisodes,
     fetchPreview,
@@ -629,6 +649,8 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     saveError: null,
     updateMapping,
     toggleIgnore,
+    targetSeasonEpisodes,
+    autoAlignSequentially,
     reset,
     isEpisodeHasSources,
     hasOverwriteConflicts,

@@ -3,7 +3,12 @@ import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { useBulkScrapeSources, calculateSeasonOffset, type LocalEpisodeItem } from '@/modules/videos/internal/useBulkScrapeSources';
+import {
+  useBulkScrapeSources,
+  getTargetSeasonEpisodes,
+  applyPreviewSequentialFallback,
+  type LocalEpisodeItem,
+} from '@/modules/videos/internal/useBulkScrapeSources';
 import * as api from '@/modules/videos/internal/api';
 
 const createWrapper = () => {
@@ -21,13 +26,14 @@ const mockLocalEpisodes: LocalEpisodeItem[] = [
 ];
 
 describe('useBulkScrapeSources hook', () => {
-  it('starts at step 1 with default empty inputs', () => {
+  it('starts at step 1 with default empty inputs and no offset state', () => {
     const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
 
     expect(result.current.step).toBe(1);
     expect(result.current.sourceUrl).toBe('');
     expect(result.current.sourceType).toBe('otakudesu');
-    expect(result.current.episodeOffset).toBe(0);
+    expect('episodeOffset' in result.current).toBe(false);
+    expect('seasonOffsetHelperText' in result.current).toBe(false);
     expect(result.current.previewItems).toEqual([]);
   });
 
@@ -37,12 +43,63 @@ describe('useBulkScrapeSources hook', () => {
     act(() => {
       result.current.setSourceUrl('https://otakudesu.cloud/anime/test');
       result.current.setSourceType('myanimelist');
-      result.current.setEpisodeOffset(5);
     });
 
     expect(result.current.sourceUrl).toBe('https://otakudesu.cloud/anime/test');
     expect(result.current.sourceType).toBe('myanimelist');
-    expect(result.current.episodeOffset).toBe(5);
+  });
+
+  describe('Source type auto-detect from URL', () => {
+    it('auto-selects dramula when the URL contains dramula', () => {
+      const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+
+      act(() => {
+        result.current.setSourceUrl('https://dramula.example.com/season-1');
+      });
+
+      expect(result.current.sourceUrl).toBe('https://dramula.example.com/season-1');
+      expect(result.current.sourceType).toBe('dramula');
+    });
+
+    it('auto-selects otakudesu when the URL contains otakudesu', () => {
+      const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+
+      act(() => {
+        result.current.setSourceType('direct');
+      });
+      act(() => {
+        result.current.setSourceUrl('https://otakudesu.cloud/anime/test');
+      });
+
+      expect(result.current.sourceType).toBe('otakudesu');
+    });
+
+    it('leaves the manual selection untouched for unrecognized URLs', () => {
+      const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+
+      act(() => {
+        result.current.setSourceType('direct');
+      });
+      act(() => {
+        result.current.setSourceUrl('https://cdn.example.com/video.mp4');
+      });
+
+      expect(result.current.sourceType).toBe('direct');
+    });
+
+    it('keeps a manual selection made after typing the URL', () => {
+      const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+
+      act(() => {
+        result.current.setSourceUrl('https://dramula.example.com/season-1');
+      });
+      expect(result.current.sourceType).toBe('dramula');
+
+      act(() => {
+        result.current.setSourceType('embed');
+      });
+      expect(result.current.sourceType).toBe('embed');
+    });
   });
 
   it('fetches preview and flags decimal episodes (.5) as needing review', async () => {
@@ -71,22 +128,18 @@ describe('useBulkScrapeSources hook', () => {
     expect(epDecimal.needsReview).toBe(true);
   });
 
-  it('applies episode offset when calculating matched local episode', async () => {
+  it('matches scraped episodes 1:1 by order with no offset applied', async () => {
     const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
-
-    act(() => {
-      result.current.setEpisodeOffset(10);
-    });
 
     await act(async () => {
       result.current.fetchPreview(mockLocalEpisodes);
     });
 
-    // Scraped Ep 1 + offset 10 = calculated order 11 -> matches local ep-11!
+    // Scraped Ep 1 maps directly to local ep with order 1
     const ep1 = result.current.previewItems[0];
     expect(ep1.rawEpisodeNumber).toBe(1);
-    expect(ep1.calculatedOrder).toBe(11);
-    expect(ep1.matchedLocalEpisodeId).toBe('ep-11');
+    expect(ep1.calculatedOrder).toBe(1);
+    expect(ep1.matchedLocalEpisodeId).toBe('ep-1');
     expect(ep1.needsReview).toBe(false);
   });
 
@@ -332,7 +385,6 @@ describe('useBulkScrapeSources hook', () => {
 
     await act(async () => {
       result.current.setSourceUrl('https://example.com');
-      result.current.setEpisodeOffset(2);
       result.current.fetchPreview(mockLocalEpisodes);
     });
 
@@ -344,7 +396,7 @@ describe('useBulkScrapeSources hook', () => {
 
     expect(result.current.step).toBe(1);
     expect(result.current.sourceUrl).toBe('');
-    expect(result.current.episodeOffset).toBe(0);
+    expect('episodeOffset' in result.current).toBe(false);
     expect(result.current.previewItems).toEqual([]);
     expect(result.current.processingLogs).toEqual([]);
     expect(result.current.completedCount).toBe(0);
@@ -391,8 +443,7 @@ describe('useBulkScrapeSources hook', () => {
     scrapeSpy.mockRestore();
   });
 
-  describe('Target Season auto-calculation of Episode Offset', () => {
-    const mockSeasonsList = [
+  describe('Target Season selection (no offset)', () => {    const mockSeasonsList = [
       {
         id: 's1',
         title: 'Season 1',
@@ -413,17 +464,18 @@ describe('useBulkScrapeSources hook', () => {
       },
     ];
 
-    it('auto-selects first season by default and sets offset to 0 when Season 1 starts at order 1', () => {
+    it('auto-selects first season by default with no offset state exposed', () => {
       const { result } = renderHook(
         () => useBulkScrapeSources({ seasons: mockSeasonsList }),
         { wrapper: createWrapper() }
       );
 
       expect(result.current.selectedSeasonId).toBe('s1');
-      expect(result.current.episodeOffset).toBe(0);
+      expect('episodeOffset' in result.current).toBe(false);
+      expect('seasonOffsetHelperText' in result.current).toBe(false);
     });
 
-    it('automatically calculates offset to 12 when selecting Season 2 with first episode order 13', () => {
+    it('switches selected season without touching any offset', () => {
       const { result } = renderHook(
         () => useBulkScrapeSources({ seasons: mockSeasonsList }),
         { wrapper: createWrapper() }
@@ -434,28 +486,10 @@ describe('useBulkScrapeSources hook', () => {
       });
 
       expect(result.current.selectedSeasonId).toBe('s2');
-      expect(result.current.episodeOffset).toBe(12);
+      expect('episodeOffset' in result.current).toBe(false);
     });
 
-    it('allows manual override of episodeOffset after season auto-calculation', () => {
-      const { result } = renderHook(
-        () => useBulkScrapeSources({ seasons: mockSeasonsList }),
-        { wrapper: createWrapper() }
-      );
-
-      act(() => {
-        result.current.selectSeason('s2');
-      });
-      expect(result.current.episodeOffset).toBe(12);
-
-      act(() => {
-        result.current.setEpisodeOffset(15);
-      });
-      expect(result.current.episodeOffset).toBe(15);
-      expect(result.current.selectedSeasonId).toBe('s2');
-    });
-
-    it('auto-calculates offset using localEpisodes if seasons list is not provided', () => {
+    it('derives season options from localEpisodes when seasons list is absent', () => {
       const flatLocalEpisodes: LocalEpisodeItem[] = [
         { id: 'ep-13', title: 'Ep 13', order: 13, seasonId: 's2', seasonTitle: 'Season 2', seasonNumber: 2 },
         { id: 'ep-14', title: 'Ep 14', order: 14, seasonId: 's2', seasonTitle: 'Season 2', seasonNumber: 2 },
@@ -467,88 +501,141 @@ describe('useBulkScrapeSources hook', () => {
       );
 
       expect(result.current.selectedSeasonId).toBe('s2');
-      expect(result.current.episodeOffset).toBe(12);
+      expect(result.current.seasonOptions).toEqual([{ id: 's2', label: 'Season 2' }]);
     });
+  });
 
-    it('calculates offset to first empty (hasSources: false) episode in partially filled season', () => {
-      const partialSeasons = [
-        {
-          id: 's1',
-          title: 'Season 1',
-          tmdbSeason: 1,
-          episodes: [
-            { id: 'ep-1', title: 'Ep 1', order: 1, hasSources: true },
-            { id: 'ep-2', title: 'Ep 2', order: 2, hasSources: true },
-            { id: 'ep-3', title: 'Ep 3', order: 3, hasSources: false },
-            { id: 'ep-4', title: 'Ep 4', order: 4, hasSources: false },
-          ],
-        },
-      ];
+  describe('Sequential fallback matching', () => {
+    const season2 = [
+      {
+        id: 's2',
+        title: 'Season 2',
+        tmdbSeason: 2,
+        episodes: [
+          { id: 'ep-13', title: 'S2 Ep 1', order: 13 },
+          { id: 'ep-14', title: 'S2 Ep 2', order: 14 },
+        ],
+      },
+    ];
 
-      expect(calculateSeasonOffset('s1', partialSeasons)).toBe(2);
-
+    it('defaults unmatched integer episodes to sequential order within the target season', async () => {
       const { result } = renderHook(
-        () => useBulkScrapeSources({ seasons: partialSeasons }),
+        () => useBulkScrapeSources({ seasons: season2 }),
         { wrapper: createWrapper() }
       );
 
-      expect(result.current.episodeOffset).toBe(2);
-      expect(result.current.seasonOffsetHelperText).toBe(
-        '2/4 episodes already have sources. Auto-offsetting to start from Episode 3.'
-      );
+      // No local episodes passed, so title matching finds nothing;
+      // fallback maps scraped Ep 1/2 to the first unclaimed season targets.
+      await act(async () => {
+        result.current.fetchPreview([]);
+      });
+
+      const items = result.current.previewItems;
+      expect(items[0].matchedLocalEpisodeId).toBe('ep-13');
+      expect(items[0].calculatedOrder).toBe(13);
+      expect(items[0].needsReview).toBe(false);
+      expect(items[1].matchedLocalEpisodeId).toBe('ep-14');
+      // Decimal episode stays unmapped and needs review
+      expect(items[2].matchedLocalEpisodeId).toBeNull();
+      expect(items[2].needsReview).toBe(true);
+      // Excess item beyond season length stays unmapped
+      expect(items[3].matchedLocalEpisodeId).toBeNull();
+      expect(items[3].needsReview).toBe(true);
     });
 
-    it('falls back offset to beginning (firstEpisode.order - 1) if season is 100% full', () => {
-      const fullSeasons = [
-        {
-          id: 's1',
-          title: 'Season 1',
-          tmdbSeason: 1,
-          episodes: [
-            { id: 'ep-1', title: 'Ep 1', order: 1, hasSources: true },
-            { id: 'ep-2', title: 'Ep 2', order: 2, hasSources: true },
-          ],
-        },
-      ];
-
-      expect(calculateSeasonOffset('s1', fullSeasons)).toBe(0);
-
+    it('exposes target season episodes in ascending order', () => {
       const { result } = renderHook(
-        () => useBulkScrapeSources({ seasons: fullSeasons }),
+        () => useBulkScrapeSources({ seasons: season2 }),
         { wrapper: createWrapper() }
       );
 
-      expect(result.current.episodeOffset).toBe(0);
-      expect(result.current.seasonOffsetHelperText).toBe(
-        '2/2 episodes already have sources. Auto-offsetting to start from Episode 1.'
-      );
+      expect(result.current.targetSeasonEpisodes.map((e) => e.id)).toEqual([
+        'ep-13',
+        'ep-14',
+      ]);
     });
 
-    it('evaluates source presence using videoSources array when hasSources is undefined', () => {
-      const seasonsWithVideoSourcesArray = [
-        {
-          id: 's1',
-          title: 'Season 1',
-          tmdbSeason: 1,
-          episodes: [
-            { id: 'ep-1', title: 'Ep 1', order: 1, videoSources: [{ type: 'otakudesu', url: 'http://ep1' }] },
-            { id: 'ep-2', title: 'Ep 2', order: 2, videoSources: [{ type: 'otakudesu', url: 'http://ep2' }] },
-            { id: 'ep-3', title: 'Ep 3', order: 3, videoSources: [] },
-          ],
-        },
+    it('getTargetSeasonEpisodes filters flat local episodes by season id', () => {
+      const flat: LocalEpisodeItem[] = [
+        { id: 'ep-1', title: 'S1 E1', order: 1, seasonId: 's1' },
+        { id: 'ep-13', title: 'S2 E1', order: 1, seasonId: 's2' },
       ];
+      expect(getTargetSeasonEpisodes(undefined, flat, 's2').map((e) => e.id)).toEqual([
+        'ep-13',
+      ]);
+      expect(getTargetSeasonEpisodes(undefined, flat, 'unknown')).toEqual([]);
+    });
 
-      expect(calculateSeasonOffset('s1', seasonsWithVideoSourcesArray)).toBe(2);
+    it('applyPreviewSequentialFallback leaves decimals and excess items unmapped', () => {
+      const mk = (
+        order: number | null,
+        matched: string | null = null
+      ) => ({
+        id: `scraped-${order}`,
+        scrapedTitle: `Episode ${order}`,
+        rawEpisodeNumber: order ?? 'x',
+        calculatedOrder: order,
+        matchedLocalEpisodeId: matched,
+        isIgnored: false,
+        needsReview: matched === null,
+        videoSources: [],
+      });
+      const result = applyPreviewSequentialFallback(
+        [mk(1), mk(7.5), mk(2), mk(3)],
+        [
+          { id: 'ep-1', order: 1 },
+          { id: 'ep-2', order: 2 },
+        ]
+      );
+      expect(result[0].matchedLocalEpisodeId).toBe('ep-1');
+      expect(result[1].matchedLocalEpisodeId).toBeNull();
+      expect(result[2].matchedLocalEpisodeId).toBe('ep-2');
+      expect(result[3].matchedLocalEpisodeId).toBeNull();
+    });
+  });
 
+  describe('1-click sequential auto-align', () => {
+    const season2 = [
+      {
+        id: 's2',
+        title: 'Season 2',
+        tmdbSeason: 2,
+        episodes: [
+          { id: 'ep-13', title: 'S2 Ep 1', order: 13 },
+          { id: 'ep-14', title: 'S2 Ep 2', order: 14 },
+        ],
+      },
+    ];
+
+    it('maps scraped items 1:1 down the target season, leaving excess unmapped', async () => {
       const { result } = renderHook(
-        () => useBulkScrapeSources({ seasons: seasonsWithVideoSourcesArray }),
+        () => useBulkScrapeSources({ seasons: season2 }),
         { wrapper: createWrapper() }
       );
 
-      expect(result.current.episodeOffset).toBe(2);
-      expect(result.current.seasonOffsetHelperText).toBe(
-        '2/3 episodes already have sources. Auto-offsetting to start from Episode 3.'
-      );
+      await act(async () => {
+        result.current.fetchPreview([]);
+      });
+
+      // Scramble one mapping first to prove auto-align overwrites everything
+      act(() => {
+        result.current.updateMapping(0, null);
+      });
+      expect(result.current.previewItems[0].matchedLocalEpisodeId).toBeNull();
+
+      act(() => {
+        result.current.autoAlignSequentially();
+      });
+
+      const items = result.current.previewItems;
+      expect(items[0].matchedLocalEpisodeId).toBe('ep-13');
+      expect(items[0].needsReview).toBe(false);
+      expect(items[1].matchedLocalEpisodeId).toBe('ep-14');
+      expect(items[1].needsReview).toBe(false);
+      expect(items[2].matchedLocalEpisodeId).toBeNull();
+      expect(items[2].needsReview).toBe(true);
+      expect(items[3].matchedLocalEpisodeId).toBeNull();
+      expect(items[3].needsReview).toBe(true);
     });
   });
 

@@ -132,11 +132,31 @@ describe('BulkScrapeModal component', () => {
     expect(sourceTypeTrigger).toHaveTextContent('Dramula');
 
     expect(screen.getByRole('combobox', { name: /Target Season/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Episode Offset/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Episode Offset/i)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bulk-scrape-offset-helper')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Preview/i })).toBeInTheDocument();
   });
 
-  it('automatically calculates episode offset when Target Season selection changes', async () => {
+  it('auto-selects the source type when the URL identifies the provider', async () => {
+    const { user } = renderWithProviders(
+      <BulkScrapeModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockLocalEpisodes}
+      />
+    );
+
+    const sourceTypeTrigger = screen.getByRole('combobox', { name: /Source Type/i });
+    expect(sourceTypeTrigger).toHaveTextContent('Otakudesu');
+
+    const urlInput = screen.getByLabelText(/Season \/ Scraper URL/i);
+    await user.type(urlInput, 'https://dramula.example.com/season-1');
+
+    expect(sourceTypeTrigger).toHaveTextContent('Dramula');
+  });
+
+  it('keeps Target Season selection without any offset field or helper text', async () => {
     const multiSeasons = [
       {
         id: 's1',
@@ -162,53 +182,19 @@ describe('BulkScrapeModal component', () => {
     );
 
     const targetSeasonTrigger = screen.getByRole('combobox', { name: /Target Season/i });
-    const offsetInput = screen.getByLabelText(/Episode Offset/i);
 
-    // Default first season is Season 1, offset is 0
+    // Default first season is Season 1, no offset input rendered
     expect(targetSeasonTrigger).toHaveTextContent('Season 1');
-    expect(offsetInput).toHaveValue(0);
+    expect(screen.queryByLabelText(/Episode Offset/i)).not.toBeInTheDocument();
 
-    // Select Season 2 (first ep order 13) -> offset should update to 12
+    // Select Season 2 -> trigger updates, still no offset field
     await user.click(targetSeasonTrigger);
     const season2Option = await screen.findByRole('option', { name: 'Season 2' });
     await user.click(season2Option);
 
     expect(targetSeasonTrigger).toHaveTextContent('Season 2');
-    expect(offsetInput).toHaveValue(12);
-
-    // User can manually edit Episode Offset after auto-calculation
-    await user.clear(offsetInput);
-    await user.type(offsetInput, '15');
-    expect(offsetInput).toHaveValue(15);
-  });
-
-  it('renders dynamic helper text below Target Season dropdown explaining math', async () => {
-    const partialSeasons = [
-      {
-        id: 's1',
-        title: 'Season 1',
-        tmdbSeason: 1,
-        episodes: [
-          { id: 'ep-1', title: 'Ep 1', order: 1, hasSources: true },
-          { id: 'ep-2', title: 'Ep 2', order: 2, hasSources: true },
-          { id: 'ep-3', title: 'Ep 3', order: 3, hasSources: false },
-          { id: 'ep-4', title: 'Ep 4', order: 4, hasSources: false },
-        ],
-      },
-    ];
-
-    renderWithProviders(
-      <BulkScrapeModal
-        open={true}
-        onOpenChange={vi.fn()}
-        seriesId="series-100"
-        seasons={partialSeasons}
-      />
-    );
-
-    expect(
-      screen.getByText('2/4 episodes already have sources. Auto-offsetting to start from Episode 3.')
-    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Episode Offset/i)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bulk-scrape-offset-helper')).not.toBeInTheDocument();
   });
 
   it('transitions to Step 2 upon submitting valid URL', async () => {
@@ -297,6 +283,92 @@ describe('BulkScrapeModal component', () => {
     await user.click(ignoreEp1Btn);
 
     expect(screen.getByText('Ignored')).toBeInTheDocument();
+  });
+
+  it('scopes TargetEpisodeCombobox options strictly to the selected target season', async () => {
+    const twoSeasons = [
+      {
+        id: 's1',
+        title: 'Season 1',
+        tmdbSeason: 1,
+        episodes: [{ id: 'ep-1', title: 'S1 Premiere', order: 1 }],
+      },
+      {
+        id: 's2',
+        title: 'Season 2',
+        tmdbSeason: 2,
+        episodes: [{ id: 'ep-101', title: 'S2 Premiere', order: 1 }],
+      },
+    ];
+
+    const { user } = renderWithProviders(
+      <BulkScrapeModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockLocalEpisodes}
+        seasons={twoSeasons}
+      />
+    );
+
+    const urlInput = screen.getByLabelText(/Season \/ Scraper URL/i);
+    await user.type(urlInput, 'https://otakudesu.cloud/anime/otaku-anime');
+    await user.click(screen.getByRole('button', { name: /Preview/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Episode 7.5 (Recap OVA)')).toBeInTheDocument();
+    });
+
+    // Default target season is s1 — combobox lists only s1 episodes
+    const ep75Trigger = screen.getByLabelText('Target episode for Episode 7.5 (Recap OVA)');
+    await user.click(ep75Trigger);
+    const s1Options = await screen.findAllByText('Ep 1: S1 Premiere');
+    expect(s1Options.length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('Ep 1: S2 Premiere')).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
+  });
+
+  it('auto-aligns scraped episodes 1:1 down the target season with one click', async () => {
+    const { user } = renderWithProviders(
+      <BulkScrapeModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockLocalEpisodes}
+        seasons={mockSeasons}
+      />
+    );
+
+    const urlInput = screen.getByLabelText(/Season \/ Scraper URL/i);
+    await user.type(urlInput, 'https://otakudesu.cloud/anime/otaku-anime');
+    await user.click(screen.getByRole('button', { name: /Preview/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Episode 7.5 (Recap OVA)')).toBeInTheDocument();
+    });
+
+    // Prominent 1-click button scoped to the 3-episode target season
+    const autoAlignBtn = screen.getByRole('button', {
+      name: /Auto-align sequentially \(1\.\.3\)/i,
+    });
+    expect(autoAlignBtn).toBeInTheDocument();
+
+    // Ep 7.5 starts unmapped...
+    const ep75Trigger = screen.getByLabelText('Target episode for Episode 7.5 (Recap OVA)');
+    expect(ep75Trigger).toHaveTextContent('-- Skip / Unmapped --');
+
+    await user.click(autoAlignBtn);
+
+    // ...and is mapped 1:1 down the season after one click (3rd scraped → ep-3)
+    await waitFor(() => {
+      expect(ep75Trigger).toHaveTextContent('Ep 3: State Management');
+    });
+    expect(toast.success).toHaveBeenCalledWith(
+      'Auto-aligned sequentially',
+      expect.objectContaining({
+        description: expect.stringContaining('Mapped 3 scraped episodes'),
+      })
+    );
   });
 
   it('returns to Step 1 when Back is clicked', async () => {

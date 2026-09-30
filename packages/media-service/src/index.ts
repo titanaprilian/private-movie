@@ -374,20 +374,48 @@ export interface SaveBulkSourcesResult {
   skippedCount: number;
 }
 
+/**
+ * Strip anime season descriptors ("2nd Season", "Season 2", "Part 2",
+ * "Cour 2", Roman numerals like "II") so bare-number episode matching
+ * doesn't mistake a season number for the episode number.
+ */
+export function stripSeasonDescriptors(title: string): string {
+  let out = title;
+  // "2nd Season", "3rd Season"
+  out = out.replace(/\b\d+(?:st|nd|rd|th)\s+season\b/gi, " ");
+  // Word-form ordinals must run before the generic "Season N" rule so the
+  // episode number in e.g. "Second Season 7" isn't mistaken for a season.
+  out = out.replace(
+    /\b(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+seasons?\b/gi,
+    " "
+  );
+  // "Season 2", "Season 02"
+  out = out.replace(/\bseasons?\s+\d+\b/gi, " ");
+  // "Season II", "Season IV" (Roman numerals)
+  out = out.replace(/\bseasons?\s+[IVXLCDM]+\b/gi, " ");
+  // "Part 2", "Part II", "Cour 2", "Cour II"
+  out = out.replace(/\b(?:part|cour)\s+(?:\d+|[IVXLCDM]+)\b/gi, " ");
+  // Trailing standalone Roman numeral season marker, e.g. "Re:Zero II Episode 1"
+  out = out.replace(/\b[IVXLCDM]{2,}\b/g, " ");
+  return out.replace(/\s{2,}/g, " ").trim();
+}
+
 export function parseBulkScrapedEpisodeNumber(title: string): number | null {
-  const decimalEpMatch = title.match(/(?:episode|eps|ep|#)\.?\s*(\d+\.\d+)/i);
+  const normalized = stripSeasonDescriptors(title);
+
+  const decimalEpMatch = normalized.match(/(?:episode|eps|ep|#)\.?\s*(\d+\.\d+)/i);
   if (decimalEpMatch) {
     const num = parseFloat(decimalEpMatch[1]);
     if (!Number.isNaN(num)) return num;
   }
 
-  const epMatch = title.match(/(?:episode|eps|ep|#)\.?\s*(\d+)/i);
+  const epMatch = normalized.match(/(?:episode|eps|ep|#)\.?\s*(\d+)/i);
   if (epMatch) {
     const num = parseInt(epMatch[1], 10);
     if (!Number.isNaN(num)) return num;
   }
 
-  const titleWithoutSeason = title.replace(/\bseason\s*\d+/gi, "").replace(/\bs\d+\b/gi, "");
+  const titleWithoutSeason = normalized.replace(/\bseason\s*\d+/gi, "").replace(/\bs\d+\b/gi, "");
 
   const decimalMatch = titleWithoutSeason.match(/\b(\d+\.\d+)\b/);
   if (decimalMatch) {
@@ -402,6 +430,58 @@ export function parseBulkScrapedEpisodeNumber(title: string): number | null {
   }
 
   return null;
+}
+
+export interface SequentialFallbackTarget {
+  id: string;
+  order: number;
+}
+
+export interface SequentialFallbackItem {
+  episodeNumber: number | null;
+  calculatedOrder: number | null;
+  matchedLocalEpisodeId: string | null;
+  matchStatus: "matched" | "unmatched";
+}
+
+/**
+ * Sequential fallback: scraped episodes with an integer episode number that
+ * title matching left unmatched default to the next unclaimed target-season
+ * episode in order. Non-integer (decimals/specials) and excess items stay
+ * unmapped so they keep needing review.
+ */
+export function applySequentialFallback<T extends SequentialFallbackItem>(
+  scrapedItems: T[],
+  targets: SequentialFallbackTarget[]
+): T[] {
+  const sortedTargets = [...targets].sort((a, b) => a.order - b.order);
+  const claimed = new Set<string>();
+  for (const item of scrapedItems) {
+    if (item.matchedLocalEpisodeId) claimed.add(item.matchedLocalEpisodeId);
+  }
+  let cursor = 0;
+  return scrapedItems.map((item) => {
+    if (
+      item.matchedLocalEpisodeId ||
+      item.episodeNumber === null ||
+      !Number.isInteger(item.episodeNumber)
+    ) {
+      return item;
+    }
+    while (cursor < sortedTargets.length && claimed.has(sortedTargets[cursor].id)) {
+      cursor++;
+    }
+    const target = sortedTargets[cursor];
+    if (!target) return item;
+    claimed.add(target.id);
+    cursor++;
+    return {
+      ...item,
+      calculatedOrder: target.order,
+      matchedLocalEpisodeId: target.id,
+      matchStatus: "matched" as const,
+    };
+  });
 }
 
 export interface OngoingScrapeResult {
@@ -716,7 +796,7 @@ export function createMediaService<
       }
 
       const offset = input.episodeOffset ?? 0;
-      const scrapedEpisodes: ScrapedBulkEpisodeItem[] = parsedSeries.episodes.map((scrapedEp) => {
+      const initialScraped: ScrapedBulkEpisodeItem[] = parsedSeries.episodes.map((scrapedEp) => {
         const epNum = parseBulkScrapedEpisodeNumber(scrapedEp.title);
         let calculatedOrder: number | null = null;
         let matchedLocalEpisodeId: string | null = null;
@@ -741,6 +821,8 @@ export function createMediaService<
           matchStatus,
         };
       });
+
+      const scrapedEpisodes = applySequentialFallback(initialScraped, localEpisodes);
 
       return {
         scrapedEpisodes,
