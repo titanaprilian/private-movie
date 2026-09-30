@@ -4,6 +4,7 @@ import { createMediaService, createS3StorageService } from "@repo/media-service"
 import { createApp } from "./app";
 import { createAuthenticationService, validateJwtSecret } from "./modules/authentication";
 import { createOngoingSeasonScheduler } from "./modules/media";
+import { loadSchedulerConfig } from "./modules/dashboard";
 
 validateJwtSecret();
 
@@ -17,9 +18,14 @@ const mediaService = createMediaService(db, {
   s3StorageService,
 });
 
-// Initialize background scheduler for ongoing seasons (runs immediately on startup, then every 30 minutes)
+// Load persisted scheduler configuration (falls back to 30min / enabled).
+const persistedSchedulerConfig = await loadSchedulerConfig(db);
+
+// Initialize background scheduler for ongoing seasons (runs immediately on startup when enabled)
 const scheduler = createOngoingSeasonScheduler({
   mediaService,
+  intervalMs: persistedSchedulerConfig.intervalMinutes * 60000,
+  enabled: persistedSchedulerConfig.isEnabled,
   runImmediately: true,
 });
 scheduler.start();
@@ -29,7 +35,7 @@ const hostname = process.env.HOST ?? "0.0.0.0";
 const maxUploadMb = parseInt(process.env.MAX_UPLOAD_SIZE_MB || "1024", 10) || 1024;
 const maxRequestBodySize = maxUploadMb * 1024 * 1024 + 20 * 1024 * 1024;
 
-const app = createApp({ db, auth, browserFn, s3StorageService }).listen({
+const app = createApp({ db, auth, browserFn, s3StorageService, scheduler }).listen({
   port,
   hostname,
   maxRequestBodySize,
@@ -50,4 +56,3 @@ process.on("SIGINT", handleShutdown);
 process.on("SIGTERM", handleShutdown);
 
 export type { App } from "./app";
-

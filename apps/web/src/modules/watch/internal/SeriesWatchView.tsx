@@ -478,7 +478,7 @@ export function SeriesWatchView({
     >
       {!selectedEpisodeId ? (
         /* ================= SERIES OVERVIEW MODE ================= */
-        <div className="space-y-8">
+        <div>
           {/* Hoisted sticky top navigation (shell-level, stays pinned on scroll) */}
           <WatchTopNav
             mode="overview"
@@ -500,7 +500,7 @@ export function SeriesWatchView({
           />
 
           {/* Container B: Episode Explorer (Home-aligned padding) */}
-          <div className="px-4 sm:px-8 md:px-12 lg:px-16">
+          <div className="px-4 sm:px-8 md:px-12 lg:px-16 pt-8">
             <EpisodeExplorer
               seasons={seasons}
               activeSeasonId={activeSeasonId}

@@ -38,6 +38,8 @@ export async function buildApp(options?: {
   minioContainerStarter?: MinioContainerStarter;
   minioHealthChecker?: MinioHealthChecker;
   minioBucketProvisioner?: MinioBucketProvisioner;
+  scheduler?: Parameters<typeof createApp>[0]["scheduler"];
+  storageUsageProvider?: Parameters<typeof createApp>[0]["storageUsageProvider"];
 }): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
@@ -73,7 +75,43 @@ export async function buildApp(options?: {
     minioContainerStarter: options?.minioContainerStarter,
     minioHealthChecker: options?.minioHealthChecker,
     minioBucketProvisioner: options?.minioBucketProvisioner,
+    scheduler: options?.scheduler ?? createTestScheduler(),
+    storageUsageProvider: options?.storageUsageProvider ?? null,
   });
+}
+
+function createTestScheduler() {
+  let executing = false;
+  let enabled = true;
+  let intervalMs = 30 * 60000;
+  let lastRunAt: Date | null = null;
+  let lastRunResult: { totalProcessed: number; successCount: number; failureCount: number } | null = null;
+  const startedAt = Date.now();
+  return {
+    async runNow() {
+      if (executing) return null;
+      executing = true;
+      try {
+        lastRunAt = new Date();
+        lastRunResult = { totalProcessed: 0, successCount: 0, failureCount: 0 };
+        return { totalProcessed: 0, successCount: 0, failureCount: 0, results: [] };
+      } finally {
+        executing = false;
+      }
+    },
+    isEnabled: () => enabled,
+    isExecuting: () => executing,
+    getIntervalMs: () => intervalMs,
+    getLastRunAt: () => lastRunAt,
+    getLastRunResult: () => lastRunResult,
+    getNextRunAt: () => (enabled ? new Date(startedAt + intervalMs) : null),
+    setEnabled: (v: boolean) => {
+      enabled = v;
+    },
+    updateInterval: (ms: number) => {
+      intervalMs = ms;
+    },
+  };
 }
 
 /**

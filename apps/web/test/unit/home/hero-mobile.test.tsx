@@ -1,4 +1,10 @@
-import { renderWithProviders, screen, waitFor, fireEvent, within } from '../../utils';
+import {
+  renderWithProviders,
+  screen,
+  waitFor,
+  fireEvent,
+  within,
+} from '../../utils';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { CinematicHome } from '@/modules/home';
 import { setAccessToken } from '@/lib/api';
@@ -64,7 +70,7 @@ function mockFetch(data: unknown) {
     if (url.includes('/auth/refresh')) {
       return new Response(
         JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
-        { status: 200 },
+        { status: 200 }
       );
     }
     if (url.includes('/series/home-feed')) {
@@ -95,7 +101,8 @@ describe('CinematicHome mobile-optimized hero', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders portrait poster full-bleed on mobile and wide banner on desktop with crossfade', async () => {    await renderHero(mockHeroWithoutLogo);
+  it('renders portrait poster full-bleed on mobile and wide banner on desktop with crossfade', async () => {
+    await renderHero(mockHeroWithoutLogo);
 
     const mobileBgs = screen.getAllByTestId('hero-bg-mobile');
     const desktopBgs = screen.getAllByTestId('hero-bg-desktop');
@@ -104,12 +111,16 @@ describe('CinematicHome mobile-optimized hero', () => {
 
     const mobileBg = mobileBgs[0];
     expect(mobileBg).toHaveClass('md:hidden');
-    expect(mobileBg.getAttribute('style')).toContain('https://example.com/poster.jpg');
+    expect(mobileBg.getAttribute('style')).toContain(
+      'https://example.com/poster.jpg'
+    );
     expect(mobileBg.className).toMatch(/transition-opacity duration-1000/);
 
     const desktopBg = desktopBgs[0];
     expect(desktopBg).toHaveClass('hidden', 'md:block');
-    expect(desktopBg.getAttribute('style')).toContain('https://example.com/banner.jpg');
+    expect(desktopBg.getAttribute('style')).toContain(
+      'https://example.com/banner.jpg'
+    );
     expect(desktopBg.className).toMatch(/transition-opacity duration-1000/);
 
     // Active slide is opaque
@@ -129,19 +140,20 @@ describe('CinematicHome mobile-optimized hero', () => {
     // No full-image dim layer: upper/left of the image stays visible on mobile
     expect(screen.queryByTestId('hero-gradient-dim')).not.toBeInTheDocument();
 
-    const bottom = screen.getByTestId('hero-gradient-bottom');
-    expect(bottom.className).toMatch(/bg-gradient-to-t/);
+    const bottomMobile = screen.getByTestId('hero-gradient-bottom-mobile');
+    expect(bottomMobile.className).toMatch(/bg-gradient-to-t/);
+    expect(bottomMobile).toHaveClass('md:hidden');
     // dark theme scrim across the bottom, fading out toward the top
-    expect(bottom.className).toContain('via-[color-mix(in_srgb,var(--bg)_75%,black)]');
-    expect(bottom.className).toContain('via-[35%]');
-    // desktop uses slightly lighter stops
-    expect(bottom.className).toContain('md:via-[color-mix(in_srgb,var(--bg)_75%,transparent)]');
-    expect(bottom.className).toContain('md:from-[color-mix(in_srgb,var(--bg)_95%,transparent)]');
-    expect(bottom.className).not.toMatch(/hidden/);
+    expect(bottomMobile.className).toContain(
+      'via-[color-mix(in_srgb,var(--bg)_75%,black)]'
+    );
+    expect(bottomMobile.className).toContain('via-[35%]');
+
+    const bottomDesktop = screen.getByTestId('hero-gradient-bottom');
+    expect(bottomDesktop).toHaveClass('hidden', 'md:block', 'hero-fade-bottom');
 
     const left = screen.getByTestId('hero-gradient-left');
-    expect(left.className).toMatch(/bg-gradient-to-r/);
-    expect(left).toHaveClass('hidden', 'md:block');
+    expect(left).toHaveClass('hidden', 'md:block', 'hero-fade-left');
   });
 
   it('renders logo image when logoUrl is present and falls back to title text when absent', async () => {
@@ -163,7 +175,7 @@ describe('CinematicHome mobile-optimized hero', () => {
       expect(screen.getByTestId('hero-title-text')).toBeInTheDocument();
     });
     expect(screen.getByTestId('hero-title-text')).toHaveTextContent(
-      'Attack on Titan: The Final Season',
+      'Attack on Titan: The Final Season'
     );
     expect(screen.queryByTestId('hero-logo')).not.toBeInTheDocument();
   });
@@ -173,10 +185,10 @@ describe('CinematicHome mobile-optimized hero', () => {
 
     expect(screen.queryByTestId('hero-logo')).not.toBeInTheDocument();
     expect(screen.getByTestId('hero-title-text')).toHaveTextContent(
-      'Attack on Titan: The Final Season',
+      'Attack on Titan: The Final Season'
     );
     expect(
-      screen.getByRole('heading', { level: 1, name: /Attack on Titan/i }),
+      screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
     ).toBeInTheDocument();
   });
 
@@ -185,7 +197,9 @@ describe('CinematicHome mobile-optimized hero', () => {
 
     const meta = screen.getByTestId('hero-meta');
     expect(meta).toBeInTheDocument();
-    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('1 Season 12 Episodes');
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent(
+      '1 Season 12 Episodes'
+    );
     expect(meta.textContent).not.toMatch(/%.*[Mm]atch/);
     expect(meta.textContent).not.toMatch(/SUB/);
     expect(meta.textContent).not.toMatch(/DUB/);
@@ -222,7 +236,12 @@ describe('CinematicHome mobile-optimized hero', () => {
     await renderHero(mockHeroWithLogo);
 
     const content = screen.getByTestId('hero-content');
-    expect(content).toHaveClass('items-center', 'text-center', 'md:items-start', 'md:text-left');
+    expect(content).toHaveClass(
+      'items-center',
+      'text-center',
+      'md:items-start',
+      'md:text-left'
+    );
 
     const logo = screen.getByTestId('hero-logo');
     expect(logo.className).toMatch(/mx-auto/);
@@ -270,7 +289,9 @@ describe('CinematicHome mobile-optimized hero', () => {
     expect(episodes).toHaveTextContent('12 Episodes');
     expect(episodes).toHaveClass('hidden', 'md:inline');
     // Season count stays visible on all viewports
-    expect(screen.getByTestId('hero-seasons-episodes').textContent).toMatch(/1 Season/);
+    expect(screen.getByTestId('hero-seasons-episodes').textContent).toMatch(
+      /1 Season/
+    );
   });
 
   it('renders mobile pagination dots in-flow above the Play button', async () => {
@@ -279,13 +300,15 @@ describe('CinematicHome mobile-optimized hero', () => {
     const mobilePag = screen.getByTestId('hero-pagination-mobile');
     expect(mobilePag).toHaveClass('md:hidden');
 
-    const dots = within(mobilePag).getAllByRole('button', { name: /go to slide/i });
+    const dots = within(mobilePag).getAllByRole('button', {
+      name: /go to slide/i,
+    });
     expect(dots).toHaveLength(3);
 
     // Dots sit above the Play button in layout order with spacing between them
     const play = screen.getByTestId('hero-play');
     expect(mobilePag.compareDocumentPosition(play)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
+      Node.DOCUMENT_POSITION_FOLLOWING
     );
   });
 
@@ -297,7 +320,9 @@ describe('CinematicHome mobile-optimized hero', () => {
     expect(desktopPag.className).toMatch(/absolute/);
     expect(desktopPag.className).toMatch(/bottom-6/);
 
-    const dots = within(desktopPag).getAllByRole('button', { name: /go to slide/i });
+    const dots = within(desktopPag).getAllByRole('button', {
+      name: /go to slide/i,
+    });
     expect(dots).toHaveLength(3);
   });
 
@@ -305,13 +330,15 @@ describe('CinematicHome mobile-optimized hero', () => {
     await renderHero(mockMultiHero);
 
     const mobilePag = screen.getByTestId('hero-pagination-mobile');
-    const dots = within(mobilePag).getAllByRole('button', { name: /go to slide/i });
+    const dots = within(mobilePag).getAllByRole('button', {
+      name: /go to slide/i,
+    });
 
     fireEvent.click(dots[1]);
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i }),
+        screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })
       ).toBeInTheDocument();
     });
   });

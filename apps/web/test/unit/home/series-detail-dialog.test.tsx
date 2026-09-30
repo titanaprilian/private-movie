@@ -69,7 +69,7 @@ describe('Home hero showcase & series detail dialog', () => {
     vi.restoreAllMocks();
   });
 
-  it('curves the hero slider bottom corners without a bottom border', async () => {
+  it('renders the hero slider container with overflow-hidden and without bottom border or rounded corners', async () => {
     mockFetch();
     renderWithProviders(<CinematicHome />);
 
@@ -78,7 +78,7 @@ describe('Home hero showcase & series detail dialog', () => {
     });
 
     const slider = screen.getByTestId('hero-slider');
-    expect(slider).toHaveClass('rounded-b-[32px]');
+    expect(slider).not.toHaveClass('rounded-b-[32px]');
     expect(slider).toHaveClass('overflow-hidden');
     expect(slider.className).not.toMatch(/border-b/);
   });

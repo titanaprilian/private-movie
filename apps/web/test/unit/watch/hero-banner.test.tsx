@@ -103,21 +103,28 @@ describe('SeriesHeroBanner cinematic layout', () => {
   });
 
   it('renders full-bleed artwork with multi-stop vignette gradient overlays', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
 
-    const bottom = screen.getByTestId('hero-gradient-bottom');
-    expect(bottom.className).toMatch('bg-gradient-to-t');
-    expect(bottom.className).toContain('from-[var(--bg)]');
+    const bottomMobile = screen.getByTestId('hero-gradient-bottom-mobile');
+    expect(bottomMobile.className).toMatch('bg-gradient-to-t');
+    expect(bottomMobile.className).toContain('from-[var(--bg)]');
+    expect(bottomMobile).toHaveClass('md:hidden');
+
+    const bottomDesktop = screen.getByTestId('hero-gradient-bottom');
+    expect(bottomDesktop).toHaveClass('hidden', 'md:block', 'hero-fade-bottom');
 
     const left = screen.getByTestId('hero-gradient-left');
-    expect(left.className).toMatch('bg-gradient-to-r');
-    expect(left.className).toContain('from-[color-mix(in_srgb,var(--bg)_92%,transparent)]');
+    expect(left).toHaveClass('hidden', 'md:block', 'hero-fade-left');
   });
 
   it('keeps mobile height at 65dvh so the portrait poster has breathing room', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     const artwork = screen.getByTestId('hero-artwork');
     expect(artwork).toHaveClass('h-[65dvh]', 'min-h-[420px]');
@@ -125,7 +132,9 @@ describe('SeriesHeroBanner cinematic layout', () => {
   });
 
   it('renders portrait poster on mobile and wide backdrop on desktop', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     const mobile = screen.getByTestId('hero-bg-mobile');
     expect(mobile).toHaveAttribute('src', baseSeries.posterUrl);
@@ -192,7 +201,9 @@ describe('SeriesHeroBanner cinematic layout', () => {
   });
 
   it('falls back to the secondary artwork when an image fails to load', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     fireEvent.error(screen.getByTestId('hero-bg-mobile'));
 
@@ -204,7 +215,9 @@ describe('SeriesHeroBanner cinematic layout', () => {
   });
 
   it('centers overlay content on mobile and left-aligns on desktop', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     const content = screen.getByTestId('hero-content');
     expect(content).toHaveClass('items-center', 'text-center', 'mx-auto');
@@ -220,11 +233,16 @@ describe('SeriesHeroBanner cinematic layout', () => {
       ...baseSeries,
       logoUrl: 'https://images.unsplash.com/logo-1.png',
     };
-    render(<SeriesHeroBanner series={withLogo} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={withLogo} onPlay={onPlay} onBack={onBack} />
+    );
 
     // Logo overlaid and centered on mobile (title heading omitted)
     const logo = screen.getByTestId('hero-logo');
-    expect(logo).toHaveAttribute('src', 'https://images.unsplash.com/logo-1.png');
+    expect(logo).toHaveAttribute(
+      'src',
+      'https://images.unsplash.com/logo-1.png'
+    );
     expect(logo).toHaveClass('mx-auto', 'md:mx-0', 'object-center');
     expect(screen.queryByTestId('hero-title-text')).not.toBeInTheDocument();
 
@@ -232,10 +250,16 @@ describe('SeriesHeroBanner cinematic layout', () => {
     const meta = screen.getByTestId('hero-meta');
     expect(meta).toBeInTheDocument();
     expect(screen.getByTestId('hero-rating')).toHaveTextContent('8.8');
-    expect(screen.getByTestId('hero-rating').className).toMatch('text-yellow-400');
+    expect(screen.getByTestId('hero-rating').className).toMatch(
+      'text-yellow-400'
+    );
     expect(meta).toHaveTextContent('2024');
-    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('2 Seasons');
-    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('3 Episodes');
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent(
+      '2 Seasons'
+    );
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent(
+      '3 Episodes'
+    );
 
     // Synopsis hidden on mobile, line-clamped on desktop
     const synopsis = screen.getByTestId('hero-synopsis');
@@ -244,7 +268,12 @@ describe('SeriesHeroBanner cinematic layout', () => {
 
     // Chunky shared-primitive green play CTA, full-width on mobile
     const play = screen.getByTestId('hero-play');
-    expect(play).toHaveClass('bg-[var(--green)]', 'text-white', 'w-full', 'md:w-auto');
+    expect(play).toHaveClass(
+      'bg-[var(--green)]',
+      'text-white',
+      'w-full',
+      'md:w-auto'
+    );
     expect(play).toHaveClass('rounded-2xl', 'font-extrabold');
     expect(play.className).toMatch('border-b-4');
     expect(play.className).toMatch(/active:translate-y-\[2px\]/);
@@ -253,7 +282,9 @@ describe('SeriesHeroBanner cinematic layout', () => {
   });
 
   it('caps genres to 2 on mobile with the remainder revealed on desktop', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     const genres = screen.getByTestId('hero-genres');
     expect(genres).toHaveTextContent('Action');
@@ -268,7 +299,9 @@ describe('SeriesHeroBanner cinematic layout', () => {
   });
 
   it('falls back to a centered high-contrast bold title when the logo is missing', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     expect(screen.queryByTestId('hero-logo')).not.toBeInTheDocument();
     const title = screen.getByTestId('hero-title-text');
@@ -287,13 +320,19 @@ describe('SeriesHeroBanner cinematic layout', () => {
       logoUrl: 'https://images.unsplash.com/broken-logo.png',
     };
     render(
-      <SeriesHeroBanner series={withBrokenLogo} onPlay={onPlay} onBack={onBack} />
+      <SeriesHeroBanner
+        series={withBrokenLogo}
+        onPlay={onPlay}
+        onBack={onBack}
+      />
     );
 
     fireEvent.error(screen.getByTestId('hero-logo'));
 
     expect(screen.queryByTestId('hero-logo')).not.toBeInTheDocument();
-    expect(screen.getByTestId('hero-title-text')).toHaveTextContent('Test Series');
+    expect(screen.getByTestId('hero-title-text')).toHaveTextContent(
+      'Test Series'
+    );
   });
 
   it('shows a synopsis fallback hidden on mobile when the description is missing', () => {
@@ -306,12 +345,16 @@ describe('SeriesHeroBanner cinematic layout', () => {
     );
 
     const synopsis = screen.getByTestId('hero-synopsis');
-    expect(synopsis).toHaveTextContent('No synopsis available for this series.');
+    expect(synopsis).toHaveTextContent(
+      'No synopsis available for this series.'
+    );
     expect(synopsis).toHaveClass('hidden');
   });
 
   it('triggers playback of Episode 1 when the play CTA is clicked', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     fireEvent.click(screen.getByTestId('hero-play'));
     expect(onPlay).toHaveBeenCalledTimes(1);
@@ -326,18 +369,24 @@ describe('SeriesHeroBanner cinematic layout', () => {
   });
 
   it('does not embed back navigation in the hero (hoisted to the watch view shell)', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     // Sticky top navigation lives in WatchTopNav at the SeriesWatchView shell level
     expect(screen.queryByTestId('hero-back-bar')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /back/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /back/i })
+    ).not.toBeInTheDocument();
   });
 
-  it('applies Duolingo curved bottom corners and display typography', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+  it('applies display typography and overflow-hidden without bottom corners radius', () => {
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     const banner = screen.getByTestId('series-hero-banner');
-    expect(banner).toHaveClass('rounded-b-[32px]');
+    expect(banner).not.toHaveClass('rounded-b-[32px]');
     expect(banner).toHaveClass('overflow-hidden');
 
     const title = screen.getByTestId('hero-title-text');
@@ -366,14 +415,19 @@ describe('SeriesHeroBanner cinematic layout', () => {
     ];
     render(
       <SeriesHeroBanner
-        series={{ ...baseSeries, episodes: flatEpisodes as typeof flatEpisodes }}
+        series={{
+          ...baseSeries,
+          episodes: flatEpisodes as typeof flatEpisodes,
+        }}
         onPlay={onPlay}
         onBack={onBack}
       />
     );
 
     // 3 unique episodes — must not sum to 6 by counting both collections
-    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('3 Episodes');
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent(
+      '3 Episodes'
+    );
   });
 
   it('sums episodes across seasons when the flat episode list is missing', () => {
@@ -387,7 +441,9 @@ describe('SeriesHeroBanner cinematic layout', () => {
       />
     );
 
-    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('3 Episodes');
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent(
+      '3 Episodes'
+    );
   });
 
   it('displays the true total for a single season with a dual-populated payload', () => {
@@ -396,14 +452,22 @@ describe('SeriesHeroBanner cinematic layout', () => {
       seasons: [baseSeries.seasons[0]],
       episodes: baseSeries.seasons[0].episodes,
     } as WatchSeriesDetails;
-    render(<SeriesHeroBanner series={singleSeason} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={singleSeason} onPlay={onPlay} onBack={onBack} />
+    );
 
-    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('1 Season');
-    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent('2 Episodes');
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent(
+      '1 Season'
+    );
+    expect(screen.getByTestId('hero-seasons-episodes')).toHaveTextContent(
+      '2 Episodes'
+    );
   });
 
   it('omits focus rings outside spatial mode', () => {
-    render(<SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />);
+    render(
+      <SeriesHeroBanner series={baseSeries} onPlay={onPlay} onBack={onBack} />
+    );
 
     expect(screen.getByTestId('hero-play')).not.toHaveClass('ring-2');
   });

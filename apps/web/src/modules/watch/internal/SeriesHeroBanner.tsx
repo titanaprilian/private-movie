@@ -81,7 +81,7 @@ export function SeriesHeroBanner({
   return (
     <div
       data-testid="series-hero-banner"
-      className="relative w-full overflow-hidden rounded-b-[32px]"
+      className="relative w-full overflow-hidden"
     >
       {/* Cinematic Hero Artwork Container (Full-bleed edge-to-edge).
           65dvh on mobile for portrait poster breathing room while teasing
@@ -109,16 +109,21 @@ export function SeriesHeroBanner({
           />
         ) : null}
 
-        {/* Multi-stop dark vignette gradients (home feed aesthetic) */}
+        {/* Gradient overlays. Mobile keeps the tall bottom fade (portrait poster needs it).
+            Desktop uses a short bottom fade plus a left fade that ends before the middle,
+            so the artwork stays bright. Both fade into var(--bg), reaching 100% at the bottom edge. */}
+        <div
+          data-testid="hero-gradient-bottom-mobile"
+          className="md:hidden absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-[color-mix(in_srgb,var(--bg)_75%,black)] via-[35%] to-transparent z-10 pointer-events-none"
+        />
         <div
           data-testid="hero-gradient-bottom"
-          className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] md:from-[color-mix(in_srgb,var(--bg)_95%,transparent)] via-[color-mix(in_srgb,var(--bg)_75%,black)] via-[35%] md:via-[color-mix(in_srgb,var(--bg)_75%,transparent)] to-transparent z-10 pointer-events-none"
+          className="hidden md:block hero-fade-bottom absolute inset-0 z-10 pointer-events-none"
         />
         <div
           data-testid="hero-gradient-left"
-          className="hidden md:block absolute inset-0 bg-gradient-to-r from-[color-mix(in_srgb,var(--bg)_92%,transparent)] via-[color-mix(in_srgb,var(--bg)_65%,transparent)] to-transparent z-10 pointer-events-none"
+          className="hidden md:block hero-fade-left absolute inset-0 z-10 pointer-events-none"
         />
-
         {/* Overlay content: centered on mobile, left-aligned on desktop */}
         <div className="absolute bottom-12 left-0 z-20 w-full px-4 sm:px-8 md:px-12 lg:px-16">
           <div
@@ -136,14 +141,19 @@ export function SeriesHeroBanner({
               />
             ) : (
               <h1 className="font-display text-center md:text-left text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
-                <span data-testid="hero-title-text">{series.title}</span>
+                <span
+                  data-testid="hero-title-text"
+                  className="hero-text-shadow"
+                >
+                  {series.title}
+                </span>
               </h1>
             )}
 
             {/* Metadata row: rating, year, season/episode counts, dot-separated genres */}
             <div
               data-testid="hero-meta"
-              className="flex items-center justify-center md:justify-start gap-3 text-sm text-zinc-300 flex-wrap"
+              className="flex items-center justify-center md:justify-start gap-3 text-sm text-zinc-300 flex-wrap hero-text-shadow"
             >
               {formattedRating && (
                 <span
@@ -207,14 +217,14 @@ export function SeriesHeroBanner({
             {series.description ? (
               <p
                 data-testid="hero-synopsis"
-                className="hidden md:line-clamp-3 text-zinc-300 text-base md:text-lg leading-relaxed max-w-2xl"
+                className="hidden md:line-clamp-3 text-zinc-300 text-base md:text-lg leading-relaxed max-w-2xl hero-text-shadow"
               >
                 {series.description}
               </p>
             ) : (
               <p
                 data-testid="hero-synopsis"
-                className="hidden md:block text-sm italic text-zinc-500 max-w-2xl"
+                className="hidden md:block text-sm italic text-zinc-500 max-w-2xl hero-text-shadow"
               >
                 No synopsis available for this series.
               </p>
@@ -235,7 +245,10 @@ export function SeriesHeroBanner({
                     : ''
                 }`}
               >
-                <Play className="h-5 w-5 fill-white text-white" aria-hidden="true" />
+                <Play
+                  className="h-5 w-5 fill-white text-white"
+                  aria-hidden="true"
+                />
                 <span>Play Episode 1</span>
               </ChunkyButton>
             </div>

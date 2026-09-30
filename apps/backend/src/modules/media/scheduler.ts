@@ -4,11 +4,18 @@ export interface OngoingSeasonSchedulerOptions {
   mediaService: Pick<MediaService, "scrapeAllOngoingSeasons">;
   intervalMs?: number;
   runImmediately?: boolean;
+  enabled?: boolean;
   logger?: {
     info(message: string, ...args: unknown[]): void;
     error(message: string, ...args: unknown[]): void;
     warn(message: string, ...args: unknown[]): void;
   };
+}
+
+export interface SchedulerLastRunResult {
+  totalProcessed: number;
+  successCount: number;
+  failureCount: number;
 }
 
 export interface OngoingSeasonScheduler {
@@ -17,9 +24,19 @@ export interface OngoingSeasonScheduler {
   runNow(): Promise<BatchOngoingScrapeResult | null>;
   isRunning(): boolean;
   isExecuting(): boolean;
+  isEnabled(): boolean;
+  setEnabled(enabled: boolean): void;
+  getIntervalMs(): number;
+  updateInterval(intervalMs: number): void;
+  getLastRunAt(): Date | null;
+  getLastRunResult(): SchedulerLastRunResult | null;
+  getNextRunAt(): Date | null;
 }
 
 const DEFAULT_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
+export const SCHEDULER_DEFAULT_INTERVAL_MINUTES = 30;
+export const SCHEDULER_DEFAULT_ENABLED = true;
 
 export function createOngoingSeasonScheduler(
   options: OngoingSeasonSchedulerOptions
@@ -28,6 +45,7 @@ export function createOngoingSeasonScheduler(
     mediaService,
     intervalMs = DEFAULT_INTERVAL_MS,
     runImmediately = false,
+    enabled = true,
     logger = console,
   } = options;
 
@@ -35,6 +53,34 @@ export function createOngoingSeasonScheduler(
   let isExecutingJob = false;
   let currentExecutionPromise: Promise<BatchOngoingScrapeResult | null> | null = null;
   let isStarted = false;
+  let isSchedulerEnabled = enabled;
+  let currentIntervalMs = intervalMs;
+  let lastRunAt: Date | null = null;
+  let lastRunResult: SchedulerLastRunResult | null = null;
+  let nextRunAt: Date | null = null;
+
+  function scheduleTimer() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+    nextRunAt = isStarted && isSchedulerEnabled ? new Date(Date.now() + currentIntervalMs) : null;
+    if (!isStarted || !isSchedulerEnabled) {
+      return;
+    }
+    timer = setInterval(() => {
+      if (!isSchedulerEnabled) {
+        return;
+      }
+      nextRunAt = new Date(Date.now() + currentIntervalMs);
+      void executeJob();
+    }, currentIntervalMs);
+
+    // Unref timer if running in Node runtime so it doesn't prevent graceful exit on its own
+    if (timer && typeof timer === "object" && "unref" in timer) {
+      (timer as unknown as { unref(): void }).unref();
+    }
+  }
 
   async function executeJob(): Promise<BatchOngoingScrapeResult | null> {
     if (isExecutingJob) {
@@ -47,12 +93,18 @@ export function createOngoingSeasonScheduler(
     isExecutingJob = true;
     const runPromise = (async () => {
       logger.info("[OngoingSeasonScheduler] Starting ongoing season scrape run...");
+      lastRunAt = new Date();
       try {
         const batchResult = await mediaService.scrapeAllOngoingSeasons();
         logger.info(
           `[OngoingSeasonScheduler] Scrape run finished. Processed: ${batchResult.totalProcessed}, ` +
             `Success: ${batchResult.successCount}, Failed: ${batchResult.failureCount}`
         );
+        lastRunResult = {
+          totalProcessed: batchResult.totalProcessed,
+          successCount: batchResult.successCount,
+          failureCount: batchResult.failureCount,
+        };
         return batchResult;
       } catch (error) {
         logger.error(
@@ -77,21 +129,15 @@ export function createOngoingSeasonScheduler(
       }
       isStarted = true;
       logger.info(
-        `[OngoingSeasonScheduler] Initialized with interval ${intervalMs}ms.`
+        `[OngoingSeasonScheduler] Initialized with interval ${currentIntervalMs}ms.`
       );
 
-      if (runImmediately) {
+      if (runImmediately && isSchedulerEnabled) {
+        nextRunAt = new Date(Date.now() + currentIntervalMs);
         void executeJob();
       }
 
-      timer = setInterval(() => {
-        void executeJob();
-      }, intervalMs);
-
-      // Unref timer if running in Node runtime so it doesn't prevent graceful exit on its own
-      if (timer && typeof timer === "object" && "unref" in timer) {
-        timer.unref();
-      }
+      scheduleTimer();
     },
 
     async stop() {
@@ -122,6 +168,36 @@ export function createOngoingSeasonScheduler(
 
     isExecuting() {
       return isExecutingJob;
+    },
+
+    isEnabled() {
+      return isSchedulerEnabled;
+    },
+
+    setEnabled(enabledValue: boolean) {
+      isSchedulerEnabled = enabledValue;
+      scheduleTimer();
+    },
+
+    getIntervalMs() {
+      return currentIntervalMs;
+    },
+
+    updateInterval(nextIntervalMs: number) {
+      currentIntervalMs = nextIntervalMs;
+      scheduleTimer();
+    },
+
+    getLastRunAt() {
+      return lastRunAt;
+    },
+
+    getLastRunResult() {
+      return lastRunResult;
+    },
+
+    getNextRunAt() {
+      return nextRunAt;
     },
   };
 }

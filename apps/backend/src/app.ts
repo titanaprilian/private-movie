@@ -6,6 +6,7 @@ import { rateLimit } from "@elysiajs/rate-limit";
 import { getClientIp } from "./lib/ip";
 import { errorResponse } from "./lib/response";
 import { authRoutes } from "./modules/authentication/http";
+import { dashboardRoutes } from "./modules/dashboard/http";
 import { episodeRoutes, UNTHROTTLED_EPISODE_ROUTE_SUFFIXES } from "./modules/episodes/http";
 import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
@@ -13,7 +14,10 @@ import { mediaRoutes, embedRoutes, UNTHROTTLED_MEDIA_ROUTE_PREFIXES } from "./mo
 import { seasonRoutes } from "./modules/seasons/http";
 import { seriesRoutes } from "./modules/series/http";
 import { storageRoutes } from "./modules/storage/http";
+import { createStorageService } from "./modules/storage/index";
+import type { StorageUsageProvider } from "./modules/dashboard/index";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type { OngoingSeasonScheduler } from "./modules/media/scheduler";
 import { InternalServerError, getDomainErrorStatus } from "./lib/errors";
 
 export interface CreateAppDeps {
@@ -27,6 +31,11 @@ export interface CreateAppDeps {
   minioContainerStarter?: Parameters<typeof storageRoutes>[0]["minioContainerStarter"];
   minioHealthChecker?: Parameters<typeof storageRoutes>[0]["minioHealthChecker"];
   minioBucketProvisioner?: Parameters<typeof storageRoutes>[0]["minioBucketProvisioner"];
+  scheduler?: Pick<
+    OngoingSeasonScheduler,
+    "runNow" | "isEnabled" | "isExecuting" | "getIntervalMs" | "getLastRunAt" | "getLastRunResult" | "getNextRunAt" | "setEnabled" | "updateInterval"
+  > | null;
+  storageUsageProvider?: StorageUsageProvider | null;
 }
 
 function getAllowedOrigins(): string[] {
@@ -43,6 +52,33 @@ function getAllowedOrigins(): string[] {
 export const createApp = (deps: CreateAppDeps) => {
   const { db, auth } = deps;
   const allowedOrigins = getAllowedOrigins();
+
+  // Dedicated storage service instance for dashboard usage stats. It reuses
+  // the storage module's cached S3 inventory scan (60s TTL), so dashboard
+  // polling never triggers a live S3 listing on every request.
+  const dashboardStorageService = createStorageService(db, {
+    s3StorageService: deps.s3StorageService,
+    storageProviderRegistry: deps.storageProviderRegistry,
+  });
+  // Explicit null disables usage reporting (used in tests); undefined uses
+  // the built-in cached S3 inventory scan.
+  const storageUsageProvider: StorageUsageProvider | null =
+    deps.storageUsageProvider === undefined
+      ? {
+          async getTotalUsedBytes() {
+            const providers = await dashboardStorageService.listProviders();
+            const enabled = providers.filter((p) => p.isEnabled);
+            if (enabled.length === 0) return null;
+            // All-or-nothing: a partial sum across providers would be misleading,
+            // so any single failure reports usage as unavailable ("Not tracked").
+            let total = 0;
+            for (const provider of enabled) {
+              total += (await dashboardStorageService.getMetrics(provider.id)).totalBytes;
+            }
+            return total;
+          },
+        }
+      : deps.storageUsageProvider;
 
   return new Elysia({ name: "app" })
     .use(embedRoutes())
@@ -126,6 +162,7 @@ export const createApp = (deps: CreateAppDeps) => {
       app
         .use(healthRoutes({ db }))
         .use(authRoutes({ authService: auth }))
+        .use(dashboardRoutes({ db, authService: auth, scheduler: deps.scheduler ?? null, storageUsageProvider }))
         .use(
           episodeRoutes({
             db,

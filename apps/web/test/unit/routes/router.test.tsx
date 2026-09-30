@@ -58,7 +58,7 @@ describe('Router integration - /admin auth guard & relocated pages', () => {
     expect(router.state.location.pathname).toBe('/login');
   });
 
-  it('redirects /admin to /admin/videos when authenticated', async () => {
+  it('renders the dashboard at /admin when authenticated (no redirect)', async () => {
     useAuthStore.setState({
       isAuthenticated: true,
       user: {
@@ -80,7 +80,7 @@ describe('Router integration - /admin auth guard & relocated pages', () => {
 
     await router.load();
 
-    expect(router.state.location.pathname).toBe('/admin/videos');
+    expect(router.state.location.pathname).toBe('/admin');
   });
 
   it('allows /admin/videos when authenticated', async () => {

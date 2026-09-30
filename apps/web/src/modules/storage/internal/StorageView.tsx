@@ -184,7 +184,7 @@ export function StorageView() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Title and Provider Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b-2 border-[var(--border)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-[var(--ink)]">
             Storage Management

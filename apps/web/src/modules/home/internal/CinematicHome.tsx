@@ -297,7 +297,9 @@ function HeroTitle({
           className="mx-auto md:mx-0 max-h-24 sm:max-h-28 md:max-h-36 w-auto max-w-full object-contain object-center md:object-left"
         />
       ) : (
-        <span data-testid="hero-title-text">{title}</span>
+        <span data-testid="hero-title-text" className="hero-text-shadow">
+          {title}
+        </span>
       )}
     </h1>
   );
@@ -524,7 +526,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
           onMouseLeave={() => setIsPaused(false)}
           onFocus={() => setIsPaused(true)}
           onBlur={() => setIsPaused(false)}
-          className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-[var(--bg)] overflow-hidden rounded-b-[32px] group/hero"
+          className="relative h-[100dvh] md:h-[85vh] min-h-[550px] w-full bg-[var(--bg)] overflow-hidden group/hero"
         >
           {/* Background Banner Images with Smooth Crossfade.
               Mobile renders the portrait poster full-bleed; desktop renders the wide banner. */}
@@ -549,18 +551,20 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
             </div>
           ))}
 
-          {/* Gradient overlays for cinematic effect.
-              Solid black across the bottom half fading out toward the top, so
-              the text area stays readable even over light artwork. Desktop
-              uses slightly lighter stops. The left-originating overlay is
-              desktop-only. */}
+          {/* Gradient overlays. Mobile keeps the tall bottom fade (portrait poster needs it).
+              Desktop uses a short bottom fade plus a left fade that ends before the middle,
+              so the artwork stays bright. Both fade into var(--bg), reaching 100% at the bottom edge. */}
+          <div
+            data-testid="hero-gradient-bottom-mobile"
+            className="md:hidden absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-[color-mix(in_srgb,var(--bg)_75%,black)] via-[35%] to-transparent z-10 pointer-events-none"
+          />
           <div
             data-testid="hero-gradient-bottom"
-            className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] md:from-[color-mix(in_srgb,var(--bg)_95%,transparent)] via-[color-mix(in_srgb,var(--bg)_75%,black)] via-[35%] md:via-[color-mix(in_srgb,var(--bg)_75%,transparent)] to-transparent z-10 pointer-events-none"
+            className="hidden md:block hero-fade-bottom absolute inset-0 z-10 pointer-events-none"
           />
           <div
             data-testid="hero-gradient-left"
-            className="hidden md:block absolute inset-0 bg-gradient-to-r from-[color-mix(in_srgb,var(--bg)_92%,transparent)] via-[color-mix(in_srgb,var(--bg)_65%,transparent)] to-transparent z-10 pointer-events-none"
+            className="hidden md:block hero-fade-left absolute inset-0 z-10 pointer-events-none"
           />
 
           {/* Hero Content */}
@@ -579,7 +583,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
               {/* Meta Row (rating first, genres inline) */}
               <div
                 data-testid="hero-meta"
-                className="flex items-center justify-center md:justify-start gap-3 text-sm text-zinc-300 flex-wrap"
+                className="flex items-center justify-center md:justify-start gap-3 text-sm text-zinc-300 flex-wrap hero-text-shadow"
               >
                 <span
                   data-testid="hero-rating"
@@ -626,7 +630,7 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
               {/* Synopsis (hidden on mobile, truncated on desktop) */}
               <p
                 data-testid="hero-synopsis"
-                className="hidden md:line-clamp-3 text-zinc-300 text-base md:text-lg leading-relaxed max-w-2xl text-shadow"
+                className="hidden md:line-clamp-3 text-zinc-300 text-base md:text-lg leading-relaxed max-w-2xl hero-text-shadow"
               >
                 {currentHero.synopsis}
               </p>

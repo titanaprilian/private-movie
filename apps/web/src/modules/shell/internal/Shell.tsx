@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import {
   Bell,
+  LayoutDashboard,
   List,
   LogOut,
   Moon,
@@ -21,6 +22,12 @@ export interface ShellProps {
 }
 
 const navItems = [
+  {
+    to: '/admin' as const,
+    label: 'Dashboard',
+    activeOptions: { exact: true },
+    Icon: LayoutDashboard,
+  },
   {
     to: '/admin/videos' as const,
     label: 'Series',
@@ -193,7 +200,7 @@ export function Shell({ children }: ShellProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh overflow-hidden">
       {/* Desktop Sidebar */}
       <aside
         data-testid="desktop-sidebar"
@@ -242,7 +249,7 @@ export function Shell({ children }: ShellProps) {
       </aside>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Header */}
         <header className="h-20 border-b-2 border-[var(--border)] bg-[var(--bg)] flex items-center gap-3 px-6 sticky top-0 z-20 shrink-0">
           {/* Mobile: open slide-over */}
@@ -307,7 +314,7 @@ export function Shell({ children }: ShellProps) {
         </header>
 
         {/* Content area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-5">{children}</main>
+        <main className="relative flex-1 min-h-0 overflow-y-auto p-4 md:p-5">{children}</main>
       </div>
     </div>
   );

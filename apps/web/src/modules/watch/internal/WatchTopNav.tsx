@@ -29,17 +29,23 @@ export function WatchTopNav({
   return (
     <div
       data-testid="watch-top-nav"
-      className="sticky top-0 z-50 px-4 sm:px-8 md:px-12 lg:px-16 py-3 bg-[var(--bg)]/60 backdrop-blur-md border-b border-[var(--border)]"
+      className={
+        isPlayer
+          ? 'sticky top-0 z-50 px-4 sm:px-8 md:px-12 lg:px-16 py-3 bg-[var(--bg)] border-b border-[var(--border)]'
+          : 'sticky top-0 z-50 w-full pointer-events-none px-4 sm:px-8 md:px-12 lg:px-16 pt-4 sm:pt-6 -mb-16 sm:-mb-20'
+      }
     >
       {onClick && (
-        <BackButton
-          backRef={backRef}
-          onClick={onClick}
-          label={label}
-          aria-label={ariaLabel}
-          isFocused={isBackFocused}
-          isSpatialMode={isSpatialMode}
-        />
+        <div className="pointer-events-auto inline-block">
+          <BackButton
+            backRef={backRef}
+            onClick={onClick}
+            label={label}
+            aria-label={ariaLabel}
+            isFocused={isBackFocused}
+            isSpatialMode={isSpatialMode}
+          />
+        </div>
       )}
     </div>
   );
