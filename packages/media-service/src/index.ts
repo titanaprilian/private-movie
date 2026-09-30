@@ -822,7 +822,7 @@ export function createMediaService<
         };
       });
 
-      const scrapedEpisodes = applySequentialFallback(initialScraped, localEpisodes);
+      const scrapedEpisodes = initialScraped;
 
       return {
         scrapedEpisodes,
