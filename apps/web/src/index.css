@@ -140,6 +140,28 @@ body {
   color: var(--fg);
 }
 
+/* Hero overlays: fade toward the page bg only where needed; the image stays bright elsewhere */
+.hero-fade-bottom {
+  background: linear-gradient(
+    to top,
+    var(--bg) 0%,
+    color-mix(in srgb, var(--bg) 80%, transparent) 12%,
+    color-mix(in srgb, var(--bg) 35%, transparent) 28%,
+    transparent 45%
+  );
+}
+.hero-fade-left {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--bg) 85%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 50%, transparent) 25%,
+    transparent 58%
+  );
+}
+.hero-text-shadow {
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.55);
+}
+
 .mono {
   font-family: 'JetBrains Mono', monospace;
 }
