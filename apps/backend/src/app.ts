@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import type { AuthenticationService } from "@repo/contracts";
 import type { DbClient } from "@repo/db";
 import { cors } from "@elysiajs/cors";
+import { openapi } from "@elysiajs/openapi";
 import { rateLimit } from "@elysiajs/rate-limit";
 import { getClientIp } from "./lib/ip";
 import { errorResponse } from "./lib/response";
@@ -49,6 +50,11 @@ function getAllowedOrigins(): string[] {
     .filter(Boolean);
 }
 
+export function isApiDocsEnabled(): boolean {
+  if (process.env.ENABLE_API_DOCS === "true") return true;
+  return process.env.NODE_ENV !== "production";
+}
+
 export const createApp = (deps: CreateAppDeps) => {
   const { db, auth } = deps;
   const allowedOrigins = getAllowedOrigins();
@@ -81,6 +87,15 @@ export const createApp = (deps: CreateAppDeps) => {
       : deps.storageUsageProvider;
 
   return new Elysia({ name: "app" })
+    .use(
+      isApiDocsEnabled()
+        ? openapi({
+            path: "/docs",
+            specPath: "/docs/json",
+            provider: "scalar",
+          })
+        : (app) => app
+    )
     .use(embedRoutes())
     .use(
       cors({
