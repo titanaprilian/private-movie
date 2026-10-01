@@ -22,7 +22,8 @@
     "@repo/media-scraper": "workspace:*",
     "@repo/media-service": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "elysia": "latest"
+    "elysia": "latest",
+    "node-unrar-js": "^2.0.2"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",
