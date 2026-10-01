@@ -352,3 +352,97 @@ export interface AdminUploadProgressResponseData {
   error?: string;
   [key: string]: unknown;
 }
+
+// Bulk archive ingest (ZIP / RAR season packs)
+export interface ArchiveIngestPreviewRequest {
+  url: string;
+  password?: string | null;
+  referer?: string | null;
+  targetSeasonId?: string | null;
+}
+
+export interface ArchiveStagedFileItem {
+  fileId: string;
+  filename: string;
+  fileSizeBytes: number;
+  detectedEpisodeNumber?: number | null;
+  matchedEpisodeId?: string | null;
+  quality?: string | null;
+  needsReview: boolean;
+}
+
+export interface ArchiveIngestPreviewResponse {
+  stagingSessionId: string;
+  items: ArchiveStagedFileItem[];
+}
+
+export interface ArchiveIngestCommitItem {
+  fileId: string;
+  episodeId: string;
+  label?: string | null;
+  quality?: string | null;
+  isIgnored?: boolean;
+}
+
+export interface ArchiveIngestCommitRequest {
+  stagingSessionId: string;
+  storageProviderId: string;
+  defaultLabel?: string | null;
+  items: ArchiveIngestCommitItem[];
+}
+
+export interface ArchiveIngestDownloadProgressPayload {
+  loaded: number;
+  total?: number | null;
+  percent?: number | null;
+}
+
+export interface ArchiveIngestExtractProgressPayload {
+  currentFile: string;
+  totalFiles?: number | null;
+}
+
+export interface ArchiveIngestPreviewReadyPayload {
+  stagingSessionId: string;
+  items: ArchiveStagedFileItem[];
+}
+
+export interface ArchiveIngestUploadProgressPayload {
+  fileIndex: number;
+  totalFiles: number;
+  filename: string;
+  percent: number;
+  loaded: number;
+  total?: number | null;
+}
+
+export interface ArchiveIngestFileCompletedPayload {
+  episodeId: string;
+  videoSourceId: string;
+}
+
+export interface ArchiveIngestAllCompletedPayload {
+  success: true;
+  count: number;
+}
+
+export interface ArchiveIngestErrorPayload {
+  code: string;
+  message: string;
+}
+
+export type ArchiveIngestPreviewSseEvent =
+  | { type: "download_progress"; data: ArchiveIngestDownloadProgressPayload }
+  | { type: "extract_progress"; data: ArchiveIngestExtractProgressPayload }
+  | { type: "preview_ready"; data: ArchiveIngestPreviewReadyPayload }
+  | { type: "error"; data: ArchiveIngestErrorPayload };
+
+export type ArchiveIngestCommitSseEvent =
+  | { type: "upload_progress"; data: ArchiveIngestUploadProgressPayload }
+  | { type: "file_completed"; data: ArchiveIngestFileCompletedPayload }
+  | { type: "all_completed"; data: ArchiveIngestAllCompletedPayload }
+  | { type: "error"; data: ArchiveIngestErrorPayload };
+
+export type ArchiveIngestSseEvent =
+  | ArchiveIngestPreviewSseEvent
+  | ArchiveIngestCommitSseEvent;
