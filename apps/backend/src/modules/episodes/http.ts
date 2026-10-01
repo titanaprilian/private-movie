@@ -23,6 +23,8 @@ import { IngestService } from "./internal/ingest-service";
 
 export const UNTHROTTLED_EPISODE_ROUTE_SUFFIXES = [
   "/remote-ingest",
+  "/archive-ingest/preview",
+  "/archive-ingest/commit",
 ];
 
 const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);

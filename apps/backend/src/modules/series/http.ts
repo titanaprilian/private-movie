@@ -19,6 +19,8 @@ import {
 } from "@repo/media-service";
 import { authGuard } from "../../lib/auth";
 import { successResponse } from "../../lib/response";
+import { ArchiveIngestService, sseResponse } from "./internal/archive-ingest";
+import type { ArchiveExtractFn, ArchiveFetchFn } from "./internal/archive-ingest";
 
 export interface SeriesRoutesOptions {
   db: DbClient;
@@ -28,6 +30,10 @@ export interface SeriesRoutesOptions {
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
   mediaService?: MediaService;
+  archiveIngestService?: ArchiveIngestService;
+  archiveFetchFn?: ArchiveFetchFn;
+  archiveExtractFn?: ArchiveExtractFn;
+  archiveStagingBaseDir?: string;
 }
 
 const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
@@ -73,6 +79,18 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       fetchHtml: options.fetchHtml,
       browserFn: options.browserFn,
       s3StorageService: options.s3StorageService,
+    });
+  const archiveIngestService =
+    options.archiveIngestService ??
+    new ArchiveIngestService({
+      db: options.db,
+      s3StorageService: options.s3StorageService,
+      storageProviderRegistry: storageRegistry,
+      ...(options.archiveFetchFn ? { fetchFn: options.archiveFetchFn } : {}),
+      ...(options.archiveExtractFn ? { extractFn: options.archiveExtractFn } : {}),
+      ...(options.archiveStagingBaseDir
+        ? { stagingBaseDir: options.archiveStagingBaseDir }
+        : {}),
     });
 
   return new Elysia({ name: "series-routes" })
@@ -455,6 +473,94 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
             seasonId: t.Optional(t.String({ format: "uuid" })),
           })
         ),
+      }
+    )
+    .post(
+      "/series/:id/archive-ingest/preview",
+      async ({ params, body, request }) => {
+        const seriesRepository = createSeriesRepositoryInternal(options.db);
+        const seriesRow = await seriesRepository.findById(params.id);
+        if (!seriesRow) {
+          throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
+        }
+        const stream = archiveIngestService.previewStream(params.id, body, request.signal);
+        return sseResponse(stream);
+      },
+      {
+        beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Preview archive ingest",
+          description:
+            "Downloads a remote ZIP/RAR season pack to temporary staging, extracts it, and streams download/extraction progress as server-sent events before returning the matched episode preview. Requires authentication.",
+        },
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          url: t.String({ format: "uri" }),
+          password: t.Optional(t.Nullable(t.String())),
+          referer: t.Optional(t.Nullable(t.String())),
+          targetSeasonId: t.Optional(t.Nullable(t.String())),
+        }),
+      }
+    )
+    .post(
+      "/series/:id/archive-ingest/commit",
+      async ({ params, body, request }) => {
+        const seriesRepository = createSeriesRepositoryInternal(options.db);
+        const seriesRow = await seriesRepository.findById(params.id);
+        if (!seriesRow) {
+          throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
+        }
+        const stream = archiveIngestService.commitStream(params.id, body, request.signal);
+        return sseResponse(stream);
+      },
+      {
+        beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Commit archive ingest",
+          description:
+            "Uploads staged archive files to the selected storage provider sequentially, creates video_sources rows, and streams per-file upload progress as server-sent events. Cleans up staging on completion. Requires authentication.",
+        },
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+        }),
+        body: t.Object({
+          stagingSessionId: t.String(),
+          storageProviderId: t.String(),
+          defaultLabel: t.Optional(t.Nullable(t.String())),
+          items: t.Array(
+            t.Object({
+              fileId: t.String(),
+              episodeId: t.String({ format: "uuid" }),
+              label: t.Optional(t.Nullable(t.String())),
+              quality: t.Optional(t.Nullable(t.String())),
+              isIgnored: t.Optional(t.Boolean()),
+            })
+          ),
+        }),
+      }
+    )
+    .delete(
+      "/series/:id/archive-ingest/:sessionId",
+      async ({ params }) => {
+        await archiveIngestService.deleteSession(params.sessionId);
+        return successResponse({ success: true });
+      },
+      {
+        beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Delete archive staging session",
+          description:
+            "Immediately removes the temporary staging directory for an archive ingest session. Requires authentication.",
+        },
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+          sessionId: t.String(),
+        }),
       }
     );
 };

@@ -20,6 +20,10 @@ import type { StorageUsageProvider } from "./modules/dashboard/index";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import type { OngoingSeasonScheduler } from "./modules/media/scheduler";
 import { InternalServerError, getDomainErrorStatus } from "./lib/errors";
+import type {
+  ArchiveExtractFn,
+  ArchiveFetchFn,
+} from "./modules/series";
 
 export interface CreateAppDeps {
   db: DbClient;
@@ -28,6 +32,9 @@ export interface CreateAppDeps {
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  archiveFetchFn?: ArchiveFetchFn;
+  archiveExtractFn?: ArchiveExtractFn;
+  archiveStagingBaseDir?: string;
   minioInspector?: Parameters<typeof storageRoutes>[0]["minioInspector"];
   minioContainerStarter?: Parameters<typeof storageRoutes>[0]["minioContainerStarter"];
   minioHealthChecker?: Parameters<typeof storageRoutes>[0]["minioHealthChecker"];
@@ -209,6 +216,9 @@ export const createApp = (deps: CreateAppDeps) => {
             browserFn: deps.browserFn,
             s3StorageService: deps.s3StorageService,
             storageProviderRegistry: deps.storageProviderRegistry,
+            archiveFetchFn: deps.archiveFetchFn,
+            archiveExtractFn: deps.archiveExtractFn,
+            archiveStagingBaseDir: deps.archiveStagingBaseDir,
           })
         )
         .use(

@@ -34,6 +34,9 @@ export async function buildApp(options?: {
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  archiveFetchFn?: Parameters<typeof createApp>[0]["archiveFetchFn"];
+  archiveExtractFn?: Parameters<typeof createApp>[0]["archiveExtractFn"];
+  archiveStagingBaseDir?: string;
   minioInspector?: MinioContainerInspector;
   minioContainerStarter?: MinioContainerStarter;
   minioHealthChecker?: MinioHealthChecker;
@@ -71,6 +74,9 @@ export async function buildApp(options?: {
     browserFn: options?.browserFn ?? defaultBrowserFn,
     s3StorageService: options?.s3StorageService,
     storageProviderRegistry: options?.storageProviderRegistry,
+    archiveFetchFn: options?.archiveFetchFn,
+    archiveExtractFn: options?.archiveExtractFn,
+    archiveStagingBaseDir: options?.archiveStagingBaseDir,
     minioInspector: options?.minioInspector,
     minioContainerStarter: options?.minioContainerStarter,
     minioHealthChecker: options?.minioHealthChecker,

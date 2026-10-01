@@ -6,3 +6,5 @@ export interface SeriesServiceOptions {
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
 }
+
+export * from "./internal/archive-ingest";
