@@ -154,6 +154,47 @@ describe("Reverse Proxy Route (/api/media/proxy/:domain/*)", () => {
     expect(response.body).toBe("#EXTM3U\n#EXT-X-VERSION:3\nchunk-0.ts");
   });
 
+  it("preserves Vidhide packed player script and strips tracker scripts end-to-end", async () => {
+    const vidhideHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Vidhide Embed</title>
+  <script>eval(function(p,a,c,k,e,d){while(c--){if(k[c]){p=p.replace(new RegExp('\\\\b'+c.toString(a)+'\\\\b','g'),k[c])}}return p}('0 1|onclick|player',2,3,'div|onclick|init'.split('|')));document.getElementById('player').onclick=function(){play();};</script>
+  <script src="https://whos.amung.us/widget/amungId.js"></script>
+  <script src="https://vidhidepro.com/player/app.js"></script>
+</head>
+<body>
+  <div id="player"><button>Play</button></div>
+  <div style="opacity: 0" id="player-controls">controls</div>
+</body>
+</html>`;
+
+    vi.spyOn(global, "fetch").mockImplementation(async () => {
+      return new Response(vidhideHtml, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    });
+
+    const response = await request(app, {
+      method: "GET",
+      path: "/media/proxy/vidhidepro.com/v/abcd123",
+    });
+
+    expect(response.status).toBe(200);
+    const html = response.body;
+
+    // Packed player initialization script retained (contains onclick token).
+    expect(html).toContain("eval(function(p,a,c,k,e,d)");
+    expect(html).toContain("player/app.js");
+    // Tracker stripped before reaching the client.
+    expect(html).not.toContain("amung");
+    // Anti-clickjack CSS present but scoped (no generic opacity:0 rule).
+    expect(html).toContain("pm-anti-clickjack");
+    expect(html).not.toContain('div[style*="opacity: 0"]');
+    expect(html).not.toContain('div[style*="opacity:0"]');
+  });
+
   it("handles upstream error responses properly", async () => {
     vi.spyOn(global, "fetch").mockImplementation(async () => {
       return new Response("Not Found", {

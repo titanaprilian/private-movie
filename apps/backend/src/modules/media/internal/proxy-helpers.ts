@@ -37,7 +37,7 @@ export function isBlockedAdAsset(target: string): boolean {
       }
       // Known ad network hosts are always blocked regardless of path.
       if (
-        /daly2024|effectivecpmnetwork|bvtpk|humeraldurezza|googletagmanager|yandex|clarity|exoclick|adcash|propeller|popunder|onclick|cpmnetwork/i.test(
+        /daly2024|effectivecpmnetwork|bvtpk|humeraldurezza|googletagmanager|yandex|clarity|exoclick|adcash|propeller|popunder|onclickads|cpmnetwork|whos\.amung\.us|amung/i.test(
           host
         )
       ) {
@@ -257,20 +257,23 @@ export const KNOWN_AD_SCRIPT_PATTERNS = [
   /exoclick/i,
   /adcash/i,
   /propeller/i,
-  /onclick/i,
+  /onclickads/i,
+  /onclck/i,
+  /clickadu/i,
   /shopee/i,
   /\/ad\?type=/i,
   /_ASO/i,
   /curiescores/i,
   /psoroumukr/i,
   /var t=\["sandbox","hasAttribute"/i,
+  /whos\.amung\.us/i,
+  /amungid/i,
 ];
 
 export const VIDHIDE_ANTI_CLICKJACK_CSS = `<style id="pm-anti-clickjack">
   #adbd, .overdiv, div[style*="2147483647"], div[style*="opacity: 0.01"], div[style*="opacity:0.01"],
-  div[style*="opacity: 0"], div[style*="opacity:0"],
-  div[style*="position: fixed"][style*="inset: 0"], div[style*="position:fixed"][style*="inset:0"],
-  div[style*="position: fixed"][style*="top: 0"], div[style*="position:fixed"][style*="top:0"],
+  div[style*="position: fixed"][style*="2147483647"], div[style*="position:fixed"][style*="2147483647"],
+  div[style*="position: fixed"][style*="inset: 0"][style*="2147483647"], div[style*="position:fixed"][style*="inset:0"][style*="2147483647"],
   a[href^="shopee:"], a[href^="intent:"], a[href^="market:"] {
     display: none !important;
     pointer-events: none !important;

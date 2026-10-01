@@ -72,9 +72,35 @@ describe("ad suppression", () => {
     expect(AD_SUPPRESSION_SHIM).toContain("window.top");
   });
 
-  it("anti-clickjack CSS hides transparent overlays and hijack divs", () => {
+  it("anti-clickjack CSS is scoped to malicious overlays, not generic player opacity", () => {
     expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain("opacity: 0");
     expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain("position: fixed");
     expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain('a[href^="shopee:"]');
+    // Generic inline-zero-opacity player elements must not be targeted.
+    expect(VIDHIDE_ANTI_CLICKJACK_CSS).not.toContain('div[style*="opacity: 0"]');
+    expect(VIDHIDE_ANTI_CLICKJACK_CSS).not.toContain('div[style*="opacity:0"]');
+    // Scoped to specific overlay IDs/classes and high z-index hijack divs.
+    expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain("#adbd");
+    expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain(".overdiv");
+    expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain("2147483647");
+  });
+
+  it("preserves Vidhide packed player scripts containing onclick tokens", () => {
+    const html = `<html><head><script>eval(function(p,a,c,k,e,d){while(c--){if(k[c]){p=p.replace(new RegExp('\\\\b'+c.toString(a)+'\\\\b','g'),k[c])}}return p}('0 1|onclick|player',2,3,'div|onclick|init'.split('|')));document.getElementById('player').onclick=function(){play();};</script></head><body><div id="player"></div></body></html>`;
+    const out = stripKnownAdScripts(html);
+    expect(out).toContain("eval(function(p,a,c,k,e,d)");
+    expect(out).toContain("onclick");
+  });
+
+  it("strips whos.amung.us / amungId tracker scripts", () => {
+    const html = `<html><head><script src="https://whos.amung.us/widget/amungId.js"></script><script>var amungId="abc123";</script><script>var playerReady=true;</script></head></html>`;
+    const out = stripKnownAdScripts(html);
+    expect(out).not.toContain("amung");
+    expect(out).toContain("playerReady");
+  });
+
+  it("blocks whos.amung.us tracker assets for proxy no-op", () => {
+    expect(isBlockedAdAsset("https://whos.amung.us/pingjs/?k=abc")).toBe(true);
+    expect(isBlockedAdAsset("https://videobello.net/player/app.js")).toBe(false);
   });
 });
