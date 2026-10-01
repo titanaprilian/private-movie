@@ -92,6 +92,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
           limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
           seasonId: t.Optional(t.String()),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "List episodes",
+          description:
+            "Returns a paginated list of episodes, optionally filtered by seasonId.",
+        },
       }
     )
     .get(
@@ -104,6 +110,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
         params: t.Object({
           sessionId: t.String(),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Get upload progress",
+          description:
+            "Returns the current progress of an upload session by session id.",
+        },
       }
     )
     .get(
@@ -119,6 +131,11 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
         params: t.Object({
           id: t.String(),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Get episode by id",
+          description: "Returns a single episode by id.",
+        },
       }
     )
     .post(
@@ -146,6 +163,13 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
           referer: t.Optional(t.String()),
           storageProviderId: t.Optional(t.String()),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Remote ingest stream",
+          description:
+            "Ingests a remote stream URL into episode storage and streams progress as a long-lived server-sent events (SSE) response. Requires authentication.",
+          hide: false,
+        },
       }
     )
     .post(
@@ -169,6 +193,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
           contentType: t.Optional(t.Nullable(t.String())),
           storageProviderId: t.Optional(t.String()),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Presign upload",
+          description:
+            "Generates a presigned upload URL for direct file upload to an episode. Requires authentication.",
+        },
       }
     )
     .post(
@@ -198,6 +228,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
           uploadSessionId: t.Optional(t.Nullable(t.String())),
           storageProviderId: t.Optional(t.String()),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Upload file",
+          description:
+            "Uploads a video file to an episode's sources. Requires authentication.",
+        },
       }
     )
     .post(
@@ -238,6 +274,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
             })
           ),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Add video sources",
+          description:
+            "Adds video sources to an episode. Requires authentication.",
+        },
       }
     )
     .post(
@@ -254,6 +296,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Scrape sources",
+          description:
+            "Scrapes video sources from a URL and saves them to the episode. Requires authentication.",
+        },
       }
     )
     .patch(
@@ -288,6 +336,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
           quality: t.Optional(t.Nullable(t.String())),
           storageProviderId: t.Optional(t.Nullable(t.String())),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Update video source",
+          description:
+            "Updates a video source belonging to an episode. Requires authentication.",
+        },
       }
     )
     .delete(
@@ -315,6 +369,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
           id: t.String({ format: "uuid" }),
           sourceId: t.String(),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Delete video source",
+          description:
+            "Deletes a video source belonging to an episode. Requires authentication.",
+        },
       }
     )
     .post(
@@ -330,6 +390,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
           source: scraperSourceSchema,
           html: t.Optional(t.String()),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Preview scrape",
+          description:
+            "Previews scraped media from a source URL without saving. Requires authentication.",
+        },
       }
     )
     .post(
@@ -376,6 +442,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
             )
           ),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Save scraped media",
+          description:
+            "Saves previously scraped media as episodes and series records. Requires authentication.",
+        },
       }
     )
     .patch(
@@ -393,6 +465,12 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
           title: t.Optional(t.String()),
           description: t.Optional(t.Nullable(t.String())),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Update episode",
+          description:
+            "Updates an episode's title and description. Requires authentication.",
+        },
       }
     )
     .delete(
@@ -406,6 +484,11 @@ export const episodeRoutes = (options: EpisodeRoutesOptions) => {
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),
+        detail: {
+          tags: ["Episodes"],
+          summary: "Delete episode",
+          description: "Deletes an episode by id. Requires authentication.",
+        },
       }
     );
 };

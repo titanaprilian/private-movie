@@ -153,6 +153,7 @@ export const embedRoutes = () => {
       params: t.Object({
         hash: t.String(),
       }),
+      detail: { hide: true },
     }
   ).get(
     "/player/*",
@@ -186,6 +187,9 @@ export const embedRoutes = () => {
         set.status = 502;
         return "Upstream unavailable";
       }
+    },
+    {
+      detail: { hide: true },
     }
   ).all(
     "/_app/*",
@@ -220,6 +224,9 @@ export const embedRoutes = () => {
         set.status = 502;
         return "Upstream unavailable";
       }
+    },
+    {
+      detail: { hide: true },
     }
   );
 };
@@ -228,7 +235,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
   const auth = authGuard(options.authService);
 
   return new Elysia({ name: "media-routes" })
-    .get("/openapi.json", () => MVP_MEDIA_OPENAPI)
+    .get("/openapi.json", () => MVP_MEDIA_OPENAPI, {
+      detail: { hide: true },
+    })
     .post(
       "/media/debug-log",
       async ({ body }) => {
@@ -239,6 +248,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           /* best-effort debug logging; ignore filesystem errors */
         }
         return { ok: true };
+      },
+      {
+        detail: { hide: true },
       }
     )
     .post(
@@ -357,6 +369,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           set.status = 500;
           return { error: e instanceof Error ? e.message : "Crypto operation failed" };
         }
+      },
+      {
+        detail: { hide: true },
       }
     )
     .post(
@@ -385,6 +400,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           set.status = 502;
           return { error: "Failed to forward embed API request" };
         }
+      },
+      {
+        detail: { hide: true },
       }
     )
     .get(
@@ -441,6 +459,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         query: t.Object({
           url: t.String(),
         }),
+        detail: { hide: true },
       }
     )
     .all(
@@ -557,6 +576,9 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
             error instanceof Error ? error : new Error("Proxy request failed")
           );
         }
+      },
+      {
+        detail: { hide: true },
       }
     )
     .all(
@@ -666,6 +688,7 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
         query: t.Object({
           url: t.String(),
         }),
+        detail: { hide: true },
       }
     )
     .post(
@@ -767,6 +790,11 @@ export const mediaRoutes = (options: MediaRoutesOptions) => {
           type: t.Union([t.Literal("direct"), t.Literal("embed"), t.Literal("s3")]),
           referer: t.Optional(t.String()),
         }),
+        detail: {
+          tags: ["Media & Playback"],
+          summary: "Check video source",
+          description: "Probes a video source URL and reports whether it is reachable. Requires authentication.",
+        },
       }
     );
 };

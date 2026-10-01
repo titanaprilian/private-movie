@@ -101,6 +101,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
         });
       },
       {
+        detail: {
+          tags: ["Series"],
+          summary: "List series",
+          description: "Returns a paginated library listing of series with optional filters.",
+        },
         query: t.Object({
           page: t.Optional(t.Number({ default: 1, minimum: 1 })),
           limit: t.Optional(t.Number({ default: 20, minimum: 1, maximum: 100 })),
@@ -122,6 +127,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
         return successResponse(feed);
       },
       {
+        detail: {
+          tags: ["Series"],
+          summary: "Get home feed",
+          description: "Returns curated home feed sections for the series library.",
+        },
         query: t.Object({
           sourceTypes: t.Optional(t.Union([t.String(), t.Array(t.String())])),
         }),
@@ -135,6 +145,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Preview scrape series",
+          description: "Scrapes a source URL and returns a preview of the series without persisting it. Requires authentication.",
+        },
         body: t.Object({
           sourceUrl: t.String({ format: "uri" }),
           source: scraperSourceSchema,
@@ -154,6 +169,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "TMDB preview",
+          description: "Returns a preview of TMDB metadata for a TV show or movie without importing it. Requires authentication.",
+        },
         query: t.Object({
           type: t.Union([t.Literal("tv"), t.Literal("movie")]),
           tmdbId: t.Numeric(),
@@ -173,6 +193,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "TMDB import",
+          description: "Imports a series from TMDB metadata into the library. Requires authentication.",
+        },
         body: t.Object({
           type: t.Union([t.Literal("tv"), t.Literal("movie")]),
           tmdbId: t.Numeric(),
@@ -191,6 +216,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
         return successResponse(s);
       },
       {
+        detail: {
+          tags: ["Series"],
+          summary: "Get series by id",
+          description: "Returns a single series by id including its episodes.",
+        },
         params: t.Object({
           id: t.String(),
         }),
@@ -204,6 +234,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Update series",
+          description: "Performs a full update of a series by id. Requires authentication.",
+        },
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),
@@ -226,6 +261,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Patch series",
+          description: "Partially updates a series by id. Requires authentication.",
+        },
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),
@@ -248,6 +288,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Delete series",
+          description: "Deletes a series by id. Requires authentication.",
+        },
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),
@@ -261,6 +306,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "TMDB sync",
+          description: "Syncs an existing series with TMDB metadata. Requires authentication.",
+        },
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),
@@ -283,6 +333,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "TMDB sync preview",
+          description: "Previews TMDB metadata changes for an existing series without applying them. Requires authentication.",
+        },
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),
@@ -308,6 +363,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Preview bulk sources",
+          description: "Previews bulk episode sources for a series from a scraper URL without persisting them. Requires authentication.",
+        },
         params: t.Object({
           id: t.String(),
         }),
@@ -342,6 +402,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Create season for series",
+          description: "Creates a new season for the given series. Requires authentication.",
+        },
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),
@@ -375,6 +440,11 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Reorder episodes",
+          description: "Updates the ordering of episodes within a series. Requires authentication.",
+        },
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),

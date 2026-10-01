@@ -7,5 +7,11 @@ export const createHealthRoutesInternal = (db: DbClient) => {
     .get("/health", async ({ db }) => {
       const rows = await db.$client.unsafe("SELECT 1 AS ok");
       return { status: "ok", db: rows.length === 1 };
+    }, {
+      detail: {
+        tags: ["Health"],
+        summary: "Health check",
+        description: "Returns service and database connectivity status.",
+      },
     });
 };

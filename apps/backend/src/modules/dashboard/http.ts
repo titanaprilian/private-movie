@@ -36,6 +36,11 @@ export const dashboardRoutes = (options: DashboardRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Dashboard & Scheduler"],
+          summary: "Get admin dashboard",
+          description: "Returns aggregated library statistics, scheduler status, and storage usage.",
+        },
       },
     )
     .post(
@@ -70,6 +75,11 @@ export const dashboardRoutes = (options: DashboardRoutesOptions) => {
       },
       {
         beforeHandle: auth,
+        detail: {
+          tags: ["Dashboard & Scheduler"],
+          summary: "Run ongoing-season scheduler",
+          description: "Triggers an immediate run of the ongoing-season sync scheduler.",
+        },
       },
     )
     .patch(
@@ -102,6 +112,11 @@ export const dashboardRoutes = (options: DashboardRoutesOptions) => {
           intervalMinutes: t.Optional(t.Number()),
           isEnabled: t.Optional(t.Boolean()),
         }),
+        detail: {
+          tags: ["Dashboard & Scheduler"],
+          summary: "Update scheduler config",
+          description: "Updates the ongoing-season scheduler interval and enabled state.",
+        },
       },
     );
 };

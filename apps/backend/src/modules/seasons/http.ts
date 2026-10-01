@@ -36,6 +36,14 @@ export const seasonRoutes = (options: SeasonRoutesOptions) => {
     });
 
   return new Elysia({ name: "season-routes" })
+    .guard(
+      {
+        detail: {
+          tags: ["Seasons"],
+        },
+      },
+      (app) =>
+        app
     .get(
       "/seasons/:id",
       async ({ params }) => {
@@ -49,6 +57,10 @@ export const seasonRoutes = (options: SeasonRoutesOptions) => {
         params: t.Object({
           id: t.String(),
         }),
+        detail: {
+          summary: "Get season",
+          description: "Returns a single season by id.",
+        },
       }
     )
     .patch(
@@ -77,6 +89,10 @@ export const seasonRoutes = (options: SeasonRoutesOptions) => {
           source: t.Optional(t.Nullable(t.String())),
           episodeOffset: t.Optional(t.Integer()),
         }),
+        detail: {
+          summary: "Update season",
+          description: "Partially updates a season by id. Requires authentication.",
+        },
       }
     )
     .delete(
@@ -88,6 +104,10 @@ export const seasonRoutes = (options: SeasonRoutesOptions) => {
       {
         beforeHandle: auth,
         params: t.Object({ id: t.String({ format: "uuid" }) }),
+        detail: {
+          summary: "Delete season",
+          description: "Deletes a season by id. Requires authentication.",
+        },
       }
     )
     .post(
@@ -108,6 +128,11 @@ export const seasonRoutes = (options: SeasonRoutesOptions) => {
       {
         beforeHandle: auth,
         params: t.Object({ id: t.String({ format: "uuid" }) }),
+        detail: {
+          summary: "Scrape ongoing season",
+          description: "Syncs and scrapes new episodes for an ongoing season. Requires authentication.",
+        },
       }
+    )
     );
 };

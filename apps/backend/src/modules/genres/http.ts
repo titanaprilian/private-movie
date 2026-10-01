@@ -19,6 +19,13 @@ export const genreRoutes = (options: GenreRoutesOptions) => {
       async () => {
         const result = await genreRepository.findAll();
         return successResponse(result);
+      },
+      {
+        detail: {
+          tags: ["Genres"],
+          summary: "List genres",
+          description: "Returns all genres ordered for display.",
+        },
       }
     )
     .post(
@@ -36,6 +43,11 @@ export const genreRoutes = (options: GenreRoutesOptions) => {
           isBigGenre: t.Optional(t.Boolean()),
           displayOrder: t.Optional(t.Number()),
         }),
+        detail: {
+          tags: ["Genres"],
+          summary: "Create genre",
+          description: "Creates a new genre. Requires authentication.",
+        },
       }
     )
     .put(
@@ -55,6 +67,11 @@ export const genreRoutes = (options: GenreRoutesOptions) => {
           isBigGenre: t.Optional(t.Boolean()),
           displayOrder: t.Optional(t.Number()),
         }),
+        detail: {
+          tags: ["Genres"],
+          summary: "Update genre",
+          description: "Updates an existing genre by id. Requires authentication.",
+        },
       }
     )
     .delete(
@@ -68,6 +85,11 @@ export const genreRoutes = (options: GenreRoutesOptions) => {
         params: t.Object({
           id: t.String(),
         }),
+        detail: {
+          tags: ["Genres"],
+          summary: "Delete genre",
+          description: "Deletes a genre by id. Requires authentication.",
+        },
       }
     );
 };

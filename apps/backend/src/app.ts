@@ -93,6 +93,19 @@ export const createApp = (deps: CreateAppDeps) => {
             path: "/docs",
             specPath: "/docs/json",
             provider: "scalar",
+            documentation: {
+              tags: [
+                { name: "Authentication", description: "User registration, login, and session management." },
+                { name: "Dashboard & Scheduler", description: "Admin overview statistics and ongoing-season scheduler controls." },
+                { name: "Series", description: "Series catalog, discovery feeds, and TMDB import/sync." },
+                { name: "Seasons", description: "Season details, updates, and ongoing-season scraping." },
+                { name: "Episodes", description: "Episode listing, video sources, uploads, and scraping." },
+                { name: "Genres", description: "Genre taxonomy management." },
+                { name: "Storage", description: "Storage providers, S3 inventory, and orphan management." },
+                { name: "Media & Playback", description: "Video source health checks and playback support." },
+                { name: "Health", description: "Service and database health checks." },
+              ],
+            },
           })
         : (app) => app
     )

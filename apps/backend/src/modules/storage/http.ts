@@ -47,6 +47,12 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
           .get("/providers", async () => {
             const providers = await storageService.listProviders();
             return successResponse(providers);
+          }, {
+            detail: {
+              tags: ["Storage"],
+              summary: "List storage providers",
+              description: "Returns all configured storage providers.",
+            },
           })
           .get(
             "/providers/:id",
@@ -58,6 +64,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               params: t.Object({
                 id: t.String({ minLength: 1 }),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Get storage provider",
+                description: "Returns a single storage provider by id.",
+              },
             }
           )
           .post(
@@ -94,6 +105,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 isDefault: t.Optional(t.Boolean()),
                 isEnabled: t.Optional(t.Boolean()),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Create storage provider",
+                description: "Creates a new storage provider configuration.",
+              },
             }
           )
           .put(
@@ -133,6 +149,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 isDefault: t.Optional(t.Boolean()),
                 isEnabled: t.Optional(t.Boolean()),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Update storage provider",
+                description: "Updates an existing storage provider by id.",
+              },
             }
           )
           .delete(
@@ -145,6 +166,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               params: t.Object({
                 id: t.String({ minLength: 1 }),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Delete storage provider",
+                description: "Deletes a storage provider by id.",
+              },
             }
           )
           .post(
@@ -165,11 +191,22 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                   forcePathStyle: t.Optional(t.Boolean()),
                 })
               ),
+              detail: {
+                tags: ["Storage"],
+                summary: "Test storage provider connection",
+                description: "Tests connectivity and credentials for a storage provider configuration.",
+              },
             }
           )
           .get("/minio/status", async () => {
             const status = await storageService.getMinioStatus();
             return successResponse(status);
+          }, {
+            detail: {
+              tags: ["Storage"],
+              summary: "Get MinIO status",
+              description: "Returns the current MinIO container status.",
+            },
           })
           .post(
             "/minio/spin-up",
@@ -189,6 +226,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                   isDefault: t.Optional(t.Boolean()),
                 })
               ),
+              detail: {
+                tags: ["Storage"],
+                summary: "Spin up MinIO",
+                description: "Provisions and starts a local MinIO container.",
+              },
             }
           )
 
@@ -205,6 +247,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                   providerId: t.Optional(t.String()),
                 })
               ),
+              detail: {
+                tags: ["Storage"],
+                summary: "Get storage metrics",
+                description: "Returns aggregated storage usage metrics, optionally scoped to a provider.",
+              },
             }
           )
           .get(
@@ -249,6 +296,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                   limit: t.Optional(t.String()),
                 })
               ),
+              detail: {
+                tags: ["Storage"],
+                summary: "List storage resources",
+                description: "Lists stored objects with filtering, sorting, and pagination.",
+              },
             }
           )
           .post(
@@ -263,6 +315,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                   providerId: t.Optional(t.String()),
                 })
               ),
+              detail: {
+                tags: ["Storage"],
+                summary: "Trigger storage scan",
+                description: "Triggers a scan of stored objects to reconcile the resource index.",
+              },
             }
           )
           .put(
@@ -284,6 +341,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 limitGb: t.Number(),
                 providerId: t.Optional(t.String()),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Update storage limit",
+                description: "Updates the storage quota limit, optionally scoped to a provider.",
+              },
             }
           )
           .patch(
@@ -303,6 +365,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 label: t.Optional(t.String({ minLength: 1 })),
                 quality: t.Optional(t.Nullable(t.String())),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Update resource metadata",
+                description: "Updates label and quality metadata for a storage resource.",
+              },
             }
           )
           .post(
@@ -325,6 +392,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 quality: t.Optional(t.Nullable(t.String())),
                 providerId: t.Optional(t.String()),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Attach orphan resource",
+                description: "Attaches an orphaned stored object to an episode.",
+              },
             }
           )
           .post(
@@ -346,6 +418,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 keys: t.Array(t.String({ minLength: 1 })),
                 providerId: t.Optional(t.String()),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Delete resources",
+                description: "Deletes stored objects by key.",
+              },
             }
           )
           .post(
@@ -360,6 +437,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                   providerId: t.Optional(t.String()),
                 })
               ),
+              detail: {
+                tags: ["Storage"],
+                summary: "Purge orphans",
+                description: "Permanently removes orphaned stored objects.",
+              },
             }
           )
           .get(
@@ -381,6 +463,11 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 key: t.String({ minLength: 1 }),
                 providerId: t.Optional(t.String()),
               }),
+              detail: {
+                tags: ["Storage"],
+                summary: "Get preview URL",
+                description: "Returns a signed preview URL for a stored object.",
+              },
             }
           )
       )

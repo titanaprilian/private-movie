@@ -115,6 +115,11 @@ export const authRoutes = (options: AuthRoutesOptions) => {
           email: t.String(),
           password: t.String(),
         }),
+        detail: {
+          tags: ["Authentication"],
+          summary: "Register a new user",
+          description: "Creates a new user account and returns access and refresh tokens.",
+        },
       }
     )
     .post(
@@ -138,6 +143,11 @@ export const authRoutes = (options: AuthRoutesOptions) => {
           email: t.String(),
           password: t.String(),
         }),
+        detail: {
+          tags: ["Authentication"],
+          summary: "Log in",
+          description: "Verifies credentials and returns access and refresh tokens.",
+        },
       }
     )
     .get(
@@ -158,6 +168,13 @@ export const authRoutes = (options: AuthRoutesOptions) => {
           }
           return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
         }
+      },
+      {
+        detail: {
+          tags: ["Authentication"],
+          summary: "Get current user",
+          description: "Returns the profile of the user identified by the bearer access token.",
+        },
       }
     )
     .post(
@@ -190,6 +207,11 @@ export const authRoutes = (options: AuthRoutesOptions) => {
             refreshToken: t.Optional(t.String()),
           })
         ),
+        detail: {
+          tags: ["Authentication"],
+          summary: "Log out",
+          description: "Revokes the current refresh token and clears the refresh cookie.",
+        },
       }
     )
     .post(
@@ -216,6 +238,13 @@ export const authRoutes = (options: AuthRoutesOptions) => {
         } catch {
           return errorResponse(set, 401, new UnauthorizedError("unauthorized"));
         }
+      },
+      {
+        detail: {
+          tags: ["Authentication"],
+          summary: "Log out everywhere",
+          description: "Revokes all refresh tokens for the authenticated user.",
+        },
       }
     )
     .post(
@@ -247,6 +276,11 @@ export const authRoutes = (options: AuthRoutesOptions) => {
             refreshToken: t.Optional(t.String()),
           })
         ),
+        detail: {
+          tags: ["Authentication"],
+          summary: "Refresh tokens",
+          description: "Exchanges a valid refresh token for a new access and refresh token pair.",
+        },
       }
     );
 };
