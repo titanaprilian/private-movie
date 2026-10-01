@@ -968,7 +968,7 @@ describe('SeriesDetailView component', () => {
 
     expect(screen.getByRole('button', { name: /Edit Series/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Bulk Add Sources/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Bulk Ingest URLs/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Bulk Ingest Sources/i })).toBeInTheDocument();
   });
 
   it('renders 3-dot contextual menu for active season actions when multiple seasons exist', async () => {
@@ -1414,7 +1414,7 @@ describe('SeriesDetailView component', () => {
       expect(screen.getByRole('button', { name: /Edit Series/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Sync with TMDB/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Bulk Add Sources/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Bulk Ingest URLs/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Bulk Ingest Sources/i })).toBeInTheDocument();
     });
   });
 });

@@ -696,7 +696,7 @@ export function SeriesDetailView({
               type="button"
             >
               <ArrowDownToLine className="size-5" />
-              Bulk Ingest URLs
+              Bulk Ingest Sources
             </ChunkyButton>
           </div>
         </div>
