@@ -8,12 +8,17 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 describe('LoginPage route component', () => {
-  it('renders centered authentication card with login form', () => {
+  it('renders chunky viewer login with showcase layout and auth card', () => {
     renderWithProviders(<LoginPage />);
 
-    // Login Form fields
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    // Two-column viewer layout: showcase + auth card
+    expect(screen.getByTestId('viewer-login-page')).toBeInTheDocument();
+    expect(screen.getByTestId('login-showcase')).toBeInTheDocument();
+    expect(screen.getByTestId('viewer-login-card')).toBeInTheDocument();
+
+    // Viewer login form fields
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
 
     // Placeholder branding & social links are absent
     expect(screen.queryByText('monoRepo')).not.toBeInTheDocument();
