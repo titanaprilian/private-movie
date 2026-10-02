@@ -18,6 +18,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
       </a>
     ),
     useNavigate: () => vi.fn(),
+    useLocation: () => ({ pathname: '/admin' }),
   };
 });
 
@@ -42,19 +43,31 @@ describe('/admin route', () => {
     expect(typeof getBeforeLoad()).toBe('function');
   });
 
-  it('redirects to /login if unauthenticated and checkAuth fails', async () => {
+  it('redirects to /admin/login if unauthenticated and checkAuth fails', async () => {
     const checkAuthMock = vi.fn().mockImplementation(async () => {
       useAuthStore.setState({ isAuthenticated: false, user: null });
     });
     useAuthStore.setState({ checkAuth: checkAuthMock });
 
     const beforeLoad = getBeforeLoad();
-    await expect(beforeLoad({})).rejects.toEqual({
-      to: '/login',
+    await expect(beforeLoad({ location: { pathname: '/admin' } })).rejects.toEqual({
+      to: '/admin/login',
     });
 
     expect(checkAuthMock).toHaveBeenCalled();
-    expect(redirect).toHaveBeenCalledWith({ to: '/login' });
+    expect(redirect).toHaveBeenCalledWith({ to: '/admin/login' });
+  });
+
+  it('does not redirect the /admin/login page itself (no guard loop)', async () => {
+    const checkAuthMock = vi.fn();
+    useAuthStore.setState({ checkAuth: checkAuthMock });
+
+    const beforeLoad = getBeforeLoad();
+    await expect(
+      beforeLoad({ location: { pathname: '/admin/login' } })
+    ).resolves.toBeUndefined();
+    expect(checkAuthMock).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it('does not redirect if user is authenticated', async () => {

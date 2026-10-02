@@ -1,0 +1,43 @@
+import { ShieldCheck, KeyRound } from 'lucide-react';
+
+export function AdminLoginShowcase() {
+  return (
+    <div
+      data-testid="admin-login-showcase"
+      className="hidden lg:flex w-1/2 flex-col justify-between overflow-hidden border-r-2 border-[var(--border)] bg-[#131f24] p-10 text-white"
+    >
+      <img
+        src="/assets/logo-full.png"
+        alt="Private Movie"
+        className="h-12 w-auto self-start"
+      />
+
+      <div className="flex flex-col items-center text-center">
+        <span
+          data-testid="admin-login-mascot"
+          className="inline-flex h-40 w-40 items-center justify-center rounded-[32px] border-2 border-b-4 border-[#37464f] bg-[#202f36] shadow-2xl"
+        >
+          <ShieldCheck
+            className="h-20 w-20 text-[var(--purple)]"
+            aria-hidden="true"
+          />
+        </span>
+        <h2 className="mt-8 max-w-md font-display text-4xl font-extrabold leading-tight">
+          The gatekeeper&apos;s post
+        </h2>
+        <p className="mt-4 max-w-sm font-sans text-base font-bold text-white/85">
+          Curate the catalog, manage the library, and keep the cinema running
+          smoothly behind the scenes.
+        </p>
+        <div className="mt-6 flex items-center gap-2 rounded-full border-2 border-[#37464f] bg-[#202f36] px-4 py-2 font-sans text-xs font-extrabold uppercase tracking-[0.8px] text-white/80">
+          <KeyRound className="h-4 w-4" aria-hidden="true" />
+          Restricted area — admins only
+        </div>
+      </div>
+
+      <p className="font-sans text-xs font-bold text-white/70">
+        Only the projectionist goes beyond this door.
+      </p>
+    </div>
+  );
+}

@@ -13,7 +13,7 @@ describe('Router integration - /admin auth guard & relocated pages', () => {
     });
   });
 
-  it('redirects /admin to /login when unauthenticated', async () => {
+  it('redirects /admin to /admin/login when unauthenticated', async () => {
     const memoryHistory = createMemoryHistory({
       initialEntries: ['/admin'],
     });
@@ -25,10 +25,10 @@ describe('Router integration - /admin auth guard & relocated pages', () => {
 
     await router.load();
 
-    expect(router.state.location.pathname).toBe('/login');
+    expect(router.state.location.pathname).toBe('/admin/login');
   });
 
-  it('redirects /admin/videos to /login when unauthenticated', async () => {
+  it('redirects /admin/videos to /admin/login when unauthenticated', async () => {
     const memoryHistory = createMemoryHistory({
       initialEntries: ['/admin/videos'],
     });
@@ -40,10 +40,10 @@ describe('Router integration - /admin auth guard & relocated pages', () => {
 
     await router.load();
 
-    expect(router.state.location.pathname).toBe('/login');
+    expect(router.state.location.pathname).toBe('/admin/login');
   });
 
-  it('redirects /admin/profile to /login when unauthenticated', async () => {
+  it('redirects /admin/profile to /admin/login when unauthenticated', async () => {
     const memoryHistory = createMemoryHistory({
       initialEntries: ['/admin/profile'],
     });
@@ -55,7 +55,27 @@ describe('Router integration - /admin auth guard & relocated pages', () => {
 
     await router.load();
 
-    expect(router.state.location.pathname).toBe('/login');
+    expect(router.state.location.pathname).toBe('/admin/login');
+  });
+
+  it('allows /admin/login without authentication (no guard loop)', async () => {
+    useAuthStore.setState({
+      isAuthenticated: false,
+      user: null,
+    });
+
+    const memoryHistory = createMemoryHistory({
+      initialEntries: ['/admin/login'],
+    });
+
+    const router = createRouter({
+      routeTree,
+      history: memoryHistory,
+    });
+
+    await router.load();
+
+    expect(router.state.location.pathname).toBe('/admin/login');
   });
 
   it('renders the dashboard at /admin when authenticated (no redirect)', async () => {

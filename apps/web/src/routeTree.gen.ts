@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminGenresRouteImport } from './routes/admin/genres'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
 import { Route as AdminStorageRouteImport } from './routes/admin/storage'
 import { Route as GenresSlugRouteImport } from './routes/genres.$slug'
@@ -51,6 +52,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminGenresRoute = AdminGenresRouteImport.update({
   id: '/genres',
   path: '/genres',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminProfileRoute = AdminProfileRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/genres': typeof AdminGenresRoute
+  '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
   '/genres/$slug': typeof GenresSlugRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/genres': typeof AdminGenresRoute
+  '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
   '/genres/$slug': typeof GenresSlugRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/admin/genres': typeof AdminGenresRoute
+  '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/storage': typeof AdminStorageRoute
   '/genres/$slug': typeof GenresSlugRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/genres'
+    | '/admin/login'
     | '/admin/profile'
     | '/admin/storage'
     | '/genres/$slug'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/genres'
+    | '/admin/login'
     | '/admin/profile'
     | '/admin/storage'
     | '/genres/$slug'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/admin/genres'
+    | '/admin/login'
     | '/admin/profile'
     | '/admin/storage'
     | '/genres/$slug'
@@ -235,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminGenresRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/profile': {
       id: '/admin/profile'
       path: '/profile'
@@ -289,6 +308,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminGenresRoute: typeof AdminGenresRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   AdminProfileRoute: typeof AdminProfileRoute
   AdminStorageRoute: typeof AdminStorageRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -298,6 +318,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminGenresRoute: AdminGenresRoute,
+  AdminLoginRoute: AdminLoginRoute,
   AdminProfileRoute: AdminProfileRoute,
   AdminStorageRoute: AdminStorageRoute,
   AdminIndexRoute: AdminIndexRoute,
