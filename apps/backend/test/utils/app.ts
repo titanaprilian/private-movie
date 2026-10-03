@@ -1,4 +1,5 @@
 import type { createApp } from "@/app";
+import type { CreateAppOverrides } from "@/app-types";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import type {
   MinioBucketProvisioner,
@@ -24,28 +25,23 @@ export interface RequestResult {
   cookies: Record<string, string>;
 }
 
+export interface BuildAppOptions extends CreateAppOverrides {
+  fetchHtml?: FetchFn;
+  browserFn?: BrowserFn;
+  s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
+  minioInspector?: MinioContainerInspector;
+  minioContainerStarter?: MinioContainerStarter;
+  minioHealthChecker?: MinioHealthChecker;
+  minioBucketProvisioner?: MinioBucketProvisioner;
+}
+
 /**
  * Build a real `createApp` instance wired to the test database. Use this in
  * integration tests inside a `beforeAll` hook to share one Elysia instance per
  * test file.
  */
-export async function buildApp(options?: {
-  fetchHtml?: FetchFn;
-  browserFn?: BrowserFn;
-  s3StorageService?: S3StorageService;
-  storageProviderRegistry?: StorageProviderRegistry;
-  archiveFetchFn?: Parameters<typeof createApp>[0]["archiveFetchFn"];
-  archiveExtractFn?: Parameters<typeof createApp>[0]["archiveExtractFn"];
-  archiveStagingBaseDir?: string;
-  minioInspector?: MinioContainerInspector;
-  minioContainerStarter?: MinioContainerStarter;
-  minioHealthChecker?: MinioHealthChecker;
-  minioBucketProvisioner?: MinioBucketProvisioner;
-  scheduler?: Parameters<typeof createApp>[0]["scheduler"];
-  storageUsageProvider?: Parameters<typeof createApp>[0]["storageUsageProvider"];
-  rateLimit?: Parameters<typeof createApp>[0]["rateLimit"];
-  authRateLimit?: Parameters<typeof createApp>[0]["authRateLimit"];
-}): Promise<App> {
+export async function buildApp(options?: BuildAppOptions): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
   const { createDbClient } = await import("@repo/db");
@@ -72,23 +68,26 @@ export async function buildApp(options?: {
   return createApp({
     db,
     auth,
-    fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
-    browserFn: options?.browserFn ?? defaultBrowserFn,
-    s3StorageService: options?.s3StorageService,
-    storageProviderRegistry: options?.storageProviderRegistry,
-    archiveFetchFn: options?.archiveFetchFn,
-    archiveExtractFn: options?.archiveExtractFn,
-    archiveStagingBaseDir: options?.archiveStagingBaseDir,
-    minioInspector: options?.minioInspector,
-    minioContainerStarter: options?.minioContainerStarter,
-    minioHealthChecker: options?.minioHealthChecker,
-    minioBucketProvisioner: options?.minioBucketProvisioner,
-    scheduler: options?.scheduler ?? createTestScheduler(),
-    storageUsageProvider: options?.storageUsageProvider ?? null,
-    // Rate limiting is disabled by default in tests. Suites asserting
-    // throttling behavior opt in explicitly via these overrides.
-    rateLimit: options?.rateLimit ?? { disabled: true },
-    authRateLimit: options?.authRateLimit ?? { disabled: true },
+    overrides: {
+      fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
+      browserFn: options?.browserFn ?? defaultBrowserFn,
+      s3StorageService: options?.s3StorageService,
+      storageProviderRegistry: options?.storageProviderRegistry,
+      archiveFetchFn: options?.archiveFetchFn,
+      archiveExtractFn: options?.archiveExtractFn,
+      archiveStagingBaseDir: options?.archiveStagingBaseDir,
+      minioInspector: options?.minioInspector,
+      minioContainerStarter: options?.minioContainerStarter,
+      minioHealthChecker: options?.minioHealthChecker,
+      minioBucketProvisioner: options?.minioBucketProvisioner,
+      scheduler: options?.scheduler ?? createTestScheduler(),
+      storageService: options?.storageService,
+      storageUsageProvider: options?.storageUsageProvider ?? null,
+      // Rate limiting is disabled by default in tests. Suites asserting
+      // throttling behavior opt in explicitly via these overrides.
+      rateLimit: options?.rateLimit ?? { disabled: true },
+      authRateLimit: options?.authRateLimit ?? { disabled: true },
+    },
   });
 }
 

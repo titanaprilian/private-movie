@@ -161,15 +161,15 @@ export interface SchedulerTelemetryProvider {
   getNextRunAt(): Date | null;
 }
 
+import type { StorageService } from "../../storage";
+
 /**
  * Supplies real storage usage in bytes (summed across enabled providers).
  * Implemented by the composition root with the storage module's cached S3
  * inventory scan. Return null when usage is unavailable; throw on failure —
  * both are treated as untracked so the dashboard never breaks.
  */
-export interface StorageUsageProvider {
-  getTotalUsedBytes(): Promise<number | null>;
-}
+export type StorageUsageProvider = Pick<StorageService, "getTotalUsedBytes">;
 
 export interface DashboardServiceOptions {
   scheduler?: SchedulerTelemetryProvider | null;

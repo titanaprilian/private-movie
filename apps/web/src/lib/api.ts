@@ -1,5 +1,5 @@
 import { edenTreaty } from '@elysiajs/eden';
-import type { App } from '@repo/backend';
+import type { App } from '@repo/backend/client';
 
 export function getApiBaseUrl(): string {
   let envApiUrl = import.meta.env.VITE_API_URL;

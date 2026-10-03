@@ -18,12 +18,13 @@ export interface DashboardRoutesOptions {
     "runNow" | "isEnabled" | "isExecuting" | "getIntervalMs" | "getLastRunAt" | "getLastRunResult" | "getNextRunAt" | "setEnabled" | "updateInterval"
   > | null;
   storageUsageProvider?: StorageUsageProvider | null;
+  storageService?: StorageUsageProvider | null;
 }
 
 export const dashboardRoutes = (options: DashboardRoutesOptions) => {
   const dashboardService = createDashboardService(options.db, {
     scheduler: options.scheduler ?? null,
-    storageUsageProvider: options.storageUsageProvider ?? null,
+    storageUsageProvider: options.storageUsageProvider ?? options.storageService ?? null,
   });
   const auth = authGuard(options.authService);
 

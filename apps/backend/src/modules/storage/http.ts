@@ -3,28 +3,32 @@ import type {
   AuthenticationService,
   StorageProviderType,
 } from "@repo/contracts";
+import type { DbClient } from "@repo/db";
 import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import { createStorageService } from "./internal/storage-service";
-import type { MinioDeps } from "./internal/storage-service";
+import type { MinioDeps, StorageService } from "./internal/storage-service";
 
 export interface StorageRoutesOptions extends MinioDeps {
-  db: Parameters<typeof createStorageService>[0];
+  db: DbClient;
   authService: AuthenticationService;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  storageService?: StorageService;
 }
 
 export const storageRoutes = (options: StorageRoutesOptions) => {
-  const storageService = createStorageService(options.db, {
-    s3StorageService: options.s3StorageService,
-    storageProviderRegistry: options.storageProviderRegistry,
-    minioInspector: options.minioInspector,
-    minioContainerStarter: options.minioContainerStarter,
-    minioHealthChecker: options.minioHealthChecker,
-    minioBucketProvisioner: options.minioBucketProvisioner,
-  });
+  const storageService =
+    options.storageService ??
+    createStorageService(options.db, {
+      s3StorageService: options.s3StorageService,
+      storageProviderRegistry: options.storageProviderRegistry,
+      minioInspector: options.minioInspector,
+      minioContainerStarter: options.minioContainerStarter,
+      minioHealthChecker: options.minioHealthChecker,
+      minioBucketProvisioner: options.minioBucketProvisioner,
+    });
   const auth = authGuard(options.authService);
 
   return new Elysia({ name: "storage-routes" }).guard(
