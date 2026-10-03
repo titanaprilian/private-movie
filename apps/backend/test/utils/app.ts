@@ -43,6 +43,8 @@ export async function buildApp(options?: {
   minioBucketProvisioner?: MinioBucketProvisioner;
   scheduler?: Parameters<typeof createApp>[0]["scheduler"];
   storageUsageProvider?: Parameters<typeof createApp>[0]["storageUsageProvider"];
+  rateLimit?: Parameters<typeof createApp>[0]["rateLimit"];
+  authRateLimit?: Parameters<typeof createApp>[0]["authRateLimit"];
 }): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
@@ -83,6 +85,10 @@ export async function buildApp(options?: {
     minioBucketProvisioner: options?.minioBucketProvisioner,
     scheduler: options?.scheduler ?? createTestScheduler(),
     storageUsageProvider: options?.storageUsageProvider ?? null,
+    // Rate limiting is disabled by default in tests. Suites asserting
+    // throttling behavior opt in explicitly via these overrides.
+    rateLimit: options?.rateLimit ?? { disabled: true },
+    authRateLimit: options?.authRateLimit ?? { disabled: true },
   });
 }
 

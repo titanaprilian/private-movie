@@ -14,9 +14,16 @@ import { errorResponse, successResponse } from "../../lib/response";
 import { getClientIp } from "../../lib/ip";
 import { createAuthenticationServiceInternal } from "./internal/authentication-service";
 
+export interface AuthRateLimitOptions {
+  disabled?: boolean;
+  max?: number;
+  duration?: number;
+}
+
 export interface AuthRoutesOptions {
   db?: Parameters<typeof createAuthenticationServiceInternal>[0];
   authService?: AuthenticationService;
+  rateLimit?: AuthRateLimitOptions;
 }
 
 export interface AuthResultPayload {
@@ -64,11 +71,13 @@ function handleAuthResponse(
 export const authRoutes = (options: AuthRoutesOptions) => {
   const auth = options.authService ?? createAuthenticationServiceInternal(options.db!);
 
+  const rateLimitDisabled = options.rateLimit?.disabled ?? false;
+
   return new Elysia({ name: "auth-routes" })
     .use(
       rateLimit({
-        duration: 60000,
-        max: 10,
+        duration: options.rateLimit?.duration ?? 60000,
+        max: options.rateLimit?.max ?? 10,
         generator: (request, server) => `${getClientIp(request, server)}:login`,
         errorResponse: new Response(
           JSON.stringify({
@@ -85,7 +94,7 @@ export const authRoutes = (options: AuthRoutesOptions) => {
           }
         ),
         skip: (request) => {
-          if (process.env.NODE_ENV === "test" && request.headers.get("x-test-rate-limit") !== "true") {
+          if (rateLimitDisabled) {
             return true;
           }
           const url = new URL(request.url);

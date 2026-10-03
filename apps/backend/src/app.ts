@@ -1,30 +1,31 @@
 import { Elysia } from "elysia";
 import type { AuthenticationService } from "@repo/contracts";
 import type { DbClient } from "@repo/db";
-import { cors } from "@elysiajs/cors";
-import { openapi } from "@elysiajs/openapi";
-import { rateLimit } from "@elysiajs/rate-limit";
-import { getClientIp } from "./lib/ip";
-import { errorResponse } from "./lib/response";
-import { authRoutes } from "./modules/authentication/http";
+import { authRoutes, type AuthRateLimitOptions } from "./modules/authentication/http";
 import { dashboardRoutes } from "./modules/dashboard/http";
-import { episodeRoutes, UNTHROTTLED_EPISODE_ROUTE_SUFFIXES } from "./modules/episodes/http";
+import { episodeRoutes } from "./modules/episodes/http";
 import { genreRoutes } from "./modules/genres/http";
 import { healthRoutes } from "./modules/health/http";
-import { mediaRoutes, embedRoutes, UNTHROTTLED_MEDIA_ROUTE_PREFIXES } from "./modules/media/http";
+import { mediaRoutes, embedRoutes } from "./modules/media/http";
 import { seasonRoutes } from "./modules/seasons/http";
 import { seriesRoutes } from "./modules/series/http";
 import { storageRoutes } from "./modules/storage/http";
 import { createStorageService } from "./modules/storage/index";
 import type { MinioDeps } from "./modules/storage/index";
-import { loadAppConfig, isApiDocsEnabled, isOriginAllowed } from "./config/app-config";
+import { loadAppConfig, isApiDocsEnabled } from "./config/app-config";
 
 // Re-exported so existing consumers (e.g. docs tests) keep importing from "@/app".
 export { isApiDocsEnabled };
+import {
+  corsPlugin,
+  openapiPlugin,
+  errorHandlerPlugin,
+  rateLimitPlugin,
+  type RateLimitPluginOptions,
+} from "./plugins";
 import type { StorageUsageProvider } from "./modules/dashboard/index";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import type { OngoingSeasonScheduler } from "./modules/media/scheduler";
-import { InternalServerError, getDomainErrorStatus } from "./lib/errors";
 import type {
   ArchiveExtractFn,
   ArchiveFetchFn,
@@ -45,6 +46,8 @@ export interface CreateAppDeps extends MinioDeps {
     "runNow" | "isEnabled" | "isExecuting" | "getIntervalMs" | "getLastRunAt" | "getLastRunResult" | "getNextRunAt" | "setEnabled" | "updateInterval"
   > | null;
   storageUsageProvider?: StorageUsageProvider | null;
+  rateLimit?: RateLimitPluginOptions;
+  authRateLimit?: AuthRateLimitOptions;
 }
 
 export const createApp = (deps: CreateAppDeps) => {
@@ -79,102 +82,15 @@ export const createApp = (deps: CreateAppDeps) => {
       : deps.storageUsageProvider;
 
   return new Elysia({ name: "app" })
-    .use(
-      isApiDocsEnabled()
-        ? openapi({
-            path: "/docs",
-            specPath: "/docs/json",
-            provider: "scalar",
-            documentation: {
-              tags: [
-                { name: "Authentication", description: "User registration, login, and session management." },
-                { name: "Dashboard & Scheduler", description: "Admin overview statistics and ongoing-season scheduler controls." },
-                { name: "Series", description: "Series catalog, discovery feeds, and TMDB import/sync." },
-                { name: "Seasons", description: "Season details, updates, and ongoing-season scraping." },
-                { name: "Episodes", description: "Episode listing, video sources, uploads, and scraping." },
-                { name: "Genres", description: "Genre taxonomy management." },
-                { name: "Storage", description: "Storage providers, S3 inventory, and orphan management." },
-                { name: "Media & Playback", description: "Video source health checks and playback support." },
-                { name: "Health", description: "Service and database health checks." },
-              ],
-            },
-          })
-        : (app) => app
-    )
+    .use(openapiPlugin({ enabled: appConfig.apiDocsEnabled }))
     .use(embedRoutes())
-    .use(
-      cors({
-        origin: (request) => {
-          const origin = request.headers.get("origin");
-          return isOriginAllowed(origin, appConfig);
-        },
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-        credentials: true,
-        maxAge: 86400,
-      })
-    )
-    .onError(({ code, set, error }) => {
-      if (code === "NOT_FOUND") {
-        return;
-      }
-      if (code === "VALIDATION") {
-        set.status = 400;
-        return {
-          error: {
-            code: "VALIDATION",
-            message: "request validation failed",
-          },
-        };
-      }
-      const domainStatus = getDomainErrorStatus(error);
-      if (domainStatus !== null) {
-        return errorResponse(set, domainStatus, error as Error);
-      }
-      console.error("[Unhandled Server Error]", error);
-      return errorResponse(set, 500, new InternalServerError());
-    })
-    .use(
-      rateLimit({
-        duration: 60000,
-        max: 100,
-        generator: (request, server) => getClientIp(request, server),
-        errorResponse: new Response(
-          JSON.stringify({
-            error: {
-              code: "RATE_LIMIT",
-              message: "rate-limit reached",
-            },
-          }),
-          {
-            status: 429,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        ),
-        skip: (request) => {
-          if (process.env.NODE_ENV === "test") {
-            return request.headers.get("x-test-rate-limit") !== "true";
-          }
-          
-          // Do not rate limit embed, media proxy, and long-lived streaming endpoints 
-          // (video streams rapidly fetch hundreds of chunks which breaks the global 100/min limit)
-          const url = new URL(request.url);
-          const isMediaUnthrottled = UNTHROTTLED_MEDIA_ROUTE_PREFIXES.some((prefix) =>
-            url.pathname.startsWith(prefix)
-          );
-          const isEpisodeUnthrottled = UNTHROTTLED_EPISODE_ROUTE_SUFFIXES.some((suffix) =>
-            url.pathname.endsWith(suffix)
-          );
-          return isMediaUnthrottled || isEpisodeUnthrottled;
-        },
-      })
-    )
+    .use(corsPlugin(appConfig))
+    .use(errorHandlerPlugin())
+    .use(rateLimitPlugin(deps.rateLimit))
     .group("/api", (app) =>
       app
         .use(healthRoutes({ db }))
-        .use(authRoutes({ authService: auth }))
+        .use(authRoutes({ authService: auth, rateLimit: deps.authRateLimit }))
         .use(dashboardRoutes({ db, authService: auth, scheduler: deps.scheduler ?? null, storageUsageProvider }))
         .use(
           episodeRoutes({
