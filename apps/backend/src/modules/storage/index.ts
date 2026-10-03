@@ -9,6 +9,7 @@ export {
 export type {
   StorageService,
   StorageServiceOptions,
+  MinioDeps,
 } from "./internal/storage-service";
 export type {
   MinioContainerInspector,

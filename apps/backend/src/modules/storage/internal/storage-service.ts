@@ -101,19 +101,23 @@ export type MinioBucketProvisioner = (
   input: MinioBucketProvisionerInput
 ) => Promise<void>;
 
-export interface StorageServiceOptions {
-  s3StorageService?: S3StorageService;
-  storageProviderRegistry?: StorageProviderRegistry;
-  cacheTtlMs?: number;
+export interface MinioDeps {
   minioInspector?: MinioContainerInspector;
   minioContainerStarter?: MinioContainerStarter;
   minioHealthChecker?: MinioHealthChecker;
   minioBucketProvisioner?: MinioBucketProvisioner;
 }
 
+export interface StorageServiceOptions extends MinioDeps {
+  s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
+  cacheTtlMs?: number;
+}
+
 export interface StorageService {
   // Scoped storage management
   getMetrics(providerId?: string): Promise<StorageMetrics>;
+  getTotalUsedBytes(): Promise<number | null>;
   getResources(query?: StorageResourcesQuery): Promise<StorageResourcesResponseData>;
   scan(force?: boolean, providerId?: string): Promise<{ count: number; totalBytes: number }>;
   updateLimit(limitGb: number, providerId?: string): Promise<{ limitGb: number; limitBytes: number }>;
@@ -441,11 +445,10 @@ export function createStorageService<
     };
   }
 
-  return {
+  const service: StorageService = {
     invalidateCache,
 
-    async getMetrics(providerId?: string): Promise<StorageMetrics> {
-      const { items, totalBytes, linkedCount, orphanCount, provider } =
+    async getMetrics(providerId?: string): Promise<StorageMetrics> {      const { items, totalBytes, linkedCount, orphanCount, provider } =
         await getCorrelatedInventory(providerId);
 
       const limitGb = await getStorageLimitGb(provider);
@@ -460,6 +463,19 @@ export function createStorageService<
         linkedCount,
         orphanCount,
       };
+    },
+
+    async getTotalUsedBytes(): Promise<number | null> {
+      const providers = await service.listProviders();
+      const enabled = providers.filter((p) => p.isEnabled);
+      if (enabled.length === 0) return null;
+      // All-or-nothing: a partial sum across providers would be misleading,
+      // so any single failure reports usage as unavailable.
+      let total = 0;
+      for (const provider of enabled) {
+        total += (await service.getMetrics(provider.id)).totalBytes;
+      }
+      return total;
     },
 
     async getResources(query?: StorageResourcesQuery): Promise<StorageResourcesResponseData> {
@@ -1137,4 +1153,6 @@ export function createStorageService<
       return { provider, consoleUrl, accessKeyId, secretAccessKey };
     },
   };
+
+  return service;
 }

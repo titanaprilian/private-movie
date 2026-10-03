@@ -1,4 +1,8 @@
 import type { BatchOngoingScrapeResult, MediaService } from "@repo/media-service";
+import {
+  loadSchedulerConfig,
+  type SchedulerConfigDb,
+} from "./scheduler-config";
 
 export interface OngoingSeasonSchedulerOptions {
   mediaService: Pick<MediaService, "scrapeAllOngoingSeasons">;
@@ -35,8 +39,38 @@ export interface OngoingSeasonScheduler {
 
 const DEFAULT_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
+const MS_PER_MINUTE = 60 * 1000;
+
 export const SCHEDULER_DEFAULT_INTERVAL_MINUTES = 30;
 export const SCHEDULER_DEFAULT_ENABLED = true;
+
+export interface StartOngoingSeasonSchedulerOptions {
+  db: SchedulerConfigDb;
+  mediaService: Pick<MediaService, "scrapeAllOngoingSeasons">;
+  runImmediately?: boolean;
+  logger?: OngoingSeasonSchedulerOptions["logger"];
+}
+
+/**
+ * Encapsulated scheduler startup for the server entry point: loads persisted
+ * scheduler configuration (falling back to defaults), converts interval
+ * minutes to milliseconds, and returns the running scheduler handle.
+ */
+export async function startOngoingSeasonScheduler(
+  options: StartOngoingSeasonSchedulerOptions
+): Promise<OngoingSeasonScheduler> {
+  const { db, mediaService, runImmediately = true, logger } = options;
+  const config = await loadSchedulerConfig(db);
+  const scheduler = createOngoingSeasonScheduler({
+    mediaService,
+    intervalMs: config.intervalMinutes * MS_PER_MINUTE,
+    enabled: config.isEnabled,
+    runImmediately,
+    logger,
+  });
+  scheduler.start();
+  return scheduler;
+}
 
 export function createOngoingSeasonScheduler(
   options: OngoingSeasonSchedulerOptions

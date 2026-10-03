@@ -1,6 +1,15 @@
 export * from "@repo/media-service";
 export * from "./scheduler";
 export {
+  loadSchedulerConfig,
+  saveSchedulerConfig,
+  validateSchedulerConfigInput,
+  ALLOWED_SCHEDULER_INTERVALS,
+  DEFAULT_SCHEDULER_INTERVAL_MINUTES,
+  DEFAULT_SCHEDULER_ENABLED,
+} from "./scheduler-config";
+export type { SchedulerConfig, SchedulerConfigDb } from "./scheduler-config";
+export {
   RELAY_CDN_HOST_FRAGMENTS,
   RELAY_CDN_REFERER,
   RELAY_EMBED_REFERER,

@@ -15,7 +15,7 @@ import type {
   AdminDashboardSchedulerTelemetry,
   AdminDashboardStorageStats,
 } from "@repo/contracts";
-import { loadSchedulerConfig } from "./scheduler-config";
+import { loadSchedulerConfig } from "../../media";
 
 type DashboardDb = Pick<DbClient, "select" | "selectDistinct" | "insert"> & {
   // Allow the concrete Drizzle PostgresJsDatabase while keeping the

@@ -8,7 +8,7 @@ import { createDashboardService, type StorageUsageProvider } from "./internal/da
 import {
   saveSchedulerConfig,
   validateSchedulerConfigInput,
-} from "./internal/scheduler-config";
+} from "../media";
 
 export interface DashboardRoutesOptions {
   db: DbClient;

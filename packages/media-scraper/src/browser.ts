@@ -4,7 +4,6 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import type { BrowserFn } from "./types";
 
 let stealthInitialized = false;
-let globalBrowser: Browser | null = null;
 
 export function getStealthChromium(): typeof chromium {
   if (!stealthInitialized) {
@@ -14,22 +13,28 @@ export function getStealthChromium(): typeof chromium {
   return chromium;
 }
 
-export interface CreateStealthBrowserFnOptions {
+export interface CreateStealthBrowserOptions {
   headless?: boolean;
   timeout?: number;
   userAgent?: string;
 }
 
-export async function initBrowser(
-  options: CreateStealthBrowserFnOptions = {}
-): Promise<Browser> {
-  if (globalBrowser) {
-    return globalBrowser;
-  }
+export interface StealthBrowserHandle {
+  browserFn: BrowserFn;
+  close: () => Promise<void>;
+}
 
-  const { headless = true } = options;
+export async function createStealthBrowser(
+  options: CreateStealthBrowserOptions = {}
+): Promise<StealthBrowserHandle> {
+  const {
+    headless = true,
+    timeout = 10000,
+    userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  } = options;
+
   const stealthChromium = getStealthChromium();
-  globalBrowser = (await stealthChromium.launch({
+  const browser = (await stealthChromium.launch({
     headless,
     args: [
       "--no-sandbox",
@@ -38,27 +43,9 @@ export async function initBrowser(
     ],
   })) as unknown as Browser;
 
-  return globalBrowser;
-}
+  let closed = false;
 
-export async function closeBrowser(): Promise<void> {
-  if (globalBrowser) {
-    await globalBrowser.close();
-    globalBrowser = null;
-  }
-}
-
-export function createStealthBrowserFn(
-  options: CreateStealthBrowserFnOptions = {}
-): BrowserFn {
-  const {
-    timeout = 10000,
-    userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  } = options;
-
-  return async (url: string): Promise<string> => {
-    const browser = await initBrowser(options);
-
+  const browserFn: BrowserFn = async (url: string): Promise<string> => {
     const context = await browser.newContext({
       userAgent,
       locale: "en-US",
@@ -99,4 +86,14 @@ export function createStealthBrowserFn(
       await context.close();
     }
   };
+
+  const close = async (): Promise<void> => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    await browser.close();
+  };
+
+  return { browserFn, close };
 }

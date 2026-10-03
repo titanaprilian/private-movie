@@ -13,17 +13,17 @@ export interface SchedulerConfig {
   isEnabled: boolean;
 }
 
-type ConfigDb = Pick<DbClient, "select" | "insert"> & {
+export type SchedulerConfigDb = Pick<DbClient, "select" | "insert"> & {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };
 
-async function readKey(db: ConfigDb, key: string): Promise<string | null> {
+async function readKey(db: SchedulerConfigDb, key: string): Promise<string | null> {
   const rows = await db.select({ value: system.value }).from(system).where(eq(system.key, key));
   return rows[0]?.value ?? null;
 }
 
-export async function loadSchedulerConfig(db: ConfigDb): Promise<SchedulerConfig> {
+export async function loadSchedulerConfig(db: SchedulerConfigDb): Promise<SchedulerConfig> {
   let intervalMinutes = DEFAULT_SCHEDULER_INTERVAL_MINUTES;
   let isEnabled = DEFAULT_SCHEDULER_ENABLED;
   try {
@@ -45,7 +45,7 @@ export async function loadSchedulerConfig(db: ConfigDb): Promise<SchedulerConfig
 }
 
 export async function saveSchedulerConfig(
-  db: ConfigDb,
+  db: SchedulerConfigDb,
   config: Partial<SchedulerConfig>,
 ): Promise<SchedulerConfig> {
   const current = await loadSchedulerConfig(db);

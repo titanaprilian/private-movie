@@ -15,7 +15,7 @@ import {
   type ParsedDownloadLink,
   type FetchFn as ScraperFetchFn,
   type BrowserFn,
-  type CreateStealthBrowserFnOptions,
+  type CreateStealthBrowserOptions,
 } from "@repo/media-scraper";
 
 import {
@@ -64,7 +64,7 @@ export type {
   AbortStaleMultipartUploadsResult,
 };
 
-export type { BrowserFn, CreateStealthBrowserFnOptions };
+export type { BrowserFn, CreateStealthBrowserOptions };
 import {
   normalizePlaybackUrl,
   normalizeVideoSource,

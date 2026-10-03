@@ -1,5 +1,8 @@
 import { describe, expect, it, afterEach } from "vitest";
-import { validateJwtSecret } from "../../../src/modules/authentication";
+import {
+  createAuthenticationService,
+  validateJwtSecret,
+} from "../../../src/modules/authentication";
 
 describe("validateJwtSecret in production", () => {
   const originalEnv = process.env.NODE_ENV;
@@ -35,5 +38,46 @@ describe("validateJwtSecret in production", () => {
     process.env.JWT_SECRET = "a-very-strong-production-jwt-secret-key-123456";
 
     expect(() => validateJwtSecret()).not.toThrow();
+  });
+});
+
+describe("createAuthenticationService fail-fast validation", () => {
+  const originalEnv = process.env.NODE_ENV;
+  const originalSecret = process.env.JWT_SECRET;
+
+  afterEach(() => {
+    process.env.NODE_ENV = originalEnv;
+    process.env.JWT_SECRET = originalSecret;
+  });
+
+  it("throws a fatal configuration error in production with a missing secret", () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.JWT_SECRET;
+
+    const fakeDb = {} as never;
+    expect(() => createAuthenticationService(fakeDb)).toThrow(
+      "FATAL: Insecure or missing JWT_SECRET in production environment"
+    );
+  });
+
+  it("throws a fatal configuration error in production with an insecure placeholder", () => {
+    process.env.NODE_ENV = "production";
+    process.env.JWT_SECRET = "secret";
+
+    const fakeDb = {} as never;
+    expect(() => createAuthenticationService(fakeDb)).toThrow(
+      "FATAL: Insecure or missing JWT_SECRET in production environment"
+    );
+  });
+
+  it("succeeds and returns the operational service with a valid secret", () => {
+    process.env.NODE_ENV = "production";
+    process.env.JWT_SECRET = "a-very-strong-production-jwt-secret-key-123456";
+
+    const fakeDb = {} as never;
+    const service = createAuthenticationService(fakeDb);
+    expect(service).toBeDefined();
+    expect(typeof service.register).toBe("function");
+    expect(typeof service.verifyCredentials).toBe("function");
   });
 });

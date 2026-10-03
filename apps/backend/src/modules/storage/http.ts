@@ -7,24 +7,13 @@ import type { S3StorageService, StorageProviderRegistry } from "@repo/media-serv
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import { createStorageService } from "./internal/storage-service";
-import type { MinioContainerInspector } from "./internal/minio-status";
-import type {
-  MinioContainerStarter,
-  MinioHealthChecker,
-} from "./internal/minio-orchestrator";
-import type { StorageServiceOptions } from "./internal/storage-service";
+import type { MinioDeps } from "./internal/storage-service";
 
-type MinioBucketProvisioner = NonNullable<StorageServiceOptions["minioBucketProvisioner"]>;
-
-export interface StorageRoutesOptions {
+export interface StorageRoutesOptions extends MinioDeps {
   db: Parameters<typeof createStorageService>[0];
   authService: AuthenticationService;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
-  minioInspector?: MinioContainerInspector;
-  minioContainerStarter?: MinioContainerStarter;
-  minioHealthChecker?: MinioHealthChecker;
-  minioBucketProvisioner?: MinioBucketProvisioner;
 }
 
 export const storageRoutes = (options: StorageRoutesOptions) => {
