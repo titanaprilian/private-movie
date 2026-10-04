@@ -8,10 +8,8 @@ import { mediaRoutes, embedRoutes } from "./modules/media/http";
 import { seasonRoutes } from "./modules/seasons/http";
 import { seriesRoutes } from "./modules/series/http";
 import { storageRoutes } from "./modules/storage/http";
-import { loadAppConfig, isApiDocsEnabled } from "./config/app-config";
+import { loadAppConfig } from "./config/app-config";
 
-// Re-exported so existing consumers (e.g. docs tests) keep importing from "@/app".
-export { isApiDocsEnabled };
 export type { CreateAppDeps, CreateAppOverrides } from "./app-types";
 import {
   corsPlugin,

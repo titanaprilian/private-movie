@@ -8,30 +8,61 @@ import { startOngoingSeasonScheduler } from "./modules/media";
 import { createStorageService } from "./modules/storage";
 import { createShutdownManager } from "./shutdown";
 
-const db = createDbClient(process.env.DATABASE_URL);
-const auth = createAuthenticationService(db);
-const s3StorageService = createS3StorageService();
-const storageService = createStorageService(db, { s3StorageService });
-const browser = await createStealthBrowser();
-const mediaService = createMediaService(db, { browserFn: browser.browserFn, s3StorageService });
-const scheduler = await startOngoingSeasonScheduler({ db, mediaService });
-const serverConfig = loadServerConfig();
-
-const app = createApp({
-  db,
-  auth,
-  storageService,
-  overrides: { browserFn: browser.browserFn, s3StorageService, scheduler },
-}).listen(serverConfig);
-
-console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
-
-const shutdown = createShutdownManager({
-  steps: [
-    { name: "http-server", run: () => app.server?.stop(false) },
-    { name: "scheduler", run: () => scheduler.stop() },
-    { name: "browser", run: () => browser.close() },
-    { name: "database", run: () => db.$client.end() },
-  ],
-});
+const shutdown = createShutdownManager();
 shutdown.registerShutdownHandlers();
+
+// Shutdown steps are pre-registered up-front in reverse-dependency (LIFO)
+// teardown order: the HTTP listener drains first, the database pool closes
+// last. Each step closes over a binding assigned during bootstrap and
+// no-ops when startup failed before that component was initialized, so a
+// failed startup still tears down only the partially allocated resources.
+// (The manager executes steps FIFO, so incremental addStep-as-you-go
+// registration would close the database before draining the server.)
+let db: ReturnType<typeof createDbClient> | undefined;
+let browser: Awaited<ReturnType<typeof createStealthBrowser>> | undefined;
+let scheduler: Awaited<ReturnType<typeof startOngoingSeasonScheduler>> | undefined;
+let app: ReturnType<typeof createApp> | undefined;
+
+shutdown.addStep({
+  name: "http-server",
+  run: async () => {
+    await app?.server?.stop(false);
+  },
+});
+shutdown.addStep({ name: "scheduler", run: () => scheduler?.stop() });
+shutdown.addStep({ name: "browser", run: () => browser?.close() });
+shutdown.addStep({ name: "database", run: () => db?.$client.end() });
+
+async function bootstrap(): Promise<void> {
+  db = createDbClient(process.env.DATABASE_URL);
+
+  const auth = createAuthenticationService(db);
+  const s3StorageService = createS3StorageService();
+  const storageService = createStorageService(db, { s3StorageService });
+
+  browser = await createStealthBrowser();
+
+  const mediaService = createMediaService(db, {
+    browserFn: browser.browserFn,
+    s3StorageService,
+  });
+
+  scheduler = await startOngoingSeasonScheduler({ db, mediaService });
+
+  const serverConfig = loadServerConfig();
+
+  app = createApp({
+    db,
+    auth,
+    storageService,
+    overrides: { browserFn: browser.browserFn, s3StorageService, scheduler },
+  }).listen(serverConfig);
+
+  console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
+}
+
+bootstrap().catch(async (error) => {
+  console.error("[Startup] failed to start backend", error);
+  await shutdown.shutdown();
+  process.exit(1);
+});
