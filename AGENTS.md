@@ -125,3 +125,14 @@ The Deep Modules architecture maps onto each framework in the monorepo as follow
 - **Workflow:** When a ticket requires database schema changes, you may modify the schema files and run `turbo run db:generate` (or `bun run db:generate`) to create the `.sql` migration files.
 - **Do not apply:** You must **never** run `db:migrate` or attempt to apply the generated `.sql` files yourself.
 - **Warn the user:** If the user asks you to modify schema, generate the SQL, leave the files uncommitted, and instruct the user to manually review the SQL for structural data loss (e.g., `DROP TABLE`) before they apply it themselves. If the user explicitly mentions or requests `db:push`, WARN them that it can result in immediate data loss without SQL file generation.
+
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+
+- **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
+- **Shell** (always works): `codegraph explore "<symbol names or question>"` prints the same output.
+
+If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
+<!-- CODEGRAPH_END -->
