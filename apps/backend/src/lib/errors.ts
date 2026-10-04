@@ -11,6 +11,8 @@ export class FileTooLargeError extends Error {
   }
 }
 
+export { SeriesHighlightWithoutOngoingError } from "@repo/media-service";
+
 export class UploadSessionNotFoundError extends Error {
   constructor(message = "Upload session not found") {
     super(message);
@@ -56,6 +58,7 @@ export function getDomainErrorStatus(error: unknown): number | null {
 
   if (
     name === "InvalidRegistrationInputError" ||
+    name === "SeriesHighlightWithoutOngoingError" ||
     name === "SeasonNotOngoingError" ||
     name === "SeasonMissingScraperUrlError" ||
     name === "EpisodeParseError" ||

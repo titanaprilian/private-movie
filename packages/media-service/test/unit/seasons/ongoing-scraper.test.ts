@@ -384,6 +384,181 @@ describe("syncAndScrapeOngoingSeason & scrapeAllOngoingSeasons", () => {
       expect(lastScrapeErrorRecorded).toBeNull();
     });
 
+    it("clears series isOngoingHighlighted when auto-scrape completes the last ongoing season", async () => {
+      const seasonRow = {
+        id: "s-1",
+        seriesId: "series-1",
+        seasonNumber: 1,
+        title: "Season 1",
+        status: "ongoing",
+        scraperUrl: "https://otakudesu.cloud/anime/example",
+        source: "otakudesu",
+        episodeOffset: 0,
+      };
+      const seriesRow = {
+        id: "series-1",
+        title: "Example Anime",
+        type: "tv",
+        tmdbId: null,
+        isOngoingHighlighted: true,
+      };
+
+      vi.spyOn(tmdbService, "fetchTmdbSeriesData").mockResolvedValue({
+        tmdbId: 9999,
+        type: "tv" as const,
+        title: "Example Anime",
+        description: "Test description",
+        posterPath: null,
+        backdropPath: null,
+        firstAirDate: null,
+        voteAverage: null,
+        genres: [],
+        seasons: [],
+      });
+
+      const ep1 = {
+        id: "ep-1",
+        seasonId: "s-1",
+        order: 1,
+        title: "Episode 1",
+      };
+      const ep2 = {
+        id: "ep-2",
+        seasonId: "s-1",
+        order: 2,
+        title: "Episode 2",
+      };
+      const vs1 = {
+        id: "vs-1",
+        episodeId: "ep-1",
+        type: "embed",
+        url: "https://stream.com/embed1",
+        label: "StreamSB",
+        quality: "720p",
+      };
+      const vs2 = {
+        id: "vs-2",
+        episodeId: "ep-2",
+        type: "embed",
+        url: "https://stream.com/embed2",
+        label: "StreamSB",
+        quality: "720p",
+      };
+
+      const mockProvider = {
+        name: "otakudesu",
+        canHandle: vi.fn().mockReturnValue(true),
+        parseSeries: vi.fn().mockResolvedValue({
+          title: "Example Anime",
+          episodes: [
+            { title: "Episode 2 Sub Indo", url: "https://otakudesu.cloud/episode/ep-2" },
+            { title: "Episode 1 Sub Indo", url: "https://otakudesu.cloud/episode/ep-1" },
+          ],
+        }),
+        parseEpisode: vi.fn(),
+        resolveVideoSources: vi.fn(),
+      };
+      vi.spyOn(MediaScraper, "getProviderForUrl").mockReturnValue(mockProvider as any);
+
+      const seriesUpdates: any[] = [];
+
+      mockDb = {
+        transaction: vi.fn().mockImplementation(async (cb) => {
+          const tx = {
+            update: vi.fn().mockReturnValue({
+              set: vi.fn().mockReturnValue({
+                where: vi.fn().mockResolvedValue([]),
+              }),
+            }),
+            delete: vi.fn().mockReturnValue({
+              where: vi.fn().mockResolvedValue([]),
+            }),
+            insert: vi.fn().mockReturnValue({
+              values: vi.fn().mockReturnValue({
+                onConflictDoUpdate: vi.fn().mockReturnValue({
+                  returning: vi.fn().mockResolvedValue([{ id: "s-1" }]),
+                }),
+                onConflictDoNothing: vi.fn().mockResolvedValue([]),
+              }),
+            }),
+          };
+          return await cb(tx);
+        }),
+        select: vi.fn().mockImplementation((selectFields) => ({
+          from: vi.fn().mockImplementation((table) => ({
+            where: vi.fn().mockImplementation((cond) => {
+              // Highlight-clear check uses a projected select({ id }) with .limit(1):
+              // no other ongoing seasons remain for this series.
+              if (selectFields !== undefined && table === seasons) {
+                return { limit: vi.fn().mockResolvedValue([]) };
+              }
+              if (table === seasons) {
+                return {
+                  orderBy: vi.fn().mockResolvedValue([seasonRow]),
+                  then: (resolve: any) => resolve([seasonRow]),
+                };
+              }
+              if (table === series) {
+                return Promise.resolve([seriesRow]);
+              }
+              if (table === episodes) {
+                return {
+                  orderBy: vi.fn().mockResolvedValue([ep1, ep2]),
+                  then: (resolve: any) => resolve([ep1, ep2]),
+                };
+              }
+              if (table === videoSources) {
+                return {
+                  orderBy: vi.fn().mockResolvedValue([vs1, vs2]),
+                  then: (resolve: any) => resolve([vs1, vs2]),
+                };
+              }
+              return Promise.resolve([]);
+            }),
+            orderBy: vi.fn().mockResolvedValue([]),
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue([]),
+              }),
+            }),
+          })),
+        })),
+        insert: vi.fn().mockImplementation((table) => ({
+          values: vi.fn().mockImplementation((val) => {
+            return {
+              onConflictDoUpdate: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([val]),
+              }),
+              onConflictDoNothing: vi.fn().mockResolvedValue([]),
+            };
+          }),
+        })),
+        update: vi.fn().mockImplementation((table) => ({
+          set: vi.fn().mockImplementation((data) => {
+            if (table === series) {
+              seriesUpdates.push(data);
+            }
+            return {
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([{ ...seasonRow, ...data }]),
+              }),
+            };
+          }),
+        })),
+      };
+
+      service = createMediaService(mockDb, { fetchHtml: mockFetchHtml });
+      const result = await service.syncAndScrapeOngoingSeason("s-1");
+
+      expect(result.success).toBe(true);
+      expect(result.seasonCompleted).toBe(true);
+      // No scraping needed — every episode already had sources.
+      expect(mockProvider.resolveVideoSources).not.toHaveBeenCalled();
+      // Highlight cleared because no ongoing seasons remain.
+      expect(seriesUpdates).toHaveLength(1);
+      expect(seriesUpdates[0]).toMatchObject({ isOngoingHighlighted: false });
+    });
+
     it("applies episodeOffset when matching scraped episodes", async () => {
       const seasonRow = {
         id: "s-2",

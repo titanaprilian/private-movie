@@ -167,6 +167,7 @@ export function SeriesDetailView({
     mutationFn: (seasonId: string) => scrapeOngoingSeason(seasonId),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
+      queryClient.invalidateQueries({ queryKey: ['series'] });
       queryClient.invalidateQueries({ queryKey: ['episodes'] });
       if (result.sourcesSaved > 0) {
         toast.success(

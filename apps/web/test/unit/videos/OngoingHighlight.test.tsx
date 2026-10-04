@@ -208,6 +208,32 @@ describe('Ongoing highlight curation (admin videos)', () => {
     expect(plainCard).not.toHaveTextContent('Highlighted Ongoing');
   });
 
+  it('renders the Highlighted Ongoing badge when both isHighlighted and isOngoing are true', () => {
+    renderOngoingGrid();
+
+    const card = screen.getByText('Highlighted Ongoing Show').closest('div.group');
+    expect(card).toHaveTextContent('Highlighted Ongoing');
+  });
+
+  it('does not render the Highlighted Ongoing badge when highlighted but not ongoing', () => {
+    const staleHighlightItem = {
+      ...highlightedSeriesItem,
+      id: 'series-stale-highlight',
+      title: 'Stale Highlight Show',
+      seasons: [{ id: 'sea-stale', title: 'Season 1', status: 'completed' }],
+    };
+    renderOngoingGrid(
+      { page: 1, tab: 'ongoing' },
+      {
+        series: [staleHighlightItem],
+        meta: { total: 1, page: 1, limit: 20 },
+      }
+    );
+
+    expect(screen.getByText('Stale Highlight Show')).toBeInTheDocument();
+    expect(screen.queryByText('Highlighted Ongoing')).not.toBeInTheDocument();
+  });
+
   it('toggles highlight via the 1-click star button with optimistic update', async () => {
     renderOngoingGrid();
 

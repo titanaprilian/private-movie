@@ -93,6 +93,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
         : {}),
     });
 
+
   return new Elysia({ name: "series-routes" })
     .get(
       "/series",

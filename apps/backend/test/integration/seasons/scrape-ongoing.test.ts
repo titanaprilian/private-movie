@@ -168,8 +168,7 @@ describe("POST /seasons/:id/scrape-ongoing", () => {
     expect(dbRow.lastScrapedAt).toBeDefined();
   });
 
-  it("successfully triggers ongoing scrape, saves sources, and returns execution result", async () => {
-    const seriesRow = await createSeries("Ongoing Grand Blue Series");
+  it("successfully triggers ongoing scrape, saves sources, and returns execution result", async () => {    const seriesRow = await createSeries("Ongoing Grand Blue Series");
     const seasonRow = await createSeason(seriesRow.id, "Season 3", {
       status: "ongoing",
       scraperUrl: "https://otakudesu.blog/anime/grand-blue-s3-sub-indo",
@@ -213,5 +212,60 @@ describe("POST /seasons/:id/scrape-ongoing", () => {
     const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
     expect(dbRow.lastScrapedAt).toBeDefined();
     expect(dbRow.lastScrapeError).toBeNull();
+  });
+
+  it("clears series isOngoingHighlighted when scrape completes the last ongoing season", async () => {
+    const [seriesRow] = await db
+      .insert(series)
+      .values({
+        id: crypto.randomUUID(),
+        title: "Highlighted Auto-Complete Series",
+        type: "tv",
+        isOngoingHighlighted: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    const seasonRow = await createSeason(seriesRow.id, "Season 3", {
+      status: "ongoing",
+      scraperUrl: "https://otakudesu.blog/anime/grand-blue-s3-sub-indo",
+      source: "otakudesu",
+      episodeOffset: 0,
+    });
+
+    // The fixture yields 7 episodes (orders 1-7); pre-seed every episode with
+    // a source so the scrape finds nothing new but auto-completes the season.
+    for (let order = 1; order <= 7; order++) {
+      const ep = await createEpisode(seasonRow.id, order);
+      await db.insert(videoSources).values({
+        id: crypto.randomUUID(),
+        episodeId: ep.id,
+        type: "embed",
+        url: `https://stream.example/pre-seeded-${order}`,
+        label: "PreSeeded",
+        quality: "720p",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    const result = await request(app, {
+      method: "POST",
+      path: `/seasons/${seasonRow.id}/scrape-ongoing`,
+      headers,
+    });
+
+    expect(result.status).toBe(200);
+    const body = result.body as {
+      data: { success: boolean; seasonCompleted: boolean };
+    };
+    expect(body.data.success).toBe(true);
+    expect(body.data.seasonCompleted).toBe(true);
+
+    const [dbSeason] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    expect(dbSeason.status).toBe("completed");
+
+    const [dbSeries] = await db.select().from(series).where(eq(series.id, seriesRow.id));
+    expect(dbSeries.isOngoingHighlighted).toBe(false);
   });
 });

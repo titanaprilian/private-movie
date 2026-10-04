@@ -3,6 +3,7 @@ import { episodes, seasons, series, seriesToGenres } from "@repo/db";
 import {
   compareSeasons,
   createSeriesRepositoryInternal,
+  SeriesHighlightWithoutOngoingError,
 } from "../../../src/internal/series/repository";
 
 describe("compareSeasons", () => {
@@ -202,6 +203,27 @@ describe("series repository updateSeries", () => {
       })
     );
     expect(result.logoUrl).toBe("https://example.com/logo.png");
+  });
+
+  it("rejects highlighting a series with no ongoing seasons", async () => {
+    const seriesId = "series-456";
+    const mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      }),
+      update: vi.fn(),
+    };
+
+    const repository = createSeriesRepositoryInternal(
+      mockDb as unknown as Parameters<typeof createSeriesRepositoryInternal>[0]
+    );
+    await expect(
+      repository.updateSeries(seriesId, { isOngoingHighlighted: true })
+    ).rejects.toThrow(SeriesHighlightWithoutOngoingError);
   });
 });
 

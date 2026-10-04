@@ -1,4 +1,4 @@
-import { renderWithProviders, screen } from '../../utils';
+import { createTestQueryClient, renderWithProviders, screen, waitFor } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SeriesDetailView } from '@/modules/videos/internal/SeriesDetailView';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
@@ -254,6 +254,63 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
 
     expect(scrapeEndpointCalled).toBe(true);
     expect(await screen.findByText(/Auto-scrape completed: 2 sources saved across 1 episode/i)).toBeInTheDocument();
+  });
+
+  it("invalidates the ['series'] query when auto-scrape succeeds", async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/series/ongoing-series-id')) {
+        return new Response(JSON.stringify({ data: mockSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/seasons/season-ongoing-id/scrape-ongoing')) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              seasonId: 'season-ongoing-id',
+              seriesId: 'ongoing-series-id',
+              success: true,
+              tmdbSynced: false,
+              episodesScraped: 1,
+              sourcesSaved: 1,
+              seasonCompleted: true,
+            },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    const queryClient = createTestQueryClient();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const { user } = renderWithProviders(
+      <>
+        <Toaster />
+        <SeriesDetailView seriesId="ongoing-series-id" initialSeasonId="season-ongoing-id" />
+      </>,
+      { queryClient }
+    );
+
+    await screen.findByRole('heading', { level: 1, name: 'Ongoing Anime Series' });
+
+    const menuBtn = screen.getByRole('button', { name: /season actions/i });
+    await user.click(menuBtn);
+
+    const autoScrapeBtn = await screen.findByRole('menuitem', { name: /run auto-scrape now/i });
+    await user.click(autoScrapeBtn);
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });
+    });
   });
 
   it('displays error toast when scrape-ongoing fails', async () => {

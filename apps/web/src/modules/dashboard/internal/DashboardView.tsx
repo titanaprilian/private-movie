@@ -31,6 +31,7 @@ export function DashboardView() {
     mutationFn: (seasonId: string) => scrapeOngoingSeason(seasonId),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['series'] });
       if (result.sourcesSaved > 0) {
         toast.success(
           `Scrape completed: ${result.sourcesSaved} source${result.sourcesSaved === 1 ? '' : 's'} saved across ${result.episodesScraped} episode${result.episodesScraped === 1 ? '' : 's'}`
