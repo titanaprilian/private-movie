@@ -19,7 +19,7 @@ When implementing a feature or fixing a bug, follow this strict execution sequen
    **Escalation guard**: if `/to-tickets` (step 3) ends up producing 3 or more tickets after a direct-to-ticket path was chosen, the agent must pause before any implementation begins and ask the user whether to back up and write a spec, or continue as-is.
 
 3. **to-tickets** → Break into tickets (test-writing tickets are priority #1, unblocked first)
-4. **implement** → Agents pick up tickets, write tests first (TDD), then implement
+- 4. **implement** → Agents pick up tickets, write tests first (TDD), then implement in an isolated git worktree (`../wt/ticket-<id>`). Editing in the main checkout is strictly forbidden.
 5. **code-review** → Orchestrator reviews each completed ticket
 6. **push-to-github** → Orchestrator pushes when all tickets are complete
 7. **deploy** → Deploy services to VPS, manage Caddy domains, or sync database
@@ -28,6 +28,7 @@ When implementing a feature or fixing a bug, follow this strict execution sequen
 
 ## Core Rules & Constraints
 
+- **Mandatory Worktree Isolation**: All ticket implementation (`implement`) **MUST** occur inside an isolated git worktree located at `../wt/ticket-<id>` on branch `ticket/<id>`. You are strictly forbidden from modifying or inspecting application code in the main checkout during implementation. Bootstrapping must use `scripts/wt-init.sh <id>` before any edits.
 - **Strict Isolation**: You are explicitly forbidden from reading or modifying the internal implementation details (`/internal/` directories) of any module unrelated to your current target feature.
 - **Import Restrictions**: ESLint/tooling enforces strict boundaries. You must never import from a module's `/internal/` folder from outside that module.
 - **Entry Points**: The only allowed export point for a module is `[app_root]/src/modules/<feature>/index.ts`. It must export a concrete implementation adhering to a strict interface.

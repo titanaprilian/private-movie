@@ -9,9 +9,31 @@ disable-model-invocation: true
 
 Implement the work described by one ticket. You are launched by hand, often alongside other agents working on other tickets at the same time. To keep your work isolated from theirs, you work in **your own git worktree on your own branch**, never in the main checkout. Your branch starts from the ticket's **Base**, a shared spec branch. After review, your branch is merged back into that spec branch (not into main), where later tickets pick it up.
 
-## 0. Get the ticket
+## ⚠️ GATE 0: Mandatory Worktree Isolation Check
 
-This skill runs in a fresh agent with no memory of the conversation that created the ticket — you start with nothing but a reference (an issue number or URL). Before doing anything else, fetch the actual ticket content from GitHub:
+**DO NOT OPEN OR EDIT ANY APPLICATION CODE IN THE MAIN CHECKOUT.**
+Before reading code files, running tests, or planning modifications, you **MUST** ensure you are running inside the ticket's isolated worktree:
+
+```bash
+git rev-parse --show-toplevel && git branch --show-current
+```
+
+1. **If already inside `../wt/ticket-<id>` on branch `ticket/<id>`**: Gate passed. Proceed to Section 1.
+2. **If currently in the main checkout or any other branch**: **STOP IMMEDIATELY**.
+   You MUST bootstrap your worktree first using the automated script:
+   ```bash
+   ./scripts/wt-init.sh <ticket-id>
+   ```
+   (If `wt-init.sh` asks for `<base>`, look up the ticket's `Base:` line or supply it: `./scripts/wt-init.sh <id> <base>`).
+   Then switch your working directory into the worktree:
+   ```bash
+   cd ../wt/ticket-<id>
+   ```
+   All subsequent steps, reads, edits, and terminal commands **MUST** take place within this worktree.
+
+## 1. Get the ticket & Verify Blockers
+
+This skill runs in a fresh agent with no memory of the conversation that created the ticket — you start with nothing but a reference (an issue number or URL). Fetch the ticket content from GitHub:
 
 ```bash
 gh issue view <number-or-url> --json title,body,labels,url,comments
@@ -42,27 +64,20 @@ A blocker counts as done only when it is **closed**, and a ticket is closed only
 
 If the ticket references a **Parent** issue (the spec), fetch that too (`gh issue view <parent-number>`) for full context before starting.
 
-## 1. Set up your worktree
+## 2. Worktree & Environment Verification
 
-Never edit files in the main checkout. Work only inside the worktree for this ticket, on branch `ticket/<id>`, where `<id>` is the issue number.
+Verify your setup before writing any code:
+1. Confirm current directory: `git rev-parse --show-toplevel` must point to `wt/ticket-<id>`.
+2. Confirm current branch: `git branch --show-current` must be `ticket/<id>`.
+3. Confirm database isolation: inspect `.env` to verify `DATABASE_URL` ends in `test_ticket_<id>`.
 
-1. Check where you are: `git rev-parse --show-toplevel` and `git branch --show-current`. If you are already inside a worktree on branch `ticket/<id>`, it was set up for you; skip to step 4.
-2. Otherwise create it from the latest tip of the ticket's **Base** branch. First confirm the branch exists on the remote; if it doesn't, stop and report (`/to-tickets` creates it when it publishes the tickets):
-
-   ```bash
-   git fetch origin
-   git ls-remote --exit-code --heads origin <base> >/dev/null
-   git worktree add --no-track -b ticket/<id> ../wt/ticket-<id> origin/<base>
-   ```
-
-   If the branch `ticket/<id>` already exists (you are resuming earlier work), omit the new-branch part: `git worktree add ../wt/ticket-<id> ticket/<id>`.
-
-3. Move into the new worktree and run every later command from inside it. Use its absolute path whenever a command could run from a different directory.
-4. Run `scripts/wt-setup.sh <id>` from inside the worktree. It copies the untracked `.env`, installs dependencies, creates an isolated test database named `test_ticket_<id>`, and points that worktree's `DATABASE_URL` at it (plus its own `PORT`, if your env files define one). Afterwards confirm that `DATABASE_URL` in the worktree's `.env` points at `test_ticket_<id>`.
-
+If `scripts/wt-setup.sh` did not run during `wt-init.sh`, or if you manually prepared the worktree, run:
+```bash
+scripts/wt-setup.sh <id>
+```
 If `scripts/wt-setup.sh` does not exist and the ticket needs integration tests (backend endpoints, middleware, CORS, auth guards), stop and report. Do **not** run integration tests against any shared database. Tickets that need only unit tests may proceed without it, but run `bun install` yourself first and say in your hand-back that no isolated database was set up.
 
-## 2. Implement
+## 3. Implement
 
 Use /tdd where possible, at pre-agreed seams.
 
@@ -129,7 +144,7 @@ After rebasing and before handing back, you **MUST** run the root verification c
 
 Then check each acceptance criterion in the ticket against what you actually ran. You will report the evidence for each one.
 
-## 3. Safe Schema Changes
+## 4. Safe Schema Changes
 
 If the ticket involves database schema changes (e.g., modifying `src/schema/index.ts` in the DB package):
 
@@ -139,7 +154,7 @@ If the ticket involves database schema changes (e.g., modifying `src/schema/inde
 4. Include a note in your hand-back message reminding the user to review the generated `.sql` file for data-loss (like dropped tables/columns) and to run `db:migrate` manually on their end.
 5. If the user explicitly asks you to run `db:push`, **DO NOT RUN IT**. Warn them that it bypasses SQL generation and can lead to immediate dataset loss, and ask them if they want to run it themselves (which they can do safely because it will be interactive).
 
-## 4. Hand back
+## 5. Hand back
 
 Commit your work on your ticket branch inside the worktree, replacing the temporary message with `#<id> — <ticket title>`. This is a local commit on an isolated branch only.
 
