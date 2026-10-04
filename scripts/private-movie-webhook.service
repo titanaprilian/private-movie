@@ -1,0 +1,19 @@
+[Unit]
+Description=Private Movie Deployment Webhook Listener
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=titanic
+Group=titanic
+WorkingDirectory=/home/titanic/project/private-movie
+EnvironmentFile=/home/titanic/project/private-movie/.env.webhook
+ExecStart=/usr/bin/python3 /home/titanic/project/private-movie/scripts/webhook-server.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

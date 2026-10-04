@@ -1,17 +1,7 @@
 name: Docker Publish
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/backend/**"
-      - "apps/web/**"
-      - "packages/**"
-      - "bun.lock"
-      - "package.json"
-      - "turbo.json"
-      - ".dockerignore"
-      - ".github/workflows/**"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -55,7 +45,7 @@ jobs:
 
   publish-backend:
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -93,7 +83,7 @@ jobs:
 
   publish-web:
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: needs.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -128,3 +118,37 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    needs: [changes, publish-backend, publish-web]
+    if: |
+      always() &&
+      needs.changes.result == 'success' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      (needs.publish-backend.result == 'success' || needs.publish-web.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine services to deploy
+        id: target
+        run: |
+          SERVICES=()
+          if [ "${{ needs.publish-backend.result }}" = "success" ]; then
+            SERVICES+=("backend")
+          fi
+          if [ "${{ needs.publish-web.result }}" = "success" ]; then
+            SERVICES+=("web")
+          fi
+          echo "services=${SERVICES[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger VPS deployment webhook
+        run: |
+          echo "Triggering deployment for services: ${{ steps.target.outputs.services }}"
+          RESPONSE=$(curl -f -sS -X POST "https://pmov.titanaprilian.me/deploy-webhook" \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 600 \
+            -d "{\"services\": \"${{ steps.target.outputs.services }}\", \"sha\": \"${{ github.sha }}\", \"ref\": \"${{ github.ref }}\"}")
+          echo "Response from VPS:"
+          echo "$RESPONSE"

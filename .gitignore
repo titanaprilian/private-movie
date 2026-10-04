@@ -3,8 +3,8 @@ dist/
 coverage/
 *.log
 .turbo/
-.env
-backup_*.sql
+.env*
+*.sql
 *.dump
 
 # Prompt & shell scratch references

@@ -76,3 +76,13 @@ jobs:
       - name: Run Android CI pipeline
         run: bun x turbo run typecheck lint test build --continue --filter=@repo/android-tv --env-mode=loose
 
+
+  publish-and-deploy:
+    name: Publish & Deploy
+    needs: [ci, android]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker-publish.yml
+    secrets: inherit

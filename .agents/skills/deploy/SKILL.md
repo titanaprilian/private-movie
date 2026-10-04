@@ -22,8 +22,25 @@ Deploy and manage services on the production VPS over SSH (`hostdataid`).
 
 ---
 
-## 1. Deployment Workflow (Full or Selective)
+## 1. Automated Continuous Deployment (CD)
 
+A webhook listener runs on the VPS (`private-movie-webhook.service` on port `9000`), reverse-proxied by Caddy at `https://pmov.titanaprilian.me/deploy-webhook`.
+
+When commits are pushed or merged to `main`:
+1. GitHub Actions `CI` (`.github/workflows/ci.yml`) runs tests, typechecks, lints, and builds.
+2. If all CI checks pass, it triggers `docker-publish.yml` via `workflow_call`.
+3. Docker images are built and pushed to GHCR for changed services (`backend` and/or `web`).
+4. The `deploy` job triggers `https://pmov.titanaprilian.me/deploy-webhook` with `X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}`.
+5. On the VPS, `scripts/deploy.sh` executes:
+   - `git pull origin main`
+   - Checks `packages/db/drizzle/*.sql` for new migrations and executes `db:migrate` (never `db:seed`)
+   - `docker compose pull <services>`
+   - `docker compose up -d --remove-orphans <services>`
+   - Health verification via `/api/health`
+
+---
+
+## 2. Manual Deployment Workflow (SSH Alternative)
 ### Step 1: Verify GitHub Actions Build
 Before deploying to VPS, verify that the GitHub Actions `Docker Publish` workflow has completed successfully for the latest commit on `main`:
 
