@@ -27,19 +27,19 @@ export const createApp = (deps: CreateAppDeps) => {
   const appConfig = loadAppConfig();
 
   const storageService =
-    overrides.storageService === undefined
+    overrides.storage?.service === undefined
       ? createStorageService(db, {
           s3StorageService: overrides.s3StorageService,
           storageProviderRegistry: overrides.storageProviderRegistry,
-          minioInspector: overrides.minioInspector,
-          minioContainerStarter: overrides.minioContainerStarter,
-          minioHealthChecker: overrides.minioHealthChecker,
-          minioBucketProvisioner: overrides.minioBucketProvisioner,
+          minioInspector: overrides.storage?.minioInspector,
+          minioContainerStarter: overrides.storage?.minioContainerStarter,
+          minioHealthChecker: overrides.storage?.minioHealthChecker,
+          minioBucketProvisioner: overrides.storage?.minioBucketProvisioner,
         })
-      : overrides.storageService;
+      : overrides.storage.service;
   const storageUsageProvider =
-    overrides.storageUsageProvider !== undefined
-      ? overrides.storageUsageProvider
+    overrides.storage?.usageProvider !== undefined
+      ? overrides.storage.usageProvider
       : storageService;
 
   const shared = {
@@ -85,10 +85,7 @@ export const createApp = (deps: CreateAppDeps) => {
           storageRoutes({
             ...shared,
             storageService: storageService ?? undefined,
-            minioInspector: overrides.minioInspector,
-            minioContainerStarter: overrides.minioContainerStarter,
-            minioHealthChecker: overrides.minioHealthChecker,
-            minioBucketProvisioner: overrides.minioBucketProvisioner,
+            overrides: overrides.storage,
           })
         )
     );

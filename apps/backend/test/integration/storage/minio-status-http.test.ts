@@ -28,7 +28,9 @@ function minioRow(overrides: Record<string, unknown> = {}) {
 describe("MinIO Status HTTP API (/api/storage/minio/status)", () => {
   it("requires authentication", async () => {
     const app = await buildApp({
-      minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+      storage: {
+        minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+      },
     });
     const res = await request(app, {
       method: "GET",
@@ -39,7 +41,9 @@ describe("MinIO Status HTTP API (/api/storage/minio/status)", () => {
 
   it("reports running + configured state with provider details", async () => {
     const app = await buildApp({
-      minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+      storage: {
+        minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+      },
     });
     const { accessToken } = await registerUser(app);
     await db.insert(storageProviders).values([minioRow()]);
@@ -64,7 +68,9 @@ describe("MinIO Status HTTP API (/api/storage/minio/status)", () => {
   it("reports stopped container state and running-but-unconfigured state", async () => {
     // Stopped + configured
     const stoppedApp = await buildApp({
-      minioInspector: async () => ({ isAvailable: true, isRunning: false }),
+      storage: {
+        minioInspector: async () => ({ isAvailable: true, isRunning: false }),
+      },
     });
     const { accessToken } = await registerUser(stoppedApp);
     await db.insert(storageProviders).values([minioRow()]);
@@ -84,7 +90,9 @@ describe("MinIO Status HTTP API (/api/storage/minio/status)", () => {
     // (truncation only runs between tests, not between blocks in one test).
     await db.delete(storageProviders);
     const runningApp = await buildApp({
-      minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+      storage: {
+        minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+      },
     });
     const secondUser = await registerUser(runningApp);
     const runningRes = await request(runningApp, {
@@ -102,7 +110,9 @@ describe("MinIO Status HTTP API (/api/storage/minio/status)", () => {
 
   it("reports unavailable when docker socket is missing", async () => {
     const app = await buildApp({
-      minioInspector: async () => ({ isAvailable: false, isRunning: false }),
+      storage: {
+        minioInspector: async () => ({ isAvailable: false, isRunning: false }),
+      },
     });
     const { accessToken } = await registerUser(app);
 
@@ -120,7 +130,9 @@ describe("MinIO Status HTTP API (/api/storage/minio/status)", () => {
 
   it("prefers the enabled default provider when multiple minio records exist", async () => {
     const app = await buildApp({
-      minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+      storage: {
+        minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+      },
     });
     const { accessToken } = await registerUser(app);
     await db.insert(storageProviders).values([

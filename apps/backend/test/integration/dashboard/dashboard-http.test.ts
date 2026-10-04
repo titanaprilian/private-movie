@@ -364,7 +364,9 @@ describe("GET /api/admin/dashboard storage usage", () => {
 
   beforeAll(async () => {
     app = await buildApp({
-      storageUsageProvider: { async getTotalUsedBytes() { return 5 * GB; } },
+      storage: {
+        usageProvider: { async getTotalUsedBytes() { return 5 * GB; } },
+      },
     });
     const auth = await registerUser(app);
     headers = authHeaders(auth.accessToken);
@@ -383,9 +385,11 @@ describe("GET /api/admin/dashboard storage usage", () => {
 
   it("falls back to untracked (0 used) when the usage provider throws", async () => {
     const failingApp = await buildApp({
-      storageUsageProvider: {
-        async getTotalUsedBytes() {
-          throw new Error("S3 unreachable");
+      storage: {
+        usageProvider: {
+          async getTotalUsedBytes() {
+            throw new Error("S3 unreachable");
+          },
         },
       },
     });

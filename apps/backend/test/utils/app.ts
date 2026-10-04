@@ -1,12 +1,7 @@
 import type { createApp } from "@/app";
 import type { CreateAppOverrides } from "@/app-types";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
-import type {
-  MinioBucketProvisioner,
-  MinioContainerInspector,
-  MinioContainerStarter,
-  MinioHealthChecker,
-} from "@/modules/storage";
+import type { StorageOverrides } from "@/modules/storage";
 
 export type App = ReturnType<typeof createApp>;
 
@@ -30,10 +25,7 @@ export interface BuildAppOptions extends CreateAppOverrides {
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
-  minioInspector?: MinioContainerInspector;
-  minioContainerStarter?: MinioContainerStarter;
-  minioHealthChecker?: MinioHealthChecker;
-  minioBucketProvisioner?: MinioBucketProvisioner;
+  storage?: StorageOverrides;
 }
 
 /**
@@ -76,13 +68,8 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
       archiveFetchFn: options?.archiveFetchFn,
       archiveExtractFn: options?.archiveExtractFn,
       archiveStagingBaseDir: options?.archiveStagingBaseDir,
-      minioInspector: options?.minioInspector,
-      minioContainerStarter: options?.minioContainerStarter,
-      minioHealthChecker: options?.minioHealthChecker,
-      minioBucketProvisioner: options?.minioBucketProvisioner,
       scheduler: options?.scheduler ?? createTestScheduler(),
-      storageService: options?.storageService,
-      storageUsageProvider: options?.storageUsageProvider ?? null,
+      storage: options?.storage,
       // Rate limiting is disabled by default in tests. Suites asserting
       // throttling behavior opt in explicitly via these overrides.
       rateLimit: options?.rateLimit ?? { disabled: true },

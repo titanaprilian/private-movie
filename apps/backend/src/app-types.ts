@@ -11,10 +11,7 @@ import type { OngoingSeasonScheduler } from "./modules/media/scheduler";
 import type { RateLimitPluginOptions } from "./plugins";
 import type { ArchiveExtractFn, ArchiveFetchFn } from "./modules/series";
 import type {
-  MinioBucketProvisioner,
-  MinioContainerInspector,
-  MinioContainerStarter,
-  MinioHealthChecker,
+  StorageOverrides,
   StorageService,
 } from "./modules/storage";
 
@@ -42,12 +39,7 @@ export interface CreateAppOverrides {
   archiveExtractFn?: ArchiveExtractFn;
   archiveStagingBaseDir?: string;
   scheduler?: SchedulerDeps | null;
-  storageService?: StorageService | null;
-  storageUsageProvider?: StorageUsageProvider | null;
-  minioInspector?: MinioContainerInspector;
-  minioContainerStarter?: MinioContainerStarter;
-  minioHealthChecker?: MinioHealthChecker;
-  minioBucketProvisioner?: MinioBucketProvisioner;
+  storage?: StorageOverrides;
   rateLimit?: RateLimitPluginOptions;
   authRateLimit?: AuthRateLimitOptions;
 }
