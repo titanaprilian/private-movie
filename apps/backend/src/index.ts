@@ -5,11 +5,13 @@ import { createApp } from "./app";
 import { loadServerConfig } from "./config/server-config";
 import { createAuthenticationService } from "./modules/authentication";
 import { startOngoingSeasonScheduler } from "./modules/media";
+import { createStorageService } from "./modules/storage";
 import { createShutdownManager } from "./shutdown";
 
 const db = createDbClient(process.env.DATABASE_URL);
 const auth = createAuthenticationService(db);
 const s3StorageService = createS3StorageService();
+const storageService = createStorageService(db, { s3StorageService });
 const browser = await createStealthBrowser();
 const mediaService = createMediaService(db, { browserFn: browser.browserFn, s3StorageService });
 const scheduler = await startOngoingSeasonScheduler({ db, mediaService });
@@ -18,6 +20,7 @@ const serverConfig = loadServerConfig();
 const app = createApp({
   db,
   auth,
+  storageService,
   overrides: { browserFn: browser.browserFn, s3StorageService, scheduler },
 }).listen(serverConfig);
 

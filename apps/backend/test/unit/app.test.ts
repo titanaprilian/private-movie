@@ -2,12 +2,18 @@ import { describe, it, expect, vi } from "vitest";
 import { createApp } from "@/app";
 import type { DbClient } from "@repo/db";
 import type { AuthenticationService } from "@repo/contracts";
+import type { StorageService } from "@/modules/storage";
+
+const storageServiceFake = {
+  getTotalUsedBytes: async () => null,
+} as unknown as StorageService;
 
 describe("composition root global error handler", () => {
   it("passes through 404 for unknown routes (NOT_FOUND)", async () => {
     const app = createApp({
       db: {} as unknown as DbClient,
       auth: {} as unknown as AuthenticationService,
+      storageService: storageServiceFake,
     });
 
     const response = await app.handle(
@@ -32,6 +38,7 @@ describe("composition root global error handler", () => {
     const app = createApp({
       db: mockDb,
       auth: {} as unknown as AuthenticationService,
+      storageService: storageServiceFake,
     });
 
     const response = await app.handle(

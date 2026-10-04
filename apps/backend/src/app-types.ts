@@ -38,7 +38,7 @@ export interface CreateAppOverrides {
   archiveFetchFn?: ArchiveFetchFn;
   archiveExtractFn?: ArchiveExtractFn;
   archiveStagingBaseDir?: string;
-  scheduler?: SchedulerDeps | null;
+  scheduler?: SchedulerDeps;
   storage?: StorageOverrides;
   rateLimit?: RateLimitPluginOptions;
   authRateLimit?: AuthRateLimitOptions;
@@ -47,5 +47,6 @@ export interface CreateAppOverrides {
 export interface CreateAppDeps {
   db: DbClient;
   auth: AuthenticationService;
+  storageService: StorageService;
   overrides?: CreateAppOverrides;
 }

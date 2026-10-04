@@ -36,12 +36,24 @@ export interface BuildAppOptions extends CreateAppOverrides {
 export async function buildApp(options?: BuildAppOptions): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
+  const { createStorageService } = await import("@/modules/storage");
   const { createDbClient } = await import("@repo/db");
   const { readFileSync } = await import("node:fs");
   const { resolve } = await import("node:path");
 
   const db = createDbClient(process.env.DATABASE_URL);
   const auth = createAuthenticationService(db);
+
+  const storageService =
+    options?.storage?.service ??
+    createStorageService(db, {
+      s3StorageService: options?.s3StorageService,
+      storageProviderRegistry: options?.storageProviderRegistry,
+      minioInspector: options?.storage?.minioInspector,
+      minioContainerStarter: options?.storage?.minioContainerStarter,
+      minioHealthChecker: options?.storage?.minioHealthChecker,
+      minioBucketProvisioner: options?.storage?.minioBucketProvisioner,
+    });
 
   const defaultFetchHtml: FetchFn = {
     async get() {
@@ -60,6 +72,7 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
   return createApp({
     db,
     auth,
+    storageService,
     overrides: {
       fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
       browserFn: options?.browserFn ?? defaultBrowserFn,
