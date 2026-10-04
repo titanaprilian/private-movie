@@ -1,4 +1,4 @@
-import { renderWithProviders, screen, waitFor } from '../../utils';
+import { createTestQueryClient, renderWithProviders, screen, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { setAccessToken } from '@/lib/api';
 import { DashboardView } from '@/modules/dashboard';
@@ -266,5 +266,44 @@ describe('DashboardView', () => {
     expect(await screen.findByTestId('ongoing-empty')).toHaveTextContent(
       'No seasons are marked as ongoing'
     );
+  });
+
+  it("invalidates the ['series'] query when auto-scrape succeeds", async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : (input as Request).url;
+      if (url.includes('scrape-ongoing')) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              seasonId: 'season-ongoing-1',
+              seriesId: 'series-ongoing-1',
+              success: true,
+              tmdbSynced: false,
+              episodesScraped: 2,
+              sourcesSaved: 2,
+              seasonCompleted: true,
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response(JSON.stringify(dashboardPayload), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    const queryClient = createTestQueryClient();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const { user } = renderWithProviders(<DashboardView />, { queryClient });
+    const scrapeBtn = await screen.findByTestId('ongoing-scrape-season-ongoing-1');
+    await user.click(scrapeBtn);
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });
+    });
   });
 });

@@ -122,7 +122,7 @@ export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleH
                 Ongoing
               </span>
             )}
-            {isHighlighted && (
+            {isHighlighted && isOngoing && (
               <span
                 className={cn(
                   'inline-flex items-center justify-center',
