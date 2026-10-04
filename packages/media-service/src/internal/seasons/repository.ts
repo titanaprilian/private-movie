@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, count, eq, isNotNull, ne } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, seasons, type SeasonRow } from "@repo/db";
+import { episodes, seasons, series, type SeasonRow } from "@repo/db";
 
 export class SeasonNotFoundError extends Error {
   constructor(message = "Season not found") {
@@ -85,6 +85,28 @@ export function createSeasonsRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
 >(db: PgDatabase<THKT, TSchema>) {
+  async function clearHighlightIfNoOngoing(
+    seriesId: string,
+    runner?: { select: any; update: any },
+  ): Promise<void> {
+    const client: any = runner ?? db;
+    const remainingQuery = client
+      .select({ id: seasons.id })
+      .from(seasons)
+      .where(and(eq(seasons.seriesId, seriesId), eq(seasons.status, "ongoing")));
+    // Support mock db shapes in unit tests that lack `.limit()`.
+    const remaining =
+      typeof remainingQuery?.limit === "function"
+        ? await remainingQuery.limit(1)
+        : await remainingQuery;
+    if (!remaining || remaining.length === 0) {
+      await client
+        .update(series)
+        .set({ isOngoingHighlighted: false, updatedAt: new Date() })
+        .where(and(eq(series.id, seriesId), eq(series.isOngoingHighlighted, true)));
+    }
+  }
+
   return {
     async upsert(input: SeasonUpsertInput): Promise<SeasonRow> {
       const now = new Date();
@@ -211,6 +233,10 @@ export function createSeasonsRepositoryInternal<
         throw new SeasonNotFoundError(`Season with id ${id} not found`);
       }
 
+      if (input.status !== undefined && input.status !== "ongoing") {
+        await clearHighlightIfNoOngoing(existing.seriesId);
+      }
+
       return row;
     },
 
@@ -222,6 +248,14 @@ export function createSeasonsRepositoryInternal<
     },
 
     async deleteSeason(id: string): Promise<void> {
+      const [existing] = await db
+        .select()
+        .from(seasons)
+        .where(eq(seasons.id, id));
+      if (!existing) {
+        throw new SeasonNotFoundError(`Season with id ${id} not found`);
+      }
+
       const [{ value }] = await db
         .select({ value: count() })
         .from(episodes)
@@ -234,6 +268,10 @@ export function createSeasonsRepositoryInternal<
       const result = await db.delete(seasons).where(eq(seasons.id, id)).returning();
       if (result.length === 0) {
         throw new SeasonNotFoundError(`Season with id ${id} not found`);
+      }
+
+      if (existing.status === "ongoing") {
+        await clearHighlightIfNoOngoing(existing.seriesId);
       }
     },
 
