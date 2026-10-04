@@ -145,10 +145,49 @@ jobs:
       - name: Trigger VPS deployment webhook
         run: |
           echo "Triggering deployment for services: ${{ steps.target.outputs.services }}"
-          RESPONSE=$(curl -f -sS -X POST "https://pmov.titanaprilian.me/deploy-webhook" \
+          HTTP_CODE=$(curl -s -o /tmp/deploy_trigger.json -w "%{http_code}" -X POST "https://pmov.titanaprilian.me/deploy-webhook" \
             -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}" \
             -H "Content-Type: application/json" \
-            --max-time 600 \
+            --max-time 30 \
             -d "{\"services\": \"${{ steps.target.outputs.services }}\", \"sha\": \"${{ github.sha }}\", \"ref\": \"${{ github.ref }}\"}")
-          echo "Response from VPS:"
-          echo "$RESPONSE"
+
+          echo "Trigger response (HTTP $HTTP_CODE):"
+          cat /tmp/deploy_trigger.json
+          echo ""
+
+          if [ "$HTTP_CODE" -ne 202 ] && [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Failed to queue deployment (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+
+      - name: Wait for VPS deployment to complete
+        run: |
+          MAX_WAIT=600
+          ELAPSED=0
+          INTERVAL=10
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+
+            STATUS_JSON=$(curl -s -f "https://pmov.titanaprilian.me/deploy-status" \
+              -H "X-Deploy-Token: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}" || echo '{"status":"unknown"}')
+
+            STATUS=$(echo "$STATUS_JSON" | jq -r '.status // "unknown"')
+            echo "[+${ELAPSED}s] Deployment status: $STATUS"
+
+            if [ "$STATUS" = "success" ]; then
+              echo "Deployment succeeded on VPS!"
+              echo "=== VPS Deployment Output ==="
+              echo "$STATUS_JSON" | jq -r '.output // "No output"'
+              exit 0
+            elif [ "$STATUS" = "error" ]; then
+              echo "::error::Deployment failed on VPS!"
+              echo "=== VPS Deployment Error Output ==="
+              echo "$STATUS_JSON" | jq -r '.output // "No output"'
+              exit 1
+            fi
+          done
+
+          echo "::error::Deployment timed out after ${MAX_WAIT}s"
+          exit 1

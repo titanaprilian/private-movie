@@ -31,10 +31,13 @@ else
   TARGET_SERVICES="$*"
 fi
 
+# 2. Record current commit SHA
+PREV_SHA="$(git rev-parse HEAD 2>/dev/null || echo '')"
+
 # 3. Pull latest git changes
 log "Pulling latest changes from origin main..."
 git fetch origin main
-git checkout -B main origin/main
+git reset --hard origin/main
 
 NEW_SHA="$(git rev-parse HEAD)"
 log "Repository updated: ${PREV_SHA:0:7} -> ${NEW_SHA:0:7}"
