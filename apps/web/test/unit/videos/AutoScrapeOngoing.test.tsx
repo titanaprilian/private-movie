@@ -257,7 +257,7 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
   });
 
   it("invalidates the ['series'] query when auto-scrape succeeds", async () => {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
       if (url.includes('/series/ongoing-series-id')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
