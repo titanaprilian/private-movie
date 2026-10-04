@@ -1,38 +1,34 @@
 ---
 name: push-to-github
-description: "Push committed work to GitHub. Always asks the user first whether to push directly to the main branch or create a dedicated branch and open a pull request — never assumes. Run by the orchestrator agent after code-review has committed the change locally."
+description: "Push the combined spec branch to GitHub and open a pull request. Runs final monorepo checks before pushing. Run by the orchestrator agent after all tickets have been locally merged into the spec branch."
 disable-model-invocation: true
 ---
 
 # Push to GitHub
 
-Get already-committed work up onto GitHub. This runs after `code-review` has committed locally — this skill's job is getting those commits onto the remote, not reviewing or committing them itself.
+Get the combined spec branch up onto GitHub as a Pull Request. This runs after `pragmatic-code-review` has locally merged all approved tickets into the shared spec branch (e.g. `spec/<slug>`). This skill's job is verifying the combined work, getting it onto the remote, and opening the PR.
 
-## 0. Sanity check before asking anything
+## 1. Sanity check & Checkout
 
-- `git status` — if there are uncommitted or staged-but-uncommitted changes, stop and flag it. This skill pushes what's already committed; it doesn't commit on someone else's behalf.
-- `git log origin/<default-branch>..HEAD` (or equivalent) — confirm there's actually something to push. If already up to date, say so and stop.
-- `gh repo view --json nameWithOwner,defaultBranchRef` — confirm the repo and its default branch. Consult **gh-cli** if auth/repo targeting is unclear.
+- `git status` — if there are uncommitted changes, stop and flag it.
+- Confirm you are on the delivery branch (e.g. `spec/<slug>`). If not, check it out.
+- `gh repo view --json nameWithOwner,defaultBranchRef` — confirm the repo and its default branch (`main`).
 
-## 1. Ask the user — always, every time
+## 2. Final Verification (Mandatory)
 
-Before touching the remote, ask:
+Because multiple tickets may have been merged into this branch in parallel, you must run the full monorepo checks to ensure the combined code doesn't conflict or break:
 
-> Do you want to push this directly to `<default-branch>`, or create a dedicated branch and open a pull request?
+- `bun run typecheck`
+- `bun run lint`
+- `bun run test` (runs all unit tests via Turbo)
 
-Don't infer this from context, ticket labels, or past behavior in the conversation — always ask explicitly. This is a one-way door (a direct push to main is live immediately; a PR is reversible up until merge), so silent defaults aren't appropriate here.
+If any of these checks fail, **stop immediately**. Report the failure to the user. Do not push broken code to the remote.
 
-## 2a. Direct push to main
+## 3. Push and Open PR
 
-- Pull/rebase onto the latest `<default-branch>` first if local is behind — never push a stale branch and let it silently create divergent history.
-- Run the project's typecheck + full test suite once more immediately before pushing, since time may have passed since `code-review` last ran them.
-- `git push origin <default-branch>`.
-- If the push is rejected (branch protection, required reviews, non-fast-forward), don't force-push. Report the rejection reason to the user and ask how they want to proceed — this is exactly the situation branch protection exists to catch.
+Once checks pass, push the branch and open the PR. You do **not** need to ask the user whether to push directly to main — this project always uses Pull Requests.
 
-## 2b. Dedicated branch + pull request
-
-- Branch naming: derive from the ticket, e.g. `<ticket-number>-<short-slug>` (matches the ticket's title/slug from `to-tickets`). If there's no ticket in play, ask the user for a branch name rather than guessing.
-- `git checkout -b <branch-name>` (if not already on it), then `git push -u origin <branch-name>`.
+- `git push -u origin <current-branch-name>`
 - Open the PR with the `gh` CLI — consult **gh-cli** for the mechanics (safe `--body-file` heredocs, capturing the returned URL):
 
 ```bash
@@ -43,13 +39,13 @@ gh pr create \
   --head <branch-name>
 ```
 
-- PR body should reference the parent spec/PRD it closes, e.g. `Closes #<parent-spec-number>`, so merging auto-closes the main feature spec. Summarize what changed and how it was verified (tests run, acceptance criteria met) across all the tickets batched in this PR.
+- **CRITICAL**: The PR body MUST explicitly include `Closes #<parent-spec-number>` so that merging the PR automatically closes the parent spec issue. Summarize what changed across all the tickets batched in this PR.
 - **Parent Spec/PRD Update**: 
   - ALWAYS leave a short comment on the parent spec/PRD issue (`gh issue comment`) containing a link to this newly created PR, indicating that the batched work is now in review and will close the spec upon merge.
-- Report the PR URL back to the user. Don't merge it yourself — opening the PR is the end of this skill's job; merging is a separate human (or explicitly separate) decision.
+- Report the PR URL back to the user. Don't merge it yourself — opening the PR is the end of this skill's job; merging is a separate human decision.
 
 ## Never
 
 - Never force-push (`--force` / `--force-with-lease`) without the user explicitly asking for it in that moment.
-- Never push directly to main without having asked in step 1, even if a previous run of this skill in the same session chose that option — ask again each time.
+- Never push directly to main. All work goes through a Pull Request.
 - Never merge a PR as part of this skill.

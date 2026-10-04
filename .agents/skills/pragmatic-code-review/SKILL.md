@@ -1,40 +1,29 @@
 ---
 name: pragmatic-code-review
-description: "Review the work another agent produced while implementing a ticket (a branch, PR, or diff) for code smells and design problems using core Pragmatic Programmer principles (DRY as knowledge duplication, orthogonality/coupling, broken windows, tracer bullets, reversibility, programming by coincidence, design by contract, YAGNI/good-enough software) plus this user's Deep Modules convention. Checks the implementation against the ticket's acceptance criteria, then produces a structured, non-interactive findings report with a verdict (approve / approve with follow-ups / request changes) that the implementing agent or a human can act on. When the verdict is an approval, closes the ticket automatically without asking for confirmation. Use whenever an agent is asked to review, audit, or critique another agent's implementation of a ticket, or to find smells in a changed app/module before merge."
+description: "Review the work another agent produced while implementing a ticket inside its isolated worktree. Validates acceptance criteria, runs checks (typecheck/lint/test), and hunts code smells using core Pragmatic Programmer principles. On approval, merges the ticket branch into the spec delivery branch locally, cleans up the worktree and test database, and closes the ticket. Never pushes to remote."
 ---
 
 # Pragmatic Code Review
 
-A non-interactive review workflow for **checking another agent's implementation
-of a ticket**. You are the reviewer, not the implementer: read the ticket, read
-the change, judge it against Pragmatic Programmer principles, and hand back a
-report the implementer can act on without a follow-up conversation.
+A non-interactive review workflow for **checking another agent's implementation of a ticket**. The implementer hands back a local branch (`ticket/<id>`) inside an isolated worktree (`wt/ticket-<id>`). You are the reviewer: verify the checks, read the diff against the spec branch, judge it against Pragmatic Programmer principles, and hand back a report.
 
 Rules of engagement:
 
-- **Do not modify the code under review.** Findings go in the report; fixes are
-  the implementer's job (or a later ticket's).
-- **Do not interview the user or ask clarifying questions mid-review.** If
-  something is ambiguous, record it as an assumption or an open question in the
-  report and keep going.
+- **Do not modify the code under review.** Findings go in the report; fixes are the implementer's job (or a later ticket's).
+- **Do not interview the user or ask clarifying questions mid-review.** If something is ambiguous, record it as an assumption or an open question in the report and keep going.
 - **Review the change, not the whole codebase.** Stay anchored to the ticket.
-- **Approval closes the ticket automatically** (Step 5) — no confirmation from
-  the user is needed. This is the only action beyond writing the report.
+- **Approval auto-merges and closes** (Step 5). If approved, you will locally merge the branch into the spec branch, clean up the worktree and database, and close the ticket automatically. You do **not** push to GitHub; pushing is handled separately.
 
-## Step 1 — Establish scope
+## Step 1 — Establish scope & Verify checks
 
-1. **Find the ticket.** Read its description and acceptance criteria (e.g. the
-   GitHub issue via `gh issue view <n>`). The ticket defines "done"; without it
-   you can't tell a bug from a design choice or scope creep from a requirement.
-2. **Find the change.** Identify the branch / PR / commit range and get the diff
-   (e.g. `gh pr diff <n>` or `git diff <base>...<head>`). List the changed
-   files and the modules they belong to.
-3. **Read beyond the diff where needed.** For each changed file, read enough of
-   the surrounding code and its callers/importers to judge whether the change
-   fits — don't review hunks in isolation, and don't guess from file names.
-4. If the ticket or diff genuinely can't be found, say so at the top of the
-   report, state what you reviewed instead, and continue with the best
-   available scope.
+1. **Find the ticket.** Read its description and acceptance criteria (`gh issue view <n>`). This defines "done".
+2. **Navigate to the worktree.** The implementer should have given you the absolute path to their worktree (e.g. `../wt/ticket-<id>`). Move into it.
+3. **Verify the checks.** Do not just take the implementer's word. Inside their worktree, run:
+   - `bun run typecheck`
+   - `bun run lint`
+   - The targeted tests or `bun run test` (as appropriate for the changes).
+4. **Find the change.** Identify the `Base` branch from the ticket (usually `spec/<slug>`). Get the diff (`git diff <base>...ticket/<id>`).
+5. **Read beyond the diff.** For each changed file, read enough of the surrounding code and its callers/importers to judge whether the change fits.
 
 ## Step 2 — Check the ticket first
 
@@ -124,31 +113,37 @@ Verdict rules:
 Omit any empty section rather than writing "none," except the verdict,
 acceptance criteria, and assumptions line, which are always present.
 
-## Step 5 — Close the ticket on approval
+## Step 5 — Merge, Cleanup, and Close (on approval)
 
-If the verdict is **Approve** or **Approve with follow-ups**, close the ticket
-**immediately and without asking the user for confirmation** — the approval is
-the go-ahead. Post the report and close in one step, e.g.:
+If the verdict is **Approve** or **Approve with follow-ups**, execute the merge and cleanup **immediately and without asking the user for confirmation**:
 
+1. **Merge locally:**
+   Checkout the ticket's Base branch (e.g., `spec/<slug>`) in the main repository checkout, and merge the ticket branch into it.
+   ```bash
+   cd <main-repo-root>
+   git checkout <base>
+   git merge ticket/<id>
+   ```
+2. **Close the ticket with the report:**
+   Post the review report and close the ticket in one step:
+   ```bash
+   gh issue close <id> --reason completed --comment-file <report.md>
+   ```
+3. **Clean up the environment:**
+   Drop the isolated test database and remove the worktree/branch.
+   ```bash
+   dropdb --if-exists test_ticket_<id>
+   git worktree remove ../wt/ticket-<id> --force
+   git branch -D ticket/<id>
+   ```
+
+**If the verdict is "Request changes":**
+Do **not** merge, clean up, or close the ticket. Post the report as a comment leaving the ticket open, and leave the worktree, branch, and test database intact for the implementer to resume.
+
+```bash
+gh issue comment <id> --body-file <report.md>
 ```
-gh issue close <n> --reason completed --comment-file <report.md>
-```
-
-(or `gh issue comment <n> --body-file <report.md>` followed by
-`gh issue close <n> --reason completed` if the flag isn't available).
-
-- Include the full report in the closing comment so the follow-ups and
-  non-blocking findings stay attached to the ticket.
-- If the verdict is **Request changes**, do **not** close the ticket. Post the
-  report as a comment and leave the ticket open for the implementer.
-- Closing the ticket does not include merging the PR or deleting the branch;
-  leave those to the normal workflow unless the invoking task says otherwise.
-- If the close command fails (permissions, wrong repo, already closed), report
-  the error at the end of your reply rather than retrying in a loop.
 
 ## Step 6 — Stop
 
-The review ends with the report and, on approval, the closed ticket. Do not
-start implementing fixes, do not open new tickets unless the invoking task
-explicitly asks, and do not re-review until the implementer has pushed changes
-in response.
+The review ends with the report and, on approval, the merged local branch and cleaned-up environment. Do not push the `spec/<slug>` branch to origin — remote pushing is handled by `/push-to-github`. Do not start implementing fixes or open new tickets unless explicitly asked.
