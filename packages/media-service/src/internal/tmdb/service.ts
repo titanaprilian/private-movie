@@ -193,6 +193,7 @@ export interface TmdbSyncInput {
   type: "tv" | "movie";
   tmdbId: number;
   includeSpecials?: boolean;
+  skipGenres?: boolean;
 }
 
 export interface TmdbSyncPreviewInput {

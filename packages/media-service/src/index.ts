@@ -1217,16 +1217,17 @@ export function createMediaService<
           })
           .where(eq(series.id, seriesId));
 
-        await tx
-          .delete(seriesToGenres)
-          .where(eq(seriesToGenres.seriesId, seriesId));
+        if (!input.skipGenres) {
+          await tx
+            .delete(seriesToGenres)
+            .where(eq(seriesToGenres.seriesId, seriesId));
 
-        const rawGenres = data.genres || [];
-        const genreNames = Array.from(
-          new Set(rawGenres.map((g) => g.trim()).filter(Boolean))
-        );
+          const rawGenres = data.genres || [];
+          const genreNames = Array.from(
+            new Set(rawGenres.map((g) => g.trim()).filter(Boolean))
+          );
 
-        if (genreNames.length > 0) {
+          if (genreNames.length > 0) {
           const genreValues = genreNames.map((name) => ({
             id: randomUUID(),
             name,
@@ -1256,6 +1257,7 @@ export function createMediaService<
               .insert(seriesToGenres)
               .values(seriesToGenreRows)
               .onConflictDoNothing();
+          }
           }
         }
 
@@ -1460,6 +1462,7 @@ export function createMediaService<
             await this.syncTmdb(targetSeries.id, {
               type: (targetSeries.type === "movie" ? "movie" : "tv"),
               tmdbId: targetSeries.tmdbId,
+              skipGenres: true,
             });
             tmdbSynced = true;
           } catch (tmdbErr) {
