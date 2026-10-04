@@ -1,10 +1,9 @@
 import { Elysia, t } from "elysia";
-import { and, eq } from "drizzle-orm";
 import {
   SCRAPER_PROVIDERS,
   type AuthenticationService,
 } from "@repo/contracts";
-import { seasons, type DbClient } from "@repo/db";
+import type { DbClient } from "@repo/db";
 import {
   createEpisodeRepositoryInternal,
   createMediaService,
@@ -19,7 +18,6 @@ import {
   type StorageProviderRegistry,
 } from "@repo/media-service";
 import { authGuard } from "../../lib/auth";
-import { SeriesHighlightWithoutOngoingError } from "../../lib/errors";
 import { successResponse } from "../../lib/response";
 import { ArchiveIngestService, sseResponse } from "./internal/archive-ingest";
 import type { ArchiveExtractFn, ArchiveFetchFn } from "./internal/archive-ingest";
@@ -95,16 +93,6 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
         : {}),
     });
 
-  async function rejectHighlightWithoutOngoing(seriesId: string): Promise<void> {
-    const ongoing = await options.db
-      .select({ id: seasons.id })
-      .from(seasons)
-      .where(and(eq(seasons.seriesId, seriesId), eq(seasons.status, "ongoing")))
-      .limit(1);
-    if (ongoing.length === 0) {
-      throw new SeriesHighlightWithoutOngoingError();
-    }
-  }
 
   return new Elysia({ name: "series-routes" })
     .get(
@@ -260,9 +248,6 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
     .put(
       "/series/:id",
       async ({ params, body }) => {
-        if (body.isOngoingHighlighted === true) {
-          await rejectHighlightWithoutOngoing(params.id);
-        }
         const updated = await seriesRepository.updateSeries(params.id, body);
         return successResponse(updated);
       },
@@ -290,9 +275,6 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
     .patch(
       "/series/:id",
       async ({ params, body }) => {
-        if (body.isOngoingHighlighted === true) {
-          await rejectHighlightWithoutOngoing(params.id);
-        }
         const updated = await seriesRepository.updateSeries(params.id, body);
         return successResponse(updated);
       },

@@ -11,14 +11,7 @@ export class FileTooLargeError extends Error {
   }
 }
 
-export class SeriesHighlightWithoutOngoingError extends Error {
-  constructor(
-    message = "Cannot highlight a series with no ongoing seasons",
-  ) {
-    super(message);
-    this.name = "SeriesHighlightWithoutOngoingError";
-  }
-}
+export { SeriesHighlightWithoutOngoingError } from "@repo/media-service";
 
 export class UploadSessionNotFoundError extends Error {
   constructor(message = "Upload session not found") {

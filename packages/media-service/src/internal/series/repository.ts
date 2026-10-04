@@ -20,6 +20,15 @@ export class SeriesNotFoundError extends Error {
   }
 }
 
+export class SeriesHighlightWithoutOngoingError extends Error {
+  constructor(
+    message = "Cannot highlight a series with no ongoing seasons",
+  ) {
+    super(message);
+    this.name = "SeriesHighlightWithoutOngoingError";
+  }
+}
+
 export function compareSeasons<
   T extends { seasonNumber?: number | null; createdAt?: Date | string | null }
 >(a: T, b: T): number {
@@ -558,6 +567,23 @@ export function createSeriesRepositoryInternal<
       if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
       if (input.isOngoingHighlighted !== undefined)
         updateData.isOngoingHighlighted = input.isOngoingHighlighted;
+
+      if (input.isOngoingHighlighted === true) {
+        const ongoingQuery = db
+          .select({ id: seasons.id })
+          .from(seasons)
+          .where(and(eq(seasons.seriesId, id), eq(seasons.status, "ongoing")));
+        const ongoing =
+          ongoingQuery &&
+          typeof ongoingQuery === "object" &&
+          "limit" in ongoingQuery &&
+          typeof ongoingQuery.limit === "function"
+            ? await ongoingQuery.limit(1)
+            : await ongoingQuery;
+        if (!ongoing || (Array.isArray(ongoing) && ongoing.length === 0)) {
+          throw new SeriesHighlightWithoutOngoingError();
+        }
+      }
 
       const [row] = await db
         .update(series)
