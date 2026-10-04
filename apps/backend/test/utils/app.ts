@@ -1,12 +1,7 @@
 import type { createApp } from "@/app";
 import type { CreateAppOverrides } from "@/app-types";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
-import type {
-  MinioBucketProvisioner,
-  MinioContainerInspector,
-  MinioContainerStarter,
-  MinioHealthChecker,
-} from "@/modules/storage";
+import type { StorageOverrides } from "@/modules/storage";
 
 export type App = ReturnType<typeof createApp>;
 
@@ -30,10 +25,7 @@ export interface BuildAppOptions extends CreateAppOverrides {
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
-  minioInspector?: MinioContainerInspector;
-  minioContainerStarter?: MinioContainerStarter;
-  minioHealthChecker?: MinioHealthChecker;
-  minioBucketProvisioner?: MinioBucketProvisioner;
+  storage?: StorageOverrides;
 }
 
 /**
@@ -44,12 +36,24 @@ export interface BuildAppOptions extends CreateAppOverrides {
 export async function buildApp(options?: BuildAppOptions): Promise<App> {
   const { createApp } = await import("@/app");
   const { createAuthenticationService } = await import("@/modules/authentication");
+  const { createStorageService } = await import("@/modules/storage");
   const { createDbClient } = await import("@repo/db");
   const { readFileSync } = await import("node:fs");
   const { resolve } = await import("node:path");
 
   const db = createDbClient(process.env.DATABASE_URL);
   const auth = createAuthenticationService(db);
+
+  const storageService =
+    options?.storage?.service ??
+    createStorageService(db, {
+      s3StorageService: options?.s3StorageService,
+      storageProviderRegistry: options?.storageProviderRegistry,
+      minioInspector: options?.storage?.minioInspector,
+      minioContainerStarter: options?.storage?.minioContainerStarter,
+      minioHealthChecker: options?.storage?.minioHealthChecker,
+      minioBucketProvisioner: options?.storage?.minioBucketProvisioner,
+    });
 
   const defaultFetchHtml: FetchFn = {
     async get() {
@@ -68,6 +72,7 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
   return createApp({
     db,
     auth,
+    storageService,
     overrides: {
       fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
       browserFn: options?.browserFn ?? defaultBrowserFn,
@@ -76,13 +81,8 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
       archiveFetchFn: options?.archiveFetchFn,
       archiveExtractFn: options?.archiveExtractFn,
       archiveStagingBaseDir: options?.archiveStagingBaseDir,
-      minioInspector: options?.minioInspector,
-      minioContainerStarter: options?.minioContainerStarter,
-      minioHealthChecker: options?.minioHealthChecker,
-      minioBucketProvisioner: options?.minioBucketProvisioner,
       scheduler: options?.scheduler ?? createTestScheduler(),
-      storageService: options?.storageService,
-      storageUsageProvider: options?.storageUsageProvider ?? null,
+      storage: options?.storage,
       // Rate limiting is disabled by default in tests. Suites asserting
       // throttling behavior opt in explicitly via these overrides.
       rateLimit: options?.rateLimit ?? { disabled: true },

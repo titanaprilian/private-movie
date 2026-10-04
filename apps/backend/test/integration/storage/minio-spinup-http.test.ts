@@ -53,10 +53,12 @@ async function buildSpinUpApp(overrides: {
   const health = vi.fn(overrides.health ?? (async () => {}));
   const provisioner = vi.fn(overrides.provisioner ?? (async () => {}));
   const app = await buildApp({
-    minioInspector: async () => ({ isAvailable: true, isRunning: overrides.isRunning ?? false }),
-    minioContainerStarter: starter,
-    minioHealthChecker: health,
-    minioBucketProvisioner: provisioner,
+    storage: {
+      minioInspector: async () => ({ isAvailable: true, isRunning: overrides.isRunning ?? false }),
+      minioContainerStarter: starter,
+      minioHealthChecker: health,
+      minioBucketProvisioner: provisioner,
+    },
   });
   return { app, starter, health, provisioner };
 }
@@ -348,12 +350,14 @@ describe("MinIO Spin-Up HTTP API (/api/storage/minio/spin-up)", () => {
 
   it("returns 503 with guidance when Docker is unavailable and 504 on health timeout", async () => {
     const dockerApp = await buildApp({
-      minioInspector: async () => ({ isAvailable: false, isRunning: false }),
-      minioContainerStarter: async () => {
-        throw new MinioDockerUnavailableError();
+      storage: {
+        minioInspector: async () => ({ isAvailable: false, isRunning: false }),
+        minioContainerStarter: async () => {
+          throw new MinioDockerUnavailableError();
+        },
+        minioHealthChecker: async () => {},
+        minioBucketProvisioner: async () => {},
       },
-      minioHealthChecker: async () => {},
-      minioBucketProvisioner: async () => {},
     });
     const { accessToken } = await registerUser(dockerApp);
     const dockerRes = await request(dockerApp, {
@@ -365,12 +369,14 @@ describe("MinIO Spin-Up HTTP API (/api/storage/minio/spin-up)", () => {
     expect(dockerRes.status).toBe(503);
 
     const healthApp = await buildApp({
-      minioInspector: async () => ({ isAvailable: true, isRunning: true }),
-      minioContainerStarter: async () => {},
-      minioHealthChecker: async () => {
-        throw new MinioHealthTimeoutError();
+      storage: {
+        minioInspector: async () => ({ isAvailable: true, isRunning: true }),
+        minioContainerStarter: async () => {},
+        minioHealthChecker: async () => {
+          throw new MinioHealthTimeoutError();
+        },
+        minioBucketProvisioner: async () => {},
       },
-      minioBucketProvisioner: async () => {},
     });
     const secondUser = await registerUser(healthApp);
     const healthRes = await request(healthApp, {

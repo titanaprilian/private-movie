@@ -9,6 +9,7 @@ export {
 export type {
   StorageService,
   StorageServiceOptions,
+  StorageOverrides,
   MinioDeps,
 } from "./internal/storage-service";
 export type {

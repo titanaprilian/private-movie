@@ -8,11 +8,8 @@ import { mediaRoutes, embedRoutes } from "./modules/media/http";
 import { seasonRoutes } from "./modules/seasons/http";
 import { seriesRoutes } from "./modules/series/http";
 import { storageRoutes } from "./modules/storage/http";
-import { createStorageService } from "./modules/storage/index";
-import { loadAppConfig, isApiDocsEnabled } from "./config/app-config";
+import { loadAppConfig } from "./config/app-config";
 
-// Re-exported so existing consumers (e.g. docs tests) keep importing from "@/app".
-export { isApiDocsEnabled };
 export type { CreateAppDeps, CreateAppOverrides } from "./app-types";
 import {
   corsPlugin,
@@ -23,33 +20,11 @@ import {
 import type { CreateAppDeps } from "./app-types";
 
 export const createApp = (deps: CreateAppDeps) => {
-  const { db, auth, overrides = {} } = deps;
+  const { db, auth, storageService, overrides = {} } = deps;
   const appConfig = loadAppConfig();
 
-  const storageService =
-    overrides.storageService === undefined
-      ? createStorageService(db, {
-          s3StorageService: overrides.s3StorageService,
-          storageProviderRegistry: overrides.storageProviderRegistry,
-          minioInspector: overrides.minioInspector,
-          minioContainerStarter: overrides.minioContainerStarter,
-          minioHealthChecker: overrides.minioHealthChecker,
-          minioBucketProvisioner: overrides.minioBucketProvisioner,
-        })
-      : overrides.storageService;
   const storageUsageProvider =
-    overrides.storageUsageProvider !== undefined
-      ? overrides.storageUsageProvider
-      : storageService;
-
-  const shared = {
-    db,
-    authService: auth,
-    fetchHtml: overrides.fetchHtml,
-    browserFn: overrides.browserFn,
-    s3StorageService: overrides.s3StorageService,
-    storageProviderRegistry: overrides.storageProviderRegistry,
-  };
+    overrides.storage?.usageProvider ?? storageService;
 
   return new Elysia({ name: "app" })
     .use(openapiPlugin({ enabled: appConfig.apiDocsEnabled }))
@@ -65,30 +40,52 @@ export const createApp = (deps: CreateAppDeps) => {
           dashboardRoutes({
             db,
             authService: auth,
-            scheduler: overrides.scheduler ?? null,
+            scheduler: overrides.scheduler,
             storageUsageProvider,
           })
         )
-        .use(episodeRoutes({ ...shared }))
+        .use(
+          episodeRoutes({
+            db,
+            authService: auth,
+            fetchHtml: overrides.fetchHtml,
+            browserFn: overrides.browserFn,
+            s3StorageService: overrides.s3StorageService,
+            storageProviderRegistry: overrides.storageProviderRegistry,
+          })
+        )
         .use(
           seriesRoutes({
-            ...shared,
+            db,
+            authService: auth,
+            fetchHtml: overrides.fetchHtml,
+            browserFn: overrides.browserFn,
+            s3StorageService: overrides.s3StorageService,
+            storageProviderRegistry: overrides.storageProviderRegistry,
             archiveFetchFn: overrides.archiveFetchFn,
             archiveExtractFn: overrides.archiveExtractFn,
             archiveStagingBaseDir: overrides.archiveStagingBaseDir,
           })
         )
-        .use(seasonRoutes({ ...shared }))
+        .use(
+          seasonRoutes({
+            db,
+            authService: auth,
+            fetchHtml: overrides.fetchHtml,
+            browserFn: overrides.browserFn,
+            s3StorageService: overrides.s3StorageService,
+          })
+        )
         .use(mediaRoutes({ db, authService: auth }))
         .use(genreRoutes({ db, authService: auth }))
         .use(
           storageRoutes({
-            ...shared,
-            storageService: storageService ?? undefined,
-            minioInspector: overrides.minioInspector,
-            minioContainerStarter: overrides.minioContainerStarter,
-            minioHealthChecker: overrides.minioHealthChecker,
-            minioBucketProvisioner: overrides.minioBucketProvisioner,
+            db,
+            authService: auth,
+            s3StorageService: overrides.s3StorageService,
+            storageProviderRegistry: overrides.storageProviderRegistry,
+            storageService: overrides.storage?.service ?? storageService,
+            overrides: overrides.storage,
           })
         )
     );

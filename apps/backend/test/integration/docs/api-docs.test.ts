@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll, afterEach } from "vitest";
-import { isApiDocsEnabled } from "@/app";
+import { isApiDocsEnabled } from "@/config/app-config";
 import { buildApp, type App } from "../../utils/app";
 
 async function fetchRaw(app: App, path: string): Promise<Response> {
@@ -23,7 +23,7 @@ describe("API docs (Scalar) plugin", () => {
   });
 
   it("is disabled in production unless ENABLE_API_DOCS=true", async () => {
-    const { isApiDocsEnabled: check } = await import("@/app");
+    const { isApiDocsEnabled: check } = await import("@/config/app-config");
     const originalNodeEnv = process.env.NODE_ENV;
 
     process.env.NODE_ENV = "production";

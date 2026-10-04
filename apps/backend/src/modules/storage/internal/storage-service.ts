@@ -108,6 +108,11 @@ export interface MinioDeps {
   minioBucketProvisioner?: MinioBucketProvisioner;
 }
 
+export interface StorageOverrides extends MinioDeps {
+  service?: StorageService | null;
+  usageProvider?: Pick<StorageService, "getTotalUsedBytes"> | null;
+}
+
 export interface StorageServiceOptions extends MinioDeps {
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;

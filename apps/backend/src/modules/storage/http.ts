@@ -8,26 +8,28 @@ import type { S3StorageService, StorageProviderRegistry } from "@repo/media-serv
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import { createStorageService } from "./internal/storage-service";
-import type { MinioDeps, StorageService } from "./internal/storage-service";
+import type { StorageOverrides, StorageService } from "./internal/storage-service";
 
-export interface StorageRoutesOptions extends MinioDeps {
+export interface StorageRoutesOptions {
   db: DbClient;
   authService: AuthenticationService;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
   storageService?: StorageService;
+  overrides?: StorageOverrides;
 }
 
 export const storageRoutes = (options: StorageRoutesOptions) => {
   const storageService =
     options.storageService ??
+    options.overrides?.service ??
     createStorageService(options.db, {
       s3StorageService: options.s3StorageService,
       storageProviderRegistry: options.storageProviderRegistry,
-      minioInspector: options.minioInspector,
-      minioContainerStarter: options.minioContainerStarter,
-      minioHealthChecker: options.minioHealthChecker,
-      minioBucketProvisioner: options.minioBucketProvisioner,
+      minioInspector: options.overrides?.minioInspector,
+      minioContainerStarter: options.overrides?.minioContainerStarter,
+      minioHealthChecker: options.overrides?.minioHealthChecker,
+      minioBucketProvisioner: options.overrides?.minioBucketProvisioner,
     });
   const auth = authGuard(options.authService);
 

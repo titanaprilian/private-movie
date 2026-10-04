@@ -16,15 +16,15 @@ export interface DashboardRoutesOptions {
   scheduler?: Pick<
     OngoingSeasonScheduler,
     "runNow" | "isEnabled" | "isExecuting" | "getIntervalMs" | "getLastRunAt" | "getLastRunResult" | "getNextRunAt" | "setEnabled" | "updateInterval"
-  > | null;
-  storageUsageProvider?: StorageUsageProvider | null;
-  storageService?: StorageUsageProvider | null;
+  >;
+  storageUsageProvider?: StorageUsageProvider;
+  storageService?: StorageUsageProvider;
 }
 
 export const dashboardRoutes = (options: DashboardRoutesOptions) => {
   const dashboardService = createDashboardService(options.db, {
-    scheduler: options.scheduler ?? null,
-    storageUsageProvider: options.storageUsageProvider ?? options.storageService ?? null,
+    scheduler: options.scheduler ?? undefined,
+    storageUsageProvider: options.storageUsageProvider ?? options.storageService ?? undefined,
   });
   const auth = authGuard(options.authService);
 
