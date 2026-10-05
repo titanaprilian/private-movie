@@ -16,6 +16,7 @@ import {
   openapiPlugin,
   errorHandlerPlugin,
   rateLimitPlugin,
+  requestLoggerPlugin,
 } from "./plugins";
 import type { CreateAppDeps } from "./app-types";
 
@@ -27,6 +28,7 @@ export const createApp = (deps: CreateAppDeps) => {
     overrides.storage?.usageProvider ?? storageService;
 
   return new Elysia({ name: "app" })
+    .use(requestLoggerPlugin())
     .use(openapiPlugin({ enabled: appConfig.apiDocsEnabled }))
     .use(embedRoutes())
     .use(corsPlugin(appConfig))

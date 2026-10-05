@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Elysia, t } from "elysia";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -121,24 +121,31 @@ describe("errorHandlerPlugin", () => {
   });
 
   it("maps unhandled errors to a logged 500 envelope", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    try {
-      const app = new Elysia().use(errorHandlerPlugin()).get("/boom", () => {
+    const errors: unknown[] = [];
+    const testLogger = {
+      warn: () => {},
+      error: (...args: unknown[]) => void errors.push(args),
+    };
+    const captured: unknown[] = [];
+    const app = new Elysia()
+      .use(
+        errorHandlerPlugin({
+          logger: testLogger,
+          captureException: (error) => void captured.push(error),
+        })
+      )
+      .get("/boom", () => {
         throw new Error("kaboom");
       });
 
-      const response = await app.handle(new Request("http://localhost/boom"));
-      expect(response.status).toBe(500);
-      expect(await response.json()).toEqual({
-        error: { code: "INTERNAL_SERVER", message: "internal server error" },
-      });
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[Unhandled Server Error]",
-        expect.any(Error)
-      );
-    } finally {
-      consoleSpy.mockRestore();
-    }
+    const response = await app.handle(new Request("http://localhost/boom"));
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: { code: "INTERNAL_SERVER", message: "internal server error" },
+    });
+    expect(captured).toHaveLength(1);
+    expect(captured[0]).toEqual(expect.any(Error));
+    expect(errors).toHaveLength(1);
   });
 
   it("passes 404s through untouched", async () => {

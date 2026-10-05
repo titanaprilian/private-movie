@@ -20,6 +20,8 @@ const deriveErrorCode = (error: Error): string => {
   return errorCodeFromClassName(className);
 };
 
+export { deriveErrorCode };
+
 export function errorResponse(
   set: ResponseSetLike,
   status: number,

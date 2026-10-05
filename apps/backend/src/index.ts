@@ -3,13 +3,19 @@ import { createStealthBrowser } from "@repo/media-scraper";
 import { createMediaService, createS3StorageService } from "@repo/media-service";
 import { createApp } from "./app";
 import { loadServerConfig } from "./config/server-config";
+import { logger } from "./lib/logger";
+import { initSentry } from "./lib/sentry";
 import { createAuthenticationService } from "./modules/authentication";
 import { startOngoingSeasonScheduler } from "./modules/media";
 import { createStorageService } from "./modules/storage";
 import { createShutdownManager } from "./shutdown";
 
-const shutdown = createShutdownManager();
+const shutdown = createShutdownManager({ logger });
 shutdown.registerShutdownHandlers();
+
+if (initSentry()) {
+  logger.info("Sentry crash reporting initialized");
+}
 
 // Shutdown steps are pre-registered up-front in reverse-dependency (LIFO)
 // teardown order: the HTTP listener drains first, the database pool closes
@@ -47,7 +53,7 @@ async function bootstrap(): Promise<void> {
     s3StorageService,
   });
 
-  scheduler = await startOngoingSeasonScheduler({ db, mediaService });
+  scheduler = await startOngoingSeasonScheduler({ db, mediaService, logger });
 
   const serverConfig = loadServerConfig();
 
@@ -58,11 +64,11 @@ async function bootstrap(): Promise<void> {
     overrides: { browserFn: browser.browserFn, s3StorageService, scheduler },
   }).listen(serverConfig);
 
-  console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
+  logger.info(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
 }
 
 bootstrap().catch(async (error) => {
-  console.error("[Startup] failed to start backend", error);
+  logger.error({ err: error }, "[Startup] failed to start backend");
   await shutdown.shutdown();
   process.exit(1);
 });
