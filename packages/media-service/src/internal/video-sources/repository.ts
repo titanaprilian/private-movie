@@ -36,6 +36,15 @@ export interface UpdateVideoSourceInput {
   storageProviderId?: string | null;
 }
 
+export interface VideoSourceRepository {
+  upsert(input: VideoSourceUpsertInput): Promise<VideoSourceRow>;
+  findById(id: string): Promise<VideoSourceRow | null>;
+  findByEpisodeId(episodeId: string): Promise<VideoSourceRow[]>;
+  update(id: string, input: Partial<UpdateVideoSourceInput>): Promise<VideoSourceRow>;
+  delete(id: string): Promise<VideoSourceRow>;
+  deleteByEpisodeId(episodeId: string): Promise<VideoSourceRow[]>;
+}
+
 export function createVideoSourceRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,

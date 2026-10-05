@@ -65,6 +65,17 @@ export interface EpisodeListResult {
   total: number;
 }
 
+export interface EpisodeRepository {
+  upsert(input: EpisodeUpsertInput): Promise<EpisodeRow>;
+  findBySeasonIdAndOrder(seasonId: string, order: number): Promise<EpisodeRow | null>;
+  findById(id: string): Promise<EpisodeWithVideoSources | null>;
+  getMaxOrder(seasonId: string | null): Promise<number>;
+  list(params: EpisodeListParams): Promise<EpisodeListResult>;
+  updateEpisode(id: string, input: Partial<UpdateEpisodeInput>): Promise<EpisodeWithVideoSources>;
+  updateOrders(items: EpisodeOrderUpdateInput[]): Promise<void>;
+  deleteEpisode(id: string): Promise<EpisodeRow>;
+}
+
 export function createEpisodeRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
