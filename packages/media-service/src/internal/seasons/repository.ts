@@ -81,6 +81,17 @@ export interface UpdateSeasonInput {
   tmdbSyncStatus?: "PENDING" | "SYNCED" | "FAILED";
 }
 
+export interface SeasonsRepository {
+  upsert(input: SeasonUpsertInput): Promise<SeasonRow>;
+  findBySeriesIdAndSeasonNumber(seriesId: string, seasonNumber: number): Promise<SeasonRow | null>;
+  findById(id: string): Promise<SeasonRow | null>;
+  updateSeason(id: string, input: UpdateSeasonInput): Promise<SeasonRow>;
+  reparentSeasons(fromSeriesId: string, toSeriesId: string): Promise<void>;
+  deleteSeason(id: string): Promise<void>;
+  findOngoingWithScraperUrl(): Promise<SeasonRow[]>;
+  create(input: CreateSeasonInput): Promise<SeasonRow>;
+}
+
 export function createSeasonsRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,

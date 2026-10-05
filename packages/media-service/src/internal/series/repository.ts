@@ -166,6 +166,20 @@ export interface HomeFeedPayload {
   recentlyAddedEpisodes: RecentlyAddedEpisode[];
 }
 
+export interface SeriesRepository {
+  upsert(input: SeriesUpsertInput): Promise<SeriesRow>;
+  findById(id: string): Promise<SeriesRow | null>;
+  findByTmdbId(tmdbId: number): Promise<SeriesRow | null>;
+  findByIdWithEpisodes(
+    id: string,
+    sourceTypes?: string[]
+  ): Promise<SeriesWithEpisodes | null>;
+  list(params: SeriesListParams): Promise<SeriesListResult>;
+  updateSeries(id: string, input: UpdateSeriesInput): Promise<SeriesWithSeasons>;
+  deleteSeries(id: string): Promise<SeriesRow>;
+  getHomeFeed(sourceTypes?: string[]): Promise<HomeFeedPayload>;
+}
+
 export function createSeriesRepositoryInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
