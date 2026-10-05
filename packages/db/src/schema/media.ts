@@ -26,6 +26,15 @@ export const genres = pgTable("genres", {
 export type GenreRow = typeof genres.$inferSelect;
 export type NewGenreRow = typeof genres.$inferInsert;
 
+export function slugifyGenre(name: string): string {
+  return name
+    .replace(/&/g, "and")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export const series = pgTable("series", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
