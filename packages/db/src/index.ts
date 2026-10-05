@@ -1,11 +1,5 @@
 export * from "./schema";
 export * from "./client";
 export * from "./seed";
-export * from "./migrate-genres";
-export * from "./tmdb";
-export * from "./merge-series";
-export * from "./repair-backdrop-urls";
-export * from "./backfill-episode-passports";
-
 
 

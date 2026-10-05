@@ -50,4 +50,17 @@ describe("db schema exports", () => {
 
     expect(schema.episodes.seasonId.notNull).toBe(true);
   });
+
+  describe("slugifyGenre", () => {
+    it("normalizes 'Sci-Fi & Fantasy' to 'sci-fi-and-fantasy'", () => {
+      expect(schema.slugifyGenre("Sci-Fi & Fantasy")).toBe("sci-fi-and-fantasy");
+    });
+
+    it("normalizes string with special characters and spaces correctly", () => {
+      expect(schema.slugifyGenre("Action & Adventure")).toBe("action-and-adventure");
+      expect(schema.slugifyGenre("Slice of Life")).toBe("slice-of-life");
+      expect(schema.slugifyGenre("  Comedy / Romance  ")).toBe("comedy-romance");
+      expect(schema.slugifyGenre("Boys' Love")).toBe("boys-love");
+    });
+  });
 });
