@@ -9,3 +9,4 @@ export interface EpisodeServiceOptions {
 export * from "./internal/archive-staging";
 export * from "./internal/archive-extractor";
 export * from "./internal/archive-matcher";
+export * from "./internal/ingest-service";

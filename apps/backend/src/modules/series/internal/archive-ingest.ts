@@ -32,6 +32,10 @@ import {
   matchArchiveFilesToEpisodes,
   type ArchiveProcessRunner,
 } from "../../episodes";
+import { captureException } from "../../../lib/sentry";
+import { logger } from "../../../lib/logger";
+import { DownloadIncompleteError } from "../../../lib/errors";
+import { createProgressThrottle } from "../../../lib/sse-progress";
 
 export type ArchiveFetchFn = (
   url: string,
@@ -257,6 +261,7 @@ export class ArchiveIngestService {
               const fileStream = createWriteStream(archivePath);
               let loaded = 0;
               const reader = (remoteRes.body as ReadableStream<Uint8Array>).getReader();
+              const throttle = createProgressThrottle();
               try {
                 while (true) {
                   const { done, value } = await reader.read();
@@ -267,7 +272,14 @@ export class ArchiveIngestService {
                   });
                   const percent =
                     total && total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
-                  send(controller, "download_progress", { loaded, total, percent });
+                  const sample = { loaded, total, percent };
+                  if (throttle.shouldEmit(sample)) {
+                    throttle.markEmitted(sample);
+                    send(controller, "download_progress", sample);
+                  }
+                }
+                if (total !== null && loaded < total) {
+                  throw new DownloadIncompleteError(loaded, total);
                 }
               } finally {
                 reader.releaseLock();
@@ -367,6 +379,18 @@ export class ArchiveIngestService {
           if (err instanceof SeriesNotFoundError) {
             throw err;
           }
+          if (err instanceof DownloadIncompleteError) {
+            captureException(err, { loaded: err.loaded, expected: err.expected });
+            logger.error({ err, loaded: err.loaded, expected: err.expected }, "archive download incomplete");
+            send(controller, "error", {
+              code: "DOWNLOAD_INCOMPLETE",
+              message: err.message,
+            });
+            await finish(controller);
+            return;
+          }
+          captureException(err);
+          logger.error({ err }, "archive ingest stream failed");
           send(controller, "error", {
             code: "INGEST_FAILED",
             message: err instanceof Error ? err.message : String(err),
@@ -478,6 +502,7 @@ export class ArchiveIngestService {
               const { Readable } = await import("node:stream");
               const nodeStream = createReadStream(staged.absolutePath);
               const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream<Uint8Array>;
+              const uploadThrottle = createProgressThrottle();
 
               await s3.uploadStream(key, webStream, {
                 contentType: "video/mp4",
@@ -485,6 +510,9 @@ export class ArchiveIngestService {
                 onProgress: ({ loaded }) => {
                   const percent =
                     total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0;
+                  const sample = { loaded, total, percent };
+                  if (!uploadThrottle.shouldEmit(sample)) return;
+                  uploadThrottle.markEmitted(sample);
                   send(controller, "upload_progress", {
                     fileIndex: index,
                     totalFiles: activeItems.length,
@@ -529,6 +557,8 @@ export class ArchiveIngestService {
             await finish(controller);
             return;
           }
+          captureException(err);
+          logger.error({ err }, "archive commit stream failed");
           send(controller, "error", {
             code: "INGEST_FAILED",
             message: err instanceof Error ? err.message : String(err),

@@ -19,6 +19,8 @@ ENV NODE_ENV=production
 COPY --from=builder /app .
 
 # Install Chromium and its system dependencies for Playwright
+# plus native archive extraction utilities (7z via p7zip-full, unrar if available)
+RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full unrar-free 2>/dev/null || apt-get install -y --no-install-recommends p7zip-full unrar 2>/dev/null || apt-get install -y --no-install-recommends p7zip-full; rm -rf /var/lib/apt/lists/*
 RUN bunx playwright install chromium --with-deps
 
 EXPOSE 3000

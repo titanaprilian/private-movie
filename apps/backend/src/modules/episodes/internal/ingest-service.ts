@@ -7,7 +7,10 @@ import {
   EpisodeNotFoundError,
   S3NotConfiguredError,
 } from "@repo/media-service";
-import { FileTooLargeError, UploadSessionNotFoundError } from "../../../lib/errors";
+import { FileTooLargeError, UploadSessionNotFoundError, DownloadIncompleteError } from "../../../lib/errors";
+import { captureException } from "../../../lib/sentry";
+import { logger } from "../../../lib/logger";
+import { createProgressThrottle } from "../../../lib/sse-progress";
 
 export interface ProgressInfo {
   loaded: number;
@@ -294,10 +297,15 @@ export class IngestService {
           );
 
           let lastLoggedMb = 0;
+          const throttle = createProgressThrottle();
+          let lastLoaded = 0;
+          let hasReportedProgress = false;
           await s3.uploadStream(key, remoteRes.body, {
             contentType,
             signal: abortController.signal,
             onProgress: ({ loaded, total }) => {
+              lastLoaded = loaded;
+              hasReportedProgress = true;
               const effectiveTotal = expectedTotal ?? total;
               const percent =
                 effectiveTotal && effectiveTotal > 0
@@ -310,6 +318,9 @@ export class IngestService {
                   `[remote-ingest] Upload progress: ${(loaded / (1024 * 1024)).toFixed(1)} MB (${percent}%)`
                 );
               }
+              const sample = { loaded, total: effectiveTotal ?? null, percent };
+              if (!throttle.shouldEmit(sample)) return;
+              throttle.markEmitted(sample);
               sendEvent("progress", {
                 loaded,
                 total: effectiveTotal ?? 0,
@@ -317,6 +328,10 @@ export class IngestService {
               });
             },
           });
+
+          if (expectedTotal !== undefined && hasReportedProgress && lastLoaded < expectedTotal) {
+            throw new DownloadIncompleteError(lastLoaded, expectedTotal);
+          }
 
           console.log(
             `[remote-ingest] S3 uploadStream finished successfully for key: ${key}. Updating DB...`
@@ -359,9 +374,12 @@ export class IngestService {
             return;
           }
           console.error("[remote-ingest] Remote video ingestion failed with exception:", err);
+          captureException(err, { episodeId, key });
+          logger.error({ err, episodeId, key }, "remote ingest stream failed");
           const errorMessage = err instanceof Error ? err.message : String(err);
+          const code = err instanceof DownloadIncompleteError ? "DOWNLOAD_INCOMPLETE" : "INGEST_FAILED";
           sendEvent("error", {
-            code: "INGEST_FAILED",
+            code,
             message: errorMessage,
           });
           await new Promise((resolve) => setTimeout(resolve, 50));
