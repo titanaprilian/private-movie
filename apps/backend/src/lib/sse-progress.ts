@@ -23,4 +23,12 @@ export function createProgressThrottle(windowMs: number = SSE_PROGRESS_THROTTLE_
   };
 }
 
+export const SSE_HEARTBEAT_MS = 15_000;
+
+export const SSE_HEARTBEAT_COMMENT = ": ping\n\n";
+
+export function shouldSendHeartbeat(lastActivityMs: number, nowMs: number, intervalMs: number = SSE_HEARTBEAT_MS): boolean {
+  return nowMs - lastActivityMs >= intervalMs;
+}
+
 export type ProgressThrottle = ReturnType<typeof createProgressThrottle>;
