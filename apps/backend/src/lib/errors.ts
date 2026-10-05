@@ -20,6 +20,17 @@ export class UploadSessionNotFoundError extends Error {
   }
 }
 
+export class DownloadIncompleteError extends Error {
+  readonly loaded: number;
+  readonly expected: number;
+  constructor(loaded: number, expected: number) {
+    super(`Download incomplete: received ${loaded} of ${expected} bytes`);
+    this.name = "DownloadIncompleteError";
+    this.loaded = loaded;
+    this.expected = expected;
+  }
+}
+
 export function getDomainErrorStatus(error: unknown): number | null {
   if (!(error instanceof Error)) return null;
   const name = error.name || error.constructor?.name || "";

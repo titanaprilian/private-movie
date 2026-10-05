@@ -5,8 +5,12 @@
 	}
 
 	# Reverse proxy API traffic to the backend container
+	# flush_interval -1 disables response buffering so SSE progress
+	# streams flush immediately without filling proxy buffers.
 	handle /api/* {
-		reverse_proxy backend:3000
+		reverse_proxy backend:3000 {
+			flush_interval -1
+		}
 	}
 
 	# Default fallback for SPA static assets
