@@ -299,11 +299,13 @@ export class IngestService {
           let lastLoggedMb = 0;
           const throttle = createProgressThrottle();
           let lastLoaded = 0;
+          let hasReportedProgress = false;
           await s3.uploadStream(key, remoteRes.body, {
             contentType,
             signal: abortController.signal,
             onProgress: ({ loaded, total }) => {
               lastLoaded = loaded;
+              hasReportedProgress = true;
               const effectiveTotal = expectedTotal ?? total;
               const percent =
                 effectiveTotal && effectiveTotal > 0
@@ -327,7 +329,7 @@ export class IngestService {
             },
           });
 
-          if (expectedTotal !== undefined && lastLoaded < expectedTotal) {
+          if (expectedTotal !== undefined && hasReportedProgress && lastLoaded < expectedTotal) {
             throw new DownloadIncompleteError(lastLoaded, expectedTotal);
           }
 
