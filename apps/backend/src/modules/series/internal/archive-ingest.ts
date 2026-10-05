@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, statfs, unlink, writeFile } from "node:fs/promises";
 import { basename, join, relative } from "node:path";
 import type { DbClient } from "@repo/db";
 import type {
@@ -35,7 +35,30 @@ import {
 import { captureException } from "../../../lib/sentry";
 import { logger } from "../../../lib/logger";
 import { DownloadIncompleteError } from "../../../lib/errors";
-import { createProgressThrottle } from "../../../lib/sse-progress";
+import {
+  createProgressThrottle,
+  SSE_HEARTBEAT_COMMENT,
+  SSE_HEARTBEAT_MS,
+  shouldSendHeartbeat,
+} from "../../../lib/sse-progress";
+
+export const MAX_ARCHIVE_DOWNLOAD_MB_DEFAULT = 5120;
+export const ARCHIVE_DISK_SAFETY_MARGIN_BYTES = 2 * 1024 * 1024 * 1024;
+export const ARCHIVE_DISK_EXPANSION_FACTOR = 2.2;
+
+export function getMaxArchiveDownloadBytes(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env.MAX_ARCHIVE_DOWNLOAD_MB;
+  const parsed = raw ? parseInt(raw, 10) : NaN;
+  const mb = !Number.isNaN(parsed) && parsed > 0 ? parsed : MAX_ARCHIVE_DOWNLOAD_MB_DEFAULT;
+  return mb * 1024 * 1024;
+}
+
+export type ArchiveStatfsFn = (path: string) => Promise<{ bavail: number; bsize: number }>;
+
+const defaultStatfsFn: ArchiveStatfsFn = async (path: string) => {
+  const s = await statfs(path);
+  return { bavail: Number(s.bavail), bsize: Number(s.bsize) };
+};
 
 export type ArchiveFetchFn = (
   url: string,
@@ -67,6 +90,9 @@ export interface ArchiveIngestServiceOptions {
   stagingBaseDir?: string;
   createSessionId?: () => string;
   extractRunner?: ArchiveProcessRunner;
+  statfsFn?: ArchiveStatfsFn;
+  maxArchiveBytes?: number;
+  heartbeatMs?: number;
 }
 
 interface StagedManifestEntry {
@@ -117,6 +143,10 @@ export class ArchiveIngestService {
   private stagingBaseDir: string;
   private createSessionId: () => string;
   private extractRunner?: ArchiveProcessRunner;
+  private statfsFn: ArchiveStatfsFn;
+  private maxArchiveBytes: number;
+  private heartbeatMs: number;
+  private activeControllers = new Map<string, AbortController>();
 
   constructor(options: ArchiveIngestServiceOptions) {
     this.db = options.db;
@@ -129,10 +159,31 @@ export class ArchiveIngestService {
     this.stagingBaseDir = options.stagingBaseDir ?? getArchiveStagingBaseDir();
     this.createSessionId = options.createSessionId ?? createArchiveStagingSessionId;
     this.extractRunner = options.extractRunner;
+    this.statfsFn = options.statfsFn ?? defaultStatfsFn;
+    this.maxArchiveBytes = options.maxArchiveBytes ?? getMaxArchiveDownloadBytes();
+    this.heartbeatMs = options.heartbeatMs ?? SSE_HEARTBEAT_MS;
   }
 
   async deleteSession(sessionId: string): Promise<void> {
+    const controller = this.activeControllers.get(sessionId);
+    if (controller) {
+      try {
+        controller.abort();
+      } catch {
+        /* ignore */
+      }
+      this.activeControllers.delete(sessionId);
+    }
     await removeArchiveStagingDir(this.stagingBaseDir, sessionId);
+  }
+
+  private async getFreeBytes(dir: string): Promise<number | null> {
+    try {
+      const s = await this.statfsFn(dir);
+      return s.bavail * s.bsize;
+    } catch {
+      return null;
+    }
   }
 
   private async resolveSeriesOrThrow(seriesId: string) {
@@ -203,6 +254,7 @@ export class ArchiveIngestService {
 
     return new ReadableStream({
       start: async (controller) => {
+        let cleanupSessionId: string | null = null;
         try {
           const seriesRepo = await this.resolveSeriesOrThrow(seriesId);
 
@@ -219,6 +271,7 @@ export class ArchiveIngestService {
           }
 
           const sessionId = this.createSessionId();
+          cleanupSessionId = sessionId;
           const sessionDir = await ensureArchiveStagingDir(this.stagingBaseDir, sessionId);
           const extractedDir = join(sessionDir, "extracted");
           await mkdir(extractedDir, { recursive: true });
@@ -231,13 +284,37 @@ export class ArchiveIngestService {
               ? body.referer.trim()
               : targetUrl.origin;
 
+          // NOTE: intentionally decoupled from requestSignal. A transient SSE
+          // socket disconnect must NOT abort the background download/extraction.
+          // Only an explicit DELETE (deleteSession) aborts via activeControllers.
+          void requestSignal;
           const abortController = new AbortController();
-          const onAbort = () => abortController.abort();
-          if (requestSignal.aborted) {
-            onAbort();
-          } else {
-            requestSignal.addEventListener("abort", onAbort, { once: true });
-          }
+          this.activeControllers.set(sessionId, abortController);
+
+          let lastActivity = Date.now();
+          const trackedSend = (event: string, data: unknown) => {
+            lastActivity = Date.now();
+            send(controller, event, data);
+          };
+          const heartbeatMs = this.heartbeatMs;
+          const heartbeat = setInterval(() => {
+            try {
+              if (shouldSendHeartbeat(lastActivity, Date.now(), heartbeatMs)) {
+                controller.enqueue(encoder.encode(SSE_HEARTBEAT_COMMENT));
+              }
+            } catch {
+              /* client disconnected */
+            }
+          }, heartbeatMs);
+          const stopHeartbeat = () => clearInterval(heartbeat);
+
+          const failAndCleanup = async (code: string, message: string) => {
+            trackedSend("error", { code, message });
+            stopHeartbeat();
+            this.activeControllers.delete(sessionId);
+            await removeArchiveStagingDir(this.stagingBaseDir, sessionId).catch(() => {});
+            await finish(controller);
+          };
 
           try {
             const remoteRes = await this.fetchFn(targetUrl.toString(), {
@@ -245,11 +322,10 @@ export class ArchiveIngestService {
               signal: abortController.signal,
             });
             if (!remoteRes.ok) {
-              send(controller, "error", {
-                code: "REMOTE_FETCH_FAILED",
-                message: `Remote server returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`,
-              });
-              await finish(controller);
+              await failAndCleanup(
+                "REMOTE_FETCH_FAILED",
+                `Remote server returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`
+              );
               return;
             }
 
@@ -257,46 +333,141 @@ export class ArchiveIngestService {
             const parsed = lengthHeader ? parseInt(lengthHeader, 10) : NaN;
             const total = !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
 
-            if (remoteRes.body) {
-              const fileStream = createWriteStream(archivePath);
-              let loaded = 0;
-              const reader = (remoteRes.body as ReadableStream<Uint8Array>).getReader();
-              const throttle = createProgressThrottle();
-              try {
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-                  loaded += value.byteLength;
-                  await new Promise<void>((resolve, reject) => {
-                    fileStream.write(value, (err) => (err ? reject(err) : resolve()));
-                  });
-                  const percent =
-                    total && total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
-                  const sample = { loaded, total, percent };
-                  if (throttle.shouldEmit(sample)) {
-                    throttle.markEmitted(sample);
-                    send(controller, "download_progress", sample);
-                  }
-                }
-                if (total !== null && loaded < total) {
-                  throw new DownloadIncompleteError(loaded, total);
-                }
-              } finally {
-                reader.releaseLock();
-                await new Promise<void>((resolve) => fileStream.end(() => resolve()));
-              }
-            } else {
-              const text = await remoteRes.text();
-              const buffer = Buffer.from(text);
-              await writeFile(archivePath, buffer);
-              send(controller, "download_progress", {
-                loaded: buffer.byteLength,
-                total: total ?? buffer.byteLength,
-                percent: 100,
-              });
+            // Max-size preflight: reject oversized archives without downloading.
+            if (total !== null && total > this.maxArchiveBytes) {
+              await failAndCleanup(
+                "ARCHIVE_TOO_LARGE",
+                `Archive size ${total} bytes exceeds the maximum of ${this.maxArchiveBytes} bytes`
+              );
+              return;
             }
 
-            send(controller, "extract_progress", { currentFile: archiveFilename, totalFiles: null });
+            // Disk-space preflight: require free >= content-length * 2.2 + 2GB.
+            if (total !== null) {
+              const free = await this.getFreeBytes(sessionDir);
+              if (free !== null) {
+                const required =
+                  total * ARCHIVE_DISK_EXPANSION_FACTOR + ARCHIVE_DISK_SAFETY_MARGIN_BYTES;
+                if (free < required) {
+                  await failAndCleanup(
+                    "INSUFFICIENT_DISK_SPACE",
+                    "Not enough disk space to download and extract this archive"
+                  );
+                  return;
+                }
+              }
+            } else {
+              // Unknown length: require at least the 2GB safety margin upfront.
+              const free = await this.getFreeBytes(sessionDir);
+              if (free !== null && free < ARCHIVE_DISK_SAFETY_MARGIN_BYTES) {
+                await failAndCleanup(
+                  "INSUFFICIENT_DISK_SPACE",
+                  "Not enough disk space to download and extract this archive"
+                );
+                return;
+              }
+            }
+
+            try {
+              if (remoteRes.body) {
+                const fileStream = createWriteStream(archivePath);
+                let loaded = 0;
+                const reader = (remoteRes.body as ReadableStream<Uint8Array>).getReader();
+                const throttle = createProgressThrottle();
+                let diskCheckCounter = 0;
+                try {
+                  while (true) {
+                    if (abortController.signal.aborted) {
+                      throw new DOMException("Aborted", "AbortError");
+                    }
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    loaded += value.byteLength;
+                    await new Promise<void>((resolve, reject) => {
+                      fileStream.write(value, (err) => (err ? reject(err) : resolve()));
+                    });
+                    // Runtime cap: abort downloads that exceed the 5GB cap mid-stream.
+                    if (loaded > this.maxArchiveBytes) {
+                      throw Object.assign(
+                        new Error(
+                          `Archive size exceeds the maximum of ${this.maxArchiveBytes} bytes`
+                        ),
+                        { code: "ARCHIVE_TOO_LARGE" }
+                      );
+                    }
+                    // Runtime disk guard for chunked transfers without content-length.
+                    if (total === null) {
+                      diskCheckCounter += 1;
+                      if (diskCheckCounter % 5 === 0 || loaded < 1024 * 1024) {
+                        const free = await this.getFreeBytes(sessionDir);
+                        if (free !== null && free < ARCHIVE_DISK_SAFETY_MARGIN_BYTES) {
+                          throw Object.assign(
+                            new Error("Not enough disk space to download this archive"),
+                            { code: "INSUFFICIENT_DISK_SPACE" }
+                          );
+                        }
+                      }
+                    }
+                    const percent =
+                      total && total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
+                    const sample = { loaded, total, percent };
+                    if (throttle.shouldEmit(sample)) {
+                      throttle.markEmitted(sample);
+                      trackedSend("download_progress", sample);
+                    }
+                  }
+                  if (total !== null && loaded < total) {
+                    throw new DownloadIncompleteError(loaded, total);
+                  }
+                } finally {
+                  try {
+                    reader.releaseLock();
+                  } catch {
+                    /* ignore */
+                  }
+                  await new Promise<void>((resolve) => fileStream.end(() => resolve()));
+                }
+              } else {
+                const text = await remoteRes.text();
+                const buffer = Buffer.from(text);
+                if (buffer.byteLength > this.maxArchiveBytes) {
+                  await failAndCleanup(
+                    "ARCHIVE_TOO_LARGE",
+                    `Archive size ${buffer.byteLength} bytes exceeds the maximum of ${this.maxArchiveBytes} bytes`
+                  );
+                  return;
+                }
+                await writeFile(archivePath, buffer);
+                trackedSend("download_progress", {
+                  loaded: buffer.byteLength,
+                  total: total ?? buffer.byteLength,
+                  percent: 100,
+                });
+              }
+            } catch (err) {
+              if (abortController.signal.aborted) {
+                // Explicit cancel via deleteSession already purged the directory.
+                stopHeartbeat();
+                this.activeControllers.delete(sessionId);
+                try {
+                  controller.close();
+                } catch {
+                  /* ignore */
+                }
+                return;
+              }
+              if ((err as { code?: string })?.code === "ARCHIVE_TOO_LARGE") {
+                await failAndCleanup("ARCHIVE_TOO_LARGE", (err as Error).message);
+                return;
+              }
+              if ((err as { code?: string })?.code === "INSUFFICIENT_DISK_SPACE") {
+                await failAndCleanup("INSUFFICIENT_DISK_SPACE", (err as Error).message);
+                return;
+              }
+              throw err;
+            }
+
+            trackedSend("extract_progress", { currentFile: archiveFilename, totalFiles: null });
             try {
               if (this.extractRunner) {
                 await extractArchive({
@@ -311,29 +482,35 @@ export class ArchiveIngestService {
                   destDir: extractedDir,
                   password: body.password ?? null,
                   onProgressFile: (filename) =>
-                    send(controller, "extract_progress", { currentFile: filename, totalFiles: null }),
+                    trackedSend("extract_progress", { currentFile: filename, totalFiles: null }),
                 });
               }
             } catch (err) {
-              if (err instanceof ArchivePasswordRequiredError) {
-                send(controller, "error", {
-                  code: "ARCHIVE_PASSWORD_REQUIRED",
-                  message: err.message,
-                });
-              } else if (err instanceof InvalidArchivePasswordError) {
-                send(controller, "error", {
-                  code: "INVALID_ARCHIVE_PASSWORD",
-                  message: err.message,
-                });
-              } else {
-                send(controller, "error", {
-                  code: "ARCHIVE_EXTRACTION_FAILED",
-                  message: err instanceof Error ? err.message : "Failed to extract archive",
-                });
+              if (abortController.signal.aborted) {
+                stopHeartbeat();
+                this.activeControllers.delete(sessionId);
+                try {
+                  controller.close();
+                } catch {
+                  /* ignore */
+                }
+                return;
               }
-              await finish(controller);
+              if (err instanceof ArchivePasswordRequiredError) {
+                await failAndCleanup("ARCHIVE_PASSWORD_REQUIRED", err.message);
+              } else if (err instanceof InvalidArchivePasswordError) {
+                await failAndCleanup("INVALID_ARCHIVE_PASSWORD", err.message);
+              } else {
+                await failAndCleanup(
+                  "ARCHIVE_EXTRACTION_FAILED",
+                  err instanceof Error ? err.message : "Failed to extract archive"
+                );
+              }
               return;
             }
+
+            // Free gigabytes of staging disk immediately: delete raw archive post-extraction.
+            await unlink(archivePath).catch(() => {});
 
             const absoluteFiles = await listFilesRecursive(extractedDir);
             const entries: StagedManifestEntry[] = [];
@@ -370,10 +547,13 @@ export class ArchiveIngestService {
               episodesForMatch
             );
 
-            send(controller, "preview_ready", { stagingSessionId: sessionId, items });
+            trackedSend("preview_ready", { stagingSessionId: sessionId, items });
+            stopHeartbeat();
+            this.activeControllers.delete(sessionId);
             await finish(controller);
           } finally {
-            requestSignal.removeEventListener("abort", onAbort);
+            stopHeartbeat();
+            this.activeControllers.delete(sessionId);
           }
         } catch (err) {
           if (err instanceof SeriesNotFoundError) {
@@ -382,19 +562,50 @@ export class ArchiveIngestService {
           if (err instanceof DownloadIncompleteError) {
             captureException(err, { loaded: err.loaded, expected: err.expected });
             logger.error({ err, loaded: err.loaded, expected: err.expected }, "archive download incomplete");
-            send(controller, "error", {
-              code: "DOWNLOAD_INCOMPLETE",
-              message: err.message,
-            });
+            try {
+              send(controller, "error", {
+                code: "DOWNLOAD_INCOMPLETE",
+                message: err.message,
+              });
+            } catch {
+              /* ignore */
+            }
+            if (cleanupSessionId) {
+              this.activeControllers.delete(cleanupSessionId);
+              await removeArchiveStagingDir(this.stagingBaseDir, cleanupSessionId).catch(
+                () => {}
+              );
+            }
             await finish(controller);
+            return;
+          }
+          if ((err as Error)?.name === "AbortError") {
+            if (cleanupSessionId) {
+              this.activeControllers.delete(cleanupSessionId);
+            }
+            try {
+              controller.close();
+            } catch {
+              /* ignore */
+            }
             return;
           }
           captureException(err);
           logger.error({ err }, "archive ingest stream failed");
-          send(controller, "error", {
-            code: "INGEST_FAILED",
-            message: err instanceof Error ? err.message : String(err),
-          });
+          try {
+            send(controller, "error", {
+              code: "INGEST_FAILED",
+              message: err instanceof Error ? err.message : String(err),
+            });
+          } catch {
+            /* ignore */
+          }
+          if (cleanupSessionId) {
+            this.activeControllers.delete(cleanupSessionId);
+            await removeArchiveStagingDir(this.stagingBaseDir, cleanupSessionId).catch(
+              () => {}
+            );
+          }
           await finish(controller);
         }
       },
