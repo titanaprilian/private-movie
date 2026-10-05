@@ -18,7 +18,8 @@ import {
   createVideoSourceRepositoryInternal,
   type VideoSourceRepository,
 } from "../video-sources/repository";
-import { parseBulkScrapedEpisodeNumber, SeriesFetchError } from "../../index";
+import { parseBulkScrapedEpisodeNumber } from "../bulk/episode-number";
+import { SeriesFetchError } from "../media/service";
 import type { TmdbSyncInput } from "../tmdb/service";
 
 export interface OngoingScrapeResult {
