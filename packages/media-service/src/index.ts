@@ -88,6 +88,40 @@ import { createSeasonsRepositoryInternal, SeasonNotFoundError } from "./internal
 import { createSeriesRepositoryInternal, SeriesNotFoundError } from "./internal/series/repository";
 import { createVideoSourceRepositoryInternal, VideoSourceNotFoundError, type VideoSourceUpsertInput, type UpdateVideoSourceInput, type VideoSourceRepositoryOptions } from "./internal/video-sources/repository";
 import {
+  createBulkServiceInternal,
+  stripSeasonDescriptors,
+  parseBulkScrapedEpisodeNumber,
+  applySequentialFallback,
+  type SequentialFallbackItem,
+  type SequentialFallbackTarget,
+  type PreviewBulkSourcesInput,
+  type PreviewBulkSourcesResult,
+  type ScrapedBulkEpisodeItem,
+  type BulkPreviewLocalEpisodeItem,
+  type BulkSourceItem,
+  type BulkSourceItemVideoSource,
+  type SaveBulkSourcesInput,
+  type SaveBulkSourcesResult,
+} from "./internal/bulk/index";
+export {
+  stripSeasonDescriptors,
+  parseBulkScrapedEpisodeNumber,
+  applySequentialFallback,
+  createBulkServiceInternal,
+};
+export type {
+  SequentialFallbackItem,
+  SequentialFallbackTarget,
+  PreviewBulkSourcesInput,
+  PreviewBulkSourcesResult,
+  ScrapedBulkEpisodeItem,
+  BulkPreviewLocalEpisodeItem,
+  BulkSourceItem,
+  BulkSourceItemVideoSource,
+  SaveBulkSourcesInput,
+  SaveBulkSourcesResult,
+};
+import {
   fetchFromTmdb,
   fetchTmdbSeriesData,
   saveTmdbSeries,
@@ -318,172 +352,6 @@ export interface SaveEpisodeServiceOptions {
   s3StorageService?: S3StorageService;
 }
 
-export interface PreviewBulkSourcesInput {
-  seriesId: string;
-  sourceUrl: string;
-  source: VideoSource;
-  episodeOffset?: number;
-  seasonId?: string;
-  html?: string;
-}
-
-export interface ScrapedBulkEpisodeItem {
-  scrapedTitle: string;
-  scrapedUrl: string;
-  episodeNumber: number | null;
-  calculatedOrder: number | null;
-  matchedLocalEpisodeId: string | null;
-  matchStatus: "matched" | "unmatched";
-}
-
-export interface BulkPreviewLocalEpisodeItem {
-  id: string;
-  title: string;
-  order: number;
-  seasonId: string;
-  seasonNumber: number | null;
-  seasonTitle: string;
-  hasSources: boolean;
-}
-
-export interface PreviewBulkSourcesResult {
-  scrapedEpisodes: ScrapedBulkEpisodeItem[];
-  localEpisodes: BulkPreviewLocalEpisodeItem[];
-}
-
-export interface BulkSourceItemVideoSource {
-  type: "embed" | "direct";
-  url: string;
-  label: string;
-  quality?: string | null;
-}
-
-export interface BulkSourceItem {
-  episodeId: string | null;
-  videoSources: BulkSourceItemVideoSource[];
-}
-
-export interface SaveBulkSourcesInput {
-  seriesId: string;
-  mappings: BulkSourceItem[];
-}
-
-export interface SaveBulkSourcesResult {
-  success: true;
-  savedCount: number;
-  skippedCount: number;
-}
-
-/**
- * Strip anime season descriptors ("2nd Season", "Season 2", "Part 2",
- * "Cour 2", Roman numerals like "II") so bare-number episode matching
- * doesn't mistake a season number for the episode number.
- */
-export function stripSeasonDescriptors(title: string): string {
-  let out = title;
-  // "2nd Season", "3rd Season"
-  out = out.replace(/\b\d+(?:st|nd|rd|th)\s+season\b/gi, " ");
-  // Word-form ordinals must run before the generic "Season N" rule so the
-  // episode number in e.g. "Second Season 7" isn't mistaken for a season.
-  out = out.replace(
-    /\b(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+seasons?\b/gi,
-    " "
-  );
-  // "Season 2", "Season 02"
-  out = out.replace(/\bseasons?\s+\d+\b/gi, " ");
-  // "Season II", "Season IV" (Roman numerals)
-  out = out.replace(/\bseasons?\s+[IVXLCDM]+\b/gi, " ");
-  // "Part 2", "Part II", "Cour 2", "Cour II"
-  out = out.replace(/\b(?:part|cour)\s+(?:\d+|[IVXLCDM]+)\b/gi, " ");
-  // Trailing standalone Roman numeral season marker, e.g. "Re:Zero II Episode 1"
-  out = out.replace(/\b[IVXLCDM]{2,}\b/g, " ");
-  return out.replace(/\s{2,}/g, " ").trim();
-}
-
-export function parseBulkScrapedEpisodeNumber(title: string): number | null {
-  const normalized = stripSeasonDescriptors(title);
-
-  const decimalEpMatch = normalized.match(/(?:episode|eps|ep|#)\.?\s*(\d+\.\d+)/i);
-  if (decimalEpMatch) {
-    const num = parseFloat(decimalEpMatch[1]);
-    if (!Number.isNaN(num)) return num;
-  }
-
-  const epMatch = normalized.match(/(?:episode|eps|ep|#)\.?\s*(\d+)/i);
-  if (epMatch) {
-    const num = parseInt(epMatch[1], 10);
-    if (!Number.isNaN(num)) return num;
-  }
-
-  const titleWithoutSeason = normalized.replace(/\bseason\s*\d+/gi, "").replace(/\bs\d+\b/gi, "");
-
-  const decimalMatch = titleWithoutSeason.match(/\b(\d+\.\d+)\b/);
-  if (decimalMatch) {
-    const num = parseFloat(decimalMatch[1]);
-    if (!Number.isNaN(num)) return num;
-  }
-
-  const numMatch = titleWithoutSeason.match(/\b(\d+)\b/);
-  if (numMatch) {
-    const num = parseInt(numMatch[1], 10);
-    if (!Number.isNaN(num) && (num < 1900 || num > 2100)) return num;
-  }
-
-  return null;
-}
-
-export interface SequentialFallbackTarget {
-  id: string;
-  order: number;
-}
-
-export interface SequentialFallbackItem {
-  episodeNumber: number | null;
-  calculatedOrder: number | null;
-  matchedLocalEpisodeId: string | null;
-  matchStatus: "matched" | "unmatched";
-}
-
-/**
- * Sequential fallback: scraped episodes with an integer episode number that
- * title matching left unmatched default to the next unclaimed target-season
- * episode in order. Non-integer (decimals/specials) and excess items stay
- * unmapped so they keep needing review.
- */
-export function applySequentialFallback<T extends SequentialFallbackItem>(
-  scrapedItems: T[],
-  targets: SequentialFallbackTarget[]
-): T[] {
-  const sortedTargets = [...targets].sort((a, b) => a.order - b.order);
-  const claimed = new Set<string>();
-  for (const item of scrapedItems) {
-    if (item.matchedLocalEpisodeId) claimed.add(item.matchedLocalEpisodeId);
-  }
-  let cursor = 0;
-  return scrapedItems.map((item) => {
-    if (
-      item.matchedLocalEpisodeId ||
-      item.episodeNumber === null ||
-      !Number.isInteger(item.episodeNumber)
-    ) {
-      return item;
-    }
-    while (cursor < sortedTargets.length && claimed.has(sortedTargets[cursor].id)) {
-      cursor++;
-    }
-    const target = sortedTargets[cursor];
-    if (!target) return item;
-    claimed.add(target.id);
-    cursor++;
-    return {
-      ...item,
-      calculatedOrder: target.order,
-      matchedLocalEpisodeId: target.id,
-      matchStatus: "matched" as const,
-    };
-  });
-}
-
 export interface OngoingScrapeResult {
   seasonId: string;
   seriesId: string;
@@ -506,6 +374,7 @@ export interface MediaService {
   previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult>;
   previewScrapeSeries(input: SaveEpisodeInput): Promise<PreviewScrapeSeriesResult>;
   previewBulkSources(input: PreviewBulkSourcesInput): Promise<PreviewBulkSourcesResult>;
+  saveBulkSources(input: SaveBulkSourcesInput): Promise<SaveBulkSourcesResult>;
   scrapeAndSaveSources(episodeId: string, sourceUrl: string): Promise<EpisodeWithVideoSources>;
   saveMedia(input: SaveMediaInput): Promise<SaveMediaResult>;
   importTmdb(input: TmdbImportInput): Promise<SeriesWithSeasons>;
@@ -758,76 +627,35 @@ export function createMediaService<
     async previewBulkSources(
       input: PreviewBulkSourcesInput
     ): Promise<PreviewBulkSourcesResult> {
-      const targetSeries = await seriesRepository.findById(input.seriesId);
-      if (!targetSeries) {
-        throw new SeriesNotFoundError(`Series with id ${input.seriesId} not found`);
-      }
+      const bulk = createBulkServiceInternal(
+        db,
+        {
+          previewScrapeSeries: (args) =>
+            this.previewScrapeSeries({
+              sourceUrl: args.sourceUrl,
+              source: args.source,
+              html: args.html,
+            }),
+        },
+        { s3StorageService: options?.s3StorageService }
+      );
+      return bulk.previewBulkSources(input);
+    },
 
-      const parsedSeries = await this.previewScrapeSeries({
-        sourceUrl: input.sourceUrl,
-        source: input.source,
-        html: input.html,
-      });
-
-      const fullSeries = await seriesRepository.findByIdWithEpisodes(input.seriesId);
-      const localEpisodes: BulkPreviewLocalEpisodeItem[] = [];
-      const localEpisodesMapByOrder = new Map<number, string>();
-
-      if (fullSeries && fullSeries.seasons) {
-        for (const s of fullSeries.seasons) {
-          if (input.seasonId && s.id !== input.seasonId) {
-            continue;
-          }
-          for (const ep of s.episodes) {
-            localEpisodes.push({
-              id: ep.id,
-              title: ep.title,
-              order: ep.order,
-              seasonId: s.id,
-              seasonNumber: s.seasonNumber ?? null,
-              seasonTitle: s.title,
-              hasSources: Array.isArray(ep.videoSources) && ep.videoSources.length > 0,
-            });
-            if (!localEpisodesMapByOrder.has(ep.order)) {
-              localEpisodesMapByOrder.set(ep.order, ep.id);
-            }
-          }
-        }
-      }
-
-      const offset = input.episodeOffset ?? 0;
-      const initialScraped: ScrapedBulkEpisodeItem[] = parsedSeries.episodes.map((scrapedEp) => {
-        const epNum = parseBulkScrapedEpisodeNumber(scrapedEp.title);
-        let calculatedOrder: number | null = null;
-        let matchedLocalEpisodeId: string | null = null;
-        let matchStatus: "matched" | "unmatched" = "unmatched";
-
-        if (epNum !== null && Number.isInteger(epNum)) {
-          const targetOrder = epNum + offset;
-          calculatedOrder = targetOrder;
-          const matchedId = localEpisodesMapByOrder.get(targetOrder);
-          if (matchedId) {
-            matchedLocalEpisodeId = matchedId;
-            matchStatus = "matched";
-          }
-        }
-
-        return {
-          scrapedTitle: scrapedEp.title,
-          scrapedUrl: scrapedEp.url,
-          episodeNumber: epNum,
-          calculatedOrder,
-          matchedLocalEpisodeId,
-          matchStatus,
-        };
-      });
-
-      const scrapedEpisodes = initialScraped;
-
-      return {
-        scrapedEpisodes,
-        localEpisodes,
-      };
+    async saveBulkSources(input: SaveBulkSourcesInput): Promise<SaveBulkSourcesResult> {
+      const bulk = createBulkServiceInternal(
+        db,
+        {
+          previewScrapeSeries: (args) =>
+            this.previewScrapeSeries({
+              sourceUrl: args.sourceUrl,
+              source: args.source,
+              html: args.html,
+            }),
+        },
+        { s3StorageService: options?.s3StorageService }
+      );
+      return bulk.saveBulkSources(input);
     },
 
     async scrapeAndSaveSources(
