@@ -60,6 +60,7 @@ function mapRowToJob(row: ArchiveIngestJobRow): ArchiveIngestJob {
     seriesId: row.seriesId,
     sourceKey: row.sourceKey,
     sourceUrl: row.sourceUrl,
+    referer: row.referer ?? null,
     status: row.status as ArchiveIngestJobStatus,
     stage: row.stage,
     bytesDone: row.bytesDone,
@@ -170,6 +171,15 @@ export class ArchiveIngestJobService {
     return "archive.zip";
   }
 
+  public resolveReferer(sourceUrl: string, referer?: string | null): string {
+    if (referer && referer.trim().length > 0) return referer.trim();
+    try {
+      return new URL(sourceUrl).origin;
+    } catch {
+      return sourceUrl;
+    }
+  }
+
   async findActiveJob(ownerId: string, sourceKey: string): Promise<ArchiveIngestJob | null> {
     const rows = await this.db
       .select()
@@ -244,6 +254,7 @@ export class ArchiveIngestJobService {
       seriesId: request.seriesId ?? null,
       sourceKey,
       sourceUrl: request.sourceUrl,
+      referer: request.referer?.trim() ? request.referer.trim() : null,
       status: initialStatus,
       stage: initialStatus,
       bytesDone: 0,
@@ -456,9 +467,10 @@ export class ArchiveIngestJobService {
       }
 
       // 2. Preflight request (Fetch headers / check Content-Length)
+      const referer = this.resolveReferer(job.sourceUrl, job.referer);
       const headOrInitialRes = await this.fetchFn(directUrl, {
         method: "GET",
-        headers: { "User-Agent": USER_AGENT },
+        headers: { "User-Agent": USER_AGENT, Referer: referer },
         signal,
       });
 
@@ -466,16 +478,22 @@ export class ArchiveIngestJobService {
         throw new Error(`Remote fetch failed with HTTP ${headOrInitialRes.status}: ${headOrInitialRes.statusText}`);
       }
 
-      // Handle Google Drive virus-scan / confirmation interstitial if served
+      // Handle Google Drive virus-scan / confirmation interstitial if served.
+      // Gate on GDrive hostname: non-GDrive providers (MediaFire, Gofile,
+      // direct links) may serve HTML landing/captcha pages with 200 OK that
+      // must NOT enter the confirmation code path.
       let finalRes = headOrInitialRes;
-      if (GoogleDriveUrlHelper.isInterstitial(headOrInitialRes)) {
+      if (
+        GoogleDriveUrlHelper.isGoogleDriveUrl(directUrl) &&
+        GoogleDriveUrlHelper.isInterstitial(headOrInitialRes)
+      ) {
         const html = await headOrInitialRes.text();
         const form = GoogleDriveUrlHelper.extractConfirmForm(html);
         if (form) {
           const cookie = GoogleDriveUrlHelper.collectCookies(headOrInitialRes.headers);
           const reqDetails = GoogleDriveUrlHelper.buildConfirmRequest(form, cookie);
           finalRes = await this.fetchFn(reqDetails.url, {
-            headers: { "User-Agent": USER_AGENT, ...reqDetails.headers },
+            headers: { "User-Agent": USER_AGENT, Referer: referer, ...reqDetails.headers },
             signal,
           });
           if (!finalRes.ok) {

@@ -302,4 +302,121 @@ describe("ArchiveIngestJobService Integration Tests", () => {
     const finishedJob2 = await service.getJob(job2.id);
     expect(finishedJob2?.status).toBe("ready");
   });
+
+  it("persists referer in the DB row and forwards it in the fetch Referer header", async () => {
+    const seenHeaders: Record<string, string>[] = [];
+    const service = new ArchiveIngestJobService({
+      db,
+      stagingBaseDir: testTmpBase,
+      fetchFn: async (_url, init) => {
+        const headers = new Headers(init?.headers as HeadersInit);
+        seenHeaders.push({ referer: headers.get("referer") ?? "" });
+        const data = new TextEncoder().encode("archive-body");
+        return new Response(data, {
+          status: 200,
+          headers: { "Content-Length": String(data.byteLength) },
+        });
+      },
+      extractor: {
+        binaryPath: "7zz",
+        list: async () => [
+          { path: "Series.S01E01.mp4", sizeBytes: 100_000, isDirectory: false },
+        ],
+        extract: async () => ({ extractedFiles: [] }),
+        run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+    });
+
+    const job = await service.submitJob(testUserId, {
+      sourceUrl: "https://example.com/referer-pack.zip",
+      referer: "https://example.com",
+    });
+
+    await new Promise((r) => setTimeout(r, 300));
+
+    const rows = await db
+      .select()
+      .from(archiveIngestJobs)
+      .where(eq(archiveIngestJobs.ownerId, testUserId));
+    const row = rows.find((r) => r.id === job.id);
+    expect(row?.referer).toBe("https://example.com");
+
+    const readyJob = await service.getJob(job.id);
+    expect(readyJob?.status).toBe("ready");
+    expect(readyJob?.referer).toBe("https://example.com");
+    expect(seenHeaders.length).toBeGreaterThan(0);
+    expect(seenHeaders[0]?.referer).toBe("https://example.com");
+  });
+
+  it("defaults the Referer header to the source URL origin when no referer is given", async () => {
+    const seenHeaders: Record<string, string>[] = [];
+    const service = new ArchiveIngestJobService({
+      db,
+      stagingBaseDir: testTmpBase,
+      fetchFn: async (_url, init) => {
+        const headers = new Headers(init?.headers as HeadersInit);
+        seenHeaders.push({ referer: headers.get("referer") ?? "" });
+        const data = new TextEncoder().encode("archive-body");
+        return new Response(data, {
+          status: 200,
+          headers: { "Content-Length": String(data.byteLength) },
+        });
+      },
+      extractor: {
+        binaryPath: "7zz",
+        list: async () => [
+          { path: "Series.S01E01.mp4", sizeBytes: 100_000, isDirectory: false },
+        ],
+        extract: async () => ({ extractedFiles: [] }),
+        run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+    });
+
+    const job = await service.submitJob(testUserId, {
+      sourceUrl: "https://cdn.example.org/files/pack.zip",
+    });
+
+    await new Promise((r) => setTimeout(r, 300));
+
+    const readyJob = await service.getJob(job.id);
+    expect(readyJob?.status).toBe("ready");
+    expect(seenHeaders.length).toBeGreaterThan(0);
+    expect(seenHeaders[0]?.referer).toBe("https://cdn.example.org");
+  });
+
+  it("does NOT enter the GDrive confirm path for an HTML 200 OK response on a non-GDrive URL", async () => {
+    let fetchCount = 0;
+    const service = new ArchiveIngestJobService({
+      db,
+      stagingBaseDir: testTmpBase,
+      fetchFn: async () => {
+        fetchCount++;
+        // MediaFire-style HTML landing page with 200 OK + a fake form.
+        return new Response(
+          "<html><body><form action='https://evil.example/confirm'><input name='x' value='1'></form></body></html>",
+          { status: 200, headers: { "Content-Type": "text/html" } }
+        );
+      },
+      extractor: {
+        binaryPath: "7zz",
+        list: async () => [
+          { path: "Series.S01E01.mp4", sizeBytes: 100_000, isDirectory: false },
+        ],
+        extract: async () => ({ extractedFiles: [] }),
+        run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+    });
+
+    const job = await service.submitJob(testUserId, {
+      sourceUrl: "https://download.mediafire.com/abc123/pack.zip",
+    });
+
+    await new Promise((r) => setTimeout(r, 300));
+
+    // Only the initial fetch happens — no second POST to a fake confirm URL.
+    expect(fetchCount).toBe(1);
+    const finished = await service.getJob(job.id);
+    expect(finished?.status).toBe("ready");
+    expect(finished?.errorMessage ?? "").not.toContain("Google Drive confirmation");
+  });
 });

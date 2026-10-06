@@ -1625,6 +1625,7 @@ export async function createArchiveIngestJob(
         ? { storageProviderId: request.storageProviderId }
         : {}),
       ...(request.password !== undefined ? { password: request.password } : {}),
+      ...(request.referer !== undefined ? { referer: request.referer } : {}),
     }),
   });
   return parseJobResponse(response, 'Failed to start archive ingest job');

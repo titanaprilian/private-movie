@@ -409,6 +409,7 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
         sourceUrl: archiveUrl.trim(),
         storageProviderId: selectedStorageProviderId || null,
         password: archivePassword.trim() || null,
+        referer: archiveReferer.trim() || null,
       });
       setJob(created);
       if (created.status === 'failed' && created.errorMessage) {
@@ -421,7 +422,7 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
     } finally {
       setIsSubmitting(false);
     }
-  }, [archiveUrl, archivePassword, selectedStorageProviderId]);
+  }, [archiveUrl, archivePassword, archiveReferer, selectedStorageProviderId]);
 
   const confirmSelection = useCallback(async () => {
     const seriesId = optionsRef.current?.seriesId ?? '';

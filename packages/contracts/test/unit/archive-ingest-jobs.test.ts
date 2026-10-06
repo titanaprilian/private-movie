@@ -35,6 +35,7 @@ describe("archive ingest durable job contracts", () => {
       seriesId: "series-1",
       sourceKey: "drive:abc123",
       sourceUrl: "https://drive.google.com/file/d/abc123/view",
+      referer: null,
       status: "downloading",
       stage: "downloading",
       bytesDone: 0,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ArchiveIngestJobService,
+  GoogleDriveUrlHelper,
   type ArchiveEntry,
 } from "../../../src/modules/series";
 import type { DbClient } from "@repo/db";
@@ -122,6 +123,50 @@ describe("ArchiveIngestJobService Unit Tests", () => {
       // No episode number detected
       expect(ova?.detectedEpisodeNumber).toBeNull();
       expect(ova?.needsReview).toBe(true);
+    });
+  });
+
+  describe("GDrive interstitial guard + referer resolution", () => {
+    it("does NOT treat an HTML 200 OK response from a non-GDrive URL as an interstitial", () => {
+      const mediafireUrl = "https://download.mediafire.com/abc123/pack.zip";
+      const htmlRes = new Response("<html><body><form action='/captcha'></form></body></html>", {
+        status: 200,
+        headers: { "Content-Type": "text/html" },
+      });
+
+      // Raw interstitial signal fires (content-type based) ...
+      expect(GoogleDriveUrlHelper.isInterstitial(htmlRes)).toBe(true);
+      // ... but the pipeline guard gates on hostname, so non-GDrive skips it.
+      const shouldEnterConfirmPath =
+        GoogleDriveUrlHelper.isGoogleDriveUrl(mediafireUrl) &&
+        GoogleDriveUrlHelper.isInterstitial(htmlRes);
+      expect(shouldEnterConfirmPath).toBe(false);
+
+      // Sanity: a real GDrive HTML interstitial still enters the confirm path.
+      const gdriveUrl =
+        "https://drive.usercontent.google.com/download?id=1a2b3c4d5e6f7g8h9i0j&export=download";
+      expect(GoogleDriveUrlHelper.isGoogleDriveUrl(gdriveUrl)).toBe(true);
+      const gdriveShouldEnter =
+        GoogleDriveUrlHelper.isGoogleDriveUrl(gdriveUrl) &&
+        GoogleDriveUrlHelper.isInterstitial(htmlRes);
+      expect(gdriveShouldEnter).toBe(true);
+    });
+
+    it("resolveReferer prefers explicit referer and defaults to URL origin", () => {
+      const service = new ArchiveIngestJobService({
+        db: dummyDb,
+        stagingBaseDir: "/tmp",
+      });
+
+      expect(service.resolveReferer("https://mediafire.com/f/abc", "https://example.com/page")).toBe(
+        "https://example.com/page"
+      );
+      expect(service.resolveReferer("https://mediafire.com/f/abc", null)).toBe(
+        "https://mediafire.com"
+      );
+      expect(service.resolveReferer("https://mediafire.com/f/abc", "  ")).toBe(
+        "https://mediafire.com"
+      );
     });
   });
 });

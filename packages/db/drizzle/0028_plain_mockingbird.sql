@@ -1,0 +1,1 @@
+ALTER TABLE "archive_ingest_jobs" ADD COLUMN "referer" text;
