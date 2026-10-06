@@ -9,7 +9,7 @@ import type {
 import type { AuthRateLimitOptions } from "./modules/authentication/http";
 import type { OngoingSeasonScheduler } from "./modules/media/scheduler";
 import type { RateLimitPluginOptions } from "./plugins";
-import type { ArchiveExtractFn, ArchiveFetchFn } from "./modules/series";
+import type { ArchiveExtractFn, ArchiveFetchFn, ArchiveIngestJobService } from "./modules/series";
 import type {
   StorageOverrides,
   StorageService,
@@ -38,6 +38,7 @@ export interface CreateAppOverrides {
   archiveFetchFn?: ArchiveFetchFn;
   archiveExtractFn?: ArchiveExtractFn;
   archiveStagingBaseDir?: string;
+  archiveJobService?: ArchiveIngestJobService;
   scheduler?: SchedulerDeps;
   storage?: StorageOverrides;
   rateLimit?: RateLimitPluginOptions;

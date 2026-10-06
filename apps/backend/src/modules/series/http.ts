@@ -18,9 +18,9 @@ import {
   type StorageProviderRegistry,
 } from "@repo/media-service";
 import { authGuard } from "../../lib/auth";
-import { successResponse } from "../../lib/response";
-import { ArchiveIngestService, sseResponse } from "./internal/archive-ingest";
+import { successResponse, errorResponse } from "../../lib/response";
 import type { ArchiveExtractFn, ArchiveFetchFn } from "./internal/archive-ingest";
+import { ArchiveIngestJobService } from "./internal/archive-ingest-job-service";
 
 export interface SeriesRoutesOptions {
   db: DbClient;
@@ -30,10 +30,10 @@ export interface SeriesRoutesOptions {
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
   mediaService?: MediaService;
-  archiveIngestService?: ArchiveIngestService;
   archiveFetchFn?: ArchiveFetchFn;
   archiveExtractFn?: ArchiveExtractFn;
   archiveStagingBaseDir?: string;
+  archiveJobService?: ArchiveIngestJobService;
 }
 
 const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
@@ -80,19 +80,18 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       browserFn: options.browserFn,
       s3StorageService: options.s3StorageService,
     });
-  const archiveIngestService =
-    options.archiveIngestService ??
-    new ArchiveIngestService({
+
+  const archiveJobService =
+    options.archiveJobService ??
+    new ArchiveIngestJobService({
       db: options.db,
       s3StorageService: options.s3StorageService,
       storageProviderRegistry: storageRegistry,
       ...(options.archiveFetchFn ? { fetchFn: options.archiveFetchFn } : {}),
-      ...(options.archiveExtractFn ? { extractFn: options.archiveExtractFn } : {}),
       ...(options.archiveStagingBaseDir
         ? { stagingBaseDir: options.archiveStagingBaseDir }
-        : {}),
+        : { stagingBaseDir: "/tmp/archive-ingest-staging" }),
     });
-
 
   return new Elysia({ name: "series-routes" })
     .get(
@@ -477,91 +476,173 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       }
     )
     .post(
-      "/series/:id/archive-ingest/preview",
-      async ({ params, body, request }) => {
-        const seriesRepository = createSeriesRepositoryInternal(options.db);
+      "/series/:id/archive-ingest/jobs",
+      async ({ params, body, headers }) => {
         const seriesRow = await seriesRepository.findById(params.id);
         if (!seriesRow) {
           throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
         }
-        const stream = archiveIngestService.previewStream(params.id, body, request.signal);
-        return sseResponse(stream);
+        const token = (headers["authorization"] ?? "").replace(/^Bearer\s+/i, "");
+        const ownerId = await options.authService.verifyAccessToken(token);
+        const job = await archiveJobService.submitJob(ownerId, {
+          sourceUrl: body.sourceUrl,
+          seriesId: params.id,
+          storageProviderId: body.storageProviderId ?? null,
+          password: body.password ?? null,
+        });
+        return successResponse(job);
       },
       {
         beforeHandle: auth,
         detail: {
           tags: ["Series"],
-          summary: "Preview archive ingest",
+          summary: "Start archive ingest job",
           description:
-            "Downloads a remote ZIP/RAR season pack to temporary staging, extracts it, and streams download/extraction progress as server-sent events before returning the matched episode preview. Requires authentication.",
+            "Starts a new durable archive ingest job for the series or returns an existing active job for the same source. Returns HTTP 200 in both cases. Requires authentication.",
         },
         params: t.Object({
           id: t.String({ format: "uuid" }),
         }),
         body: t.Object({
-          url: t.String({ format: "uri" }),
+          sourceUrl: t.String({ format: "uri" }),
+          storageProviderId: t.Optional(t.Nullable(t.String())),
           password: t.Optional(t.Nullable(t.String())),
-          referer: t.Optional(t.Nullable(t.String())),
-          targetSeasonId: t.Optional(t.Nullable(t.String())),
+        }),
+      }
+    )
+    .get(
+      "/series/:id/archive-ingest/jobs/:jobId",
+      async ({ params, set }) => {
+        const job = await archiveJobService.getJob(params.jobId);
+        if (!job) {
+          return errorResponse(set, 404, new Error("Job not found"));
+        }
+        return successResponse(job);
+      },
+      {
+        beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Poll archive ingest job",
+          description:
+            "Returns the current state, progress, entries, and error details of an archive ingest job. Requires authentication.",
+        },
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+          jobId: t.String(),
         }),
       }
     )
     .post(
-      "/series/:id/archive-ingest/commit",
-      async ({ params, body, request }) => {
-        const seriesRepository = createSeriesRepositoryInternal(options.db);
-        const seriesRow = await seriesRepository.findById(params.id);
-        if (!seriesRow) {
-          throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
+      "/series/:id/archive-ingest/jobs/:jobId/confirm",
+      async ({ params, body, set }) => {
+        const job = await archiveJobService.getJob(params.jobId);
+        if (!job) {
+          return errorResponse(set, 404, new Error("Job not found"));
         }
-        const stream = archiveIngestService.commitStream(params.id, body, request.signal);
-        return sseResponse(stream);
+        try {
+          const confirmed = await archiveJobService.confirmJob(
+            params.jobId,
+            body.selection.map((item) => ({
+              filename: item.filename,
+              episodeId: item.episodeId ?? null,
+              label: item.label ?? null,
+              quality: item.quality ?? null,
+              isIgnored: item.isIgnored ?? false,
+            })),
+            {
+              storageProviderId: body.storageProviderId ?? null,
+              password: body.password ?? null,
+            }
+          );
+          return successResponse(confirmed);
+        } catch (err) {
+          return errorResponse(set, 422, err instanceof Error ? err : new Error(String(err)));
+        }
       },
       {
         beforeHandle: auth,
         detail: {
           tags: ["Series"],
-          summary: "Commit archive ingest",
+          summary: "Confirm archive ingest job selection",
           description:
-            "Uploads staged archive files to the selected storage provider sequentially, creates video_sources rows, and streams per-file upload progress as server-sent events. Cleans up staging on completion. Requires authentication.",
+            "Submits the user's episode-file match selection and starts the sequential upload phase. Requires authentication.",
         },
         params: t.Object({
           id: t.String({ format: "uuid" }),
+          jobId: t.String(),
         }),
         body: t.Object({
-          stagingSessionId: t.String(),
-          storageProviderId: t.String(),
-          defaultLabel: t.Optional(t.Nullable(t.String())),
-          items: t.Array(
+          selection: t.Array(
             t.Object({
-              fileId: t.String(),
-              episodeId: t.String({ format: "uuid" }),
+              filename: t.String(),
+              episodeId: t.Optional(t.Nullable(t.String())),
               label: t.Optional(t.Nullable(t.String())),
               quality: t.Optional(t.Nullable(t.String())),
               isIgnored: t.Optional(t.Boolean()),
             })
           ),
+          storageProviderId: t.Optional(t.Nullable(t.String())),
+          password: t.Optional(t.Nullable(t.String())),
         }),
       }
     )
-    .delete(
-      "/series/:id/archive-ingest/:sessionId",
-      async ({ params }) => {
-        await archiveIngestService.deleteSession(params.sessionId);
-        return successResponse({ success: true });
+    .post(
+      "/series/:id/archive-ingest/jobs/:jobId/cancel",
+      async ({ params, set }) => {
+        const cancelled = await archiveJobService.cancelJob(params.jobId);
+        if (!cancelled) {
+          return errorResponse(set, 404, new Error("Job not found"));
+        }
+        return successResponse(cancelled);
       },
       {
         beforeHandle: auth,
         detail: {
           tags: ["Series"],
-          summary: "Delete archive staging session",
+          summary: "Cancel archive ingest job",
           description:
-            "Immediately removes the temporary staging directory for an archive ingest session. Requires authentication.",
+            "Cancels an active archive ingest job, aborts its running download/upload, and purges its staging directory. Requires authentication.",
         },
         params: t.Object({
           id: t.String({ format: "uuid" }),
-          sessionId: t.String(),
+          jobId: t.String(),
         }),
+      }
+    )
+    .post(
+      "/series/:id/archive-ingest/jobs/:jobId/retry",
+      async ({ params, body, set }) => {
+        const job = await archiveJobService.getJob(params.jobId);
+        if (!job) {
+          return errorResponse(set, 404, new Error("Job not found"));
+        }
+        try {
+          const retried = await archiveJobService.retryJob(params.jobId, {
+            password: body?.password ?? null,
+          });
+          return successResponse(retried);
+        } catch (err) {
+          return errorResponse(set, 422, err instanceof Error ? err : new Error(String(err)));
+        }
+      },
+      {
+        beforeHandle: auth,
+        detail: {
+          tags: ["Series"],
+          summary: "Retry failed archive ingest job",
+          description:
+            "Retries a previously failed archive ingest job, re-running the download pipeline from the beginning. An optional password is forwarded for password-protected archives. Requires authentication.",
+        },
+        params: t.Object({
+          id: t.String({ format: "uuid" }),
+          jobId: t.String(),
+        }),
+        body: t.Optional(
+          t.Object({
+            password: t.Optional(t.Nullable(t.String())),
+          })
+        ),
       }
     );
 };

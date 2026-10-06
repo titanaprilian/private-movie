@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, rm, stat, statfs, unlink } from "node:fs/promises";
+import { mkdir, readdir, rm, stat, statfs, unlink } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { Readable } from "node:stream";
-import { eq, and, inArray, desc, sql } from "drizzle-orm";
+import { eq, and, inArray, desc, sql, lte, isNotNull } from "drizzle-orm";
 import {
   type DbClient,
   archiveIngestJobs,
@@ -488,7 +488,13 @@ export class ArchiveIngestJobService {
 
       logger.info({ jobId, entryCount: processedEntries.length }, "Archive ingest job is now ready");
     } catch (err) {
-      if (signal.aborted || (err as Error)?.name === "AbortError") {
+      const isAbort =
+        signal.aborted ||
+        (err as Error)?.name === "AbortError" ||
+        (err as { code?: string })?.code === "ABORT_ERR" ||
+        (err as Error)?.message?.toLowerCase().includes("abort");
+
+      if (isAbort) {
         logger.info({ jobId }, "Job execution aborted");
         return;
       }
@@ -707,7 +713,13 @@ export class ArchiveIngestJobService {
         if (signal.aborted) return;
       }
     } catch (err) {
-      if (signal.aborted || (err as Error)?.name === "AbortError") {
+      const isAbort =
+        signal.aborted ||
+        (err as Error)?.name === "AbortError" ||
+        (err as { code?: string })?.code === "ABORT_ERR" ||
+        (err as Error)?.message?.toLowerCase().includes("abort");
+
+      if (isAbort) {
         logger.info({ jobId }, "Upload execution aborted");
         return;
       }
@@ -846,6 +858,11 @@ export class ArchiveIngestJobService {
   }
 
   private async failJob(jobId: string, errorCode: string, errorMessage: string): Promise<void> {
+    const current = await this.getJob(jobId);
+    if (current?.status === "cancelled") {
+      return;
+    }
+
     await this.db
       .update(archiveIngestJobs)
       .set({
@@ -905,10 +922,170 @@ export class ArchiveIngestJobService {
       return null;
     }
   }
+
+  /**
+   * Retry a failed job. If the archive is still present in staging (e.g.
+   * password-protected failure), re-run executeJobPipeline in-place; otherwise
+   * re-download from scratch by creating a fresh job record.
+   *
+   * An optional password is forwarded to the extraction stage.
+   */
+  async retryJob(
+    jobId: string,
+    options: { password?: string | null } = {}
+  ): Promise<ArchiveIngestJob> {
+    const job = await this.getJob(jobId);
+    if (!job) throw new Error(`Job ${jobId} not found`);
+    if (job.status !== "failed") {
+      throw new Error(`Job ${jobId} cannot be retried from status '${job.status}'`);
+    }
+
+    // Reset to downloading and re-run the full pipeline
+    await this.db
+      .update(archiveIngestJobs)
+      .set({
+        status: "downloading",
+        stage: "downloading",
+        errorCode: null,
+        errorMessage: null,
+        bytesDone: 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(archiveIngestJobs.id, jobId));
+
+    void this.executeJobPipeline(jobId, options.password ?? null).catch((err) => {
+      captureException(err);
+      logger.error({ err, jobId }, "Unexpected error in retried job execution");
+    });
+
+    const updated = await this.getJob(jobId);
+    if (!updated) throw new Error(`Job ${jobId} not found after retry`);
+    return updated;
+  }
 }
 
 export function createArchiveIngestJobService(
   options: ArchiveIngestJobServiceOptions
 ): ArchiveIngestJobService {
   return new ArchiveIngestJobService(options);
+}
+
+// ─── Boot reconciliation ──────────────────────────────────────────────────
+
+/**
+ * Called once at server startup. Any job that was actively running
+ * (queued/downloading/listing/uploading) when the process died is
+ * transitioned to `failed` with errorCode `SERVER_RESTARTED`.
+ * `ready` jobs are preserved — they can still be confirmed by the user.
+ */
+export async function markInterruptedJobsOnBoot(db: DbClient): Promise<void> {
+  const interruptedStatuses = ["queued", "downloading", "listing", "uploading"];
+  try {
+    const result = await db
+      .update(archiveIngestJobs)
+      .set({
+        status: "failed",
+        stage: "failed",
+        errorCode: "SERVER_RESTARTED",
+        errorMessage: "Server restarted while job was in progress",
+        updatedAt: new Date(),
+      })
+      .where(inArray(archiveIngestJobs.status, interruptedStatuses))
+      .returning({ id: archiveIngestJobs.id, stagingPath: archiveIngestJobs.stagingPath });
+
+    // Clean up partial staging for interrupted jobs
+    for (const row of result) {
+      if (row.stagingPath) {
+        await rm(row.stagingPath, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+
+    logger.info({ count: result.length }, "Boot reconciliation: marked interrupted jobs as failed");
+  } catch (err) {
+    logger.error({ err }, "Boot reconciliation failed");
+  }
+}
+
+/**
+ * Scans the staging base directory and removes any subdirectory that does not
+ * correspond to a known job in the database. Orphan directories accumulate
+ * when the process dies before completing cleanup.
+ */
+export async function purgeOrphanStagingDirs(
+  db: DbClient,
+  stagingBaseDir: string
+): Promise<void> {
+  try {
+    let entries: string[];
+    try {
+      entries = await readdir(stagingBaseDir);
+    } catch {
+      // Directory doesn't exist yet — nothing to purge
+      return;
+    }
+
+    if (entries.length === 0) return;
+
+    // Load all job IDs that have a staging_path inside this directory
+    const rows = await db
+      .select({ id: archiveIngestJobs.id })
+      .from(archiveIngestJobs);
+
+    const knownIds = new Set(rows.map((r) => r.id));
+
+    let purged = 0;
+    for (const entry of entries) {
+      if (!knownIds.has(entry)) {
+        const fullPath = join(stagingBaseDir, entry);
+        await rm(fullPath, { recursive: true, force: true }).catch(() => {});
+        purged++;
+      }
+    }
+
+    if (purged > 0) {
+      logger.info({ purged, stagingBaseDir }, "Purged orphan staging directories");
+    }
+  } catch (err) {
+    logger.error({ err }, "purgeOrphanStagingDirs failed");
+  }
+}
+
+// ─── Background expiration sweeper ───────────────────────────────────────
+
+/**
+ * Finds all `ready` jobs whose `expires_at` is in the past, transitions them
+ * to `expired`, and deletes their staging directories. Intended to run on a
+ * periodic timer (e.g. every 30 minutes).
+ */
+export async function sweepExpiredJobs(db: DbClient): Promise<void> {
+  try {
+    const now = new Date();
+    const expired = await db
+      .update(archiveIngestJobs)
+      .set({
+        status: "expired",
+        stage: "expired",
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(archiveIngestJobs.status, "ready"),
+          isNotNull(archiveIngestJobs.expiresAt),
+          lte(archiveIngestJobs.expiresAt, now)
+        )
+      )
+      .returning({ id: archiveIngestJobs.id, stagingPath: archiveIngestJobs.stagingPath });
+
+    for (const row of expired) {
+      if (row.stagingPath) {
+        await rm(row.stagingPath, { recursive: true, force: true }).catch(() => {});
+      }
+    }
+
+    if (expired.length > 0) {
+      logger.info({ count: expired.length }, "Swept expired archive ingest jobs");
+    }
+  } catch (err) {
+    logger.error({ err }, "sweepExpiredJobs failed");
+  }
 }
