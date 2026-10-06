@@ -8,6 +8,7 @@ import { initSentry } from "./lib/sentry";
 import { createAuthenticationService } from "./modules/authentication";
 import { startOngoingSeasonScheduler } from "./modules/media";
 import { createStorageService } from "./modules/storage";
+import { probeSevenZipFormatSupport } from "./modules/series";
 import { createShutdownManager } from "./shutdown";
 
 const shutdown = createShutdownManager({ logger });
@@ -39,6 +40,27 @@ shutdown.addStep({ name: "scheduler", run: () => scheduler?.stop() });
 shutdown.addStep({ name: "browser", run: () => browser?.close() });
 shutdown.addStep({ name: "database", run: () => db?.$client.end() });
 
+/**
+ * Archive ingest runs out-of-process 7-Zip. A binary that is present but was
+ * compiled without the RAR codec still accepts `7zz` invocations and only fails
+ * much later inside a job, so surface it at boot instead of at extract time.
+ */
+async function logArchiveEngineSupport(): Promise<void> {
+  try {
+    const support = await probeSevenZipFormatSupport();
+    if (support.missing.length > 0) {
+      logger.warn(
+        { binary: support.binary, missing: support.missing },
+        `7-Zip binary ${support.binary} cannot read ${support.missing.join(", ")}; archive ingest will fail for those formats`
+      );
+      return;
+    }
+    logger.info({ binary: support.binary }, "7-Zip archive engine ready");
+  } catch (error) {
+    logger.warn({ err: error }, "7-Zip binary not found; archive ingest will fail");
+  }
+}
+
 async function bootstrap(): Promise<void> {
   db = createDbClient(process.env.DATABASE_URL);
 
@@ -56,6 +78,8 @@ async function bootstrap(): Promise<void> {
   scheduler = await startOngoingSeasonScheduler({ db, mediaService, logger });
 
   const serverConfig = loadServerConfig();
+
+  await logArchiveEngineSupport();
 
   app = createApp({
     db,
