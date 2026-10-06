@@ -86,6 +86,26 @@ export const ARCHIVE_POLL_STATUSES: ReadonlySet<string> = new Set([
   'uploading',
 ]);
 
+/**
+ * Pick the storage provider that new uploads should target by default:
+ * the enabled provider marked as default, else the first enabled provider,
+ * else the marked default (even if disabled), else the first provider.
+ * Uploads explicitly send `storageProviderId: null` when nothing is picked,
+ * letting the backend resolve its active default provider.
+ */
+export function pickDefaultStorageProvider(
+  providers: StorageProviderItem[]
+): StorageProviderItem | null {
+  if (!Array.isArray(providers) || providers.length === 0) return null;
+  return (
+    providers.find((p) => p.isDefault && p.isEnabled) ??
+    providers.find((p) => p.isEnabled) ??
+    providers.find((p) => p.isDefault) ??
+    providers[0] ??
+    null
+  );
+}
+
 export const ARCHIVE_POLL_INTERVAL_MS = 1000;
 
 export function isPasswordErrorCode(code: string | null | undefined): boolean {
@@ -154,7 +174,7 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
     [rawProviders]
   );
   const defaultProvider = useMemo(
-    () => storageProviders.find((p) => p.isDefault) || storageProviders[0] || null,
+    () => pickDefaultStorageProvider(storageProviders),
     [storageProviders]
   );
   const [selectedStorageProviderId, setSelectedStorageProviderId] = useState<string>(

@@ -1,6 +1,6 @@
 import { createDbClient } from "@repo/db";
 import { createStealthBrowser } from "@repo/media-scraper";
-import { createMediaService, createS3StorageService } from "@repo/media-service";
+import { createMediaService, createS3StorageService, createStorageProviderRegistry } from "@repo/media-service";
 import { createApp } from "./app";
 import { loadServerConfig } from "./config/server-config";
 import { logger } from "./lib/logger";
@@ -74,6 +74,10 @@ async function bootstrap(): Promise<void> {
 
   const auth = createAuthenticationService(db);
   const s3StorageService = createS3StorageService();
+  // Single database-backed provider registry shared by the archive ingest
+  // job service and every HTTP module, so uploads resolve to the active
+  // default provider (e.g. IDrive) instead of unconfigured env-based S3.
+  const storageProviderRegistry = createStorageProviderRegistry(db, s3StorageService);
   const storageService = createStorageService(db, { s3StorageService });
 
   browser = await createStealthBrowser();
@@ -96,6 +100,7 @@ async function bootstrap(): Promise<void> {
   const archiveJobService = new ArchiveIngestJobService({
     db,
     s3StorageService,
+    storageProviderRegistry,
     stagingBaseDir: archiveStagingBaseDir,
   });
 
@@ -124,6 +129,7 @@ async function bootstrap(): Promise<void> {
     overrides: {
       browserFn: browser.browserFn,
       s3StorageService,
+      storageProviderRegistry,
       scheduler,
       archiveStagingBaseDir,
       archiveJobService,

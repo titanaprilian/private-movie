@@ -35,11 +35,13 @@ import {
 import { GoogleDriveUrlHelper } from "./google-drive-url";
 import { logger } from "../../../lib/logger";
 import { captureException } from "../../../lib/sentry";
-import type {
-  S3StorageService,
-  StorageProviderRegistry,
+import {
+  createStorageProviderRegistry,
+  createVideoSourceRepositoryInternal,
+  S3NotConfiguredError,
+  type S3StorageService,
+  type StorageProviderRegistry,
 } from "@repo/media-service";
-import { createVideoSourceRepositoryInternal } from "@repo/media-service";
 
 export const MAX_CONCURRENT_JOBS_DEFAULT = 2;
 export const ARCHIVE_DISK_PREFLIGHT_FACTOR = 2.5;
@@ -109,7 +111,7 @@ export class ArchiveIngestJobService {
   private statfsFn: ArchiveJobStatfsFn;
   private maxConcurrentJobs: number;
   private s3StorageService?: S3StorageService;
-  private storageProviderRegistry?: StorageProviderRegistry;
+  private storageProviderRegistry: StorageProviderRegistry;
   private activeControllers = new Map<string, AbortController>();
 
   constructor(options: ArchiveIngestJobServiceOptions) {
@@ -125,7 +127,14 @@ export class ArchiveIngestJobService {
       });
     this.maxConcurrentJobs = options.maxConcurrentJobs ?? MAX_CONCURRENT_JOBS_DEFAULT;
     this.s3StorageService = options.s3StorageService;
-    this.storageProviderRegistry = options.storageProviderRegistry;
+    // Always resolve uploads through the database-backed provider registry so
+    // the active default provider (e.g. IDrive) is used when no explicit
+    // provider is requested. Auto-instantiate from the db connection when the
+    // caller did not supply one (e.g. legacy constructions that only pass an
+    // environment-based S3 service).
+    this.storageProviderRegistry =
+      options.storageProviderRegistry ??
+      createStorageProviderRegistry(this.db, this.s3StorageService);
   }
 
   public deriveSourceKey(url: string): string {
@@ -199,6 +208,19 @@ export class ArchiveIngestJobService {
       return existing;
     }
 
+    // 1b. Smart staging reuse: a previous *failed* job for the same source
+    // whose downloaded archive is still intact on disk is recovered instead
+    // of re-downloading gigabytes of data (already-listed -> ready,
+    // downloaded-but-unlisted -> resume at listing).
+    const recoverable = await this.findRecoverableFailedJob(ownerId, sourceKey);
+    if (recoverable && (await this.hasArchiveOnDisk(recoverable))) {
+      logger.info(
+        { jobId: recoverable.id, ownerId, sourceKey },
+        "Recovering failed job with intact staging archive"
+      );
+      return await this.recoverFailedJob(recoverable, request.password);
+    }
+
     // 2. Concurrency limit check
     const activeCount = await this.countActiveJobs();
     const shouldQueue = activeCount >= this.maxConcurrentJobs;
@@ -253,6 +275,92 @@ export class ArchiveIngestJobService {
     }
 
     return created;
+  }
+
+  /**
+   * Most recent `failed` job for (ownerId, sourceKey), if any. Failed
+   * upload-phase jobs keep their staging archive on disk, so they are
+   * candidates for recovery without re-downloading (see `recoverFailedJob`).
+   * Download-phase failures already wipe staging via `failJob`, as do boot
+   * reconciliation, cancellation, and expiration — their archives are never
+   * intact, so `hasArchiveOnDisk` filters them out below.
+   */
+  private async findRecoverableFailedJob(
+    ownerId: string,
+    sourceKey: string
+  ): Promise<ArchiveIngestJob | null> {
+    const rows = await this.db
+      .select()
+      .from(archiveIngestJobs)
+      .where(
+        and(
+          eq(archiveIngestJobs.ownerId, ownerId),
+          eq(archiveIngestJobs.sourceKey, sourceKey),
+          eq(archiveIngestJobs.status, "failed")
+        )
+      )
+      .orderBy(desc(archiveIngestJobs.updatedAt))
+      .limit(1);
+
+    return rows[0] ? mapRowToJob(rows[0]) : null;
+  }
+
+  private async hasArchiveOnDisk(job: ArchiveIngestJob): Promise<boolean> {
+    if (!job.stagingPath || !job.archiveFilename) return false;
+    try {
+      await stat(join(job.stagingPath, job.archiveFilename));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Recover a failed job whose archive is still intact in staging:
+   * - entries already parsed  -> reset to `ready` (errors cleared) and return
+   *   immediately; the user can review + confirm without any download/listing.
+   * - downloaded but unlisted -> clear errors, move to `listing`, and resume
+   *   the pipeline from the listing stage in the background.
+   */
+  private async recoverFailedJob(
+    job: ArchiveIngestJob,
+    password?: string | null
+  ): Promise<ArchiveIngestJob> {
+    if ((job.entries?.length ?? 0) > 0) {
+      await this.db
+        .update(archiveIngestJobs)
+        .set({
+          status: "ready",
+          stage: "ready",
+          errorCode: null,
+          errorMessage: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(archiveIngestJobs.id, job.id));
+      const recovered = await this.getJob(job.id);
+      if (!recovered) throw new Error(`Job ${job.id} not found after recovery`);
+      return recovered;
+    }
+
+    await this.db
+      .update(archiveIngestJobs)
+      .set({
+        status: "listing",
+        stage: "listing",
+        errorCode: null,
+        errorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(archiveIngestJobs.id, job.id));
+
+    void this.executeListingPhase(job.id, password ?? null).catch((err) => {
+      captureException(err);
+      logger.error({ err, jobId: job.id }, "Unexpected error in resumed listing execution");
+    });
+
+    const resumed = await this.getJob(job.id);
+    if (!resumed) throw new Error(`Job ${job.id} not found after recovery`);
+    return resumed;
   }
 
   async getJob(jobId: string): Promise<ArchiveIngestJob | null> {
@@ -458,35 +566,8 @@ export class ArchiveIngestJobService {
 
       if (signal.aborted) return;
 
-      // 4. Listing stage: inspect entries using SevenZipExtractor.list
-      await this.db
-        .update(archiveIngestJobs)
-        .set({ status: "listing", stage: "listing", updatedAt: new Date() })
-        .where(eq(archiveIngestJobs.id, jobId));
-
-      const rawEntries = await this.extractor.list({
-        archivePath,
-        password: password ?? undefined,
-        signal,
-      });
-
-      if (signal.aborted) return;
-
-      // Filter video files, match episodes, and calculate size disparity
-      const processedEntries = this.processArchiveEntries(rawEntries);
-
-      // 5. Transition to ready status and persist entries (retaining raw archive on disk)
-      await this.db
-        .update(archiveIngestJobs)
-        .set({
-          status: "ready",
-          stage: "ready",
-          entries: processedEntries,
-          updatedAt: new Date(),
-        })
-        .where(eq(archiveIngestJobs.id, jobId));
-
-      logger.info({ jobId, entryCount: processedEntries.length }, "Archive ingest job is now ready");
+      // 4-5. Listing stage: inspect entries, persist them, transition to ready.
+      await this.listArchiveIntoReady(jobId, signal, password ?? null);
     } catch (err) {
       const isAbort =
         signal.aborted ||
@@ -513,6 +594,99 @@ export class ArchiveIngestJobService {
       this.activeControllers.delete(jobId);
       void this.pumpQueue();
     }
+  }
+
+  /**
+   * Listing-only resume phase: re-reads the already-downloaded on-disk
+   * archive for a job (e.g. recovered via `submitJob`) and transitions it
+   * through `listing` to `ready`. Unlike the full pipeline, a listing failure
+   * here preserves the staging archive so a retry can re-list cheaply instead
+   * of re-downloading.
+   */
+  async executeListingPhase(jobId: string, password?: string | null): Promise<void> {
+    const controller = new AbortController();
+    this.activeControllers.set(jobId, controller);
+    const signal = controller.signal;
+
+    try {
+      await this.listArchiveIntoReady(jobId, signal, password ?? null);
+    } catch (err) {
+      const isAbort =
+        signal.aborted ||
+        (err as Error)?.name === "AbortError" ||
+        (err as { code?: string })?.code === "ABORT_ERR" ||
+        (err as Error)?.message?.toLowerCase().includes("abort");
+
+      if (isAbort) {
+        logger.info({ jobId }, "Listing execution aborted");
+        return;
+      }
+
+      logger.error({ err, jobId }, "Archive ingest listing execution failed");
+      captureException(err);
+
+      const errorCode =
+        err instanceof ArchiveEngineError
+          ? err.code
+          : (err as { code?: string })?.code ?? "LIST_FAILED";
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      // Preserve staging + archive for cheap re-list retries.
+      await this.failJob(jobId, errorCode, errorMessage, { preserveStaging: true });
+    } finally {
+      this.activeControllers.delete(jobId);
+      void this.pumpQueue();
+    }
+  }
+
+  /**
+   * Shared listing implementation used by both the full download pipeline
+   * and the listing-only resume phase: sets `listing` status, lists archive
+   * entries, filters/matches episodes, and persists the `ready` transition.
+   */
+  private async listArchiveIntoReady(
+    jobId: string,
+    signal: AbortSignal,
+    password?: string | null
+  ): Promise<void> {
+    const job = await this.getJob(jobId);
+    if (!job) throw new Error(`Job ${jobId} not found`);
+    if (job.status === "cancelled") return;
+    if (!job.stagingPath) throw new Error(`Job ${jobId} has no staging path`);
+
+    const archivePath = join(job.stagingPath, job.archiveFilename ?? "archive.zip");
+
+    // Listing stage: inspect entries using SevenZipExtractor.list
+    await this.db
+      .update(archiveIngestJobs)
+      .set({ status: "listing", stage: "listing", updatedAt: new Date() })
+      .where(eq(archiveIngestJobs.id, jobId));
+
+    const rawEntries = await this.extractor.list({
+      archivePath,
+      password: password ?? undefined,
+      signal,
+    });
+
+    if (signal.aborted) return;
+
+    // Filter video files, match episodes, and calculate size disparity
+    const processedEntries = this.processArchiveEntries(rawEntries);
+
+    // Transition to ready status and persist entries (retaining raw archive on disk)
+    await this.db
+      .update(archiveIngestJobs)
+      .set({
+        status: "ready",
+        stage: "ready",
+        entries: processedEntries,
+        errorCode: null,
+        errorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(archiveIngestJobs.id, jobId));
+
+    logger.info({ jobId, entryCount: processedEntries.length }, "Archive ingest job is now ready");
   }
 
   /**
@@ -588,7 +762,7 @@ export class ArchiveIngestJobService {
     const signal = controller.signal;
 
     try {
-      const s3 = await this.resolveUploadS3(jobId);
+      const { s3, providerId: resolvedProviderId } = await this.resolveUploadStorage(jobId);
 
       for (;;) {
         if (signal.aborted) return;
@@ -683,7 +857,7 @@ export class ArchiveIngestJobService {
             url: key,
             label: item.label ?? filename,
             quality: item.quality ?? null,
-            storageProviderId: job.storageProviderId,
+            storageProviderId: resolvedProviderId,
           });
 
           // Mark completed + increment bytes_done, then delete local file immediately.
@@ -747,23 +921,41 @@ export class ArchiveIngestJobService {
     }
   }
 
-  private async resolveUploadS3(jobId: string): Promise<S3StorageService> {
+  /**
+   * Resolve the S3 client for the upload phase plus the provider id to
+   * record. An explicit `job.storageProviderId` is honored; otherwise the
+   * active default provider from the database registry (e.g. IDrive) is used.
+   * The resolved provider id is persisted on the job so subsequent resumes
+   * and the created `video_sources` rows stay linked to it. Only when no
+   * provider can be resolved at all does the environment-based S3 fallback
+   * apply (and it must be configured, otherwise `S3NotConfiguredError`).
+   */
+  private async resolveUploadStorage(
+    jobId: string
+  ): Promise<{ s3: S3StorageService; providerId: string | null }> {
     const job = await this.getJob(jobId);
-    const effectiveProviderId =
+    const requestedProviderId =
       job?.storageProviderId && job.storageProviderId.trim().length > 0
-        ? job.storageProviderId
+        ? job.storageProviderId.trim()
         : null;
-    if (this.storageProviderRegistry) {
-      const regS3 = await this.storageProviderRegistry.getService(effectiveProviderId);
-      if (regS3) return regS3;
-      if (effectiveProviderId) throw new Error("Specified storage provider not found");
+
+    const resolved = await this.storageProviderRegistry.getProvider(requestedProviderId);
+    if (resolved) {
+      if (job && resolved.provider.id !== job.storageProviderId) {
+        await this.db
+          .update(archiveIngestJobs)
+          .set({ storageProviderId: resolved.provider.id, updatedAt: new Date() })
+          .where(eq(archiveIngestJobs.id, jobId));
+      }
+      return { s3: resolved.service, providerId: resolved.provider.id };
     }
+    if (requestedProviderId) throw new Error("Specified storage provider not found");
+
     const fallback = this.s3StorageService ?? null;
     if (!fallback || !fallback.isConfigured()) {
-      const { S3NotConfiguredError } = await import("@repo/media-service");
       throw new S3NotConfiguredError("S3 storage service is not configured");
     }
-    return fallback;
+    return { s3: fallback, providerId: null };
   }
 
   private async finalizeUploadJob(jobId: string): Promise<void> {
@@ -857,7 +1049,12 @@ export class ArchiveIngestJobService {
     return matchedList;
   }
 
-  private async failJob(jobId: string, errorCode: string, errorMessage: string): Promise<void> {
+  private async failJob(
+    jobId: string,
+    errorCode: string,
+    errorMessage: string,
+    options: { preserveStaging?: boolean } = {}
+  ): Promise<void> {
     const current = await this.getJob(jobId);
     if (current?.status === "cancelled") {
       return;
@@ -873,6 +1070,10 @@ export class ArchiveIngestJobService {
         updatedAt: new Date(),
       })
       .where(eq(archiveIngestJobs.id, jobId));
+
+    // Listing-resume failures preserve the on-disk archive so a retry can
+    // re-list cheaply instead of re-downloading.
+    if (options.preserveStaging) return;
 
     const job = await this.getJob(jobId);
     if (job?.stagingPath) {

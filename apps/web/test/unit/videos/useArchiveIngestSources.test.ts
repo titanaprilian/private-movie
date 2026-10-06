@@ -1,4 +1,4 @@
-import { renderHook, createTestQueryClient } from '../../utils';
+import { renderHook, createTestQueryClient, waitFor } from '../../utils';
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act } from '@testing-library/react';
@@ -9,7 +9,7 @@ import {
   ARCHIVE_POLL_INTERVAL_MS,
 } from '@/modules/videos/internal/useArchiveIngestSources';
 import * as api from '@/modules/videos/internal/api';
-import type { ArchiveIngestJob } from '@repo/contracts';
+import type { ArchiveIngestJob, StorageProviderItem } from '@repo/contracts';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -32,10 +32,12 @@ vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
   };
 });
 
+const providersFixture = vi.hoisted(() => ({ current: [] as StorageProviderItem[] }));
+
 vi.mock('@/modules/storage', () => ({
   storageProvidersQueryOptions: () => ({
     queryKey: ['storage-providers'],
-    queryFn: async () => [],
+    queryFn: async () => providersFixture.current,
   }),
 }));
 
@@ -80,6 +82,7 @@ describe('useArchiveIngestSources polling hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    providersFixture.current = [];
   });
 
   afterEach(() => {
@@ -268,4 +271,42 @@ describe('useArchiveIngestSources polling hook', () => {
     expect([...anomalies]).toEqual(['ep03.mp4']);
     expect(computeSizeAnomalyFilenames([]).size).toBe(0);
   });
+
+  it('defaults selectedStorageProviderId to the active default provider', async () => {
+    vi.useRealTimers();
+    providersFixture.current = [
+      makeStorageProvider({ id: 'prov-plain', isDefault: false, isEnabled: true }),
+      makeStorageProvider({ id: 'prov-disabled-default', isDefault: true, isEnabled: false }),
+      makeStorageProvider({ id: 'prov-active-default', isDefault: true, isEnabled: true }),
+    ];
+
+    const { result } = renderHook(() => useArchiveIngestSources({ seriesId: 'series-1' }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedStorageProviderId).toBe('prov-active-default');
+    });
+    expect(result.current.storageProviders).toHaveLength(3);
+  });
 });
+
+function makeStorageProvider(overrides: Partial<StorageProviderItem> & { id: string }): StorageProviderItem {
+  return {
+    name: `Provider ${overrides.id}`,
+    providerType: 'custom',
+    endpoint: 'https://s3.example.com',
+    region: 'us-east-1',
+    bucket: 'videos',
+    accessKeyIdMasked: '****',
+    publicBaseUrl: null,
+    forcePathStyle: false,
+    storageLimitGb: 50,
+    isDefault: false,
+    isEnabled: true,
+    linkedSourcesCount: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
