@@ -5,6 +5,7 @@ coverage/
 .turbo/
 .env*
 *.sql
+!packages/db/drizzle/*.sql
 *.dump
 
 # Prompt & shell scratch references
