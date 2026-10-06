@@ -64,61 +64,6 @@ export async function detectArchiveFormat(
   }
 }
 
-export type RarExtractFn = (
-  archivePath: string,
-  destDir: string,
-  password?: string | null
-) => Promise<{ stdout: string; extractedFiles: string[] }>;
-
-const defaultRarExtractFn: RarExtractFn = async (archivePath, destDir, password) => {
-  const { mkdir } = await import("node:fs/promises");
-  await mkdir(destDir, { recursive: true });
-  let extractorModule: typeof import("node-unrar-js");
-  try {
-    extractorModule = await import("node-unrar-js");
-  } catch (err) {
-    throw new ArchiveExtractionError(
-      err instanceof Error ? `Failed to load unrar engine: ${err.message}` : "Failed to load unrar engine"
-    );
-  }
-  try {
-    const extractor = await extractorModule.createExtractorFromFile({
-      filepath: archivePath,
-      targetPath: destDir,
-      ...(password ? { password } : {}),
-    });
-    const extracted = extractor.extract(password ? { password } : {});
-    const names: string[] = [];
-    for (const file of extracted.files) {
-      names.push(file.fileHeader.name);
-    }
-    return { stdout: `Extracted ${names.length} file(s) via node-unrar-js`, extractedFiles: names };
-  } catch (err) {
-    if (err instanceof Error) {
-      const reason = (err as Error & { reason?: string }).reason ?? "";
-      const msg = `${reason} ${err.message}`.toLowerCase();
-      if (
-        reason === "ERAR_MISSING_PASSWORD" ||
-        (!password && (msg.includes("missing password") || msg.includes("password")))
-      ) {
-        // Distinguish missing vs wrong: without a password it's "required"
-        if (reason === "ERAR_BAD_PASSWORD" || msg.includes("bad password") || msg.includes("wrong password")) {
-          throw new ArchivePasswordRequiredError();
-        }
-        throw new ArchivePasswordRequiredError(err.message);
-      }
-      if (
-        reason === "ERAR_BAD_PASSWORD" ||
-        msg.includes("bad password") ||
-        msg.includes("wrong password") ||
-        msg.includes("data error")
-      ) {
-        throw new InvalidArchivePasswordError(err.message);
-      }
-    }
-    throw new ArchiveExtractionError(err instanceof Error ? `Failed to extract RAR archive: ${err.message}` : "Failed to extract RAR archive");
-  }
-};
 export interface ProcessRunResult {
   exitCode: number;
   stdout: string;
@@ -127,7 +72,7 @@ export interface ProcessRunResult {
 
 export type ArchiveProcessRunner = (args: string[]) => Promise<ProcessRunResult>;
 
-const SUPPORTED_ARCHIVE_EXTENSIONS = [".zip", ".rar"];
+const SUPPORTED_ARCHIVE_EXTENSIONS = [".zip", ".rar", ".7z"];
 
 export function isSupportedArchiveFilename(filename: string): boolean {
   const lower = filename.toLowerCase();
@@ -162,34 +107,13 @@ export interface ExtractArchiveOptions {
   password?: string | null;
   onProgressFile?: (filename: string) => void;
   runner?: ArchiveProcessRunner;
-  rarExtractor?: RarExtractFn;
-  detectFormat?: (archivePath: string) => Promise<ArchiveFormat>;
-}
-
-function isRarArchive(archivePath: string, format: ArchiveFormat): boolean {
-  if (format === "rar") return true;
-  if (format === "zip") return false;
-  return archivePath.toLowerCase().endsWith(".rar");
 }
 
 export async function extractArchive(options: ExtractArchiveOptions): Promise<ArchiveExtractionResult> {
   const { archivePath, destDir, password, onProgressFile } = options;
   const runner = options.runner ?? defaultRunner;
 
-  const format = options.detectFormat
-    ? await options.detectFormat(archivePath)
-    : await detectArchiveFormat(archivePath);
-
-  if (isRarArchive(archivePath, format)) {
-    const rarExtract = options.rarExtractor ?? defaultRarExtractFn;
-    const rarResult = await rarExtract(archivePath, destDir, password ?? null);
-    for (const name of rarResult.extractedFiles) {
-      onProgressFile?.(name);
-    }
-    return { extractedDir: destDir, stdout: rarResult.stdout };
-  }
-
-  const args = ["x", "-y", `-o${destDir}`];
+  const args = ["x", "-y", "-bb3", `-o${destDir}`];
   if (password) {
     args.push(`-p${password}`);
   }
@@ -205,6 +129,10 @@ export async function extractArchive(options: ExtractArchiveOptions): Promise<Ar
   }
 
   if (result.exitCode === 0) {
+    for (const line of result.stdout.split(/\r?\n/)) {
+      const match = /^-\s+(.+)$/.exec(line.trim());
+      if (match) onProgressFile?.(match[1].trim());
+    }
     return { extractedDir: destDir, stdout: result.stdout };
   }
 

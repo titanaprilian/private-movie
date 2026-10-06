@@ -67,6 +67,7 @@ export const createApp = (deps: CreateAppDeps) => {
             archiveFetchFn: overrides.archiveFetchFn,
             archiveExtractFn: overrides.archiveExtractFn,
             archiveStagingBaseDir: overrides.archiveStagingBaseDir,
+            archiveJobService: overrides.archiveJobService,
           })
         )
         .use(

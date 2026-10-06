@@ -8,7 +8,6 @@ import {
   extractArchive,
   isSupportedArchiveFilename,
   type ArchiveProcessRunner,
-  type RarExtractFn,
 } from "../../../src/modules/episodes";
 
 function runnerWith(result: { exitCode: number; stdout?: string; stderr?: string }): {
@@ -24,11 +23,11 @@ function runnerWith(result: { exitCode: number; stdout?: string; stderr?: string
 }
 
 describe("archive-extractor format support", () => {
-  it("supports zip and rar archives only", () => {
+  it("supports zip, rar, and 7z archives", () => {
     expect(isSupportedArchiveFilename("season-pack.zip")).toBe(true);
     expect(isSupportedArchiveFilename("season-pack.RAR")).toBe(true);
+    expect(isSupportedArchiveFilename("season-pack.7z")).toBe(true);
     expect(isSupportedArchiveFilename("video.mkv")).toBe(false);
-    expect(isSupportedArchiveFilename("archive.7z")).toBe(false);
     expect(isSupportedArchiveFilename("archive.tar.gz")).toBe(false);
   });
 });
@@ -43,7 +42,7 @@ describe("archive-extractor 7z invocation", () => {
       runner,
     });
     expect(result.extractedDir).toBe("/tmp/out");
-    expect(calls[0]).toEqual(["x", "-y", "-o/tmp/out", "-psecret", "/tmp/pack.zip"]);
+    expect(calls[0]).toEqual(["x", "-y", "-bb3", "-o/tmp/out", "-psecret", "/tmp/pack.zip"]);
   });
 
   it("omits the password flag when no password is provided", async () => {
@@ -52,9 +51,8 @@ describe("archive-extractor 7z invocation", () => {
       archivePath: "/tmp/pack.zip",
       destDir: "/tmp/out",
       runner,
-      detectFormat: async () => "zip",
     });
-    expect(calls[0]).toEqual(["x", "-y", "-o/tmp/out", "/tmp/pack.zip"]);
+    expect(calls[0]).toEqual(["x", "-y", "-bb3", "-o/tmp/out", "/tmp/pack.zip"]);
   });
 
   it("throws ARCHIVE_PASSWORD_REQUIRED when extraction needs a password", async () => {
@@ -128,92 +126,81 @@ describe("archive-extractor magic byte detection", () => {
   });
 });
 
-describe("archive-extractor RAR via node-unrar-js", () => {
-  function rarExtractorWith(result: { stdout?: string; files?: string[]; error?: unknown }): {
-    rarExtractor: RarExtractFn;
-    calls: { archivePath: string; destDir: string; password?: string | null }[];
-  } {
-    const calls: { archivePath: string; destDir: string; password?: string | null }[] = [];
-    const rarExtractor: RarExtractFn = async (archivePath, destDir, password) => {
-      calls.push({ archivePath, destDir, password });
-      if (result.error) throw result.error;
-      return { stdout: result.stdout ?? "ok", extractedFiles: result.files ?? [] };
-    };
-    return { rarExtractor, calls };
-  }
+describe("archive-extractor RAR via the native 7-Zip process", () => {
+  it("routes RAR archives through 7-Zip", async () => {
+    const { runner, calls } = runnerWith({ exitCode: 0, stdout: "Everything is Ok" });
 
-  it("extracts RAR archives via node-unrar-js instead of 7z", async () => {
-    let runnerCalled = false;
-    const runner: ArchiveProcessRunner = async () => {
-      runnerCalled = true;
-      return { exitCode: 0, stdout: "", stderr: "" };
-    };
-    const { rarExtractor, calls } = rarExtractorWith({ files: ["ep01.mkv", "ep02.mkv"] });
     const result = await extractArchive({
       archivePath: "/tmp/pack.rar",
       destDir: "/tmp/out",
       runner,
-      rarExtractor,
     });
+
     expect(result.extractedDir).toBe("/tmp/out");
-    expect(runnerCalled).toBe(false);
-    expect(calls[0]).toMatchObject({ archivePath: "/tmp/pack.rar", destDir: "/tmp/out" });
+    expect(calls[0]).toEqual(["x", "-y", "-bb3", "-o/tmp/out", "/tmp/pack.rar"]);
   });
 
-  it("routes extensionless /download URLs with RAR magic bytes to node-unrar-js", async () => {
-    const { rarExtractor, calls } = rarExtractorWith({ files: ["show.S01E01.mkv"] });
-    const runner: ArchiveProcessRunner = async () => {
-      throw new Error("7z should not be called for RAR magic");
-    };
+  it("routes 7z archives through 7-Zip", async () => {
+    const { runner, calls } = runnerWith({ exitCode: 0 });
+
+    await extractArchive({ archivePath: "/tmp/pack.7z", destDir: "/tmp/out", runner });
+
+    expect(calls[0]).toEqual(["x", "-y", "-bb3", "-o/tmp/out", "/tmp/pack.7z"]);
+  });
+
+  it("reports progress per extracted file", async () => {
+    const { runner } = runnerWith({
+      exitCode: 0,
+      stdout: ["Extracting archive: pack.rar", "- a.mkv", "- b.mkv", "Everything is Ok"].join("\n"),
+    });
+    const seen: string[] = [];
+
     await extractArchive({
-      archivePath: "/tmp/download",
+      archivePath: "/tmp/pack.rar",
       destDir: "/tmp/out",
       runner,
-      rarExtractor,
-      detectFormat: async () => "rar",
+      onProgressFile: (filename) => seen.push(filename),
     });
-    expect(calls).toHaveLength(1);
+
+    expect(seen).toEqual(["a.mkv", "b.mkv"]);
   });
 
-  it("forwards the password to node-unrar-js and reports progress per file", async () => {
-    const { rarExtractor } = rarExtractorWith({ files: ["a.mkv", "b.mkv"] });
-    const seen: string[] = [];
+  it("forwards the password to 7-Zip", async () => {
+    const { runner, calls } = runnerWith({ exitCode: 0 });
+
     await extractArchive({
       archivePath: "/tmp/pack.rar",
       destDir: "/tmp/out",
       password: "secret",
-      rarExtractor,
-      onProgressFile: (f) => seen.push(f),
-      detectFormat: async () => "rar",
+      runner,
     });
-    expect(seen).toEqual(["a.mkv", "b.mkv"]);
+
+    expect(calls[0]).toContain("-psecret");
   });
 
-  it("throws ARCHIVE_PASSWORD_REQUIRED when RAR needs a password", async () => {
-    const { rarExtractor } = rarExtractorWith({
-      error: new ArchivePasswordRequiredError(),
+  it("throws ARCHIVE_PASSWORD_REQUIRED when a RAR needs a password", async () => {
+    const { runner } = runnerWith({
+      exitCode: 2,
+      stderr: "ERROR: Enter password (will not be echoed): Data Error in encrypted file",
     });
+
     await expect(
-      extractArchive({
-        archivePath: "/tmp/pack.rar",
-        destDir: "/tmp/out",
-        rarExtractor,
-        detectFormat: async () => "rar",
-      })
+      extractArchive({ archivePath: "/tmp/pack.rar", destDir: "/tmp/out", runner })
     ).rejects.toBeInstanceOf(ArchivePasswordRequiredError);
   });
 
   it("throws INVALID_ARCHIVE_PASSWORD when the RAR password is wrong", async () => {
-    const { rarExtractor } = rarExtractorWith({
-      error: new InvalidArchivePasswordError(),
+    const { runner } = runnerWith({
+      exitCode: 2,
+      stderr: "ERROR: Data Error in encrypted file. Wrong password?",
     });
+
     await expect(
       extractArchive({
         archivePath: "/tmp/pack.rar",
         destDir: "/tmp/out",
         password: "wrong",
-        rarExtractor,
-        detectFormat: async () => "rar",
+        runner,
       })
     ).rejects.toBeInstanceOf(InvalidArchivePasswordError);
   });

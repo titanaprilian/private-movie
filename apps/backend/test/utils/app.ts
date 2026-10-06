@@ -81,6 +81,7 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
       archiveFetchFn: options?.archiveFetchFn,
       archiveExtractFn: options?.archiveExtractFn,
       archiveStagingBaseDir: options?.archiveStagingBaseDir,
+      archiveJobService: options?.archiveJobService,
       scheduler: options?.scheduler ?? createTestScheduler(),
       storage: options?.storage,
       // Rate limiting is disabled by default in tests. Suites asserting

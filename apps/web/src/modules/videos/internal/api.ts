@@ -47,6 +47,12 @@ import type {
   ArchiveIngestPreviewSseEvent,
   ArchiveIngestCommitSseEvent,
 } from '@repo/contracts';
+import type {
+  ArchiveIngestJob,
+  ArchiveIngestJobConfirmRequest,
+  ArchiveIngestJobCreateRequest,
+  ArchiveIngestJobResponse,
+} from '@repo/contracts';
 import { parseIngestUrl, type ParsedIngestUrl } from './parseIngestUrl';
 
 export { parseIngestUrl };
@@ -1563,5 +1569,141 @@ export async function archiveIngestCleanup(
     // Cleanup is best-effort — do not propagate network errors
   }
 }
+
+// ─── Archive Ingest Jobs (durable REST polling model) ───────────────────────
+
+function jobBase(seriesId: string): string {
+  return `${getApiBaseUrl()}/api/series/${encodeURIComponent(seriesId)}/archive-ingest/jobs`;
+}
+
+async function parseJobResponse(
+  response: Response,
+  fallbackMessage: string
+): Promise<ArchiveIngestJob> {
+  if (!response.ok) {
+    let errorCode: string | undefined;
+    let errorMessage = `${fallbackMessage} (status ${response.status})`;
+    try {
+      const errJson = await response.json();
+      if (errJson?.error) {
+        errorCode = errJson.error.code;
+        errorMessage = errJson.error.message || errorMessage;
+      }
+    } catch {
+      // ignore
+    }
+    const err = new Error(errorMessage) as Error & { code?: string; status?: number };
+    if (errorCode) err.code = errorCode;
+    err.status = response.status;
+    throw err;
+  }
+
+  const json = (await response.json()) as ArchiveIngestJobResponse | { data?: ArchiveIngestJob };
+  const job = (json as ArchiveIngestJobResponse)?.data;
+  if (!job || !job.id) {
+    throw new Error(fallbackMessage);
+  }
+  return job;
+}
+
+/**
+ * POST /api/series/:id/archive-ingest/jobs
+ * Starts a new durable job (or returns the active job for the same source).
+ * Always returns HTTP 200 — never 409.
+ */
+export async function createArchiveIngestJob(
+  seriesId: string,
+  request: ArchiveIngestJobCreateRequest
+): Promise<ArchiveIngestJob> {
+  const headers = await buildAuthHeaders();
+  const response = await fetch(jobBase(seriesId), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      sourceUrl: request.sourceUrl,
+      ...(request.storageProviderId !== undefined
+        ? { storageProviderId: request.storageProviderId }
+        : {}),
+      ...(request.password !== undefined ? { password: request.password } : {}),
+    }),
+  });
+  return parseJobResponse(response, 'Failed to start archive ingest job');
+}
+
+/**
+ * GET /api/series/:id/archive-ingest/jobs/:jobId
+ * Polls the current job state, progress, entries, and error details.
+ */
+export async function getArchiveIngestJob(
+  seriesId: string,
+  jobId: string
+): Promise<ArchiveIngestJob> {
+  const headers = await buildAuthHeaders();
+  const response = await fetch(
+    `${jobBase(seriesId)}/${encodeURIComponent(jobId)}`,
+    { headers }
+  );
+  return parseJobResponse(response, 'Failed to fetch archive ingest job');
+}
+
+/**
+ * POST /api/series/:id/archive-ingest/jobs/:jobId/confirm
+ * Submits the episode-file match selection and starts the upload phase.
+ */
+export async function confirmArchiveIngestJob(
+  seriesId: string,
+  jobId: string,
+  request: ArchiveIngestJobConfirmRequest
+): Promise<ArchiveIngestJob> {
+  const headers = await buildAuthHeaders();
+  const response = await fetch(
+    `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/confirm`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+    }
+  );
+  return parseJobResponse(response, 'Failed to confirm archive ingest job');
+}
+
+/**
+ * POST /api/series/:id/archive-ingest/jobs/:jobId/cancel
+ * Cancels the job and purges its staging directory.
+ */
+export async function cancelArchiveIngestJob(
+  seriesId: string,
+  jobId: string
+): Promise<ArchiveIngestJob> {
+  const headers = await buildAuthHeaders();
+  const response = await fetch(
+    `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/cancel`,
+    { method: 'POST', headers }
+  );
+  return parseJobResponse(response, 'Failed to cancel archive ingest job');
+}
+
+/**
+ * POST /api/series/:id/archive-ingest/jobs/:jobId/retry
+ * Retries a failed job (e.g. password-protected archives) with an optional password.
+ */
+export async function retryArchiveIngestJob(
+  seriesId: string,
+  jobId: string,
+  password?: string | null
+): Promise<ArchiveIngestJob> {
+  const headers = await buildAuthHeaders();
+  const response = await fetch(
+    `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/retry`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ ...(password ? { password } : {}) }),
+    }
+  );
+  return parseJobResponse(response, 'Failed to retry archive ingest job');
+}
+
+export type { ArchiveIngestJob, ArchiveIngestJobConfirmRequest, ArchiveIngestJobCreateRequest };
 
 

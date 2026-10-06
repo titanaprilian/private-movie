@@ -1,8 +1,13 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { BulkIngestModal } from '@/modules/videos/internal/BulkIngestModal';
 import * as api from '@/modules/videos/internal/api';
+import type { ArchiveIngestJob } from '@repo/contracts';
+
+// The archive ingest hook polls job state on a 1s interval; allow async
+// assertions enough headroom to observe at least two poll ticks.
+configure({ asyncUtilTimeout: 5000 });
 
 const mockProviders = [
   {
@@ -58,8 +63,60 @@ vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
     archiveIngestPreview: vi.fn(),
     archiveIngestCommit: vi.fn(),
     archiveIngestCleanup: vi.fn(),
+    createArchiveIngestJob: vi.fn(),
+    getArchiveIngestJob: vi.fn(),
+    confirmArchiveIngestJob: vi.fn(),
+    cancelArchiveIngestJob: vi.fn(),
+    retryArchiveIngestJob: vi.fn(),
   };
 });
+
+function makeJob(overrides: Partial<ArchiveIngestJob> = {}): ArchiveIngestJob {
+  return {
+    id: 'job-1',
+    ownerId: 'owner-1',
+    seriesId: 'series-100',
+    sourceKey: 'https://example.com/season1.zip',
+    sourceUrl: 'https://example.com/season1.zip',
+    status: 'queued',
+    stage: 'queued',
+    bytesDone: 0,
+    bytesTotal: null,
+    stagingPath: null,
+    archiveFilename: 'season1.zip',
+    entries: [],
+    selection: [],
+    storageProviderId: null,
+    errorCode: null,
+    errorMessage: null,
+    createdAt: '2026-10-06T00:00:00.000Z',
+    updatedAt: '2026-10-06T00:00:00.000Z',
+    expiresAt: null,
+    ...overrides,
+  };
+}
+
+const readyJob = () =>
+  makeJob({
+    status: 'ready',
+    stage: 'ready',
+    entries: [
+      {
+        filename: 'Show.S01E01.1080p.mkv',
+        sizeBytes: 500_000_000,
+        detectedEpisodeNumber: 1,
+        quality: '1080p',
+        needsReview: false,
+      },
+      {
+        filename: 'Show.random_extra.mkv',
+        sizeBytes: 50_000_000,
+        detectedEpisodeNumber: null,
+        quality: null,
+        needsReview: true,
+      },
+    ],
+  });
 
 const mockLocalEpisodes = [
   { id: 'ep-1', title: 'Intro to Deep Modules', order: 1 },
@@ -123,6 +180,28 @@ describe('BulkIngestModal component', () => {
     });
     vi.mocked(api.archiveIngestCommit).mockResolvedValue({ success: true, count: 1 });
     vi.mocked(api.archiveIngestCleanup).mockResolvedValue(undefined);
+    vi.mocked(api.createArchiveIngestJob).mockImplementation(async () =>
+      makeJob({ status: 'downloading', stage: 'downloading', bytesDone: 100, bytesTotal: 1000 })
+    );
+    vi.mocked(api.getArchiveIngestJob).mockImplementation(async () => readyJob());
+    vi.mocked(api.confirmArchiveIngestJob).mockImplementation(async () =>
+      makeJob({
+        status: 'uploading',
+        stage: 'uploading 1/2: Show.S01E01.1080p.mkv',
+        bytesDone: 250_000_000,
+        bytesTotal: 500_000_000,
+        entries: readyJob().entries,
+        selection: [
+          { filename: 'Show.S01E01.1080p.mkv', episodeId: 'ep-1', label: 'S3 Video', quality: '1080p', isIgnored: false },
+        ],
+      })
+    );
+    vi.mocked(api.cancelArchiveIngestJob).mockImplementation(async () =>
+      makeJob({ status: 'cancelled', stage: 'cancelled' })
+    );
+    vi.mocked(api.retryArchiveIngestJob).mockImplementation(async () =>
+      makeJob({ status: 'downloading', stage: 'downloading', bytesDone: 0, bytesTotal: 1000 })
+    );
     vi.spyOn(globalThis, 'fetch').mockImplementation(
       async (input: RequestInfo | URL) => {
         const url =
@@ -454,7 +533,7 @@ describe('BulkIngestModal component', () => {
     ).not.toBeInTheDocument();
   });
 
-  // ─── Archive tab tests ────────────────────────────────────────────────────
+  // ─── Archive tab tests (durable job polling model) ─────────────────────────
 
   it('renders Archive tab (default) with archive URL input and Preview button', async () => {
     renderWithProviders(
@@ -473,7 +552,7 @@ describe('BulkIngestModal component', () => {
     expect(screen.getByTestId('archive-preview-btn')).toBeInTheDocument();
   });
 
-  it('archive tab: calls archiveIngestPreview with URL and moves to Step 2 review', async () => {
+  it('archive tab: submitting a URL creates a job and shows downloading progress with byte metrics', async () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
@@ -484,19 +563,37 @@ describe('BulkIngestModal component', () => {
       />
     );
 
-    const archiveUrlInput = screen.getByTestId('archive-url-input');
-    await user.type(archiveUrlInput, 'https://example.com/season1.zip');
+    await user.type(screen.getByTestId('archive-url-input'), 'https://example.com/season1.zip');
     await user.click(screen.getByTestId('archive-preview-btn'));
 
     await waitFor(() => {
-      expect(api.archiveIngestPreview).toHaveBeenCalledWith(
+      expect(api.createArchiveIngestJob).toHaveBeenCalledWith(
         'series-100',
-        expect.objectContaining({ url: 'https://example.com/season1.zip' }),
-        expect.any(Object)
+        expect.objectContaining({ sourceUrl: 'https://example.com/season1.zip' })
       );
     });
 
-    // Should advance to Step 2 review
+    // Downloading progress bar with explicit byte metrics
+    const bytes = await screen.findByTestId('archive-download-bytes');
+    expect(bytes).toHaveTextContent(/100.*\/.*1,?000|B/);
+    expect(screen.getByRole('progressbar', { name: /download progress/i })).toBeInTheDocument();
+  });
+
+  it('archive tab: ready job populates the interactive review table', async () => {
+    const { user } = renderWithProviders(
+      <BulkIngestModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockLocalEpisodes}
+        seasons={mockSeasons}
+      />
+    );
+
+    await user.type(screen.getByTestId('archive-url-input'), 'https://example.com/season1.zip');
+    await user.click(screen.getByTestId('archive-preview-btn'));
+
+    // Polling resolves to ready → review table
     await waitFor(() => {
       expect(screen.getByTestId('archive-review-row-0')).toBeInTheDocument();
     });
@@ -517,20 +614,30 @@ describe('BulkIngestModal component', () => {
       />
     );
 
-    const archiveUrlInput = screen.getByTestId('archive-url-input');
-    await user.type(archiveUrlInput, 'https://example.com/season1.zip');
+    await user.type(screen.getByTestId('archive-url-input'), 'https://example.com/season1.zip');
     await user.click(screen.getByTestId('archive-preview-btn'));
 
     await waitFor(() => {
       expect(screen.getByTestId('archive-review-row-1')).toBeInTheDocument();
     });
 
-    // The second item (index 1) has no episode match — should show Needs Review
+    // The second item has no episode match — should show Needs Review
     const row1 = screen.getByTestId('archive-review-row-1');
     expect(row1).toHaveTextContent('Needs Review');
   });
 
-  it('archive tab: commit calls archiveIngestCommit and shows progress in Step 3', async () => {
+  it('archive tab: flags sibling size disparities with a warning badge', async () => {
+    vi.mocked(api.getArchiveIngestJob).mockResolvedValueOnce(
+      makeJob({
+        status: 'ready',
+        stage: 'ready',
+        entries: [
+          { filename: 'ep01.mp4', sizeBytes: 1000, detectedEpisodeNumber: 1, quality: null, needsReview: false },
+          { filename: 'ep02.mp4', sizeBytes: 1020, detectedEpisodeNumber: 2, quality: null, needsReview: false },
+          { filename: 'ep03-tiny.mp4', sizeBytes: 40, detectedEpisodeNumber: 3, quality: null, needsReview: false },
+        ],
+      })
+    );
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
@@ -541,54 +648,26 @@ describe('BulkIngestModal component', () => {
       />
     );
 
-    // Step 1: enter URL and preview
     await user.type(screen.getByTestId('archive-url-input'), 'https://example.com/season1.zip');
     await user.click(screen.getByTestId('archive-preview-btn'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('archive-commit-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('archive-review-row-2')).toBeInTheDocument();
     });
-
-    // Step 2: commit
-    await user.click(screen.getByTestId('archive-commit-btn'));
-
-    // Step 3: progress
-    await waitFor(() => {
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
-      expect(screen.getByTestId('archive-commit-logs')).toBeInTheDocument();
-    });
-
-    await waitFor(() => {
-      expect(api.archiveIngestCommit).toHaveBeenCalledWith(
-        'series-100',
-        expect.objectContaining({
-          stagingSessionId: 'sess-123',
-          items: expect.arrayContaining([
-            expect.objectContaining({ fileId: 'file-1', episodeId: 'ep-1' }),
-          ]),
-        }),
-        expect.any(Object)
-      );
-    });
-
-    // Close button should appear after commit resolves
-    const closeBtn = await screen.findByTestId('archive-commit-close-btn');
-    expect(closeBtn).toBeInTheDocument();
+    expect(screen.getByTestId('archive-review-row-2')).toHaveTextContent(/size anomaly/i);
   });
 
-  it('archive tab: closing modal calls archiveIngestCleanup when a session exists', async () => {
-    const onOpenChange = vi.fn();
+  it('archive tab: confirm submits the selection and shows the uploading view', async () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={onOpenChange}
+        onOpenChange={vi.fn()}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
       />
     );
 
-    // Preview to establish staging session
     await user.type(screen.getByTestId('archive-url-input'), 'https://example.com/season1.zip');
     await user.click(screen.getByTestId('archive-preview-btn'));
 
@@ -596,13 +675,81 @@ describe('BulkIngestModal component', () => {
       expect(screen.getByTestId('archive-commit-btn')).toBeInTheDocument();
     });
 
-    // Commit
     await user.click(screen.getByTestId('archive-commit-btn'));
 
-    const closeBtn = await screen.findByTestId('archive-commit-close-btn');
-    await user.click(closeBtn);
+    await waitFor(() => {
+      expect(api.confirmArchiveIngestJob).toHaveBeenCalledWith(
+        'series-100',
+        'job-1',
+        expect.objectContaining({ selection: expect.any(Array) })
+      );
+    });
 
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    // Uploading view: file index, total, active filename, progress
+    expect(await screen.findByTestId('archive-upload-progress')).toBeInTheDocument();
+    expect(screen.getByTestId('archive-upload-counter')).toHaveTextContent(/1.*of.*2|Uploading file/i);
+    expect(screen.getByTestId('archive-upload-active-file')).toHaveTextContent('Show.S01E01.1080p.mkv');
+    expect(screen.getByRole('progressbar', { name: /upload progress/i })).toBeInTheDocument();
+    expect(screen.getByTestId('archive-commit-logs')).toBeInTheDocument();
+  });
+
+  it('archive tab: cancel calls the cancel endpoint and stops polling', async () => {
+    const { user } = renderWithProviders(
+      <BulkIngestModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockLocalEpisodes}
+        seasons={mockSeasons}
+      />
+    );
+
+    await user.type(screen.getByTestId('archive-url-input'), 'https://example.com/season1.zip');
+    await user.click(screen.getByTestId('archive-preview-btn'));
+
+    const cancelBtn = await screen.findByTestId('archive-cancel-job-btn');
+    await user.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(api.cancelArchiveIngestJob).toHaveBeenCalledWith('series-100', 'job-1');
+    });
+    const pollCalls = vi.mocked(api.getArchiveIngestJob).mock.calls.length;
+    // Allow any in-flight poll window to pass without new polls
+    await new Promise((r) => setTimeout(r, 1200));
+    expect(vi.mocked(api.getArchiveIngestJob).mock.calls.length).toBe(pollCalls);
+  });
+
+  it('archive tab: password failure shows retry prompt and retry submits the password', async () => {
+    vi.mocked(api.createArchiveIngestJob).mockResolvedValueOnce(
+      makeJob({
+        status: 'failed',
+        stage: 'failed',
+        errorCode: 'PASSWORD_REQUIRED',
+        errorMessage: 'Archive is password protected',
+      })
+    );
+    const { user } = renderWithProviders(
+      <BulkIngestModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockLocalEpisodes}
+        seasons={mockSeasons}
+      />
+    );
+
+    await user.type(screen.getByTestId('archive-url-input'), 'https://example.com/locked.zip');
+    await user.click(screen.getByTestId('archive-preview-btn'));
+
+    const retryBox = await screen.findByTestId('archive-password-retry');
+    expect(retryBox).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/archive password for retry/i), 's3cret');
+    await user.click(screen.getByTestId('archive-retry-btn'));
+
+    await waitFor(() => {
+      expect(api.retryArchiveIngestJob).toHaveBeenCalledWith('series-100', 'job-1', 's3cret');
+    });
   });
 
   it('archive tab: shows storage provider badge in Step 2 review', async () => {

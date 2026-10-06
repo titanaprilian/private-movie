@@ -6,6 +6,7 @@ export * from "./media-management";
 export * from "./media-openapi";
 export * from "./scraper";
 export * from "./storage";
+export * from "./archive-ingest-jobs";
 
 export type Dummy = {
   message: string;

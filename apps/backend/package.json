@@ -24,7 +24,6 @@
     "@sentry/bun": "^11.4.0",
     "drizzle-orm": "^0.45.2",
     "elysia": "latest",
-    "node-unrar-js": "^2.0.2",
     "pino": "^10.4.0",
     "pino-pretty": "^13.2.0"
   },
