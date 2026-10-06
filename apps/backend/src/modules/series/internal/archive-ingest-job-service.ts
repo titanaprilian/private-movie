@@ -103,6 +103,14 @@ function sanitizeS3Filename(raw: string): string {
   return cleaned.length > 0 ? cleaned : "video.mp4";
 }
 
+/**
+ * Identity of a selection item for the completed-preservation merge:
+ * filename AND episodeId must both match for stored progress to carry over.
+ */
+function keyOf(filename: string, episodeId: string | null | undefined): string {
+  return JSON.stringify([filename, episodeId ?? null]);
+}
+
 export class ArchiveIngestJobService {
   private db: DbClient;
   private stagingBaseDir: string;
@@ -691,8 +699,16 @@ export class ArchiveIngestJobService {
 
   /**
    * Confirmation phase: persist user-selected episode matches, move the job
-   * from `ready` to `uploading`, then sequentially extract + upload + record
-   * each file, deleting each local file immediately to bound disk usage.
+   * to `uploading`, and kick off the sequential extract + upload + record
+   * loop in the background, returning immediately.
+   *
+   * Idempotency:
+   * - If an upload loop for this job is already active in this process, the
+   *   re-confirm is absorbed: the current job is returned unchanged without
+   *   overwriting the stored selection and without starting a second loop.
+   * - Otherwise the incoming selection is merged with the stored one so
+   *   already-completed files (matched on filename + episodeId) are never
+   *   re-uploaded.
    */
   async confirmJob(
     jobId: string,
@@ -704,6 +720,15 @@ export class ArchiveIngestJobService {
     if (!["ready", "uploading", "failed"].includes(job.status)) {
       throw new Error(`Job ${jobId} cannot be confirmed from status '${job.status}'`);
     }
+
+    // Absorb in-flight duplicates: a live upload loop means an earlier
+    // confirm already owns this job. Return current state untouched.
+    if (this.activeControllers.has(jobId)) {
+      const current = await this.getJob(jobId);
+      if (!current) throw new Error(`Job ${jobId} not found after confirmation`);
+      return current;
+    }
+
     if (!Array.isArray(selection) || selection.length === 0) {
       throw new Error("Selection must be a non-empty array");
     }
@@ -717,12 +742,32 @@ export class ArchiveIngestJobService {
       completed: (item as { completed?: boolean }).completed ?? false,
       videoSourceId: (item as { videoSourceId?: string | null }).videoSourceId ?? null,
     }));
-    const pending = normalized.filter((i) => !i.isIgnored && i.episodeId && !i.completed);
+
+    // Completed-preservation merge: a client re-send lacks completed flags,
+    // so inherit them (plus the recorded video-source id) from the stored
+    // selection -- but only when BOTH filename and episodeId match. A file
+    // remapped to a different episode re-uploads for the new episode.
+    const storedByKey = new Map(
+      ((job.selection ?? []) as ArchiveIngestJobSelectionRow[]).map((s) => [
+        keyOf(s.filename, s.episodeId),
+        s,
+      ])
+    );
+    const merged: ArchiveIngestJobSelectionRow[] = normalized.map((item) => {
+      const stored = storedByKey.get(keyOf(item.filename, item.episodeId));
+      if (!stored) return item;
+      return {
+        ...item,
+        completed: stored.completed ?? false,
+        videoSourceId: stored.videoSourceId ?? item.videoSourceId ?? null,
+      };
+    });
+    const pending = merged.filter((i) => !i.isIgnored && i.episodeId && !i.completed);
     if (pending.length === 0) {
       throw new Error("Selection contains no uploadable files");
     }
 
-    const hasCompleted = normalized.some((i) => i.completed);
+    const hasCompleted = merged.some((i) => i.completed);
     // Fresh confirmations start progress at 0; resumes preserve prior bytesDone.
     const bytesDone = hasCompleted ? (job.bytesDone ?? 0) : 0;
 
@@ -731,7 +776,7 @@ export class ArchiveIngestJobService {
       .set({
         status: "uploading",
         stage: "uploading",
-        selection: normalized,
+        selection: merged,
         storageProviderId:
           options.storageProviderId !== undefined
             ? (options.storageProviderId ?? null)
@@ -743,7 +788,18 @@ export class ArchiveIngestJobService {
       })
       .where(eq(archiveIngestJobs.id, jobId));
 
-    await this.executeUploadPhase(jobId, options.password ?? null);
+    // Atomic kickoff guard: no await between this check and the kickoff, and
+    // the upload loop registers its controller synchronously on entry — so a
+    // loop started while we were awaiting the write above is never doubled.
+    if (this.activeControllers.has(jobId)) {
+      const current = await this.getJob(jobId);
+      if (!current) throw new Error(`Job ${jobId} not found after confirmation`);
+      return current;
+    }
+    void this.executeUploadPhase(jobId, options.password ?? null).catch((err) => {
+      captureException(err);
+      logger.error({ err, jobId }, "Unexpected error in background upload execution");
+    });
 
     const updated = await this.getJob(jobId);
     if (!updated) throw new Error(`Job ${jobId} not found after confirmation`);

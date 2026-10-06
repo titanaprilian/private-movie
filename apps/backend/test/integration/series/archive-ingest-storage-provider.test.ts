@@ -21,6 +21,7 @@ import {
   type StorageProviderRegistry,
 } from "@repo/media-service";
 import { ArchiveIngestJobService } from "../../../src/modules/series";
+import { waitForJobStatus } from "../../utils/archive-ingest";
 
 async function createShow() {
   const userId = crypto.randomUUID();
@@ -164,7 +165,8 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
       { filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1", quality: "1080p" },
     ];
     const result = await service.confirmJob(jobId, selection);
-    expect(result.status).toBe("done");
+    expect(result.status).toBe("uploading");
+    await waitForJobStatus(service.getJob.bind(service), jobId, "done");
 
     // Registry must have been asked for the default (null id)…
     expect(seenIds).toContain(null);
@@ -208,6 +210,7 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
     await service.confirmJob(jobId, [
       { filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1" },
     ]);
+    await waitForJobStatus(service.getJob.bind(service), jobId, "done");
 
     expect(seenIds).toContain(defaultProvider.id);
     expect(uploads).toHaveLength(1);
@@ -241,7 +244,7 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
     await service.confirmJob(jobId, [
       { filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1" },
     ]);
-    const finalJob = await service.getJob(jobId);
+    const finalJob = await waitForJobStatus(service.getJob.bind(service), jobId, "failed");
     expect(finalJob?.status).toBe("failed");
     expect(finalJob?.errorMessage).toContain("Specified storage provider not found");
   });
@@ -273,7 +276,7 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
     await service.confirmJob(jobId, [
       { filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1" },
     ]);
-    const finalJob = await service.getJob(jobId);
+    const finalJob = await waitForJobStatus(service.getJob.bind(service), jobId, "failed");
     expect(finalJob?.status).toBe("failed");
     expect(finalJob?.errorMessage).toContain("not configured");
   });
