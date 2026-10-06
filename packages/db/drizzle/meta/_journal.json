@@ -190,6 +190,13 @@
       "when": 1790758094474,
       "tag": "0026_messy_gamma_corps",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791257147181,
+      "tag": "0027_big_power_man",
+      "breakpoints": true
     }
   ]
 }
