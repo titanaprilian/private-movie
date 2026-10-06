@@ -104,7 +104,7 @@ log "Running scripts/wt-setup.sh inside $TARGET_DIR..."
 (
   cd "$TARGET_DIR"
   if [[ -f "scripts/wt-setup.sh" ]]; then
-    ./scripts/wt-setup.sh "$ID"
+    bash ./scripts/wt-setup.sh "$ID"
   else
     die "scripts/wt-setup.sh not found inside worktree $TARGET_DIR"
   fi
