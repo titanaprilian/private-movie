@@ -743,7 +743,10 @@ export class ArchiveIngestJobService {
       })
       .where(eq(archiveIngestJobs.id, jobId));
 
-    await this.executeUploadPhase(jobId, options.password ?? null);
+    void this.executeUploadPhase(jobId, options.password ?? null).catch((err) => {
+      captureException(err);
+      logger.error({ err, jobId }, "Unexpected error in background upload execution");
+    });
 
     const updated = await this.getJob(jobId);
     if (!updated) throw new Error(`Job ${jobId} not found after confirmation`);

@@ -6,6 +6,7 @@ import { db } from "../../utils/db";
 import { users, series, seasons, episodes, videoSources, archiveIngestJobs } from "@repo/db";
 import { ArchiveIngestJobService, ArchiveEngineError } from "../../../src/modules/series";
 import { writeFile, mkdir } from "node:fs/promises";
+import { waitForJobStatus } from "../../utils/archive-ingest";
 
 async function createShow() {
   const userId = crypto.randomUUID();
@@ -117,7 +118,8 @@ describe("ArchiveIngest upload execution (ticket 688)", () => {
     ];
 
     const result = await service.confirmJob(jobId, selection);
-    expect(result.status).toBe("done");
+    expect(result.status).toBe("uploading");
+    await waitForJobStatus(service.getJob.bind(service), jobId, "done");
     expect(extractOrder).toEqual(["Show.S01E01.mp4", "Show.S01E02.mp4"]);
     expect(deletedBeforeNext).toEqual([true]);
     expect(uploads).toHaveLength(2);
@@ -219,17 +221,68 @@ describe("ArchiveIngest upload execution (ticket 688)", () => {
     });
 
     const selection = [{ filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1" }];
-    await service.confirmJob(jobId, selection);
-    let failed = await service.getJob(jobId);
+    const immediate = await service.confirmJob(jobId, selection);
+    expect(immediate.status).toBe("uploading");
+    let failed = await waitForJobStatus(service.getJob.bind(service), jobId, "failed");
     expect(failed?.status).toBe("failed");
     expect(failed?.errorCode).toBe("PASSWORD_REQUIRED");
     // Archive must remain intact for retry without re-downloading.
     expect(existsSync(join(stagingPath, "pack.7z"))).toBe(true);
 
-    await service.confirmJob(jobId, selection, { password: "correct-horse" });
-    failed = await service.getJob(jobId);
+    const retryImmediate = await service.confirmJob(jobId, selection, { password: "correct-horse" });
+    expect(retryImmediate.status).toBe("uploading");
+    failed = await waitForJobStatus(service.getJob.bind(service), jobId, "done");
     expect(failed?.status).toBe("done");
     expect(attempts).toBeGreaterThanOrEqual(2);
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("confirm resolves with uploading while a blocked extractor is still in flight", async () => {
+    const { userId, seriesId, epIds } = await createShow();
+    const jobId = crypto.randomUUID();
+    const stagingPath = join(testTmpBase, jobId);
+    mkdirSync(stagingPath, { recursive: true });
+    writeFileSync(join(stagingPath, "pack.7z"), "fake-archive");
+
+    await db.insert(archiveIngestJobs).values({
+      id: jobId, ownerId: userId, seriesId, sourceKey: `test-${jobId}`, sourceUrl: "https://example.com/pack.7z",
+      status: "ready", stage: "ready", bytesDone: 0, bytesTotal: null,
+      stagingPath, archiveFilename: "pack.7z", entries: [], selection: [],
+      storageProviderId: null, errorCode: null, errorMessage: null,
+      createdAt: new Date(), updatedAt: new Date(), expiresAt: null,
+    });
+
+    let releaseExtract!: () => void;
+    const extractGate = new Promise<void>((resolve) => { releaseExtract = resolve; });
+    const uploads: string[] = [];
+    const service = new ArchiveIngestJobService({
+      db,
+      stagingBaseDir: testTmpBase,
+      s3StorageService: makeFakeS3(uploads) as never,
+      extractor: {
+        binaryPath: "7zz",
+        list: async () => [],
+        extract: async (opts) => {
+          await extractGate;
+          await mkdir(opts.destDir, { recursive: true });
+          const abs = join(opts.destDir, basename(opts.targets[0]!));
+          await writeFile(abs, "blocked-content");
+          return { extractedFiles: [{ path: basename(opts.targets[0]!), sizeBytes: 5 }] };
+        },
+        run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+    });
+
+    const selection = [{ filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1" }];
+    const result = await service.confirmJob(jobId, selection);
+    expect(result.status).toBe("uploading");
+    // Extractor is still blocked — job must still be uploading, not done/failed.
+    const midFlight = await service.getJob(jobId);
+    expect(midFlight?.status).toBe("uploading");
+
+    releaseExtract();
+    const finalJob = await waitForJobStatus(service.getJob.bind(service), jobId, "done");
+    expect(finalJob.status).toBe("done");
     expect(uploads).toHaveLength(1);
   });
 });
