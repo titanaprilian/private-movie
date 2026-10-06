@@ -6,6 +6,7 @@ import {
   ArchiveEngineError,
   SevenZipExtractor,
   createSevenZipExtractor,
+  parseSevenZipFormats,
   probeSevenZipFormatSupport,
   resolveSevenZipBinary,
 } from "../../../src/modules/series";
@@ -387,6 +388,54 @@ describe("resolveSevenZipBinary", () => {
     await expect(
       resolveSevenZipBinary({ env: { PATH: "/nonexistent" } as NodeJS.ProcessEnv })
     ).rejects.toMatchObject({ code: "BINARY_NOT_FOUND" });
+  });
+});
+
+describe("parseSevenZipFormats", () => {
+  it("parses p7zip 16.02 output with space-separated flag columns", () => {
+    const stdout = [
+      "Formats:",
+      " 0 C   F         7z       7z            7 z BC AF ' 1C",
+      " 0 C   FMG       zip      zip z01 zipx jar xpi",
+      " 0 E   G         Rar      rar r00 r01",
+      "",
+      "Codecs:",
+      " 0  ED     30401 PPMD",
+    ].join("\n");
+
+    expect(parseSevenZipFormats(stdout)).toEqual(["7z", "zip", "Rar"]);
+  });
+
+  it("parses modern 7zz output with dot-delimited flag columns", () => {
+    const stdout = [
+      "Formats:",
+      "   C...F..........c.a.m+..  7z       7z            7 z BC AF ' 1C",
+      "    ......................  APFS     apfs img      offset=32 N X S B 00",
+      "    K.....O.....X.........  Base64   b64           ",
+      "",
+      "Codecs:",
+      " 0  ED     30401 PPMD",
+    ].join("\n");
+
+    expect(parseSevenZipFormats(stdout)).toEqual(["7z", "APFS", "Base64"]);
+  });
+
+  it("parses plugin-build 7z output with an index and second flag column", () => {
+    const stdout = [
+      "Formats:",
+      " 0 C...F..........c.a.m+.. w...0  7z       7z            7 z BC AF ' 1C",
+      " 0  ......................  APFS     apfs img      offset=32 N X S B 00",
+      " 0  K.....O.....X.........  Base64   b64           ",
+      "",
+      "Codecs:",
+      " 0  ED     30401 PPMD",
+    ].join("\n");
+
+    expect(parseSevenZipFormats(stdout)).toEqual(["7z", "APFS", "Base64"]);
+  });
+
+  it("returns an empty list when no Formats section exists", () => {
+    expect(parseSevenZipFormats("nothing here\n")).toEqual([]);
   });
 });
 

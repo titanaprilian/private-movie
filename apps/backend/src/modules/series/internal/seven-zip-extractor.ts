@@ -428,8 +428,23 @@ export function parseSevenZipFormats(stdout: string): string[] {
   const formats: string[] = [];
   for (const line of lines.slice(start + 1)) {
     if (/^Codecs:/i.test(line.trim())) break;
-    const match = /^\s*\S+\s+\S*\s+(\S+)/.exec(line);
-    if (match) formats.push(match[1]);
+    if (!line.trim()) continue;
+    // Format lines are split into columns on 2+ spaces. The flag columns
+    // differ per distribution: modern `7zz` uses dot-delimited flags
+    // (`C...F...`), the plugin build (`7z` with Libs) adds a numeric index
+    // plus an optional second flag column (`w...0`), and older `p7zip`
+    // 16.02 uses space-separated single-letter flags (`C   F`). When the
+    // flags merge into a single column they always contain dots, so the
+    // format name sits at columns[1]; otherwise the flags occupy two
+    // columns and the name sits at columns[2].
+    const columns = line.trim().split(/\s{2,}/);
+    const mergedFlags = columns[0].includes(".");
+    const name = mergedFlags ? columns[1] : columns[2];
+    // The name column must exist, be a single token (names never contain
+    // dots or spaces), and be followed by the primary-extension column.
+    const extension = mergedFlags ? columns[2] : columns[3];
+    if (!name || !extension || !/^[^\s.]+$/.test(name)) continue;
+    formats.push(name);
   }
   return formats;
 }
