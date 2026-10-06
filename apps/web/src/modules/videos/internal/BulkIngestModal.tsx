@@ -162,8 +162,13 @@ interface ArchiveStep1Props {
   previewError: string | null;
   downloadProgress: { loaded: number; total?: number | null; percent?: number | null } | null;
   extractProgress: { currentFile: string; totalFiles?: number | null } | null;
+  needsPassword?: boolean;
+  jobErrorCode?: string | null;
+  isSubmitting?: boolean;
   onStartPreview: () => void;
   onCancel: () => void;
+  onCancelJob: () => void;
+  onRetry: () => void;
 }
 
 function ArchiveStep1({
@@ -185,8 +190,13 @@ function ArchiveStep1({
   previewError,
   downloadProgress,
   extractProgress,
+  needsPassword,
+  jobErrorCode,
+  isSubmitting,
   onStartPreview,
   onCancel,
+  onCancelJob,
+  onRetry,
 }: ArchiveStep1Props) {
   const isPreviewing = previewPhase === 'downloading' || previewPhase === 'extracting';
 
@@ -318,16 +328,15 @@ function ArchiveStep1({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm font-bold text-[var(--muted)]">
                   <span>Downloading archive…</span>
-                  {downloadProgress && (
-                    <span>
-                      {downloadProgress.percent != null
-                        ? `${Math.round(downloadProgress.percent)}%`
-                        : formatBytes(downloadProgress.loaded)}
-                      {downloadProgress.total
-                        ? ` / ${formatBytes(downloadProgress.total)}`
-                        : ''}
-                    </span>
-                  )}
+                  <span data-testid="archive-download-bytes">
+                    {downloadProgress ? formatBytes(downloadProgress.loaded) : formatBytes(0)}
+                    {downloadProgress?.total
+                      ? ` / ${formatBytes(downloadProgress.total)}`
+                      : ''}
+                    {downloadProgress?.percent != null
+                      ? ` (${Math.round(downloadProgress.percent)}%)`
+                      : ''}
+                  </span>
                 </div>
                 <div
                   className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-4 overflow-hidden p-0.5 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
@@ -354,15 +363,19 @@ function ArchiveStep1({
               </div>
             )}
             {previewPhase === 'extracting' && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-sm font-bold text-[var(--muted)]">
-                  <span>Extracting archive…</span>
-                  {extractProgress?.totalFiles && (
+              <div className="space-y-1.5" data-testid="archive-listing-progress">
+                <div className="flex items-center gap-2 text-sm font-bold text-[var(--muted)]">
+                  <span
+                    className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--ink)]"
+                    aria-hidden="true"
+                  />
+                  <span>Listing archive contents…</span>
+                  {extractProgress?.totalFiles ? (
                     <span>{extractProgress.totalFiles} files</span>
-                  )}
+                  ) : null}
                 </div>
                 <div className="text-xs font-bold text-[var(--muted)] truncate">
-                  {extractProgress?.currentFile}
+                  {extractProgress?.currentFile ?? 'Reading archive index…'}
                 </div>
                 <div
                   className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-4 overflow-hidden p-0.5 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
@@ -379,28 +392,66 @@ function ArchiveStep1({
         {/* Error state */}
         {previewPhase === 'error' && previewError && (
           <ChunkyCard
-            className="p-3 border-[var(--red)] bg-[var(--red)]/10"
+            className="p-3 border-[var(--red)] bg-[var(--red)]/10 space-y-2"
             data-testid="archive-preview-error"
           >
             <p className="text-sm font-bold text-[var(--red)]">{previewError}</p>
+            {needsPassword && (
+              <div className="space-y-2" data-testid="archive-password-retry">
+                <p className="text-xs font-bold text-[var(--muted)]">
+                  {jobErrorCode === 'PASSWORD_INCORRECT'
+                    ? 'Incorrect password. Enter the correct archive password and retry.'
+                    : 'This archive is password-protected. Enter the password and retry.'}
+                </p>
+                <div className="flex gap-2">
+                  <ChunkyInput
+                    type="text"
+                    aria-label="Archive password for retry"
+                    placeholder="Archive password"
+                    value={archivePassword}
+                    onChange={(e) => setArchivePassword(e.target.value)}
+                  />
+                  <ChunkyButton
+                    type="button"
+                    variant="primary"
+                    data-testid="archive-retry-btn"
+                    onClick={onRetry}
+                    disabled={isSubmitting}
+                  >
+                    Retry
+                  </ChunkyButton>
+                </div>
+              </div>
+            )}
           </ChunkyCard>
         )}
       </ChunkyDialogBody>
 
       <ChunkyDialogFooter>
-        <ChunkyButton
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isPreviewing}
-        >
-          Cancel
-        </ChunkyButton>
+        {isPreviewing ? (
+          <ChunkyButton
+            type="button"
+            variant="danger"
+            data-testid="archive-cancel-job-btn"
+            onClick={onCancelJob}
+          >
+            Cancel
+          </ChunkyButton>
+        ) : (
+          <ChunkyButton
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </ChunkyButton>
+        )}
         <ChunkyButton
           type="submit"
           variant="primary"
           data-testid="archive-preview-btn"
-          disabled={isPreviewing || !archiveUrl.trim()}
+          disabled={isPreviewing || isSubmitting || !archiveUrl.trim()}
         >
           {isPreviewing ? 'Processing…' : 'Preview Archive'}
         </ChunkyButton>
@@ -422,6 +473,11 @@ interface ArchiveReviewItem {
   isIgnored: boolean;
   label: string;
   commitStatus: string;
+  hasSizeAnomaly?: boolean;
+}
+
+function isSampleFilename(filename: string): boolean {
+  return /sample/i.test(filename);
 }
 
 interface ArchiveStep2Props {
@@ -438,6 +494,7 @@ interface ArchiveStep2Props {
   localEpisodes: LocalEpisodeItem[];
   onBack: () => void;
   onCommit: () => void;
+  onCancelJob: () => void;
 }
 
 function ArchiveStep2({
@@ -454,6 +511,7 @@ function ArchiveStep2({
   localEpisodes,
   onBack,
   onCommit,
+  onCancelJob,
 }: ArchiveStep2Props) {
   return (
     <>
@@ -504,6 +562,12 @@ function ArchiveStep2({
                   )}
                   {item.needsReview && !item.isIgnored && (
                     <WarningBadge>Needs Review</WarningBadge>
+                  )}
+                  {isSampleFilename(item.filename) && (
+                    <PillBadge>Sample</PillBadge>
+                  )}
+                  {item.hasSizeAnomaly && !item.isIgnored && (
+                    <WarningBadge>Size anomaly — differs from siblings</WarningBadge>
                   )}
                   {item.isIgnored && <PillBadge>Ignored</PillBadge>}
                   {item.fileSizeBytes > 0 && (
@@ -568,6 +632,14 @@ function ArchiveStep2({
         </ChunkyButton>
         <ChunkyButton
           type="button"
+          variant="danger"
+          data-testid="archive-cancel-job-btn"
+          onClick={onCancelJob}
+        >
+          Cancel
+        </ChunkyButton>
+        <ChunkyButton
+          type="button"
           variant="primary"
           data-testid="archive-commit-btn"
           onClick={onCommit}
@@ -593,6 +665,14 @@ interface ArchiveStep3Props {
   commitCompletedCount: number;
   progressPercentage: number;
   activeCommitItem: ArchiveReviewItemWithProgress | null;
+  uploadView?: {
+    currentIndex: number;
+    totalFiles: number;
+    activeFilename: string | null;
+    percent: number;
+    loaded: number;
+    total: number | null;
+  } | null;
   selectedProviderName: string | null;
   isCommitting: boolean;
   onCancel: () => void;
@@ -605,35 +685,43 @@ function ArchiveStep3({
   commitCompletedCount,
   progressPercentage,
   activeCommitItem,
+  uploadView,
   selectedProviderName,
   isCommitting,
   onCancel,
   onClose,
 }: ArchiveStep3Props) {
+  const displayIndex = uploadView?.currentIndex ?? commitCompletedCount;
+  const displayTotal = uploadView?.totalFiles ?? totalCount;
+  const displayPercent = uploadView?.percent ?? progressPercentage;
+  const displayFilename = uploadView?.activeFilename ?? activeCommitItem?.filename ?? null;
+  const displayLoaded = uploadView?.loaded ?? activeCommitItem?.commitProgress?.loaded ?? null;
+  const displayTotalBytes = uploadView?.total ?? activeCommitItem?.commitProgress?.total ?? null;
   return (
     <>
       <ChunkyDialogBody className="space-y-4">
-        <ChunkyCard className="space-y-2 p-3">
+        <ChunkyCard className="space-y-2 p-3" data-testid="archive-upload-progress">
           <div className="flex items-center justify-between font-sans text-sm font-bold text-[var(--muted)]">
-            <span>
-              Processing: Item{' '}
-              <strong className="text-[var(--ink)]">{commitCompletedCount}</strong> of{' '}
-              {totalCount} ({progressPercentage}%)
+            <span data-testid="archive-upload-counter">
+              Uploading file{' '}
+              <strong className="text-[var(--ink)]">{displayIndex}</strong> of{' '}
+              {displayTotal} ({displayPercent}%)
             </span>
             <span className="font-extrabold text-[var(--green)]">
-              {progressPercentage}%
+              {displayPercent}%
             </span>
           </div>
           <div
             className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-5 overflow-hidden p-1 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
             role="progressbar"
-            aria-valuenow={progressPercentage}
+            aria-label="Upload progress"
+            aria-valuenow={displayPercent}
             aria-valuemin={0}
             aria-valuemax={100}
           >
             <div
               className="bg-[var(--green)] h-full rounded-full border-r-2 border-[var(--green-dark)] shadow-[0_2px_0_var(--green-dark)] transition-all duration-300"
-              style={{ width: `${progressPercentage}%` }}
+              style={{ width: `${displayPercent}%` }}
             />
           </div>
 
@@ -644,20 +732,23 @@ function ArchiveStep3({
                 <strong className="text-[var(--ink)]">{selectedProviderName}</strong>
               </span>
             )}
-            {activeCommitItem?.commitProgress && (
-              <span className="ml-auto">
-                {activeCommitItem.commitProgress.percent}% -{' '}
-                {formatBytes(activeCommitItem.commitProgress.loaded)}
-                {activeCommitItem.commitProgress.total
-                  ? ` / ${formatBytes(activeCommitItem.commitProgress.total)}`
+            {displayLoaded !== null && (
+              <span className="ml-auto" data-testid="archive-upload-bytes">
+                {displayPercent}% -{' '}
+                {formatBytes(displayLoaded)}
+                {displayTotalBytes
+                  ? ` / ${formatBytes(displayTotalBytes)}`
                   : ''}
               </span>
             )}
           </ChunkyCard>
 
-          {activeCommitItem?.commitProgress && (
-            <div className="font-sans text-xs font-bold text-[var(--muted)] truncate max-w-md">
-              Uploading: {activeCommitItem.filename}
+          {displayFilename && (
+            <div
+              className="font-sans text-xs font-bold text-[var(--muted)] truncate max-w-md"
+              data-testid="archive-upload-active-file"
+            >
+              Uploading: {displayFilename}
             </div>
           )}
         </ChunkyCard>
@@ -784,7 +875,7 @@ export function BulkIngestModal({
   type IngestTab = 'archive' | 'url';
   const [activeTab, setActiveTab] = useState<IngestTab>('archive');
 
-  const isProcessingAny = isProcessing || archive.isCommitting || archive.previewPhase === 'downloading' || archive.previewPhase === 'extracting';
+  const isProcessingAny = isProcessing || archive.isCommitting || archive.isPolling || archive.previewPhase === 'downloading' || archive.previewPhase === 'extracting';
 
   // ─── Reset on close ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -874,8 +965,13 @@ export function BulkIngestModal({
               previewError={archive.previewError}
               downloadProgress={archive.downloadProgress}
               extractProgress={archive.extractProgress}
-              onStartPreview={() => void archive.startPreview()}
+              needsPassword={archive.needsPassword}
+              jobErrorCode={archive.jobErrorCode}
+              isSubmitting={archive.isSubmitting}
+              onStartPreview={() => void archive.startJob()}
               onCancel={() => onOpenChange(false)}
+              onCancelJob={() => void archive.cancelJob()}
+              onRetry={() => void archive.retryWithPassword()}
             />
           </>
         )}
@@ -894,7 +990,8 @@ export function BulkIngestModal({
             seasons={seasons}
             localEpisodes={localEpisodes}
             onBack={() => archive.setStep(1)}
-            onCommit={() => void archive.startCommit()}
+            onCommit={() => void archive.confirmSelection()}
+            onCancelJob={() => void archive.cancelJob()}
           />
         )}
 
@@ -905,12 +1002,13 @@ export function BulkIngestModal({
             commitCompletedCount={archive.commitCompletedCount}
             progressPercentage={archive.progressPercentage}
             activeCommitItem={archive.activeCommitItem}
+            uploadView={archive.uploadView}
             selectedProviderName={archive.selectedProviderName}
             isCommitting={archive.isCommitting}
-            onCancel={() => void archive.cancelAndCleanup()}
+            onCancel={() => void archive.cancelJob()}
             onClose={() => {
               onOpenChange(false);
-              void archive.reset();
+              archive.reset();
             }}
           />
         )}
