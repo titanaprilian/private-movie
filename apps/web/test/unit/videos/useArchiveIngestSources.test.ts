@@ -54,6 +54,7 @@ function makeJob(overrides: Partial<ArchiveIngestJob> = {}): ArchiveIngestJob {
     seriesId: 'series-1',
     sourceKey: 'https://example.com/season1.zip',
     sourceUrl: 'https://example.com/season1.zip',
+    referer: null,
     status: 'queued',
     stage: 'queued',
     bytesDone: 0,
@@ -260,6 +261,31 @@ describe('useArchiveIngestSources polling hook', () => {
     expect(api.retryArchiveIngestJob).toHaveBeenCalledWith('series-1', 'job-1', 's3cret');
     expect(result.current.jobStatus).toBe('downloading');
     expect(result.current.isPolling).toBe(true);
+  });
+
+  it('startJob sends the referer field when filled', async () => {
+    const downloading = makeJob({ status: 'downloading', stage: 'downloading' });
+    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
+    vi.mocked(api.getArchiveIngestJob).mockResolvedValue(downloading);
+
+    const { result } = renderHook(
+      () => useArchiveIngestSources({ seriesId: 'series-1' }),
+      { wrapper: createWrapper() }
+    );
+    act(() => {
+      result.current.setArchiveUrl('https://example.com/pack.zip');
+      result.current.setArchiveReferer('https://example.com/page');
+    });
+    await act(async () => {
+      await result.current.startJob();
+    });
+    expect(api.createArchiveIngestJob).toHaveBeenCalledWith(
+      'series-1',
+      expect.objectContaining({
+        sourceUrl: 'https://example.com/pack.zip',
+        referer: 'https://example.com/page',
+      })
+    );
   });
 
   it('flags sibling size disparities', () => {

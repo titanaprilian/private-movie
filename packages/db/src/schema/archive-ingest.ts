@@ -40,6 +40,7 @@ export const archiveIngestJobs = pgTable(
     }),
     sourceKey: text("source_key").notNull(),
     sourceUrl: text("source_url").notNull(),
+    referer: text("referer"),
     status: text("status").notNull(),
     stage: text("stage").notNull(),
     bytesDone: bigint("bytes_done", { mode: "number" }).notNull().default(0),

@@ -50,6 +50,7 @@ export interface ArchiveIngestJob {
   seriesId: string | null;
   sourceKey: string;
   sourceUrl: string;
+  referer: string | null;
   status: ArchiveIngestJobStatus;
   stage: string;
   bytesDone: number;
@@ -71,6 +72,7 @@ export interface ArchiveIngestJobCreateRequest {
   seriesId?: string | null;
   storageProviderId?: string | null;
   password?: string | null;
+  referer?: string | null;
 }
 
 export interface ArchiveIngestJobConfirmRequest {
