@@ -197,6 +197,13 @@
       "when": 1791257147181,
       "tag": "0027_big_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791288460856,
+      "tag": "0028_plain_mockingbird",
+      "breakpoints": true
     }
   ]
 }

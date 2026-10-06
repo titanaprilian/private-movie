@@ -78,6 +78,7 @@ function makeJob(overrides: Partial<ArchiveIngestJob> = {}): ArchiveIngestJob {
     seriesId: 'series-100',
     sourceKey: 'https://example.com/season1.zip',
     sourceUrl: 'https://example.com/season1.zip',
+    referer: null,
     status: 'queued',
     stage: 'queued',
     bytesDone: 0,

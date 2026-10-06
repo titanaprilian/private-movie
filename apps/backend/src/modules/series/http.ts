@@ -489,6 +489,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
           seriesId: params.id,
           storageProviderId: body.storageProviderId ?? null,
           password: body.password ?? null,
+          referer: body.referer ?? null,
         });
         return successResponse(job);
       },
@@ -507,6 +508,7 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
           sourceUrl: t.String({ format: "uri" }),
           storageProviderId: t.Optional(t.Nullable(t.String())),
           password: t.Optional(t.Nullable(t.String())),
+          referer: t.Optional(t.Nullable(t.String())),
         }),
       }
     )
