@@ -62,7 +62,7 @@ fi
 if [ "${RUN_MIGRATION}" = "true" ]; then
   log "Running database migrations (turbo db:migrate --filter=@repo/db)..."
   # Guardrail: NEVER run db:seed on production. We override command to only run db:migrate.
-  docker compose run --rm db-migrate bunx turbo run db:migrate --filter=@repo/db
+  docker compose run --rm db-migrate sh -c "bun install --frozen-lockfile && bunx turbo run db:migrate --filter=@repo/db"
   log "Database migrations completed successfully."
 else
   log "No database migrations detected."
