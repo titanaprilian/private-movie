@@ -24,6 +24,8 @@ export type ArchiveIngestJobSelectionRow = {
   label?: string | null;
   quality?: string | null;
   isIgnored?: boolean;
+  completed?: boolean;
+  videoSourceId?: string | null;
 };
 
 export const archiveIngestJobs = pgTable(

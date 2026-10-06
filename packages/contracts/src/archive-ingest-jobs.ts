@@ -40,6 +40,8 @@ export interface ArchiveIngestJobSelectionItem {
   label?: string | null;
   quality?: string | null;
   isIgnored?: boolean;
+  completed?: boolean;
+  videoSourceId?: string | null;
 }
 
 export interface ArchiveIngestJob {

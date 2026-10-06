@@ -1,19 +1,22 @@
 import { randomUUID } from "node:crypto";
-import { createWriteStream } from "node:fs";
-import { mkdir, rm, statfs } from "node:fs/promises";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, rm, stat, statfs, unlink } from "node:fs/promises";
 import { basename, join } from "node:path";
+import { Readable } from "node:stream";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import {
   type DbClient,
   archiveIngestJobs,
   type ArchiveIngestJobEntryRow,
   type ArchiveIngestJobRow,
+  type ArchiveIngestJobSelectionRow,
   type NewArchiveIngestJobRow,
 } from "@repo/db";
 import type {
   ArchiveIngestJob,
   ArchiveIngestJobCreateRequest,
   ArchiveIngestJobEntry,
+  ArchiveIngestJobSelectionItem,
   ArchiveIngestJobStatus,
 } from "@repo/contracts";
 import { ARCHIVE_INGEST_ACTIVE_STATUSES } from "@repo/contracts";
@@ -32,6 +35,11 @@ import {
 import { GoogleDriveUrlHelper } from "./google-drive-url";
 import { logger } from "../../../lib/logger";
 import { captureException } from "../../../lib/sentry";
+import type {
+  S3StorageService,
+  StorageProviderRegistry,
+} from "@repo/media-service";
+import { createVideoSourceRepositoryInternal } from "@repo/media-service";
 
 export const MAX_CONCURRENT_JOBS_DEFAULT = 2;
 export const ARCHIVE_DISK_PREFLIGHT_FACTOR = 2.5;
@@ -78,6 +86,19 @@ export interface ArchiveIngestJobServiceOptions {
   fetchFn?: ArchiveJobFetchFn;
   statfsFn?: ArchiveJobStatfsFn;
   maxConcurrentJobs?: number;
+  s3StorageService?: S3StorageService;
+  storageProviderRegistry?: StorageProviderRegistry;
+}
+
+export interface ConfirmArchiveIngestJobOptions {
+  storageProviderId?: string | null;
+  password?: string | null;
+}
+
+function sanitizeS3Filename(raw: string): string {
+  const base = raw.split(/[\\/]/).pop() ?? raw;
+  const cleaned = base.replace(/[^a-zA-Z0-9_.\-()[\] ]/g, "_");
+  return cleaned.length > 0 ? cleaned : "video.mp4";
 }
 
 export class ArchiveIngestJobService {
@@ -87,6 +108,8 @@ export class ArchiveIngestJobService {
   private fetchFn: ArchiveJobFetchFn;
   private statfsFn: ArchiveJobStatfsFn;
   private maxConcurrentJobs: number;
+  private s3StorageService?: S3StorageService;
+  private storageProviderRegistry?: StorageProviderRegistry;
   private activeControllers = new Map<string, AbortController>();
 
   constructor(options: ArchiveIngestJobServiceOptions) {
@@ -101,6 +124,8 @@ export class ArchiveIngestJobService {
         return { bavail: Number(s.bavail), bsize: Number(s.bsize) };
       });
     this.maxConcurrentJobs = options.maxConcurrentJobs ?? MAX_CONCURRENT_JOBS_DEFAULT;
+    this.s3StorageService = options.s3StorageService;
+    this.storageProviderRegistry = options.storageProviderRegistry;
   }
 
   public deriveSourceKey(url: string): string {
@@ -482,6 +507,267 @@ export class ArchiveIngestJobService {
       this.activeControllers.delete(jobId);
       void this.pumpQueue();
     }
+  }
+
+  /**
+   * Confirmation phase: persist user-selected episode matches, move the job
+   * from `ready` to `uploading`, then sequentially extract + upload + record
+   * each file, deleting each local file immediately to bound disk usage.
+   */
+  async confirmJob(
+    jobId: string,
+    selection: ArchiveIngestJobSelectionItem[],
+    options: ConfirmArchiveIngestJobOptions = {}
+  ): Promise<ArchiveIngestJob> {
+    const job = await this.getJob(jobId);
+    if (!job) throw new Error(`Job ${jobId} not found`);
+    if (!["ready", "uploading", "failed"].includes(job.status)) {
+      throw new Error(`Job ${jobId} cannot be confirmed from status '${job.status}'`);
+    }
+    if (!Array.isArray(selection) || selection.length === 0) {
+      throw new Error("Selection must be a non-empty array");
+    }
+
+    const normalized: ArchiveIngestJobSelectionRow[] = selection.map((item) => ({
+      filename: item.filename,
+      episodeId: item.episodeId,
+      label: item.label ?? null,
+      quality: item.quality ?? null,
+      isIgnored: item.isIgnored ?? false,
+      completed: (item as { completed?: boolean }).completed ?? false,
+      videoSourceId: (item as { videoSourceId?: string | null }).videoSourceId ?? null,
+    }));
+    const pending = normalized.filter((i) => !i.isIgnored && i.episodeId && !i.completed);
+    if (pending.length === 0) {
+      throw new Error("Selection contains no uploadable files");
+    }
+
+    const hasCompleted = normalized.some((i) => i.completed);
+    // Fresh confirmations start progress at 0; resumes preserve prior bytesDone.
+    const bytesDone = hasCompleted ? (job.bytesDone ?? 0) : 0;
+
+    await this.db
+      .update(archiveIngestJobs)
+      .set({
+        status: "uploading",
+        stage: "uploading",
+        selection: normalized,
+        storageProviderId:
+          options.storageProviderId !== undefined
+            ? (options.storageProviderId ?? null)
+            : job.storageProviderId,
+        bytesDone,
+        errorCode: null,
+        errorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(archiveIngestJobs.id, jobId));
+
+    await this.executeUploadPhase(jobId, options.password ?? null);
+
+    const updated = await this.getJob(jobId);
+    if (!updated) throw new Error(`Job ${jobId} not found after confirmation`);
+    return updated;
+  }
+
+  /**
+   * Sequential execution engine. Resumable: starts at the first selection
+   * item not yet marked completed. Each iteration extracts only the single
+   * target file, uploads it, upserts video_sources, marks the item completed,
+   * increments bytes_done, and deletes the local file before continuing.
+   */
+  async executeUploadPhase(jobId: string, password?: string | null): Promise<void> {
+    const controller = new AbortController();
+    this.activeControllers.set(jobId, controller);
+    const signal = controller.signal;
+
+    try {
+      const s3 = await this.resolveUploadS3(jobId);
+
+      for (;;) {
+        if (signal.aborted) return;
+        const job = await this.getJob(jobId);
+        if (!job) throw new Error(`Job ${jobId} not found`);
+        if (job.status === "cancelled") return;
+        if (!job.stagingPath) throw new Error(`Job ${jobId} has no staging path`);
+
+        const selection = (job.selection ?? []) as ArchiveIngestJobSelectionRow[];
+        const pendingIndex = selection.findIndex(
+          (i) => !i.isIgnored && i.episodeId && !(i as { completed?: boolean }).completed
+        );
+        if (pendingIndex === -1) {
+          await this.finalizeUploadJob(jobId);
+          return;
+        }
+
+        const item = selection[pendingIndex]!;
+        const archivePath = join(job.stagingPath, job.archiveFilename ?? "archive.zip");
+
+        let archiveStat: { size: number } | null = null;
+        try {
+          archiveStat = await stat(archivePath);
+        } catch {
+          archiveStat = null;
+        }
+        if (!archiveStat) {
+          // Archive missing (e.g. re-confirm after cleanup): fail without deleting progress.
+          await this.db
+            .update(archiveIngestJobs)
+            .set({
+              status: "failed",
+              stage: "failed",
+              errorCode: "ARCHIVE_MISSING",
+              errorMessage: `Archive file ${job.archiveFilename} is missing from staging; cannot resume without re-downloading`,
+              updatedAt: new Date(),
+            })
+            .where(eq(archiveIngestJobs.id, jobId));
+          return;
+        }
+
+        const filesDir = join(job.stagingPath, "files");
+        await mkdir(filesDir, { recursive: true });
+        const listDir = join(job.stagingPath, "lists");
+        await mkdir(listDir, { recursive: true });
+
+        let extractedAbsPath: string | null = null;
+        let extractedSize = 0;
+        try {
+          const result = await this.extractor.extract({
+            archivePath,
+            destDir: filesDir,
+            targets: [item.filename],
+            listFileDir: listDir,
+            password: password ?? undefined,
+            signal,
+          });
+          const match =
+            result.extractedFiles.find((f) => f.path === item.filename) ??
+            result.extractedFiles.find((f) => basename(f.path) === basename(item.filename)) ??
+            result.extractedFiles[0];
+          if (!match) {
+            throw new Error(`Extraction produced no files for target ${item.filename}`);
+          }
+          extractedAbsPath = join(filesDir, match.path);
+          try {
+            extractedSize = (await stat(extractedAbsPath)).size;
+          } catch {
+            extractedSize = match.sizeBytes ?? 0;
+          }
+
+          if (signal.aborted) return;
+
+          // Upload uncompressed file to S3 via multipart streaming upload.
+          const nodeStream = createReadStream(extractedAbsPath);
+          const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream<Uint8Array>;
+          const filename = sanitizeS3Filename(basename(item.filename));
+          const key = `episodes/${item.episodeId}/${randomUUID()}-${filename}`;
+          await s3.uploadStream(key, webStream, {
+            contentType: "video/mp4",
+            signal,
+          });
+
+          // Create or upsert the video_sources row.
+          const videoSourceRepo = createVideoSourceRepositoryInternal(this.db, {
+            s3StorageService: this.s3StorageService,
+            storageProviderRegistry: this.storageProviderRegistry,
+          });
+          const row = await videoSourceRepo.upsert({
+            episodeId: item.episodeId!,
+            type: "s3",
+            url: key,
+            label: item.label ?? filename,
+            quality: item.quality ?? null,
+            storageProviderId: job.storageProviderId,
+          });
+
+          // Mark completed + increment bytes_done, then delete local file immediately.
+          const fresh = await this.getJob(jobId);
+          const freshSelection = ((fresh?.selection ?? []) as ArchiveIngestJobSelectionRow[]).map(
+            (s, idx) =>
+              idx === pendingIndex
+                ? { ...s, completed: true, videoSourceId: row.id }
+                : s
+          );
+          await this.db
+            .update(archiveIngestJobs)
+            .set({
+              selection: freshSelection,
+              bytesDone: (fresh?.bytesDone ?? 0) + extractedSize,
+              updatedAt: new Date(),
+            })
+            .where(eq(archiveIngestJobs.id, jobId));
+
+          logger.info({ jobId, filename, bytes: extractedSize }, "Archive ingest file uploaded");
+        } finally {
+          if (extractedAbsPath) {
+            await unlink(extractedAbsPath).catch(() => {});
+          }
+        }
+
+        if (signal.aborted) return;
+      }
+    } catch (err) {
+      if (signal.aborted || (err as Error)?.name === "AbortError") {
+        logger.info({ jobId }, "Upload execution aborted");
+        return;
+      }
+      logger.error({ err, jobId }, "Archive ingest upload execution failed");
+      captureException(err);
+      const errorCode =
+        err instanceof ArchiveEngineError
+          ? err.code
+          : (err as { code?: string })?.code ?? "UPLOAD_FAILED";
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      // Preserve staging + archive for resume/retry (incl. password retry).
+      await this.db
+        .update(archiveIngestJobs)
+        .set({
+          status: "failed",
+          stage: "failed",
+          errorCode,
+          errorMessage,
+          updatedAt: new Date(),
+        })
+        .where(eq(archiveIngestJobs.id, jobId));
+    } finally {
+      this.activeControllers.delete(jobId);
+      void this.pumpQueue();
+    }
+  }
+
+  private async resolveUploadS3(jobId: string): Promise<S3StorageService> {
+    const job = await this.getJob(jobId);
+    const effectiveProviderId =
+      job?.storageProviderId && job.storageProviderId.trim().length > 0
+        ? job.storageProviderId
+        : null;
+    if (this.storageProviderRegistry) {
+      const regS3 = await this.storageProviderRegistry.getService(effectiveProviderId);
+      if (regS3) return regS3;
+      if (effectiveProviderId) throw new Error("Specified storage provider not found");
+    }
+    const fallback = this.s3StorageService ?? null;
+    if (!fallback || !fallback.isConfigured()) {
+      const { S3NotConfiguredError } = await import("@repo/media-service");
+      throw new S3NotConfiguredError("S3 storage service is not configured");
+    }
+    return fallback;
+  }
+
+  private async finalizeUploadJob(jobId: string): Promise<void> {
+    const job = await this.getJob(jobId);
+    if (!job) return;
+    if (job.archiveFilename && job.stagingPath) {
+      await unlink(join(job.stagingPath, job.archiveFilename)).catch(() => {});
+    }
+    if (job.stagingPath) {
+      await rm(job.stagingPath, { recursive: true, force: true }).catch(() => {});
+    }
+    await this.db
+      .update(archiveIngestJobs)
+      .set({ status: "done", stage: "done", updatedAt: new Date() })
+      .where(eq(archiveIngestJobs.id, jobId));
+    logger.info({ jobId }, "Archive ingest job completed");
   }
 
   public processArchiveEntries(entries: ArchiveEntry[]): ArchiveIngestJobEntryRow[] {
