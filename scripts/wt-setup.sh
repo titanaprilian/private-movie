@@ -95,9 +95,14 @@ discover_base_url() {
 }
 
 main() {
-  local ID="${1:-}"
-  [[ "$ID" =~ ^[0-9]+$ ]] || die "usage: scripts/wt-setup.sh <ticket-id>   (ticket-id is the numeric issue number)"
-
+  local MODE="ticket"
+  local ID=""
+  if [[ "${1:-}" == "--shared" ]]; then
+    MODE="shared"
+  else
+    ID="${1:-}"
+    [[ "$ID" =~ ^[0-9]+$ ]] || die "usage: scripts/wt-setup.sh <ticket-id> | --shared"
+  fi
   require git
   require bun
   require psql
@@ -114,9 +119,10 @@ main() {
     || die "this is the main checkout. Run this from inside the ticket's worktree (git worktree add ../wt/ticket-$ID -b ticket/$ID origin/main)"
 
   branch="$(git branch --show-current)"
-  [[ "$branch" == "ticket/$ID" ]] \
-    || die "current branch is '$branch', expected 'ticket/$ID'. Wrong worktree?"
-
+  if [[ "$MODE" == "ticket" ]]; then
+    [[ "$branch" == "ticket/$ID" ]] \
+      || die "current branch is '$branch', expected 'ticket/$ID'. Wrong worktree?"
+  fi
   local MAIN
   MAIN="$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}')"
   [[ -n "$MAIN" && -d "$MAIN" ]] || die "could not locate the main checkout"
@@ -140,7 +146,20 @@ main() {
   log "env files copied: $copied"
 
   # --- 3. Isolated test database ----------------------------------------------
-  local DB="test_ticket_$ID"
+  local DB
+  local PORT
+  if [[ "$MODE" == "ticket" ]]; then
+    DB="test_ticket_$ID"
+    PORT=$((PORT_BASE + ID % 10000))
+  else
+    local slug
+    slug="$(echo "$branch" | tr '/.-' '___' | sed 's/[^a-zA-Z0-9_]//g')"
+    slug="${slug:0:50}"
+    DB="test_shared_${slug}"
+    local hash
+    hash="$(cksum <<< "$branch" | awk '{print $1}')"
+    PORT=$((PORT_BASE + hash % 10000))
+  fi
   local base_url="${BASE_DATABASE_URL:-}"
   if [[ -z "$base_url" ]]; then
     base_url="$(discover_base_url "$MAIN" "$ROOT")" \
@@ -162,8 +181,6 @@ main() {
   fi
 
   # --- 4. Point this worktree's env files at it, and give it its own PORT -----
-  local PORT=$((PORT_BASE + ID % 10000))
-
   local f key patched_db=0 patched_port=0
   while IFS= read -r -d '' f; do
     [[ "$f" == "$ROOT"/* ]] || continue
@@ -193,9 +210,8 @@ main() {
   bun install
 
   # Hard guard: migrations may only ever run against this ticket's database.
-  [[ "$ticket_url" == *"/$DB"* && "$DB" == "test_ticket_$ID" ]] \
+  [[ "$ticket_url" == *"/$DB"* && ( "$DB" == "test_ticket_$ID" || "$DB" == "test_shared_"* ) ]] \
     || die "refusing to migrate: URL does not target $DB"
-
   if grep -q '"db:migrate"' package.json; then
     log "running db:migrate against $DB"
     (
@@ -206,7 +222,11 @@ main() {
     warn "no 'db:migrate' script in the root package.json; skipped migrations"
   fi
 
-  log "done. Ticket $ID: database=$DB branch=$branch"
+  if [[ "$MODE" == "ticket" ]]; then
+    log "done. Ticket $ID: database=$DB branch=$branch"
+  else
+    log "done. Shared worktree: database=$DB branch=$branch"
+  fi
 }
 
 # Only run when executed, not when sourced (so the helpers can be tested).
