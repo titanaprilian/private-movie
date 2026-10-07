@@ -27,6 +27,7 @@ vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
     ...actual,
     createArchiveIngestJob: vi.fn(),
     getArchiveIngestJob: vi.fn(),
+    getArchiveIngestJobProgress: vi.fn(),
     confirmArchiveIngestJob: vi.fn(),
     cancelArchiveIngestJob: vi.fn(),
     retryArchiveIngestJob: vi.fn(),
@@ -185,7 +186,18 @@ describe('useArchiveIngestSources polling hook', () => {
       activeFilename: 'ep01.mp4',
     });
 
-    // Poll while uploading resolves done
+    // Poll while uploading resolves done (lightweight progress + terminal full fetch)
+    vi.mocked(api.getArchiveIngestJobProgress).mockResolvedValue({
+      id: 'job-1',
+      status: 'done',
+      stage: 'done',
+      bytesDone: 2000,
+      bytesTotal: 2000,
+      completedFilenames: ['ep01.mp4', 'ep02.mp4'],
+      activeFilename: null,
+      errorCode: null,
+      errorMessage: null,
+    });
     vi.mocked(api.getArchiveIngestJob).mockResolvedValue(done);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
@@ -398,6 +410,111 @@ describe('useArchiveIngestSources polling hook', () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS * 3);
     });
     expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+  });
+
+  it('polls lightweight progress during uploading and renders per-episode statuses', async () => {
+    const ready = makeJob({
+      status: 'ready',
+      stage: 'ready',
+      entries: [
+        { filename: 'ep01.mp4', sizeBytes: 1000, detectedEpisodeNumber: 1, quality: '1080p', needsReview: false },
+        { filename: 'ep02.mp4', sizeBytes: 1000, detectedEpisodeNumber: 2, quality: null, needsReview: true },
+        { filename: 'extra.mp4', sizeBytes: 1000, detectedEpisodeNumber: null, quality: null, needsReview: true },
+      ],
+    });
+    const uploading = makeJob({
+      status: 'uploading',
+      stage: 'uploading 1/2: ep01.mp4',
+      bytesDone: 500,
+      bytesTotal: 2000,
+      entries: ready.entries,
+      selection: [
+        { filename: 'ep01.mp4', episodeId: 'ep-1', label: 'S3 Video', quality: '1080p', isIgnored: false },
+        { filename: 'ep02.mp4', episodeId: 'ep-2', label: 'Custom', quality: '720p', isIgnored: false },
+        { filename: 'extra.mp4', episodeId: null, label: 'S3 Video', quality: null, isIgnored: true },
+      ],
+    });
+    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(ready);
+    vi.mocked(api.confirmArchiveIngestJob).mockResolvedValue(uploading);
+    vi.mocked(api.getArchiveIngestJobProgress).mockResolvedValue({
+      id: 'job-1',
+      status: 'uploading',
+      stage: 'uploading 2/2: ep02.mp4',
+      bytesDone: 1500,
+      bytesTotal: 2000,
+      completedFilenames: ['ep01.mp4'],
+      activeFilename: 'ep02.mp4',
+      errorCode: null,
+      errorMessage: null,
+    });
+
+    const { result } = renderHook(
+      () => useArchiveIngestSources({ seriesId: 'series-1', localEpisodes }),
+      { wrapper: createWrapper() }
+    );
+    act(() => {
+      result.current.setArchiveUrl('https://example.com/season1.zip');
+    });
+    await act(async () => {
+      await result.current.startJob();
+    });
+    await act(async () => {
+      await result.current.confirmSelection();
+    });
+    expect(result.current.jobStatus).toBe('uploading');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
+    });
+    expect(vi.mocked(api.getArchiveIngestJobProgress)).toHaveBeenCalledWith('series-1', 'job-1');
+    // Full job endpoint must not be used while uploading stays active.
+    expect(vi.mocked(api.getArchiveIngestJob)).not.toHaveBeenCalled();
+
+    const byName = Object.fromEntries(result.current.reviewItems.map((i) => [i.filename, i]));
+    expect(byName['ep01.mp4'].commitStatus).toBe('completed');
+    expect(byName['ep02.mp4'].commitStatus).toBe('uploading');
+    expect(byName['extra.mp4'].commitStatus).toBe('skipped');
+    // Counter tracks completed count.
+    expect(result.current.commitCompletedCount).toBe(1);
+    expect(result.current.uploadView?.activeFilename).toBe('ep02.mp4');
+    // User episode mapping and quality overrides preserved after merge.
+    expect(byName['ep02.mp4'].matchedEpisodeId).toBe('ep-2');
+    expect(byName['ep02.mp4'].quality).toBe('720p');
+    expect(byName['ep02.mp4'].label).toBe('Custom');
+    expect(result.current.activeCommitItem?.filename).toBe('ep02.mp4');
+  });
+
+  it('marks remaining episodes failed when the job fails and completed when done', async () => {
+    const failed = makeJob({
+      status: 'failed',
+      stage: 'failed',
+      errorCode: 'UPLOAD_FAILED',
+      errorMessage: 'boom',
+      entries: [
+        { filename: 'ep01.mp4', sizeBytes: 1000, detectedEpisodeNumber: 1 },
+        { filename: 'ep02.mp4', sizeBytes: 1000, detectedEpisodeNumber: 2 },
+      ],
+      selection: [
+        { filename: 'ep01.mp4', episodeId: 'ep-1', isIgnored: false, completed: true },
+        { filename: 'ep02.mp4', episodeId: 'ep-2', isIgnored: false, completed: false },
+      ],
+    });
+    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(failed);
+
+    const { result } = renderHook(
+      () => useArchiveIngestSources({ seriesId: 'series-1', localEpisodes }),
+      { wrapper: createWrapper() }
+    );
+    act(() => {
+      result.current.setArchiveUrl('https://example.com/pack.zip');
+    });
+    await act(async () => {
+      await result.current.startJob();
+    });
+    const byName = Object.fromEntries(result.current.reviewItems.map((i) => [i.filename, i]));
+    expect(byName['ep01.mp4'].commitStatus).toBe('completed');
+    expect(byName['ep02.mp4'].commitStatus).toBe('failed');
+    expect(result.current.commitCompletedCount).toBe(1);
   });
 
   it('flags sibling size disparities', () => {    const anomalies = computeSizeAnomalyFilenames([

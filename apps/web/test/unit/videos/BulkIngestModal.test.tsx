@@ -65,6 +65,7 @@ vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
     archiveIngestCleanup: vi.fn(),
     createArchiveIngestJob: vi.fn(),
     getArchiveIngestJob: vi.fn(),
+    getArchiveIngestJobProgress: vi.fn(),
     confirmArchiveIngestJob: vi.fn(),
     cancelArchiveIngestJob: vi.fn(),
     retryArchiveIngestJob: vi.fn(),
@@ -185,6 +186,17 @@ describe('BulkIngestModal component', () => {
       makeJob({ status: 'downloading', stage: 'downloading', bytesDone: 100, bytesTotal: 1000 })
     );
     vi.mocked(api.getArchiveIngestJob).mockImplementation(async () => readyJob());
+    vi.mocked(api.getArchiveIngestJobProgress).mockImplementation(async () => ({
+      id: 'job-1',
+      status: 'uploading' as const,
+      stage: 'uploading 1/2: Show.S01E01.1080p.mkv',
+      bytesDone: 250_000_000,
+      bytesTotal: 500_000_000,
+      completedFilenames: [],
+      activeFilename: 'Show.S01E01.1080p.mkv',
+      errorCode: null,
+      errorMessage: null,
+    }));
     vi.mocked(api.confirmArchiveIngestJob).mockImplementation(async () =>
       makeJob({
         status: 'uploading',
@@ -813,5 +825,64 @@ describe('BulkIngestModal component', () => {
     await waitFor(() => {
       expect(screen.getByTestId('archive-commit-btn')).toHaveTextContent('Commit to S3 (0)');
     });
+  });
+
+  it('archive tab: uploading renders per-episode completed/ingesting/pending badges and counter', async () => {
+    vi.mocked(api.confirmArchiveIngestJob).mockImplementation(async () =>
+      makeJob({
+        status: 'uploading',
+        stage: 'uploading 1/2: Show.S01E01.1080p.mkv',
+        bytesDone: 250_000_000,
+        bytesTotal: 500_000_000,
+        entries: readyJob().entries,
+        selection: [
+          { filename: 'Show.S01E01.1080p.mkv', episodeId: 'ep-1', label: 'S3 Video', quality: '1080p', isIgnored: false },
+          { filename: 'Show.random_extra.mkv', episodeId: 'ep-2', label: 'S3 Video', quality: null, isIgnored: false },
+        ],
+      })
+    );
+    vi.mocked(api.getArchiveIngestJobProgress).mockImplementation(async () => ({
+      id: 'job-1',
+      status: 'uploading' as const,
+      stage: 'uploading 2/2: Show.random_extra.mkv',
+      bytesDone: 400_000_000,
+      bytesTotal: 500_000_000,
+      completedFilenames: ['Show.S01E01.1080p.mkv'],
+      activeFilename: 'Show.random_extra.mkv',
+      errorCode: null,
+      errorMessage: null,
+    }));
+    const { user } = renderWithProviders(
+      <BulkIngestModal
+        open={true}
+        onOpenChange={vi.fn()}
+        seriesId="series-100"
+        localEpisodes={mockLocalEpisodes}
+        seasons={mockSeasons}
+      />
+    );
+
+    await user.type(screen.getByTestId('archive-url-input'), 'https://example.com/season1.zip');
+    await user.click(screen.getByTestId('archive-preview-btn'));
+    await waitFor(() => {
+      expect(screen.getByTestId('archive-commit-btn')).toBeInTheDocument();
+    });
+    await user.click(screen.getByTestId('archive-commit-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('archive-upload-progress')).toBeInTheDocument();
+    });
+    // Counter shows completedCount + 1 of total with active filename.
+    await waitFor(() => {
+      expect(screen.getByTestId('archive-upload-counter')).toHaveTextContent(/Uploading file\s*2\s*of\s*2/);
+    });
+    expect(screen.getByTestId('archive-upload-active-file')).toHaveTextContent('Show.random_extra.mkv');
+
+    const logs = screen.getByTestId('archive-commit-logs');
+    await waitFor(() => {
+      expect(logs).toHaveTextContent('completed');
+    });
+    expect(logs).toHaveTextContent('completed');
+    expect(logs).toHaveTextContent('ingesting');
   });
 });

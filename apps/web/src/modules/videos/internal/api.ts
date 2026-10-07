@@ -51,6 +51,8 @@ import type {
   ArchiveIngestJob,
   ArchiveIngestJobConfirmRequest,
   ArchiveIngestJobCreateRequest,
+  ArchiveIngestJobProgress,
+  ArchiveIngestJobProgressResponse,
   ArchiveIngestJobResponse,
 } from '@repo/contracts';
 import { parseIngestUrl, type ParsedIngestUrl } from './parseIngestUrl';
@@ -1648,6 +1650,44 @@ export async function getArchiveIngestJob(
 }
 
 /**
+ * GET /api/series/:id/archive-ingest/jobs/:jobId?summary=true
+ * Lightweight progress payload for the upload phase (no entries/selection).
+ */
+export async function getArchiveIngestJobProgress(
+  seriesId: string,
+  jobId: string
+): Promise<ArchiveIngestJobProgress> {
+  const headers = await buildAuthHeaders();
+  const response = await authFetch(
+    `${jobBase(seriesId)}/${encodeURIComponent(jobId)}?summary=true`,
+    { headers }
+  );
+  if (!response.ok) {
+    let errorCode: string | undefined;
+    let errorMessage = `Failed to fetch archive ingest job progress (status ${response.status})`;
+    try {
+      const errJson = await response.json();
+      if (errJson?.error) {
+        errorCode = errJson.error.code;
+        errorMessage = errJson.error.message || errorMessage;
+      }
+    } catch {
+      // ignore
+    }
+    const err = new Error(errorMessage) as Error & { code?: string; status?: number };
+    if (errorCode) err.code = errorCode;
+    err.status = response.status;
+    throw err;
+  }
+  const json = (await response.json()) as ArchiveIngestJobProgressResponse | { data?: ArchiveIngestJobProgress };
+  const progress = (json as ArchiveIngestJobProgressResponse)?.data;
+  if (!progress || !progress.id) {
+    throw new Error('Failed to fetch archive ingest job progress');
+  }
+  return progress;
+}
+
+/**
  * POST /api/series/:id/archive-ingest/jobs/:jobId/confirm
  * Submits the episode-file match selection and starts the upload phase.
  */
@@ -1705,6 +1745,6 @@ export async function retryArchiveIngestJob(
   return parseJobResponse(response, 'Failed to retry archive ingest job');
 }
 
-export type { ArchiveIngestJob, ArchiveIngestJobConfirmRequest, ArchiveIngestJobCreateRequest };
+export type { ArchiveIngestJob, ArchiveIngestJobConfirmRequest, ArchiveIngestJobCreateRequest, ArchiveIngestJobProgress };
 
 

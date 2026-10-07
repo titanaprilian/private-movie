@@ -6,6 +6,7 @@ import {
   confirmArchiveIngestJob,
   createArchiveIngestJob,
   getArchiveIngestJob,
+  getArchiveIngestJobProgress,
   retryArchiveIngestJob,
 } from './api';
 import type {
@@ -267,6 +268,10 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   const reviewItems = useMemo((): ArchiveReviewItem[] => {
     if (!job || job.entries.length === 0) return [];
     const anomalies = computeSizeAnomalyFilenames(job.entries);
+    const completedSet = new Set(
+      job.selection.filter((s) => s.completed).map((s) => s.filename)
+    );
+    const activeFromStage = parseUploadStage(job.stage).activeFilename;
     return job.entries.map((entry: ArchiveIngestJobEntry) => {
       let matchedEpisodeId: string | null = null;
       let needsReview = entry.needsReview ?? true;
@@ -295,12 +300,24 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
 
       const ignored = selected?.isIgnored ?? false;
       const status = job.status;
-      const commitStatus: ArchiveReviewItem['commitStatus'] =
-        ignored ? 'skipped'
-        : status === 'done' ? 'completed'
-        : status === 'failed' ? 'failed'
-        : status === 'uploading' ? 'uploading'
-        : 'pending';
+      const isCompleted =
+        completedSet.has(entry.filename) || selected?.completed === true;
+      let commitStatus: ArchiveReviewItem['commitStatus'];
+      if (ignored) {
+        commitStatus = 'skipped';
+      } else if (status === 'done') {
+        commitStatus = 'completed';
+      } else if (status === 'failed') {
+        commitStatus = isCompleted ? 'completed' : 'failed';
+      } else if (status === 'uploading') {
+        commitStatus = isCompleted
+          ? 'completed'
+          : entry.filename === activeFromStage
+            ? 'uploading'
+            : 'pending';
+      } else {
+        commitStatus = 'pending';
+      }
 
       return {
         fileId: entry.filename,
@@ -369,6 +386,14 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   useEffect(() => {
     jobIdRef.current = jobId;
   });
+  const jobStatusRef = useRef(jobStatus);
+  useEffect(() => {
+    jobStatusRef.current = jobStatus;
+  });
+  const jobRef = useRef(job);
+  useEffect(() => {
+    jobRef.current = job;
+  });
 
   // Poll-halt flag is declared above (next to job state); reset it whenever a
   // new job starts so a fresh job polls even after a previous halt.
@@ -402,7 +427,56 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
         const currentSid = seriesIdRef.current;
         const currentJobId = jobIdRef.current;
         if (!currentSid || !currentJobId) return;
-        const updated = await getArchiveIngestJob(currentSid, currentJobId);
+        let updated: ArchiveIngestJob;
+        if (jobStatusRef.current === 'uploading') {
+          // Lightweight progress poll: patch counters/stage/completion flags
+          // into local state, preserving user episode mapping & quality
+          // overrides held in selection.
+          const progress = await getArchiveIngestJobProgress(currentSid, currentJobId);
+          if (cancelled) return;
+          if (progress.status === 'done' || progress.status === 'failed') {
+            // Terminal state: fetch the full job once for final entries/selection.
+            try {
+              updated = await getArchiveIngestJob(currentSid, currentJobId);
+            } catch {
+              const completedSet = new Set(progress.completedFilenames ?? []);
+              const prev = jobRef.current;
+              if (!prev) return;
+              updated = {
+                ...prev,
+                status: progress.status,
+                stage: progress.stage,
+                bytesDone: progress.bytesDone,
+                bytesTotal: progress.bytesTotal,
+                errorCode: progress.errorCode,
+                errorMessage: progress.errorMessage,
+                selection: prev.selection.map((s) => ({
+                  ...s,
+                  completed: completedSet.has(s.filename) ? true : s.completed,
+                })),
+              };
+            }
+          } else {
+            const completedSet = new Set(progress.completedFilenames ?? []);
+            const prev = jobRef.current;
+            if (!prev) return;
+            updated = {
+              ...prev,
+              status: progress.status,
+              stage: progress.stage,
+              bytesDone: progress.bytesDone,
+              bytesTotal: progress.bytesTotal,
+              errorCode: progress.errorCode,
+              errorMessage: progress.errorMessage,
+              selection: prev.selection.map((s) => ({
+                ...s,
+                completed: completedSet.has(s.filename) ? true : s.completed,
+              })),
+            };
+          }
+        } else {
+          updated = await getArchiveIngestJob(currentSid, currentJobId);
+        }
         if (cancelled) return;
         setJob(updated);
         setJobError(null);
@@ -674,7 +748,15 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
     };
   }, [job]);
 
-  const commitCompletedCount = job?.status === 'done' ? totalCount : 0;
+  const commitCompletedCount = useMemo(() => {
+    if (!job) return 0;
+    if (job.status === 'done') {
+      return job.selection.length > 0
+        ? job.selection.filter((s) => !s.isIgnored).length
+        : totalCount;
+    }
+    return job.selection.filter((s) => s.completed && !s.isIgnored).length;
+  }, [job, totalCount]);
   const progressPercentage = useMemo(() => {
     if (!job) return 0;
     if (job.status === 'done') return 100;

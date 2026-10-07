@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   createArchiveIngestJob,
   getArchiveIngestJob,
+  getArchiveIngestJobProgress,
   confirmArchiveIngestJob,
   cancelArchiveIngestJob,
   retryArchiveIngestJob,
@@ -109,5 +110,33 @@ describe('archive ingest job calls use authFetch', () => {
     const job = await getArchiveIngestJob('series-1', 'job-1');
     expect(authFetchMock).toHaveBeenCalledOnce();
     expect(job.id).toBe('job-1');
+  });
+});
+
+describe('getArchiveIngestJobProgress', () => {
+  beforeEach(() => {
+    authFetchMock.mockReset();
+  });
+
+  it('calls ?summary=true via authFetch and returns the progress payload', async () => {
+    const progress = {
+      id: 'job-1',
+      status: 'uploading',
+      stage: 'uploading 2/3: ep02.mp4',
+      bytesDone: 1500,
+      bytesTotal: 3000,
+      completedFilenames: ['ep01.mp4'],
+      activeFilename: 'ep02.mp4',
+      errorCode: null,
+      errorMessage: null,
+    };
+    authFetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: progress }), { status: 200 })
+    );
+    const result = await getArchiveIngestJobProgress('series-1', 'job-1');
+    expect(authFetchMock).toHaveBeenCalledOnce();
+    const [url] = authFetchMock.mock.calls[0] as [string, unknown];
+    expect(url).toContain('/api/series/series-1/archive-ingest/jobs/job-1?summary=true');
+    expect(result).toMatchObject({ activeFilename: 'ep02.mp4', completedFilenames: ['ep01.mp4'] });
   });
 });
