@@ -24,6 +24,22 @@ Because multiple tickets may have been merged into this branch in parallel, you 
 
 If any of these checks fail, **stop immediately**. Report the failure to the user. Do not push broken code to the remote.
 
+## 2.5 Verify all tickets are closed
+
+Confirm all tickets associated with this spec are closed. Run:
+
+```bash
+SPEC_ID=<parent-spec-number>
+gh issue list --label ticket --state all --json number,state,body \
+  | jq --arg spec_id "$SPEC_ID" '
+    map(select(.body | contains("Parent: #" + $spec_id)))
+    | map(select(.state != "CLOSED"))
+    | length == 0
+  ' || die "Not all tickets for spec #$SPEC_ID are closed"
+```
+
+Replace `<parent-spec-number>` with the actual spec issue number (e.g., from the PR body's `Closes #42`). If any ticket is still open, **stop immediately** — pushing an incomplete spec would break the workflow.
+
 ## 3. Push and Open PR
 
 Once checks pass, push the branch and open the PR. You do **not** need to ask the user whether to push directly to main — this project always uses Pull Requests.
@@ -42,6 +58,11 @@ gh pr create \
 - **CRITICAL**: The PR body MUST explicitly include `Closes #<parent-spec-number>` so that merging the PR automatically closes the parent spec issue. Summarize what changed across all the tickets batched in this PR.
 - **Parent Spec/PRD Update**: 
   - ALWAYS leave a short comment on the parent spec/PRD issue (`gh issue comment`) containing a link to this newly created PR, indicating that the batched work is now in review and will close the spec upon merge.
+- **CRITICAL**: After GitHub **closes the spec issue** (when the PR is merged), run:
+```bash
+/cleanup <spec-issue-number>
+```
+to delete the spec branch, worktrees, and test databases. Do not run this before the PR is merged!
 - Report the PR URL back to the user. Don't merge it yourself — opening the PR is the end of this skill's job; merging is a separate human decision.
 
 ## Never
