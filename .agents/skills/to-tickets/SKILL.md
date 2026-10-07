@@ -182,22 +182,23 @@ Work the **frontier**: any ticket whose blockers are all done. In separate mode 
 
 Do NOT close or modify any parent issue.
 
-### 7. Create the worktree(s)
+### 7. Create and fully set up the worktree(s) (Mandatory)
 
-An agent works in whatever directory it was started in, so the worktree has to exist before the agent does.
+An agent works in whatever directory it was started in, and an implementor agent should never have to fiddle with worktree initialization, missing databases, or uncopied env files. You MUST create the worktree AND verify that `wt-setup.sh` successfully sets up the environment (copied `.env`, isolated database created, `bun install` completed, and migrations applied) before handing off.
 
-First check that the helper scripts are available on the default branch (separate-mode worktrees are cut from the spec branch, which was cut from it, and the scripts come from there):
+First check that the helper scripts are available on the default branch:
 
 ```bash
 git fetch origin
 git cat-file -e origin/<default-branch>:scripts/wt-init.sh && git cat-file -e origin/<default-branch>:scripts/wt-setup.sh
-# shared mode only: this version of wt-init.sh must also support --shared
+# shared mode only: wt-init.sh and wt-setup.sh must both support --shared
 git show origin/<default-branch>:scripts/wt-init.sh | grep -q -e '--shared'
+git show origin/<default-branch>:scripts/wt-setup.sh | grep -q -e '--shared'
 ```
 
-If a check fails, don't create anything: tell the user which script is missing or too old (both scripts must be committed to the default branch, and for shared mode `wt-init.sh` must support `--shared`), give them the exact command from the report below, and move on to step 8.
+If a check fails, report which script is missing or too old, fix/commit the missing script capability, and ensure the worktree setup can run cleanly.
 
-Run the commands below from the main checkout, one at a time (each run creates a database and installs dependencies).
+Run the setup command from the main checkout:
 
 **Separate mode.** Create one worktree for every ticket on the frontier, and only those: a ticket with an open blocker must start from a spec branch that contains its blocker's work, so its worktree is created later, when the blocker has been merged and closed.
 
@@ -205,22 +206,23 @@ Run the commands below from the main checkout, one at a time (each run creates a
 bash scripts/wt-init.sh <issue-number>
 ```
 
-The script reads the ticket's Base and Blocked by from the issue, refuses if a blocker is still open, creates `../wt/ticket-<issue-number>` on branch `ticket/<issue-number>` from the spec branch, and prepares it with `scripts/wt-setup.sh`.
+The script reads the ticket's Base and Blocked by from the issue, refuses if a blocker is still open, creates `../wt/ticket-<issue-number>` on branch `ticket/<issue-number>` from the spec branch, and automatically prepares it with `scripts/wt-setup.sh`.
 
-**Shared mode.** Create the single worktree for the whole set, once:
+**Shared mode.** Create and set up the single worktree for the whole set:
 
 ```bash
 bash scripts/wt-init.sh --shared <delivery-branch>
 ```
 
-The script creates the delivery branch from the latest default branch (or reuses it if it exists), puts a worktree on it next to the main checkout, and prepares it with `scripts/wt-setup.sh`. Every ticket of the set is then worked in that one worktree, in order.
+The script creates the delivery branch from the latest default branch (or reuses it if it exists), links a worktree on it next to the main checkout, and runs `scripts/wt-setup.sh --shared` to create the isolated test database, copy `.env` files, run `bun install`, and execute `db:migrate`.
 
-Rules for this step:
+**Mandatory setup verification:**
 
-- Stay where you are. Don't `cd` into the worktrees, don't edit anything in them, and don't start an implementation yourself.
-- If the script fails, report its error, carry on with the report, and don't try to fix it by hand with raw `git worktree` commands. In separate mode a failure for one ticket doesn't stop the others.
-- Never use `FORCE=1`. It skips the blocker check.
-
+- Verify that `wt-setup.sh` ran inside the target worktree and completed with exit code 0, printing `done. ...: database=<name> branch=<branch>`.
+- If `wt-setup.sh` failed or was skipped during `wt-init.sh`, do NOT leave it for the implementing agent! Diagnose the root cause, fix it, and execute `bash scripts/wt-setup.sh` (or `bash scripts/wt-setup.sh --shared`) directly inside the worktree so the environment is 100% prepared.
+- Verify the worktree's `.env` files point to the isolated database and that the database migrations have completed.
+- The implementor must be able to start `/implement` immediately without debugging environment or database setup.
+- Never use `FORCE=1` on `wt-init.sh` (it skips the blocker check).
 ### 8. Report the launch plan
 
 After publishing and creating the worktree(s), give the user a short launch plan so they know what to start and when. Don't write it into the tickets (it goes stale when edges change). Print it in the reply:
