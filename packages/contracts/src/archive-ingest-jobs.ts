@@ -84,6 +84,22 @@ export type ArchiveIngestJobResponse = {
   data: ArchiveIngestJob;
 };
 
+export interface ArchiveIngestJobProgress {
+  id: string;
+  status: ArchiveIngestJobStatus;
+  stage: string;
+  bytesDone: number;
+  bytesTotal: number | null;
+  completedFilenames: string[];
+  activeFilename: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+}
+
+export type ArchiveIngestJobProgressResponse = {
+  data: ArchiveIngestJobProgress;
+};
+
 export type ArchiveIngestJobListResponse = {
   data: ArchiveIngestJob[];
 };

@@ -514,10 +514,13 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
     )
     .get(
       "/series/:id/archive-ingest/jobs/:jobId",
-      async ({ params, set }) => {
+      async ({ params, query, set }) => {
         const job = await archiveJobService.getJob(params.jobId);
         if (!job) {
           return errorResponse(set, 404, new Error("Job not found"));
+        }
+        if (query?.summary === true) {
+          return successResponse(archiveJobService.toJobProgress(job));
         }
         return successResponse(job);
       },
@@ -527,11 +530,14 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
           tags: ["Series"],
           summary: "Poll archive ingest job",
           description:
-            "Returns the current state, progress, entries, and error details of an archive ingest job. Requires authentication.",
+            "Returns the current state, progress, entries, and error details of an archive ingest job. Pass ?summary=true during the upload phase for a lightweight progress payload without entries/selection. Requires authentication.",
         },
         params: t.Object({
           id: t.String({ format: "uuid" }),
           jobId: t.String(),
+        }),
+        query: t.Object({
+          summary: t.Optional(t.BooleanString()),
         }),
       }
     )

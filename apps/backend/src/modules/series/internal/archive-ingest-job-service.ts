@@ -16,6 +16,7 @@ import type {
   ArchiveIngestJob,
   ArchiveIngestJobCreateRequest,
   ArchiveIngestJobEntry,
+  ArchiveIngestJobProgress,
   ArchiveIngestJobSelectionItem,
   ArchiveIngestJobStatus,
 } from "@repo/contracts";
@@ -390,6 +391,36 @@ export class ArchiveIngestJobService {
       .limit(1);
 
     return rows[0] ? mapRowToJob(rows[0]) : null;
+  }
+
+  /**
+   * Lightweight progress projection of a job for cheap polling during the
+   * upload phase: omits the static `entries` list and full selection items.
+   * `completedFilenames` gathers filenames with `completed === true`;
+   * `activeFilename` is the first non-ignored, not-yet-completed filename
+   * while the job is `uploading`, otherwise null.
+   */
+  public toJobProgress(job: ArchiveIngestJob): ArchiveIngestJobProgress {
+    const selection = (job.selection ?? []) as ArchiveIngestJobSelectionRow[];
+    const completedFilenames = selection
+      .filter((s) => s.completed === true)
+      .map((s) => s.filename);
+    let activeFilename: string | null = null;
+    if (job.status === "uploading") {
+      const active = selection.find((s) => !s.isIgnored && s.completed !== true);
+      activeFilename = active?.filename ?? null;
+    }
+    return {
+      id: job.id,
+      status: job.status,
+      stage: job.stage,
+      bytesDone: job.bytesDone,
+      bytesTotal: job.bytesTotal,
+      completedFilenames,
+      activeFilename,
+      errorCode: job.errorCode,
+      errorMessage: job.errorMessage,
+    };
   }
 
   async listJobs(ownerId: string, limit = 50): Promise<ArchiveIngestJob[]> {
