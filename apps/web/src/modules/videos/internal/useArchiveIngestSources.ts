@@ -106,7 +106,16 @@ export function pickDefaultStorageProvider(
   );
 }
 
-export const ARCHIVE_POLL_INTERVAL_MS = 1000;
+/**
+ * Delay between a poll response resolving and the next poll being issued.
+ * Polls run sequentially (recursive timeout, never overlapping) rather than
+ * on a fixed interval so slow responses can't pile up.
+ */
+export const ARCHIVE_POLL_DELAY_MS = 3000;
+
+/** Error surfaced when polling halts on a terminal auth failure. */
+export const ARCHIVE_SESSION_EXPIRED_MESSAGE =
+  'Session expired. Please sign in again to continue.';
 
 export function isPasswordErrorCode(code: string | null | undefined): boolean {
   return code === 'PASSWORD_REQUIRED' || code === 'PASSWORD_INCORRECT';
@@ -243,11 +252,16 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   const [jobError, setJobError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Set once a poll fails with a terminal 401 (silent refresh already failed
+  // inside authFetch): the polling chain halts and surfaces session expiry.
+  // Cleared whenever a new job starts.
+  const [pollHalted, setPollHalted] = useState(false);
+
   const jobId = job?.id ?? null;
   const jobStatus: ArchiveJobPhase = job?.status ?? 'idle';
   const jobErrorCode = job?.errorCode ?? null;
   const isJobActive = job ? ARCHIVE_POLL_STATUSES.has(job.status) : false;
-  const isPolling = !!jobId && !!options?.seriesId && ARCHIVE_POLL_STATUSES.has(job?.status ?? '');
+  const isPolling = !!jobId && !!options?.seriesId && !pollHalted && ARCHIVE_POLL_STATUSES.has(job?.status ?? '');
 
   // ─── Step 2 — Review items (derived from job entries) ───────────────────────
   const reviewItems = useMemo((): ArchiveReviewItem[] => {
@@ -346,7 +360,7 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   const step = stepOverride ?? derivedStep;
   const setStep = useCallback((s: 1 | 2 | 3) => setStepOverride(s), []);
 
-  // ─── Polling loop (1s while job is active) ───────────────────────────────────
+  // ─── Sequential polling loop (3s after each response, paused when hidden) ──
   const seriesIdRef = useRef(options?.seriesId);
   useEffect(() => {
     seriesIdRef.current = options?.seriesId;
@@ -356,16 +370,40 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
     jobIdRef.current = jobId;
   });
 
+  // Poll-halt flag is declared above (next to job state); reset it whenever a
+  // new job starts so a fresh job polls even after a previous halt.
+  useEffect(() => {
+    setPollHalted(false);
+  }, [jobId]);
+
   useEffect(() => {
     const sid = options?.seriesId;
-    if (!sid || !jobId || !ARCHIVE_POLL_STATUSES.has(job?.status ?? '')) return;
+    if (!sid || !jobId || pollHalted || !ARCHIVE_POLL_STATUSES.has(job?.status ?? '')) return;
 
-    const timer = setInterval(async () => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleNext = () => {
+      if (cancelled) return;
+      timer = setTimeout(() => {
+        timer = null;
+        void runPoll();
+      }, ARCHIVE_POLL_DELAY_MS);
+    };
+
+    const runPoll = async () => {
+      if (cancelled) return;
+      // Pause on background tabs: defer until the tab is visible again.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        scheduleNext();
+        return;
+      }
       try {
         const currentSid = seriesIdRef.current;
         const currentJobId = jobIdRef.current;
         if (!currentSid || !currentJobId) return;
         const updated = await getArchiveIngestJob(currentSid, currentJobId);
+        if (cancelled) return;
         setJob(updated);
         setJobError(null);
         if (updated.status === 'done') {
@@ -383,13 +421,43 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
         if (updated.status === 'failed' && updated.errorMessage) {
           setJobError(updated.errorMessage);
         }
+        if (ARCHIVE_POLL_STATUSES.has(updated.status)) {
+          scheduleNext();
+        }
       } catch (err) {
+        if (cancelled) return;
+        if ((err as { status?: number } | null)?.status === 401) {
+          // Terminal auth failure — stop polling and surface session expiry.
+          setPollHalted(true);
+          setJobError(ARCHIVE_SESSION_EXPIRED_MESSAGE);
+          return;
+        }
         setJobError(err instanceof Error ? err.message : 'Failed to poll job status');
+        scheduleNext();
       }
-    }, ARCHIVE_POLL_INTERVAL_MS);
+    };
 
-    return () => clearInterval(timer);
-  }, [options?.seriesId, jobId, job?.status, queryClient]);
+    // Poll immediately when the tab becomes visible again.
+    const onVisibilityChange = () => {
+      if (typeof document === 'undefined' || cancelled) return;
+      if (document.visibilityState === 'visible') {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        void runPoll();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    scheduleNext();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [options?.seriesId, jobId, job?.status, pollHalted, queryClient]);
 
   // ─── Actions ────────────────────────────────────────────────────────────────
   const startJob = useCallback(async () => {

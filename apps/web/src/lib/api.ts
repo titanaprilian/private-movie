@@ -122,6 +122,23 @@ const customFetcher = async (
   return response;
 };
 
+/**
+ * Authenticated fetch for direct (non-Eden) API calls.
+ *
+ * Includes credentials, attaches `Authorization: Bearer <token>`, and on a
+ * 401 transparently performs a single silent refresh (`POST
+ * /api/auth/refresh`) and retries the original request once with the new
+ * token. At most one retry is ever attempted: if the retried request (or
+ * the refresh itself) still yields 401, that response is returned as-is so
+ * callers can treat it as a terminal auth failure — no retry loop.
+ */
+export const authFetch = async (
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> => {
+  return customFetcher(input, init);
+};
+
 const client = edenTreaty<App>(API_URL, {
   fetcher: customFetcher as typeof fetch,
 });

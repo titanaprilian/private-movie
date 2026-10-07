@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { api, extractErrorMessage } from '@/lib/api';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { api, authFetch, extractErrorMessage, getAccessToken, setAccessToken } from '@/lib/api';
 
 describe('api client', () => {
   it('includes credentials: include on outgoing requests', async () => {
@@ -18,6 +18,78 @@ describe('api client', () => {
     expect(init).toHaveProperty('credentials', 'include');
 
     fetchSpy.mockRestore();
+  });
+});
+
+describe('authFetch', () => {
+  beforeEach(() => {
+    setAccessToken(null);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setAccessToken(null);
+  });
+
+  it('attaches the Bearer token and includes credentials', async () => {
+    setAccessToken('token-abc');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    );
+
+    const res = await authFetch('https://api.example.test/api/series/1');
+
+    expect(res.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, init] = fetchSpy.mock.calls[0] as [unknown, RequestInit];
+    expect(init).toMatchObject({ credentials: 'include' });
+    expect(init.headers).toMatchObject({ authorization: 'Bearer token-abc' });
+  });
+
+  it('on 401 triggers silent refresh and retries once with the new token', async () => {
+    setAccessToken('expired-token');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      (async (input: string | URL | Request, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url.includes('/api/auth/refresh')) {
+          return new Response(
+            JSON.stringify({ data: { tokens: { accessToken: 'fresh-token' } } }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        const auth = (init?.headers as Record<string, string> | undefined)?.authorization;
+        if (auth === 'Bearer fresh-token') {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+        return new Response('unauthorized', { status: 401 });
+      }) as unknown as typeof fetch
+    );
+
+    const res = await authFetch('https://api.example.test/api/series/1');
+
+    expect(res.status).toBe(200);
+    // Original request + refresh + exactly one retry (no loop).
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    const refreshCall = fetchSpy.mock.calls.find(([url]) => String(url).includes('/api/auth/refresh'));
+    expect(refreshCall).toBeDefined();
+    const [, retryInit] = fetchSpy.mock.calls[2] as [unknown, RequestInit];
+    expect(retryInit.headers).toMatchObject({ authorization: 'Bearer fresh-token' });
+    // Token store updated for subsequent calls.
+    expect(getAccessToken()).toBe('fresh-token');
+  });
+
+  it('returns the 401 response without retrying when silent refresh fails', async () => {
+    setAccessToken('expired-token');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      (async () => new Response('unauthorized', { status: 401 })) as unknown as typeof fetch
+    );
+
+    const res = await authFetch('https://api.example.test/api/series/1');
+
+    expect(res.status).toBe(401);
+    // Original request + one refresh attempt only — no infinite retry loop.
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(getAccessToken()).toBeNull();
   });
 });
 

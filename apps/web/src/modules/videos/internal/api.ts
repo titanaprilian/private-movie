@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { api, getAccessToken, getApiBaseUrl, extractErrorMessage } from '@/lib/api';
+import { api, authFetch, getAccessToken, getApiBaseUrl, extractErrorMessage } from '@/lib/api';
 import type {
   AdminPaginationMeta,
   AdminVideoSourceItem,
@@ -1616,7 +1616,7 @@ export async function createArchiveIngestJob(
   request: ArchiveIngestJobCreateRequest
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(jobBase(seriesId), {
+  const response = await authFetch(jobBase(seriesId), {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -1640,7 +1640,7 @@ export async function getArchiveIngestJob(
   jobId: string
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(
+  const response = await authFetch(
     `${jobBase(seriesId)}/${encodeURIComponent(jobId)}`,
     { headers }
   );
@@ -1657,7 +1657,7 @@ export async function confirmArchiveIngestJob(
   request: ArchiveIngestJobConfirmRequest
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(
+  const response = await authFetch(
     `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/confirm`,
     {
       method: 'POST',
@@ -1677,7 +1677,7 @@ export async function cancelArchiveIngestJob(
   jobId: string
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(
+  const response = await authFetch(
     `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/cancel`,
     { method: 'POST', headers }
   );
@@ -1694,7 +1694,7 @@ export async function retryArchiveIngestJob(
   password?: string | null
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(
+  const response = await authFetch(
     `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/retry`,
     {
       method: 'POST',

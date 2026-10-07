@@ -6,7 +6,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import {
   useArchiveIngestSources,
   computeSizeAnomalyFilenames,
-  ARCHIVE_POLL_INTERVAL_MS,
+  ARCHIVE_POLL_DELAY_MS,
+  ARCHIVE_SESSION_EXPIRED_MESSAGE,
 } from '@/modules/videos/internal/useArchiveIngestSources';
 import * as api from '@/modules/videos/internal/api';
 import type { ArchiveIngestJob, StorageProviderItem } from '@repo/contracts';
@@ -153,13 +154,13 @@ describe('useArchiveIngestSources polling hook', () => {
 
     // Poll -> listing
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_INTERVAL_MS);
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
     });
     expect(result.current.jobStatus).toBe('listing');
 
     // Poll -> ready (review table populated)
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_INTERVAL_MS);
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
     });
     expect(result.current.jobStatus).toBe('ready');
     expect(result.current.step).toBe(2);
@@ -187,7 +188,7 @@ describe('useArchiveIngestSources polling hook', () => {
     // Poll while uploading resolves done
     vi.mocked(api.getArchiveIngestJob).mockResolvedValue(done);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_INTERVAL_MS);
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
     });
     expect(result.current.jobStatus).toBe('done');
     expect(result.current.isPolling).toBe(false);
@@ -222,7 +223,7 @@ describe('useArchiveIngestSources polling hook', () => {
     // Advancing timers must not trigger further polls
     const calls = vi.mocked(api.getArchiveIngestJob).mock.calls.length;
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_INTERVAL_MS * 3);
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS * 3);
     });
     expect(vi.mocked(api.getArchiveIngestJob).mock.calls.length).toBe(calls);
   });
@@ -288,8 +289,118 @@ describe('useArchiveIngestSources polling hook', () => {
     );
   });
 
-  it('flags sibling size disparities', () => {
-    const anomalies = computeSizeAnomalyFilenames([
+  it('polls sequentially with a delay after each response resolves', async () => {
+    const downloading = makeJob({ status: 'downloading', stage: 'downloading' });
+    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
+    vi.mocked(api.getArchiveIngestJob).mockResolvedValue(downloading);
+
+    const { result } = renderHook(
+      () => useArchiveIngestSources({ seriesId: 'series-1' }),
+      { wrapper: createWrapper() }
+    );
+    act(() => {
+      result.current.setArchiveUrl('https://example.com/pack.zip');
+    });
+    await act(async () => {
+      await result.current.startJob();
+    });
+
+    // No poll before the delay elapses.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS - 1);
+    });
+    expect(vi.mocked(api.getArchiveIngestJob)).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+
+    // The second poll waits for another full delay after the first resolved.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS - 1);
+    });
+    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(2);
+  });
+
+  it('pauses polling while the tab is hidden and polls promptly when visible', async () => {
+    const downloading = makeJob({ status: 'downloading', stage: 'downloading' });
+    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
+    vi.mocked(api.getArchiveIngestJob).mockResolvedValue(downloading);
+
+    const { result } = renderHook(
+      () => useArchiveIngestSources({ seriesId: 'series-1' }),
+      { wrapper: createWrapper() }
+    );
+    act(() => {
+      result.current.setArchiveUrl('https://example.com/pack.zip');
+    });
+    await act(async () => {
+      await result.current.startJob();
+    });
+
+    const descriptor = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS * 3);
+      });
+      expect(vi.mocked(api.getArchiveIngestJob)).not.toHaveBeenCalled();
+
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+    } finally {
+      if (descriptor) Object.defineProperty(document, 'visibilityState', descriptor);
+    }
+  });
+
+  it('halts polling and surfaces session expiry on terminal 401', async () => {
+    const downloading = makeJob({ status: 'downloading', stage: 'downloading' });
+    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
+    vi.mocked(api.getArchiveIngestJob).mockRejectedValue(
+      Object.assign(new Error('Unauthorized'), { status: 401 })
+    );
+
+    const { result } = renderHook(
+      () => useArchiveIngestSources({ seriesId: 'series-1' }),
+      { wrapper: createWrapper() }
+    );
+    act(() => {
+      result.current.setArchiveUrl('https://example.com/pack.zip');
+    });
+    await act(async () => {
+      await result.current.startJob();
+    });
+    expect(result.current.isPolling).toBe(true);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
+    });
+    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+    expect(result.current.jobError).toBe(ARCHIVE_SESSION_EXPIRED_MESSAGE);
+    expect(result.current.isPolling).toBe(false);
+
+    // No further polls after the halt.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS * 3);
+    });
+    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+  });
+
+  it('flags sibling size disparities', () => {    const anomalies = computeSizeAnomalyFilenames([
       { filename: 'ep01.mp4', sizeBytes: 1000 },
       { filename: 'ep02.mp4', sizeBytes: 1020 },
       { filename: 'ep03.mp4', sizeBytes: 90 },
