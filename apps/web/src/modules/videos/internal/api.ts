@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { api, getAccessToken, getApiBaseUrl, extractErrorMessage } from '@/lib/api';
+import { api, authFetch, getAccessToken, getApiBaseUrl, extractErrorMessage } from '@/lib/api';
 import type {
   AdminPaginationMeta,
   AdminVideoSourceItem,
@@ -51,6 +51,8 @@ import type {
   ArchiveIngestJob,
   ArchiveIngestJobConfirmRequest,
   ArchiveIngestJobCreateRequest,
+  ArchiveIngestJobProgress,
+  ArchiveIngestJobProgressResponse,
   ArchiveIngestJobResponse,
 } from '@repo/contracts';
 import { parseIngestUrl, type ParsedIngestUrl } from './parseIngestUrl';
@@ -1101,7 +1103,7 @@ export async function remoteIngestEpisodeVideoSource(
     'Content-Type': 'application/json',
   };
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(apiUrl, {
@@ -1251,7 +1253,7 @@ export async function checkVideoSource(
     'Content-Type': 'application/json',
   };
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(apiUrl, {
@@ -1324,7 +1326,7 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
   };
   const token = getAccessToken();
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['authorization'] = `Bearer ${token}`;
   }
   return headers;
 }
@@ -1616,7 +1618,7 @@ export async function createArchiveIngestJob(
   request: ArchiveIngestJobCreateRequest
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(jobBase(seriesId), {
+  const response = await authFetch(jobBase(seriesId), {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -1640,11 +1642,49 @@ export async function getArchiveIngestJob(
   jobId: string
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(
+  const response = await authFetch(
     `${jobBase(seriesId)}/${encodeURIComponent(jobId)}`,
     { headers }
   );
   return parseJobResponse(response, 'Failed to fetch archive ingest job');
+}
+
+/**
+ * GET /api/series/:id/archive-ingest/jobs/:jobId?summary=true
+ * Lightweight progress payload for the upload phase (no entries/selection).
+ */
+export async function getArchiveIngestJobProgress(
+  seriesId: string,
+  jobId: string
+): Promise<ArchiveIngestJobProgress> {
+  const headers = await buildAuthHeaders();
+  const response = await authFetch(
+    `${jobBase(seriesId)}/${encodeURIComponent(jobId)}?summary=true`,
+    { headers }
+  );
+  if (!response.ok) {
+    let errorCode: string | undefined;
+    let errorMessage = `Failed to fetch archive ingest job progress (status ${response.status})`;
+    try {
+      const errJson = await response.json();
+      if (errJson?.error) {
+        errorCode = errJson.error.code;
+        errorMessage = errJson.error.message || errorMessage;
+      }
+    } catch {
+      // ignore
+    }
+    const err = new Error(errorMessage) as Error & { code?: string; status?: number };
+    if (errorCode) err.code = errorCode;
+    err.status = response.status;
+    throw err;
+  }
+  const json = (await response.json()) as ArchiveIngestJobProgressResponse | { data?: ArchiveIngestJobProgress };
+  const progress = (json as ArchiveIngestJobProgressResponse)?.data;
+  if (!progress || !progress.id) {
+    throw new Error('Failed to fetch archive ingest job progress');
+  }
+  return progress;
 }
 
 /**
@@ -1657,7 +1697,7 @@ export async function confirmArchiveIngestJob(
   request: ArchiveIngestJobConfirmRequest
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(
+  const response = await authFetch(
     `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/confirm`,
     {
       method: 'POST',
@@ -1677,7 +1717,7 @@ export async function cancelArchiveIngestJob(
   jobId: string
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(
+  const response = await authFetch(
     `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/cancel`,
     { method: 'POST', headers }
   );
@@ -1694,7 +1734,7 @@ export async function retryArchiveIngestJob(
   password?: string | null
 ): Promise<ArchiveIngestJob> {
   const headers = await buildAuthHeaders();
-  const response = await fetch(
+  const response = await authFetch(
     `${jobBase(seriesId)}/${encodeURIComponent(jobId)}/retry`,
     {
       method: 'POST',
@@ -1705,6 +1745,6 @@ export async function retryArchiveIngestJob(
   return parseJobResponse(response, 'Failed to retry archive ingest job');
 }
 
-export type { ArchiveIngestJob, ArchiveIngestJobConfirmRequest, ArchiveIngestJobCreateRequest };
+export type { ArchiveIngestJob, ArchiveIngestJobConfirmRequest, ArchiveIngestJobCreateRequest, ArchiveIngestJobProgress };
 
 

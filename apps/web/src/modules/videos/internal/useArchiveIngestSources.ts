@@ -6,6 +6,7 @@ import {
   confirmArchiveIngestJob,
   createArchiveIngestJob,
   getArchiveIngestJob,
+  getArchiveIngestJobProgress,
   retryArchiveIngestJob,
 } from './api';
 import type {
@@ -106,7 +107,16 @@ export function pickDefaultStorageProvider(
   );
 }
 
-export const ARCHIVE_POLL_INTERVAL_MS = 1000;
+/**
+ * Delay between a poll response resolving and the next poll being issued.
+ * Polls run sequentially (recursive timeout, never overlapping) rather than
+ * on a fixed interval so slow responses can't pile up.
+ */
+export const ARCHIVE_POLL_DELAY_MS = 3000;
+
+/** Error surfaced when polling halts on a terminal auth failure. */
+export const ARCHIVE_SESSION_EXPIRED_MESSAGE =
+  'Session expired. Please sign in again to continue.';
 
 export function isPasswordErrorCode(code: string | null | undefined): boolean {
   return code === 'PASSWORD_REQUIRED' || code === 'PASSWORD_INCORRECT';
@@ -243,16 +253,25 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   const [jobError, setJobError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Set once a poll fails with a terminal 401 (silent refresh already failed
+  // inside authFetch): the polling chain halts and surfaces session expiry.
+  // Cleared whenever a new job starts.
+  const [pollHalted, setPollHalted] = useState(false);
+
   const jobId = job?.id ?? null;
   const jobStatus: ArchiveJobPhase = job?.status ?? 'idle';
   const jobErrorCode = job?.errorCode ?? null;
   const isJobActive = job ? ARCHIVE_POLL_STATUSES.has(job.status) : false;
-  const isPolling = !!jobId && !!options?.seriesId && ARCHIVE_POLL_STATUSES.has(job?.status ?? '');
+  const isPolling = !!jobId && !!options?.seriesId && !pollHalted && ARCHIVE_POLL_STATUSES.has(job?.status ?? '');
 
   // ─── Step 2 — Review items (derived from job entries) ───────────────────────
   const reviewItems = useMemo((): ArchiveReviewItem[] => {
     if (!job || job.entries.length === 0) return [];
     const anomalies = computeSizeAnomalyFilenames(job.entries);
+    const completedSet = new Set(
+      job.selection.filter((s) => s.completed).map((s) => s.filename)
+    );
+    const activeFromStage = parseUploadStage(job.stage).activeFilename;
     return job.entries.map((entry: ArchiveIngestJobEntry) => {
       let matchedEpisodeId: string | null = null;
       let needsReview = entry.needsReview ?? true;
@@ -281,12 +300,24 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
 
       const ignored = selected?.isIgnored ?? false;
       const status = job.status;
-      const commitStatus: ArchiveReviewItem['commitStatus'] =
-        ignored ? 'skipped'
-        : status === 'done' ? 'completed'
-        : status === 'failed' ? 'failed'
-        : status === 'uploading' ? 'uploading'
-        : 'pending';
+      const isCompleted =
+        completedSet.has(entry.filename) || selected?.completed === true;
+      let commitStatus: ArchiveReviewItem['commitStatus'];
+      if (ignored) {
+        commitStatus = 'skipped';
+      } else if (status === 'done') {
+        commitStatus = 'completed';
+      } else if (status === 'failed') {
+        commitStatus = isCompleted ? 'completed' : 'failed';
+      } else if (status === 'uploading') {
+        commitStatus = isCompleted
+          ? 'completed'
+          : entry.filename === activeFromStage
+            ? 'uploading'
+            : 'pending';
+      } else {
+        commitStatus = 'pending';
+      }
 
       return {
         fileId: entry.filename,
@@ -346,7 +377,7 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   const step = stepOverride ?? derivedStep;
   const setStep = useCallback((s: 1 | 2 | 3) => setStepOverride(s), []);
 
-  // ─── Polling loop (1s while job is active) ───────────────────────────────────
+  // ─── Sequential polling loop (3s after each response, paused when hidden) ──
   const seriesIdRef = useRef(options?.seriesId);
   useEffect(() => {
     seriesIdRef.current = options?.seriesId;
@@ -355,17 +386,98 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   useEffect(() => {
     jobIdRef.current = jobId;
   });
+  const jobStatusRef = useRef(jobStatus);
+  useEffect(() => {
+    jobStatusRef.current = jobStatus;
+  });
+  const jobRef = useRef(job);
+  useEffect(() => {
+    jobRef.current = job;
+  });
+
+  // Poll-halt flag is declared above (next to job state); reset it whenever a
+  // new job starts so a fresh job polls even after a previous halt.
+  useEffect(() => {
+    setPollHalted(false);
+  }, [jobId]);
 
   useEffect(() => {
     const sid = options?.seriesId;
-    if (!sid || !jobId || !ARCHIVE_POLL_STATUSES.has(job?.status ?? '')) return;
+    if (!sid || !jobId || pollHalted || !ARCHIVE_POLL_STATUSES.has(job?.status ?? '')) return;
 
-    const timer = setInterval(async () => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleNext = () => {
+      if (cancelled) return;
+      timer = setTimeout(() => {
+        timer = null;
+        void runPoll();
+      }, ARCHIVE_POLL_DELAY_MS);
+    };
+
+    const runPoll = async () => {
+      if (cancelled) return;
+      // Pause on background tabs: defer until the tab is visible again.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        scheduleNext();
+        return;
+      }
       try {
         const currentSid = seriesIdRef.current;
         const currentJobId = jobIdRef.current;
         if (!currentSid || !currentJobId) return;
-        const updated = await getArchiveIngestJob(currentSid, currentJobId);
+        let updated: ArchiveIngestJob;
+        if (jobStatusRef.current === 'uploading') {
+          // Lightweight progress poll: patch counters/stage/completion flags
+          // into local state, preserving user episode mapping & quality
+          // overrides held in selection.
+          const progress = await getArchiveIngestJobProgress(currentSid, currentJobId);
+          if (cancelled) return;
+          if (progress.status === 'done' || progress.status === 'failed') {
+            // Terminal state: fetch the full job once for final entries/selection.
+            try {
+              updated = await getArchiveIngestJob(currentSid, currentJobId);
+            } catch {
+              const completedSet = new Set(progress.completedFilenames ?? []);
+              const prev = jobRef.current;
+              if (!prev) return;
+              updated = {
+                ...prev,
+                status: progress.status,
+                stage: progress.stage,
+                bytesDone: progress.bytesDone,
+                bytesTotal: progress.bytesTotal,
+                errorCode: progress.errorCode,
+                errorMessage: progress.errorMessage,
+                selection: prev.selection.map((s) => ({
+                  ...s,
+                  completed: completedSet.has(s.filename) ? true : s.completed,
+                })),
+              };
+            }
+          } else {
+            const completedSet = new Set(progress.completedFilenames ?? []);
+            const prev = jobRef.current;
+            if (!prev) return;
+            updated = {
+              ...prev,
+              status: progress.status,
+              stage: progress.stage,
+              bytesDone: progress.bytesDone,
+              bytesTotal: progress.bytesTotal,
+              errorCode: progress.errorCode,
+              errorMessage: progress.errorMessage,
+              selection: prev.selection.map((s) => ({
+                ...s,
+                completed: completedSet.has(s.filename) ? true : s.completed,
+              })),
+            };
+          }
+        } else {
+          updated = await getArchiveIngestJob(currentSid, currentJobId);
+        }
+        if (cancelled) return;
         setJob(updated);
         setJobError(null);
         if (updated.status === 'done') {
@@ -383,13 +495,43 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
         if (updated.status === 'failed' && updated.errorMessage) {
           setJobError(updated.errorMessage);
         }
+        if (ARCHIVE_POLL_STATUSES.has(updated.status)) {
+          scheduleNext();
+        }
       } catch (err) {
+        if (cancelled) return;
+        if ((err as { status?: number } | null)?.status === 401) {
+          // Terminal auth failure — stop polling and surface session expiry.
+          setPollHalted(true);
+          setJobError(ARCHIVE_SESSION_EXPIRED_MESSAGE);
+          return;
+        }
         setJobError(err instanceof Error ? err.message : 'Failed to poll job status');
+        scheduleNext();
       }
-    }, ARCHIVE_POLL_INTERVAL_MS);
+    };
 
-    return () => clearInterval(timer);
-  }, [options?.seriesId, jobId, job?.status, queryClient]);
+    // Poll immediately when the tab becomes visible again.
+    const onVisibilityChange = () => {
+      if (typeof document === 'undefined' || cancelled) return;
+      if (document.visibilityState === 'visible') {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        void runPoll();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    scheduleNext();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [options?.seriesId, jobId, job?.status, pollHalted, queryClient]);
 
   // ─── Actions ────────────────────────────────────────────────────────────────
   const startJob = useCallback(async () => {
@@ -606,7 +748,15 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
     };
   }, [job]);
 
-  const commitCompletedCount = job?.status === 'done' ? totalCount : 0;
+  const commitCompletedCount = useMemo(() => {
+    if (!job) return 0;
+    if (job.status === 'done') {
+      return job.selection.length > 0
+        ? job.selection.filter((s) => !s.isIgnored).length
+        : totalCount;
+    }
+    return job.selection.filter((s) => s.completed && !s.isIgnored).length;
+  }, [job, totalCount]);
   const progressPercentage = useMemo(() => {
     if (!job) return 0;
     if (job.status === 'done') return 100;

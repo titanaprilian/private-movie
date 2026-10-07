@@ -273,6 +273,77 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
       expect(job).toHaveProperty("entries");
       expect(job).toHaveProperty("status");
     });
+
+    it("returns the lightweight progress shape with ?summary=true on an active upload job", async () => {
+      const { seriesId, ep1Id, ep2Id } = await createSeriesAndEpisodes();
+      const { user, accessToken } = await registerUser(app);
+      const jobId = crypto.randomUUID();
+      const stagingPath = join(testTmpBase, jobId);
+      mkdirSync(stagingPath, { recursive: true });
+
+      await db.insert(archiveIngestJobs).values({
+        id: jobId,
+        ownerId: user.id,
+        seriesId,
+        sourceKey: `key-${jobId}`,
+        sourceUrl: "https://example.com/summary-pack.zip",
+        status: "uploading",
+        stage: "uploading",
+        bytesDone: 100,
+        bytesTotal: 300,
+        stagingPath,
+        archiveFilename: "summary-pack.zip",
+        entries: [
+          { filename: "Show.S01E01.mp4", sizeBytes: 100 },
+          { filename: "Show.S01E02.mp4", sizeBytes: 200 },
+          { filename: "Show.S01E03.mp4", sizeBytes: 300 },
+        ],
+        selection: [
+          { filename: "Show.S01E01.mp4", episodeId: ep1Id, completed: true },
+          { filename: "Show.S01E02.mp4", episodeId: ep2Id, completed: false },
+          { filename: "Show.S01E03.mp4", episodeId: null, isIgnored: true },
+        ],
+        storageProviderId: null,
+        errorCode: null,
+        errorMessage: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        expiresAt: null,
+      });
+
+      const summaryRes = await request(app, {
+        method: "GET",
+        path: `/api/series/${seriesId}/archive-ingest/jobs/${jobId}?summary=true`,
+        headers: authHeaders(accessToken),
+      });
+      expect(summaryRes.status).toBe(200);
+      const progress = (summaryRes.body as { data: Record<string, unknown> }).data;
+      expect(progress).toMatchObject({
+        id: jobId,
+        status: "uploading",
+        stage: "uploading",
+        bytesDone: 100,
+        bytesTotal: 300,
+        completedFilenames: ["Show.S01E01.mp4"],
+        activeFilename: "Show.S01E02.mp4",
+        errorCode: null,
+        errorMessage: null,
+      });
+      expect(progress).not.toHaveProperty("entries");
+      expect(progress).not.toHaveProperty("selection");
+
+      // Without ?summary=true the complete job (entries + selection) is returned
+      const fullRes = await request(app, {
+        method: "GET",
+        path: `/api/series/${seriesId}/archive-ingest/jobs/${jobId}`,
+        headers: authHeaders(accessToken),
+      });
+      expect(fullRes.status).toBe(200);
+      const full = (fullRes.body as { data: Record<string, unknown> }).data;
+      expect(full).toHaveProperty("entries");
+      expect(full).toHaveProperty("selection");
+      expect((full.entries as unknown[]).length).toBe(3);
+    });
   });
 
   // ── POST /api/series/:id/archive-ingest/jobs/:jobId/cancel ────────────

@@ -691,8 +691,11 @@ function ArchiveStep3({
   onCancel,
   onClose,
 }: ArchiveStep3Props) {
-  const displayIndex = uploadView?.currentIndex ?? commitCompletedCount;
   const displayTotal = uploadView?.totalFiles ?? totalCount;
+  const displayIndex =
+    displayTotal > 0
+      ? Math.min(commitCompletedCount + 1, displayTotal)
+      : (uploadView?.currentIndex ?? commitCompletedCount);
   const displayPercent = uploadView?.percent ?? progressPercentage;
   const displayFilename = uploadView?.activeFilename ?? activeCommitItem?.filename ?? null;
   const displayLoaded = uploadView?.loaded ?? activeCommitItem?.commitProgress?.loaded ?? null;
