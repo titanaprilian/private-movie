@@ -21,6 +21,79 @@ This monorepo strictly follows the **Deep Modules** architecture to keep context
 
 See [`AGENTS.md`](./AGENTS.md) for the full architecture, constraints, and platform mappings.
 
+```mermaid
+flowchart TD
+
+subgraph group_clients["Client Applications"]
+node_web["Web Client"]
+node_tv["Android TV"]
+node_webwatch["Browse And Watch"]
+node_webadmin["Catalog Admin"]
+node_webstorage["Storage Admin"]
+node_tvnav["TV Navigation<br/>[AppNavigation.kt]"]
+end
+
+subgraph group_api["Backend API"]
+node_backend["HTTP API Server<br/>[app.ts]"]
+node_auth["Authentication"]
+node_catalogapi["Catalog API"]
+node_episodeapi["Episode Ingest API"]
+node_mediaapi["Media API"]
+node_storageapi["Storage API"]
+end
+
+subgraph group_media["Media Services"]
+node_mediaservice["Media Service"]
+node_scraper["Media Scraper"]
+node_seed["Ingestion And Enrichment"]
+node_contracts["API Contracts"]
+end
+
+subgraph group_data["Catalog And Storage"]
+node_db[("PostgreSQL Catalog")]
+node_s3service["S3 Storage Service"]
+end
+
+node_viewer(("Viewer"))
+node_admin(("Administrator"))
+node_postgres[("PostgreSQL")]
+node_s3[("S3-Compatible Storage")]
+node_tmdb["TMDB"]
+node_source["Remote Media Sources"]
+
+node_viewer -->|"uses"| node_web
+node_viewer -->|"uses"| node_tv
+node_admin -->|"uses"| node_web
+node_web -->|"offers browsing"| node_webwatch
+node_web -->|"offers catalog management"| node_webadmin
+node_web -->|"offers storage management"| node_webstorage
+node_tv -->|"navigates screens"| node_tvnav
+node_webwatch -->|"requests catalog and playback"| node_backend
+node_tvnav -->|"requests media data"| node_backend
+node_webadmin -->|"submits ingestion"| node_episodeapi
+node_webstorage -->|"manages storage"| node_storageapi
+node_backend -->|"dispatches routes"| node_auth
+node_backend -->|"dispatches routes"| node_catalogapi
+node_backend -->|"dispatches routes"| node_episodeapi
+node_backend -->|"dispatches routes"| node_mediaapi
+node_backend -->|"dispatches routes"| node_storageapi
+node_episodeapi -->|"ingests media"| node_mediaservice
+node_mediaapi -->|"resolves playback"| node_mediaservice
+node_storageapi -->|"manages objects"| node_mediaservice
+node_episodeapi -->|"reads episode records"| node_db
+node_mediaservice -->|"reads and writes catalog"| node_db
+node_db -->|"persists data"| node_postgres
+node_mediaservice -->|"uses storage operations"| node_s3service
+node_s3service -->|"uploads and retrieves objects"| node_s3
+node_contracts -->|"defines shared API types"| node_web
+node_contracts -->|"defines shared API types"| node_backend
+node_seed -.->|"enriches metadata"| node_tmdb
+node_seed -.->|"uses scraping utilities"| node_scraper
+node_scraper -.->|"scrapes media sources"| node_source
+node_seed -.->|"imports catalog data"| node_db
+node_mediaservice -.->|"fetches remote streams"| node_source
+```
+
 ## Project Structure
 
 ```
