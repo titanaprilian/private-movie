@@ -91,6 +91,40 @@ describe('authFetch', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(getAccessToken()).toBeNull();
   });
+
+  it('replaces a stale uppercase Authorization header on retry without comma concatenation', async () => {
+    setAccessToken('expired-token');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      (async (input: string | URL | Request, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url.includes('/api/auth/refresh')) {
+          return new Response(
+            JSON.stringify({ data: { tokens: { accessToken: 'fresh-token' } } }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        const headers = init?.headers as Record<string, string> | undefined;
+        const auth = headers?.['authorization'];
+        if (auth === 'Bearer fresh-token') {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+        return new Response('unauthorized', { status: 401 });
+      }) as unknown as typeof fetch
+    );
+
+    const res = await authFetch('https://api.example.test/api/series/1', {
+      headers: { Authorization: 'Bearer old-token' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    const [, retryInit] = fetchSpy.mock.calls[2] as [unknown, RequestInit];
+    const retryHeaders = retryInit.headers as Record<string, string>;
+    expect(retryHeaders['authorization']).toBe('Bearer fresh-token');
+    expect(retryHeaders['Authorization']).toBeUndefined();
+    expect(Object.keys(retryHeaders).filter((k) => k.toLowerCase() === 'authorization')).toHaveLength(1);
+    expect(String(retryHeaders['authorization'])).not.toContain(',');
+  });
 });
 
 describe('extractErrorMessage', () => {

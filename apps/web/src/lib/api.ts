@@ -81,17 +81,20 @@ function applyAuthHeader(
   if (init?.headers) {
     if (init.headers instanceof Headers) {
       init.headers.forEach((value, key) => {
-        headersObj[key] = value;
+        headersObj[key.toLowerCase()] = value;
       });
     } else if (Array.isArray(init.headers)) {
       init.headers.forEach(([key, value]) => {
-        headersObj[key] = value;
+        headersObj[key.toLowerCase()] = value;
       });
     } else {
-      Object.assign(headersObj, init.headers);
+      for (const [key, value] of Object.entries(init.headers)) {
+        headersObj[key.toLowerCase()] = value as string;
+      }
     }
   }
 
+  delete headersObj['authorization'];
   if (token) {
     headersObj['authorization'] = `Bearer ${token}`;
   }

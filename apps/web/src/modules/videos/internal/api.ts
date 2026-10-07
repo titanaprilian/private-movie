@@ -1103,7 +1103,7 @@ export async function remoteIngestEpisodeVideoSource(
     'Content-Type': 'application/json',
   };
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(apiUrl, {
@@ -1253,7 +1253,7 @@ export async function checkVideoSource(
     'Content-Type': 'application/json',
   };
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(apiUrl, {
@@ -1326,7 +1326,7 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
   };
   const token = getAccessToken();
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['authorization'] = `Bearer ${token}`;
   }
   return headers;
 }
