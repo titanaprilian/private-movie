@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { parseIngestUrl } from './parseIngestUrl';
-import { remoteIngestEpisodeVideoSource } from './api';
+import { remoteIngestEpisodeVideoSource } from '../api';
 import {
   storageProvidersQueryOptions,
   type StorageProviderItem,

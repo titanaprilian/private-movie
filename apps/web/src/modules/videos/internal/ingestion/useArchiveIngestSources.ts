@@ -8,7 +8,7 @@ import {
   getArchiveIngestJob,
   getArchiveIngestJobProgress,
   retryArchiveIngestJob,
-} from './api';
+} from '../api';
 import type {
   ArchiveIngestJob,
   ArchiveIngestJobEntry,

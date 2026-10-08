@@ -1,6 +1,6 @@
 import { renderWithProviders, screen, waitFor, fireEvent } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ManageSourcesDialog } from '@/modules/videos/internal/ManageSourcesDialog';
+import { ManageSourcesDialog } from '@/modules/videos/internal/sources/ManageSourcesDialog';
 import * as apiModule from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
 

@@ -1,6 +1,6 @@
 import { renderWithProviders, screen, userEvent } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { EpisodeDetailDrawer } from '@/modules/videos/internal/EpisodeDetailDrawer';
+import { EpisodeDetailDrawer } from '@/modules/videos/internal/seasons/EpisodeDetailDrawer';
 import type { Episode } from '@/modules/videos/internal/api';
 
 const mockEpisode: Episode = {

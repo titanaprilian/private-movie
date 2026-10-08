@@ -26,20 +26,20 @@ import {
   deleteSeason,
   scrapeOngoingSeason,
   type UpdateEpisodeData,
-} from './api';
-import { EditSeasonDialog } from './EditSeasonDialog';
-import { AddSeasonDialog } from './AddSeasonDialog';
-import { getSeasonNumber } from './seasonUtils';
+} from '../api';
+import { EditSeasonDialog } from '../seasons/EditSeasonDialog';
+import { AddSeasonDialog } from '../seasons/AddSeasonDialog';
+import { getSeasonNumber } from '../seasons/seasonUtils';
 import { EditSeriesDialog } from './EditSeriesDialog';
-import { SyncTmdbModal } from './SyncTmdbModal';
-import { ManageSourcesDialog } from './ManageSourcesDialog';
-import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from './crossSeasonMove';
-import { MoveEpisodesDialog } from './MoveEpisodesDialog';
-import { BulkScrapeModal } from './BulkScrapeModal';
-import { BulkIngestModal } from './BulkIngestModal';
-import { EpisodeTable } from './EpisodeTable';
-import { BatchDeleteDialog } from './BatchDeleteDialog';
-import { EpisodeDetailDrawer } from './EpisodeDetailDrawer';
+import { SyncTmdbModal } from '../ingestion/SyncTmdbModal';
+import { ManageSourcesDialog } from '../sources/ManageSourcesDialog';
+import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from '../seasons/crossSeasonMove';
+import { MoveEpisodesDialog } from '../seasons/MoveEpisodesDialog';
+import { BulkScrapeModal } from '../ingestion/BulkScrapeModal';
+import { BulkIngestModal } from '../ingestion/BulkIngestModal';
+import { EpisodeTable } from '../seasons/EpisodeTable';
+import { BatchDeleteDialog } from '../seasons/BatchDeleteDialog';
+import { EpisodeDetailDrawer } from '../seasons/EpisodeDetailDrawer';
 import {
   Dialog,
   DialogContent,

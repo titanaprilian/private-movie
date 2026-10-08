@@ -8,7 +8,7 @@ import {
   type SeriesDetails,
   type TmdbPreviewResult,
   type TmdbSyncPreviewResult,
-} from './api';
+} from '../api';
 import { computeSyncDiff } from './computeSyncDiff';
 import {
   ChunkyDialog,

@@ -1,10 +1,10 @@
 import { renderWithProviders, screen, act, waitFor } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SeriesDetailView } from '@/modules/videos/internal/SeriesDetailView';
+import { SeriesDetailView } from '@/modules/videos/internal/catalog/SeriesDetailView';
 import {
   buildCrossSeasonMove,
   type CrossSeasonMove,
-} from '@/modules/videos/internal/crossSeasonMove';
+} from '@/modules/videos/internal/seasons/crossSeasonMove';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';
 import { setAccessToken } from '@/lib/api';

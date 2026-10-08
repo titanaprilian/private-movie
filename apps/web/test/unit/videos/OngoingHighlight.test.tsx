@@ -8,7 +8,7 @@ import {
   type SeriesListResponse,
 } from '@/modules/videos';
 import { genresQueryOptions, type Genre } from '@/modules/genres';
-import { EditSeriesDialog } from '@/modules/videos/internal/EditSeriesDialog';
+import { EditSeriesDialog } from '@/modules/videos/internal/catalog/EditSeriesDialog';
 import type { SeriesItem } from '@/modules/videos/internal/api';
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {

@@ -8,7 +8,7 @@ import {
   getTargetSeasonEpisodes,
   applyPreviewSequentialFallback,
   type LocalEpisodeItem,
-} from '@/modules/videos/internal/useBulkScrapeSources';
+} from '@/modules/videos/internal/ingestion/useBulkScrapeSources';
 import * as api from '@/modules/videos/internal/api';
 
 const createWrapper = () => {

@@ -7,19 +7,19 @@ import {
 } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { SERIES_PAGE_LIMIT } from './api';
+import { SERIES_PAGE_LIMIT } from '../api';
 import { genresQueryOptions } from '@/modules/genres';
 import {
   seriesListQueryOptions,
   updateSeries,
   deleteSeries,
   type SeriesItem,
-} from './api';
+} from '../api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
 import { SeriesCard } from './SeriesCard';
 import { GenreFilter } from './GenreFilter';
-import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
+import { useScrapeWorkerStore } from '../store/useScrapeWorkerStore';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChevronLeft, ChevronRight } from 'lucide-react';

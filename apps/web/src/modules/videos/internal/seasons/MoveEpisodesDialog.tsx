@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { SeasonDetails } from './api';
+import type { SeasonDetails } from '../api';
 import { getSeasonNumber } from './seasonUtils';
 import {
   ChunkyDialog,

@@ -1,7 +1,7 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
 import { cleanup } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { BulkScrapeModal } from '@/modules/videos/internal/BulkScrapeModal';
+import { BulkScrapeModal } from '@/modules/videos/internal/ingestion/BulkScrapeModal';
 import * as api from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
 

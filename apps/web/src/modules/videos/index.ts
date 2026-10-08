@@ -1,30 +1,30 @@
-export { SeriesGrid } from './internal/SeriesGrid';
-export { SeriesCard } from './internal/SeriesCard';
-export type { SeriesCardProps } from './internal/SeriesCard';
-export { FeaturedStar } from './internal/FeaturedStar';
-export type { FeaturedStarProps } from './internal/FeaturedStar';
-export { SeriesPosterCard } from './internal/SeriesPosterCard';
-export type { SeriesPosterCardProps } from './internal/SeriesPosterCard';
-export { GenreFilter } from './internal/GenreFilter';
-export type { GenreFilterProps } from './internal/GenreFilter';
-export { RecentEpisodeCard } from './internal/RecentEpisodeCard';
-export type { RecentEpisodeCardProps } from './internal/RecentEpisodeCard';
-export { SeriesDetailDialog } from './internal/SeriesDetailDialog';
-export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/SeriesDetailDialog';
-export { SeriesDetailView } from './internal/SeriesDetailView';
-export { AddMediaDialog } from './internal/AddMediaDialog';
-export { BulkScrapeModal } from './internal/BulkScrapeModal';
-export type { BulkScrapeModalProps } from './internal/BulkScrapeModal';
-export { useBulkScrapeSources } from './internal/useBulkScrapeSources';
-export type { ScrapedEpisodePreviewItem, LocalEpisodeItem, ProcessingLogItem } from './internal/useBulkScrapeSources';
-export { BulkIngestModal } from './internal/BulkIngestModal';
-export type { BulkIngestModalProps } from './internal/BulkIngestModal';
-export { SyncTmdbModal } from './internal/SyncTmdbModal';
-export type { SyncTmdbModalProps } from './internal/SyncTmdbModal';
-export { computeSyncDiff } from './internal/computeSyncDiff';
-export type { SeasonDiffItem } from './internal/computeSyncDiff';
-export { useBulkIngestSources } from './internal/useBulkIngestSources';
-export type { BulkIngestItem, UseBulkIngestSourcesOptions } from './internal/useBulkIngestSources';
+export { SeriesGrid } from './internal/catalog/SeriesGrid';
+export { SeriesCard } from './internal/catalog/SeriesCard';
+export type { SeriesCardProps } from './internal/catalog/SeriesCard';
+export { FeaturedStar } from './internal/catalog/FeaturedStar';
+export type { FeaturedStarProps } from './internal/catalog/FeaturedStar';
+export { SeriesPosterCard } from './internal/catalog/SeriesPosterCard';
+export type { SeriesPosterCardProps } from './internal/catalog/SeriesPosterCard';
+export { GenreFilter } from './internal/catalog/GenreFilter';
+export type { GenreFilterProps } from './internal/catalog/GenreFilter';
+export { RecentEpisodeCard } from './internal/catalog/RecentEpisodeCard';
+export type { RecentEpisodeCardProps } from './internal/catalog/RecentEpisodeCard';
+export { SeriesDetailDialog } from './internal/catalog/SeriesDetailDialog';
+export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/catalog/SeriesDetailDialog';
+export { SeriesDetailView } from './internal/catalog/SeriesDetailView';
+export { AddMediaDialog } from './internal/catalog/AddMediaDialog';
+export { BulkScrapeModal } from './internal/ingestion/BulkScrapeModal';
+export type { BulkScrapeModalProps } from './internal/ingestion/BulkScrapeModal';
+export { useBulkScrapeSources } from './internal/ingestion/useBulkScrapeSources';
+export type { ScrapedEpisodePreviewItem, LocalEpisodeItem, ProcessingLogItem } from './internal/ingestion/useBulkScrapeSources';
+export { BulkIngestModal } from './internal/ingestion/BulkIngestModal';
+export type { BulkIngestModalProps } from './internal/ingestion/BulkIngestModal';
+export { SyncTmdbModal } from './internal/ingestion/SyncTmdbModal';
+export type { SyncTmdbModalProps } from './internal/ingestion/SyncTmdbModal';
+export { computeSyncDiff } from './internal/ingestion/computeSyncDiff';
+export type { SeasonDiffItem } from './internal/ingestion/computeSyncDiff';
+export { useBulkIngestSources } from './internal/ingestion/useBulkIngestSources';
+export type { BulkIngestItem, UseBulkIngestSourcesOptions } from './internal/ingestion/useBulkIngestSources';
 export {
   fetchEpisode,
   episodeQueryOptions,
@@ -54,15 +54,15 @@ export {
   getMaxUploadSizeBytes,
   SERIES_PAGE_LIMIT,
 } from './internal/api';
-export type { SeriesDetailViewProps } from './internal/SeriesDetailView';
-export { AddSeasonDialog } from './internal/AddSeasonDialog';
-export type { AddSeasonDialogProps } from './internal/AddSeasonDialog';
-export { EditSeasonDialog } from './internal/EditSeasonDialog';
-export type { EditSeasonDialogProps } from './internal/EditSeasonDialog';
-export { MoveEpisodesDialog } from './internal/MoveEpisodesDialog';
-export type { MoveEpisodesDialogProps } from './internal/MoveEpisodesDialog';
-export { buildCrossSeasonMove, buildBulkCrossSeasonMove } from './internal/crossSeasonMove';
-export { getSeasonNumber, getNextSeasonNumber } from './internal/seasonUtils';
+export type { SeriesDetailViewProps } from './internal/catalog/SeriesDetailView';
+export { AddSeasonDialog } from './internal/seasons/AddSeasonDialog';
+export type { AddSeasonDialogProps } from './internal/seasons/AddSeasonDialog';
+export { EditSeasonDialog } from './internal/seasons/EditSeasonDialog';
+export type { EditSeasonDialogProps } from './internal/seasons/EditSeasonDialog';
+export { MoveEpisodesDialog } from './internal/seasons/MoveEpisodesDialog';
+export type { MoveEpisodesDialogProps } from './internal/seasons/MoveEpisodesDialog';
+export { buildCrossSeasonMove, buildBulkCrossSeasonMove } from './internal/seasons/crossSeasonMove';
+export { getSeasonNumber, getNextSeasonNumber } from './internal/seasons/seasonUtils';
 export type {
   Episode,
   Episode as ApiEpisode,

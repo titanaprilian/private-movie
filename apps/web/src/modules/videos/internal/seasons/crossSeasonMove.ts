@@ -1,4 +1,4 @@
-import type { ReorderEpisodeItem, SeriesDetails } from './api';
+import type { ReorderEpisodeItem, SeriesDetails } from '../api';
 
 type Episode = SeriesDetails['episodes'][number];
 

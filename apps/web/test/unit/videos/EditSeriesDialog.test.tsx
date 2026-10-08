@@ -1,6 +1,6 @@
 import { renderWithProviders, screen, waitFor, fireEvent } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { EditSeriesDialog } from '@/modules/videos/internal/EditSeriesDialog';
+import { EditSeriesDialog } from '@/modules/videos/internal/catalog/EditSeriesDialog';
 import type { SeriesItem } from '@/modules/videos/internal/api';
 import { setAccessToken } from '@/lib/api';
 import { toast } from 'sonner';

@@ -4,7 +4,7 @@ import {
   type SeriesDetails,
   type VideoSource,
   parseIngestUrl,
-} from './api';
+} from '../api';
 import { storageProvidersQueryOptions } from '@/modules/storage';
 import {
   Dialog,
@@ -20,7 +20,7 @@ import {
   S3UploadTab,
   RemoteIngestTab,
   EditExistingSourcesTab,
-} from './sources';
+} from './index';
 
 type Episode = SeriesDetails['episodes'][number];
 

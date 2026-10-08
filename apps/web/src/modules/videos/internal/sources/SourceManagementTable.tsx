@@ -35,7 +35,7 @@ import {
   deleteVideoSource,
   checkVideoSource,
   type CheckVideoSourceResult,
-} from './api';
+} from '../api';
 import { VideoPreviewModal } from './VideoPreviewModal';
 
 export interface SourceManagementTableProps {

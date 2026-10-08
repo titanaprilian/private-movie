@@ -11,8 +11,8 @@ import {
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
-import type { SeriesDetails, UpdateEpisodeData } from './api';
-import { SourceManagementTable } from './SourceManagementTable';
+import type { SeriesDetails, UpdateEpisodeData } from '../api';
+import { SourceManagementTable } from '../sources/SourceManagementTable';
 
 export type Episode = SeriesDetails['episodes'][number];
 

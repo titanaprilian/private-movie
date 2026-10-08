@@ -1,6 +1,6 @@
 import { renderWithProviders, screen } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EditSeasonDialog } from '@/modules/videos/internal/EditSeasonDialog';
+import { EditSeasonDialog } from '@/modules/videos/internal/seasons/EditSeasonDialog';
 import type { SeasonDetails } from '@/modules/videos/internal/api';
 import * as apiModule from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { updateSeason, type SeasonDetails } from './api';
+import { updateSeason, type SeasonDetails } from '../api';
 import { detectProviderFromUrl } from './seasonUtils';
 import {
   ChunkyDialog,
