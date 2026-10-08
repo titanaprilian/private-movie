@@ -169,20 +169,85 @@ describe('VideoPlayer component', () => {
     expect(container.requestFullscreen).toHaveBeenCalled();
   });
 
-  it('triggers countdown overlay when video ends and invokes onNextEpisode when countdown finishes', () => {
+  it('renders control bar Next Episode button when hasNextEpisode is true and calls onNextEpisode on click', async () => {
+    const user = userEvent.setup();
+    const handleNextEpisode = vi.fn();
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode
+        onNextEpisode={handleNextEpisode}
+      />
+    );
+
+    const nextButton = screen.getByRole('button', { name: /next episode/i });
+    expect(nextButton).toBeInTheDocument();
+    expect(nextButton.className).toMatch(/rounded-full/);
+
+    await user.click(nextButton);
+    expect(handleNextEpisode).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render Next Episode button when hasNextEpisode is false', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+    expect(screen.queryByRole('button', { name: /next episode/i })).not.toBeInTheDocument();
+  });
+
+  it('shows floating corner card when playback reaches the final 25 seconds', () => {
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode
+        onNextEpisode={vi.fn()}
+      />
+    );
+
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { value: 100, writable: true });
+    fireEvent.loadedMetadata(video);
+    expect(screen.queryByTestId('next-episode-card')).not.toBeInTheDocument();
+
+    Object.defineProperty(video, 'currentTime', { value: 74, writable: true });
+    fireEvent.timeUpdate(video);
+    expect(screen.queryByTestId('next-episode-card')).not.toBeInTheDocument();
+
+    Object.defineProperty(video, 'currentTime', { value: 75, writable: true });
+    fireEvent.timeUpdate(video);
+    expect(screen.getByTestId('next-episode-card')).toBeInTheDocument();
+    expect(screen.getByText(/Next episode in 5s/i)).toBeInTheDocument();
+  });
+
+  it('does not show corner card when duration metadata is not loaded', () => {
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode
+        onNextEpisode={vi.fn()}
+      />
+    );
+    const video = screen.getByTestId('custom-video-element');
+    fireEvent.timeUpdate(video);
+    expect(screen.queryByTestId('next-episode-card')).not.toBeInTheDocument();
+  });
+
+  it('decrements 5-second countdown and triggers onNextEpisode when it reaches 0', () => {
     vi.useFakeTimers();
     const handleNextEpisode = vi.fn();
     renderWithProviders(
       <VideoPlayer
         src="https://example.com/video.mp4"
+        hasNextEpisode
         onNextEpisode={handleNextEpisode}
       />
     );
 
-    const video = screen.getByTestId('custom-video-element');
-    fireEvent.ended(video);
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { value: 100, writable: true });
+    fireEvent.loadedMetadata(video);
+    Object.defineProperty(video, 'currentTime', { value: 80, writable: true });
+    fireEvent.timeUpdate(video);
 
-    expect(screen.getByTestId('auto-next-countdown-overlay')).toBeInTheDocument();
+    expect(screen.getByTestId('next-episode-card')).toBeInTheDocument();
     expect(screen.getByText(/Next episode in 5s/i)).toBeInTheDocument();
 
     for (let i = 0; i < 5; i++) {
@@ -194,6 +259,76 @@ describe('VideoPlayer component', () => {
     expect(handleNextEpisode).toHaveBeenCalledTimes(1);
 
     vi.useRealTimers();
+  });
+
+  it('clicking Play Now immediately advances to the next episode', () => {
+    const handleNextEpisode = vi.fn();
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode
+        onNextEpisode={handleNextEpisode}
+      />
+    );
+
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { value: 100, writable: true });
+    fireEvent.loadedMetadata(video);
+    Object.defineProperty(video, 'currentTime', { value: 90, writable: true });
+    fireEvent.timeUpdate(video);
+
+    const playNowBtn = screen.getByRole('button', { name: /Play Now/i });
+    fireEvent.click(playNowBtn);
+
+    expect(handleNextEpisode).toHaveBeenCalledTimes(1);
+  });
+
+  it('clicking Cancel hides the card and prevents auto-advancing on video end', () => {
+    const handleNextEpisode = vi.fn();
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode
+        onNextEpisode={handleNextEpisode}
+      />
+    );
+
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { value: 100, writable: true });
+    fireEvent.loadedMetadata(video);
+    Object.defineProperty(video, 'currentTime', { value: 90, writable: true });
+    fireEvent.timeUpdate(video);
+
+    expect(screen.getByTestId('next-episode-card')).toBeInTheDocument();
+
+    const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
+    fireEvent.click(cancelBtn);
+
+    expect(screen.queryByTestId('next-episode-card')).not.toBeInTheDocument();
+    expect(handleNextEpisode).not.toHaveBeenCalled();
+
+    // Card stays hidden on further time updates and video end does not auto-advance
+    Object.defineProperty(video, 'currentTime', { value: 99, writable: true });
+    fireEvent.timeUpdate(video);
+    expect(screen.queryByTestId('next-episode-card')).not.toBeInTheDocument();
+
+    fireEvent.ended(video);
+    expect(handleNextEpisode).not.toHaveBeenCalled();
+  });
+
+  it('auto-advances on video end when not cancelled', () => {
+    const handleNextEpisode = vi.fn();
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode
+        onNextEpisode={handleNextEpisode}
+      />
+    );
+
+    const video = screen.getByTestId('custom-video-element');
+    fireEvent.ended(video);
+    expect(handleNextEpisode).toHaveBeenCalledTimes(1);
   });
 
   it('single tap on video container on touch devices toggles controls without pausing', () => {
@@ -271,45 +406,6 @@ describe('VideoPlayer component', () => {
     fireEvent.touchStart(volumeSlider);
 
     expect(controlBar.className).toContain('opacity-100');
-  });
-
-  it('invokes onNextEpisode immediately when Play Now button is clicked in countdown overlay', () => {
-    const handleNextEpisode = vi.fn();
-    renderWithProviders(
-      <VideoPlayer
-        src="https://example.com/video.mp4"
-        onNextEpisode={handleNextEpisode}
-      />
-    );
-
-    const video = screen.getByTestId('custom-video-element');
-    fireEvent.ended(video);
-
-    const playNowBtn = screen.getByRole('button', { name: /Play Now/i });
-    fireEvent.click(playNowBtn);
-
-    expect(handleNextEpisode).toHaveBeenCalledTimes(1);
-  });
-
-  it('cancels countdown when Cancel button is clicked in countdown overlay', () => {
-    const handleNextEpisode = vi.fn();
-    renderWithProviders(
-      <VideoPlayer
-        src="https://example.com/video.mp4"
-        onNextEpisode={handleNextEpisode}
-      />
-    );
-
-    const video = screen.getByTestId('custom-video-element');
-    fireEvent.ended(video);
-
-    expect(screen.getByTestId('auto-next-countdown-overlay')).toBeInTheDocument();
-
-    const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
-    fireEvent.click(cancelBtn);
-
-    expect(screen.queryByTestId('auto-next-countdown-overlay')).not.toBeInTheDocument();
-    expect(handleNextEpisode).not.toHaveBeenCalled();
   });
 
   it('renders 3D circular skip buttons that seek video by ±10s on click', async () => {

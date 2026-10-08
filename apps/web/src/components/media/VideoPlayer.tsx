@@ -11,10 +11,12 @@ import {
   Check,
   RotateCcw,
   RotateCw,
+  SkipForward,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { VideoScrubber, BufferedRange } from './VideoScrubber';
 import { useVideoGestures } from './useVideoGestures';
+import { VideoNextEpisodeCard } from './VideoNextEpisodeCard';
 
 export interface VideoPlayerProps {
   src: string;
@@ -57,6 +59,7 @@ export function VideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [isSpeedOpen, setIsSpeedOpen] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [cancelledNextEpisode, setCancelledNextEpisode] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTouchRef = useRef(0);
 
@@ -71,14 +74,36 @@ export function VideoPlayer({
     if (onEnded) {
       onEnded();
     }
-    if (onNextEpisode || hasNextEpisode) {
-      setCountdown(5);
+    if (hasNextEpisode && !cancelledNextEpisode) {
+      triggerNextNavigation();
     }
+  };
+
+  const handleCancelNextEpisode = () => {
+    setCancelledNextEpisode(true);
+    setCountdown(null);
   };
 
   useEffect(() => {
     setCountdown(null);
+    setCancelledNextEpisode(false);
   }, [src]);
+
+  const showNextEpisodeCard =
+    hasNextEpisode &&
+    !cancelledNextEpisode &&
+    duration > 0 &&
+    currentTime >= duration - 25;
+
+  useEffect(() => {
+    if (showNextEpisodeCard && countdown === null) {
+      setCountdown(5);
+    }
+    if (!showNextEpisodeCard && countdown !== null) {
+      setCountdown(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showNextEpisodeCard]);
 
   useEffect(() => {
     if (countdown === null) return;
@@ -365,37 +390,13 @@ export function VideoPlayer({
         className="w-full h-full object-contain cursor-pointer"
       />
 
-      {/* Auto-next countdown overlay */}
-      {countdown !== null && (
-        <div
-          data-testid="auto-next-countdown-overlay"
-          className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-30 text-white select-none p-4 text-center"
-        >
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-wider text-zinc-400 font-bold font-sans">
-              Up Next
-            </p>
-            <h3 className="text-base sm:text-xl font-bold font-display text-[var(--ink)] dark:text-white">
-              Next episode in {countdown}s
-            </h3>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setCountdown(null)}
-              className="px-4 py-2 rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] dark:text-white text-xs font-bold shadow-[0_4px_0_var(--border)] active:translate-y-1 active:shadow-[0_1px_0_var(--border)] transition cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={triggerNextNavigation}
-              className="px-4 py-2 rounded-2xl bg-[var(--green)] text-white text-xs font-bold shadow-[0_4px_0_var(--green-dark)] active:translate-y-1 active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition cursor-pointer"
-            >
-              Play Now
-            </button>
-          </div>
-        </div>
+      {/* Floating corner Next Episode card (last 25s) */}
+      {showNextEpisodeCard && countdown !== null && (
+        <VideoNextEpisodeCard
+          countdown={countdown}
+          onPlayNow={triggerNextNavigation}
+          onCancel={handleCancelNextEpisode}
+        />
       )}
 
       {/* Double-tap ripple pill overlay */}
@@ -522,6 +523,18 @@ export function VideoPlayer({
               <span className="text-zinc-400 text-xs font-bold truncate max-w-[140px] sm:max-w-[220px] hidden md:inline">
                 {title}
               </span>
+            )}
+
+            {/* Next Episode button */}
+            {hasNextEpisode && (
+              <button
+                type="button"
+                onClick={() => onNextEpisode?.()}
+                aria-label="Next Episode"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[var(--green)] text-white flex items-center justify-center shadow-[0_3px_0_var(--green-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all duration-75 cursor-pointer shrink-0"
+              >
+                <SkipForward className="w-4 h-4 fill-white stroke-none" />
+              </button>
             )}
 
             {/* Playback speed popover menu */}
