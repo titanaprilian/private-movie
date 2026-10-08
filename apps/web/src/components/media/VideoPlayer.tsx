@@ -9,9 +9,12 @@ import {
   Minimize,
   MoreVertical,
   Check,
+  RotateCcw,
+  RotateCw,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { VideoScrubber, BufferedRange } from './VideoScrubber';
+import { useVideoGestures } from './useVideoGestures';
 
 export interface VideoPlayerProps {
   src: string;
@@ -216,6 +219,21 @@ export function VideoPlayer({
     }
   };
 
+  const seekBy = useCallback((seconds: number) => {
+    if (!videoRef.current) return;
+    // Read from the element, not React state: state can lag behind seeks
+    // made through the scrubber or consecutive rapid taps.
+    const max = videoRef.current.duration || 100;
+    const next = Math.min(Math.max(0, videoRef.current.currentTime + seconds), max);
+    setCurrentTime(next);
+    videoRef.current.currentTime = next;
+  }, []);
+
+  const gestures = useVideoGestures({
+    onSeekRelative: seekBy,
+    onToggleFullscreen: toggleFullscreen,
+  });
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -262,6 +280,19 @@ export function VideoPlayer({
   );
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Double-tap on the side zones seeks instead of toggling controls, so it
+    // must be checked before the single-tap visibility toggle.
+    const touch = e.touches?.[0] as unknown as { clientX?: number } | undefined;
+    const clientX =
+      touch?.clientX ?? (e.target instanceof Element ? e.target.getBoundingClientRect().left : 0);
+    const width = containerRef.current?.getBoundingClientRect().width ?? 0;
+    const pointerType =
+      (e as unknown as { pointerType?: string }).pointerType ?? 'touch';
+    if (gestures.handleTap(clientX, width, pointerType)) {
+      lastTouchRef.current = Date.now();
+      wakeControls();
+      return;
+    }
     toggleControlsForTouch(e.target);
   };
 
@@ -280,11 +311,24 @@ export function VideoPlayer({
     toggleControlsForTouch(e.target);
   };
 
-  const handleVideoClick = () => {
+  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+    // The second click of a double-click is handled by onDoubleClick
+    // (fullscreen); only single clicks toggle play/pause.
+    if (e.detail > 1) return;
     // Suppress the synthesized click that follows a touch tap: taps toggle
     // controls visibility only and must not pause playback.
     if (Date.now() - lastTouchRef.current < 700) return;
     togglePlay();
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const nativePointerType = (
+      e.nativeEvent as globalThis.MouseEvent & { pointerType?: string }
+    ).pointerType;
+    const pointerType =
+      (e as React.MouseEvent<HTMLDivElement> & { pointerType?: string }).pointerType ??
+      nativePointerType;
+    gestures.handleDoubleClick(pointerType ?? 'mouse');
   };
 
   useEffect(() => {
@@ -302,6 +346,7 @@ export function VideoPlayer({
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
       onPointerDown={handlePointerDown}
+      onDoubleClick={handleDoubleClick}
       onMouseLeave={() => isPlaying && !isSpeedOpen && setShowControls(false)}
       className="relative aspect-video w-full rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-black overflow-hidden group select-none flex flex-col justify-end"
     >
@@ -353,6 +398,34 @@ export function VideoPlayer({
         </div>
       )}
 
+      {/* Double-tap ripple pill overlay */}
+      {gestures.ripple && (
+        <div
+          key={gestures.ripple.key}
+          data-testid={
+            gestures.ripple.direction === 'backward'
+              ? 'gesture-ripple-backward'
+              : 'gesture-ripple-forward'
+          }
+          className={`absolute top-1/2 -translate-y-1/2 z-20 pointer-events-none px-4 py-2 rounded-full bg-zinc-950/80 backdrop-blur-md border-2 border-[var(--border-strong)]/60 text-white text-sm font-extrabold flex items-center gap-1.5 animate-[gesture-ripple_600ms_ease-out_forwards] ${
+            gestures.ripple.direction === 'backward' ? 'left-6' : 'right-6'
+          }`}
+          style={{ animationName: 'gesture-ripple' }}
+        >
+          {gestures.ripple.direction === 'backward' ? '⏪ -10s' : '⏩ +10s'}
+        </div>
+      )}
+
+      {/* First-time mobile gesture hint */}
+      {gestures.hintVisible && (
+        <div
+          data-testid="gesture-hint"
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-3 py-1.5 rounded-full bg-zinc-950/80 backdrop-blur-md text-zinc-200 text-[11px] font-bold whitespace-nowrap"
+        >
+          Double tap sides to skip 10s
+        </div>
+      )}
+
       {/* Floating Rounded Pill Control Bar Overlay */}
       <div
         data-testid="video-control-bar"
@@ -373,6 +446,17 @@ export function VideoPlayer({
         <div className="flex items-center justify-between gap-2 text-white font-sans text-xs">
           {/* Left Controls: 3D Play Button, Volume, Time */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Tactile 3D Circular Skip Backward Button */}
+            <button
+              type="button"
+              onClick={() => seekBy(-10)}
+              aria-label="Skip back 10 seconds"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="sr-only">-10s</span>
+            </button>
+
             {/* Tactile 3D Circular Play/Pause Button */}
             <button
               type="button"
@@ -385,6 +469,17 @@ export function VideoPlayer({
               ) : (
                 <Play className="w-4 h-4 fill-white stroke-none ml-0.5" />
               )}
+            </button>
+
+            {/* Tactile 3D Circular Skip Forward Button */}
+            <button
+              type="button"
+              onClick={() => seekBy(10)}
+              aria-label="Skip forward 10 seconds"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+              <span className="sr-only">+10s</span>
             </button>
 
             {/* Multi-state Volume toggle + slider */}

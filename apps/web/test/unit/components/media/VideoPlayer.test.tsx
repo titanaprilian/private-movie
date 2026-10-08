@@ -311,4 +311,125 @@ describe('VideoPlayer component', () => {
     expect(screen.queryByTestId('auto-next-countdown-overlay')).not.toBeInTheDocument();
     expect(handleNextEpisode).not.toHaveBeenCalled();
   });
+
+  it('renders 3D circular skip buttons that seek video by ±10s on click', async () => {
+    const user = userEvent.setup();
+    window.localStorage.clear();
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const backButton = screen.getByRole('button', { name: /skip back 10 seconds/i });
+    const forwardButton = screen.getByRole('button', { name: /skip forward 10 seconds/i });
+    expect(backButton).toBeInTheDocument();
+    expect(forwardButton).toBeInTheDocument();
+    // Chunky 3D tactile styling adjacent to Play/Pause
+    expect(backButton.className).toMatch(/rounded-full/);
+    expect(backButton.className).toMatch(/shadow-\[0_3px_0/);
+    expect(backButton.className).toMatch(/active:translate-y-/);
+    expect(forwardButton.className).toMatch(/rounded-full/);
+    expect(forwardButton.className).toMatch(/shadow-\[0_3px_0/);
+
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { value: 120, writable: true });
+    video.currentTime = 50;
+
+    await user.click(forwardButton);
+    expect(video.currentTime).toBe(60);
+
+    await user.click(backButton);
+    expect(video.currentTime).toBe(50);
+  });
+
+  it('double-tapping the left side seeks -10s with a backward ripple overlay', () => {
+    window.localStorage.setItem('pm_player_gesture_hint_seen', '1');
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const container = screen.getByTestId('video-player-container');
+    vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({
+      width: 1000,
+      height: 500,
+      top: 0,
+      left: 0,
+      bottom: 500,
+      right: 1000,
+      x: 0,
+      y: 0,
+      toJSON: () => {},
+    });
+
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { value: 120, writable: true });
+    video.currentTime = 50;
+
+    const controlBar = screen.getByTestId('video-control-bar');
+    fireEvent.play(video);
+    expect(controlBar.className).toContain('opacity-100');
+
+    // Double-tap left zone: seeks without toggling controls visibility
+    fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
+    fireEvent.touchStart(container, { touches: [{ clientX: 120, clientY: 100 }] });
+
+    expect(video.currentTime).toBe(40);
+    expect(controlBar.className).toContain('opacity-100');
+    const ripple = screen.getByTestId('gesture-ripple-backward');
+    expect(ripple).toBeInTheDocument();
+    expect(ripple.textContent).toMatch(/⏪ -10s/);
+  });
+
+  it('double-tapping the right side seeks +10s with a forward ripple overlay', () => {
+    window.localStorage.setItem('pm_player_gesture_hint_seen', '1');
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const container = screen.getByTestId('video-player-container');
+    vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({
+      width: 1000,
+      height: 500,
+      top: 0,
+      left: 0,
+      bottom: 500,
+      right: 1000,
+      x: 0,
+      y: 0,
+      toJSON: () => {},
+    });
+
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    Object.defineProperty(video, 'duration', { value: 120, writable: true });
+    video.currentTime = 50;
+
+    fireEvent.touchStart(container, { touches: [{ clientX: 900, clientY: 100 }] });
+    fireEvent.touchStart(container, { touches: [{ clientX: 880, clientY: 100 }] });
+
+    expect(video.currentTime).toBe(60);
+    const ripple = screen.getByTestId('gesture-ripple-forward');
+    expect(ripple).toBeInTheDocument();
+    expect(ripple.textContent).toMatch(/⏩ \+10s/);
+  });
+
+  it('double-clicking toggles fullscreen', () => {
+    window.localStorage.setItem('pm_player_gesture_hint_seen', '1');
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const container = screen.getByTestId('video-player-container');
+    container.requestFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
+
+    fireEvent.doubleClick(container);
+    expect(container.requestFullscreen).toHaveBeenCalled();
+  });
+
+  it('shows the first-time gesture hint and persists it', () => {
+    vi.useFakeTimers();
+    window.localStorage.removeItem('pm_player_gesture_hint_seen');
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    expect(screen.getByTestId('gesture-hint')).toBeInTheDocument();
+    expect(screen.getByText(/double tap sides to skip 10s/i)).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+    expect(screen.queryByTestId('gesture-hint')).not.toBeInTheDocument();
+    expect(window.localStorage.getItem('pm_player_gesture_hint_seen')).not.toBeNull();
+
+    vi.useRealTimers();
+  });
 });
