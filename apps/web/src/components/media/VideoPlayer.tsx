@@ -9,7 +9,6 @@ import {
   Minimize,
   RotateCcw,
   RotateCw,
-  SkipForward,
 } from 'lucide-react';
 import { VideoScrubber, BufferedRange } from './VideoScrubber';
 import { useVideoGestures } from './useVideoGestures';
@@ -68,7 +67,10 @@ export function VideoPlayer({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isMobileSettingsOpen, setIsMobileSettingsOpen] = useState(false);
+  const [isDesktopSettingsOpen, setIsDesktopSettingsOpen] = useState(false);
+  // Either popover (mobile or desktop bar instance) suppresses auto-hide.
+  const isSettingsOpen = isMobileSettingsOpen || isDesktopSettingsOpen;
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [selectedQualityId, setSelectedQualityId] = useState<string | undefined>(
     qualities && qualities.length > 0 ? qualities[0].id : undefined,
@@ -244,7 +246,8 @@ export function VideoPlayer({
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
     }
-    setIsSettingsOpen(false);
+    setIsMobileSettingsOpen(false);
+    setIsDesktopSettingsOpen(false);
   };
 
   const handleQualityChange = (id: string) => {
@@ -345,6 +348,8 @@ export function VideoPlayer({
   const isInsideControlBar = (target: EventTarget | null) =>
     target instanceof HTMLElement &&
     (target.closest('[data-testid="video-control-bar"]') !== null ||
+      target.closest('[data-testid="video-mobile-bar"]') !== null ||
+      target.closest('[data-testid="video-center-controls"]') !== null ||
       target.closest('[data-testid="next-episode-card"]') !== null);
 
   const toggleControlsForTouch = useCallback(
@@ -426,7 +431,7 @@ export function VideoPlayer({
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
       onMouseLeave={() => isPlaying && !isSettingsOpen && !isShortcutsOpen && setShowControls(false)}
-      className="relative aspect-video w-full rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-black overflow-hidden group select-none flex flex-col justify-end"
+      className="relative aspect-video w-full @container rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-black overflow-hidden group select-none flex flex-col justify-end"
     >
       <video
         ref={videoRef}
@@ -480,10 +485,102 @@ export function VideoPlayer({
         </div>
       )}
 
-      {/* Floating Rounded Pill Control Bar Overlay */}
+      {/* Mobile center overlay: chunky 3D transport buttons over the video */}
+      <div
+        data-testid="video-center-controls"
+        className={`@md:hidden absolute inset-0 z-10 flex items-center justify-center gap-4 pointer-events-none transition-all duration-300 ${
+          showControls || !isPlaying ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        {/* Tactile 3D Circular Skip Backward Button (44px touch target) */}
+        <button
+          type="button"
+          onClick={() => seekBy(-10)}
+          aria-label="Skip back 10 seconds"
+          className="pointer-events-auto w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-zinc-800/90 backdrop-blur-md text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[11px] font-extrabold"
+        >
+          <RotateCcw className="w-4 h-4" />
+          <span className="sr-only">-10s</span>
+        </button>
+
+        {/* Tactile 3D Circular Play/Pause Button (56px touch target) */}
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
+          className="pointer-events-auto w-14 h-14 min-w-[56px] min-h-[56px] rounded-full bg-[var(--green)] text-white flex items-center justify-center shadow-[0_4px_0_var(--green-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all duration-75 cursor-pointer shrink-0"
+        >
+          {isPlaying ? (
+            <Pause className="w-6 h-6 fill-white stroke-none" />
+          ) : (
+            <Play className="w-6 h-6 fill-white stroke-none ml-0.5" />
+          )}
+        </button>
+
+        {/* Tactile 3D Circular Skip Forward Button (44px touch target) */}
+        <button
+          type="button"
+          onClick={() => seekBy(10)}
+          aria-label="Skip forward 10 seconds"
+          className="pointer-events-auto w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-zinc-800/90 backdrop-blur-md text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[11px] font-extrabold"
+        >
+          <RotateCw className="w-4 h-4" />
+          <span className="sr-only">+10s</span>
+        </button>
+      </div>
+
+      {/* Mobile slim bottom utility bar: seek bar + time / settings / fullscreen */}
+      <div
+        data-testid="video-mobile-bar"
+        className={`@md:hidden absolute inset-x-2 bottom-2 z-20 rounded-2xl border-2 border-[var(--border-strong)]/80 bg-zinc-950/85 backdrop-blur-md px-3 py-1.5 shadow-2xl transition-all duration-300 flex flex-col gap-1 min-w-0 ${
+          showControls || !isPlaying || isSettingsOpen || isShortcutsOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+        }`}
+      >
+        <VideoScrubber
+          currentTime={currentTime}
+          duration={duration}
+          bufferedRanges={bufferedRanges}
+          onSeek={handleSeek}
+          onKeyDown={handleSeekKeyDown}
+        />
+        <div className="flex items-center justify-between gap-2 text-white font-sans text-xs min-w-0">
+          <span className="text-zinc-200 font-bold text-[11px] mono whitespace-nowrap tabular-nums shrink-0">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <VideoSettingsPopover
+              playbackSpeed={playbackSpeed}
+              onSpeedChange={handleSpeedChange}
+              qualities={qualities}
+              selectedQualityId={selectedQualityId}
+              onQualityChange={handleQualityChange}
+              subtitles={subtitles}
+              selectedSubtitleId={selectedSubtitleId}
+              onSubtitleChange={handleSubtitleChange}
+              open={isMobileSettingsOpen}
+              onOpenChange={setIsMobileSettingsOpen}
+              onShortcutsOpenChange={setIsShortcutsOpen}
+            />
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
+            >
+              {isFullscreen ? (
+                <Minimize className="w-4 h-4" />
+              ) : (
+                <Maximize className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop unified bottom bar (wide containers only) */}
       <div
         data-testid="video-control-bar"
-        className={`absolute inset-x-3 sm:inset-x-6 bottom-3 sm:bottom-6 z-20 rounded-full border-2 border-[var(--border-strong)]/80 bg-zinc-950/85 backdrop-blur-md px-3 sm:px-5 py-2 sm:py-2.5 shadow-2xl transition-all duration-300 flex flex-col gap-2 ${
+        className={`hidden @md:flex absolute inset-x-3 sm:inset-x-6 bottom-3 sm:bottom-6 z-20 rounded-full border-2 border-[var(--border-strong)]/80 bg-zinc-950/85 backdrop-blur-md px-3 sm:px-5 py-2 sm:py-2.5 shadow-2xl transition-all duration-300 flex-col gap-2 min-w-0 ${
           showControls || !isPlaying || isSettingsOpen || isShortcutsOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
         }`}
       >
@@ -497,15 +594,15 @@ export function VideoPlayer({
         />
 
         {/* Controls Row */}
-        <div className="flex items-center justify-between gap-2 text-white font-sans text-xs">
+        <div className="flex items-center justify-between gap-2 text-white font-sans text-xs min-w-0">
           {/* Left Controls: 3D Play Button, Skips, Volume, Time */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* Tactile 3D Circular Skip Backward Button */}
             <button
               type="button"
               onClick={() => seekBy(-10)}
               aria-label="Skip back 10 seconds"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-zinc-800 text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span className="sr-only">-10s</span>
@@ -516,7 +613,7 @@ export function VideoPlayer({
               type="button"
               onClick={togglePlay}
               aria-label={isPlaying ? 'Pause' : 'Play'}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[var(--green)] text-white flex items-center justify-center shadow-[0_3px_0_var(--green-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all duration-75 cursor-pointer shrink-0"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-[var(--green)] text-white flex items-center justify-center shadow-[0_3px_0_var(--green-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all duration-75 cursor-pointer shrink-0"
             >
               {isPlaying ? (
                 <Pause className="w-4 h-4 fill-white stroke-none" />
@@ -530,7 +627,7 @@ export function VideoPlayer({
               type="button"
               onClick={() => seekBy(10)}
               aria-label="Skip forward 10 seconds"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-zinc-800 text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
             >
               <RotateCw className="w-3.5 h-3.5" />
               <span className="sr-only">+10s</span>
@@ -542,7 +639,7 @@ export function VideoPlayer({
                 type="button"
                 onClick={toggleMute}
                 aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
-                className="p-1 text-zinc-300 hover:text-white transition cursor-pointer"
+                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
               >
                 {isMuted || volume === 0 ? (
                   <VolumeX data-testid="volume-icon-muted" className="w-4 h-4" />
@@ -565,29 +662,17 @@ export function VideoPlayer({
             </div>
 
             {/* Elapsed Time / Duration */}
-            <span className="text-zinc-200 font-bold text-[11px] sm:text-xs mono ml-1">
+            <span className="text-zinc-200 font-bold text-[11px] sm:text-xs mono ml-1 whitespace-nowrap tabular-nums shrink-0">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
 
-          {/* Right Controls: Title, Next Episode, Settings Popover, Fullscreen */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Controls: Title, Settings Popover, Fullscreen */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
             {title && (
               <span className="text-zinc-400 text-xs font-bold truncate max-w-[140px] sm:max-w-[220px] hidden md:inline">
                 {title}
               </span>
-            )}
-
-            {/* Next Episode button */}
-            {hasNextEpisode && (
-              <button
-                type="button"
-                onClick={() => onNextEpisode?.()}
-                aria-label="Next Episode"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[var(--green)] text-white flex items-center justify-center shadow-[0_3px_0_var(--green-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all duration-75 cursor-pointer shrink-0"
-              >
-                <SkipForward className="w-4 h-4 fill-white stroke-none" />
-              </button>
             )}
 
             {/* Unified settings popover: speed, quality, subtitles, shortcuts */}
@@ -600,8 +685,8 @@ export function VideoPlayer({
               subtitles={subtitles}
               selectedSubtitleId={selectedSubtitleId}
               onSubtitleChange={handleSubtitleChange}
-              open={isSettingsOpen}
-              onOpenChange={setIsSettingsOpen}
+              open={isDesktopSettingsOpen}
+              onOpenChange={setIsDesktopSettingsOpen}
               onShortcutsOpenChange={setIsShortcutsOpen}
             />
 
@@ -610,7 +695,7 @@ export function VideoPlayer({
               type="button"
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-              className="p-1 text-zinc-300 hover:text-white transition cursor-pointer"
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
             >
               {isFullscreen ? (
                 <Minimize className="w-4 h-4" />

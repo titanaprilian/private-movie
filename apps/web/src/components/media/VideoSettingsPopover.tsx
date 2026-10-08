@@ -84,7 +84,7 @@ export function VideoSettingsPopover({
           <button
             type="button"
             aria-label="Video settings"
-            className="w-8 h-8 rounded-full bg-zinc-900/90 border border-zinc-700 text-zinc-200 hover:text-white hover:bg-zinc-800 flex items-center justify-center shadow-[0_3px_0_rgba(0,0,0,0.6)] active:translate-y-[2px] active:shadow-[0_1px_0_rgba(0,0,0,0.6)] transition-all duration-75 cursor-pointer shrink-0"
+            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-zinc-900/90 border border-zinc-700 text-zinc-200 hover:text-white hover:bg-zinc-800 flex items-center justify-center shadow-[0_3px_0_rgba(0,0,0,0.6)] active:translate-y-[2px] active:shadow-[0_1px_0_rgba(0,0,0,0.6)] transition-all duration-75 cursor-pointer shrink-0"
           >
             <Settings className="w-4 h-4" />
           </button>

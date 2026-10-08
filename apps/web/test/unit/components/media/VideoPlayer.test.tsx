@@ -1,4 +1,4 @@
-import { renderWithProviders, screen, userEvent, fireEvent, act } from '../../../utils';
+import { renderWithProviders, screen, userEvent, fireEvent, act, within } from '../../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 
@@ -23,7 +23,8 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    const playButton = screen.getByRole('button', { name: /^play$/i });
+    const controlBar = screen.getByTestId('video-control-bar');
+    const playButton = within(controlBar).getByRole('button', { name: /^play$/i });
     expect(playButton).toBeInTheDocument();
     // Verify 3D tactile styling classes
     expect(playButton.className).toMatch(/rounded-full/);
@@ -37,7 +38,7 @@ describe('VideoPlayer component', () => {
     video.dispatchEvent(new Event('play'));
 
     // After play is called, button should show Pause label/aria-label
-    const pauseButton = await screen.findByRole('button', { name: /^pause$/i });
+    const pauseButton = await within(controlBar).findByRole('button', { name: /^pause$/i });
     expect(pauseButton).toBeInTheDocument();
 
     await user.click(pauseButton);
@@ -76,7 +77,9 @@ describe('VideoPlayer component', () => {
   it('renders 8px progress scrubber with keyboard and touch seek support', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    const scrubber = screen.getByLabelText(/progress/i) as HTMLInputElement;
+    const scrubbers = screen.getAllByLabelText(/progress/i) as HTMLInputElement[];
+    expect(scrubbers.length).toBeGreaterThan(0);
+    const scrubber = scrubbers[0];
     expect(scrubber).toBeInTheDocument();
     expect(scrubber).toHaveAttribute('type', 'range');
 
@@ -137,7 +140,7 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    const settingsButton = screen.getByRole('button', { name: /video settings/i });
+    const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
     expect(settingsButton).toBeInTheDocument();
 
     await user.click(settingsButton);
@@ -152,7 +155,7 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    await user.click(screen.getByRole('button', { name: /video settings/i }));
+    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
 
     const speed15Btn = screen.getByRole('button', { name: '1.5x' });
     await user.click(speed15Btn);
@@ -177,7 +180,7 @@ describe('VideoPlayer component', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /video settings/i }));
+    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
 
     expect(screen.getByRole('button', { name: '1080p' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '720p' })).toBeInTheDocument();
@@ -191,7 +194,7 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    await user.click(screen.getByRole('button', { name: /video settings/i }));
+    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
 
     expect(screen.queryByText(/quality/i)).not.toBeInTheDocument();
   });
@@ -210,7 +213,7 @@ describe('VideoPlayer component', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /video settings/i }));
+    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
 
     expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Indonesian' })).toBeInTheDocument();
@@ -224,7 +227,7 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    await user.click(screen.getByRole('button', { name: /video settings/i }));
+    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
 
     expect(screen.queryByText(/subtitles/i)).not.toBeInTheDocument();
   });
@@ -233,8 +236,8 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    await user.click(screen.getByRole('button', { name: /video settings/i }));
-    await user.click(screen.getByRole('button', { name: /shortcuts & gestures/i }));
+    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
+    await user.click(screen.getAllByRole('button', { name: /shortcuts & gestures/i })[0]);
 
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
@@ -276,28 +279,22 @@ describe('VideoPlayer component', () => {
     container.requestFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
     document.exitFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
 
-    const fsButton = screen.getByRole('button', { name: /fullscreen/i });
+    const fsButton = screen.getAllByRole('button', { name: /fullscreen/i })[0];
     await user.click(fsButton);
     expect(container.requestFullscreen).toHaveBeenCalled();
   });
 
-  it('renders control bar Next Episode button when hasNextEpisode is true and calls onNextEpisode on click', async () => {
-    const user = userEvent.setup();
-    const handleNextEpisode = vi.fn();
+  it('does not render a Next Episode button in the player control bar even when hasNextEpisode is true', () => {
     renderWithProviders(
       <VideoPlayer
         src="https://example.com/video.mp4"
         hasNextEpisode
-        onNextEpisode={handleNextEpisode}
+        onNextEpisode={vi.fn()}
       />
     );
 
-    const nextButton = screen.getByRole('button', { name: /next episode/i });
-    expect(nextButton).toBeInTheDocument();
-    expect(nextButton.className).toMatch(/rounded-full/);
-
-    await user.click(nextButton);
-    expect(handleNextEpisode).toHaveBeenCalledTimes(1);
+    // Episodic navigation lives in the watch toolbar + corner card only
+    expect(screen.queryByRole('button', { name: /next episode/i })).not.toBeInTheDocument();
   });
 
   it('does not render Next Episode button when hasNextEpisode is false', () => {
@@ -526,8 +523,9 @@ describe('VideoPlayer component', () => {
     window.localStorage.clear();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    const backButton = screen.getByRole('button', { name: /skip back 10 seconds/i });
-    const forwardButton = screen.getByRole('button', { name: /skip forward 10 seconds/i });
+    const controlBar = screen.getByTestId('video-control-bar');
+    const backButton = within(controlBar).getByRole('button', { name: /skip back 10 seconds/i });
+    const forwardButton = within(controlBar).getByRole('button', { name: /skip forward 10 seconds/i });
     expect(backButton).toBeInTheDocument();
     expect(forwardButton).toBeInTheDocument();
     // Chunky 3D tactile styling adjacent to Play/Pause
@@ -640,5 +638,91 @@ describe('VideoPlayer component', () => {
     expect(window.localStorage.getItem('pm_player_gesture_hint_seen')).not.toBeNull();
 
     vi.useRealTimers();
+  });
+
+  it('marks the player container as a container-query context and splits mobile/desktop bars', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const container = screen.getByTestId('video-player-container');
+    expect(container.className).toMatch(/@container/);
+
+    const controlBar = screen.getByTestId('video-control-bar');
+    expect(controlBar.className).toMatch(/hidden/);
+    expect(controlBar.className).toMatch(/@md:flex/);
+
+    const mobileBar = screen.getByTestId('video-mobile-bar');
+    expect(mobileBar.className).toMatch(/@md:hidden/);
+
+    const centerControls = screen.getByTestId('video-center-controls');
+    expect(centerControls.className).toMatch(/@md:hidden/);
+  });
+
+  it('mobile center overlay renders skip, play and forward buttons that fade with controls', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const centerControls = screen.getByTestId('video-center-controls');
+    expect(within(centerControls).getByRole('button', { name: /skip back 10 seconds/i })).toBeInTheDocument();
+    expect(within(centerControls).getByRole('button', { name: /^play$/i })).toBeInTheDocument();
+    expect(within(centerControls).getByRole('button', { name: /skip forward 10 seconds/i })).toBeInTheDocument();
+    expect(centerControls.className).toContain('opacity-100');
+
+    const video = screen.getByTestId('custom-video-element');
+    fireEvent.play(video);
+    const container = screen.getByTestId('video-player-container');
+    fireEvent.touchStart(container, { touches: [{ clientX: 500, clientY: 100 }] });
+    expect(centerControls.className).toContain('opacity-0');
+
+    fireEvent.touchStart(container, { touches: [{ clientX: 500, clientY: 100 }] });
+    expect(centerControls.className).toContain('opacity-100');
+  });
+
+  it('mobile bottom bar shows seek bar, time, settings and fullscreen without volume slider or title', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" title="Episode 3" />);
+
+    const mobileBar = screen.getByTestId('video-mobile-bar');
+    expect(mobileBar.className).toMatch(/rounded-2xl/);
+    expect(within(mobileBar).getByLabelText(/progress/i)).toBeInTheDocument();
+    expect(within(mobileBar).getByRole('button', { name: /video settings/i })).toBeInTheDocument();
+    expect(within(mobileBar).getByRole('button', { name: /fullscreen/i })).toBeInTheDocument();
+    expect(within(mobileBar).queryByLabelText(/volume/i)).not.toBeInTheDocument();
+    expect(within(mobileBar).queryByText('Episode 3')).not.toBeInTheDocument();
+  });
+
+  it('elapsed / duration time never wraps', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const mobileBar = screen.getByTestId('video-mobile-bar');
+    const mobileTime = within(mobileBar).getByText(/00:00 \/ 00:00/);
+    expect(mobileTime.className).toMatch(/whitespace-nowrap/);
+    expect(mobileTime.className).toMatch(/tabular-nums/);
+    expect(mobileTime.className).toMatch(/shrink-0/);
+
+    const controlBar = screen.getByTestId('video-control-bar');
+    const desktopTime = within(controlBar).getByText(/00:00 \/ 00:00/);
+    expect(desktopTime.className).toMatch(/whitespace-nowrap/);
+    expect(desktopTime.className).toMatch(/tabular-nums/);
+    expect(desktopTime.className).toMatch(/shrink-0/);
+  });
+
+  it('all interactive buttons meet the 40-44px minimum touch target', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const centerControls = screen.getByTestId('video-center-controls');
+    for (const btn of within(centerControls).getAllByRole('button')) {
+      expect(btn.className).toMatch(/min-w-\[(40|44|56)px\]/);
+      expect(btn.className).toMatch(/min-h-\[(40|44|56)px\]/);
+    }
+
+    const controlBar = screen.getByTestId('video-control-bar');
+    for (const btn of within(controlBar).getAllByRole('button')) {
+      expect(btn.className).toMatch(/min-w-\[40px\]|w-1[0-9]|w-[2-9][0-9]/);
+      expect(btn.className).toMatch(/min-h-\[40px\]|h-1[0-9]|h-[2-9][0-9]/);
+    }
+
+    const mobileBar = screen.getByTestId('video-mobile-bar');
+    for (const btn of within(mobileBar).getAllByRole('button')) {
+      expect(btn.className).toMatch(/min-w-\[40px\]/);
+      expect(btn.className).toMatch(/min-h-\[40px\]/);
+    }
   });
 });
