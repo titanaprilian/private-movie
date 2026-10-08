@@ -517,10 +517,11 @@ export function SeriesWatchView({
             backRef={backRef as unknown as React.Ref<HTMLButtonElement>}
           />
           <div className="px-4 sm:px-8 md:px-12 lg:px-16 py-4 lg:py-6 space-y-6">
-            {/* Video Player Container */}
+            {/* Video Player Container: viewport-height constrained so TopNav,
+                player and toolbar fit short laptop viewports without scrolling */}
             <div
               data-testid="watch-player-container"
-              className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-[var(--bg)]"
+              className="sticky top-0 z-20 mx-auto bg-[var(--bg)] w-[min(100%,calc((100dvh-12rem)*16/9))] aspect-video lg:static lg:z-auto"
             >
               {activeSource ? (
                 activeSource.type === 'embed' ? (
@@ -596,7 +597,7 @@ export function SeriesWatchView({
                   onClick={handleGoToPrevEpisode}
                   disabled={!hasPrevEpisode}
                   aria-label="Prev episode"
-                  className={`rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
+                  className={`flex-1 sm:flex-none min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
                     isSpatialMode &&
                     activeZone === 'controls' &&
                     focusIndex === 0
@@ -618,7 +619,7 @@ export function SeriesWatchView({
                   onClick={handleGoToNextEpisode}
                   disabled={!hasNextEpisode}
                   aria-label="Next episode"
-                  className={`rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
+                  className={`flex-1 sm:flex-none min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
                     isSpatialMode &&
                     activeZone === 'controls' &&
                     focusIndex === 1
@@ -648,7 +649,7 @@ export function SeriesWatchView({
                       onClick={handleReloadIframe}
                       aria-label="Reload player"
                       title="Reload video player"
-                      className={`rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
+                      className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
                         isSpatialMode &&
                         activeZone === 'controls' &&
                         focusIndex === 2
@@ -670,7 +671,7 @@ export function SeriesWatchView({
                       onClick={handleOpenNewTab}
                       aria-label="Open in new tab"
                       title="Open stream in new tab"
-                      className={`rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 bg-[var(--blue)] ${
+                      className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 bg-[var(--blue)] ${
                         isSpatialMode &&
                         activeZone === 'controls' &&
                         focusIndex === 3
@@ -701,7 +702,7 @@ export function SeriesWatchView({
                     }}
                     aria-label="Server selector"
                     data-testid="server-selector"
-                    className={`rounded-full font-display w-60 sm:w-64 shrink-0 ${
+                    className={`rounded-full font-display w-40 min-[480px]:w-60 sm:w-64 shrink-0 min-h-[44px] ${
                       isSpatialMode &&
                       activeZone === 'controls' &&
                       focusIndex === serverControlIndex
@@ -714,19 +715,20 @@ export function SeriesWatchView({
                         className="w-2 h-2 rounded-full bg-[#58cc02] shrink-0 shadow-[0_0_0_3px_rgba(88,204,2,0.25)]"
                         data-testid="server-status-dot"
                       />
-                      <span className="font-display font-bold text-sm truncate leading-none">
+                      <span className="font-display font-bold text-sm truncate leading-none max-w-[96px] min-[480px]:max-w-none">
                         <ChunkySelectValue placeholder="Select server" />
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {sources.length > 1 && (
-                        <span className="font-sans font-bold text-[11px] text-[var(--muted)] bg-[var(--surface-raised)] border border-[var(--border)] px-2 py-0.5 rounded-full shrink-0 leading-none">
-                          ({sources.length} available)
-                        </span>
-                      )}
-                    </div>
                   </ChunkySelectTrigger>
                   <ChunkySelectContent>
+                    {sources.length > 1 && (
+                      <div
+                        data-testid="server-count-badge"
+                        className="font-sans font-bold text-[11px] text-[var(--muted)] bg-[var(--surface-raised)] border border-[var(--border)] px-2 py-1 rounded-full text-center leading-none mx-1 mb-1"
+                      >
+                        ({sources.length} available)
+                      </div>
+                    )}
                     {sources.map((source, index) => {
                       const isDirect =
                         source.type === 's3' || source.type === 'direct';

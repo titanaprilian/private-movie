@@ -308,9 +308,10 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     });
 
     expect(getPlayer().src).toBe('https://mirror-a.com/embed1');
-    expect(screen.getByRole('combobox', { name: /server selector/i })).toHaveTextContent('(2 available)');
+    expect(screen.getByRole('combobox', { name: /server selector/i })).not.toHaveTextContent('available');
 
     await user.click(screen.getByRole('combobox', { name: /server selector/i }));
+    expect(screen.getByTestId('server-count-badge')).toHaveTextContent('(2 available)');
     await user.click(await screen.findByRole('option', { name: /server beta/i }));
 
     expect(getPlayer().src).toBe('https://mirror-b.com/embed1');

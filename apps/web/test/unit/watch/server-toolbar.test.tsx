@@ -98,16 +98,19 @@ describe('Watch player toolbar Radix server selector', () => {
     expect(screen.getByText('Open Tab')).toBeInTheDocument();
   });
 
-  it('renders Radix Select trigger with server status dot, current label and count', () => {
-    renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
+  it('renders Radix Select trigger with server status dot and concise label, count inside dropdown', async () => {
+    const { user } = renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
     const trigger = screen.getByRole('combobox', { name: /server selector/i });
     expect(trigger).toBeInTheDocument();
     expect(trigger).toHaveAttribute('data-testid', 'server-selector');
     expect(trigger).toHaveTextContent('Server A');
-    expect(trigger).toHaveTextContent('(5 available)');
+    expect(trigger).not.toHaveTextContent('available');
     // server status dot and chevron
     expect(screen.getByTestId('server-status-dot')).toBeInTheDocument();
     expect(trigger.querySelector('svg')).toBeInTheDocument();
+
+    await user.click(trigger);
+    expect(screen.getByTestId('server-count-badge')).toHaveTextContent('(5 available)');
   });
 
   it('renders Duolingo styling attributes and classes for toolbar elements', () => {

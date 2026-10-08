@@ -687,16 +687,19 @@ describe('SeriesWatchView', () => {
       expect(screen.getByTestId('controls-server-group')).toBeInTheDocument();
       expect(screen.getByTestId('controls-utility-group')).toBeInTheDocument();
 
-      // Trigger shows server status dot, current source and count
+      // Trigger shows server status dot and current source; count lives in the dropdown
       const trigger = screen.getByRole('combobox', {
         name: /server selector/i,
       });
       expect(trigger).toBeInTheDocument();
       expect(trigger).toHaveTextContent('Server A');
-      expect(trigger).toHaveTextContent('(2 available)');
+      expect(trigger).not.toHaveTextContent('available');
       expect(screen.getByTestId('server-status-dot')).toBeInTheDocument();
       expect(trigger.querySelector('svg')).toBeInTheDocument();
       await user.click(trigger);
+      expect(screen.getByTestId('server-count-badge')).toHaveTextContent(
+        '(2 available)'
+      );
       const option = await screen.findByRole('option', { name: /server b/i });
       expect(option).toHaveTextContent('Server B');
       await user.click(option);
@@ -710,8 +713,8 @@ describe('SeriesWatchView', () => {
       ).toHaveTextContent('Server B');
     });
 
-    it('displays single source cleanly without count badge', () => {
-      renderWithProviders(
+    it('displays single source cleanly without count badge', async () => {
+      const { user } = renderWithProviders(
         <SeriesWatchView series={mockSeries} initialEpisodeId="ep-2" />
       );
 
@@ -720,6 +723,70 @@ describe('SeriesWatchView', () => {
       });
       expect(trigger).toHaveTextContent('Server A');
       expect(trigger).not.toHaveTextContent('available');
+
+      await user.click(trigger);
+      expect(screen.queryByTestId('server-count-badge')).not.toBeInTheDocument();
+    });
+
+    it('constrains the player container to fit short viewports without scrolling', () => {
+      renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      const container = screen.getByTestId('watch-player-container');
+      expect(container.className).toMatch(
+        /w-\[min\(100%,calc\(\(100dvh-12rem\)\*16\/9\)\)\]/
+      );
+      expect(container.className).toMatch(/aspect-video/);
+      expect(container.className).toMatch(/mx-auto/);
+    });
+
+    it('stretches Prev and Next buttons to equal width on mobile', () => {
+      renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      const group = screen.getByTestId('controls-playback-group');
+      const prevButton = within(group).getByRole('button', {
+        name: /prev/i,
+      });
+      const nextButton = within(group).getByRole('button', {
+        name: /next/i,
+      });
+      expect(prevButton.className).toMatch(/flex-1/);
+      expect(nextButton.className).toMatch(/flex-1/);
+    });
+
+    it('keeps the server trigger concise on mobile with the count inside the dropdown', async () => {
+      const { user } = renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      const trigger = screen.getByRole('combobox', {
+        name: /server selector/i,
+      });
+      // Concise narrow trigger with truncated label, no count badge
+      expect(trigger.className).toMatch(/w-40/);
+      expect(trigger).not.toHaveTextContent('available');
+
+      await user.click(trigger);
+      const badge = screen.getByTestId('server-count-badge');
+      expect(badge).toHaveTextContent('(2 available)');
+    });
+
+    it('maintains at least 44px touch targets on all watch toolbar buttons', () => {
+      renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      const controls = screen.getByTestId('watch-controls');
+      for (const btn of within(controls).getAllByRole('button')) {
+        expect(btn.className).toMatch(/min-h-\[44px\]|h-11/);
+      }
+      const trigger = screen.getByRole('combobox', {
+        name: /server selector/i,
+      });
+      expect(trigger.className).toMatch(/min-h-\[44px\]|h-11/);
     });
 
     it('navigates next and previous episodes with boundary disabling', async () => {
