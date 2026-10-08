@@ -7,16 +7,19 @@ import {
   VolumeX,
   Maximize,
   Minimize,
-  MoreVertical,
-  Check,
   RotateCcw,
   RotateCw,
   SkipForward,
 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { VideoScrubber, BufferedRange } from './VideoScrubber';
 import { useVideoGestures } from './useVideoGestures';
 import { VideoNextEpisodeCard } from './VideoNextEpisodeCard';
+import {
+  VideoSettingsPopover,
+  type QualityOption,
+  type SubtitleOption,
+} from './VideoSettingsPopover';
+import { useVideoShortcuts } from './useVideoShortcuts';
 
 export interface VideoPlayerProps {
   src: string;
@@ -25,6 +28,12 @@ export interface VideoPlayerProps {
   autoPlay?: boolean;
   onNextEpisode?: () => void;
   hasNextEpisode?: boolean;
+  /** Available video quality options. The Quality section renders when 2+ exist. */
+  qualities?: QualityOption[];
+  onQualityChange?: (id: string) => void;
+  /** Available subtitle tracks. The Subtitles section renders when entries exist. */
+  subtitles?: SubtitleOption[];
+  onSubtitleChange?: (id: string | null) => void;
 }
 
 function formatTime(seconds: number): string {
@@ -34,8 +43,6 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-const PLAYBACK_SPEEDS = [0.5, 1, 1.25, 1.5, 2];
-
 export function VideoPlayer({
   src,
   title,
@@ -43,6 +50,10 @@ export function VideoPlayer({
   autoPlay = false,
   onNextEpisode,
   hasNextEpisode = false,
+  qualities,
+  onQualityChange,
+  subtitles,
+  onSubtitleChange,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,7 +68,12 @@ export function VideoPlayer({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [isSpeedOpen, setIsSpeedOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [selectedQualityId, setSelectedQualityId] = useState<string | undefined>(
+    qualities && qualities.length > 0 ? qualities[0].id : undefined,
+  );
+  const [selectedSubtitleId, setSelectedSubtitleId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [cancelledNextEpisode, setCancelledNextEpisode] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -228,7 +244,17 @@ export function VideoPlayer({
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
     }
-    setIsSpeedOpen(false);
+    setIsSettingsOpen(false);
+  };
+
+  const handleQualityChange = (id: string) => {
+    setSelectedQualityId(id);
+    onQualityChange?.(id);
+  };
+
+  const handleSubtitleChange = (id: string | null) => {
+    setSelectedSubtitleId(id);
+    onSubtitleChange?.(id);
   };
 
   const toggleFullscreen = () => {
@@ -259,6 +285,31 @@ export function VideoPlayer({
     onToggleFullscreen: toggleFullscreen,
   });
 
+  const adjustVolume = useCallback(
+    (delta: number) => {
+      if (!videoRef.current) return;
+      const next = Math.min(1, Math.max(0, volume + delta));
+      setVolume(next);
+      if (next > 0) {
+        setPrevVolume(next);
+        setIsMuted(false);
+      } else {
+        setIsMuted(true);
+      }
+      videoRef.current.volume = next;
+      videoRef.current.muted = next === 0;
+    },
+    [volume],
+  );
+
+  useVideoShortcuts({
+    onTogglePlay: togglePlay,
+    onSeekRelative: seekBy,
+    onAdjustVolume: adjustVolume,
+    onToggleMute: toggleMute,
+    onToggleFullscreen: toggleFullscreen,
+  });
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -272,20 +323,20 @@ export function VideoPlayer({
   }, []);
 
   // Single effect owns the 3-second auto-hide timer: whenever controls are
-  // visible while playing (and the settings popover is closed), hide them
-  // after 3s of inactivity. Any wake/toggle resets the timer by re-running
-  // this effect.
+  // visible while playing (and the settings popover / shortcuts dialog is
+  // closed), hide them after 3s of inactivity. Any wake/toggle resets the
+  // timer by re-running this effect.
   useEffect(() => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
       controlsTimeoutRef.current = null;
     }
-    if (showControls && isPlaying && !isSpeedOpen) {
+    if (showControls && isPlaying && !isSettingsOpen && !isShortcutsOpen) {
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
       }, 3000);
     }
-  }, [showControls, isPlaying, isSpeedOpen]);
+  }, [showControls, isPlaying, isSettingsOpen, isShortcutsOpen]);
 
   const handleMouseMove = () => {
     wakeControls();
@@ -293,7 +344,8 @@ export function VideoPlayer({
 
   const isInsideControlBar = (target: EventTarget | null) =>
     target instanceof HTMLElement &&
-    target.closest('[data-testid="video-control-bar"]') !== null;
+    (target.closest('[data-testid="video-control-bar"]') !== null ||
+      target.closest('[data-testid="next-episode-card"]') !== null);
 
   const toggleControlsForTouch = useCallback(
     (target: EventTarget | null) => {
@@ -347,6 +399,7 @@ export function VideoPlayer({
   };
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isInsideControlBar(e.target)) return;
     const nativePointerType = (
       e.nativeEvent as globalThis.MouseEvent & { pointerType?: string }
     ).pointerType;
@@ -372,7 +425,7 @@ export function VideoPlayer({
       onTouchStart={handleTouchStart}
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
-      onMouseLeave={() => isPlaying && !isSpeedOpen && setShowControls(false)}
+      onMouseLeave={() => isPlaying && !isSettingsOpen && !isShortcutsOpen && setShowControls(false)}
       className="relative aspect-video w-full rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-black overflow-hidden group select-none flex flex-col justify-end"
     >
       <video
@@ -431,7 +484,7 @@ export function VideoPlayer({
       <div
         data-testid="video-control-bar"
         className={`absolute inset-x-3 sm:inset-x-6 bottom-3 sm:bottom-6 z-20 rounded-full border-2 border-[var(--border-strong)]/80 bg-zinc-950/85 backdrop-blur-md px-3 sm:px-5 py-2 sm:py-2.5 shadow-2xl transition-all duration-300 flex flex-col gap-2 ${
-          showControls || !isPlaying || isSpeedOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          showControls || !isPlaying || isSettingsOpen || isShortcutsOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
         }`}
       >
         {/* Chunky 3-Layer Progress Scrubber Bar */}
@@ -445,7 +498,7 @@ export function VideoPlayer({
 
         {/* Controls Row */}
         <div className="flex items-center justify-between gap-2 text-white font-sans text-xs">
-          {/* Left Controls: 3D Play Button, Volume, Time */}
+          {/* Left Controls: 3D Play Button, Skips, Volume, Time */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Tactile 3D Circular Skip Backward Button */}
             <button
@@ -517,7 +570,7 @@ export function VideoPlayer({
             </span>
           </div>
 
-          {/* Right Controls: Title, Speed Popover, Fullscreen */}
+          {/* Right Controls: Title, Next Episode, Settings Popover, Fullscreen */}
           <div className="flex items-center gap-2 sm:gap-3">
             {title && (
               <span className="text-zinc-400 text-xs font-bold truncate max-w-[140px] sm:max-w-[220px] hidden md:inline">
@@ -537,47 +590,20 @@ export function VideoPlayer({
               </button>
             )}
 
-            {/* Playback speed popover menu */}
-            <Popover open={isSpeedOpen} onOpenChange={setIsSpeedOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Playback speed"
-                  className="px-2 py-1 rounded-full border border-zinc-700 bg-zinc-900/90 text-zinc-200 hover:text-white hover:bg-zinc-800 text-[11px] font-extrabold flex items-center gap-1 transition cursor-pointer"
-                >
-                  <span>{playbackSpeed}x</span>
-                  <MoreVertical className="w-3 h-3" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                side="top"
-                align="end"
-                className="w-36 p-1.5 rounded-2xl border-2 border-[var(--border-strong)] bg-zinc-950/95 backdrop-blur-md text-white shadow-xl space-y-1"
-              >
-                <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider px-2 py-1">
-                  Speed
-                </p>
-                {PLAYBACK_SPEEDS.map((speed) => {
-                  const isSelected = playbackSpeed === speed;
-                  return (
-                    <button
-                      key={speed}
-                      type="button"
-                      onClick={() => handleSpeedChange(speed)}
-                      aria-label={`${speed}x`}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                        isSelected
-                          ? 'bg-[var(--green)] text-white'
-                          : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
-                      }`}
-                    >
-                      <span>{speed}x</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                    </button>
-                  );
-                })}
-              </PopoverContent>
-            </Popover>
+            {/* Unified settings popover: speed, quality, subtitles, shortcuts */}
+            <VideoSettingsPopover
+              playbackSpeed={playbackSpeed}
+              onSpeedChange={handleSpeedChange}
+              qualities={qualities}
+              selectedQualityId={selectedQualityId}
+              onQualityChange={handleQualityChange}
+              subtitles={subtitles}
+              selectedSubtitleId={selectedSubtitleId}
+              onSubtitleChange={handleSubtitleChange}
+              open={isSettingsOpen}
+              onOpenChange={setIsSettingsOpen}
+              onShortcutsOpenChange={setIsShortcutsOpen}
+            />
 
             {/* Fullscreen Button */}
             <button
@@ -598,4 +624,3 @@ export function VideoPlayer({
     </div>
   );
 }
-

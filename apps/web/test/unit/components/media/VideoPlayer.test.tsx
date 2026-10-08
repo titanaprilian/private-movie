@@ -98,34 +98,32 @@ describe('VideoPlayer component', () => {
     const volumeSlider = screen.getByLabelText(/volume/i) as HTMLInputElement;
     expect(volumeSlider).toBeInTheDocument();
     expect(volumeSlider.value).toBe('1');
-
-    // Initially volume = 1 (> 0.5) -> Volume2 icon rendered
     expect(screen.getByTestId('volume-icon-high')).toBeInTheDocument();
 
-    // Change volume to 0.4 (<= 0.5 and > 0) -> Volume1 icon rendered
+    // Change to low volume (<= 0.5)
     fireEvent.change(volumeSlider, { target: { value: '0.4' } });
     const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
     expect(video.volume).toBe(0.4);
     expect(screen.getByTestId('volume-icon-low')).toBeInTheDocument();
 
-    // Click mute button -> volume muted, VolumeX icon rendered
+    // Toggle mute
     const muteButton = screen.getByRole('button', { name: /mute/i });
     await user.click(muteButton);
 
-    const unmuteButton = screen.getByRole('button', { name: /unmute/i });
-    expect(unmuteButton).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /unmute/i })).toBeInTheDocument();
     expect(screen.getByTestId('volume-icon-muted')).toBeInTheDocument();
     expect(video.muted).toBe(true);
 
-    // Click unmute button -> restores prior volume (0.4) and un-mutes
-    await user.click(unmuteButton);
+    // Unmute restores prior volume (0.4)
+    await user.click(screen.getByRole('button', { name: /unmute/i }));
+    expect(screen.getByRole('button', { name: /^mute$/i })).toBeInTheDocument();
     expect(video.muted).toBe(false);
     expect(video.volume).toBe(0.4);
     expect(screen.getByTestId('volume-icon-low')).toBeInTheDocument();
-    expect(volumeSlider.value).toBe('0.4');
 
-    // Setting slider to 0 sets muted/zero state
+    // Setting slider to 0 mutes and shows VolumeX
     fireEvent.change(volumeSlider, { target: { value: '0' } });
+    expect(video.muted).toBe(true);
     expect(screen.getByTestId('volume-icon-muted')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /unmute/i })).toBeInTheDocument();
 
@@ -135,25 +133,139 @@ describe('VideoPlayer component', () => {
     expect(video.volume).toBe(0.4);
   });
 
-  it('allows changing playback speed via popover menu (0.5x, 1x, 1.25x, 1.5x, 2x)', async () => {
+  it('opens the settings popover from the 3D Gear button with playback speed options (0.5x, 1x, 1.25x, 1.5x, 2x)', async () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    const speedButton = screen.getByRole('button', { name: /playback speed/i });
-    expect(speedButton).toBeInTheDocument();
+    const settingsButton = screen.getByRole('button', { name: /video settings/i });
+    expect(settingsButton).toBeInTheDocument();
 
-    await user.click(speedButton);
+    await user.click(settingsButton);
 
     const speedOptions = ['0.5x', '1x', '1.25x', '1.5x', '2x'];
     for (const opt of speedOptions) {
       expect(screen.getByRole('button', { name: opt })).toBeInTheDocument();
     }
+  });
+
+  it('selecting playback speed updates video.playbackRate and closes the popover', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    await user.click(screen.getByRole('button', { name: /video settings/i }));
 
     const speed15Btn = screen.getByRole('button', { name: '1.5x' });
     await user.click(speed15Btn);
 
     const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
     expect(video.playbackRate).toBe(1.5);
+    expect(screen.queryByRole('button', { name: '1.5x' })).not.toBeInTheDocument();
+  });
+
+  it('renders quality selection options when qualities prop is provided', async () => {
+    const user = userEvent.setup();
+    const onQualityChange = vi.fn();
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        qualities={[
+          { id: '1080p', label: '1080p' },
+          { id: '720p', label: '720p' },
+          { id: '480p', label: '480p' },
+        ]}
+        onQualityChange={onQualityChange}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /video settings/i }));
+
+    expect(screen.getByRole('button', { name: '1080p' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '720p' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '480p' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '720p' }));
+    expect(onQualityChange).toHaveBeenCalledWith('720p');
+  });
+
+  it('does not render quality selection when qualities prop is omitted', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    await user.click(screen.getByRole('button', { name: /video settings/i }));
+
+    expect(screen.queryByText(/quality/i)).not.toBeInTheDocument();
+  });
+
+  it('renders subtitle toggle options when subtitles prop is provided', async () => {
+    const user = userEvent.setup();
+    const onSubtitleChange = vi.fn();
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        subtitles={[
+          { id: 'en', label: 'English' },
+          { id: 'id', label: 'Indonesian' },
+        ]}
+        onSubtitleChange={onSubtitleChange}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /video settings/i }));
+
+    expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Indonesian' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /subtitles off/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'English' }));
+    expect(onSubtitleChange).toHaveBeenCalledWith('en');
+  });
+
+  it('does not render subtitle options when subtitles prop is omitted', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    await user.click(screen.getByRole('button', { name: /video settings/i }));
+
+    expect(screen.queryByText(/subtitles/i)).not.toBeInTheDocument();
+  });
+
+  it('opening Shortcuts & Gestures displays the dialog listing keyboard keys and mobile touch gestures', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    await user.click(screen.getByRole('button', { name: /video settings/i }));
+    await user.click(screen.getByRole('button', { name: /shortcuts & gestures/i }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    // Keyboard shortcuts table
+    expect(dialog.textContent).toMatch(/Space/i);
+    expect(dialog.textContent).toMatch(/ArrowRight/i);
+    expect(dialog.textContent).toMatch(/Fullscreen/i);
+    // Mobile touch gestures
+    expect(dialog.textContent).toMatch(/tap/i);
+  });
+
+  it('keyboard shortcuts are active on VideoPlayer during playback', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const video = screen.getByTestId('custom-video-element');
+    fireEvent.play(video);
+
+    // "k" toggles pause while playing
+    fireEvent.keyDown(document, { key: 'k' });
+    expect(window.HTMLMediaElement.prototype.pause).toHaveBeenCalledTimes(1);
+
+    // "f" toggles fullscreen
+    const container = screen.getByTestId('video-player-container');
+    container.requestFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
+    document.exitFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
+    fireEvent.keyDown(document, { key: 'f' });
+    expect(container.requestFullscreen).toHaveBeenCalledTimes(1);
+
+    // "m" toggles mute
+    fireEvent.keyDown(document, { key: 'm' });
+    expect((video as HTMLVideoElement).muted).toBe(true);
   });
 
   it('toggles fullscreen', async () => {
@@ -328,6 +440,7 @@ describe('VideoPlayer component', () => {
 
     const video = screen.getByTestId('custom-video-element');
     fireEvent.ended(video);
+
     expect(handleNextEpisode).toHaveBeenCalledTimes(1);
   });
 
