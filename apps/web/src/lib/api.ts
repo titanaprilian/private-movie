@@ -53,8 +53,10 @@ async function doSilentRefresh(): Promise<string | null> {
       accessToken = token;
       return token;
     } catch {
-      accessToken = null;
-      return null;
+      // fetch itself threw (server unreachable, offline): this is a
+      // connectivity failure, not an auth rejection — keep the stored
+      // token so a transient outage does not evict the session.
+      return accessToken;
     }
   })();
 

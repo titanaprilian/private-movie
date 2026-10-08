@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { AlertTriangle, ExternalLink, Rocket, Server } from 'lucide-react';
+import { ExternalLink, Rocket, Server } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ErrorState } from '@/components/ui/error-state';
 import {
   ChunkySelect,
   ChunkySelectContent,
@@ -44,9 +45,11 @@ export function StorageView() {
   const queryClient = useQueryClient();
 
   // Provider list query
-  const { data: rawProviders, refetch: refetchProviders } = useQuery(
-    storageProvidersQueryOptions()
-  );
+  const {
+    data: rawProviders,
+    error: providersError,
+    refetch: refetchProviders,
+  } = useQuery(storageProvidersQueryOptions());
   const providers = useMemo<StorageProviderItem[]>(
     () => (Array.isArray(rawProviders) ? rawProviders : []),
     [rawProviders]
@@ -76,12 +79,14 @@ export function StorageView() {
     data: metrics,
     isLoading: isLoadingMetrics,
     error: metricsError,
+    refetch: refetchMetrics,
   } = useQuery(storageMetricsQueryOptions(selectedProviderId || undefined));
 
   const {
     data: resourcesData,
     isLoading: isLoadingResources,
     error: resourcesError,
+    refetch: refetchResources,
   } = useQuery(
     storageResourcesQueryOptions(
       selectedProviderId ? { providerId: selectedProviderId } : {}
@@ -89,7 +94,12 @@ export function StorageView() {
   );
 
   const resources = resourcesData?.data ?? [];
-  const activeError = metricsError || resourcesError;
+  const activeError = providersError || metricsError || resourcesError;
+  const handleRetryStorage = () => {
+    void refetchProviders();
+    void refetchMetrics();
+    void refetchResources();
+  };
 
   // MinIO status query (for spin-up / console header action)
   const { data: minioStatus } = useQuery(minioStatusQueryOptions());
@@ -181,6 +191,37 @@ export function StorageView() {
     queryClient.invalidateQueries({ queryKey: ['storage'] });
   };
 
+  if (activeError) {
+    return (
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <div>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight text-[var(--ink)]">
+            Storage Management
+          </h1>
+          <p className="font-sans text-sm font-semibold text-[var(--muted)] mt-1">
+            Monitor S3 capacity, inspect bucket object inventory, link orphans,
+            and manage video files.
+          </p>
+        </div>
+        <div
+          data-testid="storage-error-alert"
+          className="flex justify-center py-12"
+        >
+          <ErrorState
+            tone="warning"
+            title="Storage Warning"
+            description={
+              activeError instanceof Error
+                ? activeError.message
+                : 'S3 storage service is unavailable or unconfigured.'
+            }
+            onRetry={handleRetryStorage}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Title and Provider Controls */}
@@ -264,28 +305,6 @@ export function StorageView() {
           </ChunkyButton>
         </div>
       </div>
-
-      {/* S3 Configuration / Error Alert Banner */}
-      {activeError && (
-        <ChunkyCard
-          className="p-4 flex items-start gap-3 border-[var(--gold-dark)] bg-[var(--gold)]/10"
-          data-testid="storage-error-alert"
-        >
-          <span className="w-11 h-11 rounded-2xl border-2 border-b-4 border-[var(--gold-dark)] bg-[var(--gold)]/20 text-[var(--gold-dark)] flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5" />
-          </span>
-          <div className="space-y-1">
-            <h3 className="font-display font-bold text-sm text-[var(--ink)]">
-              Storage Warning
-            </h3>
-            <p className="font-sans text-xs font-semibold text-[var(--muted)]">
-              {activeError instanceof Error
-                ? activeError.message
-                : 'S3 storage service is unavailable or unconfigured.'}
-            </p>
-          </div>
-        </ChunkyCard>
-      )}
 
       {/* Empty-state hero: no providers connected */}
       {providers.length === 0 && (

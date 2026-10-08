@@ -6,13 +6,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  AlertTriangle,
-  RefreshCw,
   Star,
 } from 'lucide-react';
 import { useInputMode } from '@/hooks/useInputMode';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ErrorState } from '@/components/ui/error-state';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { PublicNavbar } from '@/modules/navigation';
 import {
@@ -256,22 +255,12 @@ function HomeFeedErrorState({ onRetry }: { onRetry: () => void }) {
       data-testid="home-feed-error"
       className="min-h-screen bg-[var(--bg)] text-[var(--ink)] flex items-center justify-center p-6"
     >
-      <ChunkyCard className="max-w-md w-full p-8 text-center space-y-4 shadow-2xl">
-        <div className="w-12 h-12 rounded-2xl border-2 border-b-4 border-[var(--red-dark)] bg-[var(--red)] text-white flex items-center justify-center mx-auto">
-          <AlertTriangle className="w-6 h-6" />
-        </div>
-        <h2 className="font-display text-xl font-bold text-[var(--ink)]">
-          Unable to Load Home Feed
-        </h2>
-        <p className="text-sm text-[var(--muted)] leading-relaxed">
-          We encountered an issue connecting to the backend server. Please check
-          your network connection or try again.
-        </p>
-        <ChunkyButton variant="danger" size="sm" onClick={onRetry}>
-          <RefreshCw className="w-4 h-4" />
-          <span>Retry Connection</span>
-        </ChunkyButton>
-      </ChunkyCard>
+      <ErrorState
+        title="Unable to Load Home Feed"
+        description="We encountered an issue connecting to the backend server. Please check your network connection or try again."
+        onRetry={onRetry}
+        retryLabel="Retry Connection"
+      />
     </div>
   );
 }

@@ -52,10 +52,11 @@ describe('/admin route', () => {
     const beforeLoad = getBeforeLoad();
     await expect(beforeLoad({ location: { pathname: '/admin' } })).rejects.toEqual({
       to: '/admin/login',
+      search: { redirect: undefined },
     });
 
     expect(checkAuthMock).toHaveBeenCalled();
-    expect(redirect).toHaveBeenCalledWith({ to: '/admin/login' });
+    expect(redirect).toHaveBeenCalledWith({ to: '/admin/login', search: { redirect: undefined } });
   });
 
   it('does not redirect the /admin/login page itself (no guard loop)', async () => {

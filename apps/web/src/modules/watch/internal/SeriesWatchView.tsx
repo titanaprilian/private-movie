@@ -19,11 +19,10 @@ import {
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import { toast } from 'sonner';
 import {
-  AlertCircle,
   ExternalLink,
-  RefreshCw,
   RotateCcw,
   ShieldAlert,
   SkipBack,
@@ -94,24 +93,14 @@ export function WatchViewErrorState({
       data-testid="watch-error"
       style={{ colorScheme: 'dark' }}
     >
-      <ChunkyCard className="max-w-md w-full p-6 text-center space-y-4">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-b-4 border-[var(--red-dark)] bg-[var(--red)] text-white shadow-[0_4px_0_var(--red-dark)]">
-          <AlertCircle className="h-6 w-6" />
-        </div>
-        <h2 className="font-display text-lg font-extrabold text-[var(--ink)]">
-          Failed to load series
-        </h2>
-        <p className="font-sans text-sm font-semibold text-[var(--muted)]">
-          {message ||
-            'Unable to fetch watch details. Please check your connection and try again.'}
-        </p>
-        {onRetry && (
-          <ChunkyButton variant="outline" size="sm" onClick={onRetry}>
-            <RefreshCw className="h-4 w-4" />
-            Retry
-          </ChunkyButton>
-        )}
-      </ChunkyCard>
+      <ErrorState
+        title="Failed to load series"
+        description={
+          message ||
+          'Unable to fetch watch details. Please check your connection and try again.'
+        }
+        onRetry={onRetry}
+      />
     </div>
   );
 }
