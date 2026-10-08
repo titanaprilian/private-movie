@@ -5,6 +5,11 @@ import { VideoPlayer } from '@/components/media/VideoPlayer';
 describe('VideoPlayer component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(document, 'fullscreenElement', {
+      value: null,
+      configurable: true,
+      writable: true,
+    });
     // Mock HTMLMediaElement prototype methods for JSDOM
     window.HTMLMediaElement.prototype.play = vi.fn().mockImplementation(() => Promise.resolve());
     window.HTMLMediaElement.prototype.pause = vi.fn().mockImplementation(() => {});
@@ -758,5 +763,200 @@ describe('VideoPlayer component', () => {
       expect(btn.className).toMatch(/min-w-\[40px\]/);
       expect(btn.className).toMatch(/min-h-\[40px\]/);
     }
+  });
+
+  describe('fullscreen & settings popover interactions', () => {
+    it('in normal inline mode, settings popover is portaled outside the video container to document.body', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+      const container = screen.getByTestId('video-player-container');
+      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      await user.click(settingsButton);
+
+      const popover = screen.getByTestId('video-settings-popover');
+      expect(popover).toBeInTheDocument();
+      expect(container.contains(popover)).toBe(false);
+    });
+
+    it('in native fullscreen mode, settings popover and shortcuts dialog mount inside the video container', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+      const container = screen.getByTestId('video-player-container');
+      // Simulate entering native fullscreen
+      Object.defineProperty(document, 'fullscreenElement', {
+        value: container,
+        configurable: true,
+        writable: true,
+      });
+      act(() => {
+        document.dispatchEvent(new Event('fullscreenchange'));
+      });
+
+      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      await user.click(settingsButton);
+
+      const popover = screen.getByTestId('video-settings-popover');
+      expect(popover).toBeInTheDocument();
+      expect(container.contains(popover)).toBe(true);
+
+      // Open Shortcuts & Gestures modal
+      const shortcutsButton = screen.getByRole('button', { name: /shortcuts & gestures/i });
+      await user.click(shortcutsButton);
+
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(container.contains(dialog)).toBe(true);
+
+      // Clean up fullscreenElement
+      Object.defineProperty(document, 'fullscreenElement', {
+        value: null,
+        configurable: true,
+        writable: true,
+      });
+      act(() => {
+        document.dispatchEvent(new Event('fullscreenchange'));
+      });
+    });
+
+    it('in pseudo-fullscreen mode, settings popover mounts inside the pseudo-fullscreen container', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+      const container = screen.getByTestId('video-player-container');
+      container.requestFullscreen = vi.fn().mockImplementation(() => Promise.reject(new Error('Not supported')));
+
+      const fsButton = screen.getAllByRole('button', { name: /^fullscreen$/i })[0];
+      await user.click(fsButton);
+      expect(container.className).toContain('fixed');
+
+      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      await user.click(settingsButton);
+
+      const popover = screen.getByTestId('video-settings-popover');
+      expect(popover).toBeInTheDocument();
+      expect(container.contains(popover)).toBe(true);
+    });
+
+    it('selecting options inside settings popover in fullscreen mode applies change without toggling play/pause', async () => {
+      const user = userEvent.setup();
+      const onQualityChange = vi.fn();
+      const onSubtitleChange = vi.fn();
+
+      renderWithProviders(
+        <VideoPlayer
+          src="https://example.com/video.mp4"
+          qualities={[
+            { id: '1080p', label: '1080p' },
+            { id: '720p', label: '720p' },
+          ]}
+          onQualityChange={onQualityChange}
+          subtitles={[
+            { id: 'en', label: 'English' },
+          ]}
+          onSubtitleChange={onSubtitleChange}
+        />
+      );
+
+      const container = screen.getByTestId('video-player-container');
+      Object.defineProperty(document, 'fullscreenElement', {
+        value: container,
+        configurable: true,
+        writable: true,
+      });
+      act(() => {
+        document.dispatchEvent(new Event('fullscreenchange'));
+      });
+
+      const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+      const playSpy = vi.spyOn(video, 'play');
+      const pauseSpy = vi.spyOn(video, 'pause');
+
+      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      await user.click(settingsButton);
+
+      // Select quality (popover remains open)
+      const quality720p = screen.getByRole('button', { name: '720p' });
+      await user.click(quality720p);
+      expect(onQualityChange).toHaveBeenCalledWith('720p');
+      expect(playSpy).not.toHaveBeenCalled();
+      expect(pauseSpy).not.toHaveBeenCalled();
+
+      // Select subtitle (popover remains open)
+      const subEn = screen.getByRole('button', { name: 'English' });
+      await user.click(subEn);
+      expect(onSubtitleChange).toHaveBeenCalledWith('en');
+      expect(playSpy).not.toHaveBeenCalled();
+      expect(pauseSpy).not.toHaveBeenCalled();
+
+      // Select speed (which changes playbackRate and closes popover)
+      const speed2x = screen.getByRole('button', { name: '2x' });
+      await user.click(speed2x);
+      expect(video.playbackRate).toBe(2);
+      expect(playSpy).not.toHaveBeenCalled();
+      expect(pauseSpy).not.toHaveBeenCalled();
+
+      // Clean up fullscreenElement
+      Object.defineProperty(document, 'fullscreenElement', {
+        value: null,
+        configurable: true,
+        writable: true,
+      });
+      act(() => {
+        document.dispatchEvent(new Event('fullscreenchange'));
+      });
+    });
+
+    it('clicking the video element when settings is open closes the popover without toggling play/pause', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+      const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+      const playSpy = vi.spyOn(video, 'play');
+      const pauseSpy = vi.spyOn(video, 'pause');
+
+      // 1. Open settings popover
+      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      await user.click(settingsButton);
+      expect(screen.getByTestId('video-settings-popover')).toBeInTheDocument();
+
+      // Reset play/pause spies from opening settings
+      playSpy.mockClear();
+      pauseSpy.mockClear();
+
+      // 2. Click the video element
+      await user.click(video);
+
+      // Popover should close
+      expect(screen.queryByTestId('video-settings-popover')).not.toBeInTheDocument();
+      expect(playSpy).not.toHaveBeenCalled();
+      expect(pauseSpy).not.toHaveBeenCalled();
+    });
+
+    it('touch tapping the player container when settings is open closes the popover without toggling play/pause', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+      const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+      const playSpy = vi.spyOn(video, 'play');
+      const pauseSpy = vi.spyOn(video, 'pause');
+
+      // 1. Open settings popover
+      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      await user.click(settingsButton);
+      expect(screen.getByTestId('video-settings-popover')).toBeInTheDocument();
+
+      playSpy.mockClear();
+      pauseSpy.mockClear();
+
+      // 2. Touch tap the player container outside the control bar
+      const container = screen.getByTestId('video-player-container');
+      fireEvent.touchStart(container, { touches: [{ clientX: 300, clientY: 200 }] });
+
+      expect(screen.queryByTestId('video-settings-popover')).not.toBeInTheDocument();
+      expect(playSpy).not.toHaveBeenCalled();
+      expect(pauseSpy).not.toHaveBeenCalled();
+    });
   });
 });

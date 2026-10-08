@@ -366,7 +366,7 @@ export function VideoPlayer({
   };
 
   const isInsideControlBar = (target: EventTarget | null) =>
-    target instanceof HTMLElement &&
+    target instanceof Element &&
     (target.closest('[data-testid="video-control-bar"]') !== null ||
       target.closest('[data-testid="video-mobile-bar"]') !== null ||
       target.closest('[data-testid="video-center-controls"]') !== null ||
@@ -411,6 +411,7 @@ export function VideoPlayer({
     if (isSettingsOpen && !isInsideControlBar(e.target)) {
       setIsMobileSettingsOpen(false);
       setIsDesktopSettingsOpen(false);
+      lastTouchRef.current = Date.now();
       return;
     }
     const pointerType =

@@ -109,4 +109,22 @@ describe('VideoSettingsPopover component', () => {
     expect(dialog.textContent).toMatch(/ArrowRight/i);
     expect(dialog.textContent).toMatch(/tap/i);
   });
+
+  it('mounts popover content and shortcuts dialog into custom container when container prop is provided', async () => {
+    const user = userEvent.setup();
+    const customContainer = document.createElement('div');
+    document.body.appendChild(customContainer);
+
+    renderPopover({ container: customContainer });
+
+    await user.click(screen.getByRole('button', { name: /video settings/i }));
+    const popover = screen.getByTestId('video-settings-popover');
+    expect(customContainer.contains(popover)).toBe(true);
+
+    await user.click(screen.getByRole('button', { name: /shortcuts & gestures/i }));
+    const dialog = screen.getByRole('dialog');
+    expect(customContainer.contains(dialog)).toBe(true);
+
+    document.body.removeChild(customContainer);
+  });
 });
