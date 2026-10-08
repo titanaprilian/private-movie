@@ -91,7 +91,7 @@ describe('VideoPlayer component', () => {
     fireEvent.keyDown(scrubber, { key: 'ArrowRight' });
   });
 
-  it('updates volume and toggle mute', async () => {
+  it('updates volume and toggle mute with multi-state icon and restoring prior volume', async () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
@@ -99,15 +99,40 @@ describe('VideoPlayer component', () => {
     expect(volumeSlider).toBeInTheDocument();
     expect(volumeSlider.value).toBe('1');
 
-    fireEvent.change(volumeSlider, { target: { value: '0.6' } });
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
-    expect(video.volume).toBe(0.6);
+    // Initially volume = 1 (> 0.5) -> Volume2 icon rendered
+    expect(screen.getByTestId('volume-icon-high')).toBeInTheDocument();
 
+    // Change volume to 0.4 (<= 0.5 and > 0) -> Volume1 icon rendered
+    fireEvent.change(volumeSlider, { target: { value: '0.4' } });
+    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    expect(video.volume).toBe(0.4);
+    expect(screen.getByTestId('volume-icon-low')).toBeInTheDocument();
+
+    // Click mute button -> volume muted, VolumeX icon rendered
     const muteButton = screen.getByRole('button', { name: /mute/i });
     await user.click(muteButton);
 
-    expect(screen.getByRole('button', { name: /unmute/i })).toBeInTheDocument();
+    const unmuteButton = screen.getByRole('button', { name: /unmute/i });
+    expect(unmuteButton).toBeInTheDocument();
+    expect(screen.getByTestId('volume-icon-muted')).toBeInTheDocument();
     expect(video.muted).toBe(true);
+
+    // Click unmute button -> restores prior volume (0.4) and un-mutes
+    await user.click(unmuteButton);
+    expect(video.muted).toBe(false);
+    expect(video.volume).toBe(0.4);
+    expect(screen.getByTestId('volume-icon-low')).toBeInTheDocument();
+    expect(volumeSlider.value).toBe('0.4');
+
+    // Setting slider to 0 sets muted/zero state
+    fireEvent.change(volumeSlider, { target: { value: '0' } });
+    expect(screen.getByTestId('volume-icon-muted')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /unmute/i })).toBeInTheDocument();
+
+    // Clicking unmute when slider was set to 0 restores default 1 or last non-zero volume
+    await user.click(screen.getByRole('button', { name: /unmute/i }));
+    expect(video.muted).toBe(false);
+    expect(video.volume).toBe(0.4);
   });
 
   it('allows changing playback speed via popover menu (0.5x, 1x, 1.25x, 1.5x, 2x)', async () => {

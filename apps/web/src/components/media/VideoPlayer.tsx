@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Play,
   Pause,
+  Volume1,
   Volume2,
   VolumeX,
   Maximize,
@@ -10,6 +11,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { VideoScrubber, BufferedRange } from './VideoScrubber';
 
 export interface VideoPlayerProps {
   src: string;
@@ -43,7 +45,9 @@ export function VideoPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
   const [volume, setVolume] = useState(1);
+  const [prevVolume, setPrevVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -99,18 +103,45 @@ export function VideoPlayer({
     }
   }, [isPlaying]);
 
-  const handleTimeUpdate = () => {
+  const updateProgressAndBuffer = useCallback(() => {
     if (!videoRef.current) return;
-    setCurrentTime(videoRef.current.currentTime);
+    const video = videoRef.current;
+    setCurrentTime(video.currentTime);
+
+    try {
+      if (video.buffered && video.buffered.length > 0) {
+        const ranges: BufferedRange[] = [];
+        for (let i = 0; i < video.buffered.length; i++) {
+          const start = video.buffered.start(i);
+          const end = video.buffered.end(i);
+          if (!isNaN(start) && !isNaN(end)) {
+            ranges.push({ start, end });
+          }
+        }
+        setBufferedRanges(ranges);
+      } else {
+        setBufferedRanges([]);
+      }
+    } catch {
+      setBufferedRanges([]);
+    }
+  }, []);
+
+  const handleTimeUpdate = () => {
+    updateProgressAndBuffer();
+  };
+
+  const handleProgress = () => {
+    updateProgressAndBuffer();
   };
 
   const handleLoadedMetadata = () => {
     if (!videoRef.current) return;
     setDuration(videoRef.current.duration);
+    updateProgressAndBuffer();
   };
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
+  const handleSeek = (time: number) => {
     setCurrentTime(time);
     if (videoRef.current) {
       videoRef.current.currentTime = time;
@@ -133,18 +164,35 @@ export function VideoPlayer({
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     setVolume(val);
+    if (val > 0) {
+      setPrevVolume(val);
+      setIsMuted(false);
+    } else {
+      setIsMuted(true);
+    }
     if (videoRef.current) {
       videoRef.current.volume = val;
       videoRef.current.muted = val === 0;
-      setIsMuted(val === 0);
     }
   };
 
   const toggleMute = () => {
     if (!videoRef.current) return;
-    const nextMuted = !isMuted;
-    setIsMuted(nextMuted);
-    videoRef.current.muted = nextMuted;
+    if (isMuted || volume === 0) {
+      // Unmute: restore previous non-zero volume (or default 1 if prev was 0)
+      const restoredVolume = prevVolume > 0 ? prevVolume : 1;
+      setVolume(restoredVolume);
+      setIsMuted(false);
+      videoRef.current.muted = false;
+      videoRef.current.volume = restoredVolume;
+    } else {
+      // Mute: record current volume and set muted
+      if (volume > 0) {
+        setPrevVolume(volume);
+      }
+      setIsMuted(true);
+      videoRef.current.muted = true;
+    }
   };
 
   const handleSpeedChange = (speed: number) => {
@@ -247,8 +295,6 @@ export function VideoPlayer({
     };
   }, []);
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-
   return (
     <div
       ref={containerRef}
@@ -267,6 +313,7 @@ export function VideoPlayer({
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={handleTimeUpdate}
+        onProgress={handleProgress}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleVideoEnded}
         onClick={handleVideoClick}
@@ -313,37 +360,14 @@ export function VideoPlayer({
           showControls || !isPlaying || isSpeedOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
         }`}
       >
-        {/* Progress Scrubber Bar */}
-        <div className="relative flex items-center w-full group/scrubber py-1">
-          {/* Custom Track Background */}
-          <div className="relative w-full h-2 rounded-full bg-zinc-700/80 overflow-hidden pointer-events-none">
-            <div
-              className="h-full bg-[var(--green)] rounded-full transition-all duration-75"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-
-          {/* Scrubber thumb circle */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.5)] border-2 border-[var(--green-dark)] pointer-events-none transition-transform group-hover/scrubber:scale-125"
-            style={{
-              left: `calc(${progressPercent}% - 7px)`,
-            }}
-          />
-
-          {/* Native range input for accessible touch & keyboard control */}
-          <input
-            type="range"
-            min="0"
-            max={duration || 100}
-            step="0.1"
-            value={currentTime}
-            onChange={handleSeek}
-            onKeyDown={handleSeekKeyDown}
-            aria-label="Progress"
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          />
-        </div>
+        {/* Chunky 3-Layer Progress Scrubber Bar */}
+        <VideoScrubber
+          currentTime={currentTime}
+          duration={duration}
+          bufferedRanges={bufferedRanges}
+          onSeek={handleSeek}
+          onKeyDown={handleSeekKeyDown}
+        />
 
         {/* Controls Row */}
         <div className="flex items-center justify-between gap-2 text-white font-sans text-xs">
@@ -363,7 +387,7 @@ export function VideoPlayer({
               )}
             </button>
 
-            {/* Volume toggle + slider */}
+            {/* Multi-state Volume toggle + slider */}
             <div className="flex items-center gap-1.5 group/vol">
               <button
                 type="button"
@@ -372,9 +396,11 @@ export function VideoPlayer({
                 className="p-1 text-zinc-300 hover:text-white transition cursor-pointer"
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="w-4 h-4" />
+                  <VolumeX data-testid="volume-icon-muted" className="w-4 h-4" />
+                ) : volume <= 0.5 ? (
+                  <Volume1 data-testid="volume-icon-low" className="w-4 h-4" />
                 ) : (
-                  <Volume2 className="w-4 h-4" />
+                  <Volume2 data-testid="volume-icon-high" className="w-4 h-4" />
                 )}
               </button>
               <input
