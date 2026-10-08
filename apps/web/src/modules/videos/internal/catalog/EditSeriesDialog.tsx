@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { updateSeries, type SeriesDetails, type SeriesItem } from './api';
+import { updateSeries, type SeriesDetails, type SeriesItem } from '../api';
 import { genresQueryOptions } from '@/modules/genres';
 import {
   ChunkyDialog,

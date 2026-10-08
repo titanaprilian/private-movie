@@ -8,7 +8,7 @@ import {
   computeSizeAnomalyFilenames,
   ARCHIVE_POLL_DELAY_MS,
   ARCHIVE_SESSION_EXPIRED_MESSAGE,
-} from '@/modules/videos/internal/useArchiveIngestSources';
+} from '@/modules/videos/internal/ingestion/useArchiveIngestSources';
 import * as api from '@/modules/videos/internal/api';
 import type { ArchiveIngestJob, StorageProviderItem } from '@repo/contracts';
 

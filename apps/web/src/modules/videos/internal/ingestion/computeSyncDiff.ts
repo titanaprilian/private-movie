@@ -2,7 +2,7 @@ import type {
   SeriesDetails,
   TmdbPreviewResult,
   TmdbPreviewSeason,
-} from './api';
+} from '../api';
 
 export interface SeasonDiffItem {
   seasonNumber: number;

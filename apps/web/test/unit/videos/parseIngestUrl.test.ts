@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseIngestUrl, detectEpisodeNumber, formatBytes } from '@/modules/videos/internal/parseIngestUrl';
+import { parseIngestUrl, detectEpisodeNumber, formatBytes } from '@/modules/videos/internal/ingestion/parseIngestUrl';
 
 describe('parseIngestUrl utility', () => {
   it('handles empty or blank input gracefully', () => {

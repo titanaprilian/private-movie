@@ -1,7 +1,7 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
 import { cleanup, configure } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { BulkIngestModal } from '@/modules/videos/internal/BulkIngestModal';
+import { BulkIngestModal } from '@/modules/videos/internal/ingestion/BulkIngestModal';
 import * as api from '@/modules/videos/internal/api';
 import type { ArchiveIngestJob } from '@repo/contracts';
 

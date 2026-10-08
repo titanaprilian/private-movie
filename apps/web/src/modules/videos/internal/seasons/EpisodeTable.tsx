@@ -5,7 +5,7 @@ import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
 import { formatEpisodeDuration } from './formatEpisodeDuration';
 import { Edit2, Link as LinkIcon, Trash2, GripVertical, AlertCircle } from 'lucide-react';
-import type { SeriesDetails } from './api';
+import type { SeriesDetails } from '../api';
 
 export type Episode = SeriesDetails['episodes'][number];
 

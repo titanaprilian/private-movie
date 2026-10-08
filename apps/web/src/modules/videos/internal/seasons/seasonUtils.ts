@@ -1,4 +1,4 @@
-import type { SeasonDetails } from './api';
+import type { SeasonDetails } from '../api';
 
 type SeasonLike = Pick<SeasonDetails, 'id'> &
   Partial<Pick<SeasonDetails, 'tmdbSeason'>> & {

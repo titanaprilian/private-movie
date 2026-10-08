@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/dialog';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
-import type { VideoSource } from './api';
+import type { VideoSource } from '../api';
 
 export interface VideoPreviewModalProps {
   open: boolean;

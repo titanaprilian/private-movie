@@ -1,6 +1,6 @@
 import { renderWithProviders, screen, userEvent, within } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SeriesDetailView } from '@/modules/videos/internal/SeriesDetailView';
+import { SeriesDetailView } from '@/modules/videos/internal/catalog/SeriesDetailView';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';
 import { setAccessToken } from '@/lib/api';

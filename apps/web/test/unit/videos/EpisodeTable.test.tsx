@@ -1,6 +1,6 @@
 import { renderWithProviders, fireEvent, screen, userEvent, within } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { EpisodeTable } from '@/modules/videos/internal/EpisodeTable';
+import { EpisodeTable } from '@/modules/videos/internal/seasons/EpisodeTable';
 import type { Episode } from '@/modules/videos/internal/api';
 import { DragDropContext } from '@hello-pangea/dnd';
 

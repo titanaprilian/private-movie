@@ -1,7 +1,7 @@
 import { renderWithProviders, screen } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AddSeasonDialog } from '@/modules/videos/internal/AddSeasonDialog';
-import { getNextSeasonNumber, getSeasonNumber } from '@/modules/videos/internal/seasonUtils';
+import { AddSeasonDialog } from '@/modules/videos/internal/seasons/AddSeasonDialog';
+import { getNextSeasonNumber, getSeasonNumber } from '@/modules/videos/internal/seasons/seasonUtils';
 import type { SeasonDetails } from '@/modules/videos/internal/api';
 import * as apiModule from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';

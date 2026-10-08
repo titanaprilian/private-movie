@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import {
   previewBulkSources as apiPreviewBulkSources,
   scrapeEpisodeSources,
-} from './api';
-import { detectProviderFromUrl } from './seasonUtils';
+} from '../api';
+import { detectProviderFromUrl } from '../seasons/seasonUtils';
 
 export interface SeasonGroupOption {
   id: string;

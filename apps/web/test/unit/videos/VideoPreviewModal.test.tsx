@@ -1,6 +1,6 @@
 import { renderWithProviders, screen, userEvent } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { VideoPreviewModal } from '@/modules/videos/internal/VideoPreviewModal';
+import { VideoPreviewModal } from '@/modules/videos/internal/sources/VideoPreviewModal';
 import type { VideoSource } from '@/modules/videos/internal/api';
 
 describe('VideoPreviewModal Component', () => {

@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { FeaturedStar } from './FeaturedStar';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
-import type { SeriesItem } from './api';
+import type { SeriesItem } from '../api';
 
 export interface SeriesCardProps {
   item: SeriesItem & { episodes?: unknown[]; episodeCount?: number };

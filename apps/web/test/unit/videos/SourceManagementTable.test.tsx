@@ -1,6 +1,6 @@
 import { renderWithProviders, screen, userEvent, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { SourceManagementTable } from '@/modules/videos/internal/SourceManagementTable';
+import { SourceManagementTable } from '@/modules/videos/internal/sources/SourceManagementTable';
 import type { Episode, VideoSource } from '@/modules/videos/internal/api';
 
 const mockSources: VideoSource[] = [

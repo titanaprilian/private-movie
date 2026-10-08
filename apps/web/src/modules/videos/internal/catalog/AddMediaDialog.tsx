@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useScrapeWorkerStore } from './store/useScrapeWorkerStore';
-import { importTmdb, type ImportTmdbParams } from './api';
+import { useScrapeWorkerStore } from '../store/useScrapeWorkerStore';
+import { importTmdb, type ImportTmdbParams } from '../api';
 import {
   ChunkyDrawer,
   ChunkyDrawerBody,

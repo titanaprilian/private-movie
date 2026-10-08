@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { StorageProviderItem } from '@repo/contracts';
-import { pickDefaultStorageProvider } from '@/modules/videos/internal/useArchiveIngestSources';
+import { pickDefaultStorageProvider } from '@/modules/videos/internal/ingestion/useArchiveIngestSources';
 
 function makeProvider(overrides: Partial<StorageProviderItem> & { id: string }): StorageProviderItem {
   return {

@@ -1,7 +1,7 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { SyncTmdbModal } from '@/modules/videos/internal/SyncTmdbModal';
-import { computeSyncDiff } from '@/modules/videos/internal/computeSyncDiff';
+import { SyncTmdbModal } from '@/modules/videos/internal/ingestion/SyncTmdbModal';
+import { computeSyncDiff } from '@/modules/videos/internal/ingestion/computeSyncDiff';
 import type {
   SeriesDetails,
   TmdbPreviewResult,
