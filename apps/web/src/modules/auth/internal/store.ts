@@ -41,7 +41,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           isLoading: false,
           error: null,
         });
-      } else {
+      } else if (res.status === 401) {
+        // The backend explicitly rejected the session: evict it.
         setAccessToken(null);
         set({
           user: null,
@@ -49,15 +50,16 @@ export const useAuthStore = create<AuthState>((set) => ({
           isLoading: false,
           error: null,
         });
+      } else {
+        // Network/gateway failure (502/503/504, connection loss, …):
+        // keep the stored token and current session untouched so a
+        // transient backend outage is not mistaken for a logout.
+        set({ isLoading: false, error: null });
       }
     } catch {
-      setAccessToken(null);
-      set({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
-      });
+      // fetch itself threw (server unreachable, DNS failure, offline):
+      // preserve the stored token and session state.
+      set({ isLoading: false, error: null });
     }
   },
 
