@@ -37,6 +37,7 @@ export interface VideoSettingsPopoverProps {
   /** Notifies the parent when the Shortcuts dialog opens/closes so the
    * controls auto-hide timer can stay suppressed while it is visible. */
   onShortcutsOpenChange?: (open: boolean) => void;
+  container?: HTMLElement | null;
 }
 
 const KEYBOARD_SHORTCUTS: Array<{ keys: string; action: string }> = [
@@ -66,6 +67,7 @@ export function VideoSettingsPopover({
   open,
   onOpenChange,
   onShortcutsOpenChange,
+  container,
 }: VideoSettingsPopoverProps) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -90,6 +92,7 @@ export function VideoSettingsPopover({
           </button>
         </PopoverTrigger>
         <PopoverContent
+          container={container}
           side="top"
           align="end"
           data-testid="video-settings-popover"
@@ -201,6 +204,7 @@ export function VideoSettingsPopover({
 
       <Dialog open={shortcutsOpen} onOpenChange={handleShortcutsOpenChange}>
         <DialogContent
+          container={container}
           aria-label="Shortcuts and gestures"
           className="max-w-md rounded-2xl border-2 border-[var(--border-strong)] bg-zinc-950/95 text-white shadow-xl"
         >

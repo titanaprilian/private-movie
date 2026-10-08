@@ -72,6 +72,7 @@ export function VideoPlayer({
   const [isDesktopSettingsOpen, setIsDesktopSettingsOpen] = useState(false);
   // Either popover (mobile or desktop bar instance) suppresses auto-hide.
   const isSettingsOpen = isMobileSettingsOpen || isDesktopSettingsOpen;
+  const portalContainer = isFullscreen || isPseudoFullscreen ? containerRef.current : undefined;
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [selectedQualityId, setSelectedQualityId] = useState<string | undefined>(
     qualities && qualities.length > 0 ? qualities[0].id : undefined,
@@ -369,7 +370,9 @@ export function VideoPlayer({
     (target.closest('[data-testid="video-control-bar"]') !== null ||
       target.closest('[data-testid="video-mobile-bar"]') !== null ||
       target.closest('[data-testid="video-center-controls"]') !== null ||
-      target.closest('[data-testid="next-episode-card"]') !== null);
+      target.closest('[data-testid="next-episode-card"]') !== null ||
+      target.closest('[data-testid="video-settings-popover"]') !== null ||
+      target.closest('[role="dialog"]') !== null);
 
   const toggleControlsForTouch = useCallback(
     (target: EventTarget | null) => {
@@ -381,6 +384,13 @@ export function VideoPlayer({
   );
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (isSettingsOpen && !isInsideControlBar(e.target)) {
+      setIsMobileSettingsOpen(false);
+      setIsDesktopSettingsOpen(false);
+      // Suppress further tap handling
+      lastTouchRef.current = Date.now();
+      return;
+    }
     // Double-tap on the side zones seeks instead of toggling controls, so it
     // must be checked before the single-tap visibility toggle.
     const touch = e.touches?.[0] as unknown as { clientX?: number } | undefined;
@@ -398,6 +408,11 @@ export function VideoPlayer({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isSettingsOpen && !isInsideControlBar(e.target)) {
+      setIsMobileSettingsOpen(false);
+      setIsDesktopSettingsOpen(false);
+      return;
+    }
     const pointerType =
       (e as React.PointerEvent<HTMLDivElement> & { pointerType?: string })
         .pointerType ?? e.nativeEvent?.pointerType;
@@ -413,6 +428,11 @@ export function VideoPlayer({
   };
 
   const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+    if (isSettingsOpen) {
+      setIsMobileSettingsOpen(false);
+      setIsDesktopSettingsOpen(false);
+      return;
+    }
     // The second click of a double-click is handled by onDoubleClick
     // (fullscreen); only single clicks toggle play/pause.
     if (e.detail > 1) return;
@@ -574,6 +594,7 @@ export function VideoPlayer({
           </span>
           <div className="flex items-center gap-2 shrink-0">
             <VideoSettingsPopover
+              container={portalContainer}
               playbackSpeed={playbackSpeed}
               onSpeedChange={handleSpeedChange}
               qualities={qualities}
@@ -702,6 +723,7 @@ export function VideoPlayer({
 
             {/* Unified settings popover: speed, quality, subtitles, shortcuts */}
             <VideoSettingsPopover
+              container={portalContainer}
               playbackSpeed={playbackSpeed}
               onSpeedChange={handleSpeedChange}
               qualities={qualities}
