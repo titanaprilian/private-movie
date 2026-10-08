@@ -591,3 +591,19 @@ body {
     animation: chunky-shake 0.4s ease-in-out;
   }
 }
+
+/* Double-tap seek ripple pill: scale up and fade out over ~600ms. */
+@keyframes gesture-ripple {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(1.15);
+  }
+}

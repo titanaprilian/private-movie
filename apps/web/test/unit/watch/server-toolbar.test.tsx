@@ -71,11 +71,11 @@ describe('Watch player toolbar Radix server selector', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders semantic groups for playback, server selector, and utilities with responsive reflow', () => {
+  it('renders semantic groups for playback, server selector, and utilities with single-row flex flow', () => {
     renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
     const controls = screen.getByTestId('watch-controls');
     expect(controls).toBeInTheDocument();
-    expect(controls).toHaveClass('flex-wrap', 'min-[820px]:flex-nowrap');
+    expect(controls).toHaveClass('flex', 'items-center', 'justify-between', 'flex-nowrap');
 
     const playbackGroup = screen.getByTestId('controls-playback-group');
     expect(playbackGroup).toBeInTheDocument();
@@ -85,12 +85,12 @@ describe('Watch player toolbar Radix server selector', () => {
 
     const serverGroup = screen.getByTestId('controls-server-group');
     expect(serverGroup).toBeInTheDocument();
-    expect(serverGroup).toHaveClass('order-2', 'min-[820px]:order-3', 'justify-end');
+    expect(serverGroup).toHaveClass('order-3', 'justify-end');
     expect(serverGroup).toContainElement(screen.getByRole('combobox', { name: /server selector/i }));
 
     const utilityGroup = screen.getByTestId('controls-utility-group');
     expect(utilityGroup).toBeInTheDocument();
-    expect(utilityGroup).toHaveClass('order-3', 'w-full', 'min-[820px]:order-2', 'min-[820px]:flex-1');
+    expect(utilityGroup).toHaveClass('order-2');
     expect(utilityGroup).toContainElement(screen.getByRole('button', { name: /reload player/i }));
     expect(utilityGroup).toContainElement(screen.getByRole('button', { name: /open in new tab/i }));
     // Utility buttons have visible text labels
@@ -98,16 +98,19 @@ describe('Watch player toolbar Radix server selector', () => {
     expect(screen.getByText('Open Tab')).toBeInTheDocument();
   });
 
-  it('renders Radix Select trigger with server status dot, current label and count', () => {
-    renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
+  it('renders Radix Select trigger with server status dot and concise label, count inside dropdown', async () => {
+    const { user } = renderWithProviders(<SeriesWatchView series={baseSeries} initialEpisodeId="ep-1" />);
     const trigger = screen.getByRole('combobox', { name: /server selector/i });
     expect(trigger).toBeInTheDocument();
     expect(trigger).toHaveAttribute('data-testid', 'server-selector');
     expect(trigger).toHaveTextContent('Server A');
-    expect(trigger).toHaveTextContent('(5 available)');
+    expect(trigger).not.toHaveTextContent('available');
     // server status dot and chevron
     expect(screen.getByTestId('server-status-dot')).toBeInTheDocument();
     expect(trigger.querySelector('svg')).toBeInTheDocument();
+
+    await user.click(trigger);
+    expect(screen.getByTestId('server-count-badge')).toHaveTextContent('(5 available)');
   });
 
   it('renders Duolingo styling attributes and classes for toolbar elements', () => {
@@ -269,7 +272,7 @@ describe('Watch player toolbar Radix server selector', () => {
     const { user } = renderWithProviders(<SeriesWatchView series={mixedSeries} initialEpisodeId="ep-1" />);
     const serverGroup = screen.getByTestId('controls-server-group');
 
-    expect(serverGroup).toHaveClass('order-2', 'min-[820px]:order-3', 'justify-end');
+    expect(serverGroup).toHaveClass('order-3', 'justify-end');
     expect(screen.queryByTestId('controls-utility-group')).not.toBeInTheDocument();
 
     // 2. Switch to Embed server (3-group layout: playback on left, utilities centered, server remains docked to the right)
@@ -278,9 +281,9 @@ describe('Watch player toolbar Radix server selector', () => {
 
     const utilityGroup = screen.getByTestId('controls-utility-group');
     expect(utilityGroup).toBeInTheDocument();
-    expect(utilityGroup).toHaveClass('order-3', 'w-full', 'min-[820px]:order-2', 'min-[820px]:flex-1');
+    expect(utilityGroup).toHaveClass('order-2');
 
     // Server selector stays anchored on the right without jumping
-    expect(serverGroup).toHaveClass('order-2', 'min-[820px]:order-3', 'justify-end');
+    expect(serverGroup).toHaveClass('order-3', 'justify-end');
   });
 });

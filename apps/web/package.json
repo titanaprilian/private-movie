@@ -27,6 +27,7 @@
     "@radix-ui/react-tabs": "^1.1.21",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@repo/contracts": "workspace:*",
+    "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-router": "^1.170.18",
     "class-variance-authority": "^0.7.1",

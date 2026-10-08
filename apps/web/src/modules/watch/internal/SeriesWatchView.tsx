@@ -517,10 +517,11 @@ export function SeriesWatchView({
             backRef={backRef as unknown as React.Ref<HTMLButtonElement>}
           />
           <div className="px-4 sm:px-8 md:px-12 lg:px-16 py-4 lg:py-6 space-y-6">
-            {/* Video Player Container */}
+            {/* Video Player Container: viewport-height constrained so TopNav,
+                player and toolbar fit short laptop viewports without scrolling */}
             <div
               data-testid="watch-player-container"
-              className="sticky top-0 z-20 -mx-4 sm:mx-0 lg:static lg:z-auto bg-[var(--bg)]"
+              className="sticky top-0 z-20 mx-auto bg-[var(--bg)] w-[min(100%,calc((100dvh-12rem)*16/9))] aspect-video lg:static lg:z-auto"
             >
               {activeSource ? (
                 activeSource.type === 'embed' ? (
@@ -576,15 +577,15 @@ export function SeriesWatchView({
               )}
             </div>
 
-            {/* Docked Player Toolbar — Semantic Grouping & Responsive Reflow (Duolingo Nav Row) */}
+            {/* Docked Player Toolbar — Semantic Grouping & Single-Row Flex Flow */}
             <div
               data-testid="watch-controls"
-              className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 min-[820px]:flex-nowrap"
+              className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap min-w-0"
             >
               {/* Group 1: Playback Controls (Prev / Next segmented pill group) */}
               <div
                 data-testid="controls-playback-group"
-                className="inline-flex bg-[var(--surface)] border-2 border-[var(--border)] rounded-full p-0.5 sm:p-1 gap-0.5 sm:gap-1 order-1 shrink-0 max-[360px]:w-full max-[360px]:justify-center"
+                className="inline-flex bg-[var(--surface)] border-2 border-[var(--border)] rounded-full p-0.5 sm:p-1 gap-0.5 sm:gap-1 order-1 shrink-0"
               >
                 <ChunkyButton
                   type="button"
@@ -596,7 +597,7 @@ export function SeriesWatchView({
                   onClick={handleGoToPrevEpisode}
                   disabled={!hasPrevEpisode}
                   aria-label="Prev episode"
-                  className={`rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
+                  className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
                     isSpatialMode &&
                     activeZone === 'controls' &&
                     focusIndex === 0
@@ -618,7 +619,7 @@ export function SeriesWatchView({
                   onClick={handleGoToNextEpisode}
                   disabled={!hasNextEpisode}
                   aria-label="Next episode"
-                  className={`rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
+                  className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
                     isSpatialMode &&
                     activeZone === 'controls' &&
                     focusIndex === 1
@@ -631,11 +632,11 @@ export function SeriesWatchView({
                 </ChunkyButton>
               </div>
 
-              {/* Group 2: Utility Action Buttons (Reload / Open Tab) — embed only, centered */}
+              {/* Group 2: Utility Action Buttons (Reload / Open Tab) — embed only */}
               {isEmbedSource && (
                 <div
                   data-testid="controls-utility-group"
-                  className="order-3 w-full flex justify-center pt-0.5 min-[820px]:pt-0 min-[820px]:order-2 min-[820px]:w-auto min-[820px]:flex-1"
+                  className="order-2 flex items-center justify-center shrink-0 min-w-0"
                 >
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <ChunkyButton
@@ -648,7 +649,7 @@ export function SeriesWatchView({
                       onClick={handleReloadIframe}
                       aria-label="Reload player"
                       title="Reload video player"
-                      className={`rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
+                      className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
                         isSpatialMode &&
                         activeZone === 'controls' &&
                         focusIndex === 2
@@ -657,7 +658,7 @@ export function SeriesWatchView({
                       }`}
                     >
                       <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                      <span>Reload</span>
+                      <span className="hidden sm:inline">Reload</span>
                     </ChunkyButton>
 
                     <ChunkyButton
@@ -670,7 +671,7 @@ export function SeriesWatchView({
                       onClick={handleOpenNewTab}
                       aria-label="Open in new tab"
                       title="Open stream in new tab"
-                      className={`rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 bg-[var(--blue)] ${
+                      className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 bg-[var(--blue)] ${
                         isSpatialMode &&
                         activeZone === 'controls' &&
                         focusIndex === 3
@@ -679,7 +680,7 @@ export function SeriesWatchView({
                       }`}
                     >
                       <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                      <span>Open Tab</span>
+                      <span className="hidden sm:inline">Open Tab</span>
                     </ChunkyButton>
                   </div>
                 </div>
@@ -688,7 +689,7 @@ export function SeriesWatchView({
               {/* Group 3: Stream Configuration / Server Selector Chip — docked to the right */}
               <div
                 data-testid="controls-server-group"
-                className="order-2 shrink-0 flex items-center justify-end min-[820px]:order-3 max-[480px]:w-full max-[480px]:justify-center max-[480px]:pt-0.5"
+                className="order-3 shrink min-w-0 flex items-center justify-end"
               >
                 <ChunkySelect
                   value={String(state.activeSourceIndex)}
@@ -701,7 +702,7 @@ export function SeriesWatchView({
                     }}
                     aria-label="Server selector"
                     data-testid="server-selector"
-                    className={`rounded-full font-display w-60 sm:w-64 shrink-0 ${
+                    className={`rounded-full font-display w-auto max-w-[150px] min-[400px]:max-w-[200px] sm:max-w-none sm:w-64 shrink-0 min-h-[44px] ${
                       isSpatialMode &&
                       activeZone === 'controls' &&
                       focusIndex === serverControlIndex
@@ -709,24 +710,25 @@ export function SeriesWatchView({
                         : ''
                     }`}
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
                       <span
                         className="w-2 h-2 rounded-full bg-[#58cc02] shrink-0 shadow-[0_0_0_3px_rgba(88,204,2,0.25)]"
                         data-testid="server-status-dot"
                       />
-                      <span className="font-display font-bold text-sm truncate leading-none">
+                      <span className="font-display font-bold text-xs sm:text-sm truncate leading-none">
                         <ChunkySelectValue placeholder="Select server" />
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {sources.length > 1 && (
-                        <span className="font-sans font-bold text-[11px] text-[var(--muted)] bg-[var(--surface-raised)] border border-[var(--border)] px-2 py-0.5 rounded-full shrink-0 leading-none">
-                          ({sources.length} available)
-                        </span>
-                      )}
-                    </div>
                   </ChunkySelectTrigger>
                   <ChunkySelectContent>
+                    {sources.length > 1 && (
+                      <div
+                        data-testid="server-count-badge"
+                        className="font-sans font-bold text-[11px] text-[var(--muted)] bg-[var(--surface-raised)] border border-[var(--border)] px-2 py-1 rounded-full text-center leading-none mx-1 mb-1"
+                      >
+                        ({sources.length} available)
+                      </div>
+                    )}
                     {sources.map((source, index) => {
                       const isDirect =
                         source.type === 's3' || source.type === 'direct';
