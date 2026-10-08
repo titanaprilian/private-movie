@@ -12,6 +12,18 @@ This application strictly follows the Deep Modules architecture, mapped to React
 - **Internal Logic:** All UI components, state, hooks, mappers, and internal tests specific to a feature must reside in `src/modules/<feature>/internal/`.
 - **Strict Isolation:** A module (e.g., Module `A`) must **never** import from the `internal/` directory of another module (e.g., Module `B`). It can only import what Module `B` explicitly exposes through its `index.ts`.
 
+### Internal Organization: Consistent on the Outside, Freedom on the Inside
+
+The public seam is fixed (`index.ts` is the single export point, `internal/` stays private), but how files are arranged *inside* `internal/` scales with module complexity. Organize internals proportionally — small modules stay flat, larger ones earn structure:
+
+- **Tier 1 — Flat (5 or fewer files):** Keep everything directly in `src/modules/<feature>/internal/`. No subdirectories.
+- **Tier 2 — Role-based grouping (6 to 12 files):** Group by technical role, e.g. `internal/components/`, `internal/hooks/`. Use only when the flat layout becomes hard to scan.
+- **Tier 3 — Sub-feature clustering (15 or more files):** Group by domain sub-feature, e.g. `internal/sources/`, `internal/store/` (as in the `videos` module). Each cluster holds the files for one sub-feature.
+
+**Colocation principle:** A dedicated custom hook or helper utility used by only one sub-feature lives inside that sub-feature's folder — never in a shared top-level folder. Only genuinely shared code earns a shared location.
+
+Modules between Tier 2 and Tier 3 size (13–14 files) use whichever adjacent tier fits best; do not churn the layout for a one-file difference.
+
 ### State Management (Zustand)
 
 State is managed via `zustand` and must be kept encapsulated within modules.
