@@ -45,9 +45,11 @@ export function StorageView() {
   const queryClient = useQueryClient();
 
   // Provider list query
-  const { data: rawProviders, refetch: refetchProviders } = useQuery(
-    storageProvidersQueryOptions()
-  );
+  const {
+    data: rawProviders,
+    error: providersError,
+    refetch: refetchProviders,
+  } = useQuery(storageProvidersQueryOptions());
   const providers = useMemo<StorageProviderItem[]>(
     () => (Array.isArray(rawProviders) ? rawProviders : []),
     [rawProviders]
@@ -92,7 +94,7 @@ export function StorageView() {
   );
 
   const resources = resourcesData?.data ?? [];
-  const activeError = metricsError || resourcesError;
+  const activeError = providersError || metricsError || resourcesError;
   const handleRetryStorage = () => {
     void refetchProviders();
     void refetchMetrics();
@@ -189,6 +191,37 @@ export function StorageView() {
     queryClient.invalidateQueries({ queryKey: ['storage'] });
   };
 
+  if (activeError) {
+    return (
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <div>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight text-[var(--ink)]">
+            Storage Management
+          </h1>
+          <p className="font-sans text-sm font-semibold text-[var(--muted)] mt-1">
+            Monitor S3 capacity, inspect bucket object inventory, link orphans,
+            and manage video files.
+          </p>
+        </div>
+        <div
+          data-testid="storage-error-alert"
+          className="flex justify-center py-12"
+        >
+          <ErrorState
+            tone="warning"
+            title="Storage Warning"
+            description={
+              activeError instanceof Error
+                ? activeError.message
+                : 'S3 storage service is unavailable or unconfigured.'
+            }
+            onRetry={handleRetryStorage}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Title and Provider Controls */}
@@ -272,22 +305,6 @@ export function StorageView() {
           </ChunkyButton>
         </div>
       </div>
-
-      {/* S3 Configuration / Error Alert Banner */}
-      {activeError && (
-        <div data-testid="storage-error-alert">
-          <ErrorState
-            tone="warning"
-            title="Storage Warning"
-            description={
-              activeError instanceof Error
-                ? activeError.message
-                : 'S3 storage service is unavailable or unconfigured.'
-            }
-            onRetry={handleRetryStorage}
-          />
-        </div>
-      )}
 
       {/* Empty-state hero: no providers connected */}
       {providers.length === 0 && (
