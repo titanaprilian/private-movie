@@ -20,6 +20,7 @@ export const Route = createFileRoute('/admin')({
     if (!isAuthenticated) {
       throw redirect({
         to: '/admin/login',
+        search: { redirect: undefined },
       });
     }
   },
