@@ -171,6 +171,83 @@ describe('VideoPlayer component', () => {
     vi.useRealTimers();
   });
 
+  it('single tap on video container on touch devices toggles controls without pausing', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    // Controls only auto-hide while playing, so put the video in playing state
+    const video = screen.getByTestId('custom-video-element');
+    fireEvent.play(video);
+
+    const container = screen.getByTestId('video-player-container');
+    const controlBar = screen.getByTestId('video-control-bar');
+    expect(controlBar.className).toContain('opacity-100');
+
+    // First tap hides controls
+    fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
+    expect(controlBar.className).toContain('opacity-0');
+    expect(window.HTMLMediaElement.prototype.pause).not.toHaveBeenCalled();
+    expect(window.HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+
+    // Second tap shows controls again, still without pausing
+    fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
+    expect(controlBar.className).toContain('opacity-100');
+    expect(window.HTMLMediaElement.prototype.pause).not.toHaveBeenCalled();
+  });
+
+  it('controls auto-hide after 3s of inactivity while playing on touch devices', () => {
+    vi.useFakeTimers();
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const video = screen.getByTestId('custom-video-element');
+    fireEvent.play(video);
+    const container = screen.getByTestId('video-player-container');
+    const controlBar = screen.getByTestId('video-control-bar');
+
+    // Tap to show + reset timer
+    fireEvent.touchStart(container, { touches: [{ clientX: 50, clientY: 50 }] });
+    // Ensure visible state: tap twice if first tap hid controls
+    if (controlBar.className.includes('opacity-0')) {
+      fireEvent.touchStart(container, { touches: [{ clientX: 50, clientY: 50 }] });
+    }
+    expect(controlBar.className).toContain('opacity-100');
+
+    act(() => {
+      vi.advanceTimersByTime(3500);
+    });
+    expect(controlBar.className).toContain('opacity-0');
+
+    vi.useRealTimers();
+  });
+
+  it('clicking video on desktop with mouse toggles play/pause', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const video = screen.getByTestId('custom-video-element');
+    fireEvent.click(video);
+    expect(window.HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+
+    fireEvent.play(video);
+    fireEvent.click(video);
+    expect(window.HTMLMediaElement.prototype.pause).toHaveBeenCalledTimes(1);
+  });
+
+  it('tapping inside the control bar does not toggle controls visibility', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    // Playing: a tap outside the bar would hide controls, so this proves the guard
+    const video = screen.getByTestId('custom-video-element');
+    fireEvent.play(video);
+
+    const controlBar = screen.getByTestId('video-control-bar');
+    expect(controlBar.className).toContain('opacity-100');
+
+    // Touch starting on an element inside the control bar (volume slider bubbles to container)
+    const volumeSlider = screen.getByLabelText(/volume/i);
+    fireEvent.touchStart(volumeSlider);
+
+    expect(controlBar.className).toContain('opacity-100');
+  });
+
   it('invokes onNextEpisode immediately when Play Now button is clicked in countdown overlay', () => {
     const handleNextEpisode = vi.fn();
     renderWithProviders(

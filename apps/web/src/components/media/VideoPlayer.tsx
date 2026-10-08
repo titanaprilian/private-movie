@@ -51,6 +51,7 @@ export function VideoPlayer({
   const [isSpeedOpen, setIsSpeedOpen] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTouchRef = useRef(0);
 
   const triggerNextNavigation = useCallback(() => {
     setCountdown(null);
@@ -175,16 +176,67 @@ export function VideoPlayer({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const handleMouseMove = () => {
+  const wakeControls = useCallback(() => {
     setShowControls(true);
+  }, []);
+
+  // Single effect owns the 3-second auto-hide timer: whenever controls are
+  // visible while playing (and the settings popover is closed), hide them
+  // after 3s of inactivity. Any wake/toggle resets the timer by re-running
+  // this effect.
+  useEffect(() => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
+      controlsTimeoutRef.current = null;
     }
-    if (isPlaying && !isSpeedOpen) {
+    if (showControls && isPlaying && !isSpeedOpen) {
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
       }, 3000);
     }
+  }, [showControls, isPlaying, isSpeedOpen]);
+
+  const handleMouseMove = () => {
+    wakeControls();
+  };
+
+  const isInsideControlBar = (target: EventTarget | null) =>
+    target instanceof HTMLElement &&
+    target.closest('[data-testid="video-control-bar"]') !== null;
+
+  const toggleControlsForTouch = useCallback(
+    (target: EventTarget | null) => {
+      if (isInsideControlBar(target)) return;
+      lastTouchRef.current = Date.now();
+      setShowControls((prev) => !prev);
+    },
+    [],
+  );
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    toggleControlsForTouch(e.target);
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const pointerType =
+      (e as React.PointerEvent<HTMLDivElement> & { pointerType?: string })
+        .pointerType ?? e.nativeEvent?.pointerType;
+    if (pointerType === 'mouse' || pointerType === undefined) {
+      // Desktop pointer: just wake controls, play/pause handled by video onClick.
+      wakeControls();
+      return;
+    }
+    // Touch/pen pointer: toggle like a tap. Guard against double-fire when
+    // both touchstart and pointerdown fire for the same tap.
+    if (Date.now() - lastTouchRef.current < 500) return;
+    toggleControlsForTouch(e.target);
+  };
+
+  const handleVideoClick = () => {
+    // Suppress the synthesized click that follows a touch tap: taps toggle
+    // controls visibility only and must not pause playback.
+    if (Date.now() - lastTouchRef.current < 700) return;
+    togglePlay();
   };
 
   useEffect(() => {
@@ -202,6 +254,8 @@ export function VideoPlayer({
       ref={containerRef}
       data-testid="video-player-container"
       onMouseMove={handleMouseMove}
+      onTouchStart={handleTouchStart}
+      onPointerDown={handlePointerDown}
       onMouseLeave={() => isPlaying && !isSpeedOpen && setShowControls(false)}
       className="relative aspect-video w-full rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-black overflow-hidden group select-none flex flex-col justify-end"
     >
@@ -215,7 +269,7 @@ export function VideoPlayer({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleVideoEnded}
-        onClick={togglePlay}
+        onClick={handleVideoClick}
         className="w-full h-full object-contain cursor-pointer"
       />
 
