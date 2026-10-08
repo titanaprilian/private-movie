@@ -741,7 +741,7 @@ describe('SeriesWatchView', () => {
       expect(container.className).toMatch(/mx-auto/);
     });
 
-    it('stretches Prev and Next buttons to equal width on mobile', () => {
+    it('renders Prev and Next buttons with minimum 44px touch targets on mobile', () => {
       renderWithProviders(
         <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
       );
@@ -753,8 +753,8 @@ describe('SeriesWatchView', () => {
       const nextButton = within(group).getByRole('button', {
         name: /next/i,
       });
-      expect(prevButton.className).toMatch(/flex-1/);
-      expect(nextButton.className).toMatch(/flex-1/);
+      expect(prevButton.className).toMatch(/min-h-\[44px\]/);
+      expect(nextButton.className).toMatch(/min-h-\[44px\]/);
     });
 
     it('keeps the server trigger concise on mobile with the count inside the dropdown', async () => {
@@ -765,8 +765,8 @@ describe('SeriesWatchView', () => {
       const trigger = screen.getByRole('combobox', {
         name: /server selector/i,
       });
-      // Concise narrow trigger with truncated label, no count badge
-      expect(trigger.className).toMatch(/w-40/);
+      // Concise trigger with truncated label, no count badge
+      expect(trigger.className).toMatch(/max-w-\[150px\]/);
       expect(trigger).not.toHaveTextContent('available');
 
       await user.click(trigger);

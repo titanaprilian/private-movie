@@ -271,17 +271,51 @@ describe('VideoPlayer component', () => {
     expect((video as HTMLVideoElement).muted).toBe(true);
   });
 
-  it('toggles fullscreen', async () => {
+  it('falls back to pseudo-fullscreen (fixed inset-0) when requestFullscreen is unavailable or rejects', async () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const container = screen.getByTestId('video-player-container');
-    container.requestFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
-    document.exitFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
+    // Simulate iOS Safari where requestFullscreen is missing or rejects
+    container.requestFullscreen = vi.fn().mockImplementation(() => Promise.reject(new Error('Not supported')));
 
-    const fsButton = screen.getAllByRole('button', { name: /fullscreen/i })[0];
+    const fsButton = screen.getAllByRole('button', { name: /^fullscreen$/i })[0];
     await user.click(fsButton);
-    expect(container.requestFullscreen).toHaveBeenCalled();
+
+    expect(container.className).toContain('fixed');
+    expect(container.className).toContain('inset-0');
+    expect(container.className).toContain('z-50');
+
+    // Controls remain mounted and functional
+    expect(screen.getByTestId('video-mobile-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('video-center-controls')).toBeInTheDocument();
+
+    // Clicking exit fullscreen removes pseudo-fullscreen classes
+    const exitFsButton = screen.getAllByRole('button', { name: /exit fullscreen/i })[0];
+    await user.click(exitFsButton);
+
+    expect(container.className).not.toContain('fixed');
+    expect(container.className).not.toContain('inset-0');
+  });
+
+  it('mobile center overlay transport buttons use scaled dimensions and semi-transparent styling', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const centerControls = screen.getByTestId('video-center-controls');
+    const skipBack = within(centerControls).getByRole('button', { name: /skip back 10 seconds/i });
+    const playBtn = within(centerControls).getByRole('button', { name: /^play$/i });
+    const skipForward = within(centerControls).getByRole('button', { name: /skip forward 10 seconds/i });
+
+    expect(skipBack.className).toMatch(/w-9/);
+    expect(skipBack.className).toMatch(/h-9/);
+    expect(skipBack.className).toMatch(/bg-black\/55/);
+
+    expect(playBtn.className).toMatch(/w-12/);
+    expect(playBtn.className).toMatch(/h-12/);
+
+    expect(skipForward.className).toMatch(/w-9/);
+    expect(skipForward.className).toMatch(/h-9/);
+    expect(skipForward.className).toMatch(/bg-black\/55/);
   });
 
   it('does not render a Next Episode button in the player control bar even when hasNextEpisode is true', () => {
@@ -680,7 +714,7 @@ describe('VideoPlayer component', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" title="Episode 3" />);
 
     const mobileBar = screen.getByTestId('video-mobile-bar');
-    expect(mobileBar.className).toMatch(/rounded-2xl/);
+    expect(mobileBar.className).toMatch(/bg-gradient-to-t/);
     expect(within(mobileBar).getByLabelText(/progress/i)).toBeInTheDocument();
     expect(within(mobileBar).getByRole('button', { name: /video settings/i })).toBeInTheDocument();
     expect(within(mobileBar).getByRole('button', { name: /fullscreen/i })).toBeInTheDocument();
@@ -709,8 +743,8 @@ describe('VideoPlayer component', () => {
 
     const centerControls = screen.getByTestId('video-center-controls');
     for (const btn of within(centerControls).getAllByRole('button')) {
-      expect(btn.className).toMatch(/min-w-\[(40|44|56)px\]/);
-      expect(btn.className).toMatch(/min-h-\[(40|44|56)px\]/);
+      expect(btn.className).toMatch(/min-w-\[(40|44|48|56)px\]/);
+      expect(btn.className).toMatch(/min-h-\[(40|44|48|56)px\]/);
     }
 
     const controlBar = screen.getByTestId('video-control-bar');
