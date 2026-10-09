@@ -1,6 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Rocket, Server } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
@@ -12,184 +10,36 @@ import {
   ChunkySelectTrigger,
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
-import {
-  storageMetricsQueryOptions,
-  storageResourcesQueryOptions,
-  storageProvidersQueryOptions,
-  minioStatusQueryOptions,
-  updateStorageLimit,
-  refreshStorageScan,
-  updateSourceMetadata,
-  attachOrphanFile,
-  deleteStorageResources,
-  purgeOrphanFiles,
-  type StorageResource,
-  type VideoSourceMetadata,
-  type AttachOrphanInput,
-  type StorageProviderItem,
-} from './api';
-import { StorageMetricsGrid } from './StorageMetricsGrid';
-import { StorageResourceTable } from './StorageResourceTable';
-import { StorageLimitDialog } from './StorageLimitDialog';
-import { EditSourceModal } from './EditSourceModal';
-import { AttachOrphanDialog } from './AttachOrphanDialog';
-import {
-  DeleteConfirmDialog,
-  type DeleteTargetType,
-} from './DeleteConfirmDialog';
-import { VideoPreviewModal } from './VideoPreviewModal';
-import { ManageProvidersDrawer } from './ManageProvidersDrawer';
-import { MinioSpinUpModal } from './MinioSpinUpModal';
+import { useStorageQueries } from './hooks/useStorageQueries';
+import { useStorageModals } from './hooks/useStorageModals';
+import { StorageMetricsGrid } from './components/StorageMetricsGrid';
+import { StorageResourceTable } from './components/StorageResourceTable';
+import { StorageLimitDialog } from './components/dialogs/StorageLimitDialog';
+import { EditSourceModal } from './components/dialogs/EditSourceModal';
+import { AttachOrphanDialog } from './components/dialogs/AttachOrphanDialog';
+import { DeleteConfirmDialog } from './components/dialogs/DeleteConfirmDialog';
+import { VideoPreviewModal } from './components/dialogs/VideoPreviewModal';
+import { ManageProvidersDrawer } from './components/providers/ManageProvidersDrawer';
+import { MinioSpinUpModal } from './components/dialogs/MinioSpinUpModal';
 
 export function StorageView() {
   const queryClient = useQueryClient();
-
-  // Provider list query
   const {
-    data: rawProviders,
-    error: providersError,
-    refetch: refetchProviders,
-  } = useQuery(storageProvidersQueryOptions());
-  const providers = useMemo<StorageProviderItem[]>(
-    () => (Array.isArray(rawProviders) ? rawProviders : []),
-    [rawProviders]
-  );
-
-  // Selected provider ID state (defaulting to default provider or first provider)
-  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
-    null
-  );
-
-  useEffect(() => {
-    if (providers.length > 0 && !selectedProviderId) {
-      const defaultProvider =
-        providers.find((p) => p.isDefault) || providers[0];
-      if (defaultProvider) {
-        setSelectedProviderId(defaultProvider.id);
-      }
-    }
-  }, [providers, selectedProviderId]);
-
-  // Find active provider object
-  const activeProvider =
-    providers.find((p) => p.id === selectedProviderId) || null;
-
-  // Scoped Queries based on selectedProviderId
-  const {
-    data: metrics,
-    isLoading: isLoadingMetrics,
-    error: metricsError,
-    refetch: refetchMetrics,
-  } = useQuery(storageMetricsQueryOptions(selectedProviderId || undefined));
-
-  const {
-    data: resourcesData,
-    isLoading: isLoadingResources,
-    error: resourcesError,
-    refetch: refetchResources,
-  } = useQuery(
-    storageResourcesQueryOptions(
-      selectedProviderId ? { providerId: selectedProviderId } : {}
-    )
-  );
-
-  const resources = resourcesData?.data ?? [];
-  const activeError = providersError || metricsError || resourcesError;
-  const handleRetryStorage = () => {
-    void refetchProviders();
-    void refetchMetrics();
-    void refetchResources();
-  };
-
-  // MinIO status query (for spin-up / console header action)
-  const { data: minioStatus } = useQuery(minioStatusQueryOptions());
-  const isMinioActive = Boolean(
-    minioStatus?.isRunning && minioStatus?.consoleUrl
-  );
-
-  // Dialog & Drawer States
-  const [isLimitDialogOpen, setIsLimitDialogOpen] = useState(false);
-  const [isProvidersDrawerOpen, setIsProvidersDrawerOpen] = useState(false);
-  const [isSpinUpModalOpen, setIsSpinUpModalOpen] = useState(false);
-  const [previewResource, setPreviewResource] =
-    useState<StorageResource | null>(null);
-  const [editingSource, setEditingSource] = useState<
-    (VideoSourceMetadata & { key?: string }) | null
-  >(null);
-  const [attachingResource, setAttachingResource] =
-    useState<StorageResource | null>(null);
-
-  // Deletion Dialog State
-  const [deleteTargetType, setDeleteTargetType] =
-    useState<DeleteTargetType | null>(null);
-  const [deleteSingleResource, setDeleteSingleResource] =
-    useState<StorageResource | null>(null);
-  const [deleteBatchResources, setDeleteBatchResources] = useState<
-    StorageResource[]
-  >([]);
-
-  // Refresh Scan Mutation
-  const refreshScanMutation = useMutation({
-    mutationFn: () => refreshStorageScan(selectedProviderId || undefined),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['storage'] });
-      toast.success('S3 bucket scan refreshed successfully');
-    },
-    onError: (err: unknown) => {
-      const msg =
-        err instanceof Error ? err.message : 'Failed to refresh bucket scan';
-      toast.error(msg);
-    },
-  });
-
-  // Save Limit Mutation
-  const handleSaveLimit = async (limitGb: number) => {
-    await updateStorageLimit(limitGb, selectedProviderId || undefined);
-    queryClient.invalidateQueries({ queryKey: ['storage'] });
-    toast.success(`Storage limit updated to ${limitGb} GB`);
-  };
-
-  // Edit Source Metadata Mutation
-  const handleSaveSourceMetadata = async (
-    sourceId: string,
-    input: { label: string; quality: string }
-  ) => {
-    await updateSourceMetadata(sourceId, input);
-    queryClient.invalidateQueries({ queryKey: ['storage'] });
-    toast.success('Source metadata updated successfully');
-  };
-
-  // Attach Orphan Mutation
-  const handleAttachOrphan = async (input: AttachOrphanInput) => {
-    await attachOrphanFile({
-      ...input,
-      providerId: selectedProviderId || undefined,
-    });
-    queryClient.invalidateQueries({ queryKey: ['storage'] });
-    toast.success('Orphaned file attached to episode successfully');
-  };
-
-  // Confirm Deletion Handler
-  const handleConfirmDelete = async () => {
-    const provId = selectedProviderId || undefined;
-    if (deleteTargetType === 'single' && deleteSingleResource) {
-      await deleteStorageResources([deleteSingleResource.key], provId);
-      toast.success(`Deleted file: ${deleteSingleResource.filename}`);
-    } else if (
-      deleteTargetType === 'batch' &&
-      deleteBatchResources.length > 0
-    ) {
-      const keys = deleteBatchResources.map((r) => r.key);
-      const res = await deleteStorageResources(keys, provId);
-      toast.success(`Deleted ${res.deletedKeys?.length ?? keys.length} files`);
-    } else if (deleteTargetType === 'purge') {
-      const res = await purgeOrphanFiles(provId);
-      toast.success(
-        `Purged ${res.deletedKeys?.length ?? 'all'} orphaned files`
-      );
-    }
-    queryClient.invalidateQueries({ queryKey: ['storage'] });
-  };
+    providers,
+    selectedProviderId,
+    setSelectedProviderId,
+    activeProvider,
+    metrics,
+    isLoadingMetrics,
+    isLoadingResources,
+    resources,
+    activeError,
+    handleRetryStorage,
+    refetchProviders,
+    minioStatus,
+    isMinioActive,
+  } = useStorageQueries();
+  const modals = useStorageModals(selectedProviderId);
 
   if (activeError) {
     return (
@@ -285,7 +135,7 @@ export function StorageView() {
             <ChunkyButton
               variant="blue"
               size="sm"
-              onClick={() => setIsSpinUpModalOpen(true)}
+              onClick={() => modals.setIsSpinUpModalOpen(true)}
               data-testid="spin-up-minio-btn"
             >
               <Rocket className="w-4 h-4" />
@@ -297,7 +147,7 @@ export function StorageView() {
           <ChunkyButton
             variant="outline"
             size="sm"
-            onClick={() => setIsProvidersDrawerOpen(true)}
+            onClick={() => modals.setIsProvidersDrawerOpen(true)}
             data-testid="manage-providers-btn"
           >
             <Server className="w-4 h-4" />
@@ -326,7 +176,7 @@ export function StorageView() {
             <ChunkyButton
               size="sm"
               variant="primary"
-              onClick={() => setIsSpinUpModalOpen(true)}
+              onClick={() => modals.setIsSpinUpModalOpen(true)}
               data-testid="minio-empty-state-spinup-btn"
             >
               <Rocket className="w-4 h-4" />
@@ -335,7 +185,7 @@ export function StorageView() {
             <ChunkyButton
               variant="outline"
               size="sm"
-              onClick={() => setIsProvidersDrawerOpen(true)}
+              onClick={() => modals.setIsProvidersDrawerOpen(true)}
             >
               Manage Providers
             </ChunkyButton>
@@ -347,7 +197,7 @@ export function StorageView() {
       <StorageMetricsGrid
         metrics={metrics}
         isLoading={isLoadingMetrics}
-        onOpenLimitDialog={() => setIsLimitDialogOpen(true)}
+        onOpenLimitDialog={() => modals.setIsLimitDialogOpen(true)}
         providerName={activeProvider?.name}
       />
 
@@ -356,110 +206,106 @@ export function StorageView() {
         resources={resources}
         isLoading={isLoadingResources}
         orphanedCount={metrics?.orphanCount ?? 0}
-        onRefreshScan={() => refreshScanMutation.mutate()}
-        isRefreshing={refreshScanMutation.isPending}
-        onPreview={(res) => setPreviewResource(res)}
+        onRefreshScan={() => modals.refreshScanMutation.mutate()}
+        isRefreshing={modals.refreshScanMutation.isPending}
+        onPreview={(res) => modals.setPreviewResource(res)}
         onEditSource={(res) => {
           if (res.videoSource) {
-            setEditingSource({ ...res.videoSource, key: res.key });
+            modals.setEditingSource({ ...res.videoSource, key: res.key });
           }
         }}
-        onAttachOrphan={(res) => setAttachingResource(res)}
+        onAttachOrphan={(res) => modals.setAttachingResource(res)}
         onDeleteSingle={(res) => {
-          setDeleteSingleResource(res);
-          setDeleteTargetType('single');
+          modals.setDeleteSingleResource(res);
+          modals.setDeleteTargetType('single');
         }}
         onDeleteBatch={(selected) => {
-          setDeleteBatchResources(selected);
-          setDeleteTargetType('batch');
+          modals.setDeleteBatchResources(selected);
+          modals.setDeleteTargetType('batch');
         }}
         onPurgeOrphans={() => {
-          setDeleteTargetType('purge');
+          modals.setDeleteTargetType('purge');
         }}
       />
 
       {/* Dialogs & Drawer */}
       <MinioSpinUpModal
-        open={isSpinUpModalOpen}
-        onOpenChange={setIsSpinUpModalOpen}
+        open={modals.isSpinUpModalOpen}
+        onOpenChange={modals.setIsSpinUpModalOpen}
         providerCount={providers.length}
       />
 
       <ManageProvidersDrawer
-        open={isProvidersDrawerOpen}
-        onOpenChange={setIsProvidersDrawerOpen}
+        open={modals.isProvidersDrawerOpen}
+        onOpenChange={modals.setIsProvidersDrawerOpen}
         providers={providers}
         selectedProviderId={selectedProviderId}
         onSelectProvider={(id) => {
           setSelectedProviderId(id);
-          setIsProvidersDrawerOpen(false);
+          modals.setIsProvidersDrawerOpen(false);
         }}
         onProvidersUpdated={() => {
           refetchProviders();
           queryClient.invalidateQueries({ queryKey: ['storage'] });
         }}
         onSpinUpMinio={() => {
-          setIsProvidersDrawerOpen(false);
-          setIsSpinUpModalOpen(true);
+          modals.setIsProvidersDrawerOpen(false);
+          modals.setIsSpinUpModalOpen(true);
         }}
       />
 
       <StorageLimitDialog
-        open={isLimitDialogOpen}
-        onOpenChange={setIsLimitDialogOpen}
+        open={modals.isLimitDialogOpen}
+        onOpenChange={modals.setIsLimitDialogOpen}
         currentLimitGb={
           metrics
             ? Math.round(metrics.limitBytes / (1024 * 1024 * 1024))
             : (activeProvider?.storageLimitGb ?? 50)
         }
-        onSave={handleSaveLimit}
+        onSave={modals.handleSaveLimit}
       />
 
       <EditSourceModal
-        open={Boolean(editingSource)}
+        open={Boolean(modals.editingSource)}
         onOpenChange={(open) => {
-          if (!open) setEditingSource(null);
+          if (!open) modals.setEditingSource(null);
         }}
-        videoSource={editingSource}
-        onSave={handleSaveSourceMetadata}
+        videoSource={modals.editingSource}
+        onSave={modals.handleSaveSourceMetadata}
       />
 
       <AttachOrphanDialog
-        open={Boolean(attachingResource)}
+        open={Boolean(modals.attachingResource)}
         onOpenChange={(open) => {
-          if (!open) setAttachingResource(null);
+          if (!open) modals.setAttachingResource(null);
         }}
-        fileKey={attachingResource?.key ?? null}
-        filename={attachingResource?.filename}
-        onAttach={handleAttachOrphan}
+        fileKey={modals.attachingResource?.key ?? null}
+        filename={modals.attachingResource?.filename}
+        onAttach={modals.handleAttachOrphan}
       />
 
       <DeleteConfirmDialog
-        open={Boolean(deleteTargetType)}
+        open={Boolean(modals.deleteTargetType)}
         onOpenChange={(open) => {
-          if (!open) {
-            setDeleteTargetType(null);
-            setDeleteSingleResource(null);
-            setDeleteBatchResources([]);
-          }
+          if (!open) modals.closeDeleteDialog();
         }}
-        targetType={deleteTargetType}
-        targetResource={deleteSingleResource}
-        selectedResources={deleteBatchResources}
+        targetType={modals.deleteTargetType}
+        targetResource={modals.deleteSingleResource}
+        selectedResources={modals.deleteBatchResources}
         allOrphansCount={metrics?.orphanCount ?? 0}
         allOrphansSizeBytes={resources
           .filter((r) => r.status === 'orphaned')
           .reduce((acc, r) => acc + (r.sizeBytes || 0), 0)}
-        onConfirm={handleConfirmDelete}
+        onConfirm={modals.handleConfirmDelete}
       />
 
       <VideoPreviewModal
-        open={Boolean(previewResource)}
+        open={Boolean(modals.previewResource)}
         onOpenChange={(open) => {
-          if (!open) setPreviewResource(null);
+          if (!open) modals.setPreviewResource(null);
         }}
-        fileKey={previewResource?.key ?? null}
-        filename={previewResource?.filename}
+        fileKey={modals.previewResource?.key ?? null}
+        filename={modals.previewResource?.filename}
       />
     </div>
   );

@@ -8,7 +8,7 @@ import {
   spinMinioUp,
   DEFAULT_MINIO_BUCKET,
 } from '@/modules/storage/internal/api';
-import { MinioSpinUpModal } from '@/modules/storage/internal/MinioSpinUpModal';
+import { MinioSpinUpModal } from '@/modules/storage/internal/components/dialogs/MinioSpinUpModal';
 import { StorageView } from '@/modules/storage';
 
 vi.mock('@tanstack/react-router', () => ({

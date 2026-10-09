@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { formatBytes, type StorageResource } from './api';
+import { formatBytes, type StorageResource } from '../api';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { AlertTriangle } from 'lucide-react';
-import { formatDualBytes, type StorageResource } from './api';
+import { formatDualBytes, type StorageResource } from '../../api';
 
 export type DeleteTargetType = 'single' | 'batch' | 'purge';
 

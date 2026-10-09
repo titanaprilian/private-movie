@@ -2,11 +2,11 @@ import { renderWithProviders, screen, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { setAccessToken } from '@/lib/api';
 import { StorageView } from '@/modules/storage';
-import { StorageMetricsGrid } from '@/modules/storage/internal/StorageMetricsGrid';
-import { StorageLimitDialog } from '@/modules/storage/internal/StorageLimitDialog';
-import { EditSourceModal } from '@/modules/storage/internal/EditSourceModal';
-import { DeleteConfirmDialog } from '@/modules/storage/internal/DeleteConfirmDialog';
-import { VideoPreviewModal } from '@/modules/storage/internal/VideoPreviewModal';
+import { StorageMetricsGrid } from '@/modules/storage/internal/components/StorageMetricsGrid';
+import { StorageLimitDialog } from '@/modules/storage/internal/components/dialogs/StorageLimitDialog';
+import { EditSourceModal } from '@/modules/storage/internal/components/dialogs/EditSourceModal';
+import { DeleteConfirmDialog } from '@/modules/storage/internal/components/dialogs/DeleteConfirmDialog';
+import { VideoPreviewModal } from '@/modules/storage/internal/components/dialogs/VideoPreviewModal';
 import type { StorageMetrics, StorageResource } from '@/modules/storage';
 
 // Mock TanStack Router

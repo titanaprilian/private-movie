@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/chunky-dialog';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
-import { getStoragePreviewUrl } from './api';
+import { getStoragePreviewUrl } from '../../api';
 
 export interface VideoPreviewModalProps {
   open: boolean;

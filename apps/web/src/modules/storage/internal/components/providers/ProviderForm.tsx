@@ -17,7 +17,7 @@ import {
   type UpdateStorageProviderRequest,
   type TestStorageProviderRequest,
   testStorageProviderConnection,
-} from './api';
+} from '../../api';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 

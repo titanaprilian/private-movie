@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/chunky-select';
 import { SeriesCombobox } from '@/components/media/SeriesCombobox';
 import { api } from '@/lib/api';
-import type { AttachOrphanInput } from './api';
+import type { AttachOrphanInput } from '../../api';
 
 export interface AttachOrphanDialogProps {
   open: boolean;
