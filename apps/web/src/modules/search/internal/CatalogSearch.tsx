@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { Search, SearchX, Star, X } from 'lucide-react';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import type { SeriesItem } from '@/modules/videos';
 import { useDebounce } from './useDebounce';
 import { seriesSearchQueryOptions } from './api';
@@ -78,23 +81,11 @@ export function CatalogSearch({
       {/* Search Input Bar */}
       <div className="relative flex items-center">
         {/* Search Icon */}
-        <div className="absolute left-3 pointer-events-none text-muted">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+        <div className="absolute left-3.5 pointer-events-none text-[var(--muted)]">
+          <Search size={16} strokeWidth={2.5} aria-hidden="true" />
         </div>
 
-        <input
+        <ChunkyInput
           type="text"
           value={query}
           autoFocus={autoFocus}
@@ -105,7 +96,7 @@ export function CatalogSearch({
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
           aria-label="Search series catalog"
-          className="w-full pl-9 pr-8 py-2.5 rounded-2xl border-2 border-[var(--border)] bg-[var(--bg)] text-sm font-sans font-bold text-[var(--ink)] placeholder:text-[var(--muted)] placeholder:font-semibold focus:outline-none focus:border-[var(--blue)] transition-colors"
+          className="pl-10 pr-10"
         />
 
         {/* Clear Button (X) */}
@@ -114,21 +105,9 @@ export function CatalogSearch({
             type="button"
             onClick={handleClear}
             aria-label="Clear search"
-            className="absolute right-2.5 p-0.5 rounded text-muted hover:text-foreground cursor-pointer transition-colors"
+            className="absolute right-2 flex h-7 w-7 items-center justify-center rounded-xl border-2 border-[var(--border)] bg-[var(--surface-raised)] text-[var(--muted)] transition-all hover:border-[var(--border-strong)] hover:text-[var(--ink)] active:translate-y-[1px] cursor-pointer"
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X size={14} strokeWidth={2.5} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -137,7 +116,7 @@ export function CatalogSearch({
       {showDropdown && (
         <div
           data-testid="search-dropdown"
-          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] shadow-2xl overflow-hidden max-h-96 overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] shadow-2xl overflow-hidden max-h-96 overflow-y-auto"
         >
           {/* Loading Skeleton State */}
           {isSearching ? (
@@ -145,13 +124,13 @@ export function CatalogSearch({
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 p-2 rounded bg-muted/5 animate-pulse"
+                  className="flex items-center gap-3 rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-2"
                 >
-                  <div className="w-10 h-14 bg-muted/20 rounded shrink-0 aspect-[3/4]" />
+                  <ChunkySkeleton className="h-14 w-10 shrink-0 aspect-[3/4]" />
                   <div className="flex-1 space-y-1.5">
-                    <div className="h-3.5 bg-muted/20 rounded w-3/4" />
-                    <div className="h-3 bg-muted/20 rounded w-1/2" />
-                    <div className="h-2.5 bg-muted/20 rounded w-1/3" />
+                    <ChunkySkeleton className="h-3.5 w-3/4" />
+                    <ChunkySkeleton className="h-3 w-1/2" />
+                    <ChunkySkeleton className="h-2.5 w-1/3" />
                   </div>
                 </div>
               ))}
@@ -159,10 +138,18 @@ export function CatalogSearch({
           ) : seriesList.length === 0 ? (
             /* Empty State */
             <div
-              className="p-6 text-center text-xs text-muted mono"
+              className="m-2 rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface-raised)] p-8 text-center"
               data-testid="search-empty"
             >
-              No series found
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]">
+                <SearchX size={22} strokeWidth={2.5} aria-hidden="true" />
+              </div>
+              <p className="font-display text-base font-extrabold text-[var(--ink)]">
+                No series found
+              </p>
+              <p className="mt-1 font-sans text-xs font-semibold text-[var(--muted)]">
+                Try a different title or keyword
+              </p>
             </div>
           ) : (
             /* Results List (Up to 5) */
@@ -174,25 +161,25 @@ export function CatalogSearch({
                 const seasonsCount = item.seasons?.length ?? 1;
                 const rawRating = (item as { rating?: string | null }).rating;
                 const ratingText = rawRating
-                  ? (!isNaN(Number(rawRating)) ? `★ ${Number(rawRating).toFixed(1)}` : rawRating)
+                  ? (!isNaN(Number(rawRating)) ? Number(rawRating).toFixed(1) : rawRating)
                   : (item.type === 'movie' ? 'PG-13' : 'TV-14');
                 const genreNames = Array.isArray(item.genres)
                   ? item.genres.map((g) => (typeof g === 'string' ? g : g.name))
                   : [];
 
                 const content = (
-                  <div className="flex items-center gap-3 p-2 rounded hover-bg cursor-pointer transition-colors group">
+                  <div className="flex items-center gap-3 rounded-2xl border-2 border-transparent bg-transparent p-2 transition-all cursor-pointer hover:-translate-y-[1px] hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)] hover:shadow-md group">
                     {/* Poster Thumbnail */}
-                    <div className="w-10 h-14 rounded overflow-hidden bg-muted/20 shrink-0 aspect-[3/4] flex items-center justify-center border border-c">
+                    <div className="flex h-14 w-10 shrink-0 aspect-[3/4] items-center justify-center overflow-hidden rounded-xl border-2 border-[var(--border)] bg-[var(--surface-raised)]">
                       {item.posterUrl ? (
                         <img
                           src={item.posterUrl}
                           alt={item.title}
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                           loading="lazy"
                         />
                       ) : (
-                        <span className="text-xs font-mono text-muted">
+                        <span className="font-display text-sm font-extrabold text-[var(--muted)]">
                           {item.title.charAt(0).toUpperCase()}
                         </span>
                       )}
@@ -200,21 +187,22 @@ export function CatalogSearch({
 
                     {/* Series Info */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                      <h4 className="font-display text-sm font-extrabold text-[var(--ink)] line-clamp-1 transition-colors group-hover:text-[var(--blue-dark)]">
                         {item.title}
                       </h4>
 
-                      <div className="flex items-center gap-1.5 mt-1 text-[10px] mono text-muted flex-wrap">
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 font-sans text-[11px] font-bold text-[var(--muted)]">
                         {year && <span>{year}</span>}
-                        {year && <span>•</span>}
-                        <span className="px-1 py-0.2 rounded border border-c bg-muted/10 text-foreground">
+                        {year && <span aria-hidden="true">•</span>}
+                        <span className="rounded-lg border-2 border-[var(--border)] bg-[var(--surface-raised)] px-1.5 py-px font-sans text-[10px] font-extrabold uppercase tracking-wide text-[var(--ink)]">
                           {item.type === 'movie' ? 'Movie' : 'TV'}
                         </span>
-                        <span>•</span>
-                        <span className="px-1 py-0.2 rounded border border-c bg-muted/10 text-foreground" data-testid="rating-badge">
+                        <span aria-hidden="true">•</span>
+                        <span className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--gold-dark)] bg-[var(--gold)]/15 px-1.5 py-px font-sans text-[10px] font-extrabold text-[var(--ink)]" data-testid="rating-badge">
+                          <Star size={10} strokeWidth={2.5} aria-hidden="true" className="text-[var(--gold-dark)]" />
                           {ratingText}
                         </span>
-                        <span>•</span>
+                        <span aria-hidden="true">•</span>
                         <span>
                           {seasonsCount}{' '}
                           {seasonsCount === 1 ? 'Season' : 'Seasons'}
@@ -223,11 +211,11 @@ export function CatalogSearch({
 
                       {/* Genre Tags */}
                       {genreNames.length > 0 && (
-                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1">
                           {genreNames.slice(0, 3).map((genreName) => (
                             <span
                               key={genreName}
-                              className="text-[9px] mono px-1 py-0.2 rounded border border-c text-muted bg-muted/5"
+                              className="rounded-lg border-2 border-[var(--border)] bg-[var(--blue)]/10 px-1.5 py-px font-sans text-[10px] font-extrabold text-[var(--blue-dark)]"
                             >
                               {genreName}
                             </span>
