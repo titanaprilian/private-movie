@@ -42,18 +42,21 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+APP_DIR="$ROOT/apps/android-tv"
+OUT_DIR="$APP_DIR/app/build/outputs/apk/$VARIANT"
+
 if [[ -z "$BACKEND_URL" && -n "${BACKEND_API_URL:-}" ]]; then
   BACKEND_URL="$BACKEND_API_URL"
+elif [[ -z "$BACKEND_URL" && -f "$ROOT/.env" ]]; then
+  BACKEND_URL="$(grep -E '^BACKEND_API_URL=' "$ROOT/.env" | tail -n 1 | cut -d= -f2- | tr -d '\r"' || true)"
 fi
+
 if [[ -z "$BACKEND_URL" ]]; then
   echo "Missing backend URL: pass --backend-url <url> (or -b <url>) or set the BACKEND_API_URL environment variable." >&2
   echo "Example: scripts/deploy-tv.sh --backend-url https://api.example.com" >&2
   exit 1
 fi
-
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APP_DIR="$ROOT/apps/android-tv"
-OUT_DIR="$APP_DIR/app/build/outputs/apk/$VARIANT"
 
 # ---- 1. Connect ------------------------------------------------------------
 if [[ -n "${ANDROID_TV_IP:-}" ]]; then
