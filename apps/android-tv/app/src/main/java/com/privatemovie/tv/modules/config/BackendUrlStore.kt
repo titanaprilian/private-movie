@@ -2,6 +2,7 @@ package com.privatemovie.tv.modules.config
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.privatemovie.tv.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,7 +47,7 @@ class SharedPreferencesBackendUrlStore(
     }
 
     companion object {
-        const val DEFAULT_URL = "https://anime.pylearn.my.id"
+        val DEFAULT_URL: String get() = BuildConfig.DEFAULT_BACKEND_URL
         private const val PREFS_NAME = "dev_backend_config"
         private const val KEY_BACKEND_URL = "backend_api_url"
 
