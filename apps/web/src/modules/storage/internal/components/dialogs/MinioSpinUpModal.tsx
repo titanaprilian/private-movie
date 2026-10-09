@@ -21,7 +21,7 @@ import {
   generateMinioSecret,
   spinMinioUp,
   type MinioSpinUpResponseData,
-} from './api';
+} from '../../api';
 
 export interface MinioSpinUpModalProps {
   open: boolean;

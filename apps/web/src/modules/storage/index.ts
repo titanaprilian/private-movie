@@ -1,6 +1,6 @@
 export { StorageView } from './internal/StorageView';
-export { MinioSpinUpModal } from './internal/MinioSpinUpModal';
-export type { MinioSpinUpModalProps } from './internal/MinioSpinUpModal';
+export { MinioSpinUpModal } from './internal/components/dialogs/MinioSpinUpModal';
+export type { MinioSpinUpModalProps } from './internal/components/dialogs/MinioSpinUpModal';
 export {
   fetchStorageMetrics,
   storageMetricsQueryOptions,

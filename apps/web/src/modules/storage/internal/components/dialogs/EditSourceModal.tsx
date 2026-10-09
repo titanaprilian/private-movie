@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/chunky-dialog';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
-import type { VideoSourceMetadata } from './api';
+import type { VideoSourceMetadata } from '../../api';
 
 export interface EditSourceModalProps {
   open: boolean;

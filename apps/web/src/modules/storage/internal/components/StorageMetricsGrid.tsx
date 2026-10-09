@@ -1,4 +1,4 @@
-import { formatBytes, formatDualBytes, type StorageMetrics } from './api';
+import { formatBytes, formatDualBytes, type StorageMetrics } from '../api';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';

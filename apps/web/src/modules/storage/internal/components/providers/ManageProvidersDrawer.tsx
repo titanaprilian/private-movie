@@ -26,7 +26,7 @@ import {
   createStorageProvider,
   updateStorageProvider,
   deleteStorageProvider,
-} from './api';
+} from '../../api';
 import { ProviderForm } from './ProviderForm';
 import {
   Server,
