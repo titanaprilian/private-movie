@@ -22,6 +22,18 @@ const mockSeriesList = [
 ];
 
 describe('SeriesCombobox component', () => {
+  it('renders ChunkyButton trigger with tactile styling and focus ring', () => {
+    renderWithProviders(
+      <SeriesCombobox value="" onValueChange={vi.fn()} initialSeriesList={mockSeriesList} />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: 'Select series' });
+    expect(trigger).toHaveClass('border-2');
+    expect(trigger).toHaveClass('border-b-4');
+    expect(trigger).toHaveClass('rounded-xl');
+    expect(trigger).toHaveClass('focus-visible:ring-[var(--blue)]');
+  });
+
   it('renders placeholder when no series is selected', () => {
     renderWithProviders(
       <SeriesCombobox value="" onValueChange={vi.fn()} initialSeriesList={mockSeriesList} />

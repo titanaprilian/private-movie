@@ -1,11 +1,11 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { LogIn } from 'lucide-react';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { useAuthStore } from '../store';
 import { loginSchema, type LoginSchema } from '../schema';
 
@@ -22,6 +22,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginSchema>({
@@ -62,7 +63,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         {displayError && (
           <div
             role="alert"
-            className="mb-4 rounded border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400"
+            className="mb-4 rounded-2xl border-2 border-b-4 border-[var(--red-dark)] bg-[var(--red)]/10 p-3 font-sans text-sm font-bold text-[var(--red)]"
           >
             {displayError}
           </div>
@@ -74,22 +75,23 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           noValidate
         >
           <div>
-            <Label
+            <label
               htmlFor="email"
-              className="block text-xs mono text-muted mb-1.5 uppercase tracking-wide"
+              className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
             >
               Email
-            </Label>
-            <Input
+            </label>
+            <ChunkyInput
               id="email"
               type="email"
+              autoComplete="email"
               placeholder="you@company.com"
+              aria-invalid={Boolean(errors.email)}
               disabled={isPending}
-              className="mono"
               {...register('email')}
             />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+              <p className="mt-1 font-sans text-xs font-bold text-[var(--red)]">
                 {errors.email.message}
               </p>
             )}
@@ -97,43 +99,70 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label
+              <label
                 htmlFor="password"
-                className="block text-xs mono text-muted uppercase tracking-wide"
+                className="block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
               >
                 Password
-              </Label>
-              <a href="#" className="text-xs text-primary hover:underline">
+              </label>
+              <a
+                href="#"
+                className="font-sans text-xs font-extrabold text-[var(--green-dark)] hover:underline"
+              >
                 forgot?
               </a>
             </div>
-            <Input
+            <ChunkyInput
               id="password"
               type="password"
+              autoComplete="current-password"
               placeholder="••••••••"
+              aria-invalid={Boolean(errors.password)}
               disabled={isPending}
-              className="mono"
               {...register('password')}
             />
             {errors.password && (
-              <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+              <p className="mt-1 font-sans text-xs font-bold text-[var(--red)]">
                 {errors.password.message}
               </p>
             )}
           </div>
 
-          <Label className="flex items-center gap-2 text-sm text-muted font-normal cursor-pointer">
-            <Checkbox
-              id="rememberThisDevice"
-              disabled={isPending}
-              {...register('rememberThisDevice')}
-            />
-            Remember this device
-          </Label>
+          <Controller
+            control={control}
+            name="rememberThisDevice"
+            render={({ field }) => (
+              <div className="flex items-center gap-2.5">
+                <ChunkyCheckbox
+                  id="rememberThisDevice"
+                  aria-label="Remember this device"
+                  checked={Boolean(field.value)}
+                  onCheckedChange={field.onChange}
+                  disabled={isPending}
+                />
+                <label
+                  htmlFor="rememberThisDevice"
+                  className="cursor-pointer font-sans text-sm font-bold text-[var(--muted)]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    field.onChange(!field.value);
+                  }}
+                >
+                  Remember this device
+                </label>
+              </div>
+            )}
+          />
 
-          <Button type="submit" disabled={isPending} className="w-full mono">
+          <ChunkyButton
+            type="submit"
+            variant="primary"
+            disabled={isPending}
+            className="w-full"
+          >
+            <LogIn aria-hidden="true" />
             {isPending ? 'signing_in...' : 'sign_in →'}
-          </Button>
+          </ChunkyButton>
         </form>
       </div>
 

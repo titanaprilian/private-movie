@@ -41,16 +41,17 @@ import { EpisodeTable } from '../seasons/EpisodeTable';
 import { BatchDeleteDialog } from '../seasons/BatchDeleteDialog';
 import { EpisodeDetailDrawer } from '../seasons/EpisodeDetailDrawer';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogDescription,
+  ChunkyDialogBody,
+  ChunkyDialogFooter,
+} from '@/components/ui/chunky-dialog';
+import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
+import { ChunkyInput } from '@/components/ui/chunky-input';
+import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
 import { BackButton } from '@/components/ui/back-button';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
@@ -966,97 +967,94 @@ export function SeriesDetailView({
       />
 
       {/* Delete Season Confirmation Dialog */}
-      <Dialog open={isDeleteSeasonOpen} onOpenChange={setIsDeleteSeasonOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Season</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete{' '}
-              {activeSeason?.title ? `"${activeSeason.title}"` : 'this season'}?
-              Seasons containing episodes cannot be deleted. This action cannot
-              be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsDeleteSeasonOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={
-                deleteSeasonMutation.isPending ||
-                (series.seasons ? series.seasons.length <= 1 : false)
-              }
-              onClick={() => {
-                if (series.seasons && series.seasons.length <= 1) return;
-                if (activeSeason) {
-                  deleteSeasonMutation.mutate(activeSeason.id);
-                }
-              }}
-            >
-              {deleteSeasonMutation.isPending ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ChunkyConfirmDialog
+        open={isDeleteSeasonOpen}
+        onOpenChange={setIsDeleteSeasonOpen}
+        title="Delete Season"
+        description={`Are you sure you want to delete ${activeSeason?.title ? `"${activeSeason.title}"` : 'this season'}? Seasons containing episodes cannot be deleted. This action cannot be undone.`}
+        confirmLabel={deleteSeasonMutation.isPending ? 'Deleting...' : 'Delete'}
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        isPending={deleteSeasonMutation.isPending}
+        onConfirm={() => {
+          if (series.seasons && series.seasons.length <= 1) return;
+          if (activeSeason) {
+            deleteSeasonMutation.mutate(activeSeason.id);
+          }
+        }}
+        confirmButtonTestId="confirm-delete-season"
+      />
 
       {/* Edit Episode Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Episode</DialogTitle>
-            <DialogDescription>
+      <ChunkyDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <ChunkyDialogContent>
+          <ChunkyDialogHeader>
+            <ChunkyDialogTitle>Edit Episode</ChunkyDialogTitle>
+            <ChunkyDialogDescription>
               Update the details of this episode.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleConfirmEdit} className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-title">Title</Label>
-              <Input
+            </ChunkyDialogDescription>
+          </ChunkyDialogHeader>
+          <ChunkyDialogBody>
+          <form onSubmit={handleConfirmEdit} className="flex flex-col gap-4">
+            <div>
+              <label
+                htmlFor="edit-title"
+                className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+              >
+                Title
+              </label>
+              <ChunkyInput
                 id="edit-title"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 placeholder="Episode title"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-description">Description</Label>
-              <textarea
+            <div>
+              <label
+                htmlFor="edit-description"
+                className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+              >
+                Description
+              </label>
+              <ChunkyTextarea
                 id="edit-description"
                 rows={3}
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 placeholder="Episode description"
-                className="flex w-full rounded border border-c bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-video-type">Video Type</Label>
-              <Input
+            <div>
+              <label
+                htmlFor="edit-video-type"
+                className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+              >
+                Video Type
+              </label>
+              <ChunkyInput
                 id="edit-video-type"
                 value={editVideoType}
                 onChange={(e) => setEditVideoType(e.target.value)}
                 placeholder="e.g. mp4, embed"
               />
             </div>
-            <DialogFooter className="pt-2">
-              <Button
+            <ChunkyDialogFooter>
+              <ChunkyButton
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={() => setIsEditDialogOpen(false)}
               >
                 Cancel
-              </Button>
-              <Button type="submit">Save Changes</Button>
-            </DialogFooter>
+              </ChunkyButton>
+              <ChunkyButton type="submit" variant="primary">
+                Save Changes
+              </ChunkyButton>
+            </ChunkyDialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+          </ChunkyDialogBody>
+        </ChunkyDialogContent>
+      </ChunkyDialog>
 
       {/* Manage Sources Dialog */}
       <ManageSourcesDialog
@@ -1071,32 +1069,17 @@ export function SeriesDetailView({
       />
 
       {/* Delete Episode Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Episode</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {selectedEpisode?.title ? `"${selectedEpisode.title}"` : 'this episode'}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleConfirmDelete}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ChunkyConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Episode"
+        description={`Are you sure you want to delete ${selectedEpisode?.title ? `"${selectedEpisode.title}"` : 'this episode'}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        onConfirm={handleConfirmDelete}
+        confirmButtonTestId="confirm-delete-episode"
+      />
       </DragDropContext>
     </div>
   );

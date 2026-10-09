@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
 import { addVideoSources, type VideoSourceInput } from '../api';
 
 export interface DirectUrlTabProps {
@@ -43,50 +42,56 @@ export function DirectUrlTab({ episodeId, seriesId, onSuccess }: DirectUrlTabPro
       <div className="text-xs font-medium mono text-muted uppercase">Add Direct Video Source</div>
 
       <div>
-        <Label htmlFor="direct-url" className="text-[10px] text-muted">
+        <label
+          htmlFor="direct-url"
+          className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+        >
           Video URL
-        </Label>
-        <Input
+        </label>
+        <ChunkyInput
           id="direct-url"
           placeholder="https://example.com/video.mp4"
           value={directUrl}
           onChange={(e) => setDirectUrl(e.target.value)}
-          className="text-xs h-8"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label htmlFor="direct-label" className="text-[10px] text-muted">
+          <label
+            htmlFor="direct-label"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Label
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="direct-label"
             placeholder="e.g. Server A, 480p"
             value={directLabel}
             onChange={(e) => setDirectLabel(e.target.value)}
-            className="text-xs h-8"
           />
         </div>
         <div>
-          <Label htmlFor="direct-quality" className="text-[10px] text-muted">
+          <label
+            htmlFor="direct-quality"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Quality
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="direct-quality"
             placeholder="e.g. 720p, 1080p"
             value={directQuality}
             onChange={(e) => setDirectQuality(e.target.value)}
-            className="text-xs h-8"
           />
         </div>
       </div>
 
-      <Button
+      <ChunkyButton
         type="button"
         size="sm"
-        variant="default"
-        className="w-full text-xs h-8"
+        variant="primary"
+        className="w-full"
         disabled={saveSourcesMutation.isPending || !directUrl.trim() || !directLabel.trim()}
         onClick={() => {
           saveSourcesMutation.mutate({
@@ -103,7 +108,7 @@ export function DirectUrlTab({ episodeId, seriesId, onSuccess }: DirectUrlTabPro
         }}
       >
         {saveSourcesMutation.isPending ? 'Saving...' : 'Add Video Source'}
-      </Button>
+      </ChunkyButton>
     </div>
   );
 }

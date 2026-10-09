@@ -110,6 +110,20 @@ describe('VideoSettingsPopover component', () => {
     expect(dialog.textContent).toMatch(/tap/i);
   });
 
+  it('renders the shortcuts dialog with Chunky tactile styling', async () => {
+    const user = userEvent.setup();
+    renderPopover();
+
+    await user.click(screen.getByRole('button', { name: /video settings/i }));
+    await user.click(screen.getByRole('button', { name: /shortcuts & gestures/i }));
+
+    const dialog = screen.getByTestId('shortcuts-dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveClass('rounded-[24px]');
+    expect(dialog).toHaveClass('border-b-4');
+    expect(dialog).toHaveClass('border-2');
+  });
+
   it('mounts popover content and shortcuts dialog into custom container when container prop is provided', async () => {
     const user = userEvent.setup();
     const customContainer = document.createElement('div');

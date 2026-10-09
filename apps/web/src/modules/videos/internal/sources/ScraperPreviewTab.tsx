@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { SCRAPER_PROVIDERS, type ScraperProvider } from '@repo/contracts';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
@@ -90,9 +89,12 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
         </div>
 
         <div>
-          <Label htmlFor="scrape-provider" className="text-[10px] text-muted">
+          <span
+            id="scrape-provider-label"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Provider
-          </Label>
+          </span>
           <Popover open={providerPopoverOpen} onOpenChange={setProviderPopoverOpen}>
             <PopoverTrigger asChild>
               <button
@@ -153,23 +155,25 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
         </div>
 
         <div>
-          <Label htmlFor="scrape-url" className="text-[10px] text-muted">
+          <label
+            htmlFor="scrape-url"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             {providerMeta.label} URL
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="scrape-url"
             placeholder={providerMeta.placeholder}
             value={scrapeUrl}
             onChange={(e) => setScrapeUrl(e.target.value)}
-            className="text-xs h-8"
           />
         </div>
 
-        <Button
+        <ChunkyButton
           type="button"
           size="sm"
-          variant="secondary"
-          className="w-full text-xs h-8"
+          variant="outline"
+          className="w-full"
           disabled={previewMutation.isPending || !scrapeUrl.trim()}
           onClick={() => {
             previewMutation.mutate({
@@ -179,7 +183,7 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
           }}
         >
           {previewMutation.isPending ? 'Resolving mirrors...' : 'Preview'}
-        </Button>
+        </ChunkyButton>
       </div>
 
       {extractedSources !== null && (
@@ -244,11 +248,11 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
             </div>
           )}
 
-          <Button
+          <ChunkyButton
             type="button"
             size="sm"
-            variant="default"
-            className="w-full text-xs h-8"
+            variant="primary"
+            className="w-full"
             disabled={saveSourcesMutation.isPending || extractedSources.length === 0}
             onClick={() => {
               saveSourcesMutation.mutate({
@@ -258,7 +262,7 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
             }}
           >
             {saveSourcesMutation.isPending ? 'Saving...' : 'Save Sources'}
-          </Button>
+          </ChunkyButton>
         </div>
       )}
     </div>
