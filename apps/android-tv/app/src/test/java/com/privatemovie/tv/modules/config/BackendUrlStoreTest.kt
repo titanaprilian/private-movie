@@ -9,16 +9,17 @@ import org.junit.Test
 class BackendUrlStoreTest {
 
     private lateinit var store: InMemoryBackendUrlStore
+    private val defaultUrl: String get() = SharedPreferencesBackendUrlStore.DEFAULT_URL
 
     @Before
     fun setUp() {
-        store = InMemoryBackendUrlStore(SharedPreferencesBackendUrlStore.DEFAULT_URL)
+        store = InMemoryBackendUrlStore(defaultUrl)
     }
 
     @Test
     fun `default URL is active on initialization`() {
-        assertEquals("https://anime.pylearn.my.id", store.getUrl())
-        assertEquals("https://anime.pylearn.my.id", store.activeUrl.value)
+        assertEquals(defaultUrl, store.getUrl())
+        assertEquals(defaultUrl, store.activeUrl.value)
     }
 
     @Test
@@ -33,14 +34,14 @@ class BackendUrlStoreTest {
     fun `setUrl rejects invalid URL scheme`() {
         val success = store.setUrl("ftp://192.168.1.100")
         assertFalse(success)
-        assertEquals("https://anime.pylearn.my.id", store.getUrl())
+        assertEquals(defaultUrl, store.getUrl())
     }
 
     @Test
     fun `setUrl rejects empty or blank input`() {
         val success = store.setUrl("   ")
         assertFalse(success)
-        assertEquals("https://anime.pylearn.my.id", store.getUrl())
+        assertEquals(defaultUrl, store.getUrl())
     }
 
     @Test
@@ -49,6 +50,6 @@ class BackendUrlStoreTest {
         assertEquals("https://api.my-custom-domain.com", store.getUrl())
 
         store.resetToDefault()
-        assertEquals("https://anime.pylearn.my.id", store.getUrl())
+        assertEquals(defaultUrl, store.getUrl())
     }
 }

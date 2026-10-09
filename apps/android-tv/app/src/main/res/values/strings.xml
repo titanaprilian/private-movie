@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Private Movie TV</string>
-    <string name="default_backend_url">https://anime.pylearn.my.id</string>
     <string name="home_title">Private Movie TV</string>
     <string name="detail_title">Series Detail</string>
     <string name="player_title">Player</string>

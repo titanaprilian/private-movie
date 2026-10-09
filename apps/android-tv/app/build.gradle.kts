@@ -9,6 +9,23 @@ android {
     namespace = "com.privatemovie.tv"
     compileSdk = 35
 
+    // Backend API URL injected at compile time from Gradle property (-PbackendUrl)
+    // or environment variable (BACKEND_API_URL). Assemble tasks require it;
+    // unit test / compilation tasks fall back to a dummy placeholder.
+    val configuredBackendUrl: String? =
+        (findProperty("backendUrl") as String?)?.takeIf { it.isNotBlank() }
+            ?: System.getenv("BACKEND_API_URL")?.takeIf { it.isNotBlank() }
+    val testFallbackBackendUrl = "https://example.com"
+    gradle.taskGraph.whenReady {
+        val wantsAssemble = allTasks.any { it.name.startsWith("assemble") }
+        if (wantsAssemble && configuredBackendUrl.isNullOrBlank()) {
+            throw org.gradle.api.GradleException(
+                "Missing backend URL: pass -PbackendUrl=https://<host> or set the BACKEND_API_URL environment variable to assemble the Android TV app."
+            )
+        }
+    }
+    val effectiveBackendUrl = configuredBackendUrl?.takeIf { it.isNotBlank() } ?: testFallbackBackendUrl
+
     defaultConfig {
         applicationId = "com.privatemovie.tv"
         minSdk = 30
@@ -17,6 +34,7 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "DEFAULT_BACKEND_URL", "\"$effectiveBackendUrl\"")
     }
 
     buildTypes {
