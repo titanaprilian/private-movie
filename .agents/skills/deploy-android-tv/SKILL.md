@@ -9,17 +9,20 @@ Build `@repo/android-tv` and install it on the user's TV with one script. Nothin
 
 ## Command
 
-Run from the repo root:
+Run from the repo root. A backend URL is **required** — pass `--backend-url` (or `-b`) or set `BACKEND_API_URL`:
 
 ```bash
-scripts/deploy-tv.sh            # debug build (default)
-scripts/deploy-tv.sh --release  # release build (minified, production-like)
+scripts/deploy-tv.sh --backend-url https://api.example.com            # debug build (default)
+scripts/deploy-tv.sh --backend-url https://api.example.com --release  # release build (minified, production-like)
+BACKEND_API_URL=https://api.example.com scripts/deploy-tv.sh          # via environment variable
 ```
+
+Without a backend URL the script exits with code 1 and usage guidance. The URL is forwarded to Gradle as `-PbackendUrl=<url>` and baked into the build.
 
 The script connects to the TV using `$ANDROID_TV_IP`, builds, and installs. If `ANDROID_TV_IP` is unset and no device is attached, ask the user for the TV's IP once, then run:
 
 ```bash
-ANDROID_TV_IP=<ip> scripts/deploy-tv.sh
+ANDROID_TV_IP=<ip> scripts/deploy-tv.sh --backend-url https://api.example.com
 ```
 
 ## Choosing the variant
@@ -35,14 +38,14 @@ ANDROID_TV_IP=<ip> scripts/deploy-tv.sh
 | 2         | Signature conflict    | Ask the user first: reinstalling wipes app data. If they agree, re-run with `--reinstall`.                                                                         |
 | 3         | No device             | `unauthorized`: tell the user to accept "Always allow" on the TV. `offline`: ask them to wake the TV and enable Developer Options → Network Debugging. Then retry. |
 | 4         | Build failed          | Report the error and stop.                                                                                                                                         |
-| 1         | Other install failure | Report the adb error and stop.                                                                                                                                     |
+| 1         | Other install failure / missing backend URL | Missing URL: re-run with `--backend-url <url>` or `BACKEND_API_URL`. Otherwise report the adb error and stop. |
 
 ## Optional (only if the user asks)
 
 Launch the app after installing:
 
 ```bash
-scripts/deploy-tv.sh --launch
+scripts/deploy-tv.sh --backend-url https://api.example.com --launch
 ```
 
 ## App specs
