@@ -109,4 +109,11 @@ log "Container status:"
 # shellcheck disable=SC2086
 docker compose ps ${TARGET_SERVICES}
 
+# 8. Post-deployment VPS cleanup
+CLEANUP_SCRIPT="${CLEANUP_SCRIPT:-/home/titanic/bin/vps-cleanup}"
+if [ -x "${CLEANUP_SCRIPT}" ]; then
+  log "Running post-deployment VPS cleanup (${CLEANUP_SCRIPT} --yes)..."
+  "${CLEANUP_SCRIPT}" --yes || log "Warning: VPS cleanup exited with status $?"
+fi
+
 log "Deployment completed successfully for: ${TARGET_SERVICES}"
