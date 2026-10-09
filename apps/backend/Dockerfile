@@ -40,7 +40,7 @@ RUN apt-get update \
 ENV ARCHIVE_7Z_BIN=/opt/7zip/7zz
 
 # Install Chromium and its system dependencies for Playwright
-RUN bunx playwright install chromium --with-deps
+RUN bun run --cwd packages/media-scraper playwright install chromium --with-deps
 
 EXPOSE 3000
 
