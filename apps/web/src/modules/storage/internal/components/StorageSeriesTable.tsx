@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { PackageSearch, Search } from 'lucide-react';
 import { formatDualBytes, type StorageSeriesItem } from '../api';
 import { ChunkyCard, ChunkyCardList } from '@/components/ui/chunky-card';
+import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 
@@ -42,7 +43,13 @@ export function StorageSeriesTable({
       </ChunkyCard>
 
       {/* Grid Header Row */}
-      <div className="hidden lg:grid gap-3.5 items-center px-4 pb-2 grid-cols-[minmax(0,2fr)_110px_190px_110px]">
+      <div className="hidden lg:grid gap-3.5 items-center px-4 pb-2 grid-cols-[36px_minmax(0,2fr)_110px_190px_110px_48px]">
+        <span
+          className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          data-testid="series-header-index"
+        >
+          #
+        </span>
         <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
           Series Title
         </span>
@@ -55,6 +62,7 @@ export function StorageSeriesTable({
         <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
           Seasons
         </span>
+        <span aria-hidden="true" />
       </div>
 
       {isLoading ? (
@@ -82,14 +90,14 @@ export function StorageSeriesTable({
         </ChunkyCard>
       ) : (
         <ChunkyCardList>
-          {filteredSeries.map((item) => {
+          {filteredSeries.map((item, index) => {
             const isSelected = selectedSeriesId === item.id;
             return (
               <ChunkyCard
                 key={item.id}
                 selected={isSelected}
                 interactive
-                className="p-3 items-center grid gap-3 grid-cols-[minmax(0,1fr)_48px] lg:grid-cols-[minmax(0,2fr)_110px_190px_110px] cursor-pointer"
+                className="p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_110px_190px_110px_48px] cursor-pointer hover:border-[var(--blue)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] active:translate-y-[2px]"
                 data-testid={`series-row-${item.id}`}
                 onClick={() => onSelectSeries(item)}
                 onKeyDown={(e) => {
@@ -101,6 +109,13 @@ export function StorageSeriesTable({
                 role="button"
                 tabIndex={0}
               >
+                <div
+                  className="font-mono text-sm font-extrabold text-[var(--muted)]"
+                  data-testid={`series-row-index-${item.id}`}
+                >
+                  {index + 1}
+                </div>
+
                 <div className="min-w-0">
                   <div
                     className="font-sans font-extrabold text-[15px] text-[var(--ink)] leading-snug truncate"
@@ -138,9 +153,21 @@ export function StorageSeriesTable({
                   {item.seasons.length}
                 </div>
 
-                <span className="lg:hidden flex justify-end font-mono text-xs font-bold text-[var(--muted)]">
-                  ›
-                </span>
+                <div
+                  className="flex items-center justify-end"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ChunkyActionMenu
+                    triggerLabel={`Actions for ${item.title}`}
+                    items={[
+                      {
+                        label: 'Inspect Storage',
+                        icon: <PackageSearch className="w-4 h-4" />,
+                        onSelect: () => onSelectSeries(item),
+                      },
+                    ]}
+                  />
+                </div>
               </ChunkyCard>
             );
           })}
