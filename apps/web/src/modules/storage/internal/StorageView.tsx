@@ -306,13 +306,15 @@ export function StorageView() {
         </ChunkyCard>
       )}
 
-      {/* Metrics Section */}
-      <StorageMetricsGrid
-        metrics={metrics}
-        isLoading={isLoadingMetrics}
-        onOpenLimitDialog={() => modals.setIsLimitDialogOpen(true)}
-        providerName={activeProvider?.name}
-      />
+      {/* Metrics Section (suppressed in the focused Level 2 drill-down view) */}
+      {!activeSeries && (
+        <StorageMetricsGrid
+          metrics={metrics}
+          isLoading={isLoadingMetrics}
+          onOpenLimitDialog={() => modals.setIsLimitDialogOpen(true)}
+          providerName={activeProvider?.name}
+        />
+      )}
 
       {/* Level 2 Drill-down: scoped series view with season navigation */}
       {activeSeries ? (
