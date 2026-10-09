@@ -47,6 +47,8 @@ export interface StorageResourceItem {
 
 export interface StorageResourcesQuery {
   providerId?: string;
+  seriesId?: string;
+  seasonId?: string;
   status?: "all" | "linked" | "orphaned";
   search?: string;
   sortBy?: "size" | "date" | "name";

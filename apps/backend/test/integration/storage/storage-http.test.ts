@@ -481,6 +481,46 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       expect(data.totalPages).toBe(2);
       expect(data.items).toHaveLength(1);
     });
+
+    it("scopes resources by seriesId and seasonId", async () => {
+      const first = await createSeriesWithEpisode({
+        seriesTitle: "Scoped Series",
+        seasonNumber: 1,
+      });
+      const second = await createSeriesWithEpisode({
+        seriesTitle: "Other Series",
+        seasonNumber: 1,
+      });
+      const firstKey = `episodes/${first.episode.id}/scoped.mp4`;
+      const secondKey = `episodes/${second.episode.id}/other.mp4`;
+      await insertVideoSource(first.episode.id, { url: firstKey });
+      await insertVideoSource(second.episode.id, { url: secondKey });
+      const mockObjects: S3ObjectSummary[] = [
+        { key: firstKey, size: 500, lastModified: new Date("2026-01-03") },
+        { key: secondKey, size: 300, lastModified: new Date("2026-01-02") },
+      ];
+
+      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const { accessToken } = await registerUser(app);
+
+      const bySeries = await request(app, {
+        method: "GET",
+        path: `/api/storage/resources?seriesId=${first.series.id}`,
+        headers: authHeaders(accessToken),
+      });
+      const seriesData = (bySeries.body as DataResponse<StorageResourcesResponseData>).data;
+      expect(seriesData.total).toBe(1);
+      expect(seriesData.items[0]?.seriesId).toBe(first.series.id);
+
+      const bySeason = await request(app, {
+        method: "GET",
+        path: `/api/storage/resources?seriesId=${first.series.id}&seasonId=${first.season.id}`,
+        headers: authHeaders(accessToken),
+      });
+      const seasonData = (bySeason.body as DataResponse<StorageResourcesResponseData>).data;
+      expect(seasonData.total).toBe(1);
+      expect(seasonData.items[0]?.seasonId).toBe(first.season.id);
+    });
   });
 
   describe("GET /api/storage/series", () => {

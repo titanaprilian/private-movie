@@ -259,6 +259,49 @@ describe("StorageService Unit Tests", () => {
 
       await expect(service.getSeries()).resolves.toEqual({ items: [], total: 0 });
     });
+
+    it("scopes getResources by seriesId and seasonId", async () => {
+      const { service } = setupSeries(
+        [
+          linkedRow(),
+          linkedRow({
+            id: "src-2",
+            episodeId: "ep-2",
+            url: "episodes/ep-2/video.mp4",
+            episodeTitle: "Episode 2",
+            seasonId: "season-2",
+            seasonNumber: 2,
+            seasonTitle: "Season 2",
+          }),
+          linkedRow({
+            id: "src-3",
+            episodeId: "ep-3",
+            url: "series-b/ep3.mp4",
+            episodeTitle: "Pilot",
+            seasonId: "season-9",
+            seasonNumber: 1,
+            seriesId: "series-2",
+            seriesTitle: "Second Series",
+          }),
+        ],
+        [
+          { key: "episodes/ep-1/video.mp4", size: 500 },
+          { key: "episodes/ep-2/video.mp4", size: 300 },
+          { key: "series-b/ep3.mp4", size: 700 },
+        ]
+      );
+
+      const bySeries = await service.getResources({ seriesId: "series-1" });
+      expect(bySeries.total).toBe(2);
+      expect(bySeries.items.every((i) => i.seriesId === "series-1")).toBe(true);
+
+      const bySeason = await service.getResources({
+        seriesId: "series-1",
+        seasonId: "season-2",
+      });
+      expect(bySeason.total).toBe(1);
+      expect(bySeason.items[0]?.key).toBe("episodes/ep-2/video.mp4");
+    });
   });
 
   describe("MinioDeps export", () => {    it("is exported from the public storage module entry point", () => {

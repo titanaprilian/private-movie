@@ -231,6 +231,7 @@ const mockBackendItems = [
 describe('Storage Management Console UI', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    window.history.replaceState(null, '', '/admin/storage');
     setAccessToken('test-access-token');
     vi.spyOn(globalThis, 'fetch').mockImplementation(
       async (input: RequestInfo | URL) => {
@@ -530,10 +531,10 @@ describe('Storage Management Console UI', () => {
       const firstRow = await screen.findByTestId('series-row-series-1');
       await user.click(firstRow);
 
-      expect(firstRow).toHaveAttribute('data-selected', 'true');
-      expect(screen.getByTestId('series-row-series-2')).not.toHaveAttribute(
-        'data-selected'
-      );
+      // Selecting a series transitions to the Level 2 drill-down view
+      expect(await screen.findByTestId('series-drilldown-view')).toBeInTheDocument();
+      expect(screen.getByTestId('back-to-series-btn')).toBeInTheDocument();
+      expect(window.location.search).toContain('seriesId=series-1');
     });
 
     it('displays unlinked files with purge and attach actions on the Orphaned Files tab', async () => {

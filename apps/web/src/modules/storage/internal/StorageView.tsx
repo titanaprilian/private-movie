@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Rocket, Server } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
@@ -22,7 +22,11 @@ import { useStorageModals } from './hooks/useStorageModals';
 import { StorageMetricsGrid } from './components/StorageMetricsGrid';
 import { StorageResourceTable } from './components/StorageResourceTable';
 import { StorageSeriesTable } from './components/StorageSeriesTable';
-import type { StorageSeriesItem } from './api';
+import { StorageSeriesDrilldown } from './components/StorageSeriesDrilldown';
+import {
+  storageResourcesQueryOptions,
+  type StorageSeriesItem,
+} from './api';
 import { StorageLimitDialog } from './components/dialogs/StorageLimitDialog';
 import { EditSourceModal } from './components/dialogs/EditSourceModal';
 import { AttachOrphanDialog } from './components/dialogs/AttachOrphanDialog';
@@ -51,7 +55,44 @@ export function StorageView() {
     isMinioActive,
   } = useStorageQueries();
   const modals = useStorageModals(selectedProviderId);
-  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
+
+  const readSearchParam = (key: string): string | null => {
+    try {
+      if (typeof window === 'undefined') return null;
+      const params = new URLSearchParams(window.location.search);
+      return params.get(key);
+    } catch {
+      return null;
+    }
+  };
+
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(() =>
+    readSearchParam('seriesId'),
+  );
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(() =>
+    readSearchParam('seasonId'),
+  );
+
+  // Keep browser URL in sync; fallback to local state when unavailable.
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      const url = new URL(window.location.href);
+      if (selectedSeriesId) {
+        url.searchParams.set('seriesId', selectedSeriesId);
+      } else {
+        url.searchParams.delete('seriesId');
+      }
+      if (selectedSeriesId && selectedSeasonId) {
+        url.searchParams.set('seasonId', selectedSeasonId);
+      } else {
+        url.searchParams.delete('seasonId');
+      }
+      window.history.replaceState(null, '', url.toString());
+    } catch {
+      // Fallback local state only
+    }
+  }, [selectedSeriesId, selectedSeasonId]);
 
   const orphanedResources = useMemo(
     () => resources.filter((r) => r.status === 'orphaned'),
@@ -60,7 +101,58 @@ export function StorageView() {
 
   const handleSelectSeries = (item: StorageSeriesItem) => {
     setSelectedSeriesId(item.id);
+    setSelectedSeasonId(null);
   };
+
+  const handleBackToSeries = () => {
+    setSelectedSeriesId(null);
+    setSelectedSeasonId(null);
+  };
+
+  const activeSeries = series.find((s) => s.id === selectedSeriesId) ?? null;
+
+  // Server-scoped drill-down query; client memo below filters as fallback
+  // (e.g. cached/unfiltered payloads) by series/season.
+  const drilldownQueryParams = useMemo(
+    () =>
+      selectedProviderId
+        ? {
+            providerId: selectedProviderId,
+            ...(selectedSeriesId ? { seriesId: selectedSeriesId } : {}),
+            ...(selectedSeasonId ? { seasonId: selectedSeasonId } : {}),
+          }
+        : {
+            ...(selectedSeriesId ? { seriesId: selectedSeriesId } : {}),
+            ...(selectedSeasonId ? { seasonId: selectedSeasonId } : {}),
+          },
+    [selectedProviderId, selectedSeriesId, selectedSeasonId],
+  );
+  const { data: drilldownData, isLoading: isLoadingDrilldown } = useQuery({
+    ...storageResourcesQueryOptions(drilldownQueryParams),
+    enabled: Boolean(selectedSeriesId),
+  });
+  const drilldownResources = useMemo(() => {
+    const items = drilldownData?.data ?? [];
+    return items.filter((r) => {
+      if (selectedSeriesId && r.episode && r.episode.seriesId !== selectedSeriesId)
+        return false;
+      if (
+        selectedSeriesId &&
+        !r.episode &&
+        selectedSeasonId === null
+      ) {
+        // Orphaned files have no series; exclude from series drill-down
+        // when the server returned an unfiltered payload.
+        // Detect server-side scoping: if every item links to the series,
+        // the payload is already scoped and this branch is unreachable.
+        const allLinkedToSeries = items.length > 0 && items.every((i) => i.episode?.seriesId === selectedSeriesId);
+        if (!allLinkedToSeries) return false;
+      }
+      if (selectedSeasonId && r.episode?.seasonId !== selectedSeasonId)
+        return false;
+      return true;
+    });
+  }, [drilldownData, selectedSeriesId, selectedSeasonId]);
 
   if (activeError) {
     return (
@@ -222,7 +314,46 @@ export function StorageView() {
         providerName={activeProvider?.name}
       />
 
-      {/* Level 1 Overview: Series & Orphaned Files master tabs */}
+      {/* Level 2 Drill-down: scoped series view with season navigation */}
+      {activeSeries ? (
+        <StorageSeriesDrilldown
+          series={activeSeries}
+          seasons={activeSeries.seasons}
+          activeSeasonId={selectedSeasonId}
+          onSelectSeason={setSelectedSeasonId}
+          onBack={handleBackToSeries}
+          resources={drilldownResources}
+          isLoading={isLoadingDrilldown}
+          renderTable={(scopedResources) => (
+            <StorageResourceTable
+              resources={scopedResources}
+              isLoading={isLoadingDrilldown}
+              orphanedCount={metrics?.orphanCount ?? 0}
+              onRefreshScan={() => modals.refreshScanMutation.mutate()}
+              isRefreshing={modals.refreshScanMutation.isPending}
+              onPreview={(res) => modals.setPreviewResource(res)}
+              onEditSource={(res) => {
+                if (res.videoSource) {
+                  modals.setEditingSource({ ...res.videoSource, key: res.key });
+                }
+              }}
+              onAttachOrphan={(res) => modals.setAttachingResource(res)}
+              onDeleteSingle={(res) => {
+                modals.setDeleteSingleResource(res);
+                modals.setDeleteTargetType('single');
+              }}
+              onDeleteBatch={(selected) => {
+                modals.setDeleteBatchResources(selected);
+                modals.setDeleteTargetType('batch');
+              }}
+              onPurgeOrphans={() => {
+                modals.setDeleteTargetType('purge');
+              }}
+            />
+          )}
+        />
+      ) : (
+      /* Level 1 Overview: Series & Orphaned Files master tabs */
       <ChunkyTabs defaultValue="series" data-testid="storage-overview-tabs">
         <ChunkyTabsList>
           <ChunkyTabsTrigger value="series" data-testid="tab-trigger-series">
@@ -271,6 +402,7 @@ export function StorageView() {
           />
         </ChunkyTabsContent>
       </ChunkyTabs>
+      )}
 
       {/* Dialogs & Drawer */}
       <MinioSpinUpModal

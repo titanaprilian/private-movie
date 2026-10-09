@@ -492,6 +492,14 @@ export function createStorageService<
 
       let filtered = items;
 
+      if (query?.seriesId) {
+        filtered = filtered.filter((item) => item.seriesId === query.seriesId);
+      }
+
+      if (query?.seasonId) {
+        filtered = filtered.filter((item) => item.seasonId === query.seasonId);
+      }
+
       if (query?.status && query.status !== "all") {
         filtered = filtered.filter((item) => item.status === query.status);
       }

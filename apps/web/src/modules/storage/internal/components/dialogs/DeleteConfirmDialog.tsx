@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { AlertTriangle } from 'lucide-react';
 import { formatDualBytes, type StorageResource } from '../../api';
 
@@ -109,8 +110,8 @@ export function DeleteConfirmDialog({
       onOpenChange={onOpenChange}
       title={title}
       description={
-        <div className="space-y-3 pt-1 text-left">
-          <p>{leadDescription}</p>
+        <div className="space-y-3 pt-1 text-left min-w-0">
+          <p className="break-words">{leadDescription}</p>
 
           {/* Summary Box */}
           <ChunkyCard className="p-3 space-y-1.5 font-mono">
@@ -160,13 +161,17 @@ export function DeleteConfirmDialog({
                     : `${loneSourceEpisodes.length} episodes`}{' '}
                   with 0 playable video sources:
                 </p>
-                <ul className="list-disc list-inside font-mono text-[11px] font-semibold space-y-0.5">
-                  {loneSourceEpisodes.map((ep, i) => (
-                    <li key={i} className="truncate">
-                      {ep.seriesTitle ? `${ep.seriesTitle} — ` : ''}S
-                      {ep.seasonNumber ?? 1}E{ep.episodeNumber ?? 1}: {ep.title}
-                    </li>
-                  ))}
+                <ul className="list-disc list-inside font-mono text-[11px] font-semibold space-y-0.5 min-w-0">
+                  {loneSourceEpisodes.map((ep, i) => {
+                    const fullLabel = `${ep.seriesTitle ? `${ep.seriesTitle} — ` : ''}S${ep.seasonNumber ?? 1}E${ep.episodeNumber ?? 1}: ${ep.title}`;
+                    return (
+                      <li key={i} className="min-w-0">
+                        <ChunkyTooltip content={<span className="break-words">{fullLabel}</span>}>
+                          <span className="line-clamp-2 break-words">{fullLabel}</span>
+                        </ChunkyTooltip>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </ChunkyCard>

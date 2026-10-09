@@ -76,6 +76,7 @@ export interface EpisodeMetadata {
   title: string;
   episodeNumber: number;
   seasonNumber: number;
+  seasonId?: string;
   seriesId: string;
   seriesTitle: string;
   sourceCount: number;
@@ -179,6 +180,7 @@ function mapResourceItem(item: StorageResourceItem): StorageResource {
             title: item.episodeTitle || '',
             episodeNumber: item.episodeOrder ?? 1,
             seasonNumber: item.seasonNumber ?? 1,
+            seasonId: item.seasonId || undefined,
             seriesId: item.seriesId || '',
             seriesTitle: item.seriesTitle || '',
             sourceCount: item.isLoneSource ? 1 : 2,
@@ -215,6 +217,8 @@ export async function fetchStorageResources(
 ): Promise<StorageResourcesResponse> {
   const query: Record<string, string> = {};
   if (params.providerId) query.providerId = params.providerId;
+  if (params.seriesId) query.seriesId = params.seriesId;
+  if (params.seasonId) query.seasonId = params.seasonId;
   if (params.status) query.status = params.status;
   if (params.search) query.search = params.search;
   if (params.sortBy) query.sortBy = params.sortBy;
@@ -225,6 +229,8 @@ export async function fetchStorageResources(
   const res = await api.storage.resources.get({
     $query: query as {
       providerId?: string;
+      seriesId?: string;
+      seasonId?: string;
       status?: string;
       search?: string;
       sortBy?: string;
