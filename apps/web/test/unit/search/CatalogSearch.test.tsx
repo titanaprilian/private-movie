@@ -278,3 +278,79 @@ describe('CatalogSearch Component', () => {
     expect(screen.queryByTestId('search-dropdown')).not.toBeInTheDocument();
   });
 });
+
+describe('CatalogSearch Chunky UI Design System', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fetchSeries).mockResolvedValue(mockSearchResponse);
+  });
+
+  it('renders tactile ChunkyInput with Lucide icons and no raw SVGs', () => {
+    const { container } = renderWithProviders(<CatalogSearch />);
+    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    // ChunkyInput carries chunky geometry: rounded-2xl + 3D bottom bevel
+    expect(input.className).toContain('rounded-2xl');
+    expect(input.className).toContain('border-b-4');
+    // Lucide icons render (svg with lucide class), but no hand-rolled raw svg without lucide classes
+    const svgs = container.querySelectorAll('svg');
+    expect(svgs.length).toBeGreaterThan(0);
+    svgs.forEach((svg) => {
+      expect(svg.getAttribute('class') ?? '').toContain('lucide');
+    });
+  });
+
+  it('displays ChunkySkeleton primitives with chunky corner radii in loading state', () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(fetchSeries).mockImplementation(() => new Promise(() => {}));
+
+      const { container } = renderWithProviders(<CatalogSearch />);
+      const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+      fireEvent.change(input, { target: { value: 'Solo' } });
+
+      expect(screen.getByTestId('search-skeleton')).toBeInTheDocument();
+      const skeletons = container.querySelectorAll('[data-testid="chunky-skeleton"]');
+      expect(skeletons.length).toBeGreaterThan(0);
+      skeletons.forEach((el) => {
+        expect(el.className).toContain('rounded-2xl');
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('renders result items and badges with high-contrast 2px borders', async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setDefaultOptions({ queries: { retry: false, staleTime: Infinity } });
+    queryClient.setQueryData(
+      seriesSearchQueryOptions('Solo').queryKey,
+      mockSearchResponse
+    );
+
+    renderWithProviders(<CatalogSearch />, { queryClient });
+    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    fireEvent.change(input, { target: { value: 'Solo' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Solo Leveling')).toBeInTheDocument();
+    });
+
+    // Rating badges keep test contract and use chunky 2px borders
+    const badges = screen.getAllByTestId('rating-badge');
+    expect(badges.length).toBe(2);
+    badges.forEach((badge) => {
+      expect(badge.className).toContain('border-2');
+      expect(badge.className).toContain('rounded-lg');
+    });
+
+    // Dropdown popover uses chunky 3D bevel
+    expect(screen.getByTestId('search-dropdown').className).toContain('border-b-4');
+
+    // No raw inline SVGs anywhere in the dropdown
+    const dropdown = screen.getByTestId('search-dropdown');
+    const rawSvgs = Array.from(dropdown.querySelectorAll('svg')).filter(
+      (svg) => !(svg.getAttribute('class') ?? '').includes('lucide')
+    );
+    expect(rawSvgs.length).toBe(0);
+  });
+});
