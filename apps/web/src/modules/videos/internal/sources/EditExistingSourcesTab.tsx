@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
 import { type StorageProviderItem } from '@/modules/storage';
 import {
   type VideoSource,
@@ -84,99 +83,106 @@ export function EditSourceRow({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label className="text-[10px] text-muted">Label</Label>
-          <Input
+          <span className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+            Label
+          </span>
+          <ChunkyInput
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            className="text-xs h-8"
+            aria-label="Label"
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted">Type</Label>
-          <Select
+          <span className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+            Type
+          </span>
+          <ChunkySelect
             value={type}
             onValueChange={(val) => setType(val as 'direct' | 'embed' | 's3')}
           >
-            <SelectTrigger className="w-full h-8 px-2 text-xs mono">
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="direct">Direct</SelectItem>
-              <SelectItem value="embed">Embed</SelectItem>
-              <SelectItem value="s3">S3 Storage</SelectItem>
-            </SelectContent>
-          </Select>
+            <ChunkySelectTrigger aria-label="Type">
+              <ChunkySelectValue placeholder="Select type" />
+            </ChunkySelectTrigger>
+            <ChunkySelectContent>
+              <ChunkySelectItem value="direct">Direct</ChunkySelectItem>
+              <ChunkySelectItem value="embed">Embed</ChunkySelectItem>
+              <ChunkySelectItem value="s3">S3 Storage</ChunkySelectItem>
+            </ChunkySelectContent>
+          </ChunkySelect>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label className="text-[10px] text-muted">URL / S3 Key</Label>
-          <Input
+          <span className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+            URL / S3 Key
+          </span>
+          <ChunkyInput
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="text-xs h-8"
+            aria-label="URL / S3 Key"
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted">Quality</Label>
-          <Input
+          <span className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+            Quality
+          </span>
+          <ChunkyInput
             value={quality}
             onChange={(e) => setQuality(e.target.value)}
             placeholder="e.g. 720p"
-            className="text-xs h-8"
+            aria-label="Quality"
           />
         </div>
       </div>
       {type === 's3' && providers && providers.length > 0 && (
         <div>
-          <Label className="text-[10px] text-muted">S3 Storage Provider</Label>
-          <Select
+          <span className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+            S3 Storage Provider
+          </span>
+          <ChunkySelect
             value={storageProviderId || 'default'}
             onValueChange={(val) => setStorageProviderId(val === 'default' ? null : val)}
           >
-            <SelectTrigger className="w-full h-8 px-2 text-xs mono">
-              <SelectValue placeholder="Default Provider" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="default">Default Provider</SelectItem>
+            <ChunkySelectTrigger aria-label="S3 Storage Provider">
+              <ChunkySelectValue placeholder="Default Provider" />
+            </ChunkySelectTrigger>
+            <ChunkySelectContent>
+              <ChunkySelectItem value="default">Default Provider</ChunkySelectItem>
               {providers.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
+                <ChunkySelectItem key={p.id} value={p.id}>
                   {p.name} {p.isDefault ? '(Default)' : ''}
-                </SelectItem>
+                </ChunkySelectItem>
               ))}
-            </SelectContent>
-          </Select>
+            </ChunkySelectContent>
+          </ChunkySelect>
         </div>
       )}
       <div className="flex items-center justify-between pt-1 gap-2">
-        <Button
+        <ChunkyButton
           type="button"
           size="sm"
-          variant="outline"
-          className="text-xs h-7 border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+          variant="danger"
           disabled={isPending}
           onClick={onDelete}
         >
           Remove Source
-        </Button>
+        </ChunkyButton>
         <div className="flex items-center gap-2">
           {source.type === 'direct' && onIngestToS3 && (
-            <Button
+            <ChunkyButton
               type="button"
               size="sm"
               variant="outline"
-              className="text-xs h-7 border-purple-200 dark:border-purple-900/50 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30"
               disabled={isPending}
               onClick={onIngestToS3}
             >
               Ingest to S3
-            </Button>
+            </ChunkyButton>
           )}
-          <Button
+          <ChunkyButton
             type="button"
             size="sm"
-            variant="secondary"
-            className="text-xs h-7"
+            variant="primary"
             disabled={isPending}
             onClick={() => {
               const updates: {
@@ -198,7 +204,7 @@ export function EditSourceRow({
             }}
           >
             Update Source
-          </Button>
+          </ChunkyButton>
         </div>
       </div>
     </div>

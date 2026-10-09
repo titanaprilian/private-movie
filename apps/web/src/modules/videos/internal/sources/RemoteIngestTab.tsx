@@ -1,16 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
 import { type StorageProviderItem } from '@/modules/storage';
 import { remoteIngestEpisodeVideoSource, parseIngestUrl } from '../api';
 
@@ -199,25 +198,30 @@ export function RemoteIngestTab({
       )}
 
       <div>
-        <Label htmlFor="remote-url" className="text-[10px] text-muted">
+        <label
+          htmlFor="remote-url"
+          className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+        >
           Video URL
-        </Label>
-        <Input
+        </label>
+        <ChunkyInput
           id="remote-url"
           placeholder="https://example.com/video.mp4"
           value={remoteUrl}
           onChange={(e) => handleRemoteUrlChange(e.target.value)}
           disabled={isIngesting}
-          className="text-xs h-8"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label htmlFor="remote-label" className="text-[10px] text-muted">
+          <label
+            htmlFor="remote-label"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Label
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="remote-label"
             placeholder="e.g. S3 1080p"
             value={remoteLabel}
@@ -226,14 +230,16 @@ export function RemoteIngestTab({
               isRemoteLabelManuallyEdited.current = true;
             }}
             disabled={isIngesting}
-            className="text-xs h-8"
           />
         </div>
         <div>
-          <Label htmlFor="remote-quality" className="text-[10px] text-muted">
+          <label
+            htmlFor="remote-quality"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Quality
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="remote-quality"
             placeholder="e.g. 1080p"
             value={remoteQuality}
@@ -242,36 +248,37 @@ export function RemoteIngestTab({
               isRemoteLabelManuallyEdited.current = true;
             }}
             disabled={isIngesting}
-            className="text-xs h-8"
           />
         </div>
       </div>
 
       {providers.length > 0 && (
         <div>
-          <Label htmlFor="remote-provider-select" className="text-[10px] text-muted">
+          <label
+            htmlFor="remote-provider-select"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Target S3 Storage Provider
-          </Label>
-          <Select
+          </label>
+          <ChunkySelect
             value={remoteProviderId || defaultProvider?.id || ''}
             onValueChange={(val) => setRemoteProviderId(val)}
             disabled={isIngesting}
           >
-            <SelectTrigger
+            <ChunkySelectTrigger
               id="remote-provider-select"
               data-testid="remote-provider-select"
-              className="w-full h-8 px-2 text-xs mono"
             >
-              <SelectValue placeholder="Select storage provider" />
-            </SelectTrigger>
-            <SelectContent>
+              <ChunkySelectValue placeholder="Select storage provider" />
+            </ChunkySelectTrigger>
+            <ChunkySelectContent>
               {providers.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
+                <ChunkySelectItem key={p.id} value={p.id}>
                   {p.name} {p.isDefault ? '(Default)' : ''}
-                </SelectItem>
+                </ChunkySelectItem>
               ))}
-            </SelectContent>
-          </Select>
+            </ChunkySelectContent>
+          </ChunkySelect>
         </div>
       )}
 
@@ -289,16 +296,18 @@ export function RemoteIngestTab({
         {showAdvancedHeaders && (
           <div className="mt-2 p-2 border border-c rounded bg-sidebar space-y-2">
             <div>
-              <Label htmlFor="remote-referer" className="text-[10px] text-muted">
+              <label
+                htmlFor="remote-referer"
+                className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+              >
                 Referer Header
-              </Label>
-              <Input
+              </label>
+              <ChunkyInput
                 id="remote-referer"
                 placeholder="e.g. https://remotehost.com"
                 value={remoteReferer}
                 onChange={(e) => setRemoteReferer(e.target.value)}
                 disabled={isIngesting}
-                className="text-xs h-8"
               />
             </div>
           </div>
@@ -329,26 +338,26 @@ export function RemoteIngestTab({
       {/* Action Buttons */}
       <div className="flex gap-2">
         {isIngesting ? (
-          <Button
+          <ChunkyButton
             type="button"
             size="sm"
-            variant="destructive"
-            className="w-full text-xs h-8"
+            variant="danger"
+            className="w-full"
             onClick={cancelRemoteIngest}
           >
             Cancel Ingest
-          </Button>
+          </ChunkyButton>
         ) : (
-          <Button
+          <ChunkyButton
             type="button"
             size="sm"
-            variant="default"
-            className="w-full text-xs h-8"
+            variant="primary"
+            className="w-full"
             disabled={!remoteUrl.trim() || !remoteLabel.trim()}
             onClick={handleRemoteIngest}
           >
             Ingest to S3
-          </Button>
+          </ChunkyButton>
         )}
       </div>
     </div>

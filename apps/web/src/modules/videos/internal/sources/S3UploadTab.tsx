@@ -1,16 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyInput } from '@/components/ui/chunky-input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  ChunkySelect,
+  ChunkySelectContent,
+  ChunkySelectItem,
+  ChunkySelectTrigger,
+  ChunkySelectValue,
+} from '@/components/ui/chunky-select';
 import { type StorageProviderItem } from '@/modules/storage';
 import {
   uploadEpisodeVideoSource,
@@ -230,7 +229,9 @@ export function S3UploadTab({
 
       {/* File Dropzone / Picker */}
       <div>
-        <Label className="text-[10px] text-muted">Video File (.mp4, .mkv, .webm)</Label>
+        <span className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+          Video File (.mp4, .mkv, .webm)
+        </span>
         <input
           type="file"
           ref={fileInputRef}
@@ -278,29 +279,33 @@ export function S3UploadTab({
       {/* Form Fields */}
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <Label htmlFor="upload-label" className="text-[10px] text-muted">
+          <label
+            htmlFor="upload-label"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Label
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="upload-label"
             placeholder="e.g. S3 High Quality"
             value={uploadLabel}
             onChange={(e) => setUploadLabel(e.target.value)}
             disabled={isUploading}
-            className="text-xs h-8"
           />
         </div>
         <div>
-          <Label htmlFor="upload-quality" className="text-[10px] text-muted">
+          <label
+            htmlFor="upload-quality"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Quality
-          </Label>
-          <Input
+          </label>
+          <ChunkyInput
             id="upload-quality"
             placeholder="e.g. 1080p"
             value={uploadQuality}
             onChange={(e) => setUploadQuality(e.target.value)}
             disabled={isUploading}
-            className="text-xs h-8"
           />
         </div>
       </div>
@@ -308,29 +313,31 @@ export function S3UploadTab({
       {/* Target S3 Provider Selector for Upload */}
       {providers.length > 0 && (
         <div>
-          <Label htmlFor="upload-provider-select" className="text-[10px] text-muted">
+          <label
+            htmlFor="upload-provider-select"
+            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
+          >
             Target S3 Storage Provider
-          </Label>
-          <Select
+          </label>
+          <ChunkySelect
             value={uploadProviderId || defaultProvider?.id || ''}
             onValueChange={(val) => setUploadProviderId(val)}
             disabled={isUploading}
           >
-            <SelectTrigger
+            <ChunkySelectTrigger
               id="upload-provider-select"
               data-testid="upload-provider-select"
-              className="w-full h-8 px-2 text-xs mono"
             >
-              <SelectValue placeholder="Select storage provider" />
-            </SelectTrigger>
-            <SelectContent>
+              <ChunkySelectValue placeholder="Select storage provider" />
+            </ChunkySelectTrigger>
+            <ChunkySelectContent>
               {providers.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
+                <ChunkySelectItem key={p.id} value={p.id}>
                   {p.name} {p.isDefault ? '(Default)' : ''}
-                </SelectItem>
+                </ChunkySelectItem>
               ))}
-            </SelectContent>
-          </Select>
+            </ChunkySelectContent>
+          </ChunkySelect>
         </div>
       )}
 
@@ -384,26 +391,26 @@ export function S3UploadTab({
       {/* Action Buttons */}
       <div className="flex gap-2">
         {isUploading ? (
-          <Button
+          <ChunkyButton
             type="button"
             size="sm"
-            variant="destructive"
-            className="w-full text-xs h-8"
+            variant="danger"
+            className="w-full"
             onClick={cancelUpload}
           >
             Cancel
-          </Button>
+          </ChunkyButton>
         ) : (
-          <Button
+          <ChunkyButton
             type="button"
             size="sm"
-            variant="default"
-            className="w-full text-xs h-8"
+            variant="primary"
+            className="w-full"
             disabled={!selectedFile || !uploadLabel.trim()}
             onClick={handleUpload}
           >
             Upload
-          </Button>
+          </ChunkyButton>
         )}
       </div>
     </div>
