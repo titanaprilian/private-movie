@@ -23,7 +23,8 @@
     },
     "@repo/android-tv#build": {
       "dependsOn": ["^build", "@repo/android-tv#test"],
-      "outputs": ["app/build/outputs/**"]
+      "outputs": ["app/build/outputs/**"],
+      "env": ["BACKEND_API_URL"]
     },
     "test": {
       "dependsOn": ["^build"]

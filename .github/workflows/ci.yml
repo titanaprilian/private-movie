@@ -53,6 +53,7 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       TURBO_DAEMON: "false"
+      BACKEND_API_URL: "https://example.com"
 
     steps:
       - name: Checkout
