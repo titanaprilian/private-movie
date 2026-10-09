@@ -5,6 +5,9 @@ import type {
   StorageResourceItem,
   StorageResourcesQuery,
   StorageResourcesResponseData,
+  StorageSeriesItem,
+  StorageSeriesQuery,
+  StorageSeriesResponseData,
   StorageLimitUpdateRequest,
   StorageLimitUpdateResponseData,
   StorageUpdateSourceMetadataRequest,
@@ -31,6 +34,9 @@ export type {
   StorageResourceItem,
   StorageResourcesQuery,
   StorageResourcesResponseData,
+  StorageSeriesItem,
+  StorageSeriesQuery,
+  StorageSeriesResponseData,
   StorageLimitUpdateRequest,
   StorageLimitUpdateResponseData,
   StorageUpdateSourceMetadataRequest,
@@ -249,6 +255,33 @@ export function storageResourcesQueryOptions(params: StorageResourcesQuery = {})
   return queryOptions({
     queryKey: ['storage', 'resources', params],
     queryFn: () => fetchStorageResources(params),
+  });
+}
+
+export async function fetchStorageSeries(
+  params: StorageSeriesQuery = {}
+): Promise<StorageSeriesResponseData> {
+  const query: Record<string, string> = {};
+  if (params.providerId) query.providerId = params.providerId;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (api.storage as any).series.get({
+    $query: query as { providerId?: string },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (res.data as any)?.data as StorageSeriesResponseData | undefined;
+  if (res.error || !data) {
+    throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage series'));
+  }
+
+  return data;
+}
+
+export function storageSeriesQueryOptions(params: StorageSeriesQuery = {}) {
+  return queryOptions({
+    queryKey: ['storage', 'series', params],
+    queryFn: () => fetchStorageSeries(params),
   });
 }
 

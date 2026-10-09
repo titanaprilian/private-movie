@@ -1,8 +1,15 @@
+import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Rocket, Server } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ErrorState } from '@/components/ui/error-state';
+import {
+  ChunkyTabs,
+  ChunkyTabsContent,
+  ChunkyTabsList,
+  ChunkyTabsTrigger,
+} from '@/components/ui/chunky-tabs';
 import {
   ChunkySelect,
   ChunkySelectContent,
@@ -14,6 +21,8 @@ import { useStorageQueries } from './hooks/useStorageQueries';
 import { useStorageModals } from './hooks/useStorageModals';
 import { StorageMetricsGrid } from './components/StorageMetricsGrid';
 import { StorageResourceTable } from './components/StorageResourceTable';
+import { StorageSeriesTable } from './components/StorageSeriesTable';
+import type { StorageSeriesItem } from './api';
 import { StorageLimitDialog } from './components/dialogs/StorageLimitDialog';
 import { EditSourceModal } from './components/dialogs/EditSourceModal';
 import { AttachOrphanDialog } from './components/dialogs/AttachOrphanDialog';
@@ -33,6 +42,8 @@ export function StorageView() {
     isLoadingMetrics,
     isLoadingResources,
     resources,
+    series,
+    isLoadingSeries,
     activeError,
     handleRetryStorage,
     refetchProviders,
@@ -40,6 +51,16 @@ export function StorageView() {
     isMinioActive,
   } = useStorageQueries();
   const modals = useStorageModals(selectedProviderId);
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
+
+  const orphanedResources = useMemo(
+    () => resources.filter((r) => r.status === 'orphaned'),
+    [resources],
+  );
+
+  const handleSelectSeries = (item: StorageSeriesItem) => {
+    setSelectedSeriesId(item.id);
+  };
 
   if (activeError) {
     return (
@@ -201,32 +222,55 @@ export function StorageView() {
         providerName={activeProvider?.name}
       />
 
-      {/* Resources Table Section */}
-      <StorageResourceTable
-        resources={resources}
-        isLoading={isLoadingResources}
-        orphanedCount={metrics?.orphanCount ?? 0}
-        onRefreshScan={() => modals.refreshScanMutation.mutate()}
-        isRefreshing={modals.refreshScanMutation.isPending}
-        onPreview={(res) => modals.setPreviewResource(res)}
-        onEditSource={(res) => {
-          if (res.videoSource) {
-            modals.setEditingSource({ ...res.videoSource, key: res.key });
-          }
-        }}
-        onAttachOrphan={(res) => modals.setAttachingResource(res)}
-        onDeleteSingle={(res) => {
-          modals.setDeleteSingleResource(res);
-          modals.setDeleteTargetType('single');
-        }}
-        onDeleteBatch={(selected) => {
-          modals.setDeleteBatchResources(selected);
-          modals.setDeleteTargetType('batch');
-        }}
-        onPurgeOrphans={() => {
-          modals.setDeleteTargetType('purge');
-        }}
-      />
+      {/* Level 1 Overview: Series & Orphaned Files master tabs */}
+      <ChunkyTabs defaultValue="series" data-testid="storage-overview-tabs">
+        <ChunkyTabsList>
+          <ChunkyTabsTrigger value="series" data-testid="tab-trigger-series">
+            Series{series.length > 0 ? ` (${series.length})` : ''}
+          </ChunkyTabsTrigger>
+          <ChunkyTabsTrigger value="orphaned" data-testid="tab-trigger-orphaned">
+            Orphaned Files
+            {metrics && metrics.orphanCount > 0 ? ` (${metrics.orphanCount})` : ''}
+          </ChunkyTabsTrigger>
+        </ChunkyTabsList>
+
+        <ChunkyTabsContent value="series">
+          <StorageSeriesTable
+            series={series}
+            isLoading={isLoadingSeries}
+            selectedSeriesId={selectedSeriesId}
+            onSelectSeries={handleSelectSeries}
+          />
+        </ChunkyTabsContent>
+
+        <ChunkyTabsContent value="orphaned">
+          <StorageResourceTable
+            resources={orphanedResources}
+            isLoading={isLoadingResources}
+            orphanedCount={metrics?.orphanCount ?? 0}
+            onRefreshScan={() => modals.refreshScanMutation.mutate()}
+            isRefreshing={modals.refreshScanMutation.isPending}
+            onPreview={(res) => modals.setPreviewResource(res)}
+            onEditSource={(res) => {
+              if (res.videoSource) {
+                modals.setEditingSource({ ...res.videoSource, key: res.key });
+              }
+            }}
+            onAttachOrphan={(res) => modals.setAttachingResource(res)}
+            onDeleteSingle={(res) => {
+              modals.setDeleteSingleResource(res);
+              modals.setDeleteTargetType('single');
+            }}
+            onDeleteBatch={(selected) => {
+              modals.setDeleteBatchResources(selected);
+              modals.setDeleteTargetType('batch');
+            }}
+            onPurgeOrphans={() => {
+              modals.setDeleteTargetType('purge');
+            }}
+          />
+        </ChunkyTabsContent>
+      </ChunkyTabs>
 
       {/* Dialogs & Drawer */}
       <MinioSpinUpModal

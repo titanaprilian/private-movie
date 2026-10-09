@@ -106,6 +106,49 @@ const mockResources: StorageResource[] = [
   },
 ];
 
+const mockSeriesResponse = {
+  items: [
+    {
+      id: 'series-1',
+      title: 'Cyberpunk Series',
+      s3SourceCount: 2,
+      s3SizeBytes: 6442450944, // 6 GiB
+      seasons: [
+        {
+          id: 'season-1',
+          seasonNumber: 1,
+          title: 'Season 1',
+          s3SourceCount: 2,
+          s3SizeBytes: 6442450944,
+        },
+      ],
+    },
+    {
+      id: 'series-2',
+      title: 'Space Odyssey',
+      s3SourceCount: 1,
+      s3SizeBytes: 1073741824, // 1 GiB
+      seasons: [
+        {
+          id: 'season-2',
+          seasonNumber: 1,
+          title: 'Season 1',
+          s3SourceCount: 1,
+          s3SizeBytes: 536870912,
+        },
+        {
+          id: 'season-3',
+          seasonNumber: 2,
+          title: 'Season 2',
+          s3SourceCount: 0,
+          s3SizeBytes: 536870912,
+        },
+      ],
+    },
+  ],
+  total: 2,
+};
+
 const mockBackendItems = [
   {
     key: 'movies/big_buck_bunny.mp4',
@@ -275,6 +318,12 @@ describe('Storage Management Console UI', () => {
             { status: 200, headers: { 'Content-Type': 'application/json' } }
           );
         }
+        if (url.includes('/api/storage/series')) {
+          return new Response(
+            JSON.stringify({ data: mockSeriesResponse }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
         if (url.includes('/api/storage/resources')) {
           return new Response(
             JSON.stringify({
@@ -419,67 +468,161 @@ describe('Storage Management Console UI', () => {
     });
   });
 
-  describe('StorageResourceTable component & filtering/sorting', () => {
-    it('renders resource table with items sorted by size descending by default', async () => {
+  describe('Storage overview master tabs (Series & Orphaned Files)', () => {
+    it('displays Series and Orphaned Files tabs with Series active initially', async () => {
       renderWithProviders(<StorageView />);
 
+      const seriesTab = await screen.findByTestId('tab-trigger-series');
+      const orphanedTab = await screen.findByTestId('tab-trigger-orphaned');
+
+      expect(seriesTab).toBeInTheDocument();
+      expect(orphanedTab).toBeInTheDocument();
+
+      // Series is the initial active tab
+      expect(seriesTab).toHaveAttribute('data-state', 'active');
+      expect(orphanedTab).toHaveAttribute('data-state', 'inactive');
+
+      // Series overview content is visible, orphaned file rows are not
+      expect(screen.getByTestId('series-table-container')).toBeInTheDocument();
+      expect(
+        screen.queryByText('unlinked_trailer.mp4')
+      ).not.toBeInTheDocument();
+    });
+
+    it('renders series rows showing title, S3 file count, dual-unit sizes, and season count', async () => {
+      renderWithProviders(<StorageView />);
+
+      const firstRow = await screen.findByTestId('series-row-series-1');
+      expect(firstRow).toHaveTextContent('Cyberpunk Series');
+      expect(screen.getByTestId('series-row-files-series-1')).toHaveTextContent('2');
+      expect(screen.getByTestId('series-row-size-series-1')).toHaveTextContent(
+        '6 GiB (6.44 GB)'
+      );
+      expect(
+        screen.getByTestId('series-row-seasons-series-1')
+      ).toHaveTextContent('1');
+
+      const secondRow = screen.getByTestId('series-row-series-2');
+      expect(secondRow).toHaveTextContent('Space Odyssey');
+      expect(screen.getByTestId('series-row-files-series-2')).toHaveTextContent('1');
+      expect(
+        screen.getByTestId('series-row-seasons-series-2')
+      ).toHaveTextContent('2');
+    });
+
+    it('filters visible series rows in real time by title', async () => {
+      const { user } = renderWithProviders(<StorageView />);
+
+      await screen.findByTestId('series-row-series-1');
+
+      const searchInput = screen.getByTestId('series-search-input');
+      await user.type(searchInput, 'odyssey');
+
+      expect(screen.getByTestId('series-row-series-2')).toBeInTheDocument();
+      expect(
+        screen.queryByTestId('series-row-series-1')
+      ).not.toBeInTheDocument();
+    });
+
+    it('selects a series when its row is clicked', async () => {
+      const { user } = renderWithProviders(<StorageView />);
+
+      const firstRow = await screen.findByTestId('series-row-series-1');
+      await user.click(firstRow);
+
+      expect(firstRow).toHaveAttribute('data-selected', 'true');
+      expect(screen.getByTestId('series-row-series-2')).not.toHaveAttribute(
+        'data-selected'
+      );
+    });
+
+    it('displays unlinked files with purge and attach actions on the Orphaned Files tab', async () => {
+      const { user } = renderWithProviders(<StorageView />);
+
+      await screen.findByTestId('series-row-series-1');
+      await user.click(screen.getByTestId('tab-trigger-orphaned'));
+
       await waitFor(() => {
-        expect(screen.getByText('big_buck_bunny.mp4')).toBeInTheDocument();
+        expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
+      });
+      expect(screen.getByText('temp_chunk.bin')).toBeInTheDocument();
+      // Catalogued video sources stay out of the orphaned view
+      expect(screen.queryByText('big_buck_bunny.mp4')).not.toBeInTheDocument();
+      expect(screen.queryByText('small_clip.mp4')).not.toBeInTheDocument();
+
+      expect(screen.getByTestId('purge-orphans-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('purge-orphans-btn')).toBeEnabled();
+    });
+  });
+
+  describe('StorageResourceTable component & filtering/sorting', () => {
+    it('renders orphaned resources sorted by size descending by default', async () => {
+      const { user } = renderWithProviders(<StorageView />);
+
+      await screen.findByTestId('series-row-series-1');
+      await user.click(screen.getByTestId('tab-trigger-orphaned'));
+
+      await waitFor(() => {
+        expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
       });
 
       // Wait until loading finishes and table renders rows
       await waitFor(() => {
         const rows = screen.getAllByTestId(/^row-/);
-        expect(rows.length).toBe(4);
-        expect(rows[0]).toHaveTextContent('big_buck_bunny.mp4'); // 5 GiB
-        expect(rows[0]).toHaveTextContent('5 GiB');
-        expect(rows[0]).toHaveTextContent('5.37 GB');
-        expect(rows[1]).toHaveTextContent('unlinked_trailer.mp4'); // 3 GiB
-        expect(rows[1]).toHaveTextContent('3 GiB');
-        expect(rows[1]).toHaveTextContent('3.22 GB');
+        expect(rows.length).toBe(2);
+        expect(rows[0]).toHaveTextContent('unlinked_trailer.mp4'); // 3 GiB
+        expect(rows[0]).toHaveTextContent('3 GiB');
+        expect(rows[0]).toHaveTextContent('3.22 GB');
       });
     });
 
     it('filters resources by status tabs (All, Linked, Orphaned)', async () => {
       const { user } = renderWithProviders(<StorageView />);
 
+      await screen.findByTestId('series-row-series-1');
+      await user.click(screen.getByTestId('tab-trigger-orphaned'));
+
       await waitFor(() => {
-        expect(screen.getByText('big_buck_bunny.mp4')).toBeInTheDocument();
+        expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
       });
 
-      // Click "Linked" filter tab
+      // Click "Orphaned" filter tab keeps the unlinked files visible
+      await user.click(screen.getByTestId('filter-tab-orphaned'));
+      expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
+      expect(screen.getByText('temp_chunk.bin')).toBeInTheDocument();
+
+      // Click "Linked" filter tab hides orphaned files in this isolated view
       await user.click(screen.getByTestId('filter-tab-linked'));
-      expect(screen.getByText('big_buck_bunny.mp4')).toBeInTheDocument();
-      expect(screen.getByText('small_clip.mp4')).toBeInTheDocument();
       expect(
         screen.queryByText('unlinked_trailer.mp4')
       ).not.toBeInTheDocument();
-
-      // Click "Orphaned" filter tab
-      await user.click(screen.getByTestId('filter-tab-orphaned'));
-      expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
-      expect(screen.queryByText('big_buck_bunny.mp4')).not.toBeInTheDocument();
     });
 
     it('searches resources by filename or series title', async () => {
       const { user } = renderWithProviders(<StorageView />);
 
+      await screen.findByTestId('series-row-series-1');
+      await user.click(screen.getByTestId('tab-trigger-orphaned'));
+
       await waitFor(() => {
-        expect(screen.getByText('big_buck_bunny.mp4')).toBeInTheDocument();
+        expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
       });
 
       const searchInput = screen.getByTestId('storage-search-input');
       await user.type(searchInput, 'trailer');
 
       expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
-      expect(screen.queryByText('big_buck_bunny.mp4')).not.toBeInTheDocument();
+      expect(screen.queryByText('temp_chunk.bin')).not.toBeInTheDocument();
     });
 
     it('sorts columns by name when clicking name header', async () => {
       const { user } = renderWithProviders(<StorageView />);
 
+      await screen.findByTestId('series-row-series-1');
+      await user.click(screen.getByTestId('tab-trigger-orphaned'));
+
       await waitFor(() => {
-        expect(screen.getByText('big_buck_bunny.mp4')).toBeInTheDocument();
+        expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
       });
 
       // Click Name sort header
@@ -493,8 +636,11 @@ describe('Storage Management Console UI', () => {
     it('supports batch selection and batch toolbar display', async () => {
       const { user } = renderWithProviders(<StorageView />);
 
+      await screen.findByTestId('series-row-series-1');
+      await user.click(screen.getByTestId('tab-trigger-orphaned'));
+
       await waitFor(() => {
-        expect(screen.getByText('big_buck_bunny.mp4')).toBeInTheDocument();
+        expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
       });
 
       const selectAll = screen.getByTestId('select-all-checkbox');
@@ -502,7 +648,7 @@ describe('Storage Management Console UI', () => {
 
       expect(screen.getByTestId('batch-toolbar')).toBeInTheDocument();
       expect(screen.getByTestId('delete-selected-btn')).toHaveTextContent(
-        'Delete Selected (4)'
+        'Delete Selected (2)'
       );
     });
   });

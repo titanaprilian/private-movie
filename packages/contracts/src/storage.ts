@@ -186,8 +186,34 @@ export interface TestStorageProviderResponseData {
   latencyMs?: number;
 }
 
+export interface StorageSeriesSeasonItem {
+  id: string;
+  seasonNumber: number;
+  title: string;
+  s3SourceCount: number;
+  s3SizeBytes: number;
+}
+
+export interface StorageSeriesItem {
+  id: string;
+  title: string;
+  s3SourceCount: number;
+  s3SizeBytes: number;
+  seasons: StorageSeriesSeasonItem[];
+}
+
+export interface StorageSeriesQuery {
+  providerId?: string;
+}
+
+export interface StorageSeriesResponseData {
+  items: StorageSeriesItem[];
+  total: number;
+}
+
 export type StorageMetricsResponse = StorageSuccessEnvelope<StorageMetrics>;
 export type StorageResourcesResponse = StorageSuccessEnvelope<StorageResourcesResponseData>;
+export type StorageSeriesResponse = StorageSuccessEnvelope<StorageSeriesResponseData>;
 export type StorageLimitUpdateResponse = StorageSuccessEnvelope<StorageLimitUpdateResponseData>;
 export type StorageDeleteResponse = StorageSuccessEnvelope<StorageDeleteResponseData>;
 export type StoragePurgeOrphansResponse = StorageSuccessEnvelope<StoragePurgeOrphansResponseData>;

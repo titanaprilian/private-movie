@@ -298,6 +298,28 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               },
             }
           )
+          .get(
+            "/series",
+            async ({ query }) => {
+              const series = await storageService.getSeries({
+                providerId: query?.providerId,
+              });
+              return successResponse(series);
+            },
+            {
+              query: t.Optional(
+                t.Object({
+                  providerId: t.Optional(t.String()),
+                })
+              ),
+              detail: {
+                tags: ["Storage"],
+                summary: "List storage series",
+                description:
+                  "Lists series with aggregated S3 video file counts, byte totals, and season breakdowns.",
+              },
+            }
+          )
           .post(
             "/scan",
             async ({ body }) => {

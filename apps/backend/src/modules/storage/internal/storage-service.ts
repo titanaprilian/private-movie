@@ -30,6 +30,9 @@ import type {
   StorageResourceItem,
   StorageResourcesQuery,
   StorageResourcesResponseData,
+  StorageSeriesItem,
+  StorageSeriesQuery,
+  StorageSeriesResponseData,
   StorageProviderItem,
   CreateStorageProviderRequest,
   UpdateStorageProviderRequest,
@@ -124,6 +127,7 @@ export interface StorageService {
   getMetrics(providerId?: string): Promise<StorageMetrics>;
   getTotalUsedBytes(): Promise<number | null>;
   getResources(query?: StorageResourcesQuery): Promise<StorageResourcesResponseData>;
+  getSeries(query?: StorageSeriesQuery): Promise<StorageSeriesResponseData>;
   scan(force?: boolean, providerId?: string): Promise<{ count: number; totalBytes: number }>;
   updateLimit(limitGb: number, providerId?: string): Promise<{ limitGb: number; limitBytes: number }>;
   updateSourceMetadata(
@@ -535,6 +539,65 @@ export function createStorageService<
         page,
         limit,
         totalPages,
+      };
+    },
+
+    async getSeries(query?: StorageSeriesQuery): Promise<StorageSeriesResponseData> {
+      const { items } = await getCorrelatedInventory(query?.providerId);
+
+      const seriesMap = new Map<
+        string,
+        StorageSeriesItem & { seasonMap: Map<string, StorageSeriesItem["seasons"][number]> }
+      >();
+
+      for (const item of items) {
+        if (item.status !== "linked" || !item.seriesId) continue;
+
+        let entry = seriesMap.get(item.seriesId);
+        if (!entry) {
+          entry = {
+            id: item.seriesId,
+            title: item.seriesTitle ?? "Untitled Series",
+            s3SourceCount: 0,
+            s3SizeBytes: 0,
+            seasons: [],
+            seasonMap: new Map(),
+          };
+          seriesMap.set(item.seriesId, entry);
+        }
+
+        entry.s3SourceCount += 1;
+        entry.s3SizeBytes += item.sizeBytes;
+
+        if (item.seasonId) {
+          let season = entry.seasonMap.get(item.seasonId);
+          if (!season) {
+            season = {
+              id: item.seasonId,
+              seasonNumber: item.seasonNumber ?? 0,
+              title: item.seasonTitle ?? `Season ${item.seasonNumber ?? 0}`,
+              s3SourceCount: 0,
+              s3SizeBytes: 0,
+            };
+            entry.seasonMap.set(item.seasonId, season);
+          }
+          season.s3SourceCount += 1;
+          season.s3SizeBytes += item.sizeBytes;
+        }
+      }
+
+      const seriesItems: StorageSeriesItem[] = [...seriesMap.values()]
+        .map(({ seasonMap, ...rest }) => ({
+          ...rest,
+          seasons: [...seasonMap.values()].sort(
+            (a, b) => a.seasonNumber - b.seasonNumber
+          ),
+        }))
+        .sort((a, b) => a.title.localeCompare(b.title));
+
+      return {
+        items: seriesItems,
+        total: seriesItems.length,
       };
     },
 

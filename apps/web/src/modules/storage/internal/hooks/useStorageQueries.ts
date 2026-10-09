@@ -4,6 +4,7 @@ import {
   storageMetricsQueryOptions,
   storageProvidersQueryOptions,
   storageResourcesQueryOptions,
+  storageSeriesQueryOptions,
   minioStatusQueryOptions,
   type StorageProviderItem,
 } from '../api';
@@ -59,11 +60,25 @@ export function useStorageQueries() {
   );
 
   const resources = resourcesData?.data ?? [];
-  const activeError = providersError || metricsError || resourcesError;
+
+  const {
+    data: seriesData,
+    isLoading: isLoadingSeries,
+    error: seriesError,
+    refetch: refetchSeries,
+  } = useQuery(
+    storageSeriesQueryOptions(
+      selectedProviderId ? { providerId: selectedProviderId } : {},
+    ),
+  );
+
+  const series = seriesData?.items ?? [];
+  const activeError = providersError || metricsError || resourcesError || seriesError;
   const handleRetryStorage = () => {
     void refetchProviders();
     void refetchMetrics();
     void refetchResources();
+    void refetchSeries();
   };
 
   const { data: minioStatus } = useQuery(minioStatusQueryOptions());
@@ -80,6 +95,8 @@ export function useStorageQueries() {
     isLoadingMetrics,
     isLoadingResources,
     resources,
+    series,
+    isLoadingSeries,
     activeError,
     handleRetryStorage,
     refetchProviders,
