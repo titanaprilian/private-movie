@@ -246,8 +246,10 @@ describe('SeriesDetailView component', () => {
 
     expect(await screen.findByRole('heading', { name: 'Delete Episode' })).toBeInTheDocument();
     expect(screen.getByText(`Are you sure you want to delete "${firstEpisode.title}"? This action cannot be undone.`)).toBeInTheDocument();
-
+    // Confirmation renders via the Chunky confirm dialog with tactile buttons
+    expect(screen.getByTestId('chunky-confirm-dialog')).toBeInTheDocument();
     const confirmDeleteButton = screen.getByRole('button', { name: /^delete$/i });
+    expect(confirmDeleteButton).toHaveClass('border-b-4');
     await user.click(confirmDeleteButton);
   });
 

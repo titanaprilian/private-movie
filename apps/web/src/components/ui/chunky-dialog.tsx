@@ -27,9 +27,13 @@ ChunkyDialogOverlay.displayName = 'ChunkyDialogOverlay';
 
 const ChunkyDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPrimitive.Portal>
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null }
+>(({ className, children, container, ...props }, ref) => {
+  const defaultContainer = typeof document !== 'undefined' && document.fullscreenElement ? (document.fullscreenElement as HTMLElement) : undefined;
+  const portalContainer = container !== undefined ? container : defaultContainer;
+
+  return (
+  <DialogPrimitive.Portal container={portalContainer}>
     <ChunkyDialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
@@ -43,7 +47,8 @@ const ChunkyDialogContent = React.forwardRef<
       {children}
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>
-));
+  );
+});
 ChunkyDialogContent.displayName = 'ChunkyDialogContent';
 
 interface ChunkyDialogHeaderProps

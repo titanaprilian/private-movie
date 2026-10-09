@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Settings, Check, Keyboard } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogBody,
+} from '@/components/ui/chunky-dialog';
 
 export const PLAYBACK_SPEEDS = [0.5, 1, 1.25, 1.5, 2];
 
@@ -202,17 +203,19 @@ export function VideoSettingsPopover({
         </PopoverContent>
       </Popover>
 
-      <Dialog open={shortcutsOpen} onOpenChange={handleShortcutsOpenChange}>
-        <DialogContent
+      <ChunkyDialog open={shortcutsOpen} onOpenChange={handleShortcutsOpenChange}>
+        <ChunkyDialogContent
           container={container}
           aria-label="Shortcuts and gestures"
-          className="max-w-md rounded-2xl border-2 border-[var(--border-strong)] bg-zinc-950/95 text-white shadow-xl"
+          className="max-w-md border-[var(--border-strong)] bg-zinc-950/95 text-white"
+          data-testid="shortcuts-dialog"
         >
-          <DialogHeader>
-            <DialogTitle className="text-white text-base font-extrabold">
+          <ChunkyDialogHeader className="border-zinc-800">
+            <ChunkyDialogTitle className="text-white text-base font-extrabold">
               Shortcuts &amp; Gestures
-            </DialogTitle>
-          </DialogHeader>
+            </ChunkyDialogTitle>
+          </ChunkyDialogHeader>
+          <ChunkyDialogBody>
           <div className="space-y-4">
             <div>
               <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider pb-2">
@@ -248,8 +251,9 @@ export function VideoSettingsPopover({
               </dl>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+          </ChunkyDialogBody>
+        </ChunkyDialogContent>
+      </ChunkyDialog>
     </>
   );
 }

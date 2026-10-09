@@ -1,9 +1,10 @@
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ChunkyDialog,
+  ChunkyDialogContent,
+  ChunkyDialogHeader,
+  ChunkyDialogTitle,
+  ChunkyDialogBody,
+} from '@/components/ui/chunky-dialog';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
 import type { VideoSource } from '../api';
@@ -27,12 +28,12 @@ export function VideoPreviewModal({
   const embedUrl = isEmbed ? formatEmbedUrl(source.url) : null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-3xl w-[95vw] p-4 bg-card border-c rounded sm:rounded"
+    <ChunkyDialog open={open} onOpenChange={onOpenChange}>
+      <ChunkyDialogContent
+        className="max-w-3xl"
         aria-describedby={undefined}
       >
-        <DialogHeader className="space-y-1 pb-2 border-b border-c">
+        <ChunkyDialogHeader className="space-y-1 pb-2">
           <div className="flex items-center gap-2">
             <span
               className={`text-[10px] mono uppercase font-medium px-1.5 py-0.5 rounded border ${
@@ -45,15 +46,16 @@ export function VideoPreviewModal({
             >
               {source.type}
             </span>
-            <DialogTitle className="text-sm font-semibold truncate text-fg">
+            <ChunkyDialogTitle className="text-sm truncate">
               {source.label || 'Source Preview'}
               {episodeTitle ? ` — ${episodeTitle}` : ''}
-            </DialogTitle>
+            </ChunkyDialogTitle>
           </div>
           <p className="text-[11px] mono text-muted truncate">{source.url}</p>
-        </DialogHeader>
+        </ChunkyDialogHeader>
 
-        <div className="relative aspect-video w-full overflow-hidden rounded border border-c bg-black mt-2">
+        <ChunkyDialogBody>
+        <div className="relative aspect-video w-full overflow-hidden rounded-2xl border-2 border-[var(--border)] bg-black mt-2">
           {isEmbed && embedUrl ? (
             <iframe
               src={embedUrl}
@@ -71,7 +73,8 @@ export function VideoPreviewModal({
             />
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        </ChunkyDialogBody>
+      </ChunkyDialogContent>
+    </ChunkyDialog>
   );
 }

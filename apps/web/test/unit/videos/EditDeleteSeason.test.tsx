@@ -227,7 +227,11 @@ describe('Edit & delete season flow in SeriesDetailView', () => {
       await screen.findByRole('heading', { name: 'Delete Season' })
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /^delete$/i }));
+    // Season deletion confirms via the Chunky confirm dialog with a tactile danger button
+    expect(screen.getByTestId('chunky-confirm-dialog')).toBeInTheDocument();
+    const confirmDeleteBtn = screen.getByRole('button', { name: /^delete$/i });
+    expect(confirmDeleteBtn).toHaveClass('border-b-4');
+    await user.click(confirmDeleteBtn);
 
     expect(fetchSpy.isDeleteCalled()).toBe(true);
     expect(await screen.findByText('Season deleted successfully')).toBeInTheDocument();

@@ -11,7 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Button } from '@/components/ui/button';
+import { ChunkyButton } from '@/components/ui/chunky-button';
 import { cn } from '@/lib/utils';
 import type { MediaSeriesMetadata } from '@repo/contracts';
 
@@ -87,20 +87,21 @@ export function SeriesCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
+        <ChunkyButton
           id={id}
           aria-label={ariaLabel}
           title={selectedItem ? selectedItem.title : 'Select a series...'}
           variant="outline"
+          size="sm"
           role="combobox"
           aria-expanded={open}
-          className="w-full min-w-0 max-w-full justify-between text-xs h-8 font-normal bg-transparent border-c hover-bg text-fg px-2.5 overflow-hidden flex items-center"
+          className="w-full min-w-0 max-w-full justify-between normal-case"
         >
           <span className="truncate min-w-0 flex-1 text-left block">
             {selectedItem ? selectedItem.title : 'Select a series...'}
           </span>
           <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50 text-muted" />
-        </Button>
+        </ChunkyButton>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[240px] max-w-[calc(100vw-2rem)] p-0" align="start">
         <Command shouldFilter={false}>
