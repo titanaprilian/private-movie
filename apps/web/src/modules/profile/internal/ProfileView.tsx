@@ -1,16 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuth, LogoutButton } from '@/modules/auth';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { ChunkyButton } from '@/components/ui/chunky-button';
+import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 
 export function ProfileView() {
   const { user, logoutAll } = useAuth();
@@ -86,31 +78,24 @@ export function ProfileView() {
           <div className="flex items-center gap-2">
             <LogoutButton />
 
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  Logout All Devices
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Logout All Devices</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to log out of all devices? This will
-                    invalidate all your current active sessions across all
-                    devices.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="destructive" onClick={handleLogoutAll}>
-                    Continue
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <ChunkyButton
+              type="button"
+              variant="danger"
+              size="sm"
+              onClick={() => setIsOpen(true)}
+            >
+              Logout All Devices
+            </ChunkyButton>
+            <ChunkyConfirmDialog
+              open={isOpen}
+              onOpenChange={setIsOpen}
+              title="Logout All Devices"
+              description="Are you sure you want to log out of all devices? This will invalidate all your current active sessions across all devices."
+              confirmLabel="Continue"
+              cancelLabel="Cancel"
+              confirmVariant="danger"
+              onConfirm={handleLogoutAll}
+            />
           </div>
         </div>
       </div>
