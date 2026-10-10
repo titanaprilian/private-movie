@@ -97,7 +97,7 @@ export function StorageSeriesTable({
                 key={item.id}
                 selected={isSelected}
                 interactive
-                className="p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_110px_190px_110px_48px] cursor-pointer hover:border-[var(--blue)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] active:translate-y-[2px]"
+                className="p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_110px_190px_110px_48px] bg-[var(--bg)] border-2 border-b-4 border-[var(--border)] rounded-[var(--radius)] hover:border-[#4b5d67] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
                 data-testid={`series-row-${item.id}`}
                 onClick={() => onSelectSeries(item)}
                 onKeyDown={(e) => {
@@ -110,7 +110,7 @@ export function StorageSeriesTable({
                 tabIndex={0}
               >
                 <div
-                  className="font-mono text-sm font-extrabold text-[var(--muted)]"
+                  className="ep-num"
                   data-testid={`series-row-index-${item.id}`}
                 >
                   {index + 1}
