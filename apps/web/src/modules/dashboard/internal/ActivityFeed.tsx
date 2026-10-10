@@ -1,11 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import type { AdminDashboardOngoingSeason, AdminDashboardRecentSeries } from './api';
 import { deriveActivityEvents, formatRelativeTime } from './formatters';
-
-interface ActivityFeedProps {
-  ongoingSeasons: AdminDashboardOngoingSeason[];
-  recentSeries: AdminDashboardRecentSeries[];
-}
+import type { ActivityFeedProps } from './types';
 
 function Tag({ kind }: { kind: 'failed' | 'updated' }) {
   if (kind === 'failed') {

@@ -3,6 +3,7 @@ import { RefreshCw, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import type { AdminDashboardOngoingSeason } from './api';
+import type { OngoingSeriesGridProps } from './types';
 import {
   formatRelativeTime,
   formatSeasonMeta,
@@ -10,12 +11,6 @@ import {
   sortOngoingFailedFirst,
   truncateErrorMessage,
 } from './formatters';
-
-interface OngoingSeriesGridProps {
-  seasons: AdminDashboardOngoingSeason[];
-  scrapingSeasonId: string | null;
-  onScrape: (seasonId: string) => void;
-}
 
 function Poster({ title, posterUrl }: { title: string; posterUrl: string | null }) {
   if (posterUrl) {

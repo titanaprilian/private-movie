@@ -1,84 +1,33 @@
 import { Link } from '@tanstack/react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
 import { ChunkyButton } from '@/components/ui/chunky-button';
-import {
-  adminDashboardQueryOptions,
-  runSchedulerScrapeAll,
-  scrapeOngoingSeason,
-  updateSchedulerConfig,
-} from './api';
 import { ActivityFeed } from './ActivityFeed';
 import { OngoingSeriesGrid } from './OngoingSeriesGrid';
 import { StatsRow } from './StatsRow';
 import { SchedulerPanel } from './SchedulerPanel';
+import { DashboardSkeletons } from './components/DashboardSkeletons';
+import { useDashboard } from './hooks/useDashboard';
 
 export function DashboardView() {
-  const queryClient = useQueryClient();
-  const dashboardQuery = useQuery(adminDashboardQueryOptions());
-  const catalog = dashboardQuery.data?.catalog;
-  const storage = dashboardQuery.data?.storage;
-  const scheduler = dashboardQuery.data?.scheduler;
-  const ongoingSeasons = dashboardQuery.data?.ongoingSeasons ?? [];
-  const recentSeries = dashboardQuery.data?.recentSeries ?? [];
+  const {
+    dashboardQuery,
+    catalog,
+    storage,
+    scheduler,
+    ongoingSeasons,
+    recentSeries,
+    handleRefresh,
+    scrapeMutation,
+    scrapeAllMutation,
+    configMutation,
+    isScrapeAllRunning,
+    scrapingSeasonId,
+    ongoingFailureCount,
+  } = useDashboard();
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-  };
-
-  const scrapeMutation = useMutation({
-    mutationFn: (seasonId: string) => scrapeOngoingSeason(seasonId),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['series'] });
-      if (result.sourcesSaved > 0) {
-        toast.success(
-          `Scrape completed: ${result.sourcesSaved} source${result.sourcesSaved === 1 ? '' : 's'} saved across ${result.episodesScraped} episode${result.episodesScraped === 1 ? '' : 's'}`
-        );
-      } else {
-        toast.success('Scrape completed: no new sources found');
-      }
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to scrape ongoing season');
-    },
-  });
-
-  const scrapeAllMutation = useMutation({
-    mutationFn: () => runSchedulerScrapeAll(),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-      if (result.result) {
-        toast.success(
-          `Global scrape finished: ${result.result.successCount} succeeded, ${result.result.failureCount} failed across ${result.result.totalProcessed} seasons`
-        );
-      } else {
-        toast.success('Global scrape started');
-      }
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to trigger global scrape');
-    },
-  });
-
-  const configMutation = useMutation({
-    mutationFn: (dto: { intervalMinutes?: number; isEnabled?: boolean }) =>
-      updateSchedulerConfig(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-      toast.success('Scheduler configuration updated');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update scheduler configuration');
-    },
-  });
-
-  const isScrapeAllRunning = scrapeAllMutation.isPending || scheduler?.isExecuting === true;
-  const scrapingSeasonId = scrapeMutation.isPending
-    ? (scrapeMutation.variables as string | undefined) ?? null
-    : null;
-  const ongoingFailureCount = ongoingSeasons.filter((s) => Boolean(s.lastScrapeError)).length;
+  if (dashboardQuery.isLoading) {
+    return <DashboardSkeletons />;
+  }
 
   return (
     <div className="space-y-6 w-full" data-testid="dashboard-container">

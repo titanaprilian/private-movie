@@ -1,15 +1,7 @@
 import { Clapperboard, Film, HardDrive, LayoutGrid } from 'lucide-react';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { formatGb, formatSeriesFooter, formatStorageValue, isStorageTracked } from './formatters';
-import type {
-  AdminDashboardCatalogStats,
-  AdminDashboardStorageStats,
-} from './api';
-
-interface StatsRowProps {
-  catalog?: AdminDashboardCatalogStats | null;
-  storage?: AdminDashboardStorageStats | null;
-}
+import type { StatsRowProps } from './types';
 
 function StatShell({
   testId,
