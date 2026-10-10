@@ -13,6 +13,7 @@ import type {
   StorageMetrics,
   StorageResourcesResponseData,
   StorageResourceItem,
+  StorageSeriesResponseData,
   StorageLimitUpdateResponseData,
   StorageDeleteResponseData,
   StoragePurgeOrphansResponseData,
@@ -158,6 +159,7 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       const endpoints = [
         { method: "GET", path: "/api/storage/metrics" },
         { method: "GET", path: "/api/storage/resources" },
+        { method: "GET", path: "/api/storage/series" },
         { method: "POST", path: "/api/storage/scan" },
         { method: "PUT", path: "/api/storage/limit", body: { limitGb: 50 } },
         { method: "PATCH", path: "/api/storage/resources/some-id", body: { label: "New" } },
@@ -478,6 +480,137 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       expect(data.total).toBe(3);
       expect(data.totalPages).toBe(2);
       expect(data.items).toHaveLength(1);
+    });
+
+    it("scopes resources by seriesId and seasonId", async () => {
+      const first = await createSeriesWithEpisode({
+        seriesTitle: "Scoped Series",
+        seasonNumber: 1,
+      });
+      const second = await createSeriesWithEpisode({
+        seriesTitle: "Other Series",
+        seasonNumber: 1,
+      });
+      const firstKey = `episodes/${first.episode.id}/scoped.mp4`;
+      const secondKey = `episodes/${second.episode.id}/other.mp4`;
+      await insertVideoSource(first.episode.id, { url: firstKey });
+      await insertVideoSource(second.episode.id, { url: secondKey });
+      const mockObjects: S3ObjectSummary[] = [
+        { key: firstKey, size: 500, lastModified: new Date("2026-01-03") },
+        { key: secondKey, size: 300, lastModified: new Date("2026-01-02") },
+      ];
+
+      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const { accessToken } = await registerUser(app);
+
+      const bySeries = await request(app, {
+        method: "GET",
+        path: `/api/storage/resources?seriesId=${first.series.id}`,
+        headers: authHeaders(accessToken),
+      });
+      const seriesData = (bySeries.body as DataResponse<StorageResourcesResponseData>).data;
+      expect(seriesData.total).toBe(1);
+      expect(seriesData.items[0]?.seriesId).toBe(first.series.id);
+
+      const bySeason = await request(app, {
+        method: "GET",
+        path: `/api/storage/resources?seriesId=${first.series.id}&seasonId=${first.season.id}`,
+        headers: authHeaders(accessToken),
+      });
+      const seasonData = (bySeason.body as DataResponse<StorageResourcesResponseData>).data;
+      expect(seasonData.total).toBe(1);
+      expect(seasonData.items[0]?.seasonId).toBe(first.season.id);
+    });
+  });
+
+  describe("GET /api/storage/series", () => {
+    it("returns series summaries with S3 source counts, byte sizes, and season breakdowns", async () => {
+      const first = await createSeriesWithEpisode({
+        seriesTitle: "Attack on Titan",
+        seasonNumber: 1,
+        episodeTitle: "To You, in 2000 Years",
+      });
+      const second = await createSeriesWithEpisode({
+        seriesTitle: "Cyberpunk Edgerunners",
+        seasonNumber: 2,
+        episodeTitle: "Let You Down",
+      });
+
+      const keyA = `episodes/${first.episode.id}/ep1.mp4`;
+      const keyB = `episodes/${first.episode.id}/ep1-alt.mp4`;
+      const keyC = `episodes/${second.episode.id}/ep1.mp4`;
+      await insertVideoSource(first.episode.id, { url: keyA });
+      await insertVideoSource(first.episode.id, { url: keyB });
+      await insertVideoSource(second.episode.id, { url: keyC });
+
+      const mockObjects: S3ObjectSummary[] = [
+        { key: keyA, size: 500_000_000, lastModified: new Date("2026-03-01T12:00:00Z") },
+        { key: keyB, size: 300_000_000, lastModified: new Date("2026-03-01T13:00:00Z") },
+        { key: keyC, size: 700_000_000, lastModified: new Date("2026-03-02T12:00:00Z") },
+        { key: "uploads/temp-orphan.mp4", size: 100_000_000, lastModified: new Date("2026-03-03T12:00:00Z") },
+      ];
+
+      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const { accessToken } = await registerUser(app);
+
+      const res = await request(app, {
+        method: "GET",
+        path: "/api/storage/series",
+        headers: authHeaders(accessToken),
+      });
+
+      expect(res.status).toBe(200);
+      const data = (res.body as DataResponse<StorageSeriesResponseData>).data;
+      // Orphans carry no series id and must not produce a series entry
+      expect(data.total).toBe(2);
+      expect(data.items).toHaveLength(2);
+
+      const titan = data.items.find((i) => i.id === first.series.id);
+      expect(titan).toMatchObject({
+        id: first.series.id,
+        title: "Attack on Titan",
+        s3SourceCount: 2,
+        s3SizeBytes: 800_000_000,
+      });
+      expect(titan?.seasons).toHaveLength(1);
+      expect(titan?.seasons[0]).toMatchObject({
+        id: first.season.id,
+        seasonNumber: 1,
+        s3SourceCount: 2,
+        s3SizeBytes: 800_000_000,
+      });
+
+      const cyberpunk = data.items.find((i) => i.id === second.series.id);
+      expect(cyberpunk).toMatchObject({
+        id: second.series.id,
+        title: "Cyberpunk Edgerunners",
+        s3SourceCount: 1,
+        s3SizeBytes: 700_000_000,
+      });
+      expect(cyberpunk?.seasons).toHaveLength(1);
+      expect(cyberpunk?.seasons[0]).toMatchObject({
+        id: second.season.id,
+        seasonNumber: 2,
+      });
+    });
+
+    it("returns an empty list when no linked S3 sources exist", async () => {
+      const mockObjects: S3ObjectSummary[] = [
+        { key: "uploads/orphan.mp4", size: 100, lastModified: new Date() },
+      ];
+
+      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const { accessToken } = await registerUser(app);
+
+      const res = await request(app, {
+        method: "GET",
+        path: "/api/storage/series",
+        headers: authHeaders(accessToken),
+      });
+
+      expect(res.status).toBe(200);
+      const data = (res.body as DataResponse<StorageSeriesResponseData>).data;
+      expect(data).toEqual({ items: [], total: 0 });
     });
   });
 

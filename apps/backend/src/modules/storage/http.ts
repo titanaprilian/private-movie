@@ -269,6 +269,8 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
 
               const resources = await storageService.getResources({
                 providerId: query?.providerId,
+                seriesId: query?.seriesId,
+                seasonId: query?.seasonId,
                 status,
                 search: query?.search,
                 sortBy,
@@ -283,6 +285,8 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               query: t.Optional(
                 t.Object({
                   providerId: t.Optional(t.String()),
+                  seriesId: t.Optional(t.String()),
+                  seasonId: t.Optional(t.String()),
                   status: t.Optional(t.String()),
                   search: t.Optional(t.String()),
                   sortBy: t.Optional(t.String()),
@@ -295,6 +299,28 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 tags: ["Storage"],
                 summary: "List storage resources",
                 description: "Lists stored objects with filtering, sorting, and pagination.",
+              },
+            }
+          )
+          .get(
+            "/series",
+            async ({ query }) => {
+              const series = await storageService.getSeries({
+                providerId: query?.providerId,
+              });
+              return successResponse(series);
+            },
+            {
+              query: t.Optional(
+                t.Object({
+                  providerId: t.Optional(t.String()),
+                })
+              ),
+              detail: {
+                tags: ["Storage"],
+                summary: "List storage series",
+                description:
+                  "Lists series with aggregated S3 video file counts, byte totals, and season breakdowns.",
               },
             }
           )

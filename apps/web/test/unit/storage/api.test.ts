@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   fetchStorageMetrics,
   fetchStorageResources,
+  fetchStorageSeries,
   refreshStorageScan,
   updateStorageLimit,
   updateSourceMetadata,
@@ -143,6 +144,63 @@ describe('Storage API Client Utilities', () => {
         expect.stringContaining('/api/storage/resources?status=linked&search=ep1&sortBy=size&sortOrder=desc'),
         expect.any(Object)
       );
+    });
+  });
+
+  describe('fetchStorageSeries', () => {
+    it('fetches series summaries with season breakdowns', async () => {
+      const mockBackendSeries = {
+        items: [
+          {
+            id: 'series-1',
+            title: 'Cyberpunk Series',
+            s3SourceCount: 2,
+            s3SizeBytes: 6442450944,
+            seasons: [
+              {
+                id: 'season-1',
+                seasonNumber: 1,
+                title: 'Season 1',
+                s3SourceCount: 2,
+                s3SizeBytes: 6442450944,
+              },
+            ],
+          },
+        ],
+        total: 1,
+      };
+
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ data: mockBackendSeries }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+      const res = await fetchStorageSeries();
+      expect(res.total).toBe(1);
+      expect(res.items[0]).toMatchObject({
+        id: 'series-1',
+        title: 'Cyberpunk Series',
+        s3SourceCount: 2,
+        s3SizeBytes: 6442450944,
+      });
+      expect(res.items[0].seasons).toHaveLength(1);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/api/storage/series'),
+        expect.any(Object)
+      );
+    });
+
+    it('throws error when fetch fails', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ error: { message: 'Server error' } }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+      await expect(fetchStorageSeries()).rejects.toThrow('Server error');
     });
   });
 
