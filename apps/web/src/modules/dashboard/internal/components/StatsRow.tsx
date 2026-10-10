@@ -1,7 +1,7 @@
 import { Clapperboard, Film, HardDrive, LayoutGrid } from 'lucide-react';
-import { StatCard } from './components/StatCard';
-import { formatGb, formatSeriesFooter, formatStorageValue, isStorageTracked } from './formatters';
-import type { StatsRowProps } from './types';
+import { StatCard } from './StatCard';
+import { formatGb, formatSeriesFooter, formatStorageValue, isStorageTracked } from '../formatters';
+import type { StatsRowProps } from '../types';
 
 export function StatsRow({ catalog, storage }: StatsRowProps) {
   const tracked = isStorageTracked(storage ?? undefined);

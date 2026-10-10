@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ChunkyPaginationBar } from '@/components/ui/chunky-pagination';
-import { OngoingCard } from './components/OngoingCard';
-import { sortOngoingFailedFirst } from './formatters';
-import { ONGOING_PAGE_SIZE, type OngoingSeriesGridProps } from './types';
+import { OngoingCard } from './OngoingCard';
+import { sortOngoingFailedFirst } from '../formatters';
+import { ONGOING_PAGE_SIZE, type OngoingSeriesGridProps } from '../types';
 
 export function OngoingSeriesGrid({ seasons, scrapingSeasonId, onScrape }: OngoingSeriesGridProps) {
   const [page, setPage] = useState(1);

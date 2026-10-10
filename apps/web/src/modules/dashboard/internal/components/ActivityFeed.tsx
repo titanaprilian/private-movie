@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
-import { ActivityTag } from './components/ActivityTag';
-import { deriveActivityEvents, formatRelativeTime } from './formatters';
-import type { ActivityFeedProps } from './types';
+import { ActivityTag } from './ActivityTag';
+import { deriveActivityEvents, formatRelativeTime } from '../formatters';
+import type { ActivityFeedProps } from '../types';
 
 export function ActivityFeed({ ongoingSeasons, recentSeries }: ActivityFeedProps) {
   const events = deriveActivityEvents(ongoingSeasons, recentSeries);

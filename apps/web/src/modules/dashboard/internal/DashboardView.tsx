@@ -1,6 +1,6 @@
-import { ActivityFeed } from './ActivityFeed';
-import { OngoingSeriesGrid } from './OngoingSeriesGrid';
-import { StatsRow } from './StatsRow';
+import { ActivityFeed } from './components/ActivityFeed';
+import { OngoingSeriesGrid } from './components/OngoingSeriesGrid';
+import { StatsRow } from './components/StatsRow';
 import { DashboardHeader } from './components/DashboardHeader';
 import { DashboardSkeletons } from './components/DashboardSkeletons';
 import { SchedulerPanel } from './components/SchedulerPanel';
