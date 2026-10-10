@@ -7,6 +7,7 @@ import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { ChunkyCard, ChunkyCardList } from '@/components/ui/chunky-card';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
+import { ChunkyCopyButton } from '@/components/ui/chunky-copy-button';
 import {
   Search,
   RefreshCw,
@@ -20,7 +21,7 @@ import {
 import { Link } from '@tanstack/react-router';
 
 export type StatusFilter = 'all' | 'linked' | 'orphaned';
-export type SortByField = 'size' | 'date' | 'name';
+export type SortByField = 'size' | 'date' | 'name' | 'episode';
 export type SortOrder = 'asc' | 'desc';
 
 export interface StorageResourceTableProps {
@@ -55,8 +56,14 @@ export function StorageResourceTable({
 }: StorageResourceTableProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [sortBy, setSortBy] = useState<SortByField>('size');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  // In series drill-down mode there is no toolbar to change the sort, so
+  // resources default to chronological episode order (season, then episode).
+  const [sortBy, setSortBy] = useState<SortByField>(
+    hideToolbar ? 'episode' : 'size'
+  );
+  const [sortOrder, setSortOrder] = useState<SortOrder>(
+    hideToolbar ? 'asc' : 'desc'
+  );
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   // Toggle sort direction or field
@@ -113,6 +120,18 @@ export function StorageResourceTable({
           cmp = dateA - dateB;
         } else if (sortBy === 'name') {
           cmp = a.filename.localeCompare(b.filename);
+        } else if (sortBy === 'episode') {
+          const seasonA = a.episode?.seasonNumber ?? Number.MAX_SAFE_INTEGER;
+          const seasonB = b.episode?.seasonNumber ?? Number.MAX_SAFE_INTEGER;
+          cmp = seasonA - seasonB;
+          if (cmp === 0) {
+            const epA = a.episode?.episodeNumber ?? Number.MAX_SAFE_INTEGER;
+            const epB = b.episode?.episodeNumber ?? Number.MAX_SAFE_INTEGER;
+            cmp = epA - epB;
+          }
+          if (cmp === 0) {
+            cmp = a.filename.localeCompare(b.filename);
+          }
         }
         return sortOrder === 'asc' ? cmp : -cmp;
       });
@@ -347,7 +366,7 @@ export function StorageResourceTable({
               <ChunkyCard
                 key={resource.key}
                 selected={isSelected}
-                className="p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_minmax(0,1.4fr)_130px_170px_48px]"
+                className={`p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_minmax(0,1.4fr)_130px_170px_48px] bg-[var(--bg)] hover:-translate-y-0.5 active:translate-y-0 ${isSelected ? '' : 'hover:border-[#4b5d67]'}`}
                 data-testid={`row-${resource.key}`}
               >
                 {/* Row selection */}
@@ -362,17 +381,31 @@ export function StorageResourceTable({
 
                 {/* Filename & S3 Key */}
                 <div className="min-w-0">
-                  <div
-                    className="font-sans font-extrabold text-[15px] text-[var(--ink)] leading-snug truncate"
-                    title={resource.filename}
-                  >
-                    {resource.filename}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div
+                      className="font-sans font-extrabold text-[15px] text-[var(--ink)] leading-snug truncate"
+                      title={resource.filename}
+                    >
+                      {resource.filename}
+                    </div>
+                    <ChunkyCopyButton
+                      value={resource.filename}
+                      copyLabel={`Copy filename ${resource.filename}`}
+                      data-testid={`copy-filename-${resource.key}`}
+                    />
                   </div>
-                  <div
-                    className="font-mono font-semibold text-[13px] text-[var(--muted)] truncate"
-                    title={resource.key}
-                  >
-                    {resource.key}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div
+                      className="font-mono font-semibold text-[13px] text-[var(--muted)] truncate"
+                      title={resource.key}
+                    >
+                      {resource.key}
+                    </div>
+                    <ChunkyCopyButton
+                      value={resource.key}
+                      copyLabel={`Copy S3 key ${resource.key}`}
+                      data-testid={`copy-key-${resource.key}`}
+                    />
                   </div>
                   {/* Stacked meta for compact viewports */}
                   <div className="lg:hidden mt-1 font-mono text-xs font-bold text-[var(--ink)]">
