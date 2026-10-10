@@ -23,10 +23,7 @@ import { StorageMetricsGrid } from './components/StorageMetricsGrid';
 import { StorageResourceTable } from './components/StorageResourceTable';
 import { StorageSeriesTable } from './components/StorageSeriesTable';
 import { StorageSeriesDrilldown } from './components/StorageSeriesDrilldown';
-import {
-  storageResourcesQueryOptions,
-  type StorageSeriesItem,
-} from './api';
+import { storageResourcesQueryOptions, type StorageSeriesItem } from './api';
 import { StorageLimitDialog } from './components/dialogs/StorageLimitDialog';
 import { EditSourceModal } from './components/dialogs/EditSourceModal';
 import { AttachOrphanDialog } from './components/dialogs/AttachOrphanDialog';
@@ -67,10 +64,10 @@ export function StorageView() {
   };
 
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(() =>
-    readSearchParam('seriesId'),
+    readSearchParam('seriesId')
   );
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(() =>
-    readSearchParam('seasonId'),
+    readSearchParam('seasonId')
   );
 
   // Keep browser URL in sync; fallback to local state when unavailable.
@@ -96,7 +93,7 @@ export function StorageView() {
 
   const orphanedResources = useMemo(
     () => resources.filter((r) => r.status === 'orphaned'),
-    [resources],
+    [resources]
   );
 
   const handleSelectSeries = (item: StorageSeriesItem) => {
@@ -125,7 +122,7 @@ export function StorageView() {
             ...(selectedSeriesId ? { seriesId: selectedSeriesId } : {}),
             ...(selectedSeasonId ? { seasonId: selectedSeasonId } : {}),
           },
-    [selectedProviderId, selectedSeriesId, selectedSeasonId],
+    [selectedProviderId, selectedSeriesId, selectedSeasonId]
   );
   const { data: drilldownData, isLoading: isLoadingDrilldown } = useQuery({
     ...storageResourcesQueryOptions(drilldownQueryParams),
@@ -134,18 +131,20 @@ export function StorageView() {
   const drilldownResources = useMemo(() => {
     const items = drilldownData?.data ?? [];
     return items.filter((r) => {
-      if (selectedSeriesId && r.episode && r.episode.seriesId !== selectedSeriesId)
-        return false;
       if (
         selectedSeriesId &&
-        !r.episode &&
-        selectedSeasonId === null
-      ) {
+        r.episode &&
+        r.episode.seriesId !== selectedSeriesId
+      )
+        return false;
+      if (selectedSeriesId && !r.episode && selectedSeasonId === null) {
         // Orphaned files have no series; exclude from series drill-down
         // when the server returned an unfiltered payload.
         // Detect server-side scoping: if every item links to the series,
         // the payload is already scoped and this branch is unreachable.
-        const allLinkedToSeries = items.length > 0 && items.every((i) => i.episode?.seriesId === selectedSeriesId);
+        const allLinkedToSeries =
+          items.length > 0 &&
+          items.every((i) => i.episode?.seriesId === selectedSeriesId);
         if (!allLinkedToSeries) return false;
       }
       if (selectedSeasonId && r.episode?.seasonId !== selectedSeasonId)
@@ -156,7 +155,7 @@ export function StorageView() {
 
   if (activeError) {
     return (
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-6">
         <div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-[var(--ink)]">
             Storage Management
@@ -186,92 +185,96 @@ export function StorageView() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header Title and Provider Controls (suppressed in drill-down mode) */}
       {!activeSeries && (
-      <div
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-        data-testid="storage-page-header"
-      >
-        <div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight text-[var(--ink)]">
-            Storage Management
-          </h1>
-          <p className="font-sans text-sm font-semibold text-[var(--muted)] mt-1">
-            Monitor S3 capacity, inspect bucket object inventory, link orphans,
-            and manage video files.
-          </p>
-        </div>
+        <div
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          data-testid="storage-page-header"
+        >
+          <div>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight text-[var(--ink)]">
+              Storage Management
+            </h1>
+            <p className="font-sans text-sm font-semibold text-[var(--muted)] mt-1">
+              Monitor S3 capacity, inspect bucket object inventory, link
+              orphans, and manage video files.
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Provider Selector (ChunkySelect scales to any provider count) */}
-          {providers.length > 0 && (
-            <div
-              className="flex items-center"
-              data-testid="provider-selector-container"
-            >
-              <ChunkySelect
-                value={selectedProviderId || undefined}
-                onValueChange={(val) => setSelectedProviderId(val)}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Provider Selector (ChunkySelect scales to any provider count) */}
+            {providers.length > 0 && (
+              <div
+                className="flex items-center"
+                data-testid="provider-selector-container"
               >
-                <ChunkySelectTrigger
-                  data-testid="provider-selector-dropdown"
-                  className="w-[220px] font-mono"
+                <ChunkySelect
+                  value={selectedProviderId || undefined}
+                  onValueChange={(val) => setSelectedProviderId(val)}
                 >
-                  <ChunkySelectValue placeholder="Select provider" />
-                </ChunkySelectTrigger>
-                <ChunkySelectContent>
-                  {providers.map((p) => (
-                    <ChunkySelectItem
-                      key={p.id}
-                      value={p.id}
-                      className="font-mono"
-                    >
-                      {p.name} {p.isDefault ? '(Default)' : ''}
-                    </ChunkySelectItem>
-                  ))}
-                </ChunkySelectContent>
-              </ChunkySelect>
-            </div>
-          )}
+                  <ChunkySelectTrigger
+                    data-testid="provider-selector-dropdown"
+                    className="w-[220px] font-mono"
+                  >
+                    <ChunkySelectValue placeholder="Select provider" />
+                  </ChunkySelectTrigger>
+                  <ChunkySelectContent>
+                    {providers.map((p) => (
+                      <ChunkySelectItem
+                        key={p.id}
+                        value={p.id}
+                        className="font-mono"
+                      >
+                        {p.name} {p.isDefault ? '(Default)' : ''}
+                      </ChunkySelectItem>
+                    ))}
+                  </ChunkySelectContent>
+                </ChunkySelect>
+              </div>
+            )}
 
-          {/* MinIO Console link when active, otherwise Spin Up action */}
-          {isMinioActive && minioStatus?.consoleUrl ? (
+            {/* MinIO Console link when active, otherwise Spin Up action */}
+            {isMinioActive && minioStatus?.consoleUrl ? (
+              <ChunkyButton
+                variant="outline"
+                size="sm"
+                asChild
+                data-testid="minio-console-link-btn"
+              >
+                <a
+                  href={minioStatus.consoleUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  MinIO Console
+                </a>
+              </ChunkyButton>
+            ) : (
+              <ChunkyButton
+                variant="blue"
+                size="sm"
+                onClick={() => modals.setIsSpinUpModalOpen(true)}
+                data-testid="spin-up-minio-btn"
+              >
+                <Rocket className="w-4 h-4" />
+                Spin Up MinIO
+              </ChunkyButton>
+            )}
+
+            {/* Manage Providers Action Button */}
             <ChunkyButton
               variant="outline"
               size="sm"
-              asChild
-              data-testid="minio-console-link-btn"
+              onClick={() => modals.setIsProvidersDrawerOpen(true)}
+              data-testid="manage-providers-btn"
             >
-              <a href={minioStatus.consoleUrl} target="_blank" rel="noreferrer">
-                <ExternalLink className="w-4 h-4" />
-                MinIO Console
-              </a>
+              <Server className="w-4 h-4" />
+              Manage Providers
             </ChunkyButton>
-          ) : (
-            <ChunkyButton
-              variant="blue"
-              size="sm"
-              onClick={() => modals.setIsSpinUpModalOpen(true)}
-              data-testid="spin-up-minio-btn"
-            >
-              <Rocket className="w-4 h-4" />
-              Spin Up MinIO
-            </ChunkyButton>
-          )}
-
-          {/* Manage Providers Action Button */}
-          <ChunkyButton
-            variant="outline"
-            size="sm"
-            onClick={() => modals.setIsProvidersDrawerOpen(true)}
-            data-testid="manage-providers-btn"
-          >
-            <Server className="w-4 h-4" />
-            Manage Providers
-          </ChunkyButton>
+          </div>
         </div>
-      </div>
       )}
 
       {/* Empty-state hero: no providers connected */}
@@ -361,55 +364,60 @@ export function StorageView() {
           )}
         />
       ) : (
-      /* Level 1 Overview: Series & Orphaned Files master tabs */
-      <ChunkyTabs defaultValue="series" data-testid="storage-overview-tabs">
-        <ChunkyTabsList>
-          <ChunkyTabsTrigger value="series" data-testid="tab-trigger-series">
-            Series{series.length > 0 ? ` (${series.length})` : ''}
-          </ChunkyTabsTrigger>
-          <ChunkyTabsTrigger value="orphaned" data-testid="tab-trigger-orphaned">
-            Orphaned Files
-            {metrics && metrics.orphanCount > 0 ? ` (${metrics.orphanCount})` : ''}
-          </ChunkyTabsTrigger>
-        </ChunkyTabsList>
+        /* Level 1 Overview: Series & Orphaned Files master tabs */
+        <ChunkyTabs defaultValue="series" data-testid="storage-overview-tabs">
+          <ChunkyTabsList>
+            <ChunkyTabsTrigger value="series" data-testid="tab-trigger-series">
+              Series{series.length > 0 ? ` (${series.length})` : ''}
+            </ChunkyTabsTrigger>
+            <ChunkyTabsTrigger
+              value="orphaned"
+              data-testid="tab-trigger-orphaned"
+            >
+              Orphaned Files
+              {metrics && metrics.orphanCount > 0
+                ? ` (${metrics.orphanCount})`
+                : ''}
+            </ChunkyTabsTrigger>
+          </ChunkyTabsList>
 
-        <ChunkyTabsContent value="series">
-          <StorageSeriesTable
-            series={series}
-            isLoading={isLoadingSeries}
-            selectedSeriesId={selectedSeriesId}
-            onSelectSeries={handleSelectSeries}
-          />
-        </ChunkyTabsContent>
+          <ChunkyTabsContent value="series">
+            <StorageSeriesTable
+              series={series}
+              isLoading={isLoadingSeries}
+              selectedSeriesId={selectedSeriesId}
+              onSelectSeries={handleSelectSeries}
+            />
+          </ChunkyTabsContent>
 
-        <ChunkyTabsContent value="orphaned">
-          <StorageResourceTable
-            resources={orphanedResources}
-            isLoading={isLoadingResources}
-            orphanedCount={metrics?.orphanCount ?? 0}
-            onRefreshScan={() => modals.refreshScanMutation.mutate()}
-            isRefreshing={modals.refreshScanMutation.isPending}
-            onPreview={(res) => modals.setPreviewResource(res)}
-            onEditSource={(res) => {
-              if (res.videoSource) {
-                modals.setEditingSource({ ...res.videoSource, key: res.key });
-              }
-            }}
-            onAttachOrphan={(res) => modals.setAttachingResource(res)}
-            onDeleteSingle={(res) => {
-              modals.setDeleteSingleResource(res);
-              modals.setDeleteTargetType('single');
-            }}
-            onDeleteBatch={(selected) => {
-              modals.setDeleteBatchResources(selected);
-              modals.setDeleteTargetType('batch');
-            }}
-            onPurgeOrphans={() => {
-              modals.setDeleteTargetType('purge');
-            }}
-          />
-        </ChunkyTabsContent>
-      </ChunkyTabs>
+          <ChunkyTabsContent value="orphaned">
+            <StorageResourceTable
+              resources={orphanedResources}
+              isLoading={isLoadingResources}
+              orphanedCount={metrics?.orphanCount ?? 0}
+              onRefreshScan={() => modals.refreshScanMutation.mutate()}
+              isRefreshing={modals.refreshScanMutation.isPending}
+              onPreview={(res) => modals.setPreviewResource(res)}
+              onEditSource={(res) => {
+                if (res.videoSource) {
+                  modals.setEditingSource({ ...res.videoSource, key: res.key });
+                }
+              }}
+              onAttachOrphan={(res) => modals.setAttachingResource(res)}
+              onDeleteSingle={(res) => {
+                modals.setDeleteSingleResource(res);
+                modals.setDeleteTargetType('single');
+              }}
+              onDeleteBatch={(selected) => {
+                modals.setDeleteBatchResources(selected);
+                modals.setDeleteTargetType('batch');
+              }}
+              onPurgeOrphans={() => {
+                modals.setDeleteTargetType('purge');
+              }}
+            />
+          </ChunkyTabsContent>
+        </ChunkyTabs>
       )}
 
       {/* Dialogs & Drawer */}

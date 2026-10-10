@@ -1,56 +1,14 @@
 import { Clapperboard, Film, HardDrive, LayoutGrid } from 'lucide-react';
-import { ChunkyCard } from '@/components/ui/chunky-card';
-import { formatGb, formatSeriesFooter, formatStorageValue, isStorageTracked } from './formatters';
-import type {
-  AdminDashboardCatalogStats,
-  AdminDashboardStorageStats,
-} from './api';
-
-interface StatsRowProps {
-  catalog?: AdminDashboardCatalogStats | null;
-  storage?: AdminDashboardStorageStats | null;
-}
-
-function StatShell({
-  testId,
-  label,
-  value,
-  valueTestId,
-  footer,
-  iconBadge,
-}: {
-  testId: string;
-  label: string;
-  value: string;
-  valueTestId: string;
-  footer?: React.ReactNode;
-  iconBadge: React.ReactNode;
-}) {
-  return (
-    <ChunkyCard interactive data-testid={testId} className="min-w-0 p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="font-sans text-sm font-bold text-[var(--muted)]">{label}</div>
-          <div
-            data-testid={valueTestId}
-            className="mt-1 font-display text-3xl font-extrabold tracking-tight text-[var(--ink)]"
-          >
-            {value}
-          </div>
-        </div>
-        {iconBadge}
-      </div>
-      {footer && <div className="mt-2 font-sans text-xs font-semibold text-[var(--muted)]">{footer}</div>}
-    </ChunkyCard>
-  );
-}
+import { StatCard } from './StatCard';
+import { formatGb, formatSeriesFooter, formatStorageValue, isStorageTracked } from '../formatters';
+import type { StatsRowProps } from '../types';
 
 export function StatsRow({ catalog, storage }: StatsRowProps) {
   const tracked = isStorageTracked(storage ?? undefined);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="stats-row">
-      <StatShell
+      <StatCard
         testId="kpi-total-series"
         label="Total series"
         value={catalog ? String(catalog.totalSeries) : '—'}
@@ -74,7 +32,7 @@ export function StatsRow({ catalog, storage }: StatsRowProps) {
           ) : undefined
         }
       />
-      <StatShell
+      <StatCard
         testId="kpi-total-episodes"
         label="Total episodes"
         value={catalog ? String(catalog.totalEpisodes) : '—'}
@@ -95,7 +53,7 @@ export function StatsRow({ catalog, storage }: StatsRowProps) {
           ) : undefined
         }
       />
-      <StatShell
+      <StatCard
         testId="kpi-total-genres"
         label="Genres"
         value={catalog ? String(catalog.totalGenres) : '—'}
@@ -114,7 +72,7 @@ export function StatsRow({ catalog, storage }: StatsRowProps) {
           ) : undefined
         }
       />
-      <StatShell
+      <StatCard
         testId="kpi-storage"
         label="Storage"
         value={storage ? formatStorageValue(storage) : 'Not tracked'}

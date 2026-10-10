@@ -123,6 +123,34 @@ describe('OngoingSeriesGrid', () => {
     expect(btn).toHaveTextContent(/scraping/i);
     expect(screen.getByTestId('ongoing-retry-s-failed')).not.toBeDisabled();
   });
+
+  it('hides pagination when all seasons fit on one page', () => {
+    renderWithProviders(
+      <OngoingSeriesGrid seasons={seasons} scrapingSeasonId={null} onScrape={() => {}} />
+    );
+    expect(screen.getAllByTestId(/^ongoing-card-/)).toHaveLength(2);
+    expect(screen.queryByRole('navigation', { name: 'Pagination' })).not.toBeInTheDocument();
+  });
+
+  it('paginates at 9 per page and navigates between pages', async () => {
+    const many = Array.from({ length: 10 }, (_, i) => ({
+      ...seasons[0],
+      seasonId: `s-page-${i}`,
+      seriesId: `series-page-${i}`,
+      seriesTitle: `Paged Show ${i}`,
+    }));
+    const { user } = renderWithProviders(
+      <OngoingSeriesGrid seasons={many} scrapingSeasonId={null} onScrape={() => {}} />
+    );
+    expect(screen.getAllByTestId(/^ongoing-card-/)).toHaveLength(9);
+    expect(screen.queryByTestId('ongoing-card-s-page-9')).not.toBeInTheDocument();
+    const nav = screen.getByRole('navigation', { name: 'Pagination' });
+    expect(nav).toHaveTextContent('Page 1 of 2');
+    await user.click(screen.getByRole('button', { name: 'Next page' }));
+    expect(screen.getAllByTestId(/^ongoing-card-/)).toHaveLength(1);
+    expect(screen.getByTestId('ongoing-card-s-page-9')).toBeInTheDocument();
+    expect(nav).toHaveTextContent('Page 2 of 2');
+  });
 });
 
 describe('ActivityFeed', () => {

@@ -173,7 +173,9 @@ describe('DashboardView', () => {
   it('shows an empty state when there is no recent series activity', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
       return new Response(
-        JSON.stringify({ data: { ...dashboardPayload.data, recentSeries: [] } }),
+        JSON.stringify({
+          data: { ...dashboardPayload.data, ongoingSeasons: [], recentSeries: [] },
+        }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     });
@@ -253,6 +255,20 @@ describe('DashboardView', () => {
     await waitFor(() => {
       expect(scrapeBtn).not.toBeDisabled();
     });
+  });
+
+  it('renders the dashboard skeleton while loading', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      () =>
+        new Promise<Response>(() => {
+          // Never resolves: keeps the dashboard query in its loading state.
+        })
+    );
+    renderWithProviders(<DashboardView />);
+    const skeleton = await screen.findByTestId('dashboard-skeleton');
+    expect(skeleton).toBeInTheDocument();
+    expect(skeleton).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByTestId('dashboard-container')).not.toBeInTheDocument();
   });
 
   it('shows an empty state when no seasons are ongoing', async () => {

@@ -2,20 +2,14 @@ import { Link } from '@tanstack/react-router';
 import { RefreshCw, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
-import type { AdminDashboardOngoingSeason } from './api';
+import { ChunkyCard } from '@/components/ui/chunky-card';
+import type { OngoingCardProps } from '../types';
 import {
   formatRelativeTime,
   formatSeasonMeta,
   parseScrapeError,
-  sortOngoingFailedFirst,
   truncateErrorMessage,
-} from './formatters';
-
-interface OngoingSeriesGridProps {
-  seasons: AdminDashboardOngoingSeason[];
-  scrapingSeasonId: string | null;
-  onScrape: (seasonId: string) => void;
-}
+} from '../formatters';
 
 function Poster({ title, posterUrl }: { title: string; posterUrl: string | null }) {
   if (posterUrl) {
@@ -38,15 +32,7 @@ function Poster({ title, posterUrl }: { title: string; posterUrl: string | null 
   );
 }
 
-function OngoingCard({
-  item,
-  isScraping,
-  onScrape,
-}: {
-  item: AdminDashboardOngoingSeason;
-  isScraping: boolean;
-  onScrape: () => void;
-}) {
+export function OngoingCard({ item, isScraping, onScrape }: OngoingCardProps) {
   const failed = Boolean(item.lastScrapeError);
   const parsed = failed ? parseScrapeError(item.lastScrapeError) : null;
   const [copied, setCopied] = useState(false);
@@ -64,12 +50,12 @@ function OngoingCard({
   };
 
   return (
-    <div
+    <ChunkyCard
       data-testid={`ongoing-card-${item.seasonId}`}
-      className={`min-w-0 overflow-hidden rounded-2xl border bg-[var(--surface)] p-4 ${
+      className={`min-w-0 overflow-hidden p-4 ${
         failed
-          ? 'border-red-400 border-b-4 bg-red-50/60 dark:border-red-800 dark:bg-red-950/30'
-          : 'border-[var(--border)] border-b-4'
+          ? 'border-red-400 bg-red-50/60 dark:border-red-800 dark:bg-red-950/30'
+          : ''
       }`}
     >
       <div className="flex gap-3">
@@ -176,32 +162,7 @@ function OngoingCard({
           </ChunkyButton>
         </div>
       )}
-    </div>
+    </ChunkyCard>
   );
 }
 
-export function OngoingSeriesGrid({ seasons, scrapingSeasonId, onScrape }: OngoingSeriesGridProps) {
-  const sorted = sortOngoingFailedFirst(seasons);
-  if (sorted.length === 0) {
-    return (
-      <div
-        data-testid="ongoing-empty"
-        className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 font-sans text-sm font-semibold text-[var(--muted)]"
-      >
-        No seasons are marked as ongoing. Mark a season as ongoing to enable auto-scraping.
-      </div>
-    );
-  }
-  return (
-    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {sorted.map((item) => (
-        <OngoingCard
-          key={item.seasonId}
-          item={item}
-          isScraping={scrapingSeasonId === item.seasonId}
-          onScrape={() => onScrape(item.seasonId)}
-        />
-      ))}
-    </div>
-  );
-}

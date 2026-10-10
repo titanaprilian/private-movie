@@ -1,26 +1,7 @@
 import { Link } from '@tanstack/react-router';
-import type { AdminDashboardOngoingSeason, AdminDashboardRecentSeries } from './api';
-import { deriveActivityEvents, formatRelativeTime } from './formatters';
-
-interface ActivityFeedProps {
-  ongoingSeasons: AdminDashboardOngoingSeason[];
-  recentSeries: AdminDashboardRecentSeries[];
-}
-
-function Tag({ kind }: { kind: 'failed' | 'updated' }) {
-  if (kind === 'failed') {
-    return (
-      <span className="shrink-0 rounded-lg border border-red-300 bg-red-100 px-1.5 py-0.5 font-sans text-[11px] font-extrabold text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
-        Failed
-      </span>
-    );
-  }
-  return (
-    <span className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-1.5 py-0.5 font-sans text-[11px] font-extrabold text-[var(--muted)]">
-      Updated
-    </span>
-  );
-}
+import { ActivityTag } from './ActivityTag';
+import { deriveActivityEvents, formatRelativeTime } from '../formatters';
+import type { ActivityFeedProps } from '../types';
 
 export function ActivityFeed({ ongoingSeasons, recentSeries }: ActivityFeedProps) {
   const events = deriveActivityEvents(ongoingSeasons, recentSeries);
@@ -47,7 +28,7 @@ export function ActivityFeed({ ongoingSeasons, recentSeries }: ActivityFeedProps
             className="flex items-center gap-3 px-4 py-3"
           >
             <span data-testid={`activity-tag-${event.key}`} className="contents">
-              <Tag kind="failed" />
+              <ActivityTag kind="failed" />
             </span>
             <Link
               to="/admin/videos/$seriesId"
@@ -72,7 +53,7 @@ export function ActivityFeed({ ongoingSeasons, recentSeries }: ActivityFeedProps
               className="flex items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-[var(--blue)]"
             >
               <span data-testid={`activity-tag-${event.key}`} className="contents">
-                <Tag kind="updated" />
+                <ActivityTag kind="updated" />
               </span>
               <span className="min-w-0 flex-1 truncate font-sans text-sm font-bold text-[var(--ink)]">
                 {event.title}

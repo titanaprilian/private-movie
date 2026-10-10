@@ -7,18 +7,9 @@ import {
   ChunkySelectTrigger,
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
-import { SCHEDULER_INTERVAL_PRESETS, type AdminDashboardSchedulerTelemetry } from './api';
-import { formatSchedulerStatusText } from './formatters';
-
-interface SchedulerPanelProps {
-  scheduler?: AdminDashboardSchedulerTelemetry | null;
-  ongoingFailureCount?: number;
-  isScrapeAllRunning: boolean;
-  configPending: boolean;
-  onScrapeAll: () => void;
-  onIntervalChange: (minutes: number) => void;
-  onToggle: () => void;
-}
+import { SCHEDULER_INTERVAL_PRESETS } from '../api';
+import type { SchedulerPanelProps } from '../types';
+import { formatSchedulerStatusText } from '../formatters';
 
 export function SchedulerPanel({
   scheduler,

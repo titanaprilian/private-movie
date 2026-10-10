@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
+import { Search } from 'lucide-react';
 import { SERIES_PAGE_LIMIT } from '../api';
 import { genresQueryOptions } from '@/modules/genres';
 import {
@@ -23,6 +24,8 @@ import { useScrapeWorkerStore } from '../store/useScrapeWorkerStore';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChunkyPaginationBar } from '@/components/ui/chunky-pagination';
+import { ChunkyCard } from '@/components/ui/chunky-card';
+import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import {
@@ -458,17 +461,20 @@ export function SeriesGrid() {
       )}
 
       {/* Toolbar: debounced search, genre filter, result count */}
-      <div className="bg-[var(--surface)] border-2 border-[var(--border)] rounded-[16px] p-3">
+      <ChunkyCard className="p-3 sm:p-4">
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Filter series..."
-              aria-label="Search series"
-              className="w-[300px] shrink-0 h-11 px-3.5 rounded-[14px] border-2 border-[var(--border)] bg-[var(--bg)] font-bold text-[14px] text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--blue)]"
-            />
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
+              <ChunkyInput
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Filter series..."
+                aria-label="Search series"
+                className="pl-10 font-mono"
+              />
+            </div>
             <GenreFilter
               selectedSlugs={selectedSlugs}
               onSelectionChange={handleGenreSelectionChange}
@@ -478,7 +484,7 @@ export function SeriesGrid() {
             {meta.total} series
           </span>
         </div>
-      </div>
+      </ChunkyCard>
 
       {/* Grid view */}
       <div ref={gridTopRef} className="scroll-mt-20">
