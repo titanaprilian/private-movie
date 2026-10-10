@@ -48,6 +48,12 @@ export function useGenreManager(): UseGenreManagerReturn {
       if (sortField === 'displayOrder') {
         return ((a.displayOrder ?? 0) - (b.displayOrder ?? 0)) * direction;
       }
+      if (sortField === 'isBigGenre') {
+        return (
+          (Number(a.isBigGenre ?? false) - Number(b.isBigGenre ?? false)) *
+          direction
+        );
+      }
       const aValue = a[sortField].toLowerCase();
       const bValue = b[sortField].toLowerCase();
       if (aValue < bValue) return -1 * direction;

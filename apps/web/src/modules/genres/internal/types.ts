@@ -11,7 +11,7 @@ export interface GenreSeriesCatalogProps {
   onFilterChange: (filter: GenreCatalogFilter) => void;
 }
 
-export type GenreSortField = 'name' | 'slug' | 'displayOrder';
+export type GenreSortField = 'name' | 'slug' | 'displayOrder' | 'isBigGenre';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -87,21 +87,63 @@ export interface UseGenreDialogsReturn {
 
 export interface GenreTableProps {
   genres: Genre[];
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  sortField: GenreSortField | null;
+  sortDirection: SortDirection;
+  onSort: (field: GenreSortField) => void;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
   onEdit: (genre: Genre) => void;
   onDelete: (genre: Genre) => void;
 }
 
-export interface GenreCreateDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+export interface GenreRowProps {
+  genre: Genre;
+  index: number;
+  onEdit: (genre: Genre) => void;
+  onDelete: (genre: Genre) => void;
 }
 
-export interface GenreEditDialogProps {
+export interface GenreFormFields {
+  name: string;
+  slug: string;
+  isBigGenre: boolean;
+  displayOrder: number;
+}
+
+export interface GenreCreateDialogProps extends GenreFormFields {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  error: string | null;
+  mutation: UseGenreManagerReturn['createMutation'];
+  onNameChange: (value: string) => void;
+  onSlugChange: (value: string) => void;
+  onBigGenreChange: (value: boolean) => void;
+  onDisplayOrderChange: (value: number) => void;
+  onSuccess: () => void;
+  onError: (message: string | null) => void;
+}
+
+export interface GenreEditDialogProps extends GenreFormFields {
   genre: Genre | null;
   onOpenChange: (open: boolean) => void;
+  error: string | null;
+  mutation: UseGenreManagerReturn['updateMutation'];
+  onNameChange: (value: string) => void;
+  onSlugChange: (value: string) => void;
+  onBigGenreChange: (value: boolean) => void;
+  onDisplayOrderChange: (value: number) => void;
+  onSuccess: () => void;
+  onError: (message: string | null) => void;
 }
 
 export interface GenreDeleteDialogProps {
   genre: Genre | null;
   onOpenChange: (open: boolean) => void;
+  error: string | null;
+  mutation: UseGenreManagerReturn['deleteMutation'];
+  onSuccess: () => void;
+  onError: (message: string | null) => void;
 }

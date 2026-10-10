@@ -11,6 +11,8 @@ export type {
   UseGenreManagerReturn,
   UseGenreDialogsReturn,
   GenreTableProps,
+  GenreRowProps,
+  GenreFormFields,
   GenreCreateDialogProps,
   GenreEditDialogProps,
   GenreDeleteDialogProps,
