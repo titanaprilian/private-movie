@@ -35,6 +35,8 @@ export interface StorageResourceTableProps {
   onDeleteBatch: (selectedResources: StorageResource[]) => void;
   onPurgeOrphans: () => void;
   orphanedCount?: number;
+  /** Suppresses the global toolbar card (status chips, search, scan/purge actions). */
+  hideToolbar?: boolean;
 }
 
 export function StorageResourceTable({
@@ -49,6 +51,7 @@ export function StorageResourceTable({
   onDeleteBatch,
   onPurgeOrphans,
   orphanedCount = 0,
+  hideToolbar = false,
 }: StorageResourceTableProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -68,11 +71,14 @@ export function StorageResourceTable({
 
   // Filtered & sorted resources
   const processedResources = useMemo(() => {
+    // Without the toolbar there is no way to change the status filter,
+    // so scoped resources always pass through unfiltered.
+    const effectiveStatusFilter: StatusFilter = hideToolbar ? 'all' : statusFilter;
     return resources
       .filter((r) => {
         // Status filter
-        if (statusFilter === 'linked' && r.status !== 'linked') return false;
-        if (statusFilter === 'orphaned' && r.status !== 'orphaned')
+        if (effectiveStatusFilter === 'linked' && r.status !== 'linked') return false;
+        if (effectiveStatusFilter === 'orphaned' && r.status !== 'orphaned')
           return false;
 
         // Search filter (filename, S3 key, or series title)
@@ -110,7 +116,7 @@ export function StorageResourceTable({
         }
         return sortOrder === 'asc' ? cmp : -cmp;
       });
-  }, [resources, statusFilter, search, sortBy, sortOrder]);
+  }, [resources, statusFilter, hideToolbar, search, sortBy, sortOrder]);
 
   // Checkbox handlers
   const allProcessedKeys = processedResources.map((r) => r.key);
@@ -145,7 +151,8 @@ export function StorageResourceTable({
   return (
     <div className="space-y-4" data-testid="storage-table-container">
       {/* Toolbar: filter chips, search & actions */}
-      <ChunkyCard className="p-3 sm:p-4 flex flex-col gap-3">
+      {!hideToolbar && (
+      <ChunkyCard className="p-3 sm:p-4 flex flex-col gap-3" data-testid="storage-toolbar">
         {/* Status Filter Chips */}
         <div className="flex items-center gap-2 flex-wrap">
           <ChunkyChip
@@ -217,6 +224,7 @@ export function StorageResourceTable({
           </div>
         </div>
       </ChunkyCard>
+      )}
 
       {/* Sticky 3D batch selection toolbar */}
       {selectedKeys.length > 0 && (
