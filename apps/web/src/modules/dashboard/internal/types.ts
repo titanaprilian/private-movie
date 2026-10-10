@@ -52,6 +52,33 @@ export interface ActivityFeedProps {
   recentSeries: AdminDashboardRecentSeries[];
 }
 
+export interface StatCardProps {
+  testId: string;
+  label: string;
+  value: string;
+  valueTestId: string;
+  footer?: React.ReactNode;
+  iconBadge: React.ReactNode;
+}
+
+export interface OngoingCardProps {
+  item: AdminDashboardOngoingSeason;
+  isScraping: boolean;
+  onScrape: () => void;
+}
+
+export interface ActivityTagProps {
+  kind: 'failed' | 'updated';
+}
+
+export interface DashboardHeaderProps {
+  isFetching: boolean;
+  onRefresh: () => void;
+}
+
+/** Client-side page size for the ongoing series grid. */
+export const ONGOING_PAGE_SIZE = 9;
+
 export interface SchedulerConfigUpdate {
   intervalMinutes?: number;
   isEnabled?: boolean;

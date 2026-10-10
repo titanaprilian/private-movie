@@ -7,9 +7,9 @@ import {
   ChunkySelectTrigger,
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
-import { SCHEDULER_INTERVAL_PRESETS } from './api';
-import type { SchedulerPanelProps } from './types';
-import { formatSchedulerStatusText } from './formatters';
+import { SCHEDULER_INTERVAL_PRESETS } from '../api';
+import type { SchedulerPanelProps } from '../types';
+import { formatSchedulerStatusText } from '../formatters';
 
 export function SchedulerPanel({
   scheduler,
