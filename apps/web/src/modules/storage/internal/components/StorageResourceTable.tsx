@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { formatBytes, type StorageResource } from '../api';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import { ChunkyPaginationBar } from '@/components/ui/chunky-pagination';
 import { ChunkyCard, ChunkyCardList } from '@/components/ui/chunky-card';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
@@ -18,6 +19,8 @@ import { Link } from '@tanstack/react-router';
 
 export type SortByField = 'size' | 'date' | 'name' | 'episode';
 export type SortOrder = 'asc' | 'desc';
+
+export const STORAGE_RESOURCE_PAGE_SIZE = 20;
 
 export interface StorageResourceTableProps {
   resources: StorageResource[];
@@ -56,6 +59,7 @@ export function StorageResourceTable({
     hideToolbar ? 'asc' : 'desc'
   );
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Toggle sort direction or field
   const handleSort = (field: SortByField) => {
@@ -65,13 +69,15 @@ export function StorageResourceTable({
       setSortBy(field);
       setSortOrder('desc');
     }
+    setCurrentPage(1);
   };
 
   // Sorted resources (the orphaned tab is pre-scoped server-side, so no
   // client-side status or search filtering applies here)
   const processedResources = useMemo(() => {
-    return resources
-      .sort((a, b) => {
+    // Copy before sorting: sort() mutates in place, and the memoised
+    // paginated slice below relies on a fresh array reference per sort.
+    return [...resources].sort((a, b) => {
         let cmp = 0;
         if (sortBy === 'size') {
           cmp = (a.sizeBytes || 0) - (b.sizeBytes || 0);
@@ -98,18 +104,38 @@ export function StorageResourceTable({
       });
   }, [resources, sortBy, sortOrder]);
 
-  // Checkbox handlers
-  const allProcessedKeys = processedResources.map((r) => r.key);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(processedResources.length / STORAGE_RESOURCE_PAGE_SIZE)
+  );
+
+  // Clamp back to a valid page when the list shrinks below the current offset.
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedResources = useMemo(() => {
+    const start = (currentPage - 1) * STORAGE_RESOURCE_PAGE_SIZE;
+    return processedResources.slice(start, start + STORAGE_RESOURCE_PAGE_SIZE);
+  }, [processedResources, currentPage]);
+
+  // Checkbox handlers (scoped to the current page)
+  const pageKeys = paginatedResources.map((r) => r.key);
   const isAllSelected =
-    allProcessedKeys.length > 0 &&
-    allProcessedKeys.every((key) => selectedKeys.includes(key));
+    pageKeys.length > 0 &&
+    pageKeys.every((key) => selectedKeys.includes(key));
   const isSomeSelected = selectedKeys.length > 0 && !isAllSelected;
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
-      setSelectedKeys([]);
+      setSelectedKeys((prev) => prev.filter((k) => !pageKeys.includes(k)));
     } else {
-      setSelectedKeys(allProcessedKeys);
+      setSelectedKeys((prev) => [
+        ...prev,
+        ...pageKeys.filter((k) => !prev.includes(k)),
+      ]);
     }
   };
 
@@ -257,7 +283,7 @@ export function StorageResourceTable({
         </ChunkyCard>
       ) : (
         <ChunkyCardList>
-          {processedResources.map((resource) => {
+          {paginatedResources.map((resource) => {
             const isSelected = selectedKeys.includes(resource.key);
             const isVideo = /\.(mp4|mkv|webm|mov|avi)$/i.test(
               resource.filename
@@ -436,6 +462,14 @@ export function StorageResourceTable({
             );
           })}
         </ChunkyCardList>
+      )}
+
+      {totalPages > 1 && (
+        <ChunkyPaginationBar
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
     </div>
   );
