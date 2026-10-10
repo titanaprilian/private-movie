@@ -51,18 +51,18 @@ export function GenreTable({
   return (
     <>
       {/* Toolbar / Search */}
-      <div className="rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] p-3 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px]">
+      <ChunkyCard className="p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative w-full sm:max-w-xs">
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]"
+            className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
           />
           <ChunkyInput
             placeholder="Search genres..."
             aria-label="Search genres"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
+            className="pl-10 font-mono"
           />
         </div>
         <span
@@ -71,7 +71,7 @@ export function GenreTable({
         >
           {genres.length} {genres.length === 1 ? 'genre' : 'genres'}
         </span>
-      </div>
+      </ChunkyCard>
 
       {/* Genre Card-Row Grid */}
       <div className="w-full">
