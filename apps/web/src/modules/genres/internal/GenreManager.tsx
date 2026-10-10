@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { Plus, Search, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { useGenreManager } from './hooks/useGenreManager';
+import { useGenreDialogs } from './hooks/useGenreDialogs';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
@@ -18,170 +17,112 @@ import {
   ChunkyDialogFooter,
 } from '@/components/ui/chunky-dialog';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
-import {
-  genresQueryOptions,
-  createGenre,
-  updateGenre,
-  deleteGenre,
-  slugifyGenre,
-  type Genre,
-} from './api';
 
 export function GenreManager() {
-  const queryClient = useQueryClient();
   const {
-    data: genres = [],
+    filteredGenres,
     isLoading,
     isError,
     error,
-  } = useQuery(genresQueryOptions());
+    searchTerm,
+    setSearchTerm,
+    createMutation,
+    updateMutation,
+    deleteMutation,
+  } = useGenreManager();
 
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Dialog States
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createName, setCreateName] = useState('');
-  const [createSlug, setCreateSlug] = useState('');
-  const [createIsBigGenre, setCreateIsBigGenre] = useState(false);
-  const [createDisplayOrder, setCreateDisplayOrder] = useState(0);
-  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-
-  const [editingGenre, setEditingGenre] = useState<Genre | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editSlug, setEditSlug] = useState('');
-  const [editIsBigGenre, setEditIsBigGenre] = useState(false);
-  const [editDisplayOrder, setEditDisplayOrder] = useState(0);
-  const [editError, setEditError] = useState<string | null>(null);
-
-  const [deletingGenre, setDeletingGenre] = useState<Genre | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  // Filter genres by search term
-  const filteredGenres = genres.filter(
-    (g) =>
-      g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      g.slug.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Create Mutation
-  const createMutation = useMutation({
-    mutationFn: createGenre,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['genres'] });
-      toast.success('Genre created successfully');
-      setIsCreateOpen(false);
-      resetCreateForm();
-    },
-    onError: (err: Error) => {
-      setCreateError(err.message);
-    },
-  });
-
-  // Update Mutation
-  const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      name,
-      slug,
-      isBigGenre,
-      displayOrder,
-    }: {
-      id: string;
-      name: string;
-      slug: string;
-      isBigGenre?: boolean;
-      displayOrder?: number;
-    }) => updateGenre(id, { name, slug, isBigGenre, displayOrder }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['genres'] });
-      toast.success('Genre updated successfully');
-      setEditingGenre(null);
-      setEditError(null);
-    },
-    onError: (err: Error) => {
-      setEditError(err.message);
-    },
-  });
-
-  // Delete Mutation
-  const deleteMutation = useMutation({
-    mutationFn: deleteGenre,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['genres'] });
-      toast.success('Genre deleted successfully');
-      setDeletingGenre(null);
-      setDeleteError(null);
-    },
-    onError: (err: Error) => {
-      setDeleteError(err.message);
-    },
-  });
-
-  const resetCreateForm = () => {
-    setCreateName('');
-    setCreateSlug('');
-    setCreateIsBigGenre(false);
-    setCreateDisplayOrder(0);
-    setIsSlugManuallyEdited(false);
-    setCreateError(null);
-  };
-
-  const handleCreateNameChange = (name: string) => {
-    setCreateName(name);
-    if (!isSlugManuallyEdited) {
-      setCreateSlug(slugifyGenre(name));
-    }
-  };
-
-  const handleCreateSlugChange = (slug: string) => {
-    setCreateSlug(slug);
-    setIsSlugManuallyEdited(true);
-  };
-
-  const openEditModal = (genre: Genre) => {
-    setEditingGenre(genre);
-    setEditName(genre.name);
-    setEditSlug(genre.slug);
-    setEditIsBigGenre(genre.isBigGenre ?? false);
-    setEditDisplayOrder(genre.displayOrder ?? 0);
-    setEditError(null);
-  };
-
-  const handleEditNameChange = (name: string) => {
-    setEditName(name);
-    setEditSlug(slugifyGenre(name));
-  };
+  const {
+    isCreateOpen,
+    setIsCreateOpen,
+    createName,
+    createSlug,
+    createIsBigGenre,
+    setCreateIsBigGenre,
+    createDisplayOrder,
+    setCreateDisplayOrder,
+    createError,
+    setCreateError,
+    editingGenre,
+    setEditingGenre,
+    editName,
+    editSlug,
+    setEditSlug,
+    editIsBigGenre,
+    setEditIsBigGenre,
+    editDisplayOrder,
+    setEditDisplayOrder,
+    editError,
+    setEditError,
+    deletingGenre,
+    setDeletingGenre,
+    deleteError,
+    setDeleteError,
+    resetCreateForm,
+    handleCreateNameChange,
+    handleCreateSlugChange,
+    openEditModal,
+    handleEditNameChange,
+  } = useGenreDialogs();
 
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!createName.trim() || !createSlug.trim()) return;
     setCreateError(null);
-    createMutation.mutate({
-      name: createName.trim(),
-      slug: createSlug.trim(),
-      isBigGenre: createIsBigGenre,
-      displayOrder: createDisplayOrder,
-    });
+    createMutation.mutate(
+      {
+        name: createName.trim(),
+        slug: createSlug.trim(),
+        isBigGenre: createIsBigGenre,
+        displayOrder: createDisplayOrder,
+      },
+      {
+        onSuccess: () => {
+          setIsCreateOpen(false);
+          resetCreateForm();
+        },
+        onError: (err: Error) => {
+          setCreateError(err.message);
+        },
+      }
+    );
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingGenre || !editName.trim() || !editSlug.trim()) return;
     setEditError(null);
-    updateMutation.mutate({
-      id: editingGenre.id,
-      name: editName.trim(),
-      slug: editSlug.trim(),
-      isBigGenre: editIsBigGenre,
-      displayOrder: editDisplayOrder,
-    });
+    updateMutation.mutate(
+      {
+        id: editingGenre.id,
+        name: editName.trim(),
+        slug: editSlug.trim(),
+        isBigGenre: editIsBigGenre,
+        displayOrder: editDisplayOrder,
+      },
+      {
+        onSuccess: () => {
+          setEditingGenre(null);
+          setEditError(null);
+        },
+        onError: (err: Error) => {
+          setEditError(err.message);
+        },
+      }
+    );
   };
 
   const handleDeleteConfirm = () => {
     if (!deletingGenre) return;
     setDeleteError(null);
-    deleteMutation.mutate(deletingGenre.id);
+    deleteMutation.mutate(deletingGenre.id, {
+      onSuccess: () => {
+        setDeletingGenre(null);
+        setDeleteError(null);
+      },
+      onError: (err: Error) => {
+        setDeleteError(err.message);
+      },
+    });
   };
 
   return (

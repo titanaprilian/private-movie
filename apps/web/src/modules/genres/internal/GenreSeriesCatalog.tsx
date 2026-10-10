@@ -8,6 +8,7 @@ import {
 } from '@/modules/videos';
 import { PublicNavbar } from '@/modules/navigation';
 import { ChunkyButton } from '@/components/ui/chunky-button';
+import { formatSlugFallback } from '@/lib/utils';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import {
@@ -16,26 +17,15 @@ import {
   ChunkyTabsTrigger,
 } from '@/components/ui/chunky-tabs';
 import { genresQueryOptions } from './api';
+import {
+  GENRE_CATALOG_PAGE_LIMIT,
+  type GenreCatalogFilter,
+  type GenreSeriesCatalogProps,
+} from './types';
 
-export type GenreCatalogFilter = 'all' | 'ongoing';
-
-export interface GenreSeriesCatalogProps {
-  slug: string;
-  filter: GenreCatalogFilter;
-  onFilterChange: (filter: GenreCatalogFilter) => void;
-}
-
-export const GENRE_CATALOG_PAGE_LIMIT = 20;
+export { GENRE_CATALOG_PAGE_LIMIT };
 
 type CatalogSeriesItem = SeriesItem & { rating?: string | null };
-
-function formatSlugFallback(slug: string): string {
-  return slug
-    .split('-')
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
 function formatRating(rating?: string | null): string | undefined {
   if (rating == null || rating === '') return undefined;
