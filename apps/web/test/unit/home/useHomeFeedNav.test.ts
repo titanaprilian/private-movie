@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { useHomeFeedNav } from '@/modules/home/internal/useHomeFeedNav';
+import { useHomeFeedNav } from '@/modules/home/internal/hooks/useHomeFeedNav';
 import { useInputModeStore } from '@/hooks/useInputMode';
 
 describe('useHomeFeedNav', () => {
