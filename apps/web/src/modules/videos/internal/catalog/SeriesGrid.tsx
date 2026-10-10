@@ -22,7 +22,7 @@ import { GenreFilter } from './GenreFilter';
 import { useScrapeWorkerStore } from '../store/useScrapeWorkerStore';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChunkyPaginationBar } from '@/components/ui/chunky-pagination';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import {
@@ -341,9 +341,6 @@ export function SeriesGrid() {
     });
   };
 
-  const isFirstPage = currentPage <= 1;
-  const isLastPage = currentPage >= totalPages;
-
   const gridTopRef = useRef<HTMLDivElement>(null);
 
   const goToPage = (page: number) => {
@@ -514,39 +511,11 @@ export function SeriesGrid() {
 
       {/* Pagination Bar */}
       {meta.total > 0 && (
-        <nav
-          aria-label="Pagination"
-          className="mt-7 flex items-center justify-center gap-4"
-        >
-          <ChunkyChip
-            type="button"
-            variant="default"
-            disabled={isFirstPage}
-            onClick={() => goToPage(currentPage - 1)}
-            aria-label="Previous page"
-            className="disabled:cursor-not-allowed disabled:opacity-40 disabled:active:translate-y-0 disabled:active:border-b-4"
-          >
-            <ChevronLeft aria-hidden="true" />
-            Previous
-          </ChunkyChip>
-          <span
-            aria-live="polite"
-            className="font-extrabold text-[14px] text-[var(--muted)] min-w-[120px] text-center"
-          >
-            Page {Math.min(currentPage, totalPages)} of {totalPages}
-          </span>
-          <ChunkyChip
-            type="button"
-            variant="default"
-            disabled={isLastPage}
-            onClick={() => goToPage(currentPage + 1)}
-            aria-label="Next page"
-            className="disabled:cursor-not-allowed disabled:opacity-40 disabled:active:translate-y-0 disabled:active:border-b-4"
-          >
-            Next
-            <ChevronRight aria-hidden="true" />
-          </ChunkyChip>
-        </nav>
+        <ChunkyPaginationBar
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+        />
       )}
 
       {/* Edit Series Dialog */}
