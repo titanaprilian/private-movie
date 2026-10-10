@@ -110,7 +110,10 @@ export function DeleteConfirmDialog({
       onOpenChange={onOpenChange}
       title={title}
       description={
-        <div className="space-y-3 pt-1 text-left min-w-0">
+        <div
+          className="space-y-3 pt-1 text-left min-w-0 max-h-[50vh] overflow-y-auto pr-1"
+          data-testid="delete-dialog-scroll"
+        >
           <p className="break-words">{leadDescription}</p>
 
           {/* Summary Box */}
@@ -161,7 +164,10 @@ export function DeleteConfirmDialog({
                     : `${loneSourceEpisodes.length} episodes`}{' '}
                   with 0 playable video sources:
                 </p>
-                <ul className="list-disc list-inside font-mono text-[11px] font-semibold space-y-0.5 min-w-0">
+                <ul
+                  className="list-disc list-inside font-mono text-[11px] font-semibold space-y-0.5 min-w-0 max-h-36 overflow-y-auto"
+                  data-testid="sole-source-episode-list"
+                >
                   {loneSourceEpisodes.map((ep, i) => {
                     const fullLabel = `${ep.seriesTitle ? `${ep.seriesTitle} — ` : ''}S${ep.seasonNumber ?? 1}E${ep.episodeNumber ?? 1}: ${ep.title}`;
                     return (
