@@ -204,6 +204,49 @@ describe('StorageResourceTable polish', () => {
     ]);
   });
 
+  it('renders a streamlined right-aligned action bar with only the purge button', () => {
+    renderWithProviders(
+      <StorageResourceTable {...defaultProps({ orphanedCount: 2 })} />
+    );
+    const toolbar = screen.getByTestId('storage-toolbar');
+    expect(toolbar).toBeInTheDocument();
+    expect(toolbar).toHaveClass('flex');
+    expect(toolbar).toHaveClass('justify-end');
+    expect(screen.getByTestId('purge-orphans-btn')).toBeInTheDocument();
+
+    // Removed controls stay gone.
+    expect(screen.queryByTestId('filter-tab-all')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('filter-tab-linked')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('filter-tab-orphaned')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('storage-search-input')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('refresh-scan-btn')).not.toBeInTheDocument();
+  });
+
+  it('triggers onPurgeOrphans when the purge button is clicked', async () => {
+    const props = defaultProps({ orphanedCount: 2 });
+    const { user } = renderWithProviders(<StorageResourceTable {...props} />);
+    await user.click(screen.getByTestId('purge-orphans-btn'));
+    expect(props.onPurgeOrphans).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the purge button while loading or when there are no orphans', () => {
+    const { rerender } = renderWithProviders(
+      <StorageResourceTable {...defaultProps()} isLoading orphanedCount={2} />
+    );
+    expect(screen.getByTestId('purge-orphans-btn')).toBeDisabled();
+
+    rerender(<StorageResourceTable {...defaultProps()} orphanedCount={0} />);
+    expect(screen.getByTestId('purge-orphans-btn')).toBeDisabled();
+  });
+
+  it('suppresses the entire top bar when hideToolbar is true', () => {
+    renderWithProviders(
+      <StorageResourceTable {...defaultProps({ orphanedCount: 2 })} hideToolbar />
+    );
+    expect(screen.queryByTestId('storage-toolbar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('purge-orphans-btn')).not.toBeInTheDocument();
+  });
+
   it('keeps column header sorting accessible over the drill-down default', async () => {
     const { user } = renderWithProviders(
       <StorageResourceTable
@@ -222,6 +265,98 @@ describe('StorageResourceTable polish', () => {
     ]);
   });
 
+function makeResources(count: number): StorageResource[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `file-${i}`,
+    key: `file-${String(i).padStart(2, '0')}.mp4`,
+    filename: `file-${String(i).padStart(2, '0')}.mp4`,
+    sizeBytes: 1000 - i,
+    lastModified: '2026-09-01T10:00:00.000Z',
+    status: 'orphaned',
+  }) as StorageResource);
+}
+
+describe('StorageResourceTable pagination', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('displays at most 20 rows per page when more than 20 resources are present', () => {
+    renderWithProviders(
+      <StorageResourceTable {...defaultProps({ resources: makeResources(25) })} />
+    );
+    const container = screen.getByTestId('storage-table-container');
+    expect(
+      container.querySelectorAll('[data-testid^="row-"]').length
+    ).toBe(20);
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+  });
+
+  it('renders ChunkyPaginationBar and navigates to the next page', async () => {
+    const { user } = renderWithProviders(
+      <StorageResourceTable {...defaultProps({ resources: makeResources(25) })} />
+    );
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Next page' }));
+    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+    const container = screen.getByTestId('storage-table-container');
+    expect(
+      container.querySelectorAll('[data-testid^="row-"]').length
+    ).toBe(5);
+    // Previous navigates back
+    await user.click(screen.getByRole('button', { name: 'Previous page' }));
+    expect(await screen.findByText('Page 1 of 2')).toBeInTheDocument();
+  });
+
+  it('does not render pagination when total rows fit on one page', () => {
+    renderWithProviders(
+      <StorageResourceTable {...defaultProps({ resources: makeResources(5) })} />
+    );
+    expect(screen.queryByText(/Page \d+ of/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Next page' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('resets the current page to 1 when sort changes', async () => {
+    const { user } = renderWithProviders(
+      <StorageResourceTable {...defaultProps({ resources: makeResources(25) })} />
+    );
+    await user.click(screen.getByRole('button', { name: 'Next page' }));
+    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+    await user.click(screen.getByTestId('sort-header-name'));
+    expect(await screen.findByText('Page 1 of 2')).toBeInTheDocument();
+  });
+
+  it('select-all header checkbox selects current page only', async () => {
+    const { user } = renderWithProviders(
+      <StorageResourceTable {...defaultProps({ resources: makeResources(25) })} />
+    );
+    await user.click(screen.getByTestId('select-all-checkbox'));
+    expect(await screen.findByTestId('batch-toolbar')).toBeInTheDocument();
+    expect(screen.getByText('20 files selected')).toBeInTheDocument();
+    // Page 2 rows are not selected
+    await user.click(screen.getByRole('button', { name: 'Next page' }));
+    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('20 files selected')).toBeInTheDocument();
+  });
+
+  it('keeps batch selection and delete toolbar across page navigation', async () => {
+    const props = defaultProps({ resources: makeResources(25) });
+    const { user } = renderWithProviders(<StorageResourceTable {...props} />);
+    await user.click(screen.getByTestId('checkbox-file-00.mp4'));
+    expect(await screen.findByTestId('batch-toolbar')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Next page' }));
+    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+    expect(screen.getByTestId('batch-toolbar')).toBeInTheDocument();
+    expect(screen.getByText('1 file selected')).toBeInTheDocument();
+    await user.click(screen.getByTestId('checkbox-file-24.mp4'));
+    expect(screen.getByText('2 files selected')).toBeInTheDocument();
+    await user.click(screen.getByTestId('delete-selected-btn'));
+    expect(props.onDeleteBatch).toHaveBeenCalledTimes(1);
+    expect(props.onDeleteBatch.mock.calls[0][0]).toHaveLength(2);
+  });
+});
   it('keeps row selection, batch delete, and row action menus working', async () => {
     const props = defaultProps({ resources: [...linkedResources, orphanResource] });
     const { user } = renderWithProviders(<StorageResourceTable {...props} />);
