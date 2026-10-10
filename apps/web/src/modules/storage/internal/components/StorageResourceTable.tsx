@@ -1,16 +1,12 @@
 import { useState, useMemo } from 'react';
 import { formatBytes, type StorageResource } from '../api';
 import { ChunkyButton } from '@/components/ui/chunky-button';
-import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
-import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { ChunkyCard, ChunkyCardList } from '@/components/ui/chunky-card';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
 import { ChunkyCopyButton } from '@/components/ui/chunky-copy-button';
 import {
-  Search,
-  RefreshCw,
   Trash2,
   Play,
   Edit2,
@@ -20,7 +16,6 @@ import {
 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
-export type StatusFilter = 'all' | 'linked' | 'orphaned';
 export type SortByField = 'size' | 'date' | 'name' | 'episode';
 export type SortOrder = 'asc' | 'desc';
 
@@ -36,15 +31,13 @@ export interface StorageResourceTableProps {
   onDeleteBatch: (selectedResources: StorageResource[]) => void;
   onPurgeOrphans: () => void;
   orphanedCount?: number;
-  /** Suppresses the global toolbar card (status chips, search, scan/purge actions). */
+  /** Suppresses the top action bar (purge orphans action). */
   hideToolbar?: boolean;
 }
 
 export function StorageResourceTable({
   resources,
   isLoading = false,
-  onRefreshScan,
-  isRefreshing = false,
   onPreview,
   onEditSource,
   onAttachOrphan,
@@ -54,8 +47,6 @@ export function StorageResourceTable({
   orphanedCount = 0,
   hideToolbar = false,
 }: StorageResourceTableProps) {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   // In series drill-down mode there is no toolbar to change the sort, so
   // resources default to chronological episode order (season, then episode).
   const [sortBy, setSortBy] = useState<SortByField>(
@@ -76,40 +67,10 @@ export function StorageResourceTable({
     }
   };
 
-  // Filtered & sorted resources
+  // Sorted resources (the orphaned tab is pre-scoped server-side, so no
+  // client-side status or search filtering applies here)
   const processedResources = useMemo(() => {
-    // Without the toolbar there is no way to change the status filter,
-    // so scoped resources always pass through unfiltered.
-    const effectiveStatusFilter: StatusFilter = hideToolbar ? 'all' : statusFilter;
     return resources
-      .filter((r) => {
-        // Status filter
-        if (effectiveStatusFilter === 'linked' && r.status !== 'linked') return false;
-        if (effectiveStatusFilter === 'orphaned' && r.status !== 'orphaned')
-          return false;
-
-        // Search filter (filename, S3 key, or series title)
-        if (search.trim()) {
-          const query = search.toLowerCase();
-          const matchesFilename = r.filename.toLowerCase().includes(query);
-          const matchesKey = r.key.toLowerCase().includes(query);
-          const matchesSeries = r.episode?.seriesTitle
-            ?.toLowerCase()
-            .includes(query);
-          const matchesEpisode = r.episode?.title
-            ?.toLowerCase()
-            .includes(query);
-          if (
-            !matchesFilename &&
-            !matchesKey &&
-            !matchesSeries &&
-            !matchesEpisode
-          ) {
-            return false;
-          }
-        }
-        return true;
-      })
       .sort((a, b) => {
         let cmp = 0;
         if (sortBy === 'size') {
@@ -135,7 +96,7 @@ export function StorageResourceTable({
         }
         return sortOrder === 'asc' ? cmp : -cmp;
       });
-  }, [resources, statusFilter, hideToolbar, search, sortBy, sortOrder]);
+  }, [resources, sortBy, sortOrder]);
 
   // Checkbox handlers
   const allProcessedKeys = processedResources.map((r) => r.key);
@@ -169,80 +130,20 @@ export function StorageResourceTable({
 
   return (
     <div className="space-y-4" data-testid="storage-table-container">
-      {/* Toolbar: filter chips, search & actions */}
+      {/* Top action bar: purge orphans only */}
       {!hideToolbar && (
-      <ChunkyCard className="p-3 sm:p-4 flex flex-col gap-3" data-testid="storage-toolbar">
-        {/* Status Filter Chips */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <ChunkyChip
-            type="button"
-            variant={statusFilter === 'all' ? 'active' : 'default'}
-            pressed={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-            data-testid="filter-tab-all"
-          >
-            All
-          </ChunkyChip>
-          <ChunkyChip
-            type="button"
-            variant={statusFilter === 'linked' ? 'active' : 'default'}
-            pressed={statusFilter === 'linked'}
-            onClick={() => setStatusFilter('linked')}
-            data-testid="filter-tab-linked"
-          >
-            Linked
-          </ChunkyChip>
-          <ChunkyChip
-            type="button"
-            variant={statusFilter === 'orphaned' ? 'active' : 'default'}
-            pressed={statusFilter === 'orphaned'}
-            onClick={() => setStatusFilter('orphaned')}
-            data-testid="filter-tab-orphaned"
-          >
-            Orphaned ({orphanedCount})
-          </ChunkyChip>
-        </div>
-
-        {/* Search & Actions */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
-            <ChunkyInput
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search filename or series..."
-              className="pl-10 font-mono"
-              data-testid="storage-search-input"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 sm:ml-auto">
-            <ChunkyButton
-              variant="outline"
-              size="sm"
-              onClick={onRefreshScan}
-              disabled={isRefreshing || isLoading}
-              data-testid="refresh-scan-btn"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
-              />
-              Refresh Scan
-            </ChunkyButton>
-
-            <ChunkyButton
-              variant="gold"
-              size="sm"
-              onClick={onPurgeOrphans}
-              disabled={isLoading || orphanedCount === 0}
-              data-testid="purge-orphans-btn"
-            >
-              <Trash2 className="w-4 h-4" />
-              Purge All Orphans
-            </ChunkyButton>
-          </div>
-        </div>
-      </ChunkyCard>
+      <div className="flex justify-end" data-testid="storage-toolbar">
+        <ChunkyButton
+          variant="gold"
+          size="sm"
+          onClick={onPurgeOrphans}
+          disabled={isLoading || orphanedCount === 0}
+          data-testid="purge-orphans-btn"
+        >
+          <Trash2 className="w-4 h-4" />
+          Purge All Orphans
+        </ChunkyButton>
+      </div>
       )}
 
       {/* Sticky 3D batch selection toolbar */}

@@ -204,6 +204,49 @@ describe('StorageResourceTable polish', () => {
     ]);
   });
 
+  it('renders a streamlined right-aligned action bar with only the purge button', () => {
+    renderWithProviders(
+      <StorageResourceTable {...defaultProps({ orphanedCount: 2 })} />
+    );
+    const toolbar = screen.getByTestId('storage-toolbar');
+    expect(toolbar).toBeInTheDocument();
+    expect(toolbar).toHaveClass('flex');
+    expect(toolbar).toHaveClass('justify-end');
+    expect(screen.getByTestId('purge-orphans-btn')).toBeInTheDocument();
+
+    // Removed controls stay gone.
+    expect(screen.queryByTestId('filter-tab-all')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('filter-tab-linked')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('filter-tab-orphaned')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('storage-search-input')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('refresh-scan-btn')).not.toBeInTheDocument();
+  });
+
+  it('triggers onPurgeOrphans when the purge button is clicked', async () => {
+    const props = defaultProps({ orphanedCount: 2 });
+    const { user } = renderWithProviders(<StorageResourceTable {...props} />);
+    await user.click(screen.getByTestId('purge-orphans-btn'));
+    expect(props.onPurgeOrphans).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the purge button while loading or when there are no orphans', () => {
+    const { rerender } = renderWithProviders(
+      <StorageResourceTable {...defaultProps()} isLoading orphanedCount={2} />
+    );
+    expect(screen.getByTestId('purge-orphans-btn')).toBeDisabled();
+
+    rerender(<StorageResourceTable {...defaultProps()} orphanedCount={0} />);
+    expect(screen.getByTestId('purge-orphans-btn')).toBeDisabled();
+  });
+
+  it('suppresses the entire top bar when hideToolbar is true', () => {
+    renderWithProviders(
+      <StorageResourceTable {...defaultProps({ orphanedCount: 2 })} hideToolbar />
+    );
+    expect(screen.queryByTestId('storage-toolbar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('purge-orphans-btn')).not.toBeInTheDocument();
+  });
+
   it('keeps column header sorting accessible over the drill-down default', async () => {
     const { user } = renderWithProviders(
       <StorageResourceTable

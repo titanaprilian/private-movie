@@ -577,7 +577,7 @@ describe('Storage Management Console UI', () => {
       });
     });
 
-    it('filters resources by status tabs (All, Linked, Orphaned)', async () => {
+    it('renders a streamlined action bar with only purge on the Orphaned Files tab', async () => {
       const { user } = renderWithProviders(<StorageView />);
 
       await screen.findByTestId('series-row-series-1');
@@ -587,33 +587,20 @@ describe('Storage Management Console UI', () => {
         expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
       });
 
-      // Click "Orphaned" filter tab keeps the unlinked files visible
-      await user.click(screen.getByTestId('filter-tab-orphaned'));
-      expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
-      expect(screen.getByText('temp_chunk.bin')).toBeInTheDocument();
-
-      // Click "Linked" filter tab hides orphaned files in this isolated view
-      await user.click(screen.getByTestId('filter-tab-linked'));
+      // Streamlined top bar: purge action only, no filter/search/refresh chrome.
+      const toolbar = screen.getByTestId('storage-toolbar');
+      expect(toolbar).toBeInTheDocument();
+      expect(toolbar).toHaveClass('justify-end');
+      expect(screen.getByTestId('purge-orphans-btn')).toBeInTheDocument();
+      expect(screen.queryByTestId('filter-tab-all')).not.toBeInTheDocument();
       expect(
-        screen.queryByText('unlinked_trailer.mp4')
+        screen.queryByTestId('filter-tab-orphaned')
       ).not.toBeInTheDocument();
-    });
-
-    it('searches resources by filename or series title', async () => {
-      const { user } = renderWithProviders(<StorageView />);
-
-      await screen.findByTestId('series-row-series-1');
-      await user.click(screen.getByTestId('tab-trigger-orphaned'));
-
-      await waitFor(() => {
-        expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
-      });
-
-      const searchInput = screen.getByTestId('storage-search-input');
-      await user.type(searchInput, 'trailer');
-
-      expect(screen.getByText('unlinked_trailer.mp4')).toBeInTheDocument();
-      expect(screen.queryByText('temp_chunk.bin')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('filter-tab-linked')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('storage-search-input')
+      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId('refresh-scan-btn')).not.toBeInTheDocument();
     });
 
     it('sorts columns by name when clicking name header', async () => {

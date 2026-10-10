@@ -102,13 +102,16 @@ describe('Storage drill-down declutter', () => {
     expect(await screen.findByTestId('row-s1e1.mp4')).toBeInTheDocument();
   });
 
-  it('retains the toolbar with purge and filter actions in the overview orphaned tab', async () => {
+  it('retains the streamlined purge-only action bar in the overview orphaned tab', async () => {
     const { user } = renderWithProviders(<StorageView />);
     await user.click(await screen.findByTestId('tab-trigger-orphaned'));
     expect(await screen.findByTestId('storage-toolbar')).toBeInTheDocument();
-    expect(screen.getByTestId('filter-tab-all')).toBeInTheDocument();
     expect(screen.getByTestId('purge-orphans-btn')).toBeInTheDocument();
-    expect(screen.getByTestId('refresh-scan-btn')).toBeInTheDocument();
+    expect(screen.queryByTestId('filter-tab-all')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('refresh-scan-btn')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('storage-search-input')
+    ).not.toBeInTheDocument();
   });
 
   it('keeps sorting, row selection, and row actions working in the drill-down table', async () => {
