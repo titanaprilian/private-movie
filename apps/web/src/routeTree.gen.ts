@@ -17,10 +17,10 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminGenresRouteImport } from './routes/admin/genres'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminProfileRouteImport } from './routes/admin/profile'
-import { Route as AdminStorageRouteImport } from './routes/admin/storage'
 import { Route as GenresSlugRouteImport } from './routes/genres.$slug'
 import { Route as GuideAdblockRouteImport } from './routes/guide.adblock'
 import { Route as WatchSeriesIdRouteImport } from './routes/watch.$seriesId'
+import { Route as AdminStorageIndexRouteImport } from './routes/admin/storage.index'
 import { Route as AdminStorageSeriesIdRouteImport } from './routes/admin/storage.$seriesId'
 import { Route as AdminVideosIndexRouteImport } from './routes/admin/videos.index'
 import { Route as AdminVideosSeriesIdRouteImport } from './routes/admin/videos.$seriesId'
@@ -65,11 +65,6 @@ const AdminProfileRoute = AdminProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminStorageRoute = AdminStorageRouteImport.update({
-  id: '/storage',
-  path: '/storage',
-  getParentRoute: () => AdminRoute,
-} as any)
 const GenresSlugRoute = GenresSlugRouteImport.update({
   id: '/genres/$slug',
   path: '/genres/$slug',
@@ -85,10 +80,15 @@ const WatchSeriesIdRoute = WatchSeriesIdRouteImport.update({
   path: '/watch/$seriesId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminStorageIndexRoute = AdminStorageIndexRouteImport.update({
+  id: '/storage/',
+  path: '/storage/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminStorageSeriesIdRoute = AdminStorageSeriesIdRouteImport.update({
-  id: '/$seriesId',
-  path: '/$seriesId',
-  getParentRoute: () => AdminStorageRoute,
+  id: '/storage/$seriesId',
+  path: '/storage/$seriesId',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminVideosIndexRoute = AdminVideosIndexRouteImport.update({
   id: '/videos/',
@@ -109,13 +109,13 @@ export interface FileRoutesByFullPath {
   '/admin/genres': typeof AdminGenresRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/storage': typeof AdminStorageRouteWithChildren
   '/genres/$slug': typeof GenresSlugRoute
   '/guide/adblock': typeof GuideAdblockRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/storage/$seriesId': typeof AdminStorageSeriesIdRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
+  '/admin/storage/': typeof AdminStorageIndexRoute
   '/admin/videos/': typeof AdminVideosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -125,13 +125,13 @@ export interface FileRoutesByTo {
   '/admin/genres': typeof AdminGenresRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/storage': typeof AdminStorageRouteWithChildren
   '/genres/$slug': typeof GenresSlugRoute
   '/guide/adblock': typeof GuideAdblockRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/storage/$seriesId': typeof AdminStorageSeriesIdRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
+  '/admin/storage': typeof AdminStorageIndexRoute
   '/admin/videos': typeof AdminVideosIndexRoute
 }
 export interface FileRoutesById {
@@ -143,13 +143,13 @@ export interface FileRoutesById {
   '/admin/genres': typeof AdminGenresRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/storage': typeof AdminStorageRouteWithChildren
   '/genres/$slug': typeof GenresSlugRoute
   '/guide/adblock': typeof GuideAdblockRoute
   '/watch/$seriesId': typeof WatchSeriesIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/storage/$seriesId': typeof AdminStorageSeriesIdRoute
   '/admin/videos/$seriesId': typeof AdminVideosSeriesIdRoute
+  '/admin/storage/': typeof AdminStorageIndexRoute
   '/admin/videos/': typeof AdminVideosIndexRoute
 }
 export interface FileRouteTypes {
@@ -162,13 +162,13 @@ export interface FileRouteTypes {
     | '/admin/genres'
     | '/admin/login'
     | '/admin/profile'
-    | '/admin/storage'
     | '/genres/$slug'
     | '/guide/adblock'
     | '/watch/$seriesId'
     | '/admin/'
     | '/admin/storage/$seriesId'
     | '/admin/videos/$seriesId'
+    | '/admin/storage/'
     | '/admin/videos/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -178,13 +178,13 @@ export interface FileRouteTypes {
     | '/admin/genres'
     | '/admin/login'
     | '/admin/profile'
-    | '/admin/storage'
     | '/genres/$slug'
     | '/guide/adblock'
     | '/watch/$seriesId'
     | '/admin'
     | '/admin/storage/$seriesId'
     | '/admin/videos/$seriesId'
+    | '/admin/storage'
     | '/admin/videos'
   id:
     | '__root__'
@@ -195,13 +195,13 @@ export interface FileRouteTypes {
     | '/admin/genres'
     | '/admin/login'
     | '/admin/profile'
-    | '/admin/storage'
     | '/genres/$slug'
     | '/guide/adblock'
     | '/watch/$seriesId'
     | '/admin/'
     | '/admin/storage/$seriesId'
     | '/admin/videos/$seriesId'
+    | '/admin/storage/'
     | '/admin/videos/'
   fileRoutesById: FileRoutesById
 }
@@ -273,13 +273,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProfileRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/storage': {
-      id: '/admin/storage'
-      path: '/storage'
-      fullPath: '/admin/storage'
-      preLoaderRoute: typeof AdminStorageRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/genres/$slug': {
       id: '/genres/$slug'
       path: '/genres/$slug'
@@ -301,12 +294,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchSeriesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/storage/': {
+      id: '/admin/storage/'
+      path: '/storage'
+      fullPath: '/admin/storage/'
+      preLoaderRoute: typeof AdminStorageIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/storage/$seriesId': {
       id: '/admin/storage/$seriesId'
-      path: '/$seriesId'
+      path: '/storage/$seriesId'
       fullPath: '/admin/storage/$seriesId'
       preLoaderRoute: typeof AdminStorageSeriesIdRouteImport
-      parentRoute: typeof AdminStorageRoute
+      parentRoute: typeof AdminRoute
     }
     '/admin/videos/': {
       id: '/admin/videos/'
@@ -325,25 +325,14 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminStorageRouteChildren {
-  AdminStorageSeriesIdRoute: typeof AdminStorageSeriesIdRoute
-}
-
-const AdminStorageRouteChildren: AdminStorageRouteChildren = {
-  AdminStorageSeriesIdRoute: AdminStorageSeriesIdRoute,
-}
-
-const AdminStorageRouteWithChildren = AdminStorageRoute._addFileChildren(
-  AdminStorageRouteChildren,
-)
-
 interface AdminRouteChildren {
   AdminGenresRoute: typeof AdminGenresRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminProfileRoute: typeof AdminProfileRoute
-  AdminStorageRoute: typeof AdminStorageRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminStorageSeriesIdRoute: typeof AdminStorageSeriesIdRoute
   AdminVideosSeriesIdRoute: typeof AdminVideosSeriesIdRoute
+  AdminStorageIndexRoute: typeof AdminStorageIndexRoute
   AdminVideosIndexRoute: typeof AdminVideosIndexRoute
 }
 
@@ -351,9 +340,10 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminGenresRoute: AdminGenresRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminProfileRoute: AdminProfileRoute,
-  AdminStorageRoute: AdminStorageRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
+  AdminStorageSeriesIdRoute: AdminStorageSeriesIdRoute,
   AdminVideosSeriesIdRoute: AdminVideosSeriesIdRoute,
+  AdminStorageIndexRoute: AdminStorageIndexRoute,
   AdminVideosIndexRoute: AdminVideosIndexRoute,
 }
 
