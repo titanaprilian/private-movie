@@ -66,7 +66,7 @@ describe('StorageSeriesTable episode styling', () => {
     }
   });
 
-  it('navigates to the series storage route on row click', async () => {
+  it('notifies selection on row click without navigating directly (parent owns navigation)', async () => {
     const onSelectSeries = vi.fn();
     const { user } = renderWithProviders(
       <StorageSeriesTable series={series} onSelectSeries={onSelectSeries} />
@@ -75,12 +75,8 @@ describe('StorageSeriesTable episode styling', () => {
     expect(onSelectSeries).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'series-1' })
     );
-    expect(mockNavigate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: '/admin/storage/$seriesId',
-        params: { seriesId: 'series-1' },
-      })
-    );
+    // Deduplicated navigation: the table never calls the router itself.
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('selects the series on Enter/Space keydown', async () => {

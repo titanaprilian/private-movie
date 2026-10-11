@@ -117,13 +117,13 @@ export function StorageView() {
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Provider Selector (ChunkySelect scales to any provider count) */}
-          {providers.length > 0 && (
+          {providers.length > 0 && selectedProviderId && (
             <div
               className="flex items-center"
               data-testid="provider-selector-container"
             >
               <ChunkySelect
-                value={selectedProviderId || undefined}
+                value={selectedProviderId}
                 onValueChange={(val) => setSelectedProviderId(val)}
               >
                 <ChunkySelectTrigger
@@ -256,7 +256,6 @@ export function StorageView() {
             series={series}
             isLoading={isLoadingSeries}
             onSelectSeries={handleSelectSeries}
-            providerId={selectedProviderId}
           />
         </ChunkyTabsContent>
 

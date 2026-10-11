@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
 import { PackageSearch, Search } from 'lucide-react';
 import { formatDualBytes, type StorageSeriesItem } from '../api';
 import { ChunkyCard } from '@/components/ui/chunky-card';
@@ -22,8 +21,6 @@ export interface StorageSeriesTableProps {
   isLoading?: boolean;
   selectedSeriesId?: string | null;
   onSelectSeries?: (series: StorageSeriesItem) => void;
-  /** Active storage provider, forwarded as search state on row navigation. */
-  providerId?: string | null;
 }
 
 export function StorageSeriesTable({
@@ -31,10 +28,8 @@ export function StorageSeriesTable({
   isLoading = false,
   selectedSeriesId = null,
   onSelectSeries,
-  providerId = null,
 }: StorageSeriesTableProps) {
   const [search, setSearch] = useState('');
-  const navigate = useNavigate();
 
   const filteredSeries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -42,13 +37,10 @@ export function StorageSeriesTable({
     return series.filter((s) => s.title.toLowerCase().includes(query));
   }, [series, search]);
 
+  // Navigation is owned by the parent (StorageView.onSelectSeries) — this
+  // table only notifies selection to avoid duplicate router navigations.
   const handleSelectSeries = (item: StorageSeriesItem) => {
     onSelectSeries?.(item);
-    void navigate({
-      to: '/admin/storage/$seriesId',
-      params: { seriesId: item.id },
-      search: providerId ? { providerId } : {},
-    });
   };
 
   return (

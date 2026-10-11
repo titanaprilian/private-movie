@@ -123,37 +123,25 @@ describe('StorageSeriesTable rows', () => {
     expect(onSelectSeries).toHaveBeenCalledWith(mockSeries[1]);
   });
 
-  it('navigates to the series storage route when clicking anywhere on the row', async () => {
+  it('does not navigate directly on row click — parent owns router navigation', async () => {
     const { user } = renderWithProviders(
       <StorageSeriesTable series={mockSeries} onSelectSeries={vi.fn()} />
     );
 
     await user.click(screen.getByTestId('series-row-series-2'));
-    expect(mockNavigate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: '/admin/storage/$seriesId',
-        params: { seriesId: 'series-2' },
-      })
-    );
+    // Deduplicated navigation: the table only notifies selection.
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('forwards the active providerId as search state on row navigation', async () => {
+  it('notifies selection without navigating so the parent can forward provider search params', async () => {
+    const onSelectSeries = vi.fn();
     const { user } = renderWithProviders(
-      <StorageSeriesTable
-        series={mockSeries}
-        onSelectSeries={vi.fn()}
-        providerId="prov-1"
-      />
+      <StorageSeriesTable series={mockSeries} onSelectSeries={onSelectSeries} />
     );
 
     await user.click(screen.getByTestId('series-row-series-1'));
-    expect(mockNavigate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: '/admin/storage/$seriesId',
-        params: { seriesId: 'series-1' },
-        search: { providerId: 'prov-1' },
-      })
-    );
+    expect(onSelectSeries).toHaveBeenCalledWith(mockSeries[0]);
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('does not fire a redundant row click when opening the kebab menu', async () => {
