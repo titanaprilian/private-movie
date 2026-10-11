@@ -1,34 +1,36 @@
 import { Pencil, Trash2 } from 'lucide-react';
-import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
+import {
+  ChunkyTableRow,
+  ChunkyTableCell,
+  ChunkyTableIndexBadge,
+} from '@/components/ui/chunky-table';
 import type { GenreRowProps } from '../types';
 
 export function GenreRow({ genre, index, onEdit, onDelete }: GenreRowProps) {
   return (
-    <ChunkyCard
+    <ChunkyTableRow
       data-testid={`genre-card-${genre.id}`}
-      className="genre-row hover:-translate-y-[2px] hover:shadow-lg transition-all"
+      interactive
+      className="grid grid-cols-[48px_minmax(0,1fr)_auto_72px_48px] items-center gap-3 p-3"
     >
       {/* Tactile index badge */}
-      <span
-        aria-hidden="true"
-        className="flex h-10 w-12 items-center justify-center rounded-xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface-raised)] font-sans text-[15px] font-extrabold text-[var(--blue)]"
-      >
-        {index + 1}
-      </span>
+      <ChunkyTableCell className="flex justify-center">
+        <ChunkyTableIndexBadge index={index + 1} />
+      </ChunkyTableCell>
 
       {/* Name + slug */}
-      <div className="min-w-0">
+      <ChunkyTableCell>
         <p className="truncate font-sans text-[15px] font-extrabold leading-snug text-[var(--ink)]">
           {genre.name}
         </p>
         <p className="truncate font-mono text-[13px] font-semibold text-[var(--muted)]">
           {genre.slug}
         </p>
-      </div>
+      </ChunkyTableCell>
 
       {/* Big Genre badge */}
-      <div>
+      <ChunkyTableCell>
         {genre.isBigGenre ? (
           <span className="inline-flex items-center rounded-full border-2 border-b-4 border-[var(--yellow-dark)] bg-[var(--yellow)] px-3 py-1 font-sans text-[11px] font-extrabold uppercase tracking-[0.7px] text-[#201a00]">
             Big Genre
@@ -38,15 +40,15 @@ export function GenreRow({ genre, index, onEdit, onDelete }: GenreRowProps) {
             —
           </span>
         )}
-      </div>
+      </ChunkyTableCell>
 
       {/* Display order */}
-      <span className="text-center font-mono text-sm font-bold text-[var(--ink)]">
+      <ChunkyTableCell className="text-center font-mono text-sm font-bold text-[var(--ink)]">
         {genre.displayOrder ?? 0}
-      </span>
+      </ChunkyTableCell>
 
       {/* Row actions */}
-      <div className="flex items-center justify-end">
+      <ChunkyTableCell className="flex items-center justify-end">
         <ChunkyActionMenu
           triggerLabel={`Actions for ${genre.name}`}
           items={[
@@ -63,7 +65,7 @@ export function GenreRow({ genre, index, onEdit, onDelete }: GenreRowProps) {
             },
           ]}
         />
-      </div>
-    </ChunkyCard>
+      </ChunkyTableCell>
+    </ChunkyTableRow>
   );
 }
