@@ -1,7 +1,17 @@
 import { renderWithProviders, screen, within } from '../../utils';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { StorageSeriesTable } from '@/modules/storage/internal/components/StorageSeriesTable';
 import type { StorageSeriesItem } from '@/modules/storage/internal/api';
+
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
+  useNavigate: () => mockNavigate,
+  useParams: () => ({}),
+}));
 
 const mockSeries: StorageSeriesItem[] = [
   {
@@ -44,8 +54,11 @@ const mockSeries: StorageSeriesItem[] = [
 ];
 
 describe('StorageSeriesTable rows', () => {
-  it('renders an index number column header (#)', () => {
-    renderWithProviders(
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
+  it('renders an index number column header (#)', () => {    renderWithProviders(
       <StorageSeriesTable series={mockSeries} onSelectSeries={vi.fn()} />
     );
     expect(screen.getByTestId('series-header-index')).toHaveTextContent('#');
@@ -108,6 +121,39 @@ describe('StorageSeriesTable rows', () => {
     await user.click(screen.getByTestId('series-row-series-2'));
     expect(onSelectSeries).toHaveBeenCalledTimes(1);
     expect(onSelectSeries).toHaveBeenCalledWith(mockSeries[1]);
+  });
+
+  it('navigates to the series storage route when clicking anywhere on the row', async () => {
+    const { user } = renderWithProviders(
+      <StorageSeriesTable series={mockSeries} onSelectSeries={vi.fn()} />
+    );
+
+    await user.click(screen.getByTestId('series-row-series-2'));
+    expect(mockNavigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: '/admin/storage/$seriesId',
+        params: { seriesId: 'series-2' },
+      })
+    );
+  });
+
+  it('forwards the active providerId as search state on row navigation', async () => {
+    const { user } = renderWithProviders(
+      <StorageSeriesTable
+        series={mockSeries}
+        onSelectSeries={vi.fn()}
+        providerId="prov-1"
+      />
+    );
+
+    await user.click(screen.getByTestId('series-row-series-1'));
+    expect(mockNavigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: '/admin/storage/$seriesId',
+        params: { seriesId: 'series-1' },
+        search: { providerId: 'prov-1' },
+      })
+    );
   });
 
   it('does not fire a redundant row click when opening the kebab menu', async () => {

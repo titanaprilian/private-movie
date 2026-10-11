@@ -8,6 +8,16 @@ import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
 import { ChunkyCopyButton } from '@/components/ui/chunky-copy-button';
 import {
+  ChunkyTable,
+  ChunkyTableBody,
+  ChunkyTableCell,
+  ChunkyTableHeader,
+  ChunkyTableHeaderCell,
+  ChunkyTableRow,
+  ChunkyTableToolbar,
+  type ChunkyTableSortDirection,
+} from '@/components/ui/chunky-table';
+import {
   Trash2,
   Play,
   Edit2,
@@ -149,16 +159,17 @@ export function StorageResourceTable({
     return resources.filter((r) => selectedKeys.includes(r.key));
   }, [resources, selectedKeys]);
 
-  const sortIndicator = (field: SortByField) => {
-    if (sortBy !== field) return '↕';
-    return sortOrder === 'asc' ? '↑' : '↓';
-  };
+  const sortDirectionFor = (field: SortByField): ChunkyTableSortDirection =>
+    sortBy === field ? sortOrder : null;
 
   return (
-    <div className="space-y-4" data-testid="storage-table-container">
+    <ChunkyTable data-testid="storage-table-container">
       {/* Top action bar: purge orphans only */}
       {!hideToolbar && (
-      <div className="flex justify-end" data-testid="storage-toolbar">
+      <ChunkyTableToolbar
+        className="flex justify-end"
+        data-testid="storage-toolbar"
+      >
         <ChunkyButton
           variant="gold"
           size="sm"
@@ -169,7 +180,7 @@ export function StorageResourceTable({
           <Trash2 className="w-4 h-4" />
           Purge All Orphans
         </ChunkyButton>
-      </div>
+      </ChunkyTableToolbar>
       )}
 
       {/* Sticky 3D batch selection toolbar */}
@@ -195,7 +206,7 @@ export function StorageResourceTable({
       )}
 
       {/* Grid Header Row */}
-      <div className="hidden lg:grid gap-3.5 items-center px-4 pb-2 grid-cols-[36px_minmax(0,2fr)_minmax(0,1.4fr)_130px_170px_48px]">
+      <ChunkyTableHeader className="px-4 pb-2 grid-cols-[36px_minmax(0,2fr)_minmax(0,1.4fr)_130px_170px_48px]">
         <span className="flex justify-center">
           <ChunkyCheckbox
             checked={isAllSelected}
@@ -205,37 +216,35 @@ export function StorageResourceTable({
             data-testid="select-all-checkbox"
           />
         </span>
-        <button
-          type="button"
-          onClick={() => handleSort('name')}
+        <ChunkyTableHeaderCell
+          sortable
+          sortDirection={sortDirectionFor('name')}
+          onSort={() => handleSort('name')}
           data-testid="sort-header-name"
-          className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer text-left"
         >
-          Filename / Key <span aria-hidden="true">{sortIndicator('name')}</span>
-        </button>
-        <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
-          Status
-        </span>
-        <button
-          type="button"
-          onClick={() => handleSort('size')}
+          Filename / Key
+        </ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell>Status</ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell
+          sortable
+          sortDirection={sortDirectionFor('size')}
+          onSort={() => handleSort('size')}
           data-testid="sort-header-size"
-          className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer text-left"
         >
-          Size <span aria-hidden="true">{sortIndicator('size')}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSort('date')}
+          Size
+        </ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell
+          sortable
+          sortDirection={sortDirectionFor('date')}
+          onSort={() => handleSort('date')}
           data-testid="sort-header-date"
-          className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer text-left"
         >
-          Modified <span aria-hidden="true">{sortIndicator('date')}</span>
-        </button>
-        <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] text-right">
+          Modified
+        </ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell className="text-right">
           Actions
-        </span>
-      </div>
+        </ChunkyTableHeaderCell>
+      </ChunkyTableHeader>
 
       {/* Mobile select-all row */}
       <div className="flex lg:hidden items-center gap-2 px-1">
@@ -252,7 +261,7 @@ export function StorageResourceTable({
           data-testid="sort-header-name-mobile"
           className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
         >
-          Sort by name <span aria-hidden="true">{sortIndicator('name')}</span>
+          Sort by name <span aria-hidden="true">{sortBy === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}</span>
         </button>
       </div>
 
@@ -282,7 +291,7 @@ export function StorageResourceTable({
           </p>
         </ChunkyCard>
       ) : (
-        <ChunkyCardList>
+        <ChunkyTableBody>
           {paginatedResources.map((resource) => {
             const isSelected = selectedKeys.includes(resource.key);
             const isVideo = /\.(mp4|mkv|webm|mov|avi)$/i.test(
@@ -290,10 +299,10 @@ export function StorageResourceTable({
             );
 
             return (
-              <ChunkyCard
+              <ChunkyTableRow
                 key={resource.key}
                 selected={isSelected}
-                className={`p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_minmax(0,1.4fr)_130px_170px_48px] bg-[var(--bg)] hover:-translate-y-0.5 active:translate-y-0 ${isSelected ? '' : 'hover:border-[#4b5d67]'}`}
+                className="p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_minmax(0,1.4fr)_130px_170px_48px]"
                 data-testid={`row-${resource.key}`}
               >
                 {/* Row selection */}
@@ -307,7 +316,7 @@ export function StorageResourceTable({
                 </span>
 
                 {/* Filename & S3 Key */}
-                <div className="min-w-0">
+                <ChunkyTableCell>
                   <div className="flex items-center gap-1.5 min-w-0">
                     <div
                       className="font-sans font-extrabold text-[15px] text-[var(--ink)] leading-snug truncate"
@@ -347,10 +356,10 @@ export function StorageResourceTable({
                       )
                     </span>
                   </div>
-                </div>
+                </ChunkyTableCell>
 
                 {/* Association Status */}
-                <div className="col-span-2 lg:col-span-1 min-w-0">
+                <ChunkyTableCell className="col-span-2 lg:col-span-1">
                   {resource.status === 'linked' && resource.episode ? (
                     <div className="space-y-1">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl border-2 border-[var(--green-dark)] bg-[var(--green-soft)] text-[11px] font-sans font-extrabold uppercase tracking-wider text-[var(--green)]">
@@ -388,10 +397,10 @@ export function StorageResourceTable({
                       </div>
                     </div>
                   )}
-                </div>
+                </ChunkyTableCell>
 
                 {/* Formatted Size (dual display) */}
-                <div className="hidden lg:block font-mono text-sm font-extrabold text-[var(--ink)]">
+                <ChunkyTableCell className="hidden lg:block font-mono text-sm font-extrabold text-[var(--ink)]">
                   {formatBytes(resource.sizeBytes)}
                   <span className="text-[11px] font-semibold text-[var(--muted)] block">
                     {formatBytes(resource.sizeBytes, {
@@ -399,10 +408,10 @@ export function StorageResourceTable({
                       standard: 'decimal',
                     })}
                   </span>
-                </div>
+                </ChunkyTableCell>
 
                 {/* Last Modified Date */}
-                <div className="hidden lg:block font-mono text-xs font-semibold text-[var(--muted)]">
+                <ChunkyTableCell className="hidden lg:block font-mono text-xs font-semibold text-[var(--muted)]">
                   {resource.lastModified
                     ? new Date(resource.lastModified).toLocaleDateString(
                         undefined,
@@ -415,10 +424,10 @@ export function StorageResourceTable({
                         }
                       )
                     : '—'}
-                </div>
+                </ChunkyTableCell>
 
                 {/* Row Actions kebab */}
-                <span className="flex justify-end">
+                <ChunkyTableCell className="flex justify-end">
                   <ChunkyActionMenu
                     triggerLabel={`Actions for ${resource.filename}`}
                     items={[
@@ -457,11 +466,11 @@ export function StorageResourceTable({
                       },
                     ]}
                   />
-                </span>
-              </ChunkyCard>
+                </ChunkyTableCell>
+              </ChunkyTableRow>
             );
           })}
-        </ChunkyCardList>
+        </ChunkyTableBody>
       )}
 
       {totalPages > 1 && (
@@ -471,6 +480,6 @@ export function StorageResourceTable({
           onPageChange={setCurrentPage}
         />
       )}
-    </div>
+    </ChunkyTable>
   );
 }

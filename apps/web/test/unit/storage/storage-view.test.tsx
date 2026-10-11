@@ -10,6 +10,8 @@ import { VideoPreviewModal } from '@/modules/storage/internal/components/dialogs
 import type { StorageMetrics, StorageResource } from '@/modules/storage';
 
 // Mock TanStack Router
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
@@ -24,7 +26,7 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockNavigate,
   useParams: () => ({}),
 }));
 
@@ -231,6 +233,7 @@ const mockBackendItems = [
 describe('Storage Management Console UI', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    mockNavigate.mockClear();
     window.history.replaceState(null, '', '/admin/storage');
     setAccessToken('test-access-token');
     vi.spyOn(globalThis, 'fetch').mockImplementation(
@@ -525,16 +528,25 @@ describe('Storage Management Console UI', () => {
       ).not.toBeInTheDocument();
     });
 
-    it('selects a series when its row is clicked', async () => {
+    it('navigates to the series storage route when its row is clicked', async () => {
       const { user } = renderWithProviders(<StorageView />);
 
       const firstRow = await screen.findByTestId('series-row-series-1');
       await user.click(firstRow);
 
-      // Selecting a series transitions to the Level 2 drill-down view
-      expect(await screen.findByTestId('series-drilldown-view')).toBeInTheDocument();
-      expect(screen.getByTestId('back-to-series-btn')).toBeInTheDocument();
-      expect(window.location.search).toContain('seriesId=series-1');
+      // Row clicks route to the standalone series storage detail view
+      expect(mockNavigate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: '/admin/storage/$seriesId',
+          params: { seriesId: 'series-1' },
+        })
+      );
+      // The overview stays put: no in-place drill-down view
+      expect(
+        screen.queryByTestId('series-drilldown-view')
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId('storage-page-header')).toBeInTheDocument();
+      expect(screen.getByTestId('storage-metrics-grid')).toBeInTheDocument();
     });
 
     it('displays unlinked files with purge and attach actions on the Orphaned Files tab', async () => {
@@ -614,7 +626,7 @@ describe('Storage Management Console UI', () => {
       });
 
       // Click Name sort header
-      await user.click(screen.getByTestId('sort-header-name'));
+      await user.click(screen.getByRole('button', { name: /filename \/ key/i }));
 
       const rows = screen.getAllByTestId(/^row-/);
       // Descending alphabetically by default on click

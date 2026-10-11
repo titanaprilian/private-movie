@@ -1,16 +1,29 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { PackageSearch, Search } from 'lucide-react';
 import { formatDualBytes, type StorageSeriesItem } from '../api';
-import { ChunkyCard, ChunkyCardList } from '@/components/ui/chunky-card';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
+import {
+  ChunkyTable,
+  ChunkyTableBody,
+  ChunkyTableCell,
+  ChunkyTableHeader,
+  ChunkyTableHeaderCell,
+  ChunkyTableIndexBadge,
+  ChunkyTableRow,
+  ChunkyTableToolbar,
+} from '@/components/ui/chunky-table';
 
 export interface StorageSeriesTableProps {
   series: StorageSeriesItem[];
   isLoading?: boolean;
   selectedSeriesId?: string | null;
-  onSelectSeries: (series: StorageSeriesItem) => void;
+  onSelectSeries?: (series: StorageSeriesItem) => void;
+  /** Active storage provider, forwarded as search state on row navigation. */
+  providerId?: string | null;
 }
 
 export function StorageSeriesTable({
@@ -18,8 +31,10 @@ export function StorageSeriesTable({
   isLoading = false,
   selectedSeriesId = null,
   onSelectSeries,
+  providerId = null,
 }: StorageSeriesTableProps) {
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
 
   const filteredSeries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -27,9 +42,18 @@ export function StorageSeriesTable({
     return series.filter((s) => s.title.toLowerCase().includes(query));
   }, [series, search]);
 
+  const handleSelectSeries = (item: StorageSeriesItem) => {
+    onSelectSeries?.(item);
+    void navigate({
+      to: '/admin/storage/$seriesId',
+      params: { seriesId: item.id },
+      search: providerId ? { providerId } : {},
+    });
+  };
+
   return (
-    <div className="space-y-4" data-testid="series-table-container">
-      <ChunkyCard className="p-3 sm:p-4">
+    <ChunkyTable data-testid="series-table-container">
+      <ChunkyTableToolbar>
         <div className="relative w-full sm:max-w-xs">
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
           <ChunkyInput
@@ -40,33 +64,22 @@ export function StorageSeriesTable({
             data-testid="series-search-input"
           />
         </div>
-      </ChunkyCard>
+      </ChunkyTableToolbar>
 
       {/* Grid Header Row */}
-      <div className="hidden lg:grid gap-3.5 items-center px-4 pb-2 grid-cols-[36px_minmax(0,2fr)_110px_190px_110px_48px]">
-        <span
-          className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
-          data-testid="series-header-index"
-        >
+      <ChunkyTableHeader className="px-4 pb-2 grid-cols-[36px_minmax(0,2fr)_110px_190px_110px_48px]">
+        <ChunkyTableHeaderCell data-testid="series-header-index">
           #
-        </span>
-        <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
-          Series Title
-        </span>
-        <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
-          Files
-        </span>
-        <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
-          Storage Used
-        </span>
-        <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
-          Seasons
-        </span>
-        <span aria-hidden="true" />
-      </div>
+        </ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell>Series Title</ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell>Files</ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell>Storage Used</ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell>Seasons</ChunkyTableHeaderCell>
+        <ChunkyTableHeaderCell aria-hidden="true" />
+      </ChunkyTableHeader>
 
       {isLoading ? (
-        <ChunkyCardList data-testid="series-loading-list">
+        <ChunkyTableBody data-testid="series-loading-list">
           {[1, 2, 3].map((i) => (
             <ChunkySkeleton key={i} className="p-4">
               <div className="h-4 bg-[var(--border)] rounded-xl w-2/3 mb-2" />
@@ -76,7 +89,7 @@ export function StorageSeriesTable({
           <p className="text-center font-sans text-xs font-bold text-[var(--muted)]">
             Aggregating series storage...
           </p>
-        </ChunkyCardList>
+        </ChunkyTableBody>
       ) : filteredSeries.length === 0 ? (
         <ChunkyCard className="p-8 text-center" data-testid="series-empty-state">
           <p className="font-display font-bold text-lg text-[var(--ink)]">
@@ -89,34 +102,33 @@ export function StorageSeriesTable({
           </p>
         </ChunkyCard>
       ) : (
-        <ChunkyCardList>
+        <ChunkyTableBody>
           {filteredSeries.map((item, index) => {
             const isSelected = selectedSeriesId === item.id;
             return (
-              <ChunkyCard
+              <ChunkyTableRow
                 key={item.id}
                 selected={isSelected}
                 interactive
-                className="p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_110px_190px_110px_48px] bg-[var(--bg)] border-2 border-b-4 border-[var(--border)] rounded-[var(--radius)] hover:border-[#4b5d67] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
+                className="p-3 items-center grid gap-3 grid-cols-[36px_minmax(0,1fr)_48px] lg:grid-cols-[36px_minmax(0,2fr)_110px_190px_110px_48px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]"
                 data-testid={`series-row-${item.id}`}
-                onClick={() => onSelectSeries(item)}
+                onClick={() => handleSelectSeries(item)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelectSeries(item);
+                    handleSelectSeries(item);
                   }
                 }}
                 role="button"
                 tabIndex={0}
               >
-                <div
+                <ChunkyTableIndexBadge
+                  index={index + 1}
                   className="ep-num"
                   data-testid={`series-row-index-${item.id}`}
-                >
-                  {index + 1}
-                </div>
+                />
 
-                <div className="min-w-0">
+                <ChunkyTableCell>
                   <div
                     className="font-sans font-extrabold text-[15px] text-[var(--ink)] leading-snug truncate"
                     title={item.title}
@@ -130,30 +142,30 @@ export function StorageSeriesTable({
                     {' · '}
                     {item.seasons.length} season{item.seasons.length === 1 ? '' : 's'}
                   </div>
-                </div>
+                </ChunkyTableCell>
 
-                <div
+                <ChunkyTableCell
                   className="hidden lg:block font-mono text-sm font-extrabold text-[var(--ink)]"
                   data-testid={`series-row-files-${item.id}`}
                 >
                   {item.s3SourceCount}
-                </div>
+                </ChunkyTableCell>
 
-                <div
+                <ChunkyTableCell
                   className="hidden lg:block font-mono text-sm font-extrabold text-[var(--ink)]"
                   data-testid={`series-row-size-${item.id}`}
                 >
                   {formatDualBytes(item.s3SizeBytes)}
-                </div>
+                </ChunkyTableCell>
 
-                <div
+                <ChunkyTableCell
                   className="hidden lg:block font-mono text-sm font-extrabold text-[var(--ink)]"
                   data-testid={`series-row-seasons-${item.id}`}
                 >
                   {item.seasons.length}
-                </div>
+                </ChunkyTableCell>
 
-                <div
+                <ChunkyTableCell
                   className="flex items-center justify-end"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -163,16 +175,16 @@ export function StorageSeriesTable({
                       {
                         label: 'Inspect Storage',
                         icon: <PackageSearch className="w-4 h-4" />,
-                        onSelect: () => onSelectSeries(item),
+                        onSelect: () => handleSelectSeries(item),
                       },
                     ]}
                   />
-                </div>
-              </ChunkyCard>
+                </ChunkyTableCell>
+              </ChunkyTableRow>
             );
           })}
-        </ChunkyCardList>
+        </ChunkyTableBody>
       )}
-    </div>
+    </ChunkyTable>
   );
 }

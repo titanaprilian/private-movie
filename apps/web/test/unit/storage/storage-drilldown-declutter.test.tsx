@@ -2,12 +2,16 @@ import { renderWithProviders, screen, within } from '../../utils';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { setAccessToken } from '@/lib/api';
 import { StorageView } from '@/modules/storage';
+import { StorageResourceTable } from '@/modules/storage/internal/components/StorageResourceTable';
+import type { StorageResource } from '@/modules/storage';
+
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockNavigate,
   useParams: () => ({}),
 }));
 
@@ -64,42 +68,40 @@ function mockFetch() {
   });
 }
 
-describe('Storage drill-down declutter', () => {
+describe('Storage overview chrome (no in-place drill-down)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    mockNavigate.mockClear();
     setAccessToken('test-token');
-    window.history.replaceState(null, '', '/admin/storage');
     mockFetch();
   });
   afterEach(() => {
     vi.restoreAllMocks();
-    window.history.replaceState(null, '', '/admin/storage');
   });
 
-  it('shows the top header container in Level 1 overview mode', async () => {
+  it('always shows the top header container with global controls', async () => {
     renderWithProviders(<StorageView />);
-    expect(await screen.findByTestId('storage-page-header')).toBeInTheDocument();
+    await screen.findByTestId('series-table-container');
+    expect(screen.getByTestId('storage-page-header')).toBeInTheDocument();
     expect(screen.getByTestId('spin-up-minio-btn')).toBeInTheDocument();
     expect(screen.getByTestId('manage-providers-btn')).toBeInTheDocument();
+    expect(await screen.findByTestId('storage-metrics-grid')).toBeInTheDocument();
   });
 
-  it('hides the top header container in drill-down mode', async () => {
+  it('navigates to the series route on row click instead of drilling down in place', async () => {
     const { user } = renderWithProviders(<StorageView />);
     await user.click(await screen.findByTestId('series-row-series-1'));
-    await screen.findByTestId('series-drilldown-view');
-    expect(screen.queryByTestId('storage-page-header')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('spin-up-minio-btn')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('manage-providers-btn')).not.toBeInTheDocument();
-  });
-
-  it('suppresses the resource table toolbar in drill-down mode but still renders rows', async () => {
-    const { user } = renderWithProviders(<StorageView />);
-    await user.click(await screen.findByTestId('series-row-series-1'));
-    await screen.findByTestId('series-drilldown-view');
-    expect(screen.queryByTestId('storage-toolbar')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('filter-tab-all')).not.toBeInTheDocument();
-    // Scoped resources still render (stop-and-report guard).
-    expect(await screen.findByTestId('row-s1e1.mp4')).toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: '/admin/storage/$seriesId',
+        params: { seriesId: 'series-1' },
+      })
+    );
+    // Overview chrome stays put: header, metrics, and tabs remain visible
+    expect(screen.getByTestId('storage-page-header')).toBeInTheDocument();
+    expect(screen.getByTestId('storage-metrics-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('series-table-container')).toBeInTheDocument();
+    expect(screen.queryByTestId('series-drilldown-view')).not.toBeInTheDocument();
   });
 
   it('retains the streamlined purge-only action bar in the overview orphaned tab', async () => {
@@ -114,14 +116,46 @@ describe('Storage drill-down declutter', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('keeps sorting, row selection, and row actions working in the drill-down table', async () => {
-    const { user } = renderWithProviders(<StorageView />);
-    await user.click(await screen.findByTestId('series-row-series-1'));
-    await screen.findByTestId('series-drilldown-view');
+  it('keeps sorting, row selection, and row actions working in the scoped detail table', async () => {
+    const noop = vi.fn();
+    const linked = {
+      id: 'src-1',
+      key: 's1e1.mp4',
+      filename: 's1e1.mp4',
+      sizeBytes: 100,
+      lastModified: '2026-09-01T10:00:00.000Z',
+      status: 'linked',
+      videoSource: { id: 'src-1', label: 'Main', quality: '1080p', episodeId: 'ep-1' },
+      episode: {
+        id: 'ep-1',
+        title: 'Ep One',
+        episodeNumber: 1,
+        seasonNumber: 1,
+        seriesId: 'series-1',
+        seriesTitle: 'Cyberpunk Series',
+        sourceCount: 1,
+      },
+    } as StorageResource;
+    const { user } = renderWithProviders(
+      <StorageResourceTable
+        resources={[linked]}
+        onRefreshScan={noop}
+        onPreview={noop}
+        onEditSource={noop}
+        onAttachOrphan={noop}
+        onDeleteSingle={noop}
+        onDeleteBatch={noop}
+        onPurgeOrphans={noop}
+        hideToolbar
+      />
+    );
     await screen.findByTestId('row-s1e1.mp4');
+    // Scoped detail tables suppress the overview toolbar
+    expect(screen.queryByTestId('storage-toolbar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('filter-tab-all')).not.toBeInTheDocument();
 
     // Column sorting
-    await user.click(screen.getByTestId('sort-header-name'));
+    await user.click(screen.getByRole('button', { name: /filename \/ key/i }));
     expect(screen.getByTestId('row-s1e1.mp4')).toBeInTheDocument();
 
     // Batch row selection

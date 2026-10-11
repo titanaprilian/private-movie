@@ -1,4 +1,6 @@
 export { StorageView } from './internal/StorageView';
+export { StorageSeriesDetailView } from './internal/components/StorageSeriesDetailView';
+export type { StorageSeriesDetailViewProps } from './internal/components/StorageSeriesDetailView';
 export { MinioSpinUpModal } from './internal/components/dialogs/MinioSpinUpModal';
 export type { MinioSpinUpModalProps } from './internal/components/dialogs/MinioSpinUpModal';
 export {

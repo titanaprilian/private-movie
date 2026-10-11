@@ -1,7 +1,17 @@
 import { renderWithProviders, screen, within } from '../../utils';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { StorageSeriesTable } from '@/modules/storage/internal/components/StorageSeriesTable';
 import type { StorageSeriesItem } from '@/modules/storage';
+
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
+  useNavigate: () => mockNavigate,
+  useParams: () => ({}),
+}));
 
 const series: StorageSeriesItem[] = [
   {
@@ -23,7 +33,11 @@ const series: StorageSeriesItem[] = [
 ];
 
 describe('StorageSeriesTable episode styling', () => {
-  it('displays the 1-based index in a 40x40 .ep-num tactile badge with blue text', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
+  it('displays the 1-based index in a ChunkyTableIndexBadge', () => {
     renderWithProviders(
       <StorageSeriesTable series={series} onSelectSeries={() => {}} />
     );
@@ -33,26 +47,26 @@ describe('StorageSeriesTable episode styling', () => {
     expect(screen.getByTestId('series-row-index-series-2')).toHaveTextContent('2');
   });
 
-  it('styles rows as .ep cards with 4px bottom border and hover lift effects', () => {
+  it('styles rows as interactive ChunkyTableRow cards with hover lift effects', () => {
     renderWithProviders(
       <StorageSeriesTable series={series} onSelectSeries={() => {}} />
     );
     const row = screen.getByTestId('series-row-series-1');
-    // .ep-equivalent card styling (see apps/web/src/index.css `.ep` rule)
+    // Composable chunky table row styling (see chunky-table.tsx ChunkyTableRow)
     for (const cls of [
       'bg-[var(--bg)]',
       'border-2',
       'border-b-4',
-      'rounded-[var(--radius)]',
-      'hover:-translate-y-0.5',
-      'hover:border-[#4b5d67]',
-      'active:translate-y-0',
+      'rounded-2xl',
+      'cursor-pointer',
+      'hover:-translate-y-[2px]',
+      'hover:shadow-lg',
     ]) {
       expect(row.className).toContain(cls);
     }
   });
 
-  it('selects the series on row click and on Enter/Space keydown', async () => {
+  it('navigates to the series storage route on row click', async () => {
     const onSelectSeries = vi.fn();
     const { user } = renderWithProviders(
       <StorageSeriesTable series={series} onSelectSeries={onSelectSeries} />
@@ -61,7 +75,19 @@ describe('StorageSeriesTable episode styling', () => {
     expect(onSelectSeries).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'series-1' })
     );
+    expect(mockNavigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: '/admin/storage/$seriesId',
+        params: { seriesId: 'series-1' },
+      })
+    );
+  });
 
+  it('selects the series on Enter/Space keydown', async () => {
+    const onSelectSeries = vi.fn();
+    const { user } = renderWithProviders(
+      <StorageSeriesTable series={series} onSelectSeries={onSelectSeries} />
+    );
     const row = screen.getByTestId('series-row-series-2');
     row.focus();
     await user.keyboard('{Enter}');
@@ -69,7 +95,7 @@ describe('StorageSeriesTable episode styling', () => {
       expect.objectContaining({ id: 'series-2' })
     );
     await user.keyboard(' ');
-    expect(onSelectSeries).toHaveBeenCalledTimes(3);
+    expect(onSelectSeries).toHaveBeenCalledTimes(2);
   });
 
   it('keeps the trailing action menu with an operational "Inspect Storage" action', async () => {
