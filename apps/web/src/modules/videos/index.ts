@@ -12,7 +12,7 @@ export type { RecentEpisodeCardProps } from './internal/catalog/components/Recen
 export { SeriesDetailDialog } from './internal/catalog/components/SeriesDetailDialog';
 export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/catalog/components/SeriesDetailDialog';
 export { SeriesDetailView } from './internal/catalog/SeriesDetailView';
-export { AddMediaDialog } from './internal/catalog/AddMediaDialog';
+export { AddMediaDialog } from './internal/catalog/components/AddMediaDialog';
 export { BulkScrapeModal } from './internal/ingestion/BulkScrapeModal';
 export type { BulkScrapeModalProps } from './internal/ingestion/BulkScrapeModal';
 export { useBulkScrapeSources } from './internal/ingestion/useBulkScrapeSources';

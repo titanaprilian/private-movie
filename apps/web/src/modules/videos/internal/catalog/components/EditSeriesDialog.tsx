@@ -1,9 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { updateSeries, type SeriesDetails, type SeriesItem } from '../api';
-import { genresQueryOptions } from '@/modules/genres';
+import type { SeriesDetails, SeriesItem } from '../../api';
 import {
   ChunkyDialog,
   ChunkyDialogContent,
@@ -18,6 +14,7 @@ import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
+import { useEditSeriesForm } from '../hooks/useEditSeriesForm';
 
 export interface EditSeriesDialogProps {
   open: boolean;
@@ -26,99 +23,35 @@ export interface EditSeriesDialogProps {
   seriesList?: SeriesItem[];
 }
 
-const EMPTY_SERIES_LIST: SeriesItem[] = [];
-
-function sameIdList(a: string[], b: string[]): boolean {
-  return a.length === b.length && a.every((v, i) => v === b[i]);
-}
-
 export function EditSeriesDialog({
   open,
   onOpenChange,
   series,
-  seriesList = EMPTY_SERIES_LIST,
+  seriesList = [],
 }: EditSeriesDialogProps) {
   // seriesList is retained for backwards compatibility but no longer used
   void seriesList;
-  const queryClient = useQueryClient();
-  const { data: genres = [] } = useQuery(genresQueryOptions());
-
-  const [editTitle, setEditTitle] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editPosterUrl, setEditPosterUrl] = useState('');
-  const [editLogoUrl, setEditLogoUrl] = useState('');
-  const [logoPreviewError, setLogoPreviewError] = useState(false);
-  const [editIsFeatured, setEditIsFeatured] = useState<boolean>(false);
-  const [editIsOngoingHighlighted, setEditIsOngoingHighlighted] =
-    useState<boolean>(false);
-  const [selectedGenreIds, setSelectedGenreIds] = useState<string[]>([]);
-  const wasOpenRef = useRef(false);
-
-  useEffect(() => {
-    if (open && series) {
-      // Only sync text/flag state on the open transition so fresh inline
-      // `series` object identities on re-render don't wipe user edits.
-      if (!wasOpenRef.current) {
-        setEditTitle(series.title ?? '');
-        setEditDescription(series.description ?? '');
-        setEditPosterUrl(series.posterUrl ?? '');
-        setEditLogoUrl(series.logoUrl ?? '');
-        setLogoPreviewError(false);
-        setEditIsFeatured(Boolean(series.isFeatured));
-        setEditIsOngoingHighlighted(Boolean(series.isOngoingHighlighted));
-      }
-
-      let initialGenreIds: string[] = [];
-      if ('genreIds' in series && series.genreIds && Array.isArray(series.genreIds) && series.genreIds.length > 0) {
-        initialGenreIds = series.genreIds;
-      } else if ('genres' in series && series.genres && Array.isArray(series.genres)) {
-        initialGenreIds = series.genres
-          .map((g) => {
-            if (typeof g === 'string') {
-              const found = genres.find((genre) => genre.id === g || genre.slug === g || genre.name === g);
-              return found ? found.id : g;
-            }
-            return g.id;
-          })
-          .filter(Boolean);
-      }
-      setSelectedGenreIds((prev) =>
-        sameIdList(prev, initialGenreIds) ? prev : initialGenreIds
-      );
-    }
-    wasOpenRef.current = open;
-  }, [open, series, genres]);
-
-  const updateMutation = useMutation({
-    mutationFn: (data: Parameters<typeof updateSeries>[1]) =>
-      updateSeries(series.id, data),
-    onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ['series'] });
-      toast.success('series.update', {
-        description: `Successfully updated ${updated.title}`,
-      });
-      onOpenChange(false);
-    },
-    onError: (error: Error) => {
-      toast.error('series.update', {
-        description: `Failed to update series: ${error.message}`,
-      });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!series) return;
-    updateMutation.mutate({
-      title: editTitle,
-      description: editDescription || null,
-      posterUrl: editPosterUrl || null,
-      logoUrl: editLogoUrl.trim() === '' ? null : editLogoUrl.trim(),
-      isFeatured: editIsFeatured,
-      isOngoingHighlighted: editIsOngoingHighlighted,
-      genreIds: selectedGenreIds,
-    });
-  };
+  const {
+    genres,
+    editTitle,
+    setEditTitle,
+    editDescription,
+    setEditDescription,
+    editPosterUrl,
+    setEditPosterUrl,
+    editLogoUrl,
+    handleLogoUrlChange,
+    logoPreviewError,
+    setLogoPreviewError,
+    editIsFeatured,
+    setEditIsFeatured,
+    editIsOngoingHighlighted,
+    setEditIsOngoingHighlighted,
+    selectedGenreIds,
+    toggleGenre,
+    updateMutation,
+    handleSubmit,
+  } = useEditSeriesForm({ open, series, onOpenChange });
 
   return (
     <ChunkyDialog open={open} onOpenChange={onOpenChange}>
@@ -200,10 +133,7 @@ export function EditSeriesDialog({
             <ChunkyInput
               id="edit-series-logo"
               value={editLogoUrl}
-              onChange={(e) => {
-                setEditLogoUrl(e.target.value);
-                setLogoPreviewError(false);
-              }}
+              onChange={(e) => handleLogoUrlChange(e.target.value)}
               placeholder="https://..."
             />
             {editLogoUrl.trim() !== '' && (
@@ -238,13 +168,7 @@ export function EditSeriesDialog({
                         type="button"
                         variant={isSelected ? 'active' : 'default'}
                         pressed={isSelected}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedGenreIds(selectedGenreIds.filter((id) => id !== genre.id));
-                          } else {
-                            setSelectedGenreIds([...selectedGenreIds, genre.id]);
-                          }
-                        }}
+                        onClick={() => toggleGenre(genre.id)}
                       >
                         {genre.name}
                       </ChunkyChip>

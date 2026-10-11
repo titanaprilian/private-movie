@@ -30,7 +30,7 @@ import {
 import { EditSeasonDialog } from '../seasons/EditSeasonDialog';
 import { AddSeasonDialog } from '../seasons/AddSeasonDialog';
 import { getSeasonNumber } from '../seasons/seasonUtils';
-import { EditSeriesDialog } from './EditSeriesDialog';
+import { EditSeriesDialog } from './components/EditSeriesDialog';
 import { SyncTmdbModal } from '../ingestion/SyncTmdbModal';
 import { ManageSourcesDialog } from '../sources/ManageSourcesDialog';
 import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from '../seasons/crossSeasonMove';

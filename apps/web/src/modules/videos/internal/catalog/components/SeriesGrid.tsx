@@ -16,8 +16,8 @@ import {
   deleteSeries,
   type SeriesItem,
 } from '../../api';
-import { AddMediaDialog } from '../AddMediaDialog';
-import { EditSeriesDialog } from '../EditSeriesDialog';
+import { AddMediaDialog } from './AddMediaDialog';
+import { EditSeriesDialog } from './EditSeriesDialog';
 import { SeriesCard } from './SeriesCard';
 import { GenreFilter } from './GenreFilter';
 import { useScrapeWorkerStore } from '../../store/useScrapeWorkerStore';
