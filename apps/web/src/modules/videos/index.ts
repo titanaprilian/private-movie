@@ -11,7 +11,7 @@ export { RecentEpisodeCard } from './internal/catalog/components/RecentEpisodeCa
 export type { RecentEpisodeCardProps } from './internal/catalog/components/RecentEpisodeCard';
 export { SeriesDetailDialog } from './internal/catalog/components/SeriesDetailDialog';
 export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/catalog/components/SeriesDetailDialog';
-export { SeriesDetailView } from './internal/catalog/SeriesDetailView';
+export { SeriesDetailView } from './internal/catalog/components/SeriesDetailView';
 export { AddMediaDialog } from './internal/catalog/components/AddMediaDialog';
 export { BulkScrapeModal } from './internal/ingestion/BulkScrapeModal';
 export type { BulkScrapeModalProps } from './internal/ingestion/BulkScrapeModal';
@@ -54,7 +54,7 @@ export {
   getMaxUploadSizeBytes,
   SERIES_PAGE_LIMIT,
 } from './internal/api';
-export type { SeriesDetailViewProps } from './internal/catalog/SeriesDetailView';
+export type { SeriesDetailViewProps } from './internal/catalog/components/SeriesDetailView';
 export { AddSeasonDialog } from './internal/seasons/AddSeasonDialog';
 export type { AddSeasonDialogProps } from './internal/seasons/AddSeasonDialog';
 export { EditSeasonDialog } from './internal/seasons/EditSeasonDialog';
