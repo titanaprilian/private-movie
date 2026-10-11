@@ -1,13 +1,15 @@
-import { renderWithProviders, screen, waitFor } from '../../utils';
+import { renderWithProviders, screen, waitFor, within } from '../../utils';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { setAccessToken } from '@/lib/api';
-import { StorageView } from '@/modules/storage';
+import { StorageSeriesDetailView } from '@/modules/storage';
+
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockNavigate,
   useParams: () => ({}),
 }));
 
@@ -65,68 +67,88 @@ function mockFetch() {
   });
 }
 
-describe('Focused series drill-down view', () => {
+describe('Standalone series storage detail view', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    mockNavigate.mockClear();
     setAccessToken('test-token');
-    window.history.replaceState(null, '', '/admin/storage');
     mockFetch();
   });
   afterEach(() => {
     vi.restoreAllMocks();
-    window.history.replaceState(null, '', '/admin/storage');
   });
 
-  it('shows the metrics grid on the Level 1 overview', async () => {
-    renderWithProviders(<StorageView />);
-    await screen.findByTestId('series-table-container');
-    expect(await screen.findByTestId('storage-metrics-grid')).toBeInTheDocument();
-    expect(screen.getByTestId('capacity-progress-bar')).toBeInTheDocument();
-  });
-
-  it('hides the metrics grid when drilled down into a series', async () => {
-    const { user } = renderWithProviders(<StorageView />);
-    await user.click(await screen.findByTestId('series-row-series-1'));
-    await screen.findByTestId('series-drilldown-view');
-    await waitFor(() => {
-      expect(screen.queryByTestId('storage-metrics-grid')).not.toBeInTheDocument();
-    });
-    expect(screen.queryByTestId('capacity-progress-bar')).not.toBeInTheDocument();
-  });
-
-  it('renders the standard BackButton with "Back to series" label at the top of the drill-down', async () => {
-    const { user } = renderWithProviders(<StorageView />);
-    await user.click(await screen.findByTestId('series-row-series-1'));
+  it('renders the standard BackButton with "Back to series" label above the series title', async () => {
+    renderWithProviders(<StorageSeriesDetailView seriesId="series-1" />);
     await screen.findByTestId('series-drilldown-view');
     const backBtn = screen.getByTestId('back-to-series-btn');
     expect(backBtn).toBeInTheDocument();
     expect(backBtn).toHaveTextContent('Back to series');
     expect(backBtn.tagName).toBe('BUTTON');
+    // Back button precedes the title in document order
+    const title = screen.getByTestId('drilldown-series-title');
+    expect(backBtn.compareDocumentPosition(title)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
   });
 
-  it('returns to the overview and restores the metrics grid when the back button is clicked', async () => {
-    const { user } = renderWithProviders(<StorageView />);
-    await user.click(await screen.findByTestId('series-row-series-1'));
-    await screen.findByTestId('series-drilldown-view');
-    await user.click(screen.getByTestId('back-to-series-btn'));
-    expect(await screen.findByTestId('series-table-container')).toBeInTheDocument();
-    expect(await screen.findByTestId('storage-metrics-grid')).toBeInTheDocument();
-    expect(screen.queryByTestId('series-drilldown-view')).not.toBeInTheDocument();
-  });
-
-  it('renders series title, season chips bar, and scoped resource table beneath the back button', async () => {
-    const { user } = renderWithProviders(<StorageView />);
-    await user.click(await screen.findByTestId('series-row-series-1'));
+  it('renders series title, season chips bar, and scoped resource table', async () => {
+    renderWithProviders(<StorageSeriesDetailView seriesId="series-1" />);
     await screen.findByTestId('series-drilldown-view');
     expect(screen.getByTestId('drilldown-series-title')).toHaveTextContent('Cyberpunk Series');
     expect(screen.getByTestId('season-chip-bar')).toBeInTheDocument();
     expect(screen.getByTestId('season-chip-all')).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByText('s1e1.mp4').length).toBeGreaterThan(0));
-    // Back button precedes the title in document order
-    const backBtn = screen.getByTestId('back-to-series-btn');
-    const title = screen.getByTestId('drilldown-series-title');
-    expect(backBtn.compareDocumentPosition(title)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
+  });
+
+  it('retains the rescan action on the detail view', async () => {
+    renderWithProviders(<StorageSeriesDetailView seriesId="series-1" />);
+    await screen.findByTestId('series-drilldown-view');
+    expect(screen.getByTestId('storage-detail-rescan-btn')).toBeInTheDocument();
+  });
+
+  it('scopes series and resource queries by the initial providerId', async () => {
+    renderWithProviders(
+      <StorageSeriesDetailView seriesId="series-1" initialProviderId="prov-1" />
     );
+    await screen.findByTestId('series-drilldown-view');
+    await waitFor(() => {
+      const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((c) => String(c[0]));
+      expect(
+        calls.some(
+          (u) => u.includes('/api/storage/series') && u.includes('providerId=prov-1')
+        )
+      ).toBe(true);
+      expect(
+        calls.some(
+          (u) => u.includes('/api/storage/resources') && u.includes('providerId=prov-1')
+        )
+      ).toBe(true);
+    });
+  });
+
+  it('shows a not-found state for an unknown series id', async () => {
+    renderWithProviders(<StorageSeriesDetailView seriesId="nope" />);
+    expect(await screen.findByTestId('storage-detail-not-found')).toBeInTheDocument();
+    expect(screen.queryByTestId('series-drilldown-view')).not.toBeInTheDocument();
+  });
+
+  it('retains edit-metadata and batch-delete file actions in the detail table', async () => {
+    const { user } = renderWithProviders(
+      <StorageSeriesDetailView seriesId="series-1" />
+    );
+    await screen.findByTestId('series-drilldown-view');
+    await waitFor(() => expect(screen.getAllByText('s1e1.mp4').length).toBeGreaterThan(0));
+
+    // Edit source metadata for a linked video file
+    await user.click(screen.getByRole('button', { name: 'Actions for s1e1.mp4' }));
+    const menu = await screen.findByRole('menu');
+    expect(
+      within(menu).getByRole('menuitem', { name: 'Edit metadata' })
+    ).toBeInTheDocument();
+
+    // Batch selection across scoped rows
+    await user.click(screen.getByTestId('checkbox-s1e1.mp4'));
+    expect(await screen.findByTestId('batch-toolbar')).toBeInTheDocument();
   });
 });

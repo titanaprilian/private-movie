@@ -171,6 +171,25 @@ describe('GenreManager component', () => {
     expect(screen.queryByText('Action & Adventure')).not.toBeInTheDocument();
     expect(screen.queryByText('Sci-Fi & Fantasy')).not.toBeInTheDocument();
   });
+  it('sorts genres by display order and name when clicking column header cells', async () => {
+    const { user } = renderWithProviders(<GenreManager />);
+
+    await screen.findByText('Action & Adventure');
+
+    // Default sortField is displayOrder, asc. Click Order to toggle sortDirection to desc
+    const orderSortButton = screen.getByRole('button', { name: 'Order' });
+    await user.click(orderSortButton);
+
+    // Initial display orders are all 0, so stable sort keeps mock order when tied, or desc order
+    // Click Genre header cell to sort by name ascending
+    const genreSortButton = screen.getByRole('button', { name: 'Genre' });
+    await user.click(genreSortButton);
+
+    const cards = screen.getByTestId('genre-card-grid').children;
+    expect(cards[0]).toHaveTextContent('Action & Adventure');
+    expect(cards[1]).toHaveTextContent('Comedy');
+    expect(cards[2]).toHaveTextContent('Sci-Fi & Fantasy');
+  });
 
   it('opens Create Genre modal, auto-generates slug, and creates genre', async () => {
     const { user } = renderWithProviders(

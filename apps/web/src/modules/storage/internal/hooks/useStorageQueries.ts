@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   storageMetricsQueryOptions,
@@ -24,19 +24,28 @@ export function useStorageQueries() {
     [rawProviders],
   );
 
-  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
-    null,
-  );
+  const [selectedProviderIdOverride, setSelectedProviderId] =
+    useState<string | null>(null);
 
-  useEffect(() => {
-    if (providers.length > 0 && !selectedProviderId) {
-      const defaultProvider =
-        providers.find((p) => p.isDefault) || providers[0];
-      if (defaultProvider) {
-        setSelectedProviderId(defaultProvider.id);
-      }
+  // Derive the default provider synchronously so the selected provider id is
+  // defined on the very first render that contains providers — no null →
+  // string transition across renders (avoids uncontrolled → controlled flip).
+  const defaultProviderId = useMemo<string | null>(() => {
+    if (providers.length === 0) return null;
+    return (
+      (providers.find((p) => p.isDefault) ?? providers[0])?.id ?? null
+    );
+  }, [providers]);
+
+  const selectedProviderId = useMemo<string | null>(() => {
+    if (
+      selectedProviderIdOverride &&
+      providers.some((p) => p.id === selectedProviderIdOverride)
+    ) {
+      return selectedProviderIdOverride;
     }
-  }, [providers, selectedProviderId]);
+    return selectedProviderIdOverride ?? defaultProviderId;
+  }, [selectedProviderIdOverride, providers, defaultProviderId]);
 
   const activeProvider =
     providers.find((p) => p.id === selectedProviderId) || null;

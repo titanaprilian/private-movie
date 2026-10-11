@@ -152,13 +152,13 @@ describe('StorageResourceTable polish', () => {
     vi.restoreAllMocks();
   });
 
-  it('styles data rows as .ep-like cards with a 4px bottom border and hover lift', () => {
+  it('styles data rows as ChunkyTableRow cards with a 4px bottom border', () => {
     renderWithProviders(<StorageResourceTable {...defaultProps()} />);
     const row = screen.getByTestId('row-shows/s1e1.mp4');
     expect(row).toHaveClass('border-b-4');
     expect(row).toHaveClass('bg-[var(--bg)]');
-    expect(row).toHaveClass('hover:border-[#4b5d67]');
-    expect(row).toHaveClass('hover:-translate-y-0.5');
+    expect(row).toHaveClass('rounded-2xl');
+    expect(row).toHaveClass('border-2');
   });
 
   it('copies the full S3 key via the copy button and shows feedback', async () => {
@@ -254,8 +254,8 @@ describe('StorageResourceTable polish', () => {
         hideToolbar
       />
     );
-    await user.click(screen.getByTestId('sort-header-name'));
-    await user.click(screen.getByTestId('sort-header-name'));
+    await user.click(screen.getByRole('button', { name: /filename \/ key/i }));
+    await user.click(screen.getByRole('button', { name: /filename \/ key/i }));
     // Name asc: orphan.mp4, s1e1.mp4, s1e3.mp4, s2e1.mp4
     expect(rowOrder()).toEqual([
       'row-orphan.mp4',
@@ -324,7 +324,7 @@ describe('StorageResourceTable pagination', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Next page' }));
     expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
-    await user.click(screen.getByTestId('sort-header-name'));
+    await user.click(screen.getByRole('button', { name: /filename \/ key/i }));
     expect(await screen.findByText('Page 1 of 2')).toBeInTheDocument();
   });
 

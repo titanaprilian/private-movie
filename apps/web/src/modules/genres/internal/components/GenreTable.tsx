@@ -1,39 +1,16 @@
 import { Search } from 'lucide-react';
 import { ChunkyInput } from '@/components/ui/chunky-input';
-import { ChunkyCard, ChunkyCardList } from '@/components/ui/chunky-card';
+import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
+import {
+  ChunkyTable,
+  ChunkyTableToolbar,
+  ChunkyTableHeader,
+  ChunkyTableHeaderCell,
+  ChunkyTableBody,
+} from '@/components/ui/chunky-table';
 import { GenreRow } from './GenreRow';
-import type { GenreSortField, GenreTableProps } from '../types';
-
-function SortHeaderButton({
-  label,
-  field,
-  sortField,
-  sortDirection,
-  onSort,
-  centered,
-}: {
-  label: string;
-  field: GenreSortField;
-  sortField: GenreSortField | null;
-  sortDirection: 'asc' | 'desc';
-  onSort: (field: GenreSortField) => void;
-  centered?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onSort(field)}
-      aria-label={`Sort by ${label}`}
-      className={`flex items-center gap-1 font-extrabold uppercase hover:text-[var(--ink)] cursor-pointer transition-colors ${centered ? 'justify-center w-full' : ''}`}
-    >
-      <span>{label}</span>
-      <span className="text-[10px]">
-        {sortField === field ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
-      </span>
-    </button>
-  );
-}
+import type { GenreTableProps } from '../types';
 
 export function GenreTable({
   genres,
@@ -49,9 +26,9 @@ export function GenreTable({
   onDelete,
 }: GenreTableProps) {
   return (
-    <>
+    <ChunkyTable>
       {/* Toolbar / Search */}
-      <ChunkyCard className="p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+      <ChunkyTableToolbar className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative w-full sm:max-w-xs">
           <Search
             aria-hidden="true"
@@ -71,48 +48,52 @@ export function GenreTable({
         >
           {genres.length} {genres.length === 1 ? 'genre' : 'genres'}
         </span>
-      </ChunkyCard>
+      </ChunkyTableToolbar>
 
-      {/* Genre Card-Row Grid */}
+      {/* Genre Table Content */}
       <div className="w-full">
         {genres.length > 0 && !isLoading && !isError && (
-          <div className="genre-head select-none" role="row">
-            <SortHeaderButton
-              label="#"
-              field="displayOrder"
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={onSort}
-              centered
-            />
-            <SortHeaderButton
-              label="Genre"
-              field="name"
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={onSort}
-            />
-            <SortHeaderButton
-              label="Badge"
-              field="isBigGenre"
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={onSort}
-            />
-            <SortHeaderButton
-              label="Order"
-              field="displayOrder"
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={onSort}
-              centered
-            />
+          <ChunkyTableHeader className="grid-cols-[48px_minmax(0,1fr)_auto_72px_48px]">
+            <ChunkyTableHeaderCell
+              sortable
+              sortDirection={sortField === 'displayOrder' ? sortDirection : null}
+              onSort={() => onSort('displayOrder')}
+              aria-label="Sort by #"
+              className="text-center"
+            >
+              #
+            </ChunkyTableHeaderCell>
+            <ChunkyTableHeaderCell
+              sortable
+              sortDirection={sortField === 'name' ? sortDirection : null}
+              onSort={() => onSort('name')}
+              aria-label="Sort by Genre"
+            >
+              Genre
+            </ChunkyTableHeaderCell>
+            <ChunkyTableHeaderCell
+              sortable
+              sortDirection={sortField === 'isBigGenre' ? sortDirection : null}
+              onSort={() => onSort('isBigGenre')}
+              aria-label="Sort by Badge"
+            >
+              Badge
+            </ChunkyTableHeaderCell>
+            <ChunkyTableHeaderCell
+              sortable
+              sortDirection={sortField === 'displayOrder' ? sortDirection : null}
+              onSort={() => onSort('displayOrder')}
+              aria-label="Sort by Order"
+              className="text-center"
+            >
+              Order
+            </ChunkyTableHeaderCell>
             <span aria-hidden="true" />
-          </div>
+          </ChunkyTableHeader>
         )}
 
         {isLoading ? (
-          <ChunkyCardList data-testid="genre-skeleton-list">
+          <ChunkyTableBody data-testid="genre-skeleton-list">
             {[0, 1, 2].map((i) => (
               <ChunkySkeleton
                 key={i}
@@ -121,7 +102,7 @@ export function GenreTable({
               />
             ))}
             <span className="sr-only">Loading genres...</span>
-          </ChunkyCardList>
+          </ChunkyTableBody>
         ) : isError ? (
           <ChunkyCard className="p-8 text-center">
             <p className="font-sans text-sm font-extrabold text-[var(--red)]">
@@ -143,7 +124,7 @@ export function GenreTable({
             </p>
           </ChunkyCard>
         ) : (
-          <ChunkyCardList data-testid="genre-card-grid">
+          <ChunkyTableBody data-testid="genre-card-grid">
             {genres.map((genre, index) => (
               <GenreRow
                 key={genre.id}
@@ -153,9 +134,9 @@ export function GenreTable({
                 onDelete={onDelete}
               />
             ))}
-          </ChunkyCardList>
+          </ChunkyTableBody>
         )}
       </div>
-    </>
+    </ChunkyTable>
   );
 }
