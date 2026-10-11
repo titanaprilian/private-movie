@@ -53,12 +53,18 @@ function renderEpisodeTable(props: Partial<React.ComponentProps<typeof EpisodeTa
   );
 }
 
+function selectedRows(container: HTMLElement): HTMLElement[] {
+  return Array.from(
+    container.querySelectorAll('[data-testid^="episode-row-"][data-selected]')
+  ) as HTMLElement[];
+}
+
 describe('EpisodeTable Component', () => {
   it('renders all table columns: checkbox, grip, order, title, duration, sources, status, release date, and kebab action menu', () => {
     const { container } = renderEpisodeTable();
 
-    // Table header container and items
-    const header = container.querySelector('.ep-head');
+    // Table header container and items (ChunkyTable primitives)
+    const header = screen.getByTestId('episode-table-header');
     expect(header).toBeInTheDocument();
     expect(within(header as HTMLElement).getByRole('checkbox', { name: /select all visible episodes/i })).toBeInTheDocument();
     expect(within(header as HTMLElement).getByText('#')).toBeInTheDocument();
@@ -72,12 +78,12 @@ describe('EpisodeTable Component', () => {
     // (grip + kebab placeholders stay in grid flow via aria-hidden spans,
     // never sr-only which would collapse the tracks)
     expect(header!.children).toHaveLength(9);
-    const firstRow = container.querySelector('.ep-list .ep');
+    const firstRow = screen.getByTestId('episode-row-ep-1');
     expect(firstRow).toBeInTheDocument();
     expect(firstRow!.children).toHaveLength(9);
 
-    // CSS Grid container
-    const epList = container.querySelector('.ep-list');
+    // ChunkyTable list container
+    const epList = screen.getByTestId('episode-list');
     expect(epList).toBeInTheDocument();
 
     // Episodes rendered
@@ -97,6 +103,10 @@ describe('EpisodeTable Component', () => {
     expect(screen.getByText('2026-01-01')).toBeInTheDocument();
     expect(screen.getByText('2026-01-08')).toBeInTheDocument();
     expect(screen.getByText('2026-01-15')).toBeInTheDocument();
+
+    // Drag-and-drop refs attach cleanly to ChunkyTableRow
+    expect(container.querySelector('[data-rfd-droppable-id="episodes-list"]')).toBeInTheDocument();
+    expect(firstRow).toHaveAttribute('data-rfd-draggable-id', 'ep-1');
   });
 
   it('filters episodes in real-time by title and description', async () => {
@@ -129,7 +139,7 @@ describe('EpisodeTable Component', () => {
     const { container } = renderEpisodeTable();
 
     const getRenderedTitles = () =>
-      Array.from(container.querySelectorAll('.ep .ep-title'))
+      Array.from(container.querySelectorAll('[data-testid^="episode-title-"]'))
         .map((el) => el.textContent?.trim())
         .filter(Boolean);
 
@@ -141,7 +151,7 @@ describe('EpisodeTable Component', () => {
     ]);
 
     // Sort by order desc
-    const orderHeaderBtn = screen.getByRole('button', { name: /#.*↑/i });
+    const orderHeaderBtn = screen.getByRole('button', { name: '#' });
     await user.click(orderHeaderBtn);
     expect(getRenderedTitles()).toEqual([
       'Episode 3: The Climax',
@@ -285,9 +295,9 @@ describe('EpisodeTable Component', () => {
     const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
     await user.click(checkbox1);
 
-    // First card has .sel class
-    const firstCard = container.querySelector('.ep');
-    expect(firstCard).toHaveClass('sel');
+    // First card has selected state (ChunkyTableRow data-selected)
+    const firstCard = screen.getByTestId('episode-row-ep-1');
+    expect(firstCard).toHaveAttribute('data-selected');
 
     // Header shows indeterminate state
     const headerCheckbox = screen.getByLabelText('Select all visible episodes');
@@ -296,11 +306,11 @@ describe('EpisodeTable Component', () => {
     // Select row 2
     const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
     await user.click(checkbox2);
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(2);
+    expect(selectedRows(container)).toHaveLength(2);
 
     // Deselect row 1
     await user.click(checkbox1);
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(1);
+    expect(selectedRows(container)).toHaveLength(1);
   });
 
   it('handles select all and partial selection indeterminate state on the table header checkbox', async () => {
@@ -320,13 +330,13 @@ describe('EpisodeTable Component', () => {
 
     // Click header checkbox -> should select all 3
     await user.click(headerCheckbox);
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(3);
+    expect(selectedRows(container)).toHaveLength(3);
     expect(headerCheckbox).toHaveAttribute('aria-checked', 'true');
     expect(headerCheckbox).toHaveAttribute('data-state', 'checked');
 
     // Click header checkbox again -> should unselect all
     await user.click(headerCheckbox);
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(0);
+    expect(selectedRows(container)).toHaveLength(0);
     expect(headerCheckbox).toHaveAttribute('aria-checked', 'false');
     expect(headerCheckbox).toHaveAttribute('data-state', 'unchecked');
   });
@@ -362,12 +372,12 @@ describe('EpisodeTable Component', () => {
 
     const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
     await user.click(checkbox1);
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(1);
+    expect(selectedRows(container)).toHaveLength(1);
 
     const checkbox3 = screen.getByLabelText('Select Episode 3: The Climax');
     fireEvent.click(checkbox3, { shiftKey: true });
 
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(3);
+    expect(selectedRows(container)).toHaveLength(3);
     expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith(['ep-1', 'ep-2', 'ep-3']);
   });
 
@@ -381,7 +391,7 @@ describe('EpisodeTable Component', () => {
     const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
     fireEvent.click(checkbox1, { shiftKey: true });
 
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(3);
+    expect(selectedRows(container)).toHaveLength(3);
   });
 
   it('Shift-click with no prior anchor selects only the clicked episode', async () => {
@@ -390,7 +400,7 @@ describe('EpisodeTable Component', () => {
     const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
     fireEvent.click(checkbox2, { shiftKey: true });
 
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(1);
+    expect(selectedRows(container)).toHaveLength(1);
     // Header reflects partial selection
     expect(screen.getByLabelText('Select all visible episodes')).toHaveAttribute('aria-checked', 'mixed');
   });
@@ -402,17 +412,17 @@ describe('EpisodeTable Component', () => {
     // Select all three first
     const headerCheckbox = screen.getByLabelText('Select all visible episodes');
     await user.click(headerCheckbox);
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(3);
+    expect(selectedRows(container)).toHaveLength(3);
 
     // Normal click on row 1 deselects it and sets the anchor
     const checkbox1 = screen.getByLabelText('Select Episode 1: The Beginning');
     await user.click(checkbox1);
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(2);
+    expect(selectedRows(container)).toHaveLength(2);
 
     // Shift-click row 3 (currently selected) deselects the whole range
     const checkbox3 = screen.getByLabelText('Select Episode 3: The Climax');
     fireEvent.click(checkbox3, { shiftKey: true });
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(0);
+    expect(selectedRows(container)).toHaveLength(0);
   });
 
   it('range selection follows the visible sort order', async () => {
@@ -421,7 +431,7 @@ describe('EpisodeTable Component', () => {
     const { container } = renderEpisodeTable({ onSelectedEpisodeIdsChange });
 
     // Sort order desc: visible rows are ep-3, ep-2, ep-1
-    const orderHeaderBtn = screen.getByRole('button', { name: /#.*↑/i });
+    const orderHeaderBtn = screen.getByRole('button', { name: '#' });
     await user.click(orderHeaderBtn);
 
     const checkbox3 = screen.getByLabelText('Select Episode 3: The Climax');
@@ -430,7 +440,7 @@ describe('EpisodeTable Component', () => {
     const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
     fireEvent.click(checkbox2, { shiftKey: true });
 
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(2);
+    expect(selectedRows(container)).toHaveLength(2);
     expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith(['ep-3', 'ep-2']);
   });
 
@@ -449,7 +459,7 @@ describe('EpisodeTable Component', () => {
 
     // Shift-click the same (only) visible row toggles just it off
     fireEvent.click(checkbox2, { shiftKey: true });
-    expect(container.querySelectorAll('.ep.sel')).toHaveLength(0);
+    expect(selectedRows(container)).toHaveLength(0);
     expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith([]);
   });
 });

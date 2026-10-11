@@ -418,77 +418,8 @@ body {
   color: var(--muted);
 }
 
-/* Episode grid rows */
-.ep-head,
-.ep {
-  display: grid;
-  grid-template-columns: 24px 20px 44px minmax(0, 1fr) 84px 76px 92px 116px 40px;
-  gap: 14px;
-  align-items: center;
-}
-.ep-head {
-  padding: 0 16px 8px;
-  color: var(--muted);
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-}
-.ep-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.ep {
-  position: relative;
-  padding: 12px 16px;
-  background: var(--bg);
-  border: 2px solid var(--border);
-  border-bottom-width: 4px;
-  border-radius: var(--radius);
-  transition: border-color 0.15s, transform 0.15s;
-}
-.ep:hover {
-  border-color: #4b5d67;
-  transform: translateY(-2px);
-}
-.ep.sel {
-  background: var(--green-tint);
-  border-color: var(--green);
-}
-.ep-num {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-bottom-width: 4px;
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 15px;
-  color: var(--blue);
-}
-.ep-title {
-  font-weight: 800;
-  font-size: 15px;
-  line-height: 1.25;
-}
-.ep-desc {
-  margin-top: 2px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ep-dur,
-.ep-date {
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--muted);
-}
+/* Episode rows now use ChunkyTable primitives (see chunky-table.tsx);
+   per-row styling lives in Tailwind classes on ChunkyTableRow/Cell. */
 .dot {
   width: 8px;
   height: 8px;
@@ -554,22 +485,7 @@ body {
   flex: 1;
 }
 
-@media (max-width: 1100px) {
-  .ep-head,
-  .ep {
-    grid-template-columns: 24px 44px minmax(0, 1fr) 92px 40px;
-  }
-  .ep .grip,
-  .ep .ep-dur,
-  .ep .src,
-  .ep .ep-date,
-  .ep-head span:nth-child(2),
-  .ep-head span:nth-child(5),
-  .ep-head span:nth-child(6),
-  .ep-head span:nth-child(8) {
-    display: none;
-  }
-}
+/* Episode responsive rules removed with the legacy .ep-* grid. */
 
 /* Chunky auth error shake (re-triggered by changing the React key). */
 @keyframes chunky-shake {
