@@ -19,6 +19,7 @@ The public seam is fixed (`index.ts` is the single export point, `internal/` sta
 - **Tier 1 — Flat (5 or fewer files):** Keep everything directly in `src/modules/<feature>/internal/`. No subdirectories.
 - **Tier 2 — Role-based grouping (6 to 12 files):** Group by technical role, e.g. `internal/components/`, `internal/hooks/`. Use only when the flat layout becomes hard to scan.
 - **Tier 3 — Sub-feature clustering (15 or more files):** Group by domain sub-feature, e.g. `internal/sources/`, `internal/store/` (as in the `videos` module). Each cluster holds the files for one sub-feature.
+- **Recursive Tier 2 inside Tier 3:** When a single Tier 3 sub-feature cluster itself exceeds ~10–12 files or accumulates mixed responsibilities (components alongside hooks, helpers, or views), apply the Tier 2 role-based layout *inside* that cluster, e.g. `internal/<sub-feature>/components/`, `internal/<sub-feature>/hooks/`, with an optional sub-feature `index.ts` barrel seam re-exporting the cluster so module consumers avoid deep imports (as in the `videos` module's `internal/catalog/`). The module-level public seam stays fixed at `src/modules/<feature>/index.ts`; the sub-feature barrel is internal plumbing, never imported from outside the module.
 
 **Colocation principle:** A dedicated custom hook or helper utility used by only one sub-feature lives inside that sub-feature's folder — never in a shared top-level folder. Only genuinely shared code earns a shared location.
 
