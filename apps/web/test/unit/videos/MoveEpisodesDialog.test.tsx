@@ -2,7 +2,7 @@ import { renderWithProviders, screen, fireEvent, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { buildBulkCrossSeasonMove } from '@/modules/videos/internal/seasons/crossSeasonMove';
 import { MoveEpisodesDialog } from '@/modules/videos/internal/seasons/MoveEpisodesDialog';
-import { SeriesDetailView } from '@/modules/videos/internal/catalog/SeriesDetailView';
+import { SeriesDetailView } from '@/modules/videos/internal/catalog/components/SeriesDetailView';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';
 import { setAccessToken } from '@/lib/api';
