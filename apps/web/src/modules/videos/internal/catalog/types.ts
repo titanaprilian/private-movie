@@ -306,3 +306,71 @@ export interface UseSeriesCardReturn {
     item: T,
   ) => (e: React.MouseEvent) => void;
 }
+
+export type SeriesGridTab = 'all' | 'featured' | 'ongoing';
+
+export interface SeriesGridQueryParams {
+  page: number;
+  q?: string;
+  genre?: string;
+  tab?: SeriesGridTab;
+  highlighted?: boolean;
+  limit: number;
+}
+
+export interface UseSeriesGridSearchResult {
+  currentPage: number;
+  activeTab: SeriesGridTab;
+  highlightedOnly: boolean;
+  selectedSlugs: string[];
+  inputValue: string;
+  setInputValue: (value: string) => void;
+  queryParams: SeriesGridQueryParams;
+  totalPages: number;
+  /** Push list-query bounds in so out-of-range pages clamp back. */
+  syncPageBounds: (total: number, limit: number) => void;
+  handleToggleHighlightedOnly: () => void;
+  handleTabChange: (nextTab: string) => void;
+  handleGenreSelectionChange: (next: string[]) => void;
+  handleToggleGenre: (slug: string) => void;
+  gridTopRef: React.RefObject<HTMLDivElement | null>;
+  goToPage: (page: number) => void;
+}
+
+export interface UseSeriesGridMutationsOptions {
+  seriesList: SeriesItem[];
+  currentPage: number;
+  activeTab: SeriesGridTab;
+  setDeletingSeries: (series: SeriesItem | null) => void;
+}
+
+export interface UseSeriesGridMutationsResult {
+  deleteMutation: { isPending: boolean; mutate: (id: string) => void };
+  featuredMutation: {
+    isPending: boolean;
+    mutate: (variables: { id: string; featured: boolean }) => void;
+  };
+  highlightMutation: {
+    isPending: boolean;
+    mutate: (variables: { id: string; highlighted: boolean }) => void;
+  };
+  handleToggleFeatured: (item: SeriesItem) => void;
+  handleToggleHighlight: (item: SeriesItem, e: React.MouseEvent) => void;
+}
+
+export interface UseSeriesGridResult extends UseSeriesGridSearchResult {
+  seriesList: SeriesCardItem[];
+  meta: { total: number; page: number; limit: number };
+  bigGenres: { id: string; name: string; slug: string }[];
+  highlightedCountByGenreSlug: Map<string, number>;
+  editingSeries: SeriesItem | null;
+  setEditingSeries: (series: SeriesItem | null) => void;
+  deletingSeries: SeriesItem | null;
+  setDeletingSeries: (series: SeriesItem | null) => void;
+  openDialog: () => void;
+  deleteMutation: UseSeriesGridMutationsResult['deleteMutation'];
+  handleToggleFeatured: UseSeriesGridMutationsResult['handleToggleFeatured'];
+  handleToggleHighlight: UseSeriesGridMutationsResult['handleToggleHighlight'];
+  handleOpenEdit: (item: SeriesItem, e: React.MouseEvent) => void;
+  handleOpenDelete: (item: SeriesItem, e: React.MouseEvent) => void;
+}

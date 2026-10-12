@@ -17,6 +17,9 @@ export { useAddMediaDialog } from './hooks/useAddMediaDialog';
 export { useEditSeriesForm } from './hooks/useEditSeriesForm';
 export { formatGenreTriggerLabel, GENRE_FILTER_NO_HIGHLIGHT, useGenreFilter } from './hooks/useGenreFilter';
 export { getSeriesCardEpisodeCount, useSeriesCard } from './hooks/useSeriesCard';
+export { useSeriesGridSearch, buildSeriesGridQueryParams } from './hooks/useSeriesGridSearch';
+export { useSeriesGridMutations } from './hooks/useSeriesGridMutations';
+export { useSeriesGrid } from './hooks/useSeriesGrid';
 export { useSeriesDetail } from './hooks/useSeriesDetail';
 export { useSeriesDetailDnd } from './hooks/useSeriesDetailDnd';
 export { useSeriesDrawerSync } from './hooks/useSeriesDrawerSync';
@@ -43,6 +46,8 @@ export type {
   SeriesListQueryData,
   SeriesPosterCardProps,
   SeriesSearch,
+  SeriesGridQueryParams,
+  SeriesGridTab,
   TmdbPreviewResult,
   UpdateEpisodeData,
   UpdateEpisodeMutation,
@@ -55,4 +60,8 @@ export type {
   UseSeriesDetailDndOptions,
   UseSeriesDetailOptions,
   UseSeriesDrawerSyncOptions,
+  UseSeriesGridMutationsOptions,
+  UseSeriesGridMutationsResult,
+  UseSeriesGridResult,
+  UseSeriesGridSearchResult,
 } from './types';
