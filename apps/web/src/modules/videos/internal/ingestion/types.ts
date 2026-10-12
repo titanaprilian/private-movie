@@ -1,6 +1,12 @@
 import type * as React from 'react';
+import type { UseMutationResult } from '@tanstack/react-query';
 import type { ArchiveIngestJobStatus } from '@repo/contracts';
-import type { SeriesDetails } from '../api';
+import type {
+  EpisodeChangeItem,
+  SeriesDetails,
+  TmdbPreviewResult,
+  TmdbSyncPreviewResult,
+} from '../api';
 
 export type { SeriesDetails };
 export type { ParsedIngestUrl } from './parseIngestUrl';
@@ -187,6 +193,45 @@ export interface SyncTmdbModalProps {
   onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
   series: SeriesDetails;
+}
+
+export interface UseSyncTmdbOptions {
+  series: SeriesDetails;
+  isModalOpen: boolean;
+  onSuccess?: () => void;
+}
+
+export interface UseSyncTmdbReturn {
+  seriesType: string;
+  tmdbId: number | null | undefined;
+  includeSpecials: boolean;
+  setIncludeSpecials: (value: boolean) => void;
+  tmdbPreviewData: TmdbPreviewResult | null;
+  syncPreviewData: TmdbSyncPreviewResult | null;
+  isLoadingPreview: boolean;
+  previewError: string | null;
+  seasonDiffs: SeasonDiffItem[];
+  totalNewEpisodes: number;
+  totalNewSeasons: number;
+  syncMutation: UseMutationResult<SeriesDetails, Error, void, unknown>;
+}
+
+export interface SyncSnapshotCardProps {
+  previewData: TmdbPreviewResult;
+  seriesType: string;
+  tmdbId: number | null | undefined;
+}
+
+export interface SyncSeasonDiffListProps {
+  seriesType: string;
+  seasonDiffs: SeasonDiffItem[];
+  totalNewEpisodes: number;
+  totalNewSeasons: number;
+  totalUpdatedEpisodes?: number;
+}
+
+export interface SyncEpisodeChangesListProps {
+  episodeChanges: EpisodeChangeItem[] | null | undefined;
 }
 
 export interface TargetEpisodeComboboxProps {

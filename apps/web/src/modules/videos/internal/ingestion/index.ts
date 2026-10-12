@@ -33,7 +33,11 @@ export {
   isPasswordErrorCode,
   pickDefaultStorageProvider,
 } from './useArchiveIngestSources';
-export { computeSyncDiff } from './computeSyncDiff';
+export { computeSyncDiff } from './utils/computeSyncDiff';
+export { useSyncTmdb } from './hooks/useSyncTmdb';
+export { SyncSnapshotCard } from './components/sync/SyncSnapshotCard';
+export { SyncSeasonDiffList } from './components/sync/SyncSeasonDiffList';
+export { SyncEpisodeChangesList } from './components/sync/SyncEpisodeChangesList';
 export {
   detectEpisodeNumber,
   formatBytes,
@@ -63,8 +67,13 @@ export type {
   StorageProviderOption,
   StorageProviderSelectProps,
   SyncTmdbModalProps,
+  SyncSnapshotCardProps,
+  SyncSeasonDiffListProps,
+  SyncEpisodeChangesListProps,
   TargetEpisodeComboboxProps,
   UseArchiveIngestSourcesOptions,
+  UseSyncTmdbOptions,
+  UseSyncTmdbReturn,
   UseBulkIngestSourcesOptions,
   UseBulkScrapeSourcesOptions,
 } from './types';
