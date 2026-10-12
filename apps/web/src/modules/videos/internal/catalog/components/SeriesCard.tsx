@@ -1,49 +1,29 @@
-import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { FeaturedStar } from './FeaturedStar';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
-import type { SeriesItem } from '../../api';
-
-export interface SeriesCardProps {
-  item: SeriesItem & { episodes?: unknown[]; episodeCount?: number };
-  onToggleFeatured: (item: SeriesCardProps['item'], e: React.MouseEvent) => void;
-  onEdit: (item: SeriesCardProps['item'], e: React.MouseEvent) => void;
-  onDelete: (item: SeriesCardProps['item'], e: React.MouseEvent) => void;
-  onToggleHighlight?: (item: SeriesCardProps['item'], e: React.MouseEvent) => void;
-}
+import type { SeriesCardProps } from '../types';
+import { getSeriesCardEpisodeCount, useSeriesCard } from '../hooks/useSeriesCard';
+export type { SeriesCardProps } from '../types';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function getEpisodeCount(
   item: SeriesCardProps['item']
 ): number {
-  if (Array.isArray(item.episodes)) return item.episodes.length;
-  return item.episodeCount ?? 0;
+  return getSeriesCardEpisodeCount(item);
 }
 
 export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleHighlight }: SeriesCardProps) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const epCount = getEpisodeCount(item);
-  const isFeatured = Boolean(item.isFeatured);
-  const isHighlighted = Boolean(
-    (item as SeriesItem & { isOngoingHighlighted?: boolean }).isOngoingHighlighted
-  );
-  const isOngoing = Boolean(
-    (item as SeriesItem & { hasOngoing?: boolean; seasons?: { status?: string }[] }).hasOngoing ||
-      (item as SeriesItem & { seasons?: { status?: string }[] }).seasons?.some(
-        (s) => s.status === 'ongoing'
-      )
-  );
-  const showImg = Boolean(item.posterUrl) && !imgFailed;
-  const initial = (item.title?.charAt(0) ?? '?').toUpperCase();
-
-  const stop = (fn: (item: SeriesCardProps['item'], e: React.MouseEvent) => void) => {
-    return (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      fn(item, e);
-    };
-  };
+  const {
+    isFeatured,
+    isHighlighted,
+    isOngoing,
+    showImg,
+    initial,
+    episodeCount: epCount,
+    handleImageError,
+    stop,
+  } = useSeriesCard({ item });
 
   return (
     <div
@@ -62,7 +42,7 @@ export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleH
             <img
               src={item.posterUrl as string}
               alt={item.title}
-              onError={() => setImgFailed(true)}
+              onError={handleImageError}
               className="w-full h-full object-cover rounded-t transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
@@ -213,7 +193,7 @@ export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleH
         <button
           type="button"
           aria-label={`Edit ${item.title}`}
-          onClick={stop(onEdit)}
+          onClick={stop(onEdit, item)}
           className={cn(
             'flex-1 h-11 inline-flex items-center justify-center gap-2 rounded-[14px]',
             'border-2 border-b-4 border-[var(--blue)] bg-[var(--blue-soft)] text-[var(--blue)]',
@@ -231,7 +211,7 @@ export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleH
         <button
           type="button"
           aria-label={`Delete ${item.title}`}
-          onClick={stop(onDelete)}
+          onClick={stop(onDelete, item)}
           className={cn(
             'flex-1 h-11 inline-flex items-center justify-center gap-2 rounded-[14px]',
             'border-2 border-b-4 border-[var(--red)] bg-[var(--red)]/10 text-[var(--red)]',

@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react';
-import type { SeriesDetails, SeriesItem } from '../../api';
+import type { EditSeriesDialogProps } from '../types';
+export type { EditSeriesDialogProps } from '../types';
 import {
   ChunkyDialog,
   ChunkyDialogContent,
@@ -15,13 +16,6 @@ import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { useEditSeriesForm } from '../hooks/useEditSeriesForm';
-
-export interface EditSeriesDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  series: SeriesItem | SeriesDetails;
-  seriesList?: SeriesItem[];
-}
 
 export function EditSeriesDialog({
   open,

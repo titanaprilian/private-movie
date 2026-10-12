@@ -7,6 +7,8 @@ import {
 } from '@/components/ui/chunky-select';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
+import type { AddMediaStepInputProps } from '../types';
+export type { AddMediaStepInputProps } from '../types';
 
 export function ErrorBanner({ message }: { message: string }) {
   return (
@@ -26,16 +28,6 @@ export function ErrorBanner({ message }: { message: string }) {
       <span>{message}</span>
     </div>
   );
-}
-
-export interface AddMediaStepInputProps {
-  tmdbType: 'tv' | 'movie';
-  tmdbId: string;
-  includeSpecials: boolean;
-  error: string | null;
-  onTmdbTypeChange: (value: 'tv' | 'movie') => void;
-  onTmdbIdChange: (value: string) => void;
-  onIncludeSpecialsChange: (value: boolean) => void;
 }
 
 export function AddMediaStepInput({

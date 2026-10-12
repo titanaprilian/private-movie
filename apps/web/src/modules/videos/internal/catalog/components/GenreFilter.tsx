@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronDown, Filter, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -11,86 +9,29 @@ import {
 } from '@/components/ui/command';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
-import { genresQueryOptions } from '@/modules/genres';
 import { cn } from '@/lib/utils';
-
-/**
- * Sentinel command value that matches no genre row. cmdk auto-highlights the
- * first row whenever its internal value is falsy (on mount and on list
- * changes), so holding a truthy non-matching value keeps the panel free of
- * pre-highlight until the user hovers or uses arrow keys intentionally.
- */
-const NO_HIGHLIGHT = '__genre-filter-no-highlight__';
-
-export interface GenreFilterProps {
-  selectedSlugs: string[];
-  onSelectionChange: (slugs: string[]) => void;
-}
-
-function triggerLabel(selectedSlugs: string[], namesBySlug: Map<string, string>): string {
-  if (selectedSlugs.length === 0) return 'Filter by genre';
-  if (selectedSlugs.length === 1) {
-    return namesBySlug.get(selectedSlugs[0]) ?? selectedSlugs[0];
-  }
-  return `${selectedSlugs.length} genres`;
-}
+import type { GenreFilterProps } from '../types';
+import { useGenreFilter } from '../hooks/useGenreFilter';
+export type { GenreFilterProps } from '../types';
 
 export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterProps) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [highlight, setHighlight] = useState<string>(NO_HIGHLIGHT);
-  // While true, highlight updates coming from cmdk are side effects of the
-  // search filter changing (unmount-driven auto-select), not user intent.
-  const searchChangedRef = useRef(false);
-
-  const { data: genres = [], isLoading, isError, refetch } = useQuery(genresQueryOptions());
-
-  // Reset the suppression flag after commit: cmdk's filter-driven auto-select
-  // runs in layout effects, so passive effects observe it as still suppressed.
-  useEffect(() => {
-    searchChangedRef.current = false;
-  });
-
-  const namesBySlug = new Map(genres.map((g) => [g.slug, g.name]));
-  const normalizedSearch = search.trim().toLowerCase();
-  const visibleGenres =
-    normalizedSearch.length === 0
-      ? genres
-      : genres.filter(
-          (g) =>
-            g.name.toLowerCase().includes(normalizedSearch) ||
-            g.slug.toLowerCase().includes(normalizedSearch)
-        );
-
-  const toggleGenre = (slug: string) => {
-    if (selectedSlugs.includes(slug)) {
-      onSelectionChange(selectedSlugs.filter((s) => s !== slug));
-    } else {
-      onSelectionChange([...selectedSlugs, slug]);
-    }
-  };
-
-  const handleSearchChange = (value: string) => {
-    searchChangedRef.current = true;
-    setSearch(value);
-    // Clear any existing highlight when the result set changes.
-    setHighlight(NO_HIGHLIGHT);
-  };
-
-  const handleHighlightChange = (value: string) => {
-    if (searchChangedRef.current) return;
-    setHighlight(value || NO_HIGHLIGHT);
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    setOpen(next);
-    if (next) {
-      setSearch('');
-      setHighlight(NO_HIGHLIGHT);
-    }
-  };
-
-  const isActive = selectedSlugs.length > 0;
+  const {
+    open,
+    search,
+    highlight,
+    isLoading,
+    isError,
+    visibleGenres,
+    isActive,
+    triggerLabel,
+    refetch,
+    toggleGenre,
+    handleSearchChange,
+    handleHighlightChange,
+    handleOpenChange,
+    handleClear,
+    handleDone,
+  } = useGenreFilter({ selectedSlugs, onSelectionChange });
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -100,12 +41,12 @@ export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterPro
           role="combobox"
           aria-expanded={open}
           aria-haspopup="listbox"
-          aria-label={triggerLabel(selectedSlugs, namesBySlug)}
+          aria-label={triggerLabel}
           variant={isActive ? 'active' : 'default'}
           className={cn('min-w-[170px] shrink-0', open && 'border-[var(--blue)]')}
         >
           <Filter aria-hidden="true" className="h-4 w-4 shrink-0" />
-          <span className="truncate">{triggerLabel(selectedSlugs, namesBySlug)}</span>
+          <span className="truncate">{triggerLabel}</span>
           <ChevronDown
             aria-hidden="true"
             className={cn('h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
@@ -196,11 +137,11 @@ export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterPro
               type="button"
               variant="outline"
               size="default"
-              onClick={() => onSelectionChange([])}
+              onClick={handleClear}
             >
               Clear
             </ChunkyButton>
-            <ChunkyButton type="button" size="default" onClick={() => setOpen(false)}>
+            <ChunkyButton type="button" size="default" onClick={handleDone}>
               Done
             </ChunkyButton>
           </div>

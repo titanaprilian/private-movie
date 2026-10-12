@@ -7,23 +7,12 @@ import {
   Copy,
 } from 'lucide-react';
 import { Droppable } from '@hello-pangea/dnd';
-import type { SeriesDetails, SeasonDetails } from '../../api';
+import type { SeriesDetailSeasonBarProps } from '../types';
+export type { SeriesDetailSeasonBarProps } from '../types';
 import { getSeasonNumber } from '../../seasons/seasonUtils';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
-
-export interface SeriesDetailSeasonBarProps {
-  seasons: SeriesDetails['seasons'];
-  activeSeason: SeasonDetails | null;
-  selectedSeasonId: string | null;
-  onSelectSeason: (seasonId: string) => void;
-  onAddSeason: () => void;
-  isScrapePending: boolean;
-  onRunAutoScrape: (seasonId: string) => void;
-  onEditSeason: () => void;
-  onDeleteSeason: () => void;
-}
 
 export function SeriesDetailSeasonBar({
   seasons,

@@ -6,21 +6,12 @@ import {
   Plus,
   ArrowDownToLine,
 } from 'lucide-react';
-import type { SeriesDetails, SeasonDetails } from '../../api';
+import type { SeriesDetailHeroProps } from '../types';
+export type { SeriesDetailHeroProps } from '../types';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { useClampedText } from '@/hooks/useClampedText';
-
-export interface SeriesDetailHeroProps {
-  series: SeriesDetails;
-  activeSeason: SeasonDetails | null;
-  episodeCount: number;
-  onEditSeries: () => void;
-  onSyncTmdb: () => void;
-  onBulkScrape: () => void;
-  onBulkIngest: () => void;
-}
 
 export function SeriesDetailHero({
   series,

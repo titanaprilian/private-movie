@@ -1,26 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { toast } from 'sonner';
 import { Search } from 'lucide-react';
-import { SERIES_PAGE_LIMIT } from '../../api';
-import { genresQueryOptions } from '@/modules/genres';
-import {
-  seriesListQueryOptions,
-  updateSeries,
-  deleteSeries,
-  type SeriesItem,
-} from '../../api';
 import { AddMediaDialog } from './AddMediaDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
 import { SeriesCard } from './SeriesCard';
 import { GenreFilter } from './GenreFilter';
-import { useScrapeWorkerStore } from '../../store/useScrapeWorkerStore';
+import { useSeriesGrid } from '../hooks/useSeriesGrid';
+import type { SeriesCardItem } from '../types';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChunkyPaginationBar } from '@/components/ui/chunky-pagination';
@@ -34,324 +18,36 @@ import {
   ChunkyTabsTrigger,
 } from '@/components/ui/chunky-tabs';
 
-const SEARCH_DEBOUNCE_MS = 250;
-
-type SeriesSearch = {
-  page?: number;
-  q?: string;
-  genre?: string;
-  tab?: 'all' | 'featured' | 'ongoing';
-  highlighted?: boolean;
-};
-
 export function SeriesGrid() {
-  const search = useSearch({ from: '/admin/videos/' }) as SeriesSearch;
-  const navigate = useNavigate({ from: '/admin/videos/' });
-  const openDialog = useScrapeWorkerStore((state) => state.openDialog);
-  const queryClient = useQueryClient();
-
-  const currentPage =
-    Number.isInteger(search.page) && (search.page as number) > 0
-      ? (search.page as number)
-      : 1;
-
-  const queryParams = {
-    page: currentPage,
-    q: search.q,
-    genre: search.genre,
-    tab: search.tab,
-    highlighted: search.highlighted,
-    limit: SERIES_PAGE_LIMIT,
-  };
-
-  const { data } = useQuery({
-    ...seriesListQueryOptions(queryParams),
-    placeholderData: keepPreviousData,
-  });
-
-  const activeTab =
-    search.tab === 'featured' || search.tab === 'ongoing' ? search.tab : 'all';
-
-  const highlightedOnly = search.highlighted === true;
-
-  const { data: genres = [] } = useQuery(genresQueryOptions());
-
-  const bigGenres = genres.filter((genre) => Boolean(genre.isBigGenre));
-
-  const highlightedCountsQuery = useQuery({
-    ...seriesListQueryOptions({ filter: 'ongoing', highlighted: true, limit: 100 }),
-    enabled: activeTab === 'ongoing',
-    staleTime: 30_000,
-  });
-  const highlightedSeries = highlightedCountsQuery.data?.series ?? [];
-  const highlightedCountByGenreSlug = new Map<string, number>();
-  for (const item of highlightedSeries) {
-    const itemGenres = Array.isArray(item.genres) ? item.genres : [];
-    for (const genre of itemGenres) {
-      const slug = typeof genre === 'string' ? genre : genre.slug;
-      if (slug) {
-        highlightedCountByGenreSlug.set(
-          slug,
-          (highlightedCountByGenreSlug.get(slug) ?? 0) + 1
-        );
-      }
-    }
-  }
-
-  const searchQ = search.q ?? '';
-  const [inputValue, setInputValue] = useState(searchQ);
-  const lastSyncedQRef = useRef(searchQ);
-  const [editingSeries, setEditingSeries] = useState<SeriesItem | null>(null);
-  const [deletingSeries, setDeletingSeries] = useState<SeriesItem | null>(null);
-
-  const handleToggleHighlightedOnly = () => {
-    navigate({
-      search: (old: Record<string, unknown>) => ({
-        ...old,
-        highlighted: highlightedOnly ? undefined : true,
-        page: 1,
-      }),
-    });
-  };
-
-  const handleTabChange = (nextTab: string) => {
-    navigate({
-      search: (old: Record<string, unknown>) => ({
-        ...old,
-        tab: nextTab === 'all' ? undefined : (nextTab as 'featured' | 'ongoing'),
-        page: 1,
-      }),
-    });
-  };
-
-  const selectedSlugs = search.genre
-    ? search.genre
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
-
-  const handleGenreSelectionChange = (next: string[]) => {
-    navigate({
-      search: (old: Record<string, unknown>) => ({
-        ...old,
-        genre: next.length > 0 ? next.join(',') : undefined,
-        page: 1,
-      }),
-    });
-  };
-
-  const handleToggleGenre = (slug: string) => {
-    const next = selectedSlugs.includes(slug)
-      ? selectedSlugs.filter((s) => s !== slug)
-      : [...selectedSlugs, slug];
-    handleGenreSelectionChange(next);
-  };
-
-  useEffect(() => {
-    if (searchQ !== lastSyncedQRef.current) {
-      lastSyncedQRef.current = searchQ;
-      setInputValue(searchQ);
-    }
-  }, [searchQ]);
-
-  useEffect(() => {
-    const trimmed = inputValue.trim();
-    if (trimmed === lastSyncedQRef.current) {
-      return;
-    }
-
-    const handler = setTimeout(() => {
-      lastSyncedQRef.current = trimmed;
-      navigate({
-        search: (old: Record<string, unknown>) => ({
-          ...old,
-          q: trimmed || undefined,
-          page: 1,
-        }),
-        replace: true,
-      });
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [inputValue, navigate]);
-
-  const seriesList = data?.series ?? [];
-  const meta = data?.meta ?? {
-    total: seriesList.length,
-    page: currentPage,
-    limit: SERIES_PAGE_LIMIT,
-  };
-  const limit = meta.limit || SERIES_PAGE_LIMIT;
-  const totalPages = Math.max(1, Math.ceil(meta.total / limit));
-
-  // Clamp out-of-bounds page params to valid ranges.
-  useEffect(() => {
-    if (meta.total > 0 && currentPage > totalPages) {
-      navigate({
-        search: (old: Record<string, unknown>) => ({
-          ...old,
-          page: totalPages,
-        }),
-        replace: true,
-      });
-    }
-  }, [currentPage, totalPages, meta.total, navigate]);
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteSeries(id),
-    onSuccess: (_deleted, id) => {
-      queryClient.invalidateQueries({ queryKey: ['series'] });
-      toast.success('series.delete', {
-        description: 'Successfully deleted series',
-      });
-      // If the deleted card was the sole item on page > 1, step back.
-      const wasLastOnPage =
-        seriesList.length === 1 &&
-        seriesList.some((item) => item.id === id);
-      if (wasLastOnPage && currentPage > 1) {
-        navigate({
-          search: (old: Record<string, unknown>) => ({
-            ...old,
-            page: currentPage - 1,
-          }),
-        });
-      }
-      setDeletingSeries(null);
-    },
-    onError: (error: Error) => {
-      toast.error('series.delete', {
-        description: `Failed to delete series: ${error.message}`,
-      });
-    },
-  });
-
-  type SeriesListQueryData = { series: SeriesItem[]; meta: { total: number; page: number; limit: number } };
-
-  const featuredMutation = useMutation({
-    mutationFn: ({ id, featured }: { id: string; featured: boolean }) =>
-      updateSeries(id, { isFeatured: featured }),
-    onMutate: async ({ id, featured }) => {
-      await queryClient.cancelQueries({ queryKey: ['series'] });
-      const previous = queryClient.getQueriesData<SeriesListQueryData>({
-        queryKey: ['series'],
-      });
-      queryClient.setQueriesData<SeriesListQueryData>(
-        { queryKey: ['series'] },
-        (old) => {
-          if (!old || !Array.isArray(old.series)) return old;
-          if (activeTab === 'featured' && !featured) {
-            const nextSeries = old.series.filter((item) => item.id !== id);
-            return {
-              ...old,
-              series: nextSeries,
-              meta: {
-                ...old.meta,
-                total: Math.max(0, (old.meta?.total ?? nextSeries.length) - 1),
-              },
-            };
-          }
-          return {
-            ...old,
-            series: old.series.map((item) =>
-              item.id === id ? { ...item, isFeatured: featured } : item
-            ),
-          };
-        }
-      );
-      return { previous };
-    },
-    onError: (error: Error, _vars, context) => {
-      context?.previous.forEach(([queryKey, data]) => {
-        queryClient.setQueryData(queryKey, data);
-      });
-      toast.error('series.featured', {
-        description: `Failed to update featured status: ${error.message}`,
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['series'] });
-    },
-  });
-
-  const handleToggleFeatured = (item: SeriesItem) => {
-    featuredMutation.mutate({
-      id: item.id,
-      featured: !item.isFeatured,
-    });
-  };
-
-  const handleOpenEdit = (item: SeriesItem, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setEditingSeries(item);
-  };
-
-  const handleOpenDelete = (item: SeriesItem, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDeletingSeries(item);
-  };
-
-  const highlightMutation = useMutation({
-    mutationFn: ({ id, highlighted }: { id: string; highlighted: boolean }) =>
-      updateSeries(id, { isOngoingHighlighted: highlighted }),
-    onMutate: async ({ id, highlighted }) => {
-      await queryClient.cancelQueries({ queryKey: ['series'] });
-      const previous = queryClient.getQueriesData<SeriesListQueryData>({
-        queryKey: ['series'],
-      });
-      queryClient.setQueriesData<SeriesListQueryData>(
-        { queryKey: ['series'] },
-        (old) => {
-          if (!old || !Array.isArray(old.series)) return old;
-          return {
-            ...old,
-            series: old.series.map((item) =>
-              item.id === id
-                ? { ...item, isOngoingHighlighted: highlighted }
-                : item
-            ),
-          };
-        }
-      );
-      return { previous };
-    },
-    onError: (error: Error, _vars, context) => {
-      context?.previous.forEach(([queryKey, data]) => {
-        queryClient.setQueryData(queryKey, data);
-      });
-      toast.error('series.highlight', {
-        description: `Failed to update highlight: ${error.message}`,
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['series'] });
-    },
-  });
-
-  const handleToggleHighlight = (
-    item: SeriesItem,
-    e: React.MouseEvent
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    highlightMutation.mutate({
-      id: item.id,
-      highlighted: !item.isOngoingHighlighted,
-    });
-  };
-
-  const gridTopRef = useRef<HTMLDivElement>(null);
-
-  const goToPage = (page: number) => {
-    navigate({
-      search: (old: Record<string, unknown>) => ({ ...old, page }),
-    });
-    gridTopRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-  };
+  const {
+    currentPage,
+    activeTab,
+    highlightedOnly,
+    selectedSlugs,
+    inputValue,
+    setInputValue,
+    totalPages,
+    handleToggleHighlightedOnly,
+    handleTabChange,
+    handleGenreSelectionChange,
+    handleToggleGenre,
+    gridTopRef,
+    goToPage,
+    seriesList,
+    meta,
+    bigGenres,
+    highlightedCountByGenreSlug,
+    editingSeries,
+    setEditingSeries,
+    deletingSeries,
+    setDeletingSeries,
+    openDialog,
+    deleteMutation,
+    handleToggleFeatured,
+    handleToggleHighlight,
+    handleOpenEdit,
+    handleOpenDelete,
+  } = useSeriesGrid();
 
   return (
     <div className="space-y-4">
@@ -501,7 +197,7 @@ export function SeriesGrid() {
               'repeat(auto-fill, minmax(max(210px, calc((100% - 60px) / 4)), 1fr))',
           }}
         >
-          {seriesList.map((item: SeriesItem & { episodes?: unknown[]; episodeCount?: number }) => (
+          {seriesList.map((item: SeriesCardItem) => (
             <SeriesCard
               key={item.id}
               item={item}
