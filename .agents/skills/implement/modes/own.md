@@ -49,3 +49,4 @@ Whoever merges the branch removes the worktree and its test database, so leave b
 
 - **Base:** the name of the ticket's Base branch and the commit of it you rebased onto.
 - **Commit:** the short hash and subject of your commit.
+- **Notify:**: the only tmux command you may run is the one in `references/notify-orchestrator.md`, and only against the pane in `$ORCH_PANE`. Never send keys to any other pane or window.

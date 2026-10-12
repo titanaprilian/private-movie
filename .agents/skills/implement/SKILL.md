@@ -20,6 +20,7 @@ Read each one when its step says so, not before.
 - `modes/own.md`, `modes/shared.md` — everything that differs between the modes. Read the one for your mode as soon as step 0 has told you which it is.
 - `references/testing.md` — test commands. Read before running any test.
 - `references/schema-changes.md` — read when the ticket changes the database schema.
+- `references/notify-orchestrator.md` — how to report back to the orchestrator. Read it at step 5.
 
 ## Hard rules (both modes)
 
@@ -131,3 +132,7 @@ Your hand-back message must include:
 - **Out-of-scope observations:** anything wrong you noticed nearby but deliberately left alone.
 - **Deviations or tripwires:** any decision you could not follow, or any "Stop and report if" condition you hit.
 - **Schema note:** if you generated a migration, the reminder from `references/schema-changes.md`.
+
+## 5. Notify the orchestrator
+
+You were launched by an orchestrator running in another tmux window. Once step 4 is done, or once you have stopped on a blocker, read `references/notify-orchestrator.md` and follow it: write the full report to a file, then send one single-line notification to the orchestrator. Still print the full hand-back as your final message as well.
