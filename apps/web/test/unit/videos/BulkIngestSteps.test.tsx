@@ -4,14 +4,16 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { cleanup } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
-import { ArchiveStep1 } from '@/modules/videos/internal/ingestion/bulk/components/archive/ArchiveStep1';
-import { ArchiveStep2 } from '@/modules/videos/internal/ingestion/bulk/components/archive/ArchiveStep2';
-import { ArchiveStep3 } from '@/modules/videos/internal/ingestion/bulk/components/archive/ArchiveStep3';
-import { UrlStep1 } from '@/modules/videos/internal/ingestion/bulk/components/url/UrlStep1';
-import { UrlStep2 } from '@/modules/videos/internal/ingestion/bulk/components/url/UrlStep2';
-import { UrlStep3 } from '@/modules/videos/internal/ingestion/bulk/components/url/UrlStep3';
-import { BulkIngestTabs } from '@/modules/videos/internal/ingestion/bulk/components/BulkIngestTabs';
-import { useBulkIngestModal } from '@/modules/videos/internal/ingestion/hooks/useBulkIngestModal';
+import {
+  ArchiveStep1,
+  ArchiveStep2,
+  ArchiveStep3,
+  UrlStep1,
+  UrlStep2,
+  UrlStep3,
+  BulkIngestTabs,
+  useBulkIngestModal,
+} from '@/modules/videos/internal/ingestion';
 
 vi.mock('sonner', () => ({
   toast: {

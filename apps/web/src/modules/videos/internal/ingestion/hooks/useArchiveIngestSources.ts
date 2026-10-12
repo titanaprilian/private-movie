@@ -34,7 +34,7 @@ export type {
   ArchiveUploadView,
   UseArchiveIngestSourcesOptions,
 } from '../types';
-import { getSeasonOptions } from '../useBulkScrapeSources';
+import { getSeasonOptions } from '../scrape/hooks/useBulkScrapeSources';
 import { useQuery } from '@tanstack/react-query';
 import { storageProvidersQueryOptions, type StorageProviderItem } from '@/modules/storage';
 

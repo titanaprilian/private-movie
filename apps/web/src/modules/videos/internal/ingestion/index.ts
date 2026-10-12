@@ -1,8 +1,8 @@
 export { BulkIngestModal } from './BulkIngestModal';
 export { BulkScrapeModal } from './BulkScrapeModal';
 export { SyncTmdbModal } from './SyncTmdbModal';
-export { TargetEpisodeCombobox } from './TargetEpisodeCombobox';
-export { useBulkScrapeSources } from './useBulkScrapeSources';
+export { TargetEpisodeCombobox } from './scrape/components/TargetEpisodeCombobox';
+export { useBulkScrapeSources } from './scrape/hooks/useBulkScrapeSources';
 export { useBulkIngestSources } from './hooks/useBulkIngestSources';
 export { useArchiveIngestSources } from './hooks/useArchiveIngestSources';
 export { useBulkIngestModal } from './hooks/useBulkIngestModal';
@@ -41,7 +41,7 @@ export {
   getSeasonOptions,
   getTargetSeasonEpisodes,
   applyPreviewSequentialFallback,
-} from './useBulkScrapeSources';
+} from './scrape/hooks/useBulkScrapeSources';
 export {
   ARCHIVE_POLL_DELAY_MS,
   ARCHIVE_POLL_STATUSES,

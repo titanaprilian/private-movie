@@ -3,12 +3,12 @@ import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { useBulkIngestSources } from '@/modules/videos/internal/ingestion/useBulkIngestSources';
+import { useBulkIngestSources } from '@/modules/videos/internal/ingestion';
 import * as api from '@/modules/videos/internal/api';
 import type {
   LocalEpisodeItem,
   SeasonGroupOption,
-} from '@/modules/videos/internal/ingestion/useBulkScrapeSources';
+} from '@/modules/videos/internal/ingestion';
 
 const createWrapper = () => {
   const queryClient = createTestQueryClient();

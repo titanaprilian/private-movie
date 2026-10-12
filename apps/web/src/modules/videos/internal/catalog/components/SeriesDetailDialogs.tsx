@@ -4,11 +4,9 @@ import { EditSeasonDialog } from '../../seasons/EditSeasonDialog';
 import { AddSeasonDialog } from '../../seasons/AddSeasonDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
 import { EditEpisodeDialog } from './EditEpisodeDialog';
-import { SyncTmdbModal } from '../../ingestion/SyncTmdbModal';
+import { SyncTmdbModal, BulkScrapeModal, BulkIngestModal } from '../../ingestion';
 import { ManageSourcesDialog } from '../../sources/ManageSourcesDialog';
 import { MoveEpisodesDialog } from '../../seasons/MoveEpisodesDialog';
-import { BulkScrapeModal } from '../../ingestion/BulkScrapeModal';
-import { BulkIngestModal } from '../../ingestion/BulkIngestModal';
 import { BatchDeleteDialog } from '../../seasons/BatchDeleteDialog';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 

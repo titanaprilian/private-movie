@@ -9,7 +9,7 @@ import {
 } from '@/modules/storage';
 import {
   getSeasonOptions,
-} from '../useBulkScrapeSources';
+} from '../scrape/hooks/useBulkScrapeSources';
 import type {
   BulkIngestItem,
   LocalEpisodeItem,

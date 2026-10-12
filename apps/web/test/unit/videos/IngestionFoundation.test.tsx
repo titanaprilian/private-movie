@@ -8,9 +8,9 @@ import {
   ProviderBadge,
   StatusBadge,
   WarningBadge,
-} from '@/modules/videos/internal/ingestion/components/IngestionBadges';
-import { StorageProviderSelect } from '@/modules/videos/internal/ingestion/components/StorageProviderSelect';
-import { IngestionProgressBar } from '@/modules/videos/internal/ingestion/components/IngestionProgressBar';
+  StorageProviderSelect,
+  IngestionProgressBar,
+} from '@/modules/videos/internal/ingestion';
 
 describe('IngestionBadges', () => {
   it.each([
