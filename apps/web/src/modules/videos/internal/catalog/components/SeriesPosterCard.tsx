@@ -1,17 +1,8 @@
 import { Star } from 'lucide-react';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
-
-export interface SeriesPosterCardProps {
-  seriesId: string;
-  title: string;
-  posterUrl: string;
-  type: string;
-  seasonsCount?: number | null;
-  rating?: string | null;
-  focused?: boolean;
-  onSelect?: (seriesId: string) => void;
-}
+import type { SeriesPosterCardProps } from '../types';
+export type { SeriesPosterCardProps } from '../types';
 
 function formatTypeLabel(type: string): string {
   const normalized = (type || 'tv').toLowerCase();

@@ -5,20 +5,10 @@ import type { DropResult } from '@hello-pangea/dnd';
 import {
   updateEpisodeOrders,
   type SeriesDetails,
-  type SeasonDetails,
 } from '../../api';
 import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from '../../seasons/crossSeasonMove';
-import type { SeriesDetailEpisode } from './useSeriesDetail';
-
-export interface UseSeriesDetailDndOptions {
-  seriesId: string;
-  serverEpisodes: SeriesDetailEpisode[] | undefined;
-  seasons: SeriesDetails['seasons'] | undefined;
-  activeSeason: SeasonDetails | null;
-  selectedEpisodeIds: string[];
-  onCloseMoveDialog: () => void;
-  onBulkMoveSuccess: () => void;
-}
+import type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../types';
+export type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../types';
 
 const SEASON_TAB_PREFIX = 'season-tab-';
 

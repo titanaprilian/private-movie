@@ -17,17 +17,9 @@ import { useSeriesDetailDnd } from '../hooks/useSeriesDetailDnd';
 import { useSeriesDrawerSync } from '../hooks/useSeriesDrawerSync';
 import { SeriesDetailHero } from './SeriesDetailHero';
 import { SeriesDetailSeasonBar } from './SeriesDetailSeasonBar';
-import {
-  SeriesDetailDialogs,
-  type ManageSourcesInitialTab,
-} from './SeriesDetailDialogs';
-
-export interface SeriesDetailViewProps {
-  seriesId: string;
-  initialOrder?: number;
-  initialEpisodeId?: string;
-  initialSeasonId?: string;
-}
+import { SeriesDetailDialogs } from './SeriesDetailDialogs';
+import type { ManageSourcesInitialTab, SeriesDetailViewProps } from '../types';
+export type { SeriesDetailViewProps } from '../types';
 
 export function SeriesDetailView({
   seriesId,

@@ -1,15 +1,7 @@
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
-
-export interface RecentEpisodeCardProps {
-  episodeId: string;
-  seriesId: string;
-  title: string;
-  seriesTitle: string;
-  thumbnailUrl: string;
-  badgeLabel: string;
-  onSelect?: (args: { episodeId: string; seriesId: string }) => void;
-}
+import type { RecentEpisodeCardProps } from '../types';
+export type { RecentEpisodeCardProps } from '../types';
 
 export function RecentEpisodeCard({
   episodeId,

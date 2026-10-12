@@ -1,10 +1,6 @@
 import { useState } from 'react';
-import type {
-  SeriesDetails,
-  SeasonDetails,
-  UpdateEpisodeData,
-} from '../../api';
-import type { SeriesDetailEpisode } from '../hooks/useSeriesDetail';
+import type { SeriesDetailDialogsProps } from '../types';
+export type { ManageSourcesInitialTab, SeriesDetailDialogsProps, UpdateEpisodeMutation } from '../types';
 import { EditSeasonDialog } from '../../seasons/EditSeasonDialog';
 import { AddSeasonDialog } from '../../seasons/AddSeasonDialog';
 import { EditSeriesDialog } from './EditSeriesDialog';
@@ -27,75 +23,6 @@ import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
 import { ChunkyButton } from '@/components/ui/chunky-button';
-
-export type ManageSourcesInitialTab =
-  | 'add-url'
-  | 'add-direct'
-  | 'remote-ingest'
-  | 'upload-s3'
-  | 'edit-existing';
-
-export interface UpdateEpisodeMutation {
-  isPending: boolean;
-  mutate: (variables: { id: string; data: UpdateEpisodeData }) => void;
-}
-
-export interface SeriesDetailDialogsProps {
-  series: SeriesDetails;
-  seriesId: string;
-  seasons: SeriesDetails['seasons'];
-  activeSeason: SeasonDetails | null;
-  localEpisodes: SeriesDetailEpisode[];
-  selectedEpisode: SeriesDetailEpisode | null;
-  selectedEpisodeIds: string[];
-  episodeCountBySeason: Record<string, number>;
-  updateMutation: UpdateEpisodeMutation;
-  // Move episodes dialog
-  isMoveEpisodesOpen: boolean;
-  onMoveEpisodesOpenChange: (open: boolean) => void;
-  onConfirmBulkMove: (targetSeasonId: string) => void;
-  isMovePending: boolean;
-  // Batch delete dialog
-  isBatchDeleteOpen: boolean;
-  onBatchDeleteOpenChange: (open: boolean) => void;
-  onConfirmBatchDelete: () => void;
-  isBatchOperating: boolean;
-  // Edit series dialog
-  isEditSeriesOpen: boolean;
-  onEditSeriesOpenChange: (open: boolean) => void;
-  // Sync TMDB modal
-  isSyncTmdbOpen: boolean;
-  onSyncTmdbOpenChange: (open: boolean) => void;
-  // Bulk scrape modal
-  isBulkScrapeOpen: boolean;
-  onBulkScrapeOpenChange: (open: boolean) => void;
-  bulkScrapeEpisodeIds: string[] | null;
-  onBulkScrapeEpisodeIdsChange: (ids: string[] | null) => void;
-  // Bulk ingest modal
-  isBulkIngestOpen: boolean;
-  onBulkIngestOpenChange: (open: boolean) => void;
-  // Season dialogs
-  isEditSeasonOpen: boolean;
-  onEditSeasonOpenChange: (open: boolean) => void;
-  isAddSeasonOpen: boolean;
-  onAddSeasonOpenChange: (open: boolean) => void;
-  isDeleteSeasonOpen: boolean;
-  onDeleteSeasonOpenChange: (open: boolean) => void;
-  isDeleteSeasonPending: boolean;
-  onConfirmDeleteSeason: () => void;
-  // Edit episode dialog
-  isEditDialogOpen: boolean;
-  onEditDialogOpenChange: (open: boolean) => void;
-  // Manage sources dialog
-  isManageSourcesOpen: boolean;
-  onManageSourcesOpenChange: (open: boolean) => void;
-  manageSourcesInitialTab: ManageSourcesInitialTab | undefined;
-  onManageSourcesInitialTabChange: (tab: ManageSourcesInitialTab | undefined) => void;
-  // Delete episode dialog
-  isDeleteDialogOpen: boolean;
-  onDeleteDialogOpenChange: (open: boolean) => void;
-  onConfirmDeleteEpisode: () => void;
-}
 
 export function SeriesDetailDialogs({
   series,

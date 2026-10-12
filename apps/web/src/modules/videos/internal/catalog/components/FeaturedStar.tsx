@@ -1,13 +1,8 @@
-import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 
-export interface FeaturedStarProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'onToggle'> {
-  featured: boolean;
-  title?: string;
-  onToggle: (e: React.MouseEvent) => void;
-}
+import type { FeaturedStarProps } from '../types';
+export type { FeaturedStarProps } from '../types';
 
 export function FeaturedStar({
   featured,

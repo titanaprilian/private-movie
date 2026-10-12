@@ -1,4 +1,5 @@
-import type { TmdbPreviewResult } from '../../api';
+import type { AddMediaStepPreviewProps } from '../types';
+export type { AddMediaStepPreviewProps } from '../types';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ErrorBanner } from './AddMediaStepInput';
 
@@ -8,13 +9,6 @@ function MetaBadge({ children }: { children: React.ReactNode }) {
       {children}
     </span>
   );
-}
-
-export interface AddMediaStepPreviewProps {
-  tmdbType: 'tv' | 'movie';
-  tmdbId: string;
-  previewData: TmdbPreviewResult | null;
-  importError: Error | null;
 }
 
 export function AddMediaStepPreview({

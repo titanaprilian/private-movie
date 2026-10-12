@@ -13,6 +13,8 @@ import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { genresQueryOptions } from '@/modules/genres';
 import { cn } from '@/lib/utils';
+import type { GenreFilterProps } from '../types';
+export type { GenreFilterProps } from '../types';
 
 /**
  * Sentinel command value that matches no genre row. cmdk auto-highlights the
@@ -21,11 +23,6 @@ import { cn } from '@/lib/utils';
  * pre-highlight until the user hovers or uses arrow keys intentionally.
  */
 const NO_HIGHLIGHT = '__genre-filter-no-highlight__';
-
-export interface GenreFilterProps {
-  selectedSlugs: string[];
-  onSelectionChange: (slugs: string[]) => void;
-}
 
 function triggerLabel(selectedSlugs: string[], namesBySlug: Map<string, string>): string {
   if (selectedSlugs.length === 0) return 'Filter by genre';

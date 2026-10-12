@@ -9,6 +9,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
 import { SERIES_PAGE_LIMIT } from '../../api';
+import type { SeriesListQueryData, SeriesSearch } from '../types';
 import { genresQueryOptions } from '@/modules/genres';
 import {
   seriesListQueryOptions,
@@ -36,13 +37,7 @@ import {
 
 const SEARCH_DEBOUNCE_MS = 250;
 
-type SeriesSearch = {
-  page?: number;
-  q?: string;
-  genre?: string;
-  tab?: 'all' | 'featured' | 'ongoing';
-  highlighted?: boolean;
-};
+
 
 export function SeriesGrid() {
   const search = useSearch({ from: '/admin/videos/' }) as SeriesSearch;
@@ -227,8 +222,6 @@ export function SeriesGrid() {
       });
     },
   });
-
-  type SeriesListQueryData = { series: SeriesItem[]; meta: { total: number; page: number; limit: number } };
 
   const featuredMutation = useMutation({
     mutationFn: ({ id, featured }: { id: string; featured: boolean }) =>

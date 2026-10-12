@@ -6,26 +6,8 @@ import {
 } from '@/components/ui/chunky-dialog';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 
-export interface SeriesDetailDialogSeries {
-  id: string;
-  title: string;
-  synopsis: string;
-  posterUrl: string;
-  bannerUrl: string;
-  type: string;
-  seasons: number;
-  episodes: number;
-  rating: string;
-  year: number;
-  genres: string[];
-}
-
-export interface SeriesDetailDialogProps {
-  series: SeriesDetailDialogSeries | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onPlay?: (seriesId: string) => void;
-}
+import type { SeriesDetailDialogProps } from '../types';
+export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from '../types';
 
 function formatTypeLabel(type: string): string {
   const normalized = (type || 'tv').toLowerCase();

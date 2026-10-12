@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   seriesDetailQueryOptions,
-  type SeriesDetails,
   type SeasonDetails,
   updateEpisode,
   deleteEpisode,
@@ -11,12 +10,8 @@ import {
   scrapeOngoingSeason,
 } from '../../api';
 
-export type SeriesDetailEpisode = SeriesDetails['episodes'][number];
-
-export interface UseSeriesDetailOptions {
-  seriesId: string;
-  initialSeasonId?: string;
-}
+import type { UseSeriesDetailOptions } from '../types';
+export type { SeriesDetailEpisode, UseSeriesDetailOptions } from '../types';
 
 export function useSeriesDetail({ seriesId, initialSeasonId }: UseSeriesDetailOptions) {
   const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));

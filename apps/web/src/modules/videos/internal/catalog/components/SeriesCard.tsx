@@ -4,14 +4,8 @@ import { cn } from '@/lib/utils';
 import { FeaturedStar } from './FeaturedStar';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import type { SeriesItem } from '../../api';
-
-export interface SeriesCardProps {
-  item: SeriesItem & { episodes?: unknown[]; episodeCount?: number };
-  onToggleFeatured: (item: SeriesCardProps['item'], e: React.MouseEvent) => void;
-  onEdit: (item: SeriesCardProps['item'], e: React.MouseEvent) => void;
-  onDelete: (item: SeriesCardProps['item'], e: React.MouseEvent) => void;
-  onToggleHighlight?: (item: SeriesCardProps['item'], e: React.MouseEvent) => void;
-}
+import type { SeriesCardProps } from '../types';
+export type { SeriesCardProps } from '../types';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function getEpisodeCount(
