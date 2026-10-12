@@ -1,11 +1,7 @@
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect } from 'react';
 import { Plus, Copy, Trash2 } from 'lucide-react';
 import { DragDropContext } from '@hello-pangea/dnd';
-import {
-  deleteEpisode,
-  type UpdateEpisodeData,
-} from '../../api';
+import type { UpdateEpisodeData } from '../../api';
 import { EpisodeTable } from '../../seasons/EpisodeTable';
 import { EpisodeDetailDrawer } from '../../seasons/EpisodeDetailDrawer';
 import { BackButton } from '@/components/ui/back-button';
@@ -15,10 +11,12 @@ import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { useSeriesDetail } from '../hooks/useSeriesDetail';
 import { useSeriesDetailDnd } from '../hooks/useSeriesDetailDnd';
 import { useSeriesDrawerSync } from '../hooks/useSeriesDrawerSync';
+import { useSeriesDetailModals } from '../hooks/useSeriesDetailModals';
+import { useEpisodeBatchOperations } from '../hooks/useEpisodeBatchOperations';
 import { SeriesDetailHero } from './SeriesDetailHero';
 import { SeriesDetailSeasonBar } from './SeriesDetailSeasonBar';
 import { SeriesDetailDialogs } from './SeriesDetailDialogs';
-import type { ManageSourcesInitialTab, SeriesDetailViewProps } from '../types';
+import type { SeriesDetailViewProps } from '../types';
 export type { SeriesDetailViewProps } from '../types';
 
 export function SeriesDetailView({
@@ -46,8 +44,28 @@ export function SeriesDetailView({
     invalidateDetail,
   } = useSeriesDetail({ seriesId, initialSeasonId });
 
-  const [selectedEpisodeIds, setSelectedEpisodeIds] = useState<string[]>([]);
-  const [isMoveEpisodesOpen, setIsMoveEpisodesOpen] = useState(false);
+  const modals = useSeriesDetailModals();
+
+  // useSeriesDetail closes its own delete-season flag when the mutation
+  // settles; mirror that into the unified modal state so the OR-bridged
+  // dialog below actually closes (preserves pre-refactor behavior).
+  const deleteSeasonSettled =
+    deleteSeasonMutation.isSuccess || deleteSeasonMutation.isError;
+  const closeDeleteSeasonModal = modals.setIsDeleteSeasonOpen;
+  useEffect(() => {
+    if (deleteSeasonSettled) closeDeleteSeasonModal(false);
+  }, [deleteSeasonSettled, closeDeleteSeasonModal]);
+
+  const {
+    selectedEpisodeIds,
+    setSelectedEpisodeIds,
+    clearSelection,
+    isBatchOperating,
+    handleBatchDelete,
+  } = useEpisodeBatchOperations({
+    onInvalidateDetail: invalidateDetail,
+    onCloseBatchDeleteDialog: () => modals.setIsBatchDeleteOpen(false),
+  });
 
   const {
     localEpisodes,
@@ -62,10 +80,10 @@ export function SeriesDetailView({
     seasons: series?.seasons,
     activeSeason,
     selectedEpisodeIds,
-    onCloseMoveDialog: () => setIsMoveEpisodesOpen(false),
+    onCloseMoveDialog: () => modals.setIsMoveEpisodesOpen(false),
     onBulkMoveSuccess: () => {
-      setSelectedEpisodeIds([]);
-      setIsMoveEpisodesOpen(false);
+      clearSelection();
+      modals.setIsMoveEpisodesOpen(false);
     },
   });
 
@@ -81,20 +99,6 @@ export function SeriesDetailView({
     initialOrder,
   });
 
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isManageSourcesOpen, setIsManageSourcesOpen] = useState(false);
-  const [manageSourcesInitialTab, setManageSourcesInitialTab] = useState<
-    ManageSourcesInitialTab | undefined
-  >(undefined);
-  const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
-  const [isSyncTmdbOpen, setIsSyncTmdbOpen] = useState(false);
-  const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
-  const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
-  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
-  const [isBatchOperating, setIsBatchOperating] = useState(false);
-  const [bulkScrapeEpisodeIds, setBulkScrapeEpisodeIds] = useState<string[] | null>(null);
-
   const selectedEpisode = selectedEpisodeId
     ? episodes.find((e) => e.id === selectedEpisodeId) ?? null
     : null;
@@ -109,44 +113,7 @@ export function SeriesDetailView({
   const handleConfirmDelete = () => {
     if (!selectedEpisode) return;
     deleteMutation.mutate(selectedEpisode.id);
-    setIsDeleteDialogOpen(false);
-  };
-
-  const handleBatchDelete = async () => {
-    if (selectedEpisodeIds.length === 0) return;
-    setIsBatchOperating(true);
-
-    let successCount = 0;
-    const errors: string[] = [];
-
-    for (const epId of selectedEpisodeIds) {
-      try {
-        await deleteEpisode(epId);
-        successCount++;
-      } catch (err) {
-        errors.push((err as Error).message);
-      }
-    }
-
-    await invalidateDetail();
-    setSelectedEpisodeIds([]);
-    setIsBatchDeleteOpen(false);
-    setIsBatchOperating(false);
-
-    if (successCount > 0) {
-      toast.success(
-        `Successfully deleted ${successCount} ${
-          successCount === 1 ? 'episode' : 'episodes'
-        }`
-      );
-    }
-    if (errors.length > 0) {
-      toast.error(
-        `Failed to delete ${errors.length} ${
-          errors.length === 1 ? 'episode' : 'episodes'
-        }`
-      );
-    }
+    modals.setIsDeleteDialogOpen(false);
   };
 
   if (isLoading) {
@@ -199,6 +166,48 @@ export function SeriesDetailView({
     );
   }
 
+  // Combined modal state bridge: useSeriesDetail manages season modal booleans,
+  // while useSeriesDetailModals provides the unified setters and state.
+  const modalProps = {
+    isMoveEpisodesOpen: modals.isMoveEpisodesOpen,
+    onMoveEpisodesOpenChange: modals.setIsMoveEpisodesOpen,
+    isBatchDeleteOpen: modals.isBatchDeleteOpen,
+    onBatchDeleteOpenChange: modals.setIsBatchDeleteOpen,
+    isEditSeriesOpen: modals.isEditSeriesOpen,
+    onEditSeriesOpenChange: modals.setIsEditSeriesOpen,
+    isSyncTmdbOpen: modals.isSyncTmdbOpen,
+    onSyncTmdbOpenChange: modals.setIsSyncTmdbOpen,
+    isBulkScrapeOpen: modals.isBulkScrapeOpen,
+    onBulkScrapeOpenChange: modals.setIsBulkScrapeOpen,
+    bulkScrapeEpisodeIds: modals.bulkScrapeEpisodeIds,
+    onBulkScrapeEpisodeIdsChange: modals.setBulkScrapeEpisodeIds,
+    isBulkIngestOpen: modals.isBulkIngestOpen,
+    onBulkIngestOpenChange: modals.setIsBulkIngestOpen,
+    isEditSeasonOpen: isEditSeasonOpen || modals.isEditSeasonOpen,
+    onEditSeasonOpenChange: (open: boolean) => {
+      setIsEditSeasonOpen(open);
+      modals.setIsEditSeasonOpen(open);
+    },
+    isAddSeasonOpen: isAddSeasonOpen || modals.isAddSeasonOpen,
+    onAddSeasonOpenChange: (open: boolean) => {
+      setIsAddSeasonOpen(open);
+      modals.setIsAddSeasonOpen(open);
+    },
+    isDeleteSeasonOpen: isDeleteSeasonOpen || modals.isDeleteSeasonOpen,
+    onDeleteSeasonOpenChange: (open: boolean) => {
+      setIsDeleteSeasonOpen(open);
+      modals.setIsDeleteSeasonOpen(open);
+    },
+    isEditDialogOpen: modals.isEditDialogOpen,
+    onEditDialogOpenChange: modals.setIsEditDialogOpen,
+    isManageSourcesOpen: modals.isManageSourcesOpen,
+    onManageSourcesOpenChange: modals.setIsManageSourcesOpen,
+    manageSourcesInitialTab: modals.manageSourcesInitialTab,
+    onManageSourcesInitialTabChange: modals.setManageSourcesInitialTab,
+    isDeleteDialogOpen: modals.isDeleteDialogOpen,
+    onDeleteDialogOpenChange: modals.setIsDeleteDialogOpen,
+  };
+
   return (
     <div className="space-y-4">
       {/* Top navigation */}
@@ -211,13 +220,10 @@ export function SeriesDetailView({
           series={series}
           activeSeason={activeSeason}
           episodeCount={localEpisodes.length}
-          onEditSeries={() => setIsEditSeriesOpen(true)}
-          onSyncTmdb={() => setIsSyncTmdbOpen(true)}
-          onBulkScrape={() => {
-            setBulkScrapeEpisodeIds(null);
-            setIsBulkScrapeOpen(true);
-          }}
-          onBulkIngest={() => setIsBulkIngestOpen(true)}
+          onEditSeries={() => modals.setIsEditSeriesOpen(true)}
+          onSyncTmdb={() => modals.setIsSyncTmdbOpen(true)}
+          onBulkScrape={() => modals.handleOpenBulkScrape(null)}
+          onBulkIngest={() => modals.setIsBulkIngestOpen(true)}
         />
 
         <SeriesDetailSeasonBar
@@ -225,11 +231,20 @@ export function SeriesDetailView({
           activeSeason={activeSeason}
           selectedSeasonId={selectedSeasonId}
           onSelectSeason={setSelectedSeasonId}
-          onAddSeason={() => setIsAddSeasonOpen(true)}
+          onAddSeason={() => {
+            setIsAddSeasonOpen(true);
+            modals.setIsAddSeasonOpen(true);
+          }}
           isScrapePending={scrapeOngoingMutation.isPending}
           onRunAutoScrape={(seasonId) => scrapeOngoingMutation.mutate(seasonId)}
-          onEditSeason={() => setIsEditSeasonOpen(true)}
-          onDeleteSeason={() => setIsDeleteSeasonOpen(true)}
+          onEditSeason={() => {
+            setIsEditSeasonOpen(true);
+            modals.setIsEditSeasonOpen(true);
+          }}
+          onDeleteSeason={() => {
+            setIsDeleteSeasonOpen(true);
+            modals.setIsDeleteSeasonOpen(true);
+          }}
         />
 
         {(!series.seasons || series.seasons.length === 0) && (
@@ -247,7 +262,10 @@ export function SeriesDetailView({
             </p>
             <ChunkyButton
               type="button"
-              onClick={() => setIsAddSeasonOpen(true)}
+              onClick={() => {
+                setIsAddSeasonOpen(true);
+                modals.setIsAddSeasonOpen(true);
+              }}
               className="mt-4"
             >
               <Plus className="size-5" aria-hidden="true" />
@@ -266,11 +284,11 @@ export function SeriesDetailView({
           onEditEpisode={handleOpenEpisodeDrawer}
           onDeleteEpisode={(ep) => {
             setSelectedEpisodeId(ep.id);
-            setIsDeleteDialogOpen(true);
+            modals.setIsDeleteDialogOpen(true);
           }}
           onManageSources={(ep) => {
             setSelectedEpisodeId(ep.id);
-            setIsManageSourcesOpen(true);
+            modals.setIsManageSourcesOpen(true);
           }}
         />
         {selectedEpisodeIds.length > 0 && (
@@ -282,10 +300,7 @@ export function SeriesDetailView({
             <ChunkyChip
               variant="blue"
               type="button"
-              onClick={() => {
-                setBulkScrapeEpisodeIds([...selectedEpisodeIds]);
-                setIsBulkScrapeOpen(true);
-              }}
+              onClick={() => modals.handleOpenBulkScrape([...selectedEpisodeIds])}
             >
               <Plus className="size-4" />
               Add sources
@@ -293,7 +308,7 @@ export function SeriesDetailView({
             <ChunkyChip
               variant="blue"
               type="button"
-              onClick={() => setIsMoveEpisodesOpen(true)}
+              onClick={() => modals.setIsMoveEpisodesOpen(true)}
             >
               <Copy className="size-4" />
               Move to Season
@@ -301,7 +316,7 @@ export function SeriesDetailView({
             <ChunkyChip
               variant="danger"
               type="button"
-              onClick={() => setIsBatchDeleteOpen(true)}
+              onClick={() => modals.setIsBatchDeleteOpen(true)}
             >
               <Trash2 className="size-4" />
               Delete
@@ -316,8 +331,7 @@ export function SeriesDetailView({
           onSave={handleSaveDrawerEpisode}
           isSaving={updateMutation.isPending}
           onOpenAdvancedIngest={(tab) => {
-            setManageSourcesInitialTab(tab);
-            setIsManageSourcesOpen(true);
+            modals.handleOpenManageSources(tab);
           }}
         />
         <SeriesDetailDialogs
@@ -330,30 +344,11 @@ export function SeriesDetailView({
           selectedEpisodeIds={selectedEpisodeIds}
           episodeCountBySeason={episodeCountBySeason}
           updateMutation={updateMutation}
-          isMoveEpisodesOpen={isMoveEpisodesOpen}
-          onMoveEpisodesOpenChange={setIsMoveEpisodesOpen}
+          modals={modalProps}
           onConfirmBulkMove={handleBulkMoveEpisodes}
           isMovePending={reorderMutation.isPending}
-          isBatchDeleteOpen={isBatchDeleteOpen}
-          onBatchDeleteOpenChange={setIsBatchDeleteOpen}
           onConfirmBatchDelete={handleBatchDelete}
           isBatchOperating={isBatchOperating}
-          isEditSeriesOpen={isEditSeriesOpen}
-          onEditSeriesOpenChange={setIsEditSeriesOpen}
-          isSyncTmdbOpen={isSyncTmdbOpen}
-          onSyncTmdbOpenChange={setIsSyncTmdbOpen}
-          isBulkScrapeOpen={isBulkScrapeOpen}
-          onBulkScrapeOpenChange={setIsBulkScrapeOpen}
-          bulkScrapeEpisodeIds={bulkScrapeEpisodeIds}
-          onBulkScrapeEpisodeIdsChange={setBulkScrapeEpisodeIds}
-          isBulkIngestOpen={isBulkIngestOpen}
-          onBulkIngestOpenChange={setIsBulkIngestOpen}
-          isEditSeasonOpen={isEditSeasonOpen}
-          onEditSeasonOpenChange={setIsEditSeasonOpen}
-          isAddSeasonOpen={isAddSeasonOpen}
-          onAddSeasonOpenChange={setIsAddSeasonOpen}
-          isDeleteSeasonOpen={isDeleteSeasonOpen}
-          onDeleteSeasonOpenChange={setIsDeleteSeasonOpen}
           isDeleteSeasonPending={deleteSeasonMutation.isPending}
           onConfirmDeleteSeason={() => {
             if (series.seasons && series.seasons.length <= 1) return;
@@ -361,14 +356,6 @@ export function SeriesDetailView({
               deleteSeasonMutation.mutate(activeSeason.id);
             }
           }}
-          isEditDialogOpen={isEditDialogOpen}
-          onEditDialogOpenChange={setIsEditDialogOpen}
-          isManageSourcesOpen={isManageSourcesOpen}
-          onManageSourcesOpenChange={setIsManageSourcesOpen}
-          manageSourcesInitialTab={manageSourcesInitialTab}
-          onManageSourcesInitialTabChange={setManageSourcesInitialTab}
-          isDeleteDialogOpen={isDeleteDialogOpen}
-          onDeleteDialogOpenChange={setIsDeleteDialogOpen}
           onConfirmDeleteEpisode={handleConfirmDelete}
         />
       </DragDropContext>

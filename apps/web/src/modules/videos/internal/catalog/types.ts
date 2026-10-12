@@ -54,24 +54,11 @@ export interface UpdateEpisodeMutation {
   mutate: (variables: { id: string; data: UpdateEpisodeData }) => void;
 }
 
-export interface SeriesDetailDialogsProps {
-  series: SeriesDetails;
-  seriesId: string;
-  seasons: SeriesDetails['seasons'];
-  activeSeason: SeasonDetails | null;
-  localEpisodes: SeriesDetailEpisode[];
-  selectedEpisode: SeriesDetailEpisode | null;
-  selectedEpisodeIds: string[];
-  episodeCountBySeason: Record<string, number>;
-  updateMutation: UpdateEpisodeMutation;
+export interface SeriesDetailModalsState {
   isMoveEpisodesOpen: boolean;
   onMoveEpisodesOpenChange: (open: boolean) => void;
-  onConfirmBulkMove: (targetSeasonId: string) => void;
-  isMovePending: boolean;
   isBatchDeleteOpen: boolean;
   onBatchDeleteOpenChange: (open: boolean) => void;
-  onConfirmBatchDelete: () => void;
-  isBatchOperating: boolean;
   isEditSeriesOpen: boolean;
   onEditSeriesOpenChange: (open: boolean) => void;
   isSyncTmdbOpen: boolean;
@@ -88,8 +75,6 @@ export interface SeriesDetailDialogsProps {
   onAddSeasonOpenChange: (open: boolean) => void;
   isDeleteSeasonOpen: boolean;
   onDeleteSeasonOpenChange: (open: boolean) => void;
-  isDeleteSeasonPending: boolean;
-  onConfirmDeleteSeason: () => void;
   isEditDialogOpen: boolean;
   onEditDialogOpenChange: (open: boolean) => void;
   isManageSourcesOpen: boolean;
@@ -100,6 +85,25 @@ export interface SeriesDetailDialogsProps {
   ) => void;
   isDeleteDialogOpen: boolean;
   onDeleteDialogOpenChange: (open: boolean) => void;
+}
+
+export interface SeriesDetailDialogsProps {
+  series: SeriesDetails;
+  seriesId: string;
+  seasons: SeriesDetails['seasons'];
+  activeSeason: SeasonDetails | null;
+  localEpisodes: SeriesDetailEpisode[];
+  selectedEpisode: SeriesDetailEpisode | null;
+  selectedEpisodeIds: string[];
+  episodeCountBySeason: Record<string, number>;
+  updateMutation: UpdateEpisodeMutation;
+  modals: SeriesDetailModalsState;
+  onConfirmBulkMove: (targetSeasonId: string) => void;
+  isMovePending: boolean;
+  onConfirmBatchDelete: () => void;
+  isBatchOperating: boolean;
+  isDeleteSeasonPending: boolean;
+  onConfirmDeleteSeason: () => void;
   onConfirmDeleteEpisode: () => void;
 }
 
@@ -140,6 +144,13 @@ export interface AddMediaStepPreviewProps {
   tmdbId: string;
   previewData: TmdbPreviewResult | null;
   importError: Error | null;
+}
+
+export interface EditEpisodeDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  episode: SeriesDetailEpisode | null;
+  updateMutation: UpdateEpisodeMutation;
 }
 
 export interface EditSeriesDialogProps {
@@ -373,4 +384,16 @@ export interface UseSeriesGridResult extends UseSeriesGridSearchResult {
   handleToggleHighlight: UseSeriesGridMutationsResult['handleToggleHighlight'];
   handleOpenEdit: (item: SeriesItem, e: React.MouseEvent) => void;
   handleOpenDelete: (item: SeriesItem, e: React.MouseEvent) => void;
+}
+
+export interface UseEditEpisodeFormOptions {
+  open: boolean;
+  episode: SeriesDetailEpisode | null;
+  updateMutation: UpdateEpisodeMutation;
+  onOpenChange: (open: boolean) => void;
+}
+
+export interface UseEpisodeBatchOperationsOptions {
+  onInvalidateDetail: () => Promise<unknown> | void;
+  onCloseBatchDeleteDialog?: () => void;
 }
