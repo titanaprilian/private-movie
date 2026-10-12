@@ -1,6 +1,6 @@
 ---
 name: pragmatic-code-review
-description: "Review the work another agent produced for one ticket, in its isolated git worktree. Validates acceptance criteria, re-runs typecheck, lint and tests, and hunts code smells with core Pragmatic Programmer principles. On approval it lands the work on the local spec branch (rebase, re-verify, fast-forward), closes the ticket, cleans up, then looks at what is now unblocked and creates the next worktrees: one per ready ticket when several can run in parallel, a single one when only one is ready, none when everything left is still blocked. Never pushes to the remote."
+description: "Review the work produced by implementer agent(s) in isolated git worktrees. When multiple implementors run concurrently, waits for all tickets in the batch to complete before reviewing. If an implementor blocks or needs a decision, intervenes immediately. Validates acceptance criteria, re-runs typecheck, lint and tests, and hunts code smells with core Pragmatic Programmer principles. On Request changes, posts feedback and re-prompts the implementor window. On approval, lands the work, closes the ticket, kills the implementor tmux window, and at the end of the batch launches the next ready worktrees. Never pushes to the remote."
 ---
 
 # Pragmatic Code Review
@@ -20,6 +20,15 @@ There are two kinds of tickets. The ticket's `## Worktree` section says which on
 - **Approval is automatic and complete.** Land, close, clean up, and create the next worktrees without asking for confirmation.
 - **Never push, never force-push, never open a PR.** The local `Base` branch is the source of truth during the work. Only `/push-to-github` talks to the remote, at the end.
 - **Never touch the main checkout's working tree or its checked-out branch.** All git work happens in worktrees or with ref operations.
+
+## Multi-implementor synchronization
+
+Check running implementors in tmux (`tmux list-panes -F '#{@ticket}' | grep -E '^impl-'`):
+
+- **Zero-token idle rule:** The orchestrator must NEVER poll, sleep, or loop checking on implementors. Every poll wastes tokens and tool calls. Once launched, the orchestrator sits completely idle until an implementor sends its completion or blocker notification.
+- **Partial completion in parallel batch:** When a notification arrives from ticket #<id>, if other implementors in the batch are still running, acknowledge the completion, state which tickets are still running, and **immediately end your reply**. Do not sleep or poll. Wait to be woken by the remaining notifications.
+- **Immediate blocker intervention:** If any implementor reports `BLOCKED` or `NEEDS-DECISION`, do **not** wait for the others. Intervene immediately to help that implementor resolve the issue, then end your reply and wait.
+- **Batch review execution:** Once every running implementor in the batch has delivered its notification (`DONE`), execute the review workflow on each completed ticket sequentially (Phases 1–4). Phase 5 runs **only once at the very end of the batch**.
 
 ## Workflow
 
@@ -43,15 +52,24 @@ Verdict rules:
 
 Then branch:
 
-**Request changes: stop here.** Do not merge, close, or clean up. Post the report and leave the ticket open. The worktree, branch, and test database stay for the implementer to resume.
+**Request changes: re-prompt the implementor and wait.** Do not merge, close, or clean up. Post the report on the ticket, then send the re-prompt message directly to the implementor's split pane (`impl-<id>` or `impl-shared`):
 
 ```bash
 gh issue comment <id> --body-file - <<'EOF'
 <the full report>
 EOF
+
+tag="impl-<id>" # or "impl-shared"
+pane="$(tmux list-panes -F '#{pane_id} #{@ticket}' | awk -v t="$tag" '$2==t {print $1}')"
+if [ -n "$pane" ]; then
+  msg="Review feedback posted on #<id> (Request changes). Please address the blocking findings from the review comment and report back."
+  tmux send-keys -t "$pane" -l -- "$msg"
+  sleep 0.5
+  tmux send-keys -t "$pane" Enter
+fi
 ```
 
-Do not create new worktrees: the ticket is not done, so nothing it blocks is unblocked. Then stop.
+The worktree, branch, DB, and tmux pane stay open. Do not create new worktrees. **End your reply immediately and remain idle** until the implementor sends its revised notification. Do not poll or sleep.
 
 **Waiting on something external** (user decision, third-party response, another spec): **read `exceptions.md`, section "Block a ticket"**, follow it, then stop. Do not merge, close, clean up, or create worktrees.
 
@@ -59,11 +77,13 @@ Do not create new worktrees: the ticket is not done, so nothing it blocks is unb
 
 ### Phase 4: Land, close, clean up (approval only)
 
-Do this immediately, without confirmation. **Read `land-and-close.md` and follow it exactly.** Never leave the main checkout on a different branch than you found it. If landing fails (rebase conflict, failing re-verification), the review becomes **Request changes**: that file tells you how to post the finding. Then stop.
+Do this immediately, without confirmation. **Read `land-and-close.md` and follow it exactly.** It lands the work on `Base`, closes the ticket, cleans up the worktree and test DB, and kills the implementor's split pane. If landing fails (rebase conflict, failing re-verification), the review becomes **Request changes**: that file tells you how to post the finding.
 
-### Phase 5: Plan the next worktrees and hand back (after landing)
+In a multi-ticket batch, proceed to review the next completed ticket in the batch (repeat Phases 1–4).
 
-Only after the ticket is closed: **read `next-worktrees.md` and follow it.** It covers `scripts/wt-init.sh --ready`, which worktrees to create, and the final hand-back block. Do not start implementing anything yourself.
+### Phase 5: Plan the next worktrees and launch (end of batch)
+
+Run Phase 5 **only once at the very end of the batch**, after all approved tickets have landed and their implementor panes are closed: **read `next-worktrees.md` and follow it.** It covers `scripts/wt-init.sh --ready`, creating new worktrees, and launching the next batch of implementors via `scripts/wt-launch.sh`. Do not start implementing anything yourself.
 
 ## Other situations
 

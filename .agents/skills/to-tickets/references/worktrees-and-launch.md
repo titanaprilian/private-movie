@@ -49,9 +49,9 @@ The script creates the delivery branch from the latest default branch (or reuses
 Only after step 7's verification passed. Never launch into a worktree whose `wt-setup.sh` failed. Launching is `scripts/wt-launch.sh`; it needs the orchestrator to be running inside tmux.
 
 - **Separate mode:** for every frontier ticket, run
-  `bash scripts/wt-launch.sh <issue> <abs-worktree-path>`. One tmux window (`impl-<issue>`) per ticket, all in parallel. Re-running is safe: an existing window is left alone. Blocked tickets are NOT launched; their worktrees are created and launched when the blocker is merged and closed.
-- **Shared mode:** run `bash scripts/wt-launch.sh --shared <first-issue> <abs-worktree-path>`. Exactly one window (`impl-shared`) exists at a time. Do not launch the next
-  ticket until review has approved and closed the current one; then kill the old window (`tmux kill-window -t impl-shared`) and launch the next ticket the same way (a fresh agent per ticket is fine).
-- **Check the launch:** after launching, `tmux list-windows -F '#W'` must show each expected window, and `tmux capture-pane -p -t impl-<issue> | tail -5` must not show a startup error. If a launch fails (exit code 2 or 3), do not retry in a loop; report the reason and the exact manual command.
+  `bash scripts/wt-launch.sh <issue> <abs-worktree-path>`. Each ticket launches in a split pane (`impl-<issue>`) below the orchestrator, tiled side-by-side in the bottom half. Re-running is safe: an existing pane is left alone. Blocked tickets are NOT launched; their worktrees are created and launched when the blocker is merged and closed.
+- **Shared mode:** run `bash scripts/wt-launch.sh --shared <first-issue> <abs-worktree-path>`. Exactly one pane (`impl-shared`) exists at a time. Do not launch the next
+  ticket until review has approved and closed the current one; the reviewer kills the old pane on approval.
+- **Check the launch:** after launching, `tmux list-panes -F '#{@ticket}'` must show each expected tag, and `tmux capture-pane -p -t "$pane" | tail -5` must not show a startup error. If a launch fails (exit code 2 or 3), do not retry in a loop; report the reason and the exact manual command.
 - **Fallback:** if not inside tmux, or the script is missing, print the manual launch plan (path + `/implement <issue>` per ticket) as before.
-- **Report** (short, in the reply, not in the tickets): mode, delivery branch (created or reused), the windows launched with issue number and title, the tickets still blocked and by what, and the `/push-to-github` reminder once every ticket is closed.
+- **Report & Idle (Zero Tokens):** In your reply, state the launched panes (issue numbers and titles), the tickets still blocked, and then **end your reply immediately**. Do NOT poll, sleep, or tail pane outputs in a loop. Remain completely idle. The implementors will automatically wake you by sending their notifications when they finish or hit a blocker.

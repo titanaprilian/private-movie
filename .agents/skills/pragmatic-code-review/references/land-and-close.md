@@ -49,6 +49,8 @@ EOF
    psql "$ADMIN_DATABASE_URL" -c 'DROP DATABASE IF EXISTS "test_ticket_<id>"'
    git worktree remove ../wt/ticket-<id> --force
    git branch -d ticket/<id>          # lowercase -d: refuses if it was not merged
+   pane="$(tmux list-panes -F '#{pane_id} #{@ticket}' 2>/dev/null | awk -v t="impl-<id>" '$2==t {print $1}')"
+   [ -n "$pane" ] && tmux kill-pane -t "$pane" 2>/dev/null || true
    ```
    If `git branch -d` refuses, something went wrong in step 4: stop and report it instead of forcing.
 
@@ -61,6 +63,8 @@ gh issue close <id> --reason completed --comment "$(cat <<'EOF'
 <the full report>
 EOF
 )"
+pane="$(tmux list-panes -F '#{pane_id} #{@ticket}' 2>/dev/null | awk -v t="impl-shared" '$2==t {print $1}')"
+[ -n "$pane" ] && tmux kill-pane -t "$pane" 2>/dev/null || true
 ```
 
 Leave the shared worktree and its database alone. The next ticket of the set uses them.

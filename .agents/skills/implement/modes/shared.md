@@ -47,3 +47,4 @@ Also:
 
 - **Base:** the commit your ticket started from (noted in step 2).
 - **Commit:** the short hash and subject of your commit, plus the **review range** `<starting commit>..<your commit>`, so the reviewer looks at exactly your ticket.
+- **Notify:**: the only tmux command you may run is the one in `references/notify-orchestrator.md`, and only against the pane in `$ORCH_PANE`. Never send keys to any other pane or window.

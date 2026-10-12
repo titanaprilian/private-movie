@@ -1,6 +1,8 @@
-# Plan the next worktrees and hand back (Phase 5, after landing)
+# Plan the next worktrees and launch implementors (Phase 5, after landing)
 
-The ticket is now closed, so the tickets it blocked may have become ready. Look at the whole delivery, then create exactly the worktrees that are needed. Run from the main repository root:
+In a multi-ticket batch, run Phase 5 **only once at the very end of the batch**, after all approved tickets have landed and their implementor panes are closed.
+
+With the completed tickets closed, tickets they blocked may have become ready. Look at the whole delivery, then create the needed worktrees and launch implementors. Run from the main repository root:
 
 ```bash
 bash scripts/wt-init.sh --ready <base>
@@ -16,8 +18,8 @@ Act on it:
 
 | What you see                           | What to do                                                                                                                                                                     |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Several `ready` tickets                | They can run in parallel (the ticket graph already guarantees ready tickets do not overlap). Create **one worktree per ready ticket**: `bash scripts/wt-init.sh <n>` for each. |
-| Exactly one `ready` ticket             | Create **one** worktree: `bash scripts/wt-init.sh <n>`. This covers both "only one ticket was left" and "the others are still blocked".                                        |
+| Several `ready` tickets                | They can run in parallel (the ticket graph already guarantees ready tickets do not overlap). Create **one worktree per ready ticket**: `bash scripts/wt-init.sh <n>` for each, then launch each: `bash scripts/wt-launch.sh <n> <abs-worktree-path>`. |
+| Exactly one `ready` ticket             | Create **one** worktree: `bash scripts/wt-init.sh <n>`, then launch: `bash scripts/wt-launch.sh <n> <abs-worktree-path>` (or with `--shared` if shared mode).                |
 | No `ready`, some `active` or `blocked` | Create **no** worktree. Say what is being waited on: which tickets are active, and which open tickets block the blocked ones.                                                  |
 | No open tickets left                   | The delivery is complete. Create nothing. Tell the user to run `/push-to-github`.                                                                                              |
 
@@ -30,10 +32,9 @@ Notes:
 
 ## Hand back
 
-End with the report, then a short **Next** block the user can act on:
+End with the report summary, then a short **Next** block the user can act on:
 
-- What landed: own tickets were fast-forwarded into the local `Base`; shared tickets were closed in place.
-- For each worktree you created: its absolute path, the ticket number and title, and the line to run: open a fresh agent **inside that directory** and invoke `/implement <n>`.
+- What landed: own tickets were fast-forwarded into the local `Base`; shared tickets were closed in place; their implementor panes were closed.
+- For each ticket launched: its split pane tag (`impl-<n>` or `impl-shared`), worktree path, ticket number, and title. Once reported, **end your reply immediately and remain idle**. Do not poll or sleep; wait for notifications.
 - Or: "Nothing ready: #a, #b are in progress, #c waits on #a." Or: "All tickets are done. Run `/push-to-github`."
-
 Do not push `Base` to origin: that is `/push-to-github`'s job. Do not fix review findings and do not open new tickets unless explicitly asked.
