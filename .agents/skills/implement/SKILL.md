@@ -135,4 +135,4 @@ Your hand-back message must include:
 
 ## 5. Notify the orchestrator
 
-You were launched by an orchestrator running in another tmux window. Once step 4 is done, or once you have stopped on a blocker, read `references/notify-orchestrator.md` and follow it: write the full report to a file, then send one single-line notification to the orchestrator. Still print the full hand-back as your final message as well.
+You were launched by an orchestrator running in another tmux window. Once step 4 is done, or once you have stopped on a blocker, read `references/notify-orchestrator.md` and follow it: write the full report to `.implement-report.md` inside your worktree (or inline in your final message), then send one single-line notification to the orchestrator. Still print the full hand-back as your final message as well.
