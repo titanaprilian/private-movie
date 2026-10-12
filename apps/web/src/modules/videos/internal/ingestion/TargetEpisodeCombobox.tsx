@@ -11,17 +11,9 @@ import {
 } from '@/components/ui/command';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { cn } from '@/lib/utils';
-import type { LocalEpisodeItem, SeasonGroupOption } from './useBulkScrapeSources';
+import type { TargetEpisodeComboboxProps } from './types';
 
-export interface TargetEpisodeComboboxProps {
-  value: string | null;
-  onValueChange: (value: string | null) => void;
-  disabled?: boolean;
-  scrapedTitle: string;
-  seasons?: SeasonGroupOption[];
-  localEpisodes?: LocalEpisodeItem[];
-  targetSeasonId?: string;
-}
+export type { TargetEpisodeComboboxProps } from './types';
 
 interface ScopedEpisode {
   id: string;

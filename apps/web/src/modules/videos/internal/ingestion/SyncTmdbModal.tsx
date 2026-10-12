@@ -5,11 +5,18 @@ import {
   fetchSeriesTmdbPreview,
   fetchSeriesTmdbSyncPreview,
   syncSeriesTmdb,
-  type SeriesDetails,
   type TmdbPreviewResult,
   type TmdbSyncPreviewResult,
 } from '../api';
 import { computeSyncDiff } from './computeSyncDiff';
+import type { SyncTmdbModalProps } from './types';
+
+export type { SyncTmdbModalProps } from './types';
+import {
+  CountBadge,
+  FieldBadge,
+  MetaBadge,
+} from './components/IngestionBadges';
 import {
   ChunkyDialog,
   ChunkyDialogContent,
@@ -22,52 +29,6 @@ import {
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-
-export interface SyncTmdbModalProps {
-  open?: boolean;
-  isOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onClose?: () => void;
-  series: SeriesDetails;
-}
-
-function MetaBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]">
-      {children}
-    </span>
-  );
-}
-
-function CountBadge({
-  children,
-  tone = 'green',
-}: {
-  children: React.ReactNode;
-  tone?: 'green' | 'blue' | 'amber';
-}) {
-  const toneClasses =
-    tone === 'green'
-      ? 'border-[var(--green)] bg-[var(--green-soft)] text-[var(--green)]'
-      : tone === 'blue'
-        ? 'border-[var(--blue)] bg-[var(--blue-soft)] text-[var(--blue)]'
-        : 'border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)]';
-  return (
-    <span
-      className={`rounded-full px-2.5 py-1 text-xs font-extrabold border-2 ${toneClasses}`}
-    >
-      {children}
-    </span>
-  );
-}
-
-function FieldBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--blue)] bg-[var(--blue-soft)] text-[var(--blue)]">
-      {children}
-    </span>
-  );
-}
 
 export function SyncTmdbModal({
   open: openProp,

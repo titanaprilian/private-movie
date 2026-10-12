@@ -30,116 +30,24 @@ import { useArchiveIngestSources } from './useArchiveIngestSources';
 import { TargetEpisodeCombobox } from './TargetEpisodeCombobox';
 import { formatBytes } from './parseIngestUrl';
 import type {
+  ArchiveReviewItem,
+  BulkIngestModalProps,
   LocalEpisodeItem,
   SeasonGroupOption,
-} from './useBulkScrapeSources';
+} from './types';
 
-export interface BulkIngestModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  seriesId: string;
-  localEpisodes?: LocalEpisodeItem[];
-  seasons?: SeasonGroupOption[];
-  onSuccess?: () => void;
-}
-
-// ─── Shared Badge Components ──────────────────────────────────────────────────
-
-function PillBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]">
-      {children}
-    </span>
-  );
-}
-
-function WarningBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)]">
-      {children}
-    </span>
-  );
-}
-
-function ProviderBadge({
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) {
-  return (
-    <span
-      className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--purple)] bg-[var(--purple)]/10 text-[var(--purple)]"
-      {...props}
-    >
-      {children}
-    </span>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status === 'completed'
-      ? 'border-[var(--green)] bg-[var(--green-soft)] text-[var(--green)]'
-      : status === 'ingesting' || status === 'uploading'
-        ? 'border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] animate-pulse'
-        : status === 'failed'
-          ? 'border-[var(--red)] bg-[var(--red)]/10 text-[var(--red)]'
-          : 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]';
-  return (
-    <span
-      className={`rounded-full px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide border-2 ${tone}`}
-    >
-      {status}
-    </span>
-  );
-}
-
-const labelClassName = 'mb-1.5 block text-sm font-bold text-[var(--ink)]';
-
-// ─── Shared Step 1 Storage Provider & Season selectors ───────────────────────
-
-interface StorageProviderSelectProps {
-  storageProviders: { id: string; name: string; isDefault: boolean }[];
-  selectedStorageProviderId: string;
-  setSelectedStorageProviderId: (id: string) => void;
-  disabled?: boolean;
-}
-
-function StorageProviderSelect({
-  storageProviders,
-  selectedStorageProviderId,
-  setSelectedStorageProviderId,
-  disabled,
-}: StorageProviderSelectProps) {
-  if (storageProviders.length === 0) return null;
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor="bulk-ingest-storage-provider" className={labelClassName}>
-        Target S3 Storage Provider
-      </label>
-      <ChunkySelect
-        value={selectedStorageProviderId}
-        onValueChange={(val) => setSelectedStorageProviderId(val)}
-        disabled={disabled}
-      >
-        <ChunkySelectTrigger
-          id="bulk-ingest-storage-provider"
-          data-testid="bulk-ingest-storage-provider-select"
-          aria-label="Target S3 Storage Provider"
-        >
-          <ChunkySelectValue placeholder="Select storage provider" />
-        </ChunkySelectTrigger>
-        <ChunkySelectContent>
-          {storageProviders.map((provider) => (
-            <ChunkySelectItem key={provider.id} value={provider.id}>
-              {provider.name}
-              {provider.isDefault ? ' (Default)' : ''}
-            </ChunkySelectItem>
-          ))}
-        </ChunkySelectContent>
-      </ChunkySelect>
-    </div>
-  );
-}
+export type { BulkIngestModalProps } from './types';
+import {
+  PillBadge,
+  ProviderBadge,
+  StatusBadge,
+  WarningBadge,
+} from './components/IngestionBadges';
+import {
+  StorageProviderSelect,
+  labelClassName,
+} from './components/StorageProviderSelect';
+import { IngestionProgressBar } from './components/IngestionProgressBar';
 
 // ─── Archive Tab: Step 1 ──────────────────────────────────────────────────────
 
@@ -338,28 +246,12 @@ function ArchiveStep1({
                       : ''}
                   </span>
                 </div>
-                <div
-                  className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-4 overflow-hidden p-0.5 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
-                  role="progressbar"
-                  aria-label="Download progress"
-                  aria-valuenow={
-                    downloadProgress?.percent != null
-                      ? Math.round(downloadProgress.percent)
-                      : 0
-                  }
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                >
-                  <div
-                    className="bg-[var(--blue)] h-full rounded-full border-r-2 border-[var(--blue-dark)] shadow-[0_2px_0_var(--blue-dark)] transition-all duration-300"
-                    style={{
-                      width:
-                        downloadProgress?.percent != null
-                          ? `${Math.round(downloadProgress.percent)}%`
-                          : '5%',
-                    }}
-                  />
-                </div>
+                <IngestionProgressBar
+                  value={downloadProgress?.percent ?? 0}
+                  ariaLabel="Download progress"
+                  tone="blue"
+                  size="sm"
+                />
               </div>
             )}
             {previewPhase === 'extracting' && (
@@ -377,13 +269,12 @@ function ArchiveStep1({
                 <div className="text-xs font-bold text-[var(--muted)] truncate">
                   {extractProgress?.currentFile ?? 'Reading archive index…'}
                 </div>
-                <div
-                  className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-4 overflow-hidden p-0.5 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
-                  role="progressbar"
-                  aria-label="Extract progress"
-                >
-                  <div className="bg-[var(--green)] h-full rounded-full border-r-2 border-[var(--green-dark)] shadow-[0_2px_0_var(--green-dark)] animate-pulse" />
-                </div>
+                <IngestionProgressBar
+                  value={null}
+                  ariaLabel="Extract progress"
+                  tone="green"
+                  size="sm"
+                />
               </div>
             )}
           </ChunkyCard>
@@ -461,20 +352,6 @@ function ArchiveStep1({
 }
 
 // ─── Archive Tab: Step 2 (Review) ─────────────────────────────────────────────
-
-interface ArchiveReviewItem {
-  fileId: string;
-  filename: string;
-  fileSizeBytes: number;
-  detectedEpisodeNumber: number | null;
-  matchedEpisodeId: string | null;
-  quality: string | null;
-  needsReview: boolean;
-  isIgnored: boolean;
-  label: string;
-  commitStatus: string;
-  hasSizeAnomaly?: boolean;
-}
 
 function isSampleFilename(filename: string): boolean {
   return /sample/i.test(filename);
@@ -654,17 +531,12 @@ function ArchiveStep2({
 
 // ─── Archive Tab: Step 3 (Progress) ──────────────────────────────────────────
 
-interface ArchiveReviewItemWithProgress extends ArchiveReviewItem {
-  commitProgress?: { percent: number; loaded: number; total?: number | null };
-  commitError?: string;
-}
-
 interface ArchiveStep3Props {
-  reviewItems: ArchiveReviewItemWithProgress[];
+  reviewItems: ArchiveReviewItem[];
   totalCount: number;
   commitCompletedCount: number;
   progressPercentage: number;
-  activeCommitItem: ArchiveReviewItemWithProgress | null;
+  activeCommitItem: ArchiveReviewItem | null;
   uploadView?: {
     currentIndex: number;
     totalFiles: number;
@@ -714,19 +586,10 @@ function ArchiveStep3({
               {displayPercent}%
             </span>
           </div>
-          <div
-            className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-5 overflow-hidden p-1 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
-            role="progressbar"
-            aria-label="Upload progress"
-            aria-valuenow={displayPercent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <div
-              className="bg-[var(--green)] h-full rounded-full border-r-2 border-[var(--green-dark)] shadow-[0_2px_0_var(--green-dark)] transition-all duration-300"
-              style={{ width: `${displayPercent}%` }}
-            />
-          </div>
+          <IngestionProgressBar
+            value={displayPercent}
+            ariaLabel="Upload progress"
+          />
 
           <ChunkyCard className="flex items-center justify-between gap-2 flex-wrap p-2 font-sans text-xs font-bold text-[var(--muted)]">
             {selectedProviderName && (
@@ -1342,18 +1205,10 @@ export function BulkIngestModal({
                     {urlProgressPercentage}%
                   </span>
                 </div>
-                <div
-                  className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-5 overflow-hidden p-1 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
-                  role="progressbar"
-                  aria-valuenow={urlProgressPercentage}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                >
-                  <div
-                    className="bg-[var(--green)] h-full rounded-full border-r-2 border-[var(--green-dark)] shadow-[0_2px_0_var(--green-dark)] transition-all duration-300"
-                    style={{ width: `${urlProgressPercentage}%` }}
-                  />
-                </div>
+                <IngestionProgressBar
+                  value={urlProgressPercentage}
+                  ariaLabel="Ingest progress"
+                />
 
                 {/* Target Provider & Active Transfer Details */}
                 <ChunkyCard className="flex items-center justify-between gap-2 flex-wrap p-2 font-sans text-xs font-bold text-[var(--muted)]">

@@ -21,57 +21,18 @@ import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import {
   useBulkScrapeSources,
-  type LocalEpisodeItem,
-  type SeasonGroupOption,
 } from './useBulkScrapeSources';
+import type { BulkScrapeModalProps } from './types';
+
+export type { BulkScrapeModalProps, SeasonGroupOption } from './types';
 import { TargetEpisodeCombobox } from './TargetEpisodeCombobox';
-
-export type { SeasonGroupOption };
-
-export interface BulkScrapeModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  seriesId: string;
-  localEpisodes?: LocalEpisodeItem[];
-  seasons?: SeasonGroupOption[];
-  onSuccess?: () => void;
-}
-
-function PillBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]">
-      {children}
-    </span>
-  );
-}
-
-function WarningBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full px-2.5 py-1 text-xs font-extrabold border-2 border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)]">
-      {children}
-    </span>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status === 'success'
-      ? 'border-[var(--green)] bg-[var(--green-soft)] text-[var(--green)]'
-      : status === 'processing'
-        ? 'border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] animate-pulse'
-        : status === 'error'
-          ? 'border-[var(--red)] bg-[var(--red)]/10 text-[var(--red)]'
-          : 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]';
-  return (
-    <span
-      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide border-2 ${tone}`}
-    >
-      {status}
-    </span>
-  );
-}
-
-const labelClassName = 'mb-1.5 block text-sm font-bold text-[var(--ink)]';
+import {
+  PillBadge,
+  StatusBadge,
+  WarningBadge,
+} from './components/IngestionBadges';
+import { labelClassName } from './components/StorageProviderSelect';
+import { IngestionProgressBar } from './components/IngestionProgressBar';
 
 export function BulkScrapeModal({
   open,
@@ -394,18 +355,7 @@ export function BulkScrapeModal({
                     </span>
                     <span className="font-extrabold text-[var(--green)]">{progress}%</span>
                   </div>
-                  <div
-                    className="w-full rounded-full border-2 border-[var(--border)] bg-[var(--bg)] h-5 overflow-hidden p-1 shadow-[inset_0_2px_0_rgba(0,0,0,0.15)]"
-                    role="progressbar"
-                    aria-valuenow={progress}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  >
-                    <div
-                      className="bg-[var(--green)] h-full rounded-full border-r-2 border-[var(--green-dark)] shadow-[0_2px_0_var(--green-dark)] transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
+                  <IngestionProgressBar value={progress} ariaLabel="Scrape progress" />
                 </ChunkyCard>
 
                 {/* Item-by-item status log list */}

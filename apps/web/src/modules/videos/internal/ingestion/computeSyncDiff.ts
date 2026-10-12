@@ -3,17 +3,9 @@ import type {
   TmdbPreviewResult,
   TmdbPreviewSeason,
 } from '../api';
+import type { SeasonDiffItem } from './types';
 
-export interface SeasonDiffItem {
-  seasonNumber: number;
-  name: string;
-  incomingEpisodeCount: number;
-  localEpisodeCount: number;
-  diff: number;
-  isNewSeason: boolean;
-  badgeText: string;
-  badgeType: 'existing' | 'new-eps' | 'new-season';
-}
+export type { SeasonDiffItem } from './types';
 
 export function computeSyncDiff(
   series: SeriesDetails,

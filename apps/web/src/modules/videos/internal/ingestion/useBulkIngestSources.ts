@@ -9,35 +9,17 @@ import {
 } from '@/modules/storage';
 import {
   getSeasonOptions,
-  type LocalEpisodeItem,
-  type SeasonGroupOption,
 } from './useBulkScrapeSources';
+import type {
+  BulkIngestItem,
+  LocalEpisodeItem,
+  UseBulkIngestSourcesOptions,
+} from './types';
 
-export interface BulkIngestItem {
-  id: string;
-  url: string;
-  filename: string;
-  detectedEpisodeNumber: number | null;
-  matchedLocalEpisodeId: string | null;
-  label: string;
-  quality: string | null;
-  isIgnored: boolean;
-  needsReview: boolean;
-  status: 'pending' | 'ingesting' | 'completed' | 'failed' | 'skipped';
-  progress?: {
-    percent: number;
-    loaded: number;
-    total: number;
-  };
-  errorMessage?: string;
-}
-
-export interface UseBulkIngestSourcesOptions {
-  seriesId?: string;
-  seasons?: SeasonGroupOption[];
-  localEpisodes?: LocalEpisodeItem[];
-  onSuccess?: () => void;
-}
+export type {
+  BulkIngestItem,
+  UseBulkIngestSourcesOptions,
+} from './types';
 
 export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
   const queryClient = useQueryClient();
