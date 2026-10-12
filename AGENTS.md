@@ -79,9 +79,10 @@ Tests use a conventional folder-based structure with Vitest as the test runner v
   - `bun run test:contracts -- -- test/unit/<feature>/<name>.test.ts`
   - Equivalently: `bunx turbo run test --filter=@repo/<pkg> -- test/unit/<feature>/<name>.test.ts`
   - This completes in ~2–5 seconds. Never run the full suite in a tight TDD loop.
-- **Before handing back**, run the full suite once so Turbo caches results for the orchestrator:
-  - `bun run test:web`, `bun run test:backend`, `bun run test:seed-cli`, `bun run test:media-service`, `bun run test:media-scraper`, `bun run test:db`, or `bun run test:contracts` (or `bunx turbo run test --filter=<pkg>`)
-  - `bun run test` (or `turbo run test`) from the monorepo root executes all unit tests
+- **Implementer test restriction (Targeted runs only):**
+  - Implementers are strictly restricted to running targeted test files covering their changes (`bun run test:<pkg> -- -- <file>` or `bun --filter=@repo/backend run test:integration <file>`).
+  - **NEVER** run the full test suite (`bun run test` or package-wide `bun run test:<pkg>`) inside an implementer worktree. Running full test suites concurrently during parallel ticket implementation spikes host CPU usage to 100%.
+  - The full test suite (`bun run test`) is executed exclusively by the orchestrator / reviewer during the review phase.
 - Run `bun run test:integration` (or `turbo run test:integration`) to execute integration tests (requires a running Postgres database)
 
 **⚠️ Bun CLI Test Constraint (Mandatory):**

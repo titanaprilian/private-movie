@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -11,23 +11,10 @@ import {
 } from '@/components/ui/command';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { cn } from '@/lib/utils';
-import type { LocalEpisodeItem, SeasonGroupOption } from './useBulkScrapeSources';
+import type { TargetEpisodeComboboxProps } from '../../types';
+import { useTargetEpisodeOptions } from '../hooks/useTargetEpisodeOptions';
 
-export interface TargetEpisodeComboboxProps {
-  value: string | null;
-  onValueChange: (value: string | null) => void;
-  disabled?: boolean;
-  scrapedTitle: string;
-  seasons?: SeasonGroupOption[];
-  localEpisodes?: LocalEpisodeItem[];
-  targetSeasonId?: string;
-}
-
-interface ScopedEpisode {
-  id: string;
-  title: string;
-  order?: number;
-}
+export type { TargetEpisodeComboboxProps } from '../../types';
 
 export function TargetEpisodeCombobox({
   value,
@@ -40,57 +27,15 @@ export function TargetEpisodeCombobox({
 }: TargetEpisodeComboboxProps) {
   const [open, setOpen] = useState(false);
 
-  const { scopedEpisodes, seasonHeading } = useMemo(() => {
-    if (targetSeasonId && seasons.length > 0) {
-      const season = seasons.find((s) => s.id === targetSeasonId);
-      if (season) {
-        return {
-          scopedEpisodes: [...(season.episodes ?? [])].sort(
-            (a, b) => (a.order ?? 0) - (b.order ?? 0)
-          ),
-          seasonHeading:
-            season.title ||
-            (typeof season.tmdbSeason === 'number' ? `Season ${season.tmdbSeason}` : 'Season'),
-        };
-      }
-    }
-    if (targetSeasonId && localEpisodes.length > 0) {
-      const filtered = localEpisodes.filter((ep) => ep.seasonId === targetSeasonId);
-      if (filtered.length > 0) {
-        return {
-          scopedEpisodes: [...filtered].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-          seasonHeading:
-            filtered[0].seasonTitle ||
-            (typeof filtered[0].seasonNumber === 'number'
-              ? `Season ${filtered[0].seasonNumber}`
-              : 'Season'),
-        };
-      }
-    }
-    if (seasons.length > 0) {
-      const all = seasons.flatMap((s) => s.episodes ?? []);
-      return {
-        scopedEpisodes: [...all].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-        seasonHeading: null as string | null,
-      };
-    }
-    return {
-      scopedEpisodes: [...localEpisodes].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-      seasonHeading: null as string | null,
-    };
-  }, [targetSeasonId, seasons, localEpisodes]);
-
-  const allEpisodes: ScopedEpisode[] = useMemo(() => {
-    if (seasons.length > 0) return seasons.flatMap((s) => s.episodes ?? []);
-    return localEpisodes;
-  }, [seasons, localEpisodes]);
+  const { scopedEpisodes, seasonHeading, allEpisodes, formatEpisodeLabel } =
+    useTargetEpisodeOptions(seasons, localEpisodes, targetSeasonId);
 
   let selectedLabel = '-- Skip / Unmapped --';
   if (value) {
     const foundEp =
       scopedEpisodes.find((ep) => ep.id === value) ?? allEpisodes.find((ep) => ep.id === value);
     if (foundEp) {
-      selectedLabel = `Ep ${foundEp.order ?? '?'}: ${foundEp.title}`;
+      selectedLabel = formatEpisodeLabel(foundEp);
     }
   }
 
@@ -147,7 +92,7 @@ export function TargetEpisodeCombobox({
             <CommandGroup heading={seasonHeading ?? undefined} className="[&_[cmdk-group-heading]]:font-sans [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-extrabold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-[var(--muted)]">
               {scopedEpisodes.map((ep) => {
                 const isSelected = value === ep.id;
-                const itemLabel = `Ep ${ep.order ?? '?'}: ${ep.title}`;
+                const itemLabel = formatEpisodeLabel(ep);
                 return (
                   <CommandItem
                     key={ep.id}

@@ -55,7 +55,7 @@ import type {
   ArchiveIngestJobProgressResponse,
   ArchiveIngestJobResponse,
 } from '@repo/contracts';
-import { parseIngestUrl, type ParsedIngestUrl } from './ingestion/parseIngestUrl';
+import { parseIngestUrl, type ParsedIngestUrl } from './ingestion';
 
 export { parseIngestUrl };
 export type { ParsedIngestUrl };

@@ -21,10 +21,10 @@ If `ORCH_PANE` is unset or the pane no longer exists, skip the notification sile
 
 ## 1. Write the full report to a file
 
-The whole hand-back message (everything listed in step 4, or the blocker report) goes into a file inside the worktree's git dir, so it is never committed and never dirties the working tree:
+The whole hand-back message (everything listed in step 4, or the blocker report) goes into a file inside your worktree's root directory (`.implement-report.md`) or directly inline in your prompt response. Writing to `.implement-report.md` at the worktree root is gitignored and guarantees you never write outside your worktree directory:
 
 ```bash
-REPORT="$(git rev-parse --absolute-git-dir)/implement-report.md"
+REPORT="$(git rev-parse --show-toplevel)/.implement-report.md"
 # write the hand-back content to "$REPORT"
 ```
 

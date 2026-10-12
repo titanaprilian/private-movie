@@ -27,7 +27,7 @@ Read each one when its step says so, not before.
 - Work only inside your worktree `WT`. Every command runs from inside it, every file you read, create or edit is under it. Never `cd` out to work, never check out another branch in it, never touch an absolute path pointing at the main checkout or another worktree.
 - Never push, open a pull request, merge into the spec branch or main, close or edit the GitHub issue, or remove the worktree or its test database.
 - Never run `db:push`. Run `db:migrate` only against TESTDB, after confirming `DATABASE_URL` ends in TESTDB. Never run integration tests against a shared database.
-- Never run bare `bun test` (see `references/testing.md`).
+- Never run bare `bun test`, and never run full test suites (`bun run test` or package-wide `bun run test:<pkg>`). Implementors are strictly restricted to targeted test runs for their changes (see `references/testing.md`). Full test suite runs are left to the orchestrator / reviewer.
 - Never resolve rebase conflicts yourself, and never hand-edit migration files or the migrations journal.
 - When you stop because of a "Stop and report if" condition, a conflict, a missing blocker or any other blocker, do not commit partial work. Leave the worktree as it is and report what you found.
 
@@ -114,7 +114,7 @@ If the ticket changes the database schema, read `references/schema-changes.md` a
 
 1. `bun run typecheck` — **MANDATORY**. Confirms TypeScript compilation and Android Kotlin compilation (`./gradlew compileDebugKotlin`) pass cleanly across the monorepo.
 2. `bun run lint` — **MANDATORY**. Confirms ESLint and Android Gradle lint pass with zero errors across all workspaces.
-3. The full unit test suite for the touched package(s), or `bun run test`, so Turbo caches passing results in this worktree for the reviewer (commands in `references/testing.md`).
+3. Targeted tests covering your changes (commands in `references/testing.md`). You are strictly forbidden from running full test suites (`bun run test` or package-wide `bun run test:<pkg>`) — leave full suite runs to the orchestrator/reviewer to prevent local CPU exhaustion during parallel execution.
 
 Then check each acceptance criterion in the ticket against what you actually ran. You will report the evidence for each one.
 
@@ -128,11 +128,11 @@ Your hand-back message must include:
 - **Base** and **Commit:** exactly as your mode file's "Hand-back fields" section says.
 - **What you did:** a short summary, in terms of behavior.
 - **Acceptance criteria:** each criterion, and the command or observation that proves it, with the result.
-- **Checks run:** `typecheck`, `lint`, and the test commands, each passed or failed.
+- **Checks run:** `typecheck`, `lint`, and the targeted test commands, each passed or failed.
 - **Out-of-scope observations:** anything wrong you noticed nearby but deliberately left alone.
 - **Deviations or tripwires:** any decision you could not follow, or any "Stop and report if" condition you hit.
 - **Schema note:** if you generated a migration, the reminder from `references/schema-changes.md`.
 
 ## 5. Notify the orchestrator
 
-You were launched by an orchestrator running in another tmux window. Once step 4 is done, or once you have stopped on a blocker, read `references/notify-orchestrator.md` and follow it: write the full report to a file, then send one single-line notification to the orchestrator. Still print the full hand-back as your final message as well.
+You were launched by an orchestrator running in another tmux window. Once step 4 is done, or once you have stopped on a blocker, read `references/notify-orchestrator.md` and follow it: write the full report to `.implement-report.md` inside your worktree (or inline in your final message), then send one single-line notification to the orchestrator. Still print the full hand-back as your final message as well.

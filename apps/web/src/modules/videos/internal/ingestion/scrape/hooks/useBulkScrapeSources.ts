@@ -4,63 +4,27 @@ import { toast } from 'sonner';
 import {
   previewBulkSources as apiPreviewBulkSources,
   scrapeEpisodeSources,
-} from '../api';
-import { detectProviderFromUrl } from '../seasons/seasonUtils';
+} from '../../../api';
+import { detectProviderFromUrl } from '../../../seasons/seasonUtils';
+import type {
+  LocalEpisodeItem,
+  ProcessingLogItem,
+  ScrapedEpisodePreviewItem,
+  SeasonGroupOption,
+  UseBulkScrapeSourcesOptions,
+} from '../../types';
 
-export interface SeasonGroupOption {
-  id: string;
-  title?: string | null;
-  tmdbSeason?: number | null;
-  episodes?: Array<{ id: string; title: string; order?: number; hasSources?: boolean; videoSources?: unknown[] }>;
-}
-
-export interface ScrapedEpisodePreviewItem {
-  id: string;
-  scrapedTitle: string;
-  rawEpisodeNumber: number | string;
-  calculatedOrder: number | null;
-  matchedLocalEpisodeId: string | null;
-  isIgnored: boolean;
-  needsReview: boolean;
-  videoSources: {
-    type: string;
-    url: string;
-    label: string;
-    quality?: string;
-  }[];
-}
-
-export interface LocalEpisodeItem {
-  id: string;
-  title: string;
-  order?: number;
-  seasonId?: string | null;
-  seasonTitle?: string;
-  seasonNumber?: number;
-  hasSources?: boolean;
-  videoSources?: unknown[];
-}
+export type {
+  LocalEpisodeItem,
+  ProcessingLogItem,
+  ScrapedEpisodePreviewItem,
+  SeasonGroupOption,
+  UseBulkScrapeSourcesOptions,
+} from '../../types';
 
 export function checkEpisodeHasSources(ep?: { hasSources?: boolean; videoSources?: unknown[] } | null): boolean {
   if (!ep) return false;
   return ep.hasSources ?? (Array.isArray(ep.videoSources) && ep.videoSources.length > 0);
-}
-
-export interface ProcessingLogItem {
-  id: string;
-  scrapedTitle: string;
-  rawEpisodeNumber: number | string;
-  status: 'pending' | 'processing' | 'success' | 'error' | 'skipped';
-  message: string;
-}
-
-export interface UseBulkScrapeSourcesOptions {
-  seriesId?: string;
-  initialSourceType?: string;
-  onSuccess?: () => void;
-  stepDelayMs?: number;
-  seasons?: SeasonGroupOption[];
-  localEpisodes?: LocalEpisodeItem[];
 }
 
 export function getSeasonOptions(  seasons?: SeasonGroupOption[],

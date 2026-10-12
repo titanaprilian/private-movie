@@ -8,76 +8,37 @@ import {
   getArchiveIngestJob,
   getArchiveIngestJobProgress,
   retryArchiveIngestJob,
-} from '../api';
+} from '../../api';
 import type {
   ArchiveIngestJob,
   ArchiveIngestJobEntry,
   ArchiveIngestJobStatus,
 } from '@repo/contracts';
-import type { LocalEpisodeItem, SeasonGroupOption } from './useBulkScrapeSources';
-import { getSeasonOptions } from './useBulkScrapeSources';
+import type {
+  ArchiveDownloadProgress,
+  ArchiveExtractProgress,
+  ArchiveJobPhase,
+  ArchivePreviewPhase,
+  ArchiveReviewItem,
+  ArchiveUploadView,
+  LocalEpisodeItem,
+  UseArchiveIngestSourcesOptions,
+} from '../types';
+
+export type {
+  ArchiveDownloadProgress,
+  ArchiveExtractProgress,
+  ArchiveJobPhase,
+  ArchivePreviewPhase,
+  ArchiveReviewItem,
+  ArchiveUploadView,
+  UseArchiveIngestSourcesOptions,
+} from '../types';
+import { getSeasonOptions } from '../scrape/hooks/useBulkScrapeSources';
 import { useQuery } from '@tanstack/react-query';
 import { storageProvidersQueryOptions, type StorageProviderItem } from '@/modules/storage';
 
-// ─── State Types ──────────────────────────────────────────────────────────────
-
-export type ArchiveJobPhase = ArchiveIngestJobStatus | 'idle';
-
-/** Legacy alias kept for modal compat during migration. */
-export type ArchivePreviewPhase =
-  | 'idle'
-  | 'downloading'
-  | 'extracting'
-  | 'done'
-  | 'error';
-
-export interface ArchiveReviewItem {
-  /** filename acts as the stable id in the job model */
-  fileId: string;
-  filename: string;
-  fileSizeBytes: number;
-  detectedEpisodeNumber: number | null;
-  matchedEpisodeId: string | null;
-  quality: string | null;
-  needsReview: boolean;
-  isIgnored: boolean;
-  label: string;
-  /** Commit-phase status (derived from job status for compat) */
-  commitStatus: 'pending' | 'uploading' | 'completed' | 'failed' | 'skipped';
-  commitProgress?: { percent: number; loaded: number; total?: number | null };
-  commitError?: string;
-  /** True when the file size deviates significantly from its siblings */
-  hasSizeAnomaly?: boolean;
-}
-
-export interface UseArchiveIngestSourcesOptions {
-  seriesId?: string;
-  seasons?: SeasonGroupOption[];
-  localEpisodes?: LocalEpisodeItem[];
-  onSuccess?: () => void;
-}
-
 // ─── Preview download/extract progress ───────────────────────────────────────
-
-export interface ArchiveDownloadProgress {
-  loaded: number;
-  total?: number | null;
-  percent?: number | null;
-}
-
-export interface ArchiveExtractProgress {
-  currentFile: string;
-  totalFiles?: number | null;
-}
-
-export interface ArchiveUploadView {
-  currentIndex: number;
-  totalFiles: number;
-  activeFilename: string | null;
-  percent: number;
-  loaded: number;
-  total: number | null;
-}
 
 /** Statuses that keep the 1s polling loop alive. */
 export const ARCHIVE_POLL_STATUSES: ReadonlySet<string> = new Set([
