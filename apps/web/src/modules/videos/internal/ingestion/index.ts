@@ -19,6 +19,12 @@ export {
   labelClassName,
 } from './components/StorageProviderSelect';
 export { IngestionProgressBar } from './components/IngestionProgressBar';
+export { BulkScrapeStepSource } from './scrape/components/BulkScrapeStepSource';
+export { BulkScrapeStepReview } from './scrape/components/BulkScrapeStepReview';
+export { BulkScrapeStepProgress } from './scrape/components/BulkScrapeStepProgress';
+export { BulkScrapeOverwriteDialog } from './scrape/components/BulkScrapeOverwriteDialog';
+export { useBulkScrapeModal } from './scrape/hooks/useBulkScrapeModal';
+export { useTargetEpisodeOptions, formatTargetEpisodeLabel } from './scrape/hooks/useTargetEpisodeOptions';
 export {
   checkEpisodeHasSources,
   getSeasonOptions,
