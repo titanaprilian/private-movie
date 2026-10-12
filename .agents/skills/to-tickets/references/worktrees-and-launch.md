@@ -44,13 +44,14 @@ The script creates the delivery branch from the latest default branch (or reuses
 - The implementor must be able to start `/implement` immediately without debugging environment or database setup.
 - Never use `FORCE=1` on `wt-init.sh` (it skips the blocker check).
 
-### 8. Report the launch plan
+### 8. Launch the implementor(s) and report
 
-After publishing and creating the worktree(s), give the user a short launch plan so they know what to start and when. Don't write it into the tickets (it goes stale when edges change). Print it in the reply:
+Only after step 7's verification passed. Never launch into a worktree whose `wt-setup.sh` failed. Launching is `scripts/wt-launch.sh`; it needs the orchestrator to be running inside tmux.
 
-- **Mode and delivery branch:** which mode was used, the branch name, and whether you created it or it already existed (the branch is local until the final push, in both modes).
-- **Separate mode, launch now, in parallel:** one line per frontier ticket: issue number, title, and the absolute path of its worktree. Tell the user to start a new agent with that directory as its working directory (for example `cd <path>` and then start the agent there) and run `/implement <issue>`. Mention that an agent started in the main checkout would edit the main checkout, so each agent must be started inside its own worktree.
-- **Separate mode, not created yet:** every ticket that is still blocked, with the tickets blocking it. When a blocker has been merged and closed, create the worktree with `bash scripts/wt-init.sh <issue-number>` from the main checkout. The review report lists which tickets just became ready.
-- **Shared mode, how to run it:** the absolute path of the one worktree, and the tickets in order. Tell the user to start a new agent with that directory as its working directory and run `/implement <first issue>`; when the review has approved and closed it, run `/implement <next issue>` in the same directory (a fresh agent for each ticket is fine). Mention that an agent started in the main checkout would edit the main checkout.
-- **If worktree creation was skipped or failed:** the exact command for each affected ticket (or the one `--shared` command), and the reason.
-- **When every ticket is closed:** run `/push-to-github` to open the single pull request from the delivery branch to main. That is also the first time the delivery branch is pushed, in both modes.
+- **Separate mode:** for every frontier ticket, run
+  `bash scripts/wt-launch.sh <issue> <abs-worktree-path>`. One tmux window (`impl-<issue>`) per ticket, all in parallel. Re-running is safe: an existing window is left alone. Blocked tickets are NOT launched; their worktrees are created and launched when the blocker is merged and closed.
+- **Shared mode:** run `bash scripts/wt-launch.sh --shared <first-issue> <abs-worktree-path>`. Exactly one window (`impl-shared`) exists at a time. Do not launch the next
+  ticket until review has approved and closed the current one; then kill the old window (`tmux kill-window -t impl-shared`) and launch the next ticket the same way (a fresh agent per ticket is fine).
+- **Check the launch:** after launching, `tmux list-windows -F '#W'` must show each expected window, and `tmux capture-pane -p -t impl-<issue> | tail -5` must not show a startup error. If a launch fails (exit code 2 or 3), do not retry in a loop; report the reason and the exact manual command.
+- **Fallback:** if not inside tmux, or the script is missing, print the manual launch plan (path + `/implement <issue>` per ticket) as before.
+- **Report** (short, in the reply, not in the tickets): mode, delivery branch (created or reused), the windows launched with issue number and title, the tickets still blocked and by what, and the `/push-to-github` reminder once every ticket is closed.
