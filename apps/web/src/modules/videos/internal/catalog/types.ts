@@ -240,3 +240,69 @@ export interface UseSeriesDrawerSyncOptions {
   initialEpisodeId?: string;
   initialOrder?: number;
 }
+
+export interface UseAddMediaDialogReturn {
+  isOpen: boolean;
+  step: number;
+  tmdbType: 'tv' | 'movie';
+  tmdbId: string;
+  includeSpecials: boolean;
+  tmdbPreviewData: TmdbPreviewResult | null;
+  isLoading: boolean;
+  error: string | null;
+  setTmdbType: (value: 'tv' | 'movie') => void;
+  setTmdbId: (value: string) => void;
+  setIncludeSpecials: (value: boolean) => void;
+  submitPreview: () => Promise<boolean>;
+  backToStep1: () => void;
+  closeDialog: () => void;
+  importTmdbMutation: {
+    isPending: boolean;
+    error: Error | null;
+    mutate: (variables: { type: 'tv' | 'movie'; tmdbId: number; includeSpecials: boolean }) => void;
+  };
+}
+
+export interface UseGenreFilterOptions {
+  selectedSlugs: string[];
+  onSelectionChange: (slugs: string[]) => void;
+}
+
+export interface UseGenreFilterReturn {
+  open: boolean;
+  search: string;
+  highlight: string;
+  genres: { id: string; name: string; slug: string }[];
+  isLoading: boolean;
+  isError: boolean;
+  namesBySlug: Map<string, string>;
+  visibleGenres: { id: string; name: string; slug: string }[];
+  isActive: boolean;
+  triggerLabel: string;
+  refetch: () => void;
+  toggleGenre: (slug: string) => void;
+  handleSearchChange: (value: string) => void;
+  handleHighlightChange: (value: string) => void;
+  handleOpenChange: (next: boolean) => void;
+  handleClear: () => void;
+  handleDone: () => void;
+}
+
+export interface UseSeriesCardOptions {
+  item: SeriesCardItem;
+}
+
+export interface UseSeriesCardReturn {
+  imgFailed: boolean;
+  episodeCount: number;
+  isFeatured: boolean;
+  isHighlighted: boolean;
+  isOngoing: boolean;
+  showImg: boolean;
+  initial: string;
+  handleImageError: () => void;
+  stop: <T extends SeriesCardItem>(
+    fn: (item: T, e: React.MouseEvent) => void,
+    item: T,
+  ) => (e: React.MouseEvent) => void;
+}

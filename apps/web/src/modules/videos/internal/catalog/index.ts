@@ -13,7 +13,10 @@ export { AddMediaDialog } from './components/AddMediaDialog';
 export { AddMediaStepInput } from './components/AddMediaStepInput';
 export { AddMediaStepPreview } from './components/AddMediaStepPreview';
 export { EditSeriesDialog } from './components/EditSeriesDialog';
+export { useAddMediaDialog } from './hooks/useAddMediaDialog';
 export { useEditSeriesForm } from './hooks/useEditSeriesForm';
+export { formatGenreTriggerLabel, GENRE_FILTER_NO_HIGHLIGHT, useGenreFilter } from './hooks/useGenreFilter';
+export { getSeriesCardEpisodeCount, useSeriesCard } from './hooks/useSeriesCard';
 export { useSeriesDetail } from './hooks/useSeriesDetail';
 export { useSeriesDetailDnd } from './hooks/useSeriesDetailDnd';
 export { useSeriesDrawerSync } from './hooks/useSeriesDrawerSync';
@@ -44,6 +47,11 @@ export type {
   UpdateEpisodeData,
   UpdateEpisodeMutation,
   UseEditSeriesFormOptions,
+  UseAddMediaDialogReturn,
+  UseGenreFilterOptions,
+  UseGenreFilterReturn,
+  UseSeriesCardOptions,
+  UseSeriesCardReturn,
   UseSeriesDetailDndOptions,
   UseSeriesDetailOptions,
   UseSeriesDrawerSyncOptions,
