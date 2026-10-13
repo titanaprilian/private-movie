@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useAdblockDetector } from '@/modules/watch/internal/useAdblockDetector';
+import { useAdblockDetector } from '@/modules/watch/internal/hooks/useAdblockDetector';
 
 describe('useAdblockDetector', () => {
   const originalFetch = window.fetch;

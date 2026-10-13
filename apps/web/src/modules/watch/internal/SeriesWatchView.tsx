@@ -28,30 +28,21 @@ import {
   SkipBack,
   SkipForward,
 } from 'lucide-react';
-import { useWatchState } from './useWatchState';
-import {
-  getSeriesWithEpisodesQueryOptions,
-  type WatchEpisode,
-  type WatchSeriesDetails,
-} from './api';
+import { useWatchState } from './hooks';
+import { getSeriesWithEpisodesQueryOptions } from './api';
+import type { SeriesWatchViewProps, WatchEpisode } from './types';
 import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { useInputMode } from '@/hooks/useInputMode';
-import { useWatchNav } from './useWatchNav';
-import { useAdblockDetector } from './useAdblockDetector';
-import { SeriesHeroBanner } from './SeriesHeroBanner';
-import { WatchTopNav } from './WatchTopNav';
-import { navigateBackToCatalog } from './watchBackNav';
-import { EpisodeExplorer } from './EpisodeExplorer';
-import { formatDuration } from './formatDuration';
+import { useWatchNav } from './hooks';
+import { useAdblockDetector } from './hooks';
+import { SeriesHeroBanner } from './components';
+import { WatchTopNav } from './components';
+import { navigateBackToCatalog } from './utils';
+import { EpisodeExplorer } from './components';
+import { formatDuration } from './utils';
 
-export interface SeriesWatchViewProps {
-  seriesId?: string;
-  series?: WatchSeriesDetails;
-  initialSeasonId?: string;
-  initialEpisodeId?: string;
-  initialSourceIndex?: number;
-}
+export type { SeriesWatchViewProps };
 
 export function WatchViewSkeleton() {
   return (

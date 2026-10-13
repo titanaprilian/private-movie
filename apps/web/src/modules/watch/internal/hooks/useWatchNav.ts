@@ -1,19 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-export type WatchZone = 'back' | 'player' | 'controls' | 'episodes';
-
-export interface UseWatchNavOptions {
-  controlsCount?: number;
-  episodesCount?: number;
-  iframeRef?: React.RefObject<HTMLIFrameElement | null>;
-}
-
-export interface UseWatchNavReturn {
-  activeZone: WatchZone;
-  focusIndex: number;
-  setActiveZone: (zone: WatchZone) => void;
-  setFocusIndex: (index: number) => void;
-}
+import type { UseWatchNavOptions, UseWatchNavReturn, WatchZone } from '../types';
 
 function dispatchToIframe(
   iframeRef: React.RefObject<HTMLIFrameElement | null> | undefined,

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '../../utils';
-import { SeriesHeroBanner } from '@/modules/watch/internal/SeriesHeroBanner';
+import { SeriesHeroBanner } from '@/modules/watch/internal/components/SeriesHeroBanner';
 import type { WatchSeriesDetails } from '@/modules/watch';
 
 const baseSeries: WatchSeriesDetails = {

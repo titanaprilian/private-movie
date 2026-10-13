@@ -1,17 +1,8 @@
 import { useState } from 'react';
 import { Check, Play } from 'lucide-react';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import { formatDuration } from './formatDuration';
-import type { WatchEpisode, WatchSeriesDetails } from './api';
-
-export interface EpisodeRowProps {
-  episode: WatchEpisode;
-  index: number;
-  series?: WatchSeriesDetails | null;
-  onSelect: (episodeId: string) => void;
-  isNowPlaying?: boolean;
-  isFocused?: boolean;
-}
+import { formatDuration } from '../utils';
+import type { EpisodeRowProps } from '../types';
 
 export function EpisodeRow({
   episode,

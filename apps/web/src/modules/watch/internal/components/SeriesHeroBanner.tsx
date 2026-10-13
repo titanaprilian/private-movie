@@ -1,22 +1,7 @@
 import { useState } from 'react';
 import { Play, Star } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
-import type { WatchSeriesDetails } from './api';
-
-export interface SeriesHeroBannerProps {
-  series: WatchSeriesDetails;
-  onPlay: () => void;
-  /** @deprecated Back navigation is hoisted to the watch view shell (WatchTopNav). Kept for compat. */
-  onBack?: () => void;
-  isPlayDisabled?: boolean;
-  isSpatialMode?: boolean;
-  isPlayFocused?: boolean;
-  /** @deprecated Back navigation is hoisted to the watch view shell (WatchTopNav). Kept for compat. */
-  isBackFocused?: boolean;
-  /** @deprecated Back navigation is hoisted to the watch view shell (WatchTopNav). Kept for compat. */
-  backRef?: React.Ref<HTMLButtonElement | HTMLAnchorElement>;
-  playRef?: React.Ref<HTMLButtonElement>;
-}
+import type { SeriesHeroBannerProps } from '../types';
 
 /** Max genres shown on mobile viewports; extras reveal on md+ screens. */
 export const WATCH_HERO_MOBILE_GENRE_CAP = 2;

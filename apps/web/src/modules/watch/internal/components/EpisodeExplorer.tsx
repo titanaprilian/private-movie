@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import {
   ChunkyTabs,
@@ -14,22 +14,7 @@ import {
 } from '@/components/ui/chunky-select';
 import { EpisodeCard } from './EpisodeCard';
 import { EpisodeRow } from './EpisodeRow';
-import type { WatchEpisode, WatchSeason, WatchSeriesDetails } from './api';
-
-export interface EpisodeExplorerProps {
-  seasons: WatchSeason[];
-  activeSeasonId: string | null;
-  onSelectSeason: (seasonId: string) => void;
-  episodes: WatchEpisode[];
-  series?: WatchSeriesDetails | null;
-  activeEpisodeId?: string | null;
-  onSelectEpisode: (episodeId: string) => void;
-  episodeRefs?: React.MutableRefObject<(HTMLButtonElement | null)[]>;
-  isSpatialMode?: boolean;
-  activeZone?: string;
-  focusIndex?: number;
-  layoutMode?: 'grid' | 'list';
-}
+import type { EpisodeExplorerProps } from '../types';
 
 export function EpisodeExplorer({
   seasons,
