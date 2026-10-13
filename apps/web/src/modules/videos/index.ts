@@ -3,6 +3,8 @@ export { SeriesCard } from './internal/catalog';
 export type { SeriesCardProps } from './internal/catalog';
 export { FeaturedStar } from './internal/catalog';
 export type { FeaturedStarProps } from './internal/catalog';
+export { StarToggleButton } from './internal/catalog';
+export type { StarToggleButtonProps } from './internal/catalog';
 export { SeriesPosterCard } from './internal/catalog';
 export type { SeriesPosterCardProps } from './internal/catalog';
 export { GenreFilter } from './internal/catalog';

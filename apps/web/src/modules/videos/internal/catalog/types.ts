@@ -170,6 +170,25 @@ export interface FeaturedStarProps
   onToggle: (e: React.MouseEvent) => void;
 }
 
+export interface StarToggleButtonProps
+  extends Omit<
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    'onClick' | 'onToggle'
+  > {
+  active: boolean;
+  onToggle: (e: React.MouseEvent) => void;
+  /** Accessible label when active. Defaults to `activeTooltip` text. */
+  activeLabel?: string;
+  /** Accessible label when inactive. Defaults to `inactiveTooltip` text. */
+  inactiveLabel?: string;
+  /** Tooltip content when active. Defaults to 'Remove from featured'. */
+  activeTooltip?: React.ReactNode;
+  /** Tooltip content when inactive. Defaults to 'Mark as featured'. */
+  inactiveTooltip?: React.ReactNode;
+  /** Lucide Star icon size in pixels. Defaults to 20. */
+  iconSize?: number;
+}
+
 export interface SeriesPosterCardProps {
   seriesId: string;
   title: string;

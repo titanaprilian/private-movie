@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from '@tanstack/react-router';
+import { Menu, Search, X } from 'lucide-react';
 import { genresQueryOptions } from '@/modules/genres';
 import { CatalogSearch } from '@/modules/search';
 import { ChunkyButton } from '@/components/ui/chunky-button';
@@ -191,35 +192,9 @@ export function PublicNavbar() {
               className="hover:bg-[var(--yellow)] hover:border-[var(--yellow-dark)]"
             >
               {searchOpen ? (
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <X width={18} height={18} aria-hidden="true" />
               ) : (
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <Search width={20} height={20} aria-hidden="true" />
               )}
             </ChunkyButton>
             {/* Mobile menu trigger */}
@@ -233,21 +208,7 @@ export function PublicNavbar() {
               onClick={() => setMobileMenuOpen(true)}
               className="md:hidden"
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
+              <Menu width={20} height={20} aria-hidden="true" />
             </ChunkyButton>
           </div>
         </div>
@@ -307,20 +268,7 @@ export function PublicNavbar() {
                 data-testid="mobile-drawer-close"
                 onClick={closeMobileMenu}
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <X width={18} height={18} aria-hidden="true" />
               </ChunkyButton>
             </div>
             <nav aria-label="Mobile Navigation" className="flex flex-col gap-2">

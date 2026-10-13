@@ -2,6 +2,8 @@ export { SeriesCard } from './SeriesCard';
 export type { SeriesCardProps } from './SeriesCard';
 export { FeaturedStar } from './FeaturedStar';
 export type { FeaturedStarProps } from './FeaturedStar';
+export { StarToggleButton } from './StarToggleButton';
+export type { StarToggleButtonProps } from './StarToggleButton';
 export { SeriesPosterCard } from './SeriesPosterCard';
 export type { SeriesPosterCardProps } from './SeriesPosterCard';
 export { GenreFilter } from './GenreFilter';
