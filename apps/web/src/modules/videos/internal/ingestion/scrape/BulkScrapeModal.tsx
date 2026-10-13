@@ -9,14 +9,14 @@ import {
   ChunkyDialogFooter,
 } from '@/components/ui/chunky-dialog';
 import { ChunkyButton } from '@/components/ui/chunky-button';
-import type { BulkScrapeModalProps } from './types';
+import type { BulkScrapeModalProps } from '../types';
 
-export type { BulkScrapeModalProps, SeasonGroupOption } from './types';
-import { useBulkScrapeModal } from './scrape/hooks/useBulkScrapeModal';
-import { BulkScrapeStepSource } from './scrape/components/BulkScrapeStepSource';
-import { BulkScrapeStepReview } from './scrape/components/BulkScrapeStepReview';
-import { BulkScrapeStepProgress } from './scrape/components/BulkScrapeStepProgress';
-import { BulkScrapeOverwriteDialog } from './scrape/components/BulkScrapeOverwriteDialog';
+export type { BulkScrapeModalProps, SeasonGroupOption } from '../types';
+import { useBulkScrapeModal } from './hooks/useBulkScrapeModal';
+import { BulkScrapeStepSource } from './components/BulkScrapeStepSource';
+import { BulkScrapeStepReview } from './components/BulkScrapeStepReview';
+import { BulkScrapeStepProgress } from './components/BulkScrapeStepProgress';
+import { BulkScrapeOverwriteDialog } from './components/BulkScrapeOverwriteDialog';
 
 const STEP_DESCRIPTIONS = {
   1: 'Enter season source URL to match scraped episodes with local TMDB episodes in the selected season.',

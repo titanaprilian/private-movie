@@ -1,10 +1,10 @@
 import { useSyncTmdb } from './hooks/useSyncTmdb';
-import type { SyncTmdbModalProps } from './types';
+import type { SyncTmdbModalProps } from '../types';
 
-export type { SyncTmdbModalProps } from './types';
-import { SyncSnapshotCard } from './components/sync/SyncSnapshotCard';
-import { SyncSeasonDiffList } from './components/sync/SyncSeasonDiffList';
-import { SyncEpisodeChangesList } from './components/sync/SyncEpisodeChangesList';
+export type { SyncTmdbModalProps } from '../types';
+import { SyncSnapshotCard } from './components/SyncSnapshotCard';
+import { SyncSeasonDiffList } from './components/SyncSeasonDiffList';
+import { SyncEpisodeChangesList } from './components/SyncEpisodeChangesList';
 import {
   ChunkyDialog,
   ChunkyDialogContent,

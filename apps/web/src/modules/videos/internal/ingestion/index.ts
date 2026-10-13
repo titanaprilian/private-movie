@@ -1,6 +1,6 @@
 export { BulkIngestModal } from './BulkIngestModal';
-export { BulkScrapeModal } from './BulkScrapeModal';
-export { SyncTmdbModal } from './SyncTmdbModal';
+export { BulkScrapeModal } from './scrape/BulkScrapeModal';
+export { SyncTmdbModal } from './sync/SyncTmdbModal';
 export { TargetEpisodeCombobox } from './scrape/components/TargetEpisodeCombobox';
 export { useBulkScrapeSources } from './scrape/hooks/useBulkScrapeSources';
 export { useBulkIngestSources } from './hooks/useBulkIngestSources';
@@ -50,11 +50,11 @@ export {
   isPasswordErrorCode,
   pickDefaultStorageProvider,
 } from './hooks/useArchiveIngestSources';
-export { computeSyncDiff } from './utils/computeSyncDiff';
-export { useSyncTmdb } from './hooks/useSyncTmdb';
-export { SyncSnapshotCard } from './components/sync/SyncSnapshotCard';
-export { SyncSeasonDiffList } from './components/sync/SyncSeasonDiffList';
-export { SyncEpisodeChangesList } from './components/sync/SyncEpisodeChangesList';
+export { computeSyncDiff } from './sync/utils/computeSyncDiff';
+export { useSyncTmdb } from './sync/hooks/useSyncTmdb';
+export { SyncSnapshotCard } from './sync/components/SyncSnapshotCard';
+export { SyncSeasonDiffList } from './sync/components/SyncSeasonDiffList';
+export { SyncEpisodeChangesList } from './sync/components/SyncEpisodeChangesList';
 export {
   detectEpisodeNumber,
   formatBytes,

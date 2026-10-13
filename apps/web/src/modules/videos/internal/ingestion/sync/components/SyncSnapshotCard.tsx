@@ -1,7 +1,7 @@
 import type { SyncSnapshotCardProps } from '../../types';
 export type { SyncSnapshotCardProps } from '../../types';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import { MetaBadge } from '../IngestionBadges';
+import { MetaBadge } from '../../components/IngestionBadges';
 
 export function SyncSnapshotCard({
   previewData,

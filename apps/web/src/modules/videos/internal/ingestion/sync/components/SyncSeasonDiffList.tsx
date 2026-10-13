@@ -1,7 +1,7 @@
 import type { SyncSeasonDiffListProps } from '../../types';
 export type { SyncSeasonDiffListProps } from '../../types';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import { CountBadge, MetaBadge } from '../IngestionBadges';
+import { CountBadge, MetaBadge } from '../../components/IngestionBadges';
 
 export function SyncSeasonDiffList({
   seriesType,

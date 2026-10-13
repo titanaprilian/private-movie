@@ -7,15 +7,15 @@ import {
   syncSeriesTmdb,
   type TmdbPreviewResult,
   type TmdbSyncPreviewResult,
-} from '../../api';
+} from '../../../api';
 import { computeSyncDiff } from '../utils/computeSyncDiff';
 import type {
   SeriesDetails,
   UseSyncTmdbOptions,
   UseSyncTmdbReturn,
-} from '../types';
+} from '../../types';
 
-export type { UseSyncTmdbOptions, UseSyncTmdbReturn } from '../types';
+export type { UseSyncTmdbOptions, UseSyncTmdbReturn } from '../../types';
 
 export function useSyncTmdb({
   series,

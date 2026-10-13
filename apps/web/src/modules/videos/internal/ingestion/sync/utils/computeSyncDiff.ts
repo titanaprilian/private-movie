@@ -2,10 +2,10 @@ import type {
   SeriesDetails,
   TmdbPreviewResult,
   TmdbPreviewSeason,
-} from '../../api';
-import type { SeasonDiffItem } from '../types';
+} from '../../../api';
+import type { SeasonDiffItem } from '../../types';
 
-export type { SeasonDiffItem } from '../types';
+export type { SeasonDiffItem } from '../../types';
 
 export function computeSyncDiff(
   series: SeriesDetails,

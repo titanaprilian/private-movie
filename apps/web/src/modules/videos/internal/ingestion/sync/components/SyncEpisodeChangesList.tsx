@@ -1,7 +1,7 @@
 import type { SyncEpisodeChangesListProps } from '../../types';
 export type { SyncEpisodeChangesListProps } from '../../types';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import { FieldBadge, MetaBadge } from '../IngestionBadges';
+import { FieldBadge, MetaBadge } from '../../components/IngestionBadges';
 
 export function SyncEpisodeChangesList({
   episodeChanges,
