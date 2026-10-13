@@ -4,7 +4,7 @@ import {
   type SeriesDetails,
   type VideoSource,
   parseIngestUrl,
-} from '../api';
+} from '../../api';
 import { storageProvidersQueryOptions } from '@/modules/storage';
 import {
   ChunkyDialog,
@@ -26,7 +26,7 @@ import {
   S3UploadTab,
   RemoteIngestTab,
   EditExistingSourcesTab,
-} from './index';
+} from './tabs';
 
 type Episode = SeriesDetails['episodes'][number];
 

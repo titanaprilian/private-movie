@@ -11,7 +11,7 @@ import {
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
 import { type StorageProviderItem } from '@/modules/storage';
-import { remoteIngestEpisodeVideoSource, parseIngestUrl } from '../api';
+import { remoteIngestEpisodeVideoSource, parseIngestUrl } from '../../../api';
 
 export interface RemoteIngestTabProps {
   episodeId: string;

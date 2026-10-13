@@ -13,7 +13,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { previewScrape, addVideoSources, type VideoSourceInput } from '../api';
+import { previewScrape, addVideoSources, type VideoSourceInput } from '../../../api';
 
 const PROVIDER_META: Record<string, { label: string; placeholder: string }> = {
   otakudesu: { label: 'Otakudesu', placeholder: 'https://otakudesu.cloud/episode/...' },

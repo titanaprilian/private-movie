@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
-import { addVideoSources, type VideoSourceInput } from '../api';
+import { addVideoSources, type VideoSourceInput } from '../../../api';
 
 export interface DirectUrlTabProps {
   episodeId: string;

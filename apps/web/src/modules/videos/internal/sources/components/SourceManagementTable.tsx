@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Layers, Plus, UploadCloud } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import type { VideoSource } from '../api';
-import { useSourceMutations } from './hooks/useSourceMutations';
+import type { VideoSource } from '../../api';
+import { useSourceMutations } from '../hooks/useSourceMutations';
 import { SourceAddForm } from './table/SourceAddForm';
 import { SourceTableRow } from './table/SourceTableRow';
-import type { SourceManagementTableProps, SourceMutationValues } from './types';
+import type { SourceManagementTableProps, SourceMutationValues } from '../types';
 import { VideoPreviewModal } from './VideoPreviewModal';
 
 export type { SourceManagementTableProps };

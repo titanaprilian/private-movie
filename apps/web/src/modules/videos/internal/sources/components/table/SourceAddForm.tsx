@@ -15,7 +15,7 @@ import {
   SOURCE_TYPES,
   type SourceAddFormProps,
   type SourceType,
-} from '../types';
+} from '../../types';
 
 export function SourceAddForm({ isPending, onCancel, onSave }: SourceAddFormProps) {
   const [type, setType] = useState<SourceType>('direct');

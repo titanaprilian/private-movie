@@ -14,7 +14,7 @@ import {
   SOURCE_TYPES,
   type SourceInlineEditFormProps,
   type SourceType,
-} from '../types';
+} from '../../types';
 
 export function SourceInlineEditForm({
   source,

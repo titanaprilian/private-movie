@@ -1,4 +1,4 @@
-import type { SourceTypeBadgeProps } from '../types';
+import type { SourceTypeBadgeProps } from '../../types';
 
 export function SourceTypeBadge({ type }: SourceTypeBadgeProps) {
   return (

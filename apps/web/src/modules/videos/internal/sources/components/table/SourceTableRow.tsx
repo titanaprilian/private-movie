@@ -1,8 +1,8 @@
 import { Activity, Check, Copy, Edit2, Play, Trash2 } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import { useSourceHealthProbe } from '../hooks/useSourceHealthProbe';
-import type { SourceTableRowProps } from '../types';
+import { useSourceHealthProbe } from '../../hooks/useSourceHealthProbe';
+import type { SourceTableRowProps } from '../../types';
 import { SourceHealthBadge } from './SourceHealthBadge';
 import { SourceInlineEditForm } from './SourceInlineEditForm';
 import { SourceTypeBadge } from './SourceTypeBadge';

@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import type { SourceHealthBadgeProps } from '../types';
+import type { SourceHealthBadgeProps } from '../../types';
 
 export function SourceHealthBadge({ status, title }: SourceHealthBadgeProps) {
   if (status === 'testing') {

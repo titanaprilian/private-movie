@@ -16,7 +16,7 @@ import {
   type SeriesDetails,
   updateVideoSource,
   deleteVideoSource,
-} from '../api';
+} from '../../../api';
 
 type Episode = SeriesDetails['episodes'][number];
 
