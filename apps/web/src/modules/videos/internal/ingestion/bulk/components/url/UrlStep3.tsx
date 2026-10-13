@@ -6,7 +6,7 @@ import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { IngestionProgressBar } from '../../../components/IngestionProgressBar';
 import { StatusBadge } from '../../../components/IngestionBadges';
-import { formatBytes } from '../../../utils/parseIngestUrl';
+import { formatBytes } from '../../utils/parseIngestUrl';
 import type { BulkIngestItem } from '../../../types';
 
 export interface UrlStep3Props {

@@ -1,12 +1,12 @@
-export { BulkIngestModal } from './BulkIngestModal';
+export { BulkIngestModal } from './bulk/BulkIngestModal';
 export { BulkScrapeModal } from './scrape/BulkScrapeModal';
 export { SyncTmdbModal } from './sync/SyncTmdbModal';
 export { TargetEpisodeCombobox } from './scrape/components/TargetEpisodeCombobox';
 export { useBulkScrapeSources } from './scrape/hooks/useBulkScrapeSources';
-export { useBulkIngestSources } from './hooks/useBulkIngestSources';
-export { useArchiveIngestSources } from './hooks/useArchiveIngestSources';
-export { useBulkIngestModal } from './hooks/useBulkIngestModal';
-export type { IngestTab, UseBulkIngestModalOptions, UseBulkIngestModalReturn } from './hooks/useBulkIngestModal';
+export { useBulkIngestSources } from './bulk/hooks/useBulkIngestSources';
+export { useArchiveIngestSources } from './bulk/hooks/useArchiveIngestSources';
+export { useBulkIngestModal } from './bulk/hooks/useBulkIngestModal';
+export type { IngestTab, UseBulkIngestModalOptions, UseBulkIngestModalReturn } from './bulk/hooks/useBulkIngestModal';
 export {
   ArchiveStep1,
   ArchiveStep2,
@@ -49,7 +49,7 @@ export {
   computeSizeAnomalyFilenames,
   isPasswordErrorCode,
   pickDefaultStorageProvider,
-} from './hooks/useArchiveIngestSources';
+} from './bulk/hooks/useArchiveIngestSources';
 export { computeSyncDiff } from './sync/utils/computeSyncDiff';
 export { useSyncTmdb } from './sync/hooks/useSyncTmdb';
 export { SyncSnapshotCard } from './sync/components/SyncSnapshotCard';
@@ -59,7 +59,7 @@ export {
   detectEpisodeNumber,
   formatBytes,
   parseIngestUrl,
-} from './utils/parseIngestUrl';
+} from './bulk/utils/parseIngestUrl';
 export type {
   ArchiveDownloadProgress,
   ArchiveExtractProgress,

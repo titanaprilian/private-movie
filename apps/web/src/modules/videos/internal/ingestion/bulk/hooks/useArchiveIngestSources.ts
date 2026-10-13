@@ -8,7 +8,7 @@ import {
   getArchiveIngestJob,
   getArchiveIngestJobProgress,
   retryArchiveIngestJob,
-} from '../../api';
+} from '../../../api';
 import type {
   ArchiveIngestJob,
   ArchiveIngestJobEntry,
@@ -23,7 +23,7 @@ import type {
   ArchiveUploadView,
   LocalEpisodeItem,
   UseArchiveIngestSourcesOptions,
-} from '../types';
+} from '../../types';
 
 export type {
   ArchiveDownloadProgress,
@@ -33,8 +33,8 @@ export type {
   ArchiveReviewItem,
   ArchiveUploadView,
   UseArchiveIngestSourcesOptions,
-} from '../types';
-import { getSeasonOptions } from '../scrape/hooks/useBulkScrapeSources';
+} from '../../types';
+import { getSeasonOptions } from '../../scrape/hooks/useBulkScrapeSources';
 import { useQuery } from '@tanstack/react-query';
 import { storageProvidersQueryOptions, type StorageProviderItem } from '@/modules/storage';
 

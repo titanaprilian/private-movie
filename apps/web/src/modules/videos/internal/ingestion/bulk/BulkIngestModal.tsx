@@ -6,9 +6,9 @@ import {
   ChunkyDialogTitle,
   ChunkyDialogDescription,
 } from '@/components/ui/chunky-dialog';
-import type { BulkIngestModalProps } from './types';
+import type { BulkIngestModalProps } from '../types';
 
-export type { BulkIngestModalProps } from './types';
+export type { BulkIngestModalProps } from '../types';
 import { useBulkIngestModal } from './hooks/useBulkIngestModal';
 import {
   ArchiveStep1,
@@ -18,7 +18,7 @@ import {
   UrlStep2,
   UrlStep3,
   BulkIngestTabs,
-} from './bulk/components';
+} from './components';
 
 export function BulkIngestModal(props: BulkIngestModalProps) {
   const { open, onOpenChange, seriesId, localEpisodes = [], seasons = [], onSuccess } = props;

@@ -4,7 +4,7 @@ import { useBulkIngestSources } from './useBulkIngestSources';
 import type {
   LocalEpisodeItem,
   SeasonGroupOption,
-} from '../types';
+} from '../../types';
 
 export type IngestTab = 'archive' | 'url';
 
