@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useEpisodeBatchOperations } from '@/modules/videos/internal/catalog/hooks/useEpisodeBatchOperations';
+import { useEpisodeBatchOperations } from '@/modules/videos/internal/catalog';
 import * as api from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
 

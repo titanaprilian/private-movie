@@ -1,3 +1,4 @@
+export { BulkScrapeModal } from './BulkScrapeModal';
 export { BulkScrapeStepSource } from './components/BulkScrapeStepSource';
 export type { BulkScrapeStepSourceProps } from './components/BulkScrapeStepSource';
 export { BulkScrapeStepReview } from './components/BulkScrapeStepReview';

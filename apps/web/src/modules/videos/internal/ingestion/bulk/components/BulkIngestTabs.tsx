@@ -4,7 +4,7 @@ import {
   ChunkyTabsTrigger,
   ChunkyTabsContent,
 } from '@/components/ui/chunky-tabs';
-import type { IngestTab } from '../../hooks/useBulkIngestModal';
+import type { IngestTab } from '../hooks/useBulkIngestModal';
 
 export interface BulkIngestTabsProps {
   activeTab: IngestTab;

@@ -6,7 +6,7 @@ import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { TargetEpisodeCombobox } from '../../../scrape/components/TargetEpisodeCombobox';
-import { formatBytes } from '../../../utils/parseIngestUrl';
+import { formatBytes } from '../../utils/parseIngestUrl';
 import {
   PillBadge,
   ProviderBadge,

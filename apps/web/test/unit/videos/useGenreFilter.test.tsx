@@ -7,8 +7,8 @@ import {
   formatGenreTriggerLabel,
   GENRE_FILTER_NO_HIGHLIGHT,
   useGenreFilter,
-} from '@/modules/videos/internal/catalog/hooks/useGenreFilter';
-import { GenreFilter } from '@/modules/videos/internal/catalog/components/GenreFilter';
+} from '@/modules/videos/internal/catalog/grid/hooks/useGenreFilter';
+import { GenreFilter } from '@/modules/videos/internal/catalog/grid/components/GenreFilter';
 import type { Genre } from '@/modules/genres';
 import { useState } from 'react';
 

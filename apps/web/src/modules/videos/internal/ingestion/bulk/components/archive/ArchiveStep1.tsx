@@ -17,7 +17,7 @@ import {
   labelClassName,
 } from '../../../components/StorageProviderSelect';
 import { IngestionProgressBar } from '../../../components/IngestionProgressBar';
-import { formatBytes } from '../../../utils/parseIngestUrl';
+import { formatBytes } from '../../utils/parseIngestUrl';
 
 export interface ArchiveStep1Props {
   archiveUrl: string;

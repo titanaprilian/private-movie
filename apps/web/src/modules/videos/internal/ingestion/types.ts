@@ -9,7 +9,7 @@ import type {
 } from '../api';
 
 export type { SeriesDetails };
-export type { ParsedIngestUrl } from './utils/parseIngestUrl';
+export type { ParsedIngestUrl } from './bulk/utils/parseIngestUrl';
 
 // ─── Shared domain entities ─────────────────────────────────────────────────
 

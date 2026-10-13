@@ -1,12 +1,12 @@
-export { BulkIngestModal } from './BulkIngestModal';
-export { BulkScrapeModal } from './BulkScrapeModal';
-export { SyncTmdbModal } from './SyncTmdbModal';
+export { BulkIngestModal } from './bulk/BulkIngestModal';
+export { BulkScrapeModal } from './scrape/BulkScrapeModal';
+export { SyncTmdbModal } from './sync/SyncTmdbModal';
 export { TargetEpisodeCombobox } from './scrape/components/TargetEpisodeCombobox';
 export { useBulkScrapeSources } from './scrape/hooks/useBulkScrapeSources';
-export { useBulkIngestSources } from './hooks/useBulkIngestSources';
-export { useArchiveIngestSources } from './hooks/useArchiveIngestSources';
-export { useBulkIngestModal } from './hooks/useBulkIngestModal';
-export type { IngestTab, UseBulkIngestModalOptions, UseBulkIngestModalReturn } from './hooks/useBulkIngestModal';
+export { useBulkIngestSources } from './bulk/hooks/useBulkIngestSources';
+export { useArchiveIngestSources } from './bulk/hooks/useArchiveIngestSources';
+export { useBulkIngestModal } from './bulk/hooks/useBulkIngestModal';
+export type { IngestTab, UseBulkIngestModalOptions, UseBulkIngestModalReturn } from './bulk/hooks/useBulkIngestModal';
 export {
   ArchiveStep1,
   ArchiveStep2,
@@ -49,17 +49,17 @@ export {
   computeSizeAnomalyFilenames,
   isPasswordErrorCode,
   pickDefaultStorageProvider,
-} from './hooks/useArchiveIngestSources';
-export { computeSyncDiff } from './utils/computeSyncDiff';
-export { useSyncTmdb } from './hooks/useSyncTmdb';
-export { SyncSnapshotCard } from './components/sync/SyncSnapshotCard';
-export { SyncSeasonDiffList } from './components/sync/SyncSeasonDiffList';
-export { SyncEpisodeChangesList } from './components/sync/SyncEpisodeChangesList';
+} from './bulk/hooks/useArchiveIngestSources';
+export { computeSyncDiff } from './sync/utils/computeSyncDiff';
+export { useSyncTmdb } from './sync/hooks/useSyncTmdb';
+export { SyncSnapshotCard } from './sync/components/SyncSnapshotCard';
+export { SyncSeasonDiffList } from './sync/components/SyncSeasonDiffList';
+export { SyncEpisodeChangesList } from './sync/components/SyncEpisodeChangesList';
 export {
   detectEpisodeNumber,
   formatBytes,
   parseIngestUrl,
-} from './utils/parseIngestUrl';
+} from './bulk/utils/parseIngestUrl';
 export type {
   ArchiveDownloadProgress,
   ArchiveExtractProgress,

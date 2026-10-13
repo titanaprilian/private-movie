@@ -2,8 +2,8 @@ import { createTestQueryClient, renderHook, waitFor, act } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { useSeriesDrawerSync } from '@/modules/videos/internal/catalog/hooks/useSeriesDrawerSync';
-import type { SeriesDetailEpisode } from '@/modules/videos/internal/catalog/hooks/useSeriesDetail';
+import { useSeriesDrawerSync } from '@/modules/videos/internal/catalog';
+import type { SeriesDetailEpisode } from '@/modules/videos/internal/catalog';
 
 const routerHoisted = vi.hoisted(() => ({
   searchParams: {} as Record<string, unknown>,

@@ -7,7 +7,7 @@ import {
   act,
   waitFor,
 } from '../../utils';
-import { useSeriesGridSearch } from '@/modules/videos/internal/catalog/hooks/useSeriesGridSearch';
+import { useSeriesGridSearch } from '@/modules/videos/internal/catalog/grid/hooks/useSeriesGridSearch';
 import { SERIES_PAGE_LIMIT } from '@/modules/videos/internal/api';
 
 const mockNavigate = vi.fn();
