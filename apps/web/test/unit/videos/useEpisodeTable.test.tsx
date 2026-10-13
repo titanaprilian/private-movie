@@ -1,6 +1,6 @@
 import { renderHook, act } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { useEpisodeTable } from '@/modules/videos/internal/seasons/useEpisodeTable';
+import { useEpisodeTable } from '@/modules/videos/internal/seasons';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
 
 type Ep = SeriesDetails['episodes'][number];

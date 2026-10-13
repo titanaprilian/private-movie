@@ -1,7 +1,7 @@
 import {
   useEpisodeDetailDrawer,
-  type EpisodeDrawerEpisode as Episode,
-} from './useEpisodeDetailDrawer';
+} from '../hooks/useEpisodeDetailDrawer';
+import type { EpisodeDetailDrawerProps } from '../types';
 import {
   ChunkyDrawer,
   ChunkyDrawerBody,
@@ -14,19 +14,7 @@ import {
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
-import type { UpdateEpisodeData } from '../api';
-import { SourceManagementTable } from '../sources/SourceManagementTable';
-
-export type { Episode };
-
-export interface EpisodeDetailDrawerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  episode: Episode | null;
-  onSave: (episodeId: string, data: UpdateEpisodeData) => Promise<void> | void;
-  isSaving?: boolean;
-  onOpenAdvancedIngest?: (tab: 'remote-ingest' | 'upload-s3') => void;
-}
+import { SourceManagementTable } from '../../sources/SourceManagementTable';
 
 export function EpisodeDetailDrawer({
   open,

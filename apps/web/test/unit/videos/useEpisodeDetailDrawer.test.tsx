@@ -1,6 +1,6 @@
 import { renderHook, act } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { useEpisodeDetailDrawer } from '@/modules/videos/internal/seasons/useEpisodeDetailDrawer';
+import { useEpisodeDetailDrawer } from '@/modules/videos/internal/seasons';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
 
 const mockEpisode = {

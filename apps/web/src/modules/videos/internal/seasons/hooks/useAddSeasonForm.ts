@@ -2,17 +2,9 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { createSeason, type SeasonDetails } from '../api';
-import { getNextSeasonNumber, detectProviderFromUrl } from './seasonUtils';
-
-export type SeasonStatus = 'completed' | 'ongoing' | 'pending';
-
-export interface UseAddSeasonFormOptions {
-  open: boolean;
-  seriesId: string;
-  seasons: SeasonDetails[];
-  onOpenChange: (open: boolean) => void;
-}
+import { createSeason } from '../../api';
+import { getNextSeasonNumber, detectProviderFromUrl } from '../utils/seasonUtils';
+import type { SeasonStatus, UseAddSeasonFormOptions } from '../types';
 
 export function useAddSeasonForm({
   open,

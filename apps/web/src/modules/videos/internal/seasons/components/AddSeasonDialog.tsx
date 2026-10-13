@@ -1,5 +1,5 @@
-import { useEditSeasonForm } from './useEditSeasonForm';
-import type { SeasonDetails } from '../api';
+import { useAddSeasonForm } from '../hooks/useAddSeasonForm';
+import type { AddSeasonDialogProps } from '../types';
 import {
   ChunkyDialog,
   ChunkyDialogContent,
@@ -20,20 +20,15 @@ import {
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
 
-export interface EditSeasonDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  season: SeasonDetails;
-}
-
-export function EditSeasonDialog({
+export function AddSeasonDialog({
   open,
   onOpenChange,
-  season,
-}: EditSeasonDialogProps) {
+  seriesId,
+  seasons,
+}: AddSeasonDialogProps) {
   const {
+    seasonNumber,
     title,
-    setTitle,
     description,
     setDescription,
     status,
@@ -43,85 +38,120 @@ export function EditSeasonDialog({
     setSource,
     episodeOffset,
     setEpisodeOffset,
+    handleSeasonNumberChange,
+    handleTitleChange,
     handleScraperUrlChange,
-    updateMutation,
+    createMutation,
     handleSubmit,
-  } = useEditSeasonForm({ open, season, onOpenChange });
+    isValid,
+  } = useAddSeasonForm({ open, seriesId, seasons, onOpenChange });
 
   return (
     <ChunkyDialog open={open} onOpenChange={onOpenChange}>
       <ChunkyDialogContent className="max-w-md">
         <ChunkyDialogHeader>
-          <ChunkyDialogTitle>Edit Season</ChunkyDialogTitle>
+          <ChunkyDialogTitle>Add Season</ChunkyDialogTitle>
           <ChunkyDialogDescription>
-            Update this season&apos;s metadata to correct scraped data or configure ongoing automated scraping.
+            Create a new season for this series. The season number is suggested
+            from the highest existing season.
           </ChunkyDialogDescription>
         </ChunkyDialogHeader>
         <ChunkyDialogBody>
-          <form id="edit-season-form" onSubmit={handleSubmit} className="space-y-4 py-2">
+          <form
+            id="add-season-form"
+            onSubmit={handleSubmit}
+            className="space-y-4 py-2"
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="add-season-number"
+                  className="text-sm font-extrabold text-[var(--ink)]"
+                >
+                  Season Number
+                </label>
+                <ChunkyInput
+                  id="add-season-number"
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={seasonNumber}
+                  onChange={(e) =>
+                    handleSeasonNumberChange(parseInt(e.target.value, 10))
+                  }
+                  placeholder="e.g. 2"
+                  required
+                  aria-label="Season Number"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="add-season-status"
+                  className="text-sm font-extrabold text-[var(--ink)]"
+                >
+                  Status
+                </label>
+                <ChunkySelect
+                  value={status}
+                  onValueChange={(val) =>
+                    setStatus(val as 'completed' | 'ongoing' | 'pending')
+                  }
+                >
+                  <ChunkySelectTrigger id="add-season-status" aria-label="Status">
+                    <ChunkySelectValue placeholder="Select status" />
+                  </ChunkySelectTrigger>
+                  <ChunkySelectContent>
+                    <ChunkySelectItem value="completed">Completed</ChunkySelectItem>
+                    <ChunkySelectItem value="ongoing">Ongoing</ChunkySelectItem>
+                    <ChunkySelectItem value="pending">Pending</ChunkySelectItem>
+                  </ChunkySelectContent>
+                </ChunkySelect>
+              </div>
+            </div>
             <div className="space-y-1.5">
               <label
-                htmlFor="edit-season-title"
+                htmlFor="add-season-title"
                 className="text-sm font-extrabold text-[var(--ink)]"
               >
                 Title
               </label>
               <ChunkyInput
-                id="edit-season-title"
+                id="add-season-title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Season 1"
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="e.g. Season 2"
                 required
               />
             </div>
             <div className="space-y-1.5">
               <label
-                htmlFor="edit-season-description"
+                htmlFor="add-season-description"
                 className="text-sm font-extrabold text-[var(--ink)]"
               >
                 Description
               </label>
               <ChunkyTextarea
-                id="edit-season-description"
+                id="add-season-description"
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional description"
               />
             </div>
-            <div className="space-y-1.5">
-              <label
-                htmlFor="edit-season-status"
-                className="text-sm font-extrabold text-[var(--ink)]"
-              >
-                Status
-              </label>
-              <ChunkySelect
-                value={status}
-                onValueChange={(val) => setStatus(val as 'completed' | 'ongoing' | 'pending')}
-              >
-                <ChunkySelectTrigger id="edit-season-status" aria-label="Status">
-                  <ChunkySelectValue placeholder="Select status" />
-                </ChunkySelectTrigger>
-                <ChunkySelectContent>
-                  <ChunkySelectItem value="completed">Completed</ChunkySelectItem>
-                  <ChunkySelectItem value="ongoing">Ongoing</ChunkySelectItem>
-                  <ChunkySelectItem value="pending">Pending</ChunkySelectItem>
-                </ChunkySelectContent>
-              </ChunkySelect>
-            </div>
 
             <div className="pt-2 border-t-2 border-[var(--border)] space-y-3">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">Scraper Configuration</h4>
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+                Scraper Configuration
+              </h4>
               <div className="space-y-1.5">
                 <label
-                  htmlFor="edit-season-scraper-url"
+                  htmlFor="add-season-scraper-url"
                   className="text-sm font-extrabold text-[var(--ink)]"
                 >
                   Scraper URL
                 </label>
                 <ChunkyInput
-                  id="edit-season-scraper-url"
+                  id="add-season-scraper-url"
                   type="url"
                   value={scraperUrl}
                   onChange={(e) => handleScraperUrlChange(e.target.value)}
@@ -131,7 +161,7 @@ export function EditSeasonDialog({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label
-                    htmlFor="edit-season-source"
+                    htmlFor="add-season-source"
                     className="text-sm font-extrabold text-[var(--ink)]"
                   >
                     Provider Source
@@ -140,7 +170,10 @@ export function EditSeasonDialog({
                     value={source}
                     onValueChange={(val) => setSource(val)}
                   >
-                    <ChunkySelectTrigger id="edit-season-source" aria-label="Provider Source">
+                    <ChunkySelectTrigger
+                      id="add-season-source"
+                      aria-label="Provider Source"
+                    >
                       <ChunkySelectValue placeholder="Select provider" />
                     </ChunkySelectTrigger>
                     <ChunkySelectContent>
@@ -152,36 +185,22 @@ export function EditSeasonDialog({
                 </div>
                 <div className="space-y-1.5">
                   <label
-                    htmlFor="edit-season-episode-offset"
+                    htmlFor="add-season-episode-offset"
                     className="text-sm font-extrabold text-[var(--ink)]"
                   >
                     Episode Offset
                   </label>
                   <ChunkyInput
-                    id="edit-season-episode-offset"
+                    id="add-season-episode-offset"
                     type="number"
                     value={episodeOffset}
-                    onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
+                    onChange={(e) =>
+                      setEpisodeOffset(parseInt(e.target.value, 10) || 0)
+                    }
                     placeholder="0"
                   />
                 </div>
               </div>
-
-              {(season.lastScrapedAt || season.lastScrapeError) && (
-                <div className="rounded-2xl border-2 border-[var(--border)] bg-[var(--bg)] p-2.5 space-y-1 text-xs">
-                  {season.lastScrapedAt && (
-                    <div className="text-[var(--muted)]">
-                      <span className="font-extrabold text-[var(--ink)]">Last Scraped:</span>{' '}
-                      {new Date(season.lastScrapedAt).toLocaleString()}
-                    </div>
-                  )}
-                  {season.lastScrapeError && (
-                    <div className="text-[var(--red)] font-mono text-[11px] break-words">
-                      <span className="font-semibold">Last Error:</span> {season.lastScrapeError}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </form>
         </ChunkyDialogBody>
@@ -195,10 +214,10 @@ export function EditSeasonDialog({
           </ChunkyButton>
           <ChunkyButton
             type="submit"
-            form="edit-season-form"
-            disabled={!title.trim() || updateMutation.isPending}
+            form="add-season-form"
+            disabled={!isValid || createMutation.isPending}
           >
-            {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            {createMutation.isPending ? 'Creating...' : 'Create Season'}
           </ChunkyButton>
         </ChunkyDialogFooter>
       </ChunkyDialogContent>

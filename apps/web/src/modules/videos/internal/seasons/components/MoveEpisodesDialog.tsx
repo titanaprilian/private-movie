@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { SeasonDetails } from '../api';
-import { getSeasonNumber } from './seasonUtils';
+import type { MoveEpisodesDialogProps } from '../types';
+import { getSeasonNumber } from '../utils/seasonUtils';
 import {
   ChunkyDialog,
   ChunkyDialogContent,
@@ -11,17 +11,6 @@ import {
   ChunkyDialogFooter,
 } from '@/components/ui/chunky-dialog';
 import { ChunkyButton } from '@/components/ui/chunky-button';
-
-export interface MoveEpisodesDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  seasons: SeasonDetails[];
-  currentSeasonId: string | null;
-  selectedCount: number;
-  episodeCountBySeason: Record<string, number>;
-  isPending?: boolean;
-  onConfirm: (targetSeasonId: string) => void;
-}
 
 export function MoveEpisodesDialog({
   open,

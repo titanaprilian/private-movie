@@ -2,7 +2,7 @@ import { createTestQueryClient, renderHook, waitFor, act } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { useEditSeasonForm } from '@/modules/videos/internal/seasons/useEditSeasonForm';
+import { useEditSeasonForm } from '@/modules/videos/internal/seasons';
 import type { SeasonDetails } from '@/modules/videos/internal/api';
 import { setAccessToken } from '@/lib/api';
 import { toast } from 'sonner';

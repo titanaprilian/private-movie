@@ -1,11 +1,4 @@
-import type { ReorderEpisodeItem, SeriesDetails } from '../api';
-
-type Episode = SeriesDetails['episodes'][number];
-
-export interface CrossSeasonMove {
-  episodes: Episode[];
-  orders: ReorderEpisodeItem[];
-}
+import type { CrossSeasonMove, Episode, ReorderEpisodeItem } from '../types';
 
 export function buildCrossSeasonMove(
   allEpisodes: Episode[],

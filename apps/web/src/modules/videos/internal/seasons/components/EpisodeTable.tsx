@@ -1,9 +1,8 @@
 import {
   useEpisodeTable,
-  type EpisodeTableSortField as HookSortField,
-  type EpisodeTableSortDirection as HookSortDirection,
-  type EpisodeTableEpisode,
-} from './useEpisodeTable';
+  getEpisodeReleaseDate,
+} from '../hooks/useEpisodeTable';
+import type { EpisodeTableProps } from '../types';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { Search, Edit2, Link as LinkIcon, Trash2, GripVertical, AlertCircle } from 'lucide-react';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
@@ -20,26 +19,7 @@ import {
   ChunkyTableCell,
   ChunkyTableIndexBadge,
 } from '@/components/ui/chunky-table';
-import { formatEpisodeDuration } from './formatEpisodeDuration';
-import { getEpisodeReleaseDate } from './useEpisodeTable';
-
-export type Episode = EpisodeTableEpisode;
-
-export type SortField = HookSortField;
-export type SortDirection = HookSortDirection;
-
-export interface EpisodeTableProps {
-  episodes: Episode[];
-  onSelectEpisode?: (episode: Episode) => void;
-  onEditEpisode?: (episode: Episode) => void;
-  onDeleteEpisode?: (episode: Episode) => void;
-  onManageSources?: (episode: Episode) => void;
-  selectedEpisodeId?: string | null;
-
-  // Multi-selection props (bulk actions render in SeriesDetailView sticky bulkbar)
-  selectedEpisodeIds?: string[];
-  onSelectedEpisodeIdsChange?: (selectedIds: string[]) => void;
-}
+import { formatEpisodeDuration } from '../utils/formatEpisodeDuration';
 
 const ROW_GRID = 'grid-cols-[24px_20px_44px_minmax(0,1fr)_84px_76px_92px_116px_40px]';
 

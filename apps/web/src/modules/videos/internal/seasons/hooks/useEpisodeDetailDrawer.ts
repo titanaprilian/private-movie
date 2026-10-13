@@ -1,20 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { SeriesDetails, UpdateEpisodeData } from '../api';
-
-export type EpisodeDrawerEpisode = SeriesDetails['episodes'][number];
-
-export interface EpisodeDrawerFormState {
-  title: string;
-  description: string;
-  duration: string;
-}
-
-export interface UseEpisodeDetailDrawerOptions {
-  episode: EpisodeDrawerEpisode | null;
-  onSave: (episodeId: string, data: UpdateEpisodeData) => Promise<void> | void;
-  isSaving?: boolean;
-}
+import type { UpdateEpisodeData } from '../../api';
+import type {
+  EpisodeDrawerEpisode,
+  EpisodeDrawerFormState,
+  UseEpisodeDetailDrawerOptions,
+} from '../types';
 
 export function getEpisodeDrawerInitialState(
   episode: EpisodeDrawerEpisode | null

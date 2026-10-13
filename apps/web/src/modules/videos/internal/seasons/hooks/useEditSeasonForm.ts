@@ -2,15 +2,9 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { updateSeason, type SeasonDetails } from '../api';
-import { detectProviderFromUrl } from './seasonUtils';
-import type { SeasonStatus } from './useAddSeasonForm';
-
-export interface UseEditSeasonFormOptions {
-  open: boolean;
-  season: SeasonDetails;
-  onOpenChange: (open: boolean) => void;
-}
+import { updateSeason } from '../../api';
+import { detectProviderFromUrl } from '../utils/seasonUtils';
+import type { SeasonStatus, UseEditSeasonFormOptions } from '../types';
 
 export function useEditSeasonForm({
   open,

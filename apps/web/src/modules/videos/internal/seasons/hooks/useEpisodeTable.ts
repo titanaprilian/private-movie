@@ -1,16 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
-import type { SeriesDetails } from '../api';
-
-export type EpisodeTableEpisode = SeriesDetails['episodes'][number];
-
-export type EpisodeTableSortField = 'order' | 'title' | 'duration' | 'releaseDate';
-export type EpisodeTableSortDirection = 'asc' | 'desc';
-
-export interface UseEpisodeTableOptions {
-  episodes: EpisodeTableEpisode[];
-  selectedEpisodeIds?: string[];
-  onSelectedEpisodeIdsChange?: (selectedIds: string[]) => void;
-}
+import type {
+  EpisodeTableEpisode,
+  EpisodeTableSortDirection,
+  EpisodeTableSortField,
+  UseEpisodeTableOptions,
+} from '../types';
 
 export function parseEpisodeDurationToSeconds(
   duration?: number | string | null
