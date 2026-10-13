@@ -2,6 +2,7 @@ export { SeriesGrid } from './SeriesGrid';
 export {
   SeriesCard,
   FeaturedStar,
+  StarToggleButton,
   SeriesPosterCard,
   GenreFilter,
   RecentEpisodeCard,
@@ -9,6 +10,7 @@ export {
 export type {
   SeriesCardProps,
   FeaturedStarProps,
+  StarToggleButtonProps,
   SeriesPosterCardProps,
   GenreFilterProps,
   RecentEpisodeCardProps,
