@@ -403,4 +403,73 @@ describe("GET /api/admin/dashboard storage usage", () => {
     expect(body.data.storage.totalUsedBytes).toBe(0);
     expect(body.data.storage.percentUsed).toBe(0);
   });
+
+  it("falls back to 0 bytes when the usage provider stalls beyond 2.5s", async () => {
+    const slowApp = await buildApp({
+      storage: {
+        usageProvider: {
+          async getTotalUsedBytes() {
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+            return 42 * GB;
+          },
+        },
+      },
+    });
+    const auth = await registerUser(slowApp);
+    const slowHeaders = authHeaders(auth.accessToken);
+    await seedProviders();
+    const startedAt = Date.now();
+    const res = await request(slowApp, { path: "/api/admin/dashboard", headers: slowHeaders });
+    const elapsedMs = Date.now() - startedAt;
+    expect(res.status).toBe(200);
+    const body = res.body as DataResponse<AdminDashboardDto>;
+    expect(body.data.storage.totalUsedBytes).toBe(0);
+    expect(body.data.storage.percentUsed).toBe(0);
+    // Must not wait for the 5s stall: 2.5s timeout plus request overhead.
+    expect(elapsedMs).toBeLessThan(4500);
+  });
+
+  it("aggregates episode counts across multiple ongoing seasons in one response", async () => {
+    const now = new Date();
+    const [s] = await db
+      .insert(seriesTable)
+      .values({ id: crypto.randomUUID(), title: "Multi Season Show", createdAt: now, updatedAt: now })
+      .returning();
+    const [seasonA] = await db
+      .insert(seasonsTable)
+      .values({
+        id: crypto.randomUUID(),
+        seriesId: s.id,
+        title: "Season 1",
+        seasonNumber: 1,
+        status: "ongoing",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    const [seasonB] = await db
+      .insert(seasonsTable)
+      .values({
+        id: crypto.randomUUID(),
+        seriesId: s.id,
+        title: "Season 2",
+        seasonNumber: 2,
+        status: "ongoing",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    await db.insert(episodesTable).values([
+      { id: crypto.randomUUID(), seasonId: seasonA.id, title: "E1", order: 1, createdAt: now, updatedAt: now },
+      { id: crypto.randomUUID(), seasonId: seasonA.id, title: "E2", order: 2, createdAt: now, updatedAt: now },
+      { id: crypto.randomUUID(), seasonId: seasonA.id, title: "E3", order: 3, createdAt: now, updatedAt: now },
+      { id: crypto.randomUUID(), seasonId: seasonB.id, title: "E1", order: 1, createdAt: now, updatedAt: now },
+    ]);
+    const res = await request(app, { path: "/api/admin/dashboard", headers });
+    expect(res.status).toBe(200);
+    const body = res.body as DataResponse<AdminDashboardDto>;
+    const counts = new Map(body.data.ongoingSeasons.map((o) => [o.seasonId, o.episodeCount]));
+    expect(counts.get(seasonA.id)).toBe(3);
+    expect(counts.get(seasonB.id)).toBe(1);
+  });
 });
