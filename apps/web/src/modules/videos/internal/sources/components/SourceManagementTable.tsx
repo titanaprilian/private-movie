@@ -1,38 +1,31 @@
-import { useState } from 'react';
 import { Layers, Plus, UploadCloud } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import type { VideoSource } from '../../api';
-import { useSourceMutations } from '../hooks/useSourceMutations';
+import { useSourceManagementTable } from '../hooks/useSourceManagementTable';
 import { SourceAddForm } from './table/SourceAddForm';
 import { SourceTableRow } from './table/SourceTableRow';
-import type { SourceManagementTableProps, SourceMutationValues } from '../types';
+import type { SourceManagementTableProps } from '../types';
 import { VideoPreviewModal } from './VideoPreviewModal';
 
-export type { SourceManagementTableProps };
+export type { SourceManagementTableProps } from '../types';
 
 export function SourceManagementTable({ episode, onOpenAdvancedIngest }: SourceManagementTableProps) {
-  const { addMutation, editMutation, deleteMutation } = useSourceMutations({
-    episodeId: episode.id,
-  });
-  const [previewSource, setPreviewSource] = useState<VideoSource | null>(null);
-  const [isAddingSource, setIsAddingSource] = useState(false);
-  const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
-  const [deletingSourceId, setDeletingSourceId] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const handleCopyUrl = (id: string, url: string) => {
-    navigator.clipboard.writeText(url);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 2000);
-  };
-
-  const handleAdd = (values: SourceMutationValues) => {
-    addMutation.mutate(values, { onSuccess: () => {
-      setIsAddingSource(false);
-      setEditingSourceId(null);
-    } });
-  };
+  const {
+    addMutation,
+    editMutation,
+    deleteMutation,
+    previewSource,
+    setPreviewSource,
+    isAddingSource,
+    setIsAddingSource,
+    editingSourceId,
+    setEditingSourceId,
+    deletingSourceId,
+    setDeletingSourceId,
+    copiedId,
+    handleCopyUrl,
+    handleAdd,
+  } = useSourceManagementTable({ episodeId: episode.id });
 
   const sources = episode.videoSources ?? [];
 

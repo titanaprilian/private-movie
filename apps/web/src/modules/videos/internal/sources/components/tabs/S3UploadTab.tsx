@@ -7,16 +7,10 @@ import {
   ChunkySelectTrigger,
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
-import { type StorageProviderItem } from '@/modules/storage';
 import { useS3Upload } from '../../hooks/useS3Upload';
+import type { S3UploadTabProps } from '../../types';
 
-export interface S3UploadTabProps {
-  episodeId: string;
-  seriesId: string;
-  providers: StorageProviderItem[];
-  defaultProvider: StorageProviderItem | null;
-  onSuccess: () => void;
-}
+export type { S3UploadTabProps } from '../../types';
 
 export function S3UploadTab({
   episodeId,

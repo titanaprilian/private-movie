@@ -1,11 +1,3 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import {
-  type SeriesDetails,
-  type VideoSource,
-  parseIngestUrl,
-} from '../../api';
-import { storageProvidersQueryOptions } from '@/modules/storage';
 import {
   ChunkyDialog,
   ChunkyDialogContent,
@@ -20,6 +12,11 @@ import {
   ChunkyTabsTrigger,
   ChunkyTabsContent,
 } from '@/components/ui/chunky-tabs';
+import { useManageSourcesDialog } from '../hooks/useManageSourcesDialog';
+import type {
+  ManageSourcesDialogProps,
+  ManageSourcesTab,
+} from '../types';
 import {
   DirectUrlTab,
   ScraperPreviewTab,
@@ -28,15 +25,7 @@ import {
   EditExistingSourcesTab,
 } from './tabs';
 
-type Episode = SeriesDetails['episodes'][number];
-
-interface ManageSourcesDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  episode: Episode | null;
-  seriesId: string;
-  initialTab?: 'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing';
-}
+export type { ManageSourcesDialogProps } from '../types';
 
 export function ManageSourcesDialog({
   open,
@@ -45,37 +34,14 @@ export function ManageSourcesDialog({
   seriesId,
   initialTab,
 }: ManageSourcesDialogProps) {
-  const [activeTab, setActiveTab] = useState<
-    'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing'
-  >('add-url');
-
-  // Storage Providers Query
-  const { data: rawProviders } = useQuery(storageProvidersQueryOptions());
-  const providers = Array.isArray(rawProviders) ? rawProviders : [];
-  const defaultProvider = providers.find((p) => p.isDefault) || providers[0] || null;
-
-  // Shortcut prefill state for remote ingest
-  const [remotePrefill, setRemotePrefill] = useState<{
-    url: string;
-    label: string;
-    quality: string;
-  }>({ url: '', label: '', quality: '' });
-
-  useEffect(() => {
-    if (open && initialTab) {
-      setActiveTab(initialTab);
-    }
-  }, [open, initialTab]);
-
-  const handleIngestShortcut = (source: VideoSource) => {
-    const parsed = parseIngestUrl(source.url);
-    setRemotePrefill({
-      url: source.url,
-      label: source.quality ? `S3 ${source.quality}` : parsed.label,
-      quality: source.quality || parsed.quality || '',
-    });
-    setActiveTab('remote-ingest');
-  };
+  const {
+    activeTab,
+    setActiveTab,
+    providers,
+    defaultProvider,
+    remotePrefill,
+    handleIngestShortcut,
+  } = useManageSourcesDialog({ open, initialTab });
 
   if (!episode) return null;
 
@@ -92,11 +58,7 @@ export function ManageSourcesDialog({
         <ChunkyDialogBody>
         <ChunkyTabs
           value={activeTab}
-          onValueChange={(val) =>
-            setActiveTab(
-              val as 'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing'
-            )
-          }
+          onValueChange={(val) => setActiveTab(val as ManageSourcesTab)}
           className="w-full"
         >
           <ChunkyTabsList className="flex w-full flex-wrap gap-2">

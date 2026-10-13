@@ -1,50 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { type StorageProviderItem } from '@/modules/storage';
 import {
   uploadEpisodeVideoSource,
   getUploadProgress,
   getMaxUploadSizeMb,
   getMaxUploadSizeBytes,
 } from '../../api';
+import type {
+  S3UploadPhase,
+  S3UploadProgress,
+  S3UploadStatus,
+  UseS3UploadOptions,
+  UseS3UploadReturn,
+} from '../types';
 
-export type S3UploadStatus = 'idle' | 'uploading';
-
-export type S3UploadPhase = 'browser' | 'cloud';
-
-export interface S3UploadProgress {
-  percent: number;
-  loaded: number;
-  total: number;
-}
-
-export interface UseS3UploadOptions {
-  episodeId: string;
-  seriesId: string;
-  defaultProvider: StorageProviderItem | null;
-  onSuccess: () => void;
-}
-
-export interface UseS3UploadReturn {
-  selectedFile: File | null;
-  uploadLabel: string;
-  setUploadLabel: (value: string) => void;
-  uploadQuality: string;
-  setUploadQuality: (value: string) => void;
-  uploadProviderId: string;
-  setUploadProviderId: (value: string) => void;
-  uploadStatus: S3UploadStatus;
-  uploadPhase: S3UploadPhase;
-  uploadProgress: S3UploadProgress;
-  s3Warning: string | null;
-  isUploading: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  handleFileSelect: (file: File | null) => void;
-  cancelUpload: () => void;
-  handleUpload: () => Promise<void>;
-}
-
+export type {
+  S3UploadStatus,
+  S3UploadPhase,
+  S3UploadProgress,
+  UseS3UploadOptions,
+  UseS3UploadReturn,
+} from '../types';
 export function useS3Upload({
   episodeId,
   seriesId,

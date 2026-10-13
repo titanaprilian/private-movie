@@ -24,11 +24,9 @@ function getProviderMeta(provider: string): { label: string; placeholder: string
   return PROVIDER_META[provider] ?? { label: provider, placeholder: 'https://...' };
 }
 
-export interface ScraperPreviewTabProps {
-  episodeId: string;
-  seriesId: string;
-  onSuccess: () => void;
-}
+import type { ScraperPreviewTabProps } from '../../types';
+
+export type { ScraperPreviewTabProps } from '../../types';
 
 export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPreviewTabProps) {
   const queryClient = useQueryClient();

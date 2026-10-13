@@ -7,14 +7,9 @@ import {
 } from '@/components/ui/chunky-dialog';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
-import type { VideoSource } from '../../api';
+import type { VideoPreviewModalProps } from '../types';
 
-export interface VideoPreviewModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  source: VideoSource | null;
-  episodeTitle?: string;
-}
+export type { VideoPreviewModalProps } from '../types';
 
 export function VideoPreviewModal({
   open,
