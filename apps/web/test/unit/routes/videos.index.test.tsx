@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Route } from '@/routes/admin/videos.index';
 
 vi.mock('@tanstack/react-router', () => ({
