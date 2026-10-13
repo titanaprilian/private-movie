@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { SeriesDetailView, seriesDetailQueryOptions } from '@/modules/videos';
-import { queryClient } from '@/lib/queryClient';
+import { SeriesDetailView } from '@/modules/videos';
 
 type SeriesDetailSearch = {
   order?: number;
@@ -25,8 +24,6 @@ export const Route = createFileRoute('/admin/videos/$seriesId')({
         ? search.seasonId
         : undefined,
   }),
-  loader: ({ params }) =>
-    queryClient.ensureQueryData(seriesDetailQueryOptions(params.seriesId)),
   component: SeriesDetailPage,
 });
 
