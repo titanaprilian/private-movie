@@ -4,7 +4,7 @@ import { SeriesDetailView } from '@/modules/videos/internal/catalog';
 import {
   buildCrossSeasonMove,
   type CrossSeasonMove,
-} from '@/modules/videos/internal/seasons/crossSeasonMove';
+} from '@/modules/videos/internal/seasons';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';
 import { setAccessToken } from '@/lib/api';

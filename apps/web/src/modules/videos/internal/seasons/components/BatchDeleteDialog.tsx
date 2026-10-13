@@ -1,12 +1,5 @@
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
-
-export interface BatchDeleteDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  selectedEpisodeCount: number;
-  onConfirmDelete: () => void;
-  isPending?: boolean;
-}
+import type { BatchDeleteDialogProps } from '../types';
 
 export function BatchDeleteDialog({
   open,

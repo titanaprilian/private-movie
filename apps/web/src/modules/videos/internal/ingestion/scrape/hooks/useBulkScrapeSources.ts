@@ -5,7 +5,7 @@ import {
   previewBulkSources as apiPreviewBulkSources,
   scrapeEpisodeSources,
 } from '../../../api';
-import { detectProviderFromUrl } from '../../../seasons/seasonUtils';
+import { detectProviderFromUrl } from '../../../seasons';
 import type {
   LocalEpisodeItem,
   ProcessingLogItem,

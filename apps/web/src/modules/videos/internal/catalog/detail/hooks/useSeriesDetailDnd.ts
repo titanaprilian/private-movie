@@ -6,7 +6,7 @@ import {
   updateEpisodeOrders,
   type SeriesDetails,
 } from '../../../api';
-import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from '../../../seasons/crossSeasonMove';
+import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from '../../../seasons';
 import type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../../types';
 export type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../../types';
 
