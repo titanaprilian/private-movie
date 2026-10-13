@@ -7,9 +7,9 @@ import {
   Copy,
 } from 'lucide-react';
 import { Droppable } from '@hello-pangea/dnd';
-import type { SeriesDetailSeasonBarProps } from '../types';
-export type { SeriesDetailSeasonBarProps } from '../types';
-import { getSeasonNumber } from '../../seasons/seasonUtils';
+import type { SeriesDetailSeasonBarProps } from '../../types';
+export type { SeriesDetailSeasonBarProps } from '../../types';
+import { getSeasonNumber } from '../../../seasons/seasonUtils';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';

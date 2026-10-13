@@ -6,8 +6,8 @@ import {
   Plus,
   ArrowDownToLine,
 } from 'lucide-react';
-import type { SeriesDetailHeroProps } from '../types';
-export type { SeriesDetailHeroProps } from '../types';
+import type { SeriesDetailHeroProps } from '../../types';
+export type { SeriesDetailHeroProps } from '../../types';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';

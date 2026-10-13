@@ -1,13 +1,13 @@
-import type { SeriesDetailDialogsProps } from '../types';
-export type { ManageSourcesInitialTab, SeriesDetailDialogsProps, UpdateEpisodeMutation } from '../types';
-import { EditSeasonDialog } from '../../seasons/EditSeasonDialog';
-import { AddSeasonDialog } from '../../seasons/AddSeasonDialog';
-import { EditSeriesDialog } from '../dialogs/EditSeriesDialog';
-import { EditEpisodeDialog } from '../dialogs/EditEpisodeDialog';
-import { SyncTmdbModal, BulkScrapeModal, BulkIngestModal } from '../../ingestion';
-import { ManageSourcesDialog } from '../../sources/ManageSourcesDialog';
-import { MoveEpisodesDialog } from '../../seasons/MoveEpisodesDialog';
-import { BatchDeleteDialog } from '../../seasons/BatchDeleteDialog';
+import type { SeriesDetailDialogsProps } from '../../types';
+export type { ManageSourcesInitialTab, SeriesDetailDialogsProps, UpdateEpisodeMutation } from '../../types';
+import { EditSeasonDialog } from '../../../seasons/EditSeasonDialog';
+import { AddSeasonDialog } from '../../../seasons/AddSeasonDialog';
+import { EditSeriesDialog } from '../../dialogs/EditSeriesDialog';
+import { EditEpisodeDialog } from '../../dialogs/EditEpisodeDialog';
+import { SyncTmdbModal, BulkScrapeModal, BulkIngestModal } from '../../../ingestion';
+import { ManageSourcesDialog } from '../../../sources/ManageSourcesDialog';
+import { MoveEpisodesDialog } from '../../../seasons/MoveEpisodesDialog';
+import { BatchDeleteDialog } from '../../../seasons/BatchDeleteDialog';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 
 export function SeriesDetailDialogs({

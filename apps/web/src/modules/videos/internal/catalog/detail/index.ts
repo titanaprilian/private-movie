@@ -1,10 +1,14 @@
 export { SeriesDetailView } from './SeriesDetailView';
-export { SeriesDetailHero } from './SeriesDetailHero';
-export { SeriesDetailSeasonBar } from './SeriesDetailSeasonBar';
-export { SeriesDetailDialog } from './SeriesDetailDialog';
-export { SeriesDetailDialogs } from './SeriesDetailDialogs';
-export { useSeriesDetail } from './useSeriesDetail';
-export { useSeriesDetailDnd } from './useSeriesDetailDnd';
-export { useSeriesDetailModals } from './useSeriesDetailModals';
-export { useEpisodeBatchOperations } from './useEpisodeBatchOperations';
-export { useSeriesDrawerSync } from './useSeriesDrawerSync';
+export {
+  SeriesDetailHero,
+  SeriesDetailSeasonBar,
+  SeriesDetailDialog,
+  SeriesDetailDialogs,
+} from './components';
+export {
+  useSeriesDetail,
+  useSeriesDetailDnd,
+  useSeriesDetailModals,
+  useEpisodeBatchOperations,
+  useSeriesDrawerSync,
+} from './hooks';

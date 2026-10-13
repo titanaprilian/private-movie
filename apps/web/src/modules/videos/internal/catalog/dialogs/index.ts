@@ -1,14 +1,9 @@
 export { AddMediaDialog } from './AddMediaDialog';
-export { AddMediaStepInput, ErrorBanner } from './AddMediaStepInput';
-export type { AddMediaStepInputProps } from './AddMediaStepInput';
-export { AddMediaStepPreview } from './AddMediaStepPreview';
-export type { AddMediaStepPreviewProps } from './AddMediaStepPreview';
 export { EditSeriesDialog } from './EditSeriesDialog';
 export type { EditSeriesDialogProps } from './EditSeriesDialog';
 export { EditEpisodeDialog } from './EditEpisodeDialog';
 export type { EditEpisodeDialogProps } from './EditEpisodeDialog';
-export { useAddMediaDialog } from './useAddMediaDialog';
-export type { UseAddMediaDialogReturn } from './useAddMediaDialog';
-export { useEditSeriesForm } from './useEditSeriesForm';
-export type { UseEditSeriesFormOptions } from './useEditSeriesForm';
-export { useEditEpisodeForm } from './useEditEpisodeForm';
+export { AddMediaStepInput, ErrorBanner, AddMediaStepPreview } from './components';
+export type { AddMediaStepInputProps, AddMediaStepPreviewProps } from './components';
+export { useAddMediaDialog, useEditSeriesForm, useEditEpisodeForm } from './hooks';
+export type { UseAddMediaDialogReturn, UseEditSeriesFormOptions } from './hooks';

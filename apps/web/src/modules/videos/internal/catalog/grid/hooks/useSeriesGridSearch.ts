@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { SERIES_PAGE_LIMIT } from '../../api';
+import { SERIES_PAGE_LIMIT } from '../../../api';
 import type {
   SeriesGridQueryParams,
   SeriesGridTab,
   SeriesSearch,
   UseSeriesGridSearchResult,
-} from '../types';
+} from '../../types';
 
 export const SERIES_GRID_SEARCH_DEBOUNCE_MS = 250;
 

@@ -6,8 +6,8 @@ import {
 } from '@/components/ui/chunky-dialog';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 
-import type { SeriesDetailDialogProps } from '../types';
-export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from '../types';
+import type { SeriesDetailDialogProps } from '../../types';
+export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from '../../types';
 
 function formatTypeLabel(type: string): string {
   const normalized = (type || 'tv').toLowerCase();

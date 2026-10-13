@@ -1,9 +1,9 @@
 import { Search } from 'lucide-react';
 import { AddMediaDialog } from '../dialogs/AddMediaDialog';
 import { EditSeriesDialog } from '../dialogs/EditSeriesDialog';
-import { SeriesCard } from './SeriesCard';
-import { GenreFilter } from './GenreFilter';
-import { useSeriesGrid } from './useSeriesGrid';
+import { SeriesCard } from './components/SeriesCard';
+import { GenreFilter } from './components/GenreFilter';
+import { useSeriesGrid } from './hooks/useSeriesGrid';
 import type { SeriesCardItem } from '../types';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';

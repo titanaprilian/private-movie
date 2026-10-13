@@ -5,12 +5,12 @@ import {
   updateSeries,
   deleteSeries,
   type SeriesItem,
-} from '../../api';
+} from '../../../api';
 import type {
   SeriesListQueryData,
   UseSeriesGridMutationsOptions,
   UseSeriesGridMutationsResult,
-} from '../types';
+} from '../../types';
 
 /**
  * Manages series deletion (with pagination rollback when the last item on

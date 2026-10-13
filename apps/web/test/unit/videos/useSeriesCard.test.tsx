@@ -1,10 +1,10 @@
 import { renderHook, renderWithProviders, screen, fireEvent, act } from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
-import { SeriesCard } from '@/modules/videos/internal/catalog/grid/SeriesCard';
+import { SeriesCard } from '@/modules/videos/internal/catalog/grid/components/SeriesCard';
 import {
   getSeriesCardEpisodeCount,
   useSeriesCard,
-} from '@/modules/videos/internal/catalog/grid/useSeriesCard';
+} from '@/modules/videos/internal/catalog/grid/hooks/useSeriesCard';
 import type { SeriesCardItem } from '@/modules/videos/internal/catalog/types';
 import type { SeriesItem } from '@/modules/videos/internal/api';
 

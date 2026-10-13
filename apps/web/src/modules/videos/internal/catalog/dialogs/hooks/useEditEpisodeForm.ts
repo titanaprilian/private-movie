@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import type { SeriesDetailEpisode, UpdateEpisodeMutation } from '../types';
+import type { SeriesDetailEpisode, UpdateEpisodeMutation } from '../../types';
 
 export interface UseEditEpisodeFormOptions {
   open: boolean;

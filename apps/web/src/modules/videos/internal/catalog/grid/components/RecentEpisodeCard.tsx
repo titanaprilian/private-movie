@@ -1,7 +1,7 @@
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
-import type { RecentEpisodeCardProps } from '../types';
-export type { RecentEpisodeCardProps } from '../types';
+import type { RecentEpisodeCardProps } from '../../types';
+export type { RecentEpisodeCardProps } from '../../types';
 
 export function RecentEpisodeCard({
   episodeId,

@@ -1,7 +1,7 @@
-import type { AddMediaStepPreviewProps } from '../types';
-export type { AddMediaStepPreviewProps } from '../types';
+import type { AddMediaStepPreviewProps } from '../../types';
+export type { AddMediaStepPreviewProps } from '../../types';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import { ErrorBanner } from '../components/ErrorBanner';
+import { ErrorBanner } from '../../components/ErrorBanner';
 
 function MetaBadge({ children }: { children: React.ReactNode }) {
   return (

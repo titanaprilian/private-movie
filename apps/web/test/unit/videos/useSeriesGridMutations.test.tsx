@@ -7,7 +7,7 @@ import {
   act,
   waitFor,
 } from '../../utils';
-import { useSeriesGridMutations } from '@/modules/videos/internal/catalog/grid/useSeriesGridMutations';
+import { useSeriesGridMutations } from '@/modules/videos/internal/catalog/grid/hooks/useSeriesGridMutations';
 import { updateSeries, deleteSeries } from '@/modules/videos/internal/api';
 import type { SeriesItem } from '@/modules/videos/internal/api';
 

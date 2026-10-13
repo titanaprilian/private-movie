@@ -8,10 +8,10 @@ import {
   deleteEpisode,
   deleteSeason,
   scrapeOngoingSeason,
-} from '../../api';
+} from '../../../api';
 
-import type { UseSeriesDetailOptions } from '../types';
-export type { SeriesDetailEpisode, UseSeriesDetailOptions } from '../types';
+import type { UseSeriesDetailOptions } from '../../types';
+export type { SeriesDetailEpisode, UseSeriesDetailOptions } from '../../types';
 
 export function useSeriesDetail({ seriesId, initialSeasonId }: UseSeriesDetailOptions) {
   const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));

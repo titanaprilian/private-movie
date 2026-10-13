@@ -2,9 +2,9 @@ import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { FeaturedStar } from './FeaturedStar';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
-import type { SeriesCardProps } from '../types';
-import { getSeriesCardEpisodeCount, useSeriesCard } from './useSeriesCard';
-export type { SeriesCardProps } from '../types';
+import type { SeriesCardProps } from '../../types';
+import { getSeriesCardEpisodeCount, useSeriesCard } from '../hooks/useSeriesCard';
+export type { SeriesCardProps } from '../../types';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function getEpisodeCount(

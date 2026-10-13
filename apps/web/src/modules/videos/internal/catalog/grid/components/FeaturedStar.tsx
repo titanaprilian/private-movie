@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 
-import type { FeaturedStarProps } from '../types';
-export type { FeaturedStarProps } from '../types';
+import type { FeaturedStarProps } from '../../types';
+export type { FeaturedStarProps } from '../../types';
 
 export function FeaturedStar({
   featured,

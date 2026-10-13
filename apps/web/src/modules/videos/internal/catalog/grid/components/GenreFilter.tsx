@@ -10,9 +10,9 @@ import {
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { cn } from '@/lib/utils';
-import type { GenreFilterProps } from '../types';
-import { useGenreFilter } from './useGenreFilter';
-export type { GenreFilterProps } from '../types';
+import type { GenreFilterProps } from '../../types';
+import { useGenreFilter } from '../hooks/useGenreFilter';
+export type { GenreFilterProps } from '../../types';
 
 export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterProps) {
   const {

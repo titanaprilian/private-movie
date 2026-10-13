@@ -1,8 +1,8 @@
 import { Star } from 'lucide-react';
 import { ChunkyCard } from '@/components/ui/chunky-card';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
-import type { SeriesPosterCardProps } from '../types';
-export type { SeriesPosterCardProps } from '../types';
+import type { SeriesPosterCardProps } from '../../types';
+export type { SeriesPosterCardProps } from '../../types';
 
 function formatTypeLabel(type: string): string {
   const normalized = (type || 'tv').toLowerCase();

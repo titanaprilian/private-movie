@@ -1,6 +1,6 @@
 import type { EditEpisodeDialogProps } from '../types';
 export type { EditEpisodeDialogProps } from '../types';
-import { useEditEpisodeForm } from './useEditEpisodeForm';
+import { useEditEpisodeForm } from './hooks/useEditEpisodeForm';
 import {
   ChunkyDialog,
   ChunkyDialogContent,

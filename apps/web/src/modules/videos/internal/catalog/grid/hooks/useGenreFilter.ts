@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { genresQueryOptions } from '@/modules/genres';
 
-import type { UseGenreFilterOptions, UseGenreFilterReturn } from '../types';
-export type { UseGenreFilterOptions, UseGenreFilterReturn } from '../types';
+import type { UseGenreFilterOptions, UseGenreFilterReturn } from '../../types';
+export type { UseGenreFilterOptions, UseGenreFilterReturn } from '../../types';
 
 /**
  * Sentinel command value that matches no genre row. cmdk auto-highlights the

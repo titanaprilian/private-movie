@@ -9,9 +9,9 @@ import {
   ChunkyDrawerTitle,
 } from '@/components/ui/chunky-drawer';
 import { ChunkyButton } from '@/components/ui/chunky-button';
-import { AddMediaStepInput } from './AddMediaStepInput';
-import { AddMediaStepPreview } from './AddMediaStepPreview';
-import { useAddMediaDialog } from './useAddMediaDialog';
+import { AddMediaStepInput } from './components/AddMediaStepInput';
+import { AddMediaStepPreview } from './components/AddMediaStepPreview';
+import { useAddMediaDialog } from './hooks/useAddMediaDialog';
 
 export function AddMediaDialog() {
   const {

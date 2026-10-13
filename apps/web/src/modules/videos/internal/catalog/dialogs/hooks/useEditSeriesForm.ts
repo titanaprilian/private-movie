@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { updateSeries } from '../../api';
+import { updateSeries } from '../../../api';
 import { genresQueryOptions } from '@/modules/genres';
-import type { UseEditSeriesFormOptions } from '../types';
-export type { UseEditSeriesFormOptions } from '../types';
+import type { UseEditSeriesFormOptions } from '../../types';
+export type { UseEditSeriesFormOptions } from '../../types';
 
 function sameIdList(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);

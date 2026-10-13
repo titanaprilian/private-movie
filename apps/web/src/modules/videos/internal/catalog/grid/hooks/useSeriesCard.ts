@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { SeriesItem } from '../../api';
+import type { SeriesItem } from '../../../api';
 
-import type { SeriesCardItem, UseSeriesCardOptions, UseSeriesCardReturn } from '../types';
-export type { UseSeriesCardOptions, UseSeriesCardReturn } from '../types';
+import type { SeriesCardItem, UseSeriesCardOptions, UseSeriesCardReturn } from '../../types';
+export type { UseSeriesCardOptions, UseSeriesCardReturn } from '../../types';
 
 export function getSeriesCardEpisodeCount(item: SeriesCardItem): number {
   if (Array.isArray(item.episodes)) return item.episodes.length;

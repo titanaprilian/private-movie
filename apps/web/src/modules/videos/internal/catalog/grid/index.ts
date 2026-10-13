@@ -1,18 +1,32 @@
 export { SeriesGrid } from './SeriesGrid';
-export { SeriesCard } from './SeriesCard';
-export type { SeriesCardProps } from './SeriesCard';
-export { FeaturedStar } from './FeaturedStar';
-export type { FeaturedStarProps } from './FeaturedStar';
-export { SeriesPosterCard } from './SeriesPosterCard';
-export type { SeriesPosterCardProps } from './SeriesPosterCard';
-export { GenreFilter } from './GenreFilter';
-export type { GenreFilterProps } from './GenreFilter';
-export { RecentEpisodeCard } from './RecentEpisodeCard';
-export type { RecentEpisodeCardProps } from './RecentEpisodeCard';
-export { formatGenreTriggerLabel, GENRE_FILTER_NO_HIGHLIGHT, useGenreFilter } from './useGenreFilter';
-export type { UseGenreFilterOptions, UseGenreFilterReturn } from './useGenreFilter';
-export { getSeriesCardEpisodeCount, useSeriesCard } from './useSeriesCard';
-export type { UseSeriesCardOptions, UseSeriesCardReturn } from './useSeriesCard';
-export { useSeriesGridSearch, buildSeriesGridQueryParams } from './useSeriesGridSearch';
-export { useSeriesGridMutations } from './useSeriesGridMutations';
-export { useSeriesGrid } from './useSeriesGrid';
+export {
+  SeriesCard,
+  FeaturedStar,
+  SeriesPosterCard,
+  GenreFilter,
+  RecentEpisodeCard,
+} from './components';
+export type {
+  SeriesCardProps,
+  FeaturedStarProps,
+  SeriesPosterCardProps,
+  GenreFilterProps,
+  RecentEpisodeCardProps,
+} from './components';
+export {
+  formatGenreTriggerLabel,
+  GENRE_FILTER_NO_HIGHLIGHT,
+  useGenreFilter,
+  getSeriesCardEpisodeCount,
+  useSeriesCard,
+  useSeriesGridSearch,
+  buildSeriesGridQueryParams,
+  useSeriesGridMutations,
+  useSeriesGrid,
+} from './hooks';
+export type {
+  UseGenreFilterOptions,
+  UseGenreFilterReturn,
+  UseSeriesCardOptions,
+  UseSeriesCardReturn,
+} from './hooks';

@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useScrapeWorkerStore } from '../../store/useScrapeWorkerStore';
-import { importTmdb, type ImportTmdbParams } from '../../api';
+import { useScrapeWorkerStore } from '../../../store/useScrapeWorkerStore';
+import { importTmdb, type ImportTmdbParams } from '../../../api';
 
-import type { UseAddMediaDialogReturn } from '../types';
-export type { UseAddMediaDialogReturn } from '../types';
+import type { UseAddMediaDialogReturn } from '../../types';
+export type { UseAddMediaDialogReturn } from '../../types';
 
 export function useAddMediaDialog(): UseAddMediaDialogReturn {
   const queryClient = useQueryClient();

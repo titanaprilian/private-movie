@@ -5,10 +5,10 @@ import type { DropResult } from '@hello-pangea/dnd';
 import {
   updateEpisodeOrders,
   type SeriesDetails,
-} from '../../api';
-import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from '../../seasons/crossSeasonMove';
-import type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../types';
-export type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../types';
+} from '../../../api';
+import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from '../../../seasons/crossSeasonMove';
+import type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../../types';
+export type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../../types';
 
 const SEASON_TAB_PREFIX = 'season-tab-';
 

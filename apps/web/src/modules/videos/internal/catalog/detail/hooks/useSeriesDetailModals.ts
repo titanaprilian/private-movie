@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { ManageSourcesInitialTab } from '../types';
+import type { ManageSourcesInitialTab } from '../../types';
 
 export interface UseSeriesDetailModalsReturn {
   // Move Episodes

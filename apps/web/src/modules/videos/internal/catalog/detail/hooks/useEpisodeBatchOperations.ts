@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { deleteEpisode } from '../../api';
+import { deleteEpisode } from '../../../api';
 
 export interface UseEpisodeBatchOperationsOptions {
   onInvalidateDetail: () => Promise<unknown> | void;

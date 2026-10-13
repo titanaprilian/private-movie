@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { SERIES_PAGE_LIMIT, seriesListQueryOptions, type SeriesItem } from '../../api';
+import { SERIES_PAGE_LIMIT, seriesListQueryOptions, type SeriesItem } from '../../../api';
 import { genresQueryOptions } from '@/modules/genres';
-import { useScrapeWorkerStore } from '../../store/useScrapeWorkerStore';
+import { useScrapeWorkerStore } from '../../../store/useScrapeWorkerStore';
 import { useSeriesGridSearch } from './useSeriesGridSearch';
 import { useSeriesGridMutations } from './useSeriesGridMutations';
-import type { SeriesCardItem, UseSeriesGridResult } from '../types';
+import type { SeriesCardItem, UseSeriesGridResult } from '../../types';
 
 /**
  * Orchestrates the SeriesGrid sub-hooks, fetches series list and genre

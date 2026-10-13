@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import type { SeriesDetailEpisode, UseSeriesDrawerSyncOptions } from '../types';
-export type { UseSeriesDrawerSyncOptions } from '../types';
+import type { SeriesDetailEpisode, UseSeriesDrawerSyncOptions } from '../../types';
+export type { UseSeriesDrawerSyncOptions } from '../../types';
 
 export function useSeriesDrawerSync({
   localEpisodes,

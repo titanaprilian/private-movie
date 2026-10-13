@@ -1,6 +1,6 @@
 import { createTestQueryClient, renderHook, renderWithProviders, screen, waitFor, act } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { useAddMediaDialog } from '@/modules/videos/internal/catalog/dialogs/useAddMediaDialog';
+import { useAddMediaDialog } from '@/modules/videos/internal/catalog/dialogs/hooks/useAddMediaDialog';
 import { AddMediaDialog } from '@/modules/videos/internal/catalog/dialogs/AddMediaDialog';
 import { useScrapeWorkerStore } from '@/modules/videos/internal/store/useScrapeWorkerStore';
 import * as apiModule from '@/modules/videos/internal/api';

@@ -6,7 +6,7 @@ import {
   renderHook,
   act,
 } from '../../utils';
-import { useSeriesGrid } from '@/modules/videos/internal/catalog/grid/useSeriesGrid';
+import { useSeriesGrid } from '@/modules/videos/internal/catalog/grid/hooks/useSeriesGrid';
 import {
   SERIES_PAGE_LIMIT,
   seriesListQueryOptions,
