@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { Clapperboard, Film, HardDrive, LayoutGrid } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { formatGb, formatSeriesFooter, formatStorageValue, isStorageTracked } from '../formatters';
@@ -72,27 +73,34 @@ export function StatsRow({ catalog, storage }: StatsRowProps) {
           ) : undefined
         }
       />
-      <StatCard
-        testId="kpi-storage"
-        label="Storage"
-        value={storage ? formatStorageValue(storage) : 'Not tracked'}
-        valueTestId="kpi-storage-value"
-        iconBadge={
-          <div
-            aria-hidden="true"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-2 border-b-4 border-[var(--green-dark)] bg-[var(--green-soft)] text-[var(--green)]"
-          >
-            <HardDrive className="h-5 w-5" />
-          </div>
-        }
-        footer={
-          tracked && storage ? (
-            <span data-testid="kpi-storage-percent">
-              of {formatGb(storage.totalLimitBytes)} used ({storage.percentUsed.toFixed(1)}%)
-            </span>
-          ) : undefined
-        }
-      />
+      <Link
+        to="/admin/storage"
+        aria-label="Manage storage"
+        data-testid="kpi-storage-link"
+        className="block rounded-2xl focus-visible:outline-2 focus-visible:outline-[var(--blue)]"
+      >
+        <StatCard
+          testId="kpi-storage"
+          label="Storage"
+          value={storage ? formatStorageValue(storage) : 'Not tracked'}
+          valueTestId="kpi-storage-value"
+          iconBadge={
+            <div
+              aria-hidden="true"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border-2 border-b-4 border-[var(--green-dark)] bg-[var(--green-soft)] text-[var(--green)]"
+            >
+              <HardDrive className="h-5 w-5" />
+            </div>
+          }
+          footer={
+            tracked && storage ? (
+              <span data-testid="kpi-storage-percent">
+                of {formatGb(storage.totalLimitBytes)} used ({storage.percentUsed.toFixed(1)}%)
+              </span>
+            ) : undefined
+          }
+        />
+      </Link>
     </div>
   );
 }

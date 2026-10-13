@@ -1,6 +1,33 @@
 import { renderWithProviders, screen } from '../../utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { StatsRow } from '@/modules/dashboard';
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({
+    children,
+    to,
+    params,
+    className,
+    ...rest
+  }: {
+    children: React.ReactNode;
+    to: string;
+    params?: Record<string, string>;
+    className?: string;
+  }) => {
+    let href = to;
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        href = href.replace(`$${key}`, value);
+      }
+    }
+    return (
+      <a href={href} className={className} {...rest}>
+        {children}
+      </a>
+    );
+  },
+}));
 
 describe('StatsRow', () => {
   it('renders four interactive chunky cards with sentence case labels', () => {
@@ -96,5 +123,41 @@ describe('StatsRow', () => {
     );
     expect(screen.getByTestId('kpi-episodes-footer')).toHaveTextContent('Across 12 series');
     expect(screen.getByTestId('kpi-genres-footer')).toHaveTextContent('Used across the catalog');
+  });
+
+  it('wraps the Storage card in a link to /admin/storage preserving metrics', () => {
+    renderWithProviders(
+      <StatsRow
+        catalog={{
+          totalSeries: 12,
+          ongoingSeriesCount: 3,
+          featuredSeriesCount: 4,
+          totalSeasons: 15,
+          totalEpisodes: 240,
+          totalGenres: 8,
+        }}
+        storage={{
+          totalUsedBytes: 10737418240,
+          totalLimitBytes: 107374182400,
+          percentUsed: 10,
+          providerCount: 2,
+        }}
+      />
+    );
+    const link = screen.getByTestId('kpi-storage-link');
+    expect(link.tagName).toBe('A');
+    expect(link).toHaveAttribute('href', '/admin/storage');
+    // Storage card content preserved inside the link
+    expect(screen.getByTestId('kpi-storage')).toBeInTheDocument();
+    expect(link).toContainElement(screen.getByTestId('kpi-storage'));
+    expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent('10.0 GB');
+    expect(screen.getByTestId('kpi-storage-percent')).toHaveTextContent('of 100.0 GB used (10.0%)');
+    // Interactive affordance on the link wrapper (focus ring), inner card keeps hover lift
+    expect(link.className).toMatch(/focus-visible:outline/);
+    expect(screen.getByTestId('kpi-storage').className).toContain('hover:-translate-y-[2px]');
+    // Other KPI cards are not links
+    for (const testId of ['kpi-total-series', 'kpi-total-episodes', 'kpi-total-genres']) {
+      expect(screen.getByTestId(testId).closest('a')).not.toBeInTheDocument();
+    }
   });
 });
