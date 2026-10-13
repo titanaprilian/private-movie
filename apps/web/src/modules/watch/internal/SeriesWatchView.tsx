@@ -1,100 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { ChunkyButton } from '@/components/ui/chunky-button';
-import { ChunkyCard } from '@/components/ui/chunky-card';
-import {
-  ChunkyDialog,
-  ChunkyDialogContent,
-  ChunkyDialogDescription,
-  ChunkyDialogFooter,
-  ChunkyDialogHeader,
-  ChunkyDialogTitle,
-} from '@/components/ui/chunky-dialog';
-import {
-  ChunkySelect,
-  ChunkySelectContent,
-  ChunkySelectItem,
-  ChunkySelectTrigger,
-  ChunkySelectValue,
-} from '@/components/ui/chunky-select';
-import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
-import { ErrorState } from '@/components/ui/error-state';
+import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import {
-  ExternalLink,
-  RotateCcw,
-  ShieldAlert,
-  SkipBack,
-  SkipForward,
-} from 'lucide-react';
 import { useWatchState } from './hooks';
 import { getSeriesWithEpisodesQueryOptions } from './api';
 import type { SeriesWatchViewProps, WatchEpisode } from './types';
-import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
-import { VideoPlayer } from '@/components/media/VideoPlayer';
+import { formatEmbedUrl } from '@/lib/media';
 import { useInputMode } from '@/hooks/useInputMode';
 import { useWatchNav } from './hooks';
 import { useAdblockDetector } from './hooks';
 import { SeriesHeroBanner } from './components';
 import { WatchTopNav } from './components';
+import { WatchViewSkeleton, WatchViewErrorState } from './components';
+import { WatchPlayerFrame } from './components';
+import { WatchToolbar } from './components';
+import { ActiveEpisodeCard } from './components';
+import { AdblockWarningDialog } from './components';
 import { navigateBackToCatalog } from './utils';
 import { EpisodeExplorer } from './components';
 import { formatDuration } from './utils';
 
 export type { SeriesWatchViewProps };
-
-export function WatchViewSkeleton() {
-  return (
-    <div
-      className="dark min-h-screen bg-[var(--bg)] text-fg font-sans animate-pulse"
-      data-testid="watch-skeleton"
-      style={{ colorScheme: 'dark' }}
-    >
-      <ChunkySkeleton className="w-full h-[50vh] sm:h-[60vh] rounded-none border-0" />
-      <div className="px-4 sm:px-8 md:px-12 lg:px-16 py-6 space-y-8">
-        <div className="space-y-4 max-w-4xl">
-          <ChunkySkeleton className="h-6 w-36" />
-          <ChunkySkeleton className="h-10 w-44" />
-          <ChunkySkeleton className="h-16 w-full" />
-        </div>
-        <div className="space-y-4">
-          <ChunkySkeleton className="h-8 w-48" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <ChunkySkeleton key={i} className="aspect-video w-full" />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function WatchViewErrorState({
-  message,
-  onRetry,
-}: {
-  message?: string;
-  onRetry?: () => void;
-}) {
-  return (
-    <div
-      className="dark min-h-screen bg-[var(--bg)] text-fg font-sans flex items-center justify-center p-4"
-      data-testid="watch-error"
-      style={{ colorScheme: 'dark' }}
-    >
-      <ErrorState
-        title="Failed to load series"
-        description={
-          message ||
-          'Unable to fetch watch details. Please check your connection and try again.'
-        }
-        onRetry={onRetry}
-      />
-    </div>
-  );
-}
+export { WatchViewSkeleton, WatchViewErrorState };
 
 export function SeriesWatchView({
   seriesId,
@@ -510,305 +437,45 @@ export function SeriesWatchView({
           <div className="px-4 sm:px-8 md:px-12 lg:px-16 py-4 lg:py-6 space-y-6">
             {/* Video Player Container: viewport-height constrained so TopNav,
                 player and toolbar fit short laptop viewports without scrolling */}
-            <div
-              data-testid="watch-player-container"
-              className="sticky top-0 z-20 mx-auto bg-[var(--bg)] w-[min(100%,calc((100dvh-12rem)*16/9))] aspect-video lg:static lg:z-auto"
-            >
-              {activeSource ? (
-                activeSource.type === 'embed' ? (
-                  <div
-                    className={`relative aspect-video w-full overflow-hidden rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-[var(--bg)] ${
-                      playerFocused ? 'ring-2 ring-white' : ''
-                    }`}
-                    style={{
-                      backgroundImage: activeEpisode?.thumbnailUrl
-                        ? `url(${activeEpisode.thumbnailUrl})`
-                        : series.backdropUrl
-                          ? `url(${series.backdropUrl})`
-                          : undefined,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }}
-                  >
-                    <iframe
-                      ref={iframeRef}
-                      data-testid="watch-player"
-                      src={formatEmbedUrl(activeSource.url)}
-                      title={activeEpisode?.title ?? 'Video player'}
-                      className="relative z-10 h-full w-full"
-                      sandbox={getEmbedIframeSandbox(activeSource.url)}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                      allowFullScreen
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className={
-                      playerFocused
-                        ? 'ring-2 ring-white rounded-2xl sm:rounded-[20px]'
-                        : ''
-                    }
-                  >
-                    <VideoPlayer
-                      src={activeSource.url}
-                      title={activeEpisode?.title}
-                      autoPlay
-                      onNextEpisode={
-                        hasNextEpisode ? handleGoToNextEpisode : undefined
-                      }
-                      hasNextEpisode={hasNextEpisode}
-                    />
-                  </div>
-                )
-              ) : (
-                <div className="flex aspect-video w-full items-center justify-center rounded-2xl sm:rounded-[20px] border-2 border-[var(--border)] bg-card text-muted">
-                  No video source available
-                </div>
-              )}
-            </div>
+            <WatchPlayerFrame
+              activeSource={activeSource}
+              episodeThumbnailUrl={activeEpisode?.thumbnailUrl}
+              episodeTitle={activeEpisode?.title}
+              seriesBackdropUrl={series.backdropUrl}
+              isPlayerFocused={playerFocused}
+              iframeRef={iframeRef}
+              hasNextEpisode={hasNextEpisode}
+              onNextEpisode={handleGoToNextEpisode}
+            />
 
             {/* Docked Player Toolbar — Semantic Grouping & Single-Row Flex Flow */}
-            <div
-              data-testid="watch-controls"
-              className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap min-w-0"
-            >
-              {/* Group 1: Playback Controls (Prev / Next segmented pill group) */}
-              <div
-                data-testid="controls-playback-group"
-                className="inline-flex bg-[var(--surface)] border-2 border-[var(--border)] rounded-full p-0.5 sm:p-1 gap-0.5 sm:gap-1 order-1 shrink-0"
-              >
-                <ChunkyButton
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  ref={(el) => {
-                    controlsRefs.current[0] = el;
-                  }}
-                  onClick={handleGoToPrevEpisode}
-                  disabled={!hasPrevEpisode}
-                  aria-label="Prev episode"
-                  className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
-                    isSpatialMode &&
-                    activeZone === 'controls' &&
-                    focusIndex === 0
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
-                      : ''
-                  }`}
-                >
-                  <SkipBack className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                  <span>Prev</span>
-                </ChunkyButton>
-
-                <ChunkyButton
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  ref={(el) => {
-                    controlsRefs.current[1] = el;
-                  }}
-                  onClick={handleGoToNextEpisode}
-                  disabled={!hasNextEpisode}
-                  aria-label="Next episode"
-                  className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
-                    isSpatialMode &&
-                    activeZone === 'controls' &&
-                    focusIndex === 1
-                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
-                      : ''
-                  }`}
-                >
-                  <span>Next</span>
-                  <SkipForward className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                </ChunkyButton>
-              </div>
-
-              {/* Group 2: Utility Action Buttons (Reload / Open Tab) — embed only */}
-              {isEmbedSource && (
-                <div
-                  data-testid="controls-utility-group"
-                  className="order-2 flex items-center justify-center shrink-0 min-w-0"
-                >
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <ChunkyButton
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      ref={(el) => {
-                        controlsRefs.current[2] = el;
-                      }}
-                      onClick={handleReloadIframe}
-                      aria-label="Reload player"
-                      title="Reload video player"
-                      className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 ${
-                        isSpatialMode &&
-                        activeZone === 'controls' &&
-                        focusIndex === 2
-                          ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
-                          : ''
-                      }`}
-                    >
-                      <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                      <span className="hidden sm:inline">Reload</span>
-                    </ChunkyButton>
-
-                    <ChunkyButton
-                      type="button"
-                      variant="blue"
-                      size="sm"
-                      ref={(el) => {
-                        controlsRefs.current[3] = el;
-                      }}
-                      onClick={handleOpenNewTab}
-                      aria-label="Open in new tab"
-                      title="Open stream in new tab"
-                      className={`min-h-[44px] rounded-full font-display text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2 bg-[var(--blue)] ${
-                        isSpatialMode &&
-                        activeZone === 'controls' &&
-                        focusIndex === 3
-                          ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105 bg-white text-black font-semibold shadow-xl z-10'
-                          : ''
-                      }`}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                      <span className="hidden sm:inline">Open Tab</span>
-                    </ChunkyButton>
-                  </div>
-                </div>
-              )}
-
-              {/* Group 3: Stream Configuration / Server Selector Chip — docked to the right */}
-              <div
-                data-testid="controls-server-group"
-                className="order-3 shrink min-w-0 flex items-center justify-end"
-              >
-                <ChunkySelect
-                  value={String(state.activeSourceIndex)}
-                  onValueChange={(v) => selectSource(Number(v))}
-                >
-                  <ChunkySelectTrigger
-                    ref={(el) => {
-                      controlsRefs.current[serverControlIndex] =
-                        el as unknown as HTMLButtonElement;
-                    }}
-                    aria-label="Server selector"
-                    data-testid="server-selector"
-                    className={`rounded-full font-display w-auto max-w-[150px] min-[400px]:max-w-[200px] sm:max-w-none sm:w-64 shrink-0 min-h-[44px] ${
-                      isSpatialMode &&
-                      activeZone === 'controls' &&
-                      focusIndex === serverControlIndex
-                        ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-[1.02] bg-white text-black font-semibold shadow-xl z-10'
-                        : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
-                      <span
-                        className="w-2 h-2 rounded-full bg-[#58cc02] shrink-0 shadow-[0_0_0_3px_rgba(88,204,2,0.25)]"
-                        data-testid="server-status-dot"
-                      />
-                      <span className="font-display font-bold text-xs sm:text-sm truncate leading-none">
-                        <ChunkySelectValue placeholder="Select server" />
-                      </span>
-                    </div>
-                  </ChunkySelectTrigger>
-                  <ChunkySelectContent>
-                    {sources.length > 1 && (
-                      <div
-                        data-testid="server-count-badge"
-                        className="font-sans font-bold text-[11px] text-[var(--muted)] bg-[var(--surface-raised)] border border-[var(--border)] px-2 py-1 rounded-full text-center leading-none mx-1 mb-1"
-                      >
-                        ({sources.length} available)
-                      </div>
-                    )}
-                    {sources.map((source, index) => {
-                      const isDirect =
-                        source.type === 's3' || source.type === 'direct';
-                      return (
-                        <ChunkySelectItem
-                          key={source.id}
-                          value={String(index)}
-                          data-testid={`server-option-${index}`}
-                          className="font-display"
-                        >
-                          <span className="inline-flex items-center gap-2">
-                            <span>{source.label}</span>
-                            {source.quality && (
-                              <span className="font-sans font-bold text-xs opacity-75">
-                                · {source.quality}
-                              </span>
-                            )}
-                            <span
-                              data-testid={`server-badge-${index}`}
-                              className={
-                                isDirect
-                                  ? 'font-sans font-bold text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#58cc02]/15 text-[#58cc02] border border-[#58cc02]/30 leading-none'
-                                  : 'font-sans font-bold text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-[var(--surface-raised)] text-[var(--muted)] border border-[var(--border)] leading-none'
-                              }
-                            >
-                              {isDirect ? 'Direct' : 'Embed'}
-                            </span>
-                          </span>
-                        </ChunkySelectItem>
-                      );
-                    })}
-                  </ChunkySelectContent>
-                </ChunkySelect>
-              </div>
-            </div>
+            <WatchToolbar
+              hasPrevEpisode={hasPrevEpisode}
+              hasNextEpisode={hasNextEpisode}
+              onPrevEpisode={handleGoToPrevEpisode}
+              onNextEpisode={handleGoToNextEpisode}
+              onReloadPlayer={handleReloadIframe}
+              onOpenNewTab={handleOpenNewTab}
+              isEmbedSource={isEmbedSource}
+              activeSourceIndex={state.activeSourceIndex}
+              sources={sources}
+              onSelectSource={selectSource}
+              controlsRefs={controlsRefs}
+              serverControlIndex={serverControlIndex}
+              isSpatialMode={isSpatialMode}
+              activeZone={activeZone}
+              focusIndex={focusIndex}
+            />
 
             {/* Active Episode Overview Details (Chunky meta-card) */}
             {activeEpisode && (
-              <ChunkyCard
-                data-testid="active-episode-overview"
-                className="rounded-[20px] p-5 sm:p-6 space-y-3"
-              >
-                <button
-                  type="button"
-                  onClick={handleBackToOverview}
-                  data-testid="series-tag-pill"
-                  className="inline-flex items-center bg-[#58cc02]/15 hover:bg-[#58cc02]/25 text-[#58cc02] font-display font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full cursor-pointer transition-all duration-150 active:scale-[0.97]"
-                >
-                  {series.title}
-                </button>
-
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 flex-wrap">
-                  <h2 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight text-[var(--ink)] leading-snug">
-                    {activeEpisode.order !== undefined &&
-                    activeEpisode.order !== null
-                      ? `EP ${activeEpisode.order} — ${activeEpisode.title}`
-                      : activeEpisode.title}
-                  </h2>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {activeSeason && (
-                      <span
-                        data-testid="meta-season-badge"
-                        className="bg-[var(--surface-raised)] border-2 border-b-4 border-[var(--border)] text-[var(--muted)] font-display font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full whitespace-nowrap"
-                      >
-                        {activeSeason.title}
-                      </span>
-                    )}
-                    {formattedEpisodeDuration && (
-                      <span
-                        data-testid="meta-duration-badge"
-                        className="bg-[var(--yellow)]/15 border-2 border-b-4 border-[var(--yellow-dark)]/40 text-[var(--yellow)] font-display font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full whitespace-nowrap"
-                      >
-                        {formattedEpisodeDuration}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {activeEpisode.description ? (
-                  <p className="text-sm sm:text-base leading-relaxed text-[var(--muted)] max-w-4xl pt-1">
-                    {activeEpisode.description}
-                  </p>
-                ) : (
-                  <p className="text-sm sm:text-base italic text-[var(--muted)]/60 pt-1">
-                    No description available for this episode.
-                  </p>
-                )}
-              </ChunkyCard>
+              <ActiveEpisodeCard
+                seriesTitle={series.title}
+                activeEpisode={activeEpisode}
+                activeSeasonTitle={activeSeason?.title}
+                formattedDuration={formattedEpisodeDuration}
+                onBackToOverview={handleBackToOverview}
+              />
             )}
 
             {/* Episode Explorer vertical list below active episode in Player Mode */}
@@ -830,50 +497,10 @@ export function SeriesWatchView({
         </div>
       )}
 
-      <ChunkyDialog
+      <AdblockWarningDialog
         open={showAdblockModal}
-        onOpenChange={(open) => !open && handleDismissWarning()}
-      >
-        <ChunkyDialogContent className="sm:max-w-md">
-          <ChunkyDialogHeader>
-            <div className="flex items-center gap-2 text-amber-500">
-              <ShieldAlert className="h-5 w-5 shrink-0" />
-              <ChunkyDialogTitle className="text-base">
-                Ad Blocker Recommended
-              </ChunkyDialogTitle>
-            </div>
-            <ChunkyDialogDescription className="text-xs leading-relaxed space-y-2 pt-1">
-              <span>
-                Third-party video mirrors may serve popups and unexpected
-                redirects during playback. We strongly recommend using an ad
-                blocker (such as uBlock Origin or Brave Shields) for an
-                uninterrupted experience.
-              </span>
-            </ChunkyDialogDescription>
-          </ChunkyDialogHeader>
-
-          <ChunkyDialogFooter className="mt-0 flex-col-reverse sm:flex-row">
-            <ChunkyButton
-              variant="outline"
-              size="sm"
-              onClick={handleDismissWarning}
-            >
-              Continue anyway
-            </ChunkyButton>
-            <ChunkyButton size="sm" asChild>
-              <Link
-                to="/guide/adblock"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="gap-1.5"
-              >
-                <span>View Adblock Guide</span>
-                <ExternalLink className="h-3.5 w-3.5" />
-              </Link>
-            </ChunkyButton>
-          </ChunkyDialogFooter>
-        </ChunkyDialogContent>
-      </ChunkyDialog>
+        onDismiss={handleDismissWarning}
+      />
     </div>
   );
 }

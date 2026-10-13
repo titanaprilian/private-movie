@@ -1,4 +1,4 @@
-export { SeriesWatchView, WatchViewSkeleton, WatchViewErrorState } from './internal/SeriesWatchView';
+export { SeriesWatchView } from './internal/SeriesWatchView';
 export type { SeriesWatchViewProps, WatchViewErrorStateProps } from './internal/types';
 
 export {
@@ -18,6 +18,12 @@ export {
   EpisodeExplorer,
   EpisodeCard,
   EpisodeRow,
+  WatchViewSkeleton,
+  WatchViewErrorState,
+  WatchPlayerFrame,
+  WatchToolbar,
+  ActiveEpisodeCard,
+  AdblockWarningDialog,
 } from './internal/components';
 export type {
   SeriesHeroBannerProps,
@@ -26,6 +32,10 @@ export type {
   EpisodeExplorerProps,
   EpisodeCardProps,
   EpisodeRowProps,
+  WatchPlayerFrameProps,
+  WatchToolbarProps,
+  ActiveEpisodeCardProps,
+  AdblockWarningDialogProps,
 } from './internal/types';
 export { useWatchState, resolveDefaultSourceIndex, useWatchNav, useAdblockDetector } from './internal/hooks';
 export type {

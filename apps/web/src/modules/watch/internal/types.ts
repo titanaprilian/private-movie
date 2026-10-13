@@ -135,3 +135,45 @@ export interface AdblockDetectorResult {
   isLoading: boolean;
   isBlocked: boolean;
 }
+
+export interface WatchPlayerFrameProps {
+  activeSource: WatchVideoSource | null;
+  episodeThumbnailUrl?: string | null;
+  episodeTitle?: string;
+  seriesBackdropUrl?: string | null;
+  isPlayerFocused?: boolean;
+  iframeRef?: React.Ref<HTMLIFrameElement>;
+  hasNextEpisode?: boolean;
+  onNextEpisode?: () => void;
+}
+
+export interface WatchToolbarProps {
+  hasPrevEpisode: boolean;
+  hasNextEpisode: boolean;
+  onPrevEpisode: () => void;
+  onNextEpisode: () => void;
+  onReloadPlayer: () => void;
+  onOpenNewTab: () => void;
+  isEmbedSource: boolean;
+  activeSourceIndex: number;
+  sources: WatchVideoSource[];
+  onSelectSource: (index: number) => void;
+  controlsRefs?: React.MutableRefObject<(HTMLButtonElement | null)[]>;
+  serverControlIndex: number;
+  isSpatialMode?: boolean;
+  activeZone?: string;
+  focusIndex?: number;
+}
+
+export interface ActiveEpisodeCardProps {
+  seriesTitle: string;
+  activeEpisode: WatchEpisode;
+  activeSeasonTitle?: string | null;
+  formattedDuration?: string | null;
+  onBackToOverview: () => void;
+}
+
+export interface AdblockWarningDialogProps {
+  open: boolean;
+  onDismiss: () => void;
+}
