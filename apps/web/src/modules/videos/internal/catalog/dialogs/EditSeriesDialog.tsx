@@ -15,7 +15,7 @@ import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
-import { useEditSeriesForm } from '../hooks/useEditSeriesForm';
+import { useEditSeriesForm } from './useEditSeriesForm';
 
 export function EditSeriesDialog({
   open,

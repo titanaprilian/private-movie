@@ -11,7 +11,7 @@ import {
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { AddMediaStepInput } from './AddMediaStepInput';
 import { AddMediaStepPreview } from './AddMediaStepPreview';
-import { useAddMediaDialog } from '../hooks/useAddMediaDialog';
+import { useAddMediaDialog } from './useAddMediaDialog';
 
 export function AddMediaDialog() {
   const {
