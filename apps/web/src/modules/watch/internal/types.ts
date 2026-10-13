@@ -136,6 +136,71 @@ export interface AdblockDetectorResult {
   isBlocked: boolean;
 }
 
+export interface UseWatchSpatialFocusOptions {
+  hasSeries: boolean;
+  isSpatialMode: boolean;
+  activeZone: WatchZone;
+  focusIndex: number;
+  setFocusIndex: (index: number) => void;
+  selectedEpisodeId: string | null;
+  iframeRef: React.RefObject<HTMLIFrameElement | null>;
+  controlsCount: number;
+}
+
+export interface UseWatchSpatialFocusReturn {
+  backRef: React.RefObject<HTMLAnchorElement | HTMLButtonElement | null>;
+  playRef: React.RefObject<HTMLButtonElement | null>;
+  controlsRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
+  episodeRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
+}
+
+export type UseSeriesWatchViewOptions = SeriesWatchViewProps;
+
+export interface UseSeriesWatchViewReturn {
+  series: WatchSeriesDetails | null | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
+  refetch: () => void;
+  selectedEpisodeId: string | null;
+  activeSeason: WatchSeason | null;
+  activeSeasonId: string | null;
+  activeEpisode: WatchEpisode | null;
+  activeSource: WatchVideoSource | null;
+  activeSourceIndex: number;
+  availableEpisodes: WatchEpisode[];
+  hasNextEpisode: boolean;
+  hasPrevEpisode: boolean;
+  selectSeason: (seasonId: string) => void;
+  selectSource: (index: number) => void;
+  isSpatialMode: boolean;
+  activeZone: WatchZone;
+  focusIndex: number;
+  iframeRef: React.RefObject<HTMLIFrameElement | null>;
+  backRef: React.RefObject<HTMLAnchorElement | HTMLButtonElement | null>;
+  playRef: React.RefObject<HTMLButtonElement | null>;
+  controlsRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
+  episodeRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
+  showAdblockModal: boolean;
+  handleDismissWarning: () => void;
+  sources: WatchVideoSource[];
+  seasons: WatchSeason[];
+  firstPlayableEpisode: WatchEpisode | null;
+  isEmbedSource: boolean;
+  serverControlIndex: number;
+  backFocused: boolean;
+  playerFocused: boolean;
+  formattedEpisodeDuration: string | null;
+  handleBackToHome: () => void;
+  handleSelectEpisode: (episodeId: string) => void;
+  handleGoToPrevEpisode: () => void;
+  handleGoToNextEpisode: () => void;
+  handlePlayFirstEpisode: () => void;
+  handleBackToOverview: () => void;
+  handleReloadIframe: () => void;
+  handleOpenNewTab: () => void;
+}
+
 export interface WatchPlayerFrameProps {
   activeSource: WatchVideoSource | null;
   episodeThumbnailUrl?: string | null;
@@ -176,4 +241,61 @@ export interface ActiveEpisodeCardProps {
 export interface AdblockWarningDialogProps {
   open: boolean;
   onDismiss: () => void;
+}
+
+export interface WatchOverviewModeProps {
+  series: WatchSeriesDetails;
+  onBackToCatalog: () => void;
+  isBackFocused: boolean;
+  isSpatialMode: boolean;
+  backRef: React.Ref<HTMLButtonElement>;
+  onPlay: () => void;
+  isPlayDisabled: boolean;
+  isPlayFocused: boolean;
+  playRef: React.Ref<HTMLButtonElement>;
+  seasons: WatchSeason[];
+  activeSeasonId: string | null;
+  onSelectSeason: (seasonId: string) => void;
+  episodes: WatchEpisode[];
+  onSelectEpisode: (episodeId: string) => void;
+  episodeRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
+  activeZone: WatchZone;
+  focusIndex: number;
+}
+
+export interface WatchPlayerModeProps {
+  series: WatchSeriesDetails;
+  onBackToOverview: () => void;
+  isBackFocused: boolean;
+  isSpatialMode: boolean;
+  backRef: React.Ref<HTMLButtonElement>;
+  activeSource: WatchVideoSource | null;
+  episodeThumbnailUrl?: string | null;
+  episodeTitle?: string;
+  isPlayerFocused: boolean;
+  iframeRef: React.Ref<HTMLIFrameElement>;
+  hasNextEpisode: boolean;
+  hasPrevEpisode: boolean;
+  onPrevEpisode: () => void;
+  onNextEpisode: () => void;
+  onReloadPlayer: () => void;
+  onOpenNewTab: () => void;
+  isEmbedSource: boolean;
+  activeSourceIndex: number;
+  sources: WatchVideoSource[];
+  onSelectSource: (index: number) => void;
+  controlsRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
+  serverControlIndex: number;
+  activeZone: WatchZone;
+  focusIndex: number;
+  activeEpisode: WatchEpisode | null;
+  activeSeasonTitle?: string | null;
+  formattedDuration: string | null;
+  seasons: WatchSeason[];
+  activeSeasonId: string | null;
+  onSelectSeason: (seasonId: string) => void;
+  episodes: WatchEpisode[];
+  activeEpisodeId: string | null;
+  onSelectEpisode: (episodeId: string) => void;
+  episodeRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
 }

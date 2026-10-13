@@ -24,6 +24,8 @@ export {
   WatchToolbar,
   ActiveEpisodeCard,
   AdblockWarningDialog,
+  WatchOverviewMode,
+  WatchPlayerMode,
 } from './internal/components';
 export type {
   SeriesHeroBannerProps,
@@ -36,13 +38,19 @@ export type {
   WatchToolbarProps,
   ActiveEpisodeCardProps,
   AdblockWarningDialogProps,
+  WatchOverviewModeProps,
+  WatchPlayerModeProps,
 } from './internal/types';
-export { useWatchState, resolveDefaultSourceIndex, useWatchNav, useAdblockDetector } from './internal/hooks';
+export { useWatchState, resolveDefaultSourceIndex, useWatchNav, useAdblockDetector, useWatchSpatialFocus, useSeriesWatchView } from './internal/hooks';
 export type {
   UseWatchStateOptions,
   UseWatchStateReturn,
   UseWatchNavOptions,
   UseWatchNavReturn,
+  UseWatchSpatialFocusOptions,
+  UseWatchSpatialFocusReturn,
+  UseSeriesWatchViewOptions,
+  UseSeriesWatchViewReturn,
   WatchZone,
   AdblockDetectorResult,
 } from './internal/types';

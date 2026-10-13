@@ -1,3 +1,6 @@
+export { WatchOverviewMode } from './WatchOverviewMode';
+export { WatchPlayerMode } from './WatchPlayerMode';
+export type { WatchOverviewModeProps, WatchPlayerModeProps } from '../types';
 export { SeriesHeroBanner, WATCH_HERO_MOBILE_GENRE_CAP } from './SeriesHeroBanner';
 export { WatchViewSkeleton, WatchViewErrorState } from './WatchViewStates';
 export { WatchPlayerFrame } from './WatchPlayerFrame';
