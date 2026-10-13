@@ -1,18 +1,18 @@
-export { SeriesGrid } from './internal/catalog/grid/SeriesGrid';
-export { SeriesCard } from './internal/catalog/grid/SeriesCard';
-export type { SeriesCardProps } from './internal/catalog/grid/SeriesCard';
-export { FeaturedStar } from './internal/catalog/grid/FeaturedStar';
-export type { FeaturedStarProps } from './internal/catalog/grid/FeaturedStar';
-export { SeriesPosterCard } from './internal/catalog/grid/SeriesPosterCard';
-export type { SeriesPosterCardProps } from './internal/catalog/grid/SeriesPosterCard';
-export { GenreFilter } from './internal/catalog/grid/GenreFilter';
-export type { GenreFilterProps } from './internal/catalog/grid/GenreFilter';
-export { RecentEpisodeCard } from './internal/catalog/grid/RecentEpisodeCard';
-export type { RecentEpisodeCardProps } from './internal/catalog/grid/RecentEpisodeCard';
-export { SeriesDetailDialog } from './internal/catalog/components/SeriesDetailDialog';
-export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/catalog/components/SeriesDetailDialog';
-export { SeriesDetailView } from './internal/catalog/components/SeriesDetailView';
-export { AddMediaDialog } from './internal/catalog/dialogs/AddMediaDialog';
+export { SeriesGrid } from './internal/catalog';
+export { SeriesCard } from './internal/catalog';
+export type { SeriesCardProps } from './internal/catalog';
+export { FeaturedStar } from './internal/catalog';
+export type { FeaturedStarProps } from './internal/catalog';
+export { SeriesPosterCard } from './internal/catalog';
+export type { SeriesPosterCardProps } from './internal/catalog';
+export { GenreFilter } from './internal/catalog';
+export type { GenreFilterProps } from './internal/catalog';
+export { RecentEpisodeCard } from './internal/catalog';
+export type { RecentEpisodeCardProps } from './internal/catalog';
+export { SeriesDetailDialog } from './internal/catalog';
+export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/catalog';
+export { SeriesDetailView } from './internal/catalog';
+export { AddMediaDialog } from './internal/catalog';
 export {
   BulkScrapeModal,
   useBulkScrapeSources,
@@ -61,7 +61,7 @@ export {
   getMaxUploadSizeBytes,
   SERIES_PAGE_LIMIT,
 } from './internal/api';
-export type { SeriesDetailViewProps } from './internal/catalog/components/SeriesDetailView';
+export type { SeriesDetailViewProps } from './internal/catalog';
 export { AddSeasonDialog } from './internal/seasons/AddSeasonDialog';
 export type { AddSeasonDialogProps } from './internal/seasons/AddSeasonDialog';
 export { EditSeasonDialog } from './internal/seasons/EditSeasonDialog';

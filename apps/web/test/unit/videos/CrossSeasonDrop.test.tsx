@@ -1,6 +1,6 @@
 import { renderWithProviders, screen, act, waitFor } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SeriesDetailView } from '@/modules/videos/internal/catalog/components/SeriesDetailView';
+import { SeriesDetailView } from '@/modules/videos/internal/catalog';
 import {
   buildCrossSeasonMove,
   type CrossSeasonMove,

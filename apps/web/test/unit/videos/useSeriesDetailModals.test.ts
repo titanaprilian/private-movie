@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useSeriesDetailModals } from '@/modules/videos/internal/catalog/hooks/useSeriesDetailModals';
+import { useSeriesDetailModals } from '@/modules/videos/internal/catalog';
 
 describe('useSeriesDetailModals', () => {
   it('initializes with all dialogs closed and null/undefined values', () => {

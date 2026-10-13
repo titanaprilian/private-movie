@@ -25,17 +25,19 @@ export {
   useEditSeriesForm,
   useEditEpisodeForm,
 } from './dialogs';
+export {
+  SeriesDetailView,
+  SeriesDetailHero,
+  SeriesDetailSeasonBar,
+  SeriesDetailDialog,
+  SeriesDetailDialogs,
+  useSeriesDetail,
+  useSeriesDetailDnd,
+  useSeriesDetailModals,
+  useEpisodeBatchOperations,
+  useSeriesDrawerSync,
+} from './detail';
 export { ErrorBanner } from './components/ErrorBanner';
-export { SeriesDetailDialog } from './components/SeriesDetailDialog';
-export { SeriesDetailView } from './components/SeriesDetailView';
-export { SeriesDetailHero } from './components/SeriesDetailHero';
-export { SeriesDetailSeasonBar } from './components/SeriesDetailSeasonBar';
-export { SeriesDetailDialogs } from './components/SeriesDetailDialogs';
-export { useSeriesDetailModals } from './hooks/useSeriesDetailModals';
-export { useEpisodeBatchOperations } from './hooks/useEpisodeBatchOperations';
-export { useSeriesDetail } from './hooks/useSeriesDetail';
-export { useSeriesDetailDnd } from './hooks/useSeriesDetailDnd';
-export { useSeriesDrawerSync } from './hooks/useSeriesDrawerSync';
 export type {
   AddMediaStepInputProps,
   AddMediaStepPreviewProps,
