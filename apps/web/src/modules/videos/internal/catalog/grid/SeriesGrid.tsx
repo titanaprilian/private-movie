@@ -6,6 +6,7 @@ import { GenreFilter } from './components/GenreFilter';
 import { useSeriesGrid } from './hooks/useSeriesGrid';
 import type { SeriesCardItem } from '../types';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';
+import { ChunkySkeleton } from '@/components/ui/chunky-skeleton';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChunkyPaginationBar } from '@/components/ui/chunky-pagination';
 import { ChunkyCard } from '@/components/ui/chunky-card';
@@ -34,6 +35,7 @@ export function SeriesGrid() {
     gridTopRef,
     goToPage,
     seriesList,
+    isLoading,
     meta,
     bigGenres,
     highlightedCountByGenreSlug,
@@ -176,15 +178,45 @@ export function SeriesGrid() {
               onSelectionChange={handleGenreSelectionChange}
             />
           </div>
-          <span className="ml-auto font-extrabold text-[14px] text-[var(--muted)]" aria-live="polite">
-            {meta.total} series
-          </span>
+          {isLoading ? (
+            <ChunkySkeleton
+              data-testid="series-count-skeleton"
+              className="ml-auto h-5 w-20"
+            />
+          ) : (
+            <span className="ml-auto font-extrabold text-[14px] text-[var(--muted)]" aria-live="polite">
+              {meta.total} series
+            </span>
+          )}
         </div>
       </ChunkyCard>
 
       {/* Grid view */}
       <div ref={gridTopRef} className="scroll-mt-20">
-      {seriesList.length === 0 ? (
+      {isLoading ? (
+        <div
+          data-testid="series-grid"
+          className="grid gap-4"
+          style={{
+            gridTemplateColumns:
+              'repeat(auto-fill, minmax(max(210px, calc((100% - 60px) / 4)), 1fr))',
+          }}
+        >
+          {Array.from({ length: 12 }).map((_, index) => (
+            <div
+              key={index}
+              data-testid="series-card-skeleton"
+              className="bg-card border border-c rounded-[16px] overflow-hidden flex flex-col"
+            >
+              <ChunkySkeleton className="aspect-[3/4] w-full rounded-none border-0" />
+              <div className="space-y-2 p-3">
+                <ChunkySkeleton className="h-4 w-3/4" />
+                <ChunkySkeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : seriesList.length === 0 ? (
         <div className="bg-card border border-c rounded p-8 text-center text-xs text-muted mono">
           No series match your filter.
         </div>
@@ -212,7 +244,7 @@ export function SeriesGrid() {
       </div>
 
       {/* Pagination Bar */}
-      {meta.total > 0 && (
+      {!isLoading && meta.total > 0 && (
         <ChunkyPaginationBar
           currentPage={currentPage}
           totalPages={totalPages}

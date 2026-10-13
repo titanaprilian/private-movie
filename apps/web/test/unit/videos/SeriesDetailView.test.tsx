@@ -2,6 +2,7 @@ import { renderWithProviders, screen, userEvent, within } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SeriesDetailView } from '@/modules/videos/internal/catalog';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
+import { seriesDetailQueryOptions } from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';
 import { setAccessToken } from '@/lib/api';
 
@@ -1417,6 +1418,106 @@ describe('SeriesDetailView component', () => {
       expect(screen.getByRole('button', { name: /Sync with TMDB/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Bulk Add Sources/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Bulk Ingest Sources/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('loading skeleton fidelity', () => {
+    function renderLoadingDetail() {
+      // Keep the series detail query pending so `isLoading` stays true.
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(() => new Promise(() => {}) as Promise<Response>);
+      const result = renderWithProviders(
+        <SeriesDetailView seriesId="deep-modules" />
+      );
+      return { ...result, fetchSpy };
+    }
+
+    it('renders the back button at the top of the view while loading', () => {
+      const { fetchSpy, unmount } = renderLoadingDetail();
+
+      const skeleton = screen.getByTestId('series-detail-skeleton');
+      expect(
+        within(skeleton).getByRole('button', { name: 'Back' })
+      ).toBeInTheDocument();
+
+      unmount();
+      fetchSpy.mockRestore();
+    });
+
+    it('renders hero skeleton placeholders (poster, title, action buttons) while loading', () => {
+      const { fetchSpy, unmount } = renderLoadingDetail();
+
+      const hero = screen.getByTestId('series-detail-hero-skeleton');
+      expect(hero).toBeInTheDocument();
+      expect(
+        within(hero).getAllByTestId('chunky-skeleton').length
+      ).toBeGreaterThanOrEqual(5);
+
+      unmount();
+      fetchSpy.mockRestore();
+    });
+
+    it('renders a season bar skeleton with placeholder season chips while loading', () => {
+      const { fetchSpy, unmount } = renderLoadingDetail();
+
+      const seasonBar = screen.getByTestId(
+        'series-detail-seasonbar-skeleton'
+      );
+      expect(seasonBar).toBeInTheDocument();
+      expect(
+        within(seasonBar).getAllByTestId('season-chip-skeleton').length
+      ).toBeGreaterThan(0);
+
+      unmount();
+      fetchSpy.mockRestore();
+    });
+
+    it('renders an episode table skeleton with toolbar, header, and placeholder rows while loading', () => {
+      const { fetchSpy, unmount } = renderLoadingDetail();
+
+      const table = screen.getByTestId(
+        'series-detail-episode-table-skeleton'
+      );
+      expect(table).toBeInTheDocument();
+      expect(
+        within(table).getByTestId('episode-table-toolbar-skeleton')
+      ).toBeInTheDocument();
+      expect(
+        within(table).getByTestId('episode-table-header-skeleton')
+      ).toBeInTheDocument();
+      expect(
+        within(table).getAllByTestId('episode-row-skeleton').length
+      ).toBeGreaterThan(0);
+
+      unmount();
+      fetchSpy.mockRestore();
+    });
+
+    it('replaces skeletons with the real hero, season bar, and episode table once loaded', async () => {
+      const { queryClient, fetchSpy } = renderLoadingDetail();
+
+      expect(
+        screen.getByTestId('series-detail-skeleton')
+      ).toBeInTheDocument();
+
+      queryClient.setQueryData(
+        seriesDetailQueryOptions('deep-modules').queryKey,
+        mockSeries
+      );
+
+      expect(
+        await screen.findByRole('heading', {
+          level: 1,
+          name: mockSeries.title,
+        })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId('series-detail-skeleton')
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId('episode-table')).toBeInTheDocument();
+
+      fetchSpy.mockRestore();
     });
   });
 });

@@ -395,6 +395,7 @@ export interface UseSeriesGridMutationsResult {
 
 export interface UseSeriesGridResult extends UseSeriesGridSearchResult {
   seriesList: SeriesCardItem[];
+  isLoading: boolean;
   meta: { total: number; page: number; limit: number };
   bigGenres: { id: string; name: string; slug: string }[];
   highlightedCountByGenreSlug: Map<string, number>;

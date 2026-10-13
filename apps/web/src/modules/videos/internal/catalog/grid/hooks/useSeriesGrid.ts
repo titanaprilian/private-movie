@@ -15,7 +15,7 @@ export function useSeriesGrid(): UseSeriesGridResult {
   const search = useSeriesGridSearch();
   const openDialog = useAddMediaStore((state) => state.openDialog);
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     ...seriesListQueryOptions(search.queryParams),
     placeholderData: keepPreviousData,
   });
@@ -80,6 +80,7 @@ export function useSeriesGrid(): UseSeriesGridResult {
   return {
     ...search,
     seriesList,
+    isLoading,
     meta,
     bigGenres,
     highlightedCountByGenreSlug,

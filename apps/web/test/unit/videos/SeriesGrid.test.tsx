@@ -895,3 +895,101 @@ describe('SeriesGrid component', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
+
+describe('SeriesGrid loading state', () => {
+  beforeEach(() => {
+    useScrapeWorkerStore.getState().reset();
+    useScrapeWorkerStore.setState({ isOpen: false });
+  });
+
+  function renderLoadingGrid() {
+    mockSearchState = { page: 1, q: undefined, genre: undefined, tab: undefined };
+    mockNavigate.mockReset();
+    // Keep the series catalog query pending so `isLoading` stays true.
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() => new Promise(() => {}) as Promise<Response>);
+    const queryClient = createTestQueryClient();
+    queryClient.setDefaultOptions({
+      queries: {
+        retry: false,
+        staleTime: Infinity,
+      },
+    });
+    queryClient.setQueryData(genresQueryOptions().queryKey, mockGenresList);
+    const result = renderWithProviders(<SeriesGrid />, { queryClient });
+    return { ...result, queryClient, fetchSpy };
+  }
+
+  it('renders 12 skeleton card placeholders while the series list query is loading', () => {
+    const { fetchSpy, unmount } = renderLoadingGrid();
+
+    expect(screen.getAllByTestId('series-card-skeleton')).toHaveLength(12);
+
+    unmount();
+    fetchSpy.mockRestore();
+  });
+
+  it('does not render the empty state message while loading', () => {
+    const { fetchSpy, unmount } = renderLoadingGrid();
+
+    expect(
+      screen.queryByText('No series match your filter.')
+    ).not.toBeInTheDocument();
+
+    unmount();
+    fetchSpy.mockRestore();
+  });
+
+  it('shows a count skeleton in the toolbar rather than "0 series" while loading', () => {
+    const { fetchSpy, unmount } = renderLoadingGrid();
+
+    expect(screen.getByTestId('series-count-skeleton')).toBeInTheDocument();
+    expect(screen.queryByText('0 series')).not.toBeInTheDocument();
+
+    unmount();
+    fetchSpy.mockRestore();
+  });
+
+  it('hides the pagination bar while loading', () => {
+    const { fetchSpy, unmount } = renderLoadingGrid();
+
+    expect(
+      screen.queryByRole('button', { name: 'Previous page' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Next page' })
+    ).not.toBeInTheDocument();
+
+    unmount();
+    fetchSpy.mockRestore();
+  });
+
+  it('replaces skeletons with loaded series cards and pagination once data resolves', async () => {
+    const { queryClient, fetchSpy } = renderLoadingGrid();
+
+    expect(screen.getAllByTestId('series-card-skeleton')).toHaveLength(12);
+
+    queryClient.setQueryData(
+      seriesListQueryOptions({
+        page: 1,
+        q: undefined,
+        genre: undefined,
+        tab: undefined,
+        limit: SERIES_PAGE_LIMIT,
+      }).queryKey,
+      {
+        ...mockSeriesResponse,
+        meta: { total: 25, page: 1, limit: SERIES_PAGE_LIMIT },
+      } as SeriesListResponse
+    );
+
+    expect(await screen.findByText('Solo Leveling')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('series-card-skeleton')
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
+
+    fetchSpy.mockRestore();
+  });
+});
