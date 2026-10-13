@@ -1,36 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type {
-  WatchSeriesDetails,
-  WatchSeason,
+  UseWatchStateOptions,
+  UseWatchStateReturn,
   WatchEpisode,
+  WatchSeriesDetails,
   WatchVideoSource,
-} from './api';
-
-export interface UseWatchStateOptions {
-  initialSeasonId?: string;
-  initialEpisodeId?: string;
-  initialSourceIndex?: number;
-}
-
-export interface UseWatchStateReturn {
-  activeSeasonId: string | null;
-  activeEpisodeId: string | null;
-  activeSourceIndex: number;
-  activeSeason: WatchSeason | null;
-  activeEpisode: WatchEpisode | null;
-  activeSource: WatchVideoSource | null;
-  availableEpisodes: WatchEpisode[];
-  hasNextEpisode: boolean;
-  hasPrevEpisode: boolean;
-  setActiveSeasonId: (seasonId: string) => void;
-  setActiveEpisodeId: (episodeId: string) => void;
-  setActiveSourceIndex: (index: number) => void;
-  selectSeason: (seasonId: string) => void;
-  selectEpisode: (episodeId: string) => void;
-  selectSource: (index: number) => void;
-  goToNextEpisode: () => void;
-  goToPrevEpisode: () => void;
-}
+} from '../types';
 
 /**
  * Resolve the default source index for an episode.

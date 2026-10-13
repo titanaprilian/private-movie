@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { getSeriesWithEpisodesQueryOptions, type WatchSeriesDetails } from '@/modules/watch/internal/api';
-import { useWatchState } from '@/modules/watch/internal/useWatchState';
+import { useWatchState } from '@/modules/watch/internal/hooks/useWatchState';
 import { api } from '@/lib/api';
 
 vi.mock('@/lib/api', async (importOriginal) => {

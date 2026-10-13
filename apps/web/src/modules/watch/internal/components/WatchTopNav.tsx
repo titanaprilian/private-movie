@@ -1,17 +1,5 @@
 import { BackButton } from '@/components/ui/back-button';
-
-export type WatchTopNavMode = 'overview' | 'player';
-
-export interface WatchTopNavProps {
-  mode: WatchTopNavMode;
-  /** Referrer-safe back to catalogue (overview mode). */
-  onBackToCatalog?: () => void;
-  /** Back to episode overview (player mode). */
-  onBackToOverview?: () => void;
-  isBackFocused?: boolean;
-  isSpatialMode?: boolean;
-  backRef?: React.Ref<HTMLButtonElement>;
-}
+import type { WatchTopNavProps } from '../types';
 
 export function WatchTopNav({
   mode,

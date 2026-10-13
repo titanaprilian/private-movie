@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react';
-
-export interface AdblockDetectorResult {
-  isLoading: boolean;
-  isBlocked: boolean;
-}
+import type { AdblockDetectorResult } from '../types';
 
 export function useAdblockDetector(): AdblockDetectorResult {
   const [state, setState] = useState<AdblockDetectorResult>({

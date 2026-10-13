@@ -1,23 +1,14 @@
 import { queryOptions } from '@tanstack/react-query';
 import { api, extractErrorMessage } from '@/lib/api';
+import type { MediaSeriesDetails } from '@repo/contracts';
 import type {
-  MediaSeriesDetails,
-  MediaSeasonWithEpisodes,
-  MediaEpisodeWithSources,
-  MediaVideoSource,
-} from '@repo/contracts';
+  WatchEpisode,
+  WatchSeason,
+  WatchSeriesDetails,
+  WatchVideoSource,
+} from './types';
 
-export type WatchSeriesDetails = MediaSeriesDetails;
-export type WatchSeason = MediaSeasonWithEpisodes;
-export type WatchEpisode = MediaEpisodeWithSources;
-export type WatchVideoSource = MediaVideoSource;
-
-export type {
-  MediaSeriesDetails,
-  MediaSeasonWithEpisodes,
-  MediaEpisodeWithSources,
-  MediaVideoSource,
-};
+export type { WatchEpisode, WatchSeason, WatchSeriesDetails, WatchVideoSource };
 
 export async function fetchSeriesWithEpisodes(
   seriesId: string
