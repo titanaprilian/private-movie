@@ -9,7 +9,7 @@ import {
   type SeriesListResponse,
 } from '@/modules/videos';
 import { genresQueryOptions, type Genre } from '@/modules/genres';
-import { useScrapeWorkerStore } from '@/modules/videos/internal/store/useScrapeWorkerStore';
+import { useAddMediaStore as useScrapeWorkerStore } from '@/modules/videos/internal/catalog';
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@/modules/videos/internal/api')>();

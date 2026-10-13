@@ -5,5 +5,6 @@ export { EditEpisodeDialog } from './EditEpisodeDialog';
 export type { EditEpisodeDialogProps } from './EditEpisodeDialog';
 export { AddMediaStepInput, ErrorBanner, AddMediaStepPreview } from './components';
 export type { AddMediaStepInputProps, AddMediaStepPreviewProps } from './components';
-export { useAddMediaDialog, useEditSeriesForm, useEditEpisodeForm } from './hooks';
+export { useAddMediaDialog, useEditSeriesForm, useEditEpisodeForm, useAddMediaStore, useScrapeWorkerStore } from './hooks';
 export type { UseAddMediaDialogReturn, UseEditSeriesFormOptions } from './hooks';
+export type { AddMediaStoreState, ScrapeWorkerState } from './hooks';

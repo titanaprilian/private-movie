@@ -1,27 +1,8 @@
 import { create } from 'zustand';
-import { fetchSeriesTmdbPreview, type TmdbPreviewResult } from '../api';
+import { fetchSeriesTmdbPreview } from '../../../api';
+import type { AddMediaStoreState, ScrapeWorkerState } from '../../types';
 
-export interface ScrapeWorkerState {
-  isOpen: boolean;
-  step: 1 | 2;
-  tmdbType: 'tv' | 'movie';
-  tmdbId: string;
-  includeSpecials: boolean;
-  tmdbPreviewData: TmdbPreviewResult | null;
-  isLoading: boolean;
-  error: string | null;
-
-  // Actions
-  openDialog: () => void;
-  closeDialog: () => void;
-  reset: () => void;
-  setTmdbType: (tmdbType: 'tv' | 'movie') => void;
-  setTmdbId: (tmdbId: string) => void;
-  setIncludeSpecials: (includeSpecials: boolean) => void;
-  setStep: (step: 1 | 2) => void;
-  backToStep1: () => void;
-  submitPreview: () => Promise<boolean>;
-}
+export type { AddMediaStoreState, ScrapeWorkerState };
 
 const initialState = {
   isOpen: false,
@@ -34,7 +15,7 @@ const initialState = {
   error: null,
 };
 
-export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
+export const useAddMediaStore = create<AddMediaStoreState>((set, get) => ({
   ...initialState,
 
   openDialog: () => set({ isOpen: true }),
@@ -84,3 +65,6 @@ export const useScrapeWorkerStore = create<ScrapeWorkerState>((set, get) => ({
     }
   },
 }));
+
+/** Backward-compatibility alias for the catalog add media dialog store. */
+export const useScrapeWorkerStore = useAddMediaStore;
