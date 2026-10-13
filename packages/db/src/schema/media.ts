@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   integer,
   pgTable,
   primaryKey,
@@ -97,6 +98,8 @@ export const seasons = pgTable(
       table.seriesId,
       table.seasonNumber,
     ),
+    index("seasons_series_id_idx").on(table.seriesId),
+    index("seasons_status_idx").on(table.status),
   ],
 );
 
@@ -125,6 +128,7 @@ export const episodes = pgTable(
   },
   (table) => [
     unique("episodes_season_id_order_unique").on(table.seasonId, table.order),
+    index("episodes_season_id_idx").on(table.seasonId),
   ],
 );
 

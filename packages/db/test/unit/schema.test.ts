@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getTableConfig } from "drizzle-orm/pg-core";
 import * as schema from "../../src/schema";
 
 describe("db schema exports", () => {
@@ -49,6 +50,34 @@ describe("db schema exports", () => {
     expect((schema.episodes as any).metadata).toBeUndefined();
 
     expect(schema.episodes.seasonId.notNull).toBe(true);
+  });
+
+  it("defines episodes_season_id_idx index on episodes(season_id)", () => {
+    const config = getTableConfig(schema.episodes);
+    const indexNames = config.indexes.map((i) => i.config.name);
+    expect(indexNames).toContain("episodes_season_id_idx");
+    const idx = config.indexes.find(
+      (i) => i.config.name === "episodes_season_id_idx",
+    );
+    const colNames = idx?.config.columns.map((c) => c.name) ?? [];
+    expect(colNames).toEqual(["season_id"]);
+  });
+
+  it("defines seasons_series_id_idx and seasons_status_idx indexes on seasons", () => {
+    const config = getTableConfig(schema.seasons);
+    const indexNames = config.indexes.map((i) => i.config.name);
+    expect(indexNames).toContain("seasons_series_id_idx");
+    expect(indexNames).toContain("seasons_status_idx");
+    const seriesIdx = config.indexes.find(
+      (i) => i.config.name === "seasons_series_id_idx",
+    );
+    const statusIdx = config.indexes.find(
+      (i) => i.config.name === "seasons_status_idx",
+    );
+    expect(seriesIdx?.config.columns.map((c) => c.name)).toEqual([
+      "series_id",
+    ]);
+    expect(statusIdx?.config.columns.map((c) => c.name)).toEqual(["status"]);
   });
 
   describe("slugifyGenre", () => {

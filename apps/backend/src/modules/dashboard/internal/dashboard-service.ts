@@ -26,6 +26,18 @@ type DashboardDb = Pick<DbClient, "select" | "selectDistinct" | "insert"> & {
 
 const GB_IN_BYTES = 1024 * 1024 * 1024;
 
+const STORAGE_USAGE_TIMEOUT_MS = 2500;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("StorageUsageTimeout")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  }) as Promise<T>;
+}
+
 async function getStorageStats(
   db: DashboardDb,
   storageUsageProvider?: StorageUsageProvider | null,
@@ -46,7 +58,10 @@ async function getStorageStats(
   let totalUsedBytes = 0;
   if (storageUsageProvider) {
     try {
-      const used = await storageUsageProvider.getTotalUsedBytes();
+      const used = await withTimeout(
+        storageUsageProvider.getTotalUsedBytes(),
+        STORAGE_USAGE_TIMEOUT_MS,
+      );
       if (typeof used === "number" && Number.isFinite(used) && used > 0) {
         totalUsedBytes = Math.floor(used);
       }
@@ -62,35 +77,35 @@ async function getStorageStats(
 }
 
 async function getRecentSeries(db: DashboardDb): Promise<AdminDashboardRecentSeries[]> {
+  // Single grouped query: one roundtrip for the 5 most recent series plus
+  // their total episode counts (summed across all seasons).
   const rows = await db
     .select({
       id: series.id,
       title: series.title,
       posterUrl: series.posterUrl,
       updatedAt: series.updatedAt,
+      episodeCount: count(episodes.id),
     })
     .from(series)
+    .leftJoin(seasons, eq(seasons.seriesId, series.id))
+    .leftJoin(episodes, eq(episodes.seasonId, seasons.id))
+    .groupBy(series.id, series.title, series.posterUrl, series.updatedAt)
     .orderBy(desc(series.updatedAt))
     .limit(5);
-  const recent: AdminDashboardRecentSeries[] = [];
-  for (const row of rows) {
-    const [epRow] = await db
-      .select({ value: count() })
-      .from(episodes)
-      .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
-      .where(eq(seasons.seriesId, row.id));
-    recent.push({
-      id: row.id,
-      title: row.title,
-      posterUrl: row.posterUrl ?? null,
-      episodeCount: epRow?.value ?? 0,
-      updatedAt: row.updatedAt.toISOString(),
-    });
-  }
-  return recent;
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    posterUrl: row.posterUrl ?? null,
+    episodeCount: row.episodeCount ?? 0,
+    updatedAt: row.updatedAt.toISOString(),
+  }));
 }
 
 async function getOngoingSeasons(db: DashboardDb): Promise<AdminDashboardOngoingSeason[]> {
+  // Single grouped join: seasons + series + episodes with
+  // count(episodes.id) grouped by season/series, replacing the previous
+  // N+1 per-season episode count loop.
   const rows = await db
     .select({
       seasonId: seasons.id,
@@ -101,29 +116,33 @@ async function getOngoingSeasons(db: DashboardDb): Promise<AdminDashboardOngoing
       posterUrl: series.posterUrl,
       lastScrapedAt: seasons.lastScrapedAt,
       lastScrapeError: seasons.lastScrapeError,
+      episodeCount: count(episodes.id),
     })
     .from(seasons)
     .innerJoin(series, eq(seasons.seriesId, series.id))
-    .where(eq(seasons.status, "ongoing"));
-  const ongoing: AdminDashboardOngoingSeason[] = [];
-  for (const row of rows) {
-    const [epRow] = await db
-      .select({ value: count() })
-      .from(episodes)
-      .where(eq(episodes.seasonId, row.seasonId));
-    ongoing.push({
-      seasonId: row.seasonId,
-      seriesId: row.seriesId,
-      seriesTitle: row.seriesTitle,
-      seasonTitle: row.seasonTitle,
-      seasonNumber: row.seasonNumber ?? null,
-      posterUrl: row.posterUrl ?? null,
-      episodeCount: epRow?.value ?? 0,
-      lastScrapedAt: row.lastScrapedAt ? row.lastScrapedAt.toISOString() : null,
-      lastScrapeError: row.lastScrapeError ?? null,
-    });
-  }
-  return ongoing;
+    .leftJoin(episodes, eq(episodes.seasonId, seasons.id))
+    .where(eq(seasons.status, "ongoing"))
+    .groupBy(
+      seasons.id,
+      seasons.seriesId,
+      series.title,
+      seasons.title,
+      seasons.seasonNumber,
+      series.posterUrl,
+      seasons.lastScrapedAt,
+      seasons.lastScrapeError,
+    );
+  return rows.map((row) => ({
+    seasonId: row.seasonId,
+    seriesId: row.seriesId,
+    seriesTitle: row.seriesTitle,
+    seasonTitle: row.seasonTitle,
+    seasonNumber: row.seasonNumber ?? null,
+    posterUrl: row.posterUrl ?? null,
+    episodeCount: row.episodeCount ?? 0,
+    lastScrapedAt: row.lastScrapedAt ? row.lastScrapedAt.toISOString() : null,
+    lastScrapeError: row.lastScrapeError ?? null,
+  }));
 }
 
 async function countOngoingSeries(db: DashboardDb): Promise<number> {
