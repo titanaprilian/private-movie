@@ -1,18 +1,18 @@
-export { SeriesGrid } from './internal/catalog/components/SeriesGrid';
-export { SeriesCard } from './internal/catalog/components/SeriesCard';
-export type { SeriesCardProps } from './internal/catalog/components/SeriesCard';
-export { FeaturedStar } from './internal/catalog/components/FeaturedStar';
-export type { FeaturedStarProps } from './internal/catalog/components/FeaturedStar';
-export { SeriesPosterCard } from './internal/catalog/components/SeriesPosterCard';
-export type { SeriesPosterCardProps } from './internal/catalog/components/SeriesPosterCard';
-export { GenreFilter } from './internal/catalog/components/GenreFilter';
-export type { GenreFilterProps } from './internal/catalog/components/GenreFilter';
-export { RecentEpisodeCard } from './internal/catalog/components/RecentEpisodeCard';
-export type { RecentEpisodeCardProps } from './internal/catalog/components/RecentEpisodeCard';
+export { SeriesGrid } from './internal/catalog/grid/SeriesGrid';
+export { SeriesCard } from './internal/catalog/grid/SeriesCard';
+export type { SeriesCardProps } from './internal/catalog/grid/SeriesCard';
+export { FeaturedStar } from './internal/catalog/grid/FeaturedStar';
+export type { FeaturedStarProps } from './internal/catalog/grid/FeaturedStar';
+export { SeriesPosterCard } from './internal/catalog/grid/SeriesPosterCard';
+export type { SeriesPosterCardProps } from './internal/catalog/grid/SeriesPosterCard';
+export { GenreFilter } from './internal/catalog/grid/GenreFilter';
+export type { GenreFilterProps } from './internal/catalog/grid/GenreFilter';
+export { RecentEpisodeCard } from './internal/catalog/grid/RecentEpisodeCard';
+export type { RecentEpisodeCardProps } from './internal/catalog/grid/RecentEpisodeCard';
 export { SeriesDetailDialog } from './internal/catalog/components/SeriesDetailDialog';
 export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/catalog/components/SeriesDetailDialog';
 export { SeriesDetailView } from './internal/catalog/components/SeriesDetailView';
-export { AddMediaDialog } from './internal/catalog/components/AddMediaDialog';
+export { AddMediaDialog } from './internal/catalog/dialogs/AddMediaDialog';
 export {
   BulkScrapeModal,
   useBulkScrapeSources,
