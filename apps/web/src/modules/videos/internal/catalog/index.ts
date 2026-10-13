@@ -24,6 +24,8 @@ export {
   useAddMediaDialog,
   useEditSeriesForm,
   useEditEpisodeForm,
+  useAddMediaStore,
+  useScrapeWorkerStore,
 } from './dialogs';
 export {
   SeriesDetailView,
@@ -40,6 +42,8 @@ export {
 export { ErrorBanner } from './components/ErrorBanner';
 export type {
   AddMediaStepInputProps,
+  AddMediaStoreState,
+  ScrapeWorkerState,
   AddMediaStepPreviewProps,
   EditEpisodeDialogProps,
   EditSeriesDialogProps,

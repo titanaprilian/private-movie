@@ -3,13 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
-import { addVideoSources, type VideoSourceInput } from '../api';
+import { addVideoSources, type VideoSourceInput } from '../../../api';
+import type { DirectUrlTabProps } from '../../types';
 
-export interface DirectUrlTabProps {
-  episodeId: string;
-  seriesId: string;
-  onSuccess: () => void;
-}
+export type { DirectUrlTabProps } from '../../types';
 
 export function DirectUrlTab({ episodeId, seriesId, onSuccess }: DirectUrlTabProps) {
   const queryClient = useQueryClient();

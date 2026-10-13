@@ -5,7 +5,7 @@ import { AddSeasonDialog } from '../../../seasons';
 import { EditSeriesDialog } from '../../dialogs/EditSeriesDialog';
 import { EditEpisodeDialog } from '../../dialogs/EditEpisodeDialog';
 import { SyncTmdbModal, BulkScrapeModal, BulkIngestModal } from '../../../ingestion';
-import { ManageSourcesDialog } from '../../../sources/ManageSourcesDialog';
+import { ManageSourcesDialog } from '../../../sources';
 import { MoveEpisodesDialog } from '../../../seasons';
 import { BatchDeleteDialog } from '../../../seasons';
 import { ChunkyConfirmDialog } from '@/components/ui/chunky-confirm-dialog';

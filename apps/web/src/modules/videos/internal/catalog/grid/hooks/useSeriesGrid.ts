@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { SERIES_PAGE_LIMIT, seriesListQueryOptions, type SeriesItem } from '../../../api';
 import { genresQueryOptions } from '@/modules/genres';
-import { useScrapeWorkerStore } from '../../../store/useScrapeWorkerStore';
+import { useAddMediaStore } from '../../dialogs';
 import { useSeriesGridSearch } from './useSeriesGridSearch';
 import { useSeriesGridMutations } from './useSeriesGridMutations';
 import type { SeriesCardItem, UseSeriesGridResult } from '../../types';
@@ -13,7 +13,7 @@ import type { SeriesCardItem, UseSeriesGridResult } from '../../types';
  */
 export function useSeriesGrid(): UseSeriesGridResult {
   const search = useSeriesGridSearch();
-  const openDialog = useScrapeWorkerStore((state) => state.openDialog);
+  const openDialog = useAddMediaStore((state) => state.openDialog);
 
   const { data } = useQuery({
     ...seriesListQueryOptions(search.queryParams),

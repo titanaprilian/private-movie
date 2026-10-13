@@ -10,19 +10,10 @@ import {
   ChunkySelectTrigger,
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
-import { type StorageProviderItem } from '@/modules/storage';
-import { remoteIngestEpisodeVideoSource, parseIngestUrl } from '../api';
+import { remoteIngestEpisodeVideoSource, parseIngestUrl } from '../../../api';
+import type { RemoteIngestTabProps } from '../../types';
 
-export interface RemoteIngestTabProps {
-  episodeId: string;
-  seriesId: string;
-  providers: StorageProviderItem[];
-  defaultProvider: StorageProviderItem | null;
-  initialUrl?: string;
-  initialLabel?: string;
-  initialQuality?: string;
-  onSuccess: () => void;
-}
+export type { RemoteIngestTabProps } from '../../types';
 
 export function RemoteIngestTab({
   episodeId,

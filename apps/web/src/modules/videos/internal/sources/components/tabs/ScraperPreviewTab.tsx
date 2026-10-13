@@ -13,7 +13,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { previewScrape, addVideoSources, type VideoSourceInput } from '../api';
+import { previewScrape, addVideoSources, type VideoSourceInput } from '../../../api';
 
 const PROVIDER_META: Record<string, { label: string; placeholder: string }> = {
   otakudesu: { label: 'Otakudesu', placeholder: 'https://otakudesu.cloud/episode/...' },
@@ -24,11 +24,9 @@ function getProviderMeta(provider: string): { label: string; placeholder: string
   return PROVIDER_META[provider] ?? { label: provider, placeholder: 'https://...' };
 }
 
-export interface ScraperPreviewTabProps {
-  episodeId: string;
-  seriesId: string;
-  onSuccess: () => void;
-}
+import type { ScraperPreviewTabProps } from '../../types';
+
+export type { ScraperPreviewTabProps } from '../../types';
 
 export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPreviewTabProps) {
   const queryClient = useQueryClient();

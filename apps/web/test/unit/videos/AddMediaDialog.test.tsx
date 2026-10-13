@@ -1,7 +1,6 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { AddMediaDialog } from '@/modules/videos/internal/catalog/dialogs/AddMediaDialog';
-import { useScrapeWorkerStore } from '@/modules/videos/internal/store/useScrapeWorkerStore';
+import { AddMediaDialog, useAddMediaStore as useScrapeWorkerStore } from '@/modules/videos/internal/catalog';
 import * as apiModule from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
 

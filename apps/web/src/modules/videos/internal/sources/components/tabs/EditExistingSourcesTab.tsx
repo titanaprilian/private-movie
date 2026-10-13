@@ -10,30 +10,13 @@ import {
   ChunkySelectTrigger,
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
-import { type StorageProviderItem } from '@/modules/storage';
 import {
-  type VideoSource,
-  type SeriesDetails,
   updateVideoSource,
   deleteVideoSource,
-} from '../api';
+} from '../../../api';
+import type { EditSourceRowProps } from '../../types';
 
-type Episode = SeriesDetails['episodes'][number];
-
-export interface EditSourceRowProps {
-  source: VideoSource;
-  providers?: StorageProviderItem[];
-  onUpdate: (updates: {
-    type: 'direct' | 'embed' | 's3';
-    label: string;
-    url: string;
-    quality?: string | null;
-    storageProviderId?: string | null;
-  }) => void;
-  onDelete: () => void;
-  onIngestToS3?: () => void;
-  isPending: boolean;
-}
+export type { EditSourceRowProps } from '../../types';
 
 export function EditSourceRow({
   source,
@@ -211,12 +194,9 @@ export function EditSourceRow({
   );
 }
 
-export interface EditExistingSourcesTabProps {
-  episode: Episode;
-  seriesId: string;
-  providers: StorageProviderItem[];
-  onIngestShortcut: (source: VideoSource) => void;
-}
+import type { EditExistingSourcesTabProps } from '../../types';
+
+export type { EditExistingSourcesTabProps } from '../../types';
 
 export function EditExistingSourcesTab({
   episode,

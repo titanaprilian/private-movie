@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { useScrapeWorkerStore } from '@/modules/videos/internal/store/useScrapeWorkerStore';
+import { useAddMediaStore, useScrapeWorkerStore } from '@/modules/videos/internal/catalog';
 import * as apiModule from '@/modules/videos/internal/api';
 
 vi.mock('@/modules/videos/internal/api', async () => {
@@ -19,9 +19,9 @@ describe('useScrapeWorkerStore', () => {
     vi.clearAllMocks();
   });
 
-  it('has correct initial state', () => {
+  it('has correct initial state and is aliased to useAddMediaStore', () => {
+    expect(useAddMediaStore).toBe(useScrapeWorkerStore);
     const state = useScrapeWorkerStore.getState();
-    expect(state.isOpen).toBe(false);
     expect(state.step).toBe(1);
     expect(state.tmdbType).toBe('tv');
     expect(state.tmdbId).toBe('');

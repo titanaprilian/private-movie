@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useScrapeWorkerStore } from '../../../store/useScrapeWorkerStore';
+import { useAddMediaStore } from './useAddMediaStore';
 import { importTmdb, type ImportTmdbParams } from '../../../api';
 
 import type { UseAddMediaDialogReturn } from '../../types';
@@ -9,21 +9,21 @@ export type { UseAddMediaDialogReturn } from '../../types';
 export function useAddMediaDialog(): UseAddMediaDialogReturn {
   const queryClient = useQueryClient();
 
-  const isOpen = useScrapeWorkerStore((state) => state.isOpen);
-  const step = useScrapeWorkerStore((state) => state.step);
-  const tmdbType = useScrapeWorkerStore((state) => state.tmdbType);
-  const tmdbId = useScrapeWorkerStore((state) => state.tmdbId);
-  const includeSpecials = useScrapeWorkerStore((state) => state.includeSpecials);
-  const tmdbPreviewData = useScrapeWorkerStore((state) => state.tmdbPreviewData);
-  const isLoading = useScrapeWorkerStore((state) => state.isLoading);
-  const error = useScrapeWorkerStore((state) => state.error);
+  const isOpen = useAddMediaStore((state) => state.isOpen);
+  const step = useAddMediaStore((state) => state.step);
+  const tmdbType = useAddMediaStore((state) => state.tmdbType);
+  const tmdbId = useAddMediaStore((state) => state.tmdbId);
+  const includeSpecials = useAddMediaStore((state) => state.includeSpecials);
+  const tmdbPreviewData = useAddMediaStore((state) => state.tmdbPreviewData);
+  const isLoading = useAddMediaStore((state) => state.isLoading);
+  const error = useAddMediaStore((state) => state.error);
 
-  const resetStore = useScrapeWorkerStore((state) => state.reset);
-  const setTmdbType = useScrapeWorkerStore((state) => state.setTmdbType);
-  const setTmdbId = useScrapeWorkerStore((state) => state.setTmdbId);
-  const setIncludeSpecials = useScrapeWorkerStore((state) => state.setIncludeSpecials);
-  const submitPreview = useScrapeWorkerStore((state) => state.submitPreview);
-  const backToStep1 = useScrapeWorkerStore((state) => state.backToStep1);
+  const resetStore = useAddMediaStore((state) => state.reset);
+  const setTmdbType = useAddMediaStore((state) => state.setTmdbType);
+  const setTmdbId = useAddMediaStore((state) => state.setTmdbId);
+  const setIncludeSpecials = useAddMediaStore((state) => state.setIncludeSpecials);
+  const submitPreview = useAddMediaStore((state) => state.submitPreview);
+  const backToStep1 = useAddMediaStore((state) => state.backToStep1);
 
   const closeDialog = () => {
     resetStore();

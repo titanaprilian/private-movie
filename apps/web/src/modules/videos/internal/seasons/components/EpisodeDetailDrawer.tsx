@@ -14,7 +14,7 @@ import {
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
-import { SourceManagementTable } from '../../sources/SourceManagementTable';
+import { SourceManagementTable } from '../../sources';
 
 export function EpisodeDetailDrawer({
   open,

@@ -13,7 +13,7 @@ import {
   type SeriesListResponse,
 } from '@/modules/videos';
 import { genresQueryOptions } from '@/modules/genres';
-import { useScrapeWorkerStore } from '@/modules/videos/internal/store/useScrapeWorkerStore';
+import { useAddMediaStore as useScrapeWorkerStore } from '@/modules/videos/internal/catalog';
 
 const mockNavigate = vi.fn();
 let mockSearchState: Record<string, unknown> = { page: 1 };

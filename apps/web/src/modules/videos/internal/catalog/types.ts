@@ -274,6 +274,30 @@ export interface UseAddMediaDialogReturn {
   };
 }
 
+export interface AddMediaStoreState {
+  isOpen: boolean;
+  step: 1 | 2;
+  tmdbType: 'tv' | 'movie';
+  tmdbId: string;
+  includeSpecials: boolean;
+  tmdbPreviewData: TmdbPreviewResult | null;
+  isLoading: boolean;
+  error: string | null;
+
+  // Actions
+  openDialog: () => void;
+  closeDialog: () => void;
+  reset: () => void;
+  setTmdbType: (tmdbType: 'tv' | 'movie') => void;
+  setTmdbId: (tmdbId: string) => void;
+  setIncludeSpecials: (includeSpecials: boolean) => void;
+  setStep: (step: 1 | 2) => void;
+  backToStep1: () => void;
+  submitPreview: () => Promise<boolean>;
+}
+
+export type ScrapeWorkerState = AddMediaStoreState;
+
 export interface UseGenreFilterOptions {
   selectedSlugs: string[];
   onSelectionChange: (slugs: string[]) => void;
