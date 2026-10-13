@@ -1,4 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import {
+  useEpisodeDetailDrawer,
+  type EpisodeDrawerEpisode as Episode,
+} from './useEpisodeDetailDrawer';
 import {
   ChunkyDrawer,
   ChunkyDrawerBody,
@@ -11,10 +14,10 @@ import {
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyTextarea } from '@/components/ui/chunky-textarea';
-import type { SeriesDetails, UpdateEpisodeData } from '../api';
+import type { UpdateEpisodeData } from '../api';
 import { SourceManagementTable } from '../sources/SourceManagementTable';
 
-export type Episode = SeriesDetails['episodes'][number];
+export type { Episode };
 
 export interface EpisodeDetailDrawerProps {
   open: boolean;
@@ -25,23 +28,6 @@ export interface EpisodeDetailDrawerProps {
   onOpenAdvancedIngest?: (tab: 'remote-ingest' | 'upload-s3') => void;
 }
 
-interface FormState {
-  title: string;
-  description: string;
-  duration: string;
-}
-
-function getInitialFormState(episode: Episode | null): FormState {
-  return {
-    title: episode?.title ?? '',
-    description: episode?.description ?? '',
-    duration:
-      episode?.duration !== null && episode?.duration !== undefined
-        ? String(episode.duration)
-        : '',
-  };
-}
-
 export function EpisodeDetailDrawer({
   open,
   onOpenChange,
@@ -50,47 +36,12 @@ export function EpisodeDetailDrawer({
   isSaving = false,
   onOpenAdvancedIngest,
 }: EpisodeDetailDrawerProps) {
-  const [formState, setFormState] = useState<FormState>(() =>
-    getInitialFormState(episode)
-  );
-
-  useEffect(() => {
-    setFormState(getInitialFormState(episode));
-  }, [episode]);
-
-  const initialFormState = useMemo(
-    () => getInitialFormState(episode),
-    [episode]
-  );
-
-  const isDirty = useMemo(() => {
-    return (
-      formState.title !== initialFormState.title ||
-      formState.description !== initialFormState.description ||
-      formState.duration !== initialFormState.duration
-    );
-  }, [formState, initialFormState]);
+  const { formState, updateField, isDirty, handleDiscard, handleSubmit } =
+    useEpisodeDetailDrawer({ episode, onSave, isSaving });
 
   if (!episode) {
     return null;
   }
-
-  const handleDiscard = () => {
-    setFormState(getInitialFormState(episode));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isDirty || isSaving) return;
-
-    const updateData: UpdateEpisodeData = {
-      title: formState.title,
-      description: formState.description || null,
-      duration: formState.duration || null,
-    };
-
-    await onSave(episode.id, updateData);
-  };
 
   return (
     <ChunkyDrawer open={open} onOpenChange={onOpenChange}>
@@ -123,9 +74,7 @@ export function EpisodeDetailDrawer({
               <ChunkyInput
                 id="drawer-title"
                 value={formState.title}
-                onChange={(e) =>
-                  setFormState((prev) => ({ ...prev, title: e.target.value }))
-                }
+                onChange={(e) => updateField('title', e.target.value)}
                 placeholder="Episode title"
                 required
               />
@@ -142,12 +91,7 @@ export function EpisodeDetailDrawer({
                 id="drawer-description"
                 rows={4}
                 value={formState.description}
-                onChange={(e) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
+                onChange={(e) => updateField('description', e.target.value)}
                 placeholder="Episode description..."
               />
             </div>
@@ -162,12 +106,7 @@ export function EpisodeDetailDrawer({
               <ChunkyInput
                 id="drawer-duration"
                 value={formState.duration}
-                onChange={(e) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    duration: e.target.value,
-                  }))
-                }
+                onChange={(e) => updateField('duration', e.target.value)}
                 placeholder="e.g. 24:15 or 01:20:00"
               />
             </div>

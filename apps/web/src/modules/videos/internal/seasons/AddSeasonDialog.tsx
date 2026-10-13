@@ -1,8 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { createSeason, type SeasonDetails } from '../api';
-import { getNextSeasonNumber, detectProviderFromUrl } from './seasonUtils';
+import { useAddSeasonForm } from './useAddSeasonForm';
+import type { SeasonDetails } from '../api';
 import {
   ChunkyDialog,
   ChunkyDialogContent,
@@ -36,82 +33,25 @@ export function AddSeasonDialog({
   seriesId,
   seasons,
 }: AddSeasonDialogProps) {
-  const queryClient = useQueryClient();
-  const nextSeasonNumber = getNextSeasonNumber(seasons);
-
-  const [seasonNumber, setSeasonNumber] = useState(nextSeasonNumber);
-  const [title, setTitle] = useState(`Season ${nextSeasonNumber}`);
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<'completed' | 'ongoing' | 'pending'>('completed');
-  const [scraperUrl, setScraperUrl] = useState('');
-  const [source, setSource] = useState<string>('none');
-  const [episodeOffset, setEpisodeOffset] = useState<number>(0);
-  const [titleTouched, setTitleTouched] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      const next = getNextSeasonNumber(seasons);
-      setSeasonNumber(next);
-      setTitle(`Season ${next}`);
-      setTitleTouched(false);
-      setDescription('');
-      setStatus('completed');
-      setScraperUrl('');
-      setSource('none');
-      setEpisodeOffset(0);
-    }
-  }, [open, seasons]);
-
-  const handleSeasonNumberChange = (value: number) => {
-    setSeasonNumber(value);
-    if (!titleTouched && Number.isFinite(value)) {
-      setTitle(`Season ${value}`);
-    }
-  };
-
-  const handleScraperUrlChange = (value: string) => {
-    setScraperUrl(value);
-    const detected = detectProviderFromUrl(value);
-    if (detected) {
-      setSource(detected);
-    }
-  };
-
-  const createMutation = useMutation({
-    mutationFn: () =>
-      createSeason(seriesId, {
-        title: title.trim(),
-        seasonNumber,
-        description: description.trim() || null,
-        status,
-        scraperUrl: scraperUrl.trim() || null,
-        source: source === 'none' ? null : source,
-        episodeOffset: Number.isFinite(Number(episodeOffset)) ? Number(episodeOffset) : 0,
-      }),
-    onSuccess: (created) => {
-      queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
-      queryClient.invalidateQueries({ queryKey: ['series'] });
-      toast.success('Season created successfully', {
-        description: created.title,
-      });
-      onOpenChange(false);
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create season');
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    if (!Number.isInteger(seasonNumber) || seasonNumber < 0) return;
-    createMutation.mutate();
-  };
-
-  const isValid =
-    title.trim().length > 0 &&
-    Number.isInteger(seasonNumber) &&
-    seasonNumber >= 0;
+  const {
+    seasonNumber,
+    title,
+    description,
+    setDescription,
+    status,
+    setStatus,
+    scraperUrl,
+    source,
+    setSource,
+    episodeOffset,
+    setEpisodeOffset,
+    handleSeasonNumberChange,
+    handleTitleChange,
+    handleScraperUrlChange,
+    createMutation,
+    handleSubmit,
+    isValid,
+  } = useAddSeasonForm({ open, seriesId, seasons, onOpenChange });
 
   return (
     <ChunkyDialog open={open} onOpenChange={onOpenChange}>
@@ -185,10 +125,7 @@ export function AddSeasonDialog({
               <ChunkyInput
                 id="add-season-title"
                 value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  setTitleTouched(true);
-                }}
+                onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="e.g. Season 2"
                 required
               />
