@@ -62,14 +62,14 @@ export {
   SERIES_PAGE_LIMIT,
 } from './internal/api';
 export type { SeriesDetailViewProps } from './internal/catalog';
-export { AddSeasonDialog } from './internal/seasons/AddSeasonDialog';
-export type { AddSeasonDialogProps } from './internal/seasons/AddSeasonDialog';
-export { EditSeasonDialog } from './internal/seasons/EditSeasonDialog';
-export type { EditSeasonDialogProps } from './internal/seasons/EditSeasonDialog';
-export { MoveEpisodesDialog } from './internal/seasons/MoveEpisodesDialog';
-export type { MoveEpisodesDialogProps } from './internal/seasons/MoveEpisodesDialog';
-export { buildCrossSeasonMove, buildBulkCrossSeasonMove } from './internal/seasons/crossSeasonMove';
-export { getSeasonNumber, getNextSeasonNumber } from './internal/seasons/seasonUtils';
+export { AddSeasonDialog } from './internal/seasons';
+export type { AddSeasonDialogProps } from './internal/seasons';
+export { EditSeasonDialog } from './internal/seasons';
+export type { EditSeasonDialogProps } from './internal/seasons';
+export { MoveEpisodesDialog } from './internal/seasons';
+export type { MoveEpisodesDialogProps } from './internal/seasons';
+export { buildCrossSeasonMove, buildBulkCrossSeasonMove } from './internal/seasons';
+export { getSeasonNumber, getNextSeasonNumber } from './internal/seasons';
 export type {
   Episode,
   Episode as ApiEpisode,
