@@ -39,6 +39,8 @@ export interface ShutdownManager {
   registerShutdownHandlers(): void;
   /** Appends a step to the end of the shutdown sequence. */
   addStep(step: ShutdownStep): void;
+  /** Prepends a step to the front of the shutdown sequence. */
+  prependStep(step: ShutdownStep): void;
 }
 
 /** Guarantees the process terminates with code 1 if cleanup hangs. */
@@ -108,5 +110,9 @@ export function createShutdownManager(
     steps.push(step);
   };
 
-  return { shutdown, registerShutdownHandlers, addStep };
+  const prependStep = (step: ShutdownStep): void => {
+    steps.unshift(step);
+  };
+
+  return { shutdown, registerShutdownHandlers, addStep, prependStep };
 }

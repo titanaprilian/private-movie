@@ -11,3 +11,4 @@ export * from "./internal/archive-ingest";
 export * from "./internal/archive-ingest-job-service";
 export * from "./internal/google-drive-url";
 export * from "./internal/seven-zip-extractor";
+export * from "./archive-subsystem";

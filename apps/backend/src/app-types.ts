@@ -32,14 +32,9 @@ export type StorageUsageProvider = Pick<StorageService, "getTotalUsedBytes">;
 
 export interface CreateAppOverrides {
   fetchHtml?: FetchFn;
-  browserFn?: BrowserFn;
-  s3StorageService?: S3StorageService;
-  storageProviderRegistry?: StorageProviderRegistry;
   archiveFetchFn?: ArchiveFetchFn;
   archiveExtractFn?: ArchiveExtractFn;
-  archiveStagingBaseDir?: string;
-  archiveJobService?: ArchiveIngestJobService;
-  scheduler?: SchedulerDeps;
+  storageUsageProvider?: StorageUsageProvider;
   storage?: StorageOverrides;
   rateLimit?: RateLimitPluginOptions;
   authRateLimit?: AuthRateLimitOptions;
@@ -49,5 +44,11 @@ export interface CreateAppDeps {
   db: DbClient;
   auth: AuthenticationService;
   storageService: StorageService;
+  storageProviderRegistry: StorageProviderRegistry;
+  browserFn: BrowserFn;
+  s3StorageService?: S3StorageService;
+  scheduler?: SchedulerDeps;
+  archiveJobService?: ArchiveIngestJobService;
+  archiveStagingBaseDir?: string;
   overrides?: CreateAppOverrides;
 }

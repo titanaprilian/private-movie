@@ -73,6 +73,14 @@ describe("requestLoggerPlugin", () => {
       db: {} as never,
       auth: {} as never,
       storageService: { getTotalUsedBytes: async () => null } as never,
+      browserFn: (async () => "") as never,
+      storageProviderRegistry: {
+        getProvider: async () => null,
+        getDefaultProvider: async () => null,
+        getServiceForProvider: () => null,
+        getService: async () => null,
+        invalidateCache: () => {},
+      } as never,
     });
     const res = await app.handle(new Request("http://localhost/nonexistent"));
     expect(res.headers.get(REQUEST_ID_HEADER)).toBeTruthy();
