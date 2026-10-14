@@ -6,13 +6,20 @@ import { toast } from 'sonner';
 const CHUNKY_TOAST_CLASSES = [
   'border-2',
   'border-b-4',
-  'rounded-2xl',
+  '!rounded-2xl',
   'bg-[var(--surface)]',
   'text-[var(--ink)]',
   'font-sans',
   'shadow-xl',
+  'hover:-translate-y-[2px]',
+  'hover:shadow-2xl',
+  'cursor-pointer',
+  'transition-all',
+  'duration-150',
   'p-4',
 ];
+
+const ICON_BADGE_CLASSES = ['rounded-xl', 'size-9', 'shadow-sm'];
 
 describe('ChunkySonner Toaster component', () => {
   it('renders Toaster component without crashing', () => {
@@ -25,6 +32,21 @@ describe('ChunkySonner Toaster component', () => {
     const section =
       container.querySelector('section') || document.querySelector('section');
     expect(section).toBeInTheDocument();
+  });
+
+  it('applies an explicit 16px border-radius override to toast options style', async () => {
+    renderWithProviders(<Toaster />);
+    act(() => {
+      toast('radius.check', { description: 'radius override body' });
+    });
+
+    const toastElement = await screen.findByText('radius.check');
+    const toastCard =
+      toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
+    expect(toastCard).toBeInTheDocument();
+    expect(
+      (toastCard as HTMLElement).style.getPropertyValue('--border-radius'),
+    ).toBe('16px');
   });
 
   it('renders toasts with chunky tactile classes and Baloo/Nunito typography', async () => {
@@ -48,7 +70,13 @@ describe('ChunkySonner Toaster component', () => {
     }
 
     expect(toastElement.className).toContain('font-display');
+    expect(toastElement.className).toContain('font-extrabold');
+    expect(toastElement.className).toContain('text-sm');
+    expect(toastElement.className).toContain('tracking-wide');
     expect(descriptionElement.className).toContain('font-sans');
+    expect(descriptionElement.className).toContain('font-bold');
+    expect(descriptionElement.className).toContain('text-xs');
+    expect(descriptionElement.className).toContain('leading-relaxed');
   });
 
   it('renders success toast with CheckCircle2 Lucide icon and green border', async () => {
@@ -65,12 +93,18 @@ describe('ChunkySonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'success');
+    expect(toastCard?.className).toContain('bg-[var(--green-soft)]');
     expect(toastCard?.className).toContain('border-[var(--green)]');
     expect(toastCard?.className).toContain('border-b-[var(--green-dark)]');
 
     const icon = toastCard?.querySelector('.toast-icon-success');
     expect(icon).toBeInTheDocument();
     expect(icon?.tagName.toLowerCase()).toBe('svg');
+    const badge = icon?.closest('span');
+    expect(badge).toBeInTheDocument();
+    for (const cls of ICON_BADGE_CLASSES) {
+      expect(badge?.className).toContain(cls);
+    }
   });
 
   it('renders error toast with AlertCircle Lucide icon and red border', async () => {
@@ -86,12 +120,18 @@ describe('ChunkySonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'error');
+    expect(toastCard?.className).toContain('bg-[var(--red-soft)]');
     expect(toastCard?.className).toContain('border-[var(--red)]');
     expect(toastCard?.className).toContain('border-b-[var(--red-dark)]');
 
     const icon = toastCard?.querySelector('.toast-icon-error');
     expect(icon).toBeInTheDocument();
     expect(icon?.tagName.toLowerCase()).toBe('svg');
+    const badge = icon?.closest('span');
+    expect(badge).toBeInTheDocument();
+    for (const cls of ICON_BADGE_CLASSES) {
+      expect(badge?.className).toContain(cls);
+    }
   });
 
   it('renders info toast with Info Lucide icon and blue border', async () => {
@@ -107,12 +147,18 @@ describe('ChunkySonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'info');
+    expect(toastCard?.className).toContain('bg-[var(--blue-soft)]');
     expect(toastCard?.className).toContain('border-[var(--blue)]');
     expect(toastCard?.className).toContain('border-b-[var(--blue-dark)]');
 
     const icon = toastCard?.querySelector('.toast-icon-info');
     expect(icon).toBeInTheDocument();
     expect(icon?.tagName.toLowerCase()).toBe('svg');
+    const badge = icon?.closest('span');
+    expect(badge).toBeInTheDocument();
+    for (const cls of ICON_BADGE_CLASSES) {
+      expect(badge?.className).toContain(cls);
+    }
   });
 
   it('renders warning toast with AlertTriangle Lucide icon and gold border', async () => {
@@ -128,11 +174,17 @@ describe('ChunkySonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'warning');
+    expect(toastCard?.className).toContain('bg-[var(--gold-soft)]');
     expect(toastCard?.className).toContain('border-[var(--gold)]');
     expect(toastCard?.className).toContain('border-b-[var(--gold-dark)]');
 
     const icon = toastCard?.querySelector('.toast-icon-warning');
     expect(icon).toBeInTheDocument();
     expect(icon?.tagName.toLowerCase()).toBe('svg');
+    const badge = icon?.closest('span');
+    expect(badge).toBeInTheDocument();
+    for (const cls of ICON_BADGE_CLASSES) {
+      expect(badge?.className).toContain(cls);
+    }
   });
 });
