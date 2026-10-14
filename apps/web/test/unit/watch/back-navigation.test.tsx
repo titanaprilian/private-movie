@@ -166,4 +166,68 @@ describe('SeriesWatchView hoisted sticky top navigation', () => {
     expect(screen.queryByTestId('active-episode-overview')).not.toBeInTheDocument();
     expect(screen.getByTestId('watch-top-nav')).toHaveTextContent('Back');
   });
+
+  it('uses replace navigation to overview when entering directly into player mode via initialEpisodeId', () => {
+    renderWithProviders(
+      <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /back to series overview/i })
+    );
+
+    expect(historyBackMock).not.toHaveBeenCalled();
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/watch/$seriesId',
+      params: { seriesId: 'series-1' },
+      search: {},
+      replace: true,
+    });
+    // Lands in overview mode
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
+  });
+
+  it('returns to Home/Catalog via history.back() from overview after direct player entry', () => {
+    canGoBackMock.mockReturnValue(true);
+
+    renderWithProviders(
+      <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+    );
+
+    // Back to Overview replaces the player entry...
+    fireEvent.click(
+      screen.getByRole('button', { name: /back to series overview/i })
+    );
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/watch/$seriesId',
+      params: { seriesId: 'series-1' },
+      search: {},
+      replace: true,
+    });
+
+    // ...so Back from overview pops to Home/Catalog, not the player loop.
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(historyBackMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses router.history.back() for Back to Overview when entering overview first then playing', () => {
+    renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+    // Overview -> player is a history push (Play first episode).
+    fireEvent.click(screen.getByTestId('hero-play'));
+
+    expect(
+      screen.getByRole('button', { name: /back to series overview/i })
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /back to series overview/i })
+    );
+
+    expect(historyBackMock).toHaveBeenCalledTimes(1);
+    expect(navigateMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ replace: true })
+    );
+  });
 });

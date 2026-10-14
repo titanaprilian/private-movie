@@ -33,6 +33,13 @@ export function useSeriesWatchView({
   const navigate = useNavigate();
   const router = useRouter();
 
+  // Direct player entry: mounted with an initialEpisodeId (e.g. a series
+  // card from "Recently Added Episodes" linking straight to playback).
+  // In that case there is no in-app overview history entry beneath the
+  // player, so "Back to Overview" must replace the player entry instead
+  // of pushing — otherwise Back from overview returns to the player loop.
+  const enteredDirectlyToPlayerRef = useRef(Boolean(initialEpisodeId));
+
   // Return to the catalogue: in-app visitors go back through router
   // history so scroll position is restored; direct external entries with
   // no in-app history fall back to the home route instead of being
@@ -271,14 +278,25 @@ export function useSeriesWatchView({
   };
 
   const handleBackToOverview = () => {
-    setSelectedEpisodeId(null);
-    if (navigate && series?.id) {
-      navigate({
-        to: '/watch/$seriesId',
-        params: { seriesId: series.id },
-        search: {},
-      });
+    // Direct-to-player entry: replace the player history entry with the
+    // overview so the preceding entry stays Home/Catalog.
+    if (enteredDirectlyToPlayerRef.current) {
+      enteredDirectlyToPlayerRef.current = false;
+      setSelectedEpisodeId(null);
+      if (navigate && series?.id) {
+        navigate({
+          to: '/watch/$seriesId',
+          params: { seriesId: series.id },
+          search: {},
+          replace: true,
+        });
+      }
+      return;
     }
+    // Overview-first entry: an overview history entry already exists
+    // beneath the player, so pop back to it (preserves scroll/focus).
+    setSelectedEpisodeId(null);
+    router.history.back();
   };
 
   const handleReloadIframe = () => {
