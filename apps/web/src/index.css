@@ -27,8 +27,10 @@
   --yellow-dark: #e6a800;
   --red: #ff4b4b;
   --red-dark: #e63e3e;
+  --red-soft: rgba(255, 75, 75, 0.15);
   --gold: #ffc800;
   --gold-dark: #e5a600;
+  --gold-soft: rgba(255, 200, 0, 0.15);
   --gold-tint: #2b2a14;
   --gold-tint-hover: #363415;
 
@@ -86,8 +88,10 @@
   --yellow-dark: #e6a800;
   --red: #ff4b4b;
   --red-dark: #e63e3e;
+  --red-soft: rgba(255, 75, 75, 0.15);
   --gold: #ffc800;
   --gold-dark: #e5a600;
+  --gold-soft: rgba(255, 200, 0, 0.15);
   --gold-tint: #2b2a14;
   --gold-tint-hover: #363415;
 

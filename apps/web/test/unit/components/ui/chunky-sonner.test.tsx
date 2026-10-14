@@ -19,7 +19,16 @@ const CHUNKY_TOAST_CLASSES = [
   'p-4',
 ];
 
-const ICON_BADGE_CLASSES = ['rounded-xl', 'size-9', 'shadow-sm'];
+const ICON_BADGE_CLASSES = [
+  'rounded-xl',
+  '!size-9',
+  'shadow-sm',
+  'mr-3.5',
+  'shrink-0',
+  'flex',
+  'items-center',
+  'justify-center',
+];
 
 describe('ChunkySonner Toaster component', () => {
   it('renders Toaster component without crashing', () => {
@@ -47,6 +56,27 @@ describe('ChunkySonner Toaster component', () => {
     expect(
       (toastCard as HTMLElement).style.getPropertyValue('--border-radius'),
     ).toBe('16px');
+  });
+
+  it('bridges theme tokens into Sonner CSS variables via toast options style', async () => {
+    renderWithProviders(<Toaster />);
+    act(() => {
+      toast('theme.tokens', { description: 'theme token body' });
+    });
+
+    const toastElement = await screen.findByText('theme.tokens');
+    const toastCard =
+      toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
+    expect(toastCard).toBeInTheDocument();
+    expect(
+      (toastCard as HTMLElement).style.getPropertyValue('--normal-bg'),
+    ).toBe('var(--surface)');
+    expect(
+      (toastCard as HTMLElement).style.getPropertyValue('--normal-text'),
+    ).toBe('var(--ink)');
+    expect(
+      (toastCard as HTMLElement).style.getPropertyValue('--normal-border'),
+    ).toBe('var(--border)');
   });
 
   it('renders toasts with chunky tactile classes and Baloo/Nunito typography', async () => {
@@ -93,14 +123,14 @@ describe('ChunkySonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'success');
-    expect(toastCard?.className).toContain('bg-[var(--green-soft)]');
-    expect(toastCard?.className).toContain('border-[var(--green)]');
-    expect(toastCard?.className).toContain('border-b-[var(--green-dark)]');
+    expect(toastCard?.className).toContain('!bg-[var(--green-soft)]');
+    expect(toastCard?.className).toContain('!border-[var(--green)]');
+    expect(toastCard?.className).toContain('!border-b-[var(--green-dark)]');
 
     const icon = toastCard?.querySelector('.toast-icon-success');
     expect(icon).toBeInTheDocument();
     expect(icon?.tagName.toLowerCase()).toBe('svg');
-    const badge = icon?.closest('span');
+    const badge = icon?.closest('[data-icon]');
     expect(badge).toBeInTheDocument();
     for (const cls of ICON_BADGE_CLASSES) {
       expect(badge?.className).toContain(cls);
@@ -120,14 +150,14 @@ describe('ChunkySonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'error');
-    expect(toastCard?.className).toContain('bg-[var(--red-soft)]');
-    expect(toastCard?.className).toContain('border-[var(--red)]');
-    expect(toastCard?.className).toContain('border-b-[var(--red-dark)]');
+    expect(toastCard?.className).toContain('!bg-[var(--red-soft)]');
+    expect(toastCard?.className).toContain('!border-[var(--red)]');
+    expect(toastCard?.className).toContain('!border-b-[var(--red-dark)]');
 
     const icon = toastCard?.querySelector('.toast-icon-error');
     expect(icon).toBeInTheDocument();
     expect(icon?.tagName.toLowerCase()).toBe('svg');
-    const badge = icon?.closest('span');
+    const badge = icon?.closest('[data-icon]');
     expect(badge).toBeInTheDocument();
     for (const cls of ICON_BADGE_CLASSES) {
       expect(badge?.className).toContain(cls);
@@ -147,14 +177,14 @@ describe('ChunkySonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'info');
-    expect(toastCard?.className).toContain('bg-[var(--blue-soft)]');
-    expect(toastCard?.className).toContain('border-[var(--blue)]');
-    expect(toastCard?.className).toContain('border-b-[var(--blue-dark)]');
+    expect(toastCard?.className).toContain('!bg-[var(--blue-soft)]');
+    expect(toastCard?.className).toContain('!border-[var(--blue)]');
+    expect(toastCard?.className).toContain('!border-b-[var(--blue-dark)]');
 
     const icon = toastCard?.querySelector('.toast-icon-info');
     expect(icon).toBeInTheDocument();
     expect(icon?.tagName.toLowerCase()).toBe('svg');
-    const badge = icon?.closest('span');
+    const badge = icon?.closest('[data-icon]');
     expect(badge).toBeInTheDocument();
     for (const cls of ICON_BADGE_CLASSES) {
       expect(badge?.className).toContain(cls);
@@ -174,14 +204,14 @@ describe('ChunkySonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'warning');
-    expect(toastCard?.className).toContain('bg-[var(--gold-soft)]');
-    expect(toastCard?.className).toContain('border-[var(--gold)]');
-    expect(toastCard?.className).toContain('border-b-[var(--gold-dark)]');
+    expect(toastCard?.className).toContain('!bg-[var(--gold-soft)]');
+    expect(toastCard?.className).toContain('!border-[var(--gold)]');
+    expect(toastCard?.className).toContain('!border-b-[var(--gold-dark)]');
 
     const icon = toastCard?.querySelector('.toast-icon-warning');
     expect(icon).toBeInTheDocument();
     expect(icon?.tagName.toLowerCase()).toBe('svg');
-    const badge = icon?.closest('span');
+    const badge = icon?.closest('[data-icon]');
     expect(badge).toBeInTheDocument();
     for (const cls of ICON_BADGE_CLASSES) {
       expect(badge?.className).toContain(cls);

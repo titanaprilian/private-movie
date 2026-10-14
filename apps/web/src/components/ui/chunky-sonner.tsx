@@ -11,40 +11,32 @@ import { useUIStore } from '@/store/uiStore';
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const iconBadgeClassName =
-  'inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-black/20 shadow-sm';
+  '!size-9 !h-9 !w-9 shrink-0 flex items-center justify-center rounded-xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-black/20 shadow-sm mr-3.5';
 
 const toastIcons = {
   success: (
-    <span className={iconBadgeClassName}>
-      <CheckCircle2
-        className="toast-icon toast-icon-success size-[18px] shrink-0 text-[var(--green)]"
-        aria-hidden
-      />
-    </span>
+    <CheckCircle2
+      className="toast-icon toast-icon-success size-5 shrink-0 text-[var(--green)]"
+      aria-hidden
+    />
   ),
   error: (
-    <span className={iconBadgeClassName}>
-      <AlertCircle
-        className="toast-icon toast-icon-error size-[18px] shrink-0 text-[var(--red)]"
-        aria-hidden
-      />
-    </span>
+    <AlertCircle
+      className="toast-icon toast-icon-error size-5 shrink-0 text-[var(--red)]"
+      aria-hidden
+    />
   ),
   info: (
-    <span className={iconBadgeClassName}>
-      <Info
-        className="toast-icon toast-icon-info size-[18px] shrink-0 text-[var(--blue)]"
-        aria-hidden
-      />
-    </span>
+    <Info
+      className="toast-icon toast-icon-info size-5 shrink-0 text-[var(--blue)]"
+      aria-hidden
+    />
   ),
   warning: (
-    <span className={iconBadgeClassName}>
-      <AlertTriangle
-        className="toast-icon toast-icon-warning size-[18px] shrink-0 text-[var(--gold)]"
-        aria-hidden
-      />
-    </span>
+    <AlertTriangle
+      className="toast-icon toast-icon-warning size-5 shrink-0 text-[var(--gold)]"
+      aria-hidden
+    />
   ),
   close: <X className="size-4 shrink-0" aria-hidden />,
 };
@@ -58,10 +50,23 @@ const Toaster = ({ ...props }: ToasterProps) => {
       position="bottom-right"
       icons={toastIcons}
       className="toaster group"
-      style={{ '--border-radius': '16px' } as React.CSSProperties}
+      style={
+        {
+          '--normal-bg': 'var(--surface)',
+          '--normal-text': 'var(--ink)',
+          '--normal-border': 'var(--border)',
+          '--border-radius': '16px',
+        } as React.CSSProperties
+      }
       toastOptions={{
-        style: { '--border-radius': '16px' } as React.CSSProperties,
+        style: {
+          '--normal-bg': 'var(--surface)',
+          '--normal-text': 'var(--ink)',
+          '--normal-border': 'var(--border)',
+          '--border-radius': '16px',
+        } as React.CSSProperties,
         classNames: {
+          icon: iconBadgeClassName,
           toast:
             'group toast font-sans bg-[var(--surface)] text-[var(--ink)] border-2 border-b-4 border-[var(--border)] border-b-[var(--border-strong)] !rounded-2xl shadow-xl hover:-translate-y-[2px] hover:shadow-2xl cursor-pointer transition-all duration-150 p-4 flex gap-2.5 items-start',
           title:
@@ -69,12 +74,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
           description:
             'font-sans font-bold text-xs leading-relaxed mt-0.5 text-[var(--muted)]',
           success:
-            'bg-[var(--green-soft)] border-[var(--green)] border-b-[var(--green-dark)]',
+            '!bg-[var(--green-soft)] !border-[var(--green)] !border-b-[var(--green-dark)]',
           error:
-            'bg-[var(--red-soft)] border-[var(--red)] border-b-[var(--red-dark)]',
-          info: 'bg-[var(--blue-soft)] border-[var(--blue)] border-b-[var(--blue-dark)]',
+            '!bg-[var(--red-soft)] !border-[var(--red)] !border-b-[var(--red-dark)]',
+          info: '!bg-[var(--blue-soft)] !border-[var(--blue)] !border-b-[var(--blue-dark)]',
           warning:
-            'bg-[var(--gold-soft)] border-[var(--gold)] border-b-[var(--gold-dark)]',
+            '!bg-[var(--gold-soft)] !border-[var(--gold)] !border-b-[var(--gold-dark)]',
           closeButton:
             'size-7 rounded-full border border-[var(--border)] bg-[var(--surface-raised)] hover:bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all shrink-0',
           actionButton:
