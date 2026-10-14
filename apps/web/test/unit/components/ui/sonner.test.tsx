@@ -1,9 +1,14 @@
 import { Toaster } from '@/components/ui/sonner';
+import { Toaster as ChunkyToaster } from '@/components/ui/chunky-sonner';
 import { renderWithProviders, screen, act } from '../../../utils';
 import { describe, expect, it } from 'vitest';
 import { toast } from 'sonner';
 
-describe('Sonner Toaster component', () => {
+describe('Sonner Toaster component (chunky re-export)', () => {
+  it('re-exports the chunky Toaster implementation', () => {
+    expect(Toaster).toBe(ChunkyToaster);
+  });
+
   it('renders Toaster component without crashing', () => {
     const { container } = renderWithProviders(<Toaster />);
     expect(container).toBeInTheDocument();
@@ -16,7 +21,7 @@ describe('Sonner Toaster component', () => {
     expect(section).toBeInTheDocument();
   });
 
-  it('renders success toast with SVG icon, border color, and custom class mapping', async () => {
+  it('renders success toast with chunky markup, Lucide icon, and green border', async () => {
     renderWithProviders(<Toaster />);
     act(() => {
       toast.success('item.create', {
@@ -33,14 +38,19 @@ describe('Sonner Toaster component', () => {
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'success');
     expect(toastCard?.className).toContain('toast');
-    expect(toastCard?.className).toContain('mono');
+    expect(toastCard?.className).toContain('border-2');
+    expect(toastCard?.className).toContain('border-b-4');
+    expect(toastCard?.className).toContain('rounded-2xl');
+    expect(toastCard?.className).toContain('bg-[var(--surface)]');
+    expect(toastCard?.className).toContain('border-[var(--green)]');
+    expect(toastCard?.className).toContain('border-b-[var(--green-dark)]');
 
-    const icon = toastCard?.querySelector('svg');
+    const icon = toastCard?.querySelector('.toast-icon-success');
     expect(icon).toBeInTheDocument();
-    expect(icon?.getAttribute('stroke')).toBe('#22c55e');
+    expect(icon?.tagName.toLowerCase()).toBe('svg');
   });
 
-  it('renders error toast with SVG icon and border color', async () => {
+  it('renders error toast with Lucide icon and red border', async () => {
     renderWithProviders(<Toaster />);
     act(() => {
       toast.error('auth.login', { description: 'invalid credentials' });
@@ -53,13 +63,14 @@ describe('Sonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'error');
+    expect(toastCard?.className).toContain('border-[var(--red)]');
 
-    const icon = toastCard?.querySelector('svg');
+    const icon = toastCard?.querySelector('.toast-icon-error');
     expect(icon).toBeInTheDocument();
-    expect(icon?.getAttribute('stroke')).toBe('#ef4444');
+    expect(icon?.tagName.toLowerCase()).toBe('svg');
   });
 
-  it('renders info toast with SVG icon and border color', async () => {
+  it('renders info toast with Lucide icon and blue border', async () => {
     renderWithProviders(<Toaster />);
     act(() => {
       toast.info('sync', { description: 'workspace up to date' });
@@ -72,13 +83,14 @@ describe('Sonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'info');
+    expect(toastCard?.className).toContain('border-[var(--blue)]');
 
-    const icon = toastCard?.querySelector('svg');
+    const icon = toastCard?.querySelector('.toast-icon-info');
     expect(icon).toBeInTheDocument();
-    expect(icon?.getAttribute('stroke')).toBe('#818cf8');
+    expect(icon?.tagName.toLowerCase()).toBe('svg');
   });
 
-  it('renders warning toast with SVG icon and border color', async () => {
+  it('renders warning toast with Lucide icon and gold border', async () => {
     renderWithProviders(<Toaster />);
     act(() => {
       toast.warning('session', { description: 'expires in 5 minutes' });
@@ -91,9 +103,10 @@ describe('Sonner Toaster component', () => {
     const toastCard =
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toHaveAttribute('data-type', 'warning');
+    expect(toastCard?.className).toContain('border-[var(--gold)]');
 
-    const icon = toastCard?.querySelector('svg');
+    const icon = toastCard?.querySelector('.toast-icon-warning');
     expect(icon).toBeInTheDocument();
-    expect(icon?.getAttribute('stroke')).toBe('#f59e0b');
+    expect(icon?.tagName.toLowerCase()).toBe('svg');
   });
 });
