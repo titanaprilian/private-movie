@@ -28,8 +28,14 @@ export function SeriesDetailDialog({
         className="max-w-2xl p-0 gap-0"
       >
         {series ? (
-          <div>
-            <div className="relative h-56 md:h-72 w-full overflow-hidden">
+          <div
+            data-testid="series-detail-layout"
+            className="flex min-h-0 max-h-[85vh] flex-1 flex-col overflow-hidden"
+          >
+            <div
+              data-testid="series-detail-header"
+              className="relative h-56 md:h-72 w-full shrink-0 overflow-hidden"
+            >
               <img
                 data-testid="series-detail-backdrop"
                 src={series.bannerUrl}
@@ -49,7 +55,10 @@ export function SeriesDetailDialog({
               </ChunkyDialogClose>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div
+              data-testid="series-detail-body"
+              className="p-6 space-y-4 min-h-0 flex-1 overflow-y-auto"
+            >
               <div
                 data-testid="series-detail-badges"
                 className="flex items-center gap-2 flex-wrap"
@@ -82,8 +91,12 @@ export function SeriesDetailDialog({
               >
                 {series.synopsis}
               </p>
+            </div>
 
-              <div className="flex items-center gap-3 pt-2">
+            <div
+              data-testid="series-detail-footer"
+              className="flex shrink-0 items-center gap-3 px-6 pb-6 pt-2"
+            >
                 <ChunkyButton
                   type="button"
                   data-testid="series-detail-play"
@@ -95,7 +108,6 @@ export function SeriesDetailDialog({
                   <Play className="w-5 h-5 fill-white text-white" />
                   <span>Play Now</span>
                 </ChunkyButton>
-              </div>
             </div>
           </div>
         ) : null}
