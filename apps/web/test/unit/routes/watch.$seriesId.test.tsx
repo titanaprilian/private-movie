@@ -5,6 +5,7 @@ import { Route as ImportedRoute } from '@/routes/watch.$seriesId';
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (config: unknown) => config,
   useNavigate: () => vi.fn(),
+  useRouter: () => ({ history: { canGoBack: () => false, back: () => {} } }),
   useSearch: () => ({}),
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));

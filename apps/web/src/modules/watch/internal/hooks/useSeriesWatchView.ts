@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useWatchState } from './useWatchState';
 import { useWatchNav } from './useWatchNav';
@@ -31,13 +31,14 @@ export function useSeriesWatchView({
   initialSourceIndex,
 }: UseSeriesWatchViewOptions): UseSeriesWatchViewReturn {
   const navigate = useNavigate();
+  const router = useRouter();
 
-  // Referrer-safe return to the catalogue: internal visitors (Home,
-  // Genres, Search) go back through browser history so scroll position is
-  // preserved; direct external entries fall back to the home route instead
-  // of being ejected from the app.
+  // Return to the catalogue: in-app visitors go back through router
+  // history so scroll position is restored; direct external entries with
+  // no in-app history fall back to the home route instead of being
+  // ejected from the app.
   const handleBackToHome = () => {
-    navigateBackToCatalog(() => {
+    navigateBackToCatalog(router, () => {
       if (navigate) {
         navigate({ to: '/' });
       } else if (typeof window !== 'undefined') {
@@ -193,6 +194,7 @@ export function useSeriesWatchView({
         to: '/watch/$seriesId',
         params: { seriesId: series.id },
         search: { ep: episodeId },
+        replace: true,
       });
     }
 
@@ -217,6 +219,7 @@ export function useSeriesWatchView({
             to: '/watch/$seriesId',
             params: { seriesId: series.id },
             search: { ep: prevEp.id },
+            replace: true,
           });
         }
       }
@@ -237,6 +240,7 @@ export function useSeriesWatchView({
             to: '/watch/$seriesId',
             params: { seriesId: series.id },
             search: { ep: nextEp.id },
+            replace: true,
           });
         }
       }
@@ -244,8 +248,25 @@ export function useSeriesWatchView({
   };
 
   const handlePlayFirstEpisode = () => {
-    if (firstPlayableEpisode) {
-      handleSelectEpisode(firstPlayableEpisode.id);
+    if (!firstPlayableEpisode) return;
+    // Initial overview → player transition stays a history push so the
+    // overview remains reachable via back navigation.
+    setSelectedEpisodeId(firstPlayableEpisode.id);
+    selectEpisode(firstPlayableEpisode.id);
+    toast.info(`Switched to ${firstPlayableEpisode.title}`);
+
+    if (navigate && series?.id) {
+      navigate({
+        to: '/watch/$seriesId',
+        params: { seriesId: series.id },
+        search: { ep: firstPlayableEpisode.id },
+      });
+    }
+
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // ignore
     }
   };
 

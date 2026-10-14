@@ -1,34 +1,33 @@
 /**
- * Returns true when `document.referrer` belongs to the current origin,
- * meaning the visitor arrived from an internal catalogue route
- * (Home, Genres, Search) and history-back is safe.
+ * Minimal structural type for the TanStack Router instance used for
+ * catalogue back navigation. Only the history surface is required so the
+ * helper stays unit-testable without a real router.
  */
-export function isInternalReferrer(): boolean {
-  try {
-    if (typeof document === 'undefined' || typeof window === 'undefined') {
-      return false;
-    }
-    const referrer = document.referrer;
-    if (!referrer) return false;
-    return new URL(referrer).origin === window.location.origin;
-  } catch {
-    return false;
-  }
+export interface BackNavRouter {
+  history: {
+    canGoBack: () => boolean;
+    back: () => void;
+  };
 }
 
 /**
- * Referrer-safe catalog back navigation: internal visitors go back through
- * browser history (preserving catalogue scroll position), while direct
- * external visitors fall back to the home route.
+ * Router-history back navigation: when the router history can go back
+ * (the visitor arrived from an in-app catalogue route), go back through
+ * history so the catalogue scroll position is restored. Direct external
+ * entries with no in-app history fall back to the home route instead of
+ * being ejected from the app.
  */
-export function navigateBackToCatalog(fallback: () => void): void {
-  if (isInternalReferrer()) {
-    try {
-      window.history.back();
+export function navigateBackToCatalog(
+  router: BackNavRouter,
+  fallback: () => void
+): void {
+  try {
+    if (router.history.canGoBack()) {
+      router.history.back();
       return;
-    } catch {
-      // fall through to fallback
     }
+  } catch {
+    // fall through to fallback
   }
   fallback();
 }

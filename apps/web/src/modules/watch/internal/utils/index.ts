@@ -1,2 +1,3 @@
 export { formatDuration } from './formatDuration';
-export { isInternalReferrer, navigateBackToCatalog } from './watchBackNav';
+export { navigateBackToCatalog } from './watchBackNav';
+export type { BackNavRouter } from './watchBackNav';

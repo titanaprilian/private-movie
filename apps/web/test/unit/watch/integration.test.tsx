@@ -18,6 +18,7 @@ vi.mock('@tanstack/react-router', () => ({
     </a>
   ),
   useNavigate: () => vi.fn(),
+  useRouter: () => ({ history: { canGoBack: () => false, back: () => {} } }),
   useSearch: () => ({}),
   useParams: () => ({ seriesId: 'series-real-1' }),
 }));

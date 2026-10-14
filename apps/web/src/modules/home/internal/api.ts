@@ -39,5 +39,7 @@ export function homeFeedQueryOptions(genreSlug?: string) {
   return queryOptions({
     queryKey: ['home-feed', genreSlug],
     queryFn: () => fetchHomeFeed(genreSlug),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
