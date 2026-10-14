@@ -1,6 +1,9 @@
 import type { createApp } from "@/app";
-import type { CreateAppOverrides } from "@/app-types";
+import type { SchedulerDeps, StorageUsageProvider } from "@/app-types";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type { ArchiveExtractFn, ArchiveFetchFn, ArchiveIngestJobService } from "@/modules/series";
+import type { AuthRateLimitOptions } from "@/modules/authentication/http";
+import type { RateLimitPluginOptions } from "@/plugins";
 import type { StorageOverrides } from "@/modules/storage";
 
 export type App = ReturnType<typeof createApp>;
@@ -20,12 +23,20 @@ export interface RequestResult {
   cookies: Record<string, string>;
 }
 
-export interface BuildAppOptions extends CreateAppOverrides {
+export interface BuildAppOptions {
   fetchHtml?: FetchFn;
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  archiveFetchFn?: ArchiveFetchFn;
+  archiveExtractFn?: ArchiveExtractFn;
+  archiveStagingBaseDir?: string;
+  archiveJobService?: ArchiveIngestJobService;
+  scheduler?: SchedulerDeps;
   storage?: StorageOverrides;
+  storageUsageProvider?: StorageUsageProvider;
+  rateLimit?: RateLimitPluginOptions;
+  authRateLimit?: AuthRateLimitOptions;
 }
 
 /**
@@ -69,20 +80,26 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
 
   const defaultBrowserFn: BrowserFn = async () => "";
 
+  const { createStorageProviderRegistry } = await import("@repo/media-service");
+  const storageProviderRegistry =
+    options?.storageProviderRegistry ??
+    createStorageProviderRegistry(db, options?.s3StorageService);
+
   return createApp({
     db,
     auth,
     storageService,
+    browserFn: options?.browserFn ?? defaultBrowserFn,
+    storageProviderRegistry,
+    s3StorageService: options?.s3StorageService,
+    scheduler: options?.scheduler ?? createTestScheduler(),
+    archiveStagingBaseDir: options?.archiveStagingBaseDir,
+    archiveJobService: options?.archiveJobService,
     overrides: {
       fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
-      browserFn: options?.browserFn ?? defaultBrowserFn,
-      s3StorageService: options?.s3StorageService,
-      storageProviderRegistry: options?.storageProviderRegistry,
       archiveFetchFn: options?.archiveFetchFn,
       archiveExtractFn: options?.archiveExtractFn,
-      archiveStagingBaseDir: options?.archiveStagingBaseDir,
-      archiveJobService: options?.archiveJobService,
-      scheduler: options?.scheduler ?? createTestScheduler(),
+      storageUsageProvider: options?.storageUsageProvider ?? options?.storage?.usageProvider ?? undefined,
       storage: options?.storage,
       // Rate limiting is disabled by default in tests. Suites asserting
       // throttling behavior opt in explicitly via these overrides.

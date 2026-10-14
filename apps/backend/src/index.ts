@@ -55,14 +55,12 @@ async function bootstrap(): Promise<void> {
     db,
     auth,
     storageService,
-    overrides: {
-      browserFn: browser.browserFn,
-      s3StorageService,
-      storageProviderRegistry,
-      scheduler,
-      archiveStagingBaseDir: archiveSubsystem.stagingBaseDir,
-      archiveJobService: archiveSubsystem.jobService,
-    },
+    storageProviderRegistry,
+    browserFn: browser.browserFn,
+    s3StorageService,
+    scheduler,
+    archiveStagingBaseDir: archiveSubsystem.stagingBaseDir,
+    archiveJobService: archiveSubsystem.jobService,
   }).listen(serverConfig);
   shutdown.prependStep({
     name: "http-server",

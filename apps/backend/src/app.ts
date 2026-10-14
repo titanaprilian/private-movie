@@ -21,11 +21,24 @@ import {
 import type { CreateAppDeps } from "./app-types";
 
 export const createApp = (deps: CreateAppDeps) => {
-  const { db, auth, storageService, overrides = {} } = deps;
+  const {
+    db,
+    auth,
+    storageService,
+    storageProviderRegistry,
+    browserFn,
+    s3StorageService,
+    scheduler,
+    archiveJobService,
+    archiveStagingBaseDir,
+    overrides = {},
+  } = deps;
   const appConfig = loadAppConfig();
 
   const storageUsageProvider =
-    overrides.storage?.usageProvider ?? storageService;
+    overrides.storageUsageProvider ??
+    overrides.storage?.usageProvider ??
+    storageService;
 
   return new Elysia({ name: "app" })
     .use(requestLoggerPlugin())
@@ -42,7 +55,7 @@ export const createApp = (deps: CreateAppDeps) => {
           dashboardRoutes({
             db,
             authService: auth,
-            scheduler: overrides.scheduler,
+            scheduler,
             storageUsageProvider,
           })
         )
@@ -51,9 +64,9 @@ export const createApp = (deps: CreateAppDeps) => {
             db,
             authService: auth,
             fetchHtml: overrides.fetchHtml,
-            browserFn: overrides.browserFn,
-            s3StorageService: overrides.s3StorageService,
-            storageProviderRegistry: overrides.storageProviderRegistry,
+            browserFn,
+            s3StorageService,
+            storageProviderRegistry,
           })
         )
         .use(
@@ -61,13 +74,13 @@ export const createApp = (deps: CreateAppDeps) => {
             db,
             authService: auth,
             fetchHtml: overrides.fetchHtml,
-            browserFn: overrides.browserFn,
-            s3StorageService: overrides.s3StorageService,
-            storageProviderRegistry: overrides.storageProviderRegistry,
+            browserFn,
+            s3StorageService,
+            storageProviderRegistry,
             archiveFetchFn: overrides.archiveFetchFn,
             archiveExtractFn: overrides.archiveExtractFn,
-            archiveStagingBaseDir: overrides.archiveStagingBaseDir,
-            archiveJobService: overrides.archiveJobService,
+            archiveStagingBaseDir,
+            archiveJobService,
           })
         )
         .use(
@@ -75,8 +88,8 @@ export const createApp = (deps: CreateAppDeps) => {
             db,
             authService: auth,
             fetchHtml: overrides.fetchHtml,
-            browserFn: overrides.browserFn,
-            s3StorageService: overrides.s3StorageService,
+            browserFn,
+            s3StorageService,
           })
         )
         .use(mediaRoutes({ db, authService: auth }))
@@ -85,8 +98,8 @@ export const createApp = (deps: CreateAppDeps) => {
           storageRoutes({
             db,
             authService: auth,
-            s3StorageService: overrides.s3StorageService,
-            storageProviderRegistry: overrides.storageProviderRegistry,
+            s3StorageService,
+            storageProviderRegistry,
             storageService: overrides.storage?.service ?? storageService,
             overrides: overrides.storage,
           })

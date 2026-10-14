@@ -3,10 +3,20 @@ import { createApp } from "@/app";
 import type { DbClient } from "@repo/db";
 import type { AuthenticationService } from "@repo/contracts";
 import type { StorageService } from "@/modules/storage";
+import type { BrowserFn, StorageProviderRegistry } from "@repo/media-service";
 
 const storageServiceFake = {
   getTotalUsedBytes: async () => null,
 } as unknown as StorageService;
+
+const browserFnFake: BrowserFn = async () => "";
+const registryFake = {
+  getProvider: async () => null,
+  getDefaultProvider: async () => null,
+  getServiceForProvider: () => null,
+  getService: async () => null,
+  invalidateCache: () => {},
+} as unknown as StorageProviderRegistry;
 
 describe("composition root global error handler", () => {
   it("passes through 404 for unknown routes (NOT_FOUND)", async () => {
@@ -14,6 +24,8 @@ describe("composition root global error handler", () => {
       db: {} as unknown as DbClient,
       auth: {} as unknown as AuthenticationService,
       storageService: storageServiceFake,
+      browserFn: browserFnFake,
+      storageProviderRegistry: registryFake,
     });
 
     const response = await app.handle(
@@ -37,6 +49,8 @@ describe("composition root global error handler", () => {
       db: mockDb,
       auth: {} as unknown as AuthenticationService,
       storageService: storageServiceFake,
+      browserFn: browserFnFake,
+      storageProviderRegistry: registryFake,
     });
 
     const response = await app.handle(
