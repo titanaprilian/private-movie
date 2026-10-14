@@ -105,6 +105,41 @@ describe("createShutdownManager", () => {
     expect(proc.exits).toEqual([0]);
   });
 
+  it("supports steps prepended before existing steps", async () => {
+    const order: string[] = [];
+    const proc = createFakeProcess();
+    const manager = createShutdownManager({
+      proc,
+      timers: createManualTimers(),
+      logger: silentLogger,
+      steps: [{ name: "existing", run: () => void order.push("existing") }],
+    });
+    manager.prependStep({ name: "first", run: () => void order.push("first") });
+
+    await manager.shutdown();
+
+    expect(order).toEqual(["first", "existing"]);
+    expect(proc.exits).toEqual([0]);
+  });
+
+  it("runs prepended steps in reverse-registration (LIFO) order", async () => {
+    const order: string[] = [];
+    const proc = createFakeProcess();
+    const manager = createShutdownManager({
+      proc,
+      timers: createManualTimers(),
+      logger: silentLogger,
+    });
+    manager.prependStep({ name: "db", run: () => void order.push("db") });
+    manager.prependStep({ name: "browser", run: () => void order.push("browser") });
+    manager.prependStep({ name: "http", run: () => void order.push("http") });
+
+    await manager.shutdown();
+
+    expect(order).toEqual(["http", "browser", "db"]);
+    expect(proc.exits).toEqual([0]);
+  });
+
   it("isolates step failures and exits 1 without skipping later steps", async () => {
     const order: string[] = [];
     const logger = { error: vi.fn() };
