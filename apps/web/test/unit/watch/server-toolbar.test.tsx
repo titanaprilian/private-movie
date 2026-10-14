@@ -5,6 +5,7 @@ import { renderWithProviders } from '../../utils';
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   useNavigate: () => vi.fn(),
+  useRouter: () => ({ history: { canGoBack: () => false, back: () => {} } }),
   useSearch: () => ({}),
   useParams: () => ({ seriesId: 'series-1' }),
 }));

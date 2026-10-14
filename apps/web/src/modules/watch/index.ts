@@ -54,4 +54,5 @@ export type {
   WatchZone,
   AdblockDetectorResult,
 } from './internal/types';
-export { formatDuration, isInternalReferrer, navigateBackToCatalog } from './internal/utils';
+export { formatDuration, navigateBackToCatalog } from './internal/utils';
+export type { BackNavRouter } from './internal/utils';

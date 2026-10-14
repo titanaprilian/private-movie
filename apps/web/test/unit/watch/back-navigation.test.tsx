@@ -2,6 +2,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { screen, fireEvent } from '../../utils';
 
 const navigateMock = vi.fn();
+const historyBackMock = vi.fn();
+const canGoBackMock = vi.fn(() => true);
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
@@ -20,6 +22,12 @@ vi.mock('@tanstack/react-router', () => ({
     </a>
   ),
   useNavigate: () => navigateMock,
+  useRouter: () => ({
+    history: {
+      canGoBack: () => canGoBackMock(),
+      back: () => historyBackMock(),
+    },
+  }),
   useSearch: () => ({}),
   useParams: () => ({ seriesId: 'series-1' }),
 }));
@@ -82,36 +90,18 @@ const mockSeries: WatchSeriesDetails = {
   episodes: [],
 };
 
-function mockReferrer(value: string) {
-  Object.defineProperty(document, 'referrer', {
-    configurable: true,
-    get: () => value,
-  });
-}
-
 describe('SeriesWatchView hoisted sticky top navigation', () => {
-  const historyBackSpy = vi
-    .spyOn(window.history, 'back')
-    .mockImplementation(() => {});
-  const originalReferrer = Object.getOwnPropertyDescriptor(
-    document,
-    'referrer'
-  );
-
   beforeEach(() => {
     vi.clearAllMocks();
+    canGoBackMock.mockReturnValue(true);
     localStorage.setItem('adblock_warning_dismissed', 'true');
   });
 
   afterEach(() => {
     localStorage.removeItem('adblock_warning_dismissed');
-    if (originalReferrer) {
-      Object.defineProperty(document, 'referrer', originalReferrer);
-    }
   });
 
   it('renders a sticky top nav with a "Back" button (chevron icon and greenish border) in Overview mode', () => {
-    mockReferrer('');
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
     const nav = screen.getByTestId('watch-top-nav');
@@ -126,7 +116,6 @@ describe('SeriesWatchView hoisted sticky top navigation', () => {
     expect(back.querySelector('svg')).toBeInTheDocument();
   });
   it('renders a sticky top nav with "Back to Overview" in Player mode', () => {
-    mockReferrer('');
     renderWithProviders(
       <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
     );
@@ -140,41 +129,30 @@ describe('SeriesWatchView hoisted sticky top navigation', () => {
     ).toHaveTextContent('Back to Overview');
   });
 
-  it('uses history.back() when the referrer is internal to the catalogue', () => {
-    mockReferrer(`${window.location.origin}/genres/action`);
+  it('uses router.history.back() when in-app history can go back', () => {
+    canGoBackMock.mockReturnValue(true);
 
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
-    expect(historyBackSpy).toHaveBeenCalledTimes(1);
+    expect(canGoBackMock).toHaveBeenCalledTimes(1);
+    expect(historyBackMock).toHaveBeenCalledTimes(1);
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  it('falls back to / when the referrer is external', () => {
-    mockReferrer('https://external.example.com/some-page');
+  it('falls back to / when router history cannot go back (direct visit)', () => {
+    canGoBackMock.mockReturnValue(false);
 
     renderWithProviders(<SeriesWatchView series={mockSeries} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
-    expect(historyBackSpy).not.toHaveBeenCalled();
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/' });
-  });
-
-  it('falls back to / when the referrer is absent (direct visit)', () => {
-    mockReferrer('');
-
-    renderWithProviders(<SeriesWatchView series={mockSeries} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-
-    expect(historyBackSpy).not.toHaveBeenCalled();
+    expect(historyBackMock).not.toHaveBeenCalled();
     expect(navigateMock).toHaveBeenCalledWith({ to: '/' });
   });
 
   it('navigates to series overview when clicking the series tag pill on the active episode metadata card', () => {
-    mockReferrer('');
     renderWithProviders(
       <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
     );
@@ -187,5 +165,69 @@ describe('SeriesWatchView hoisted sticky top navigation', () => {
 
     expect(screen.queryByTestId('active-episode-overview')).not.toBeInTheDocument();
     expect(screen.getByTestId('watch-top-nav')).toHaveTextContent('Back');
+  });
+
+  it('uses replace navigation to overview when entering directly into player mode via initialEpisodeId', () => {
+    renderWithProviders(
+      <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /back to series overview/i })
+    );
+
+    expect(historyBackMock).not.toHaveBeenCalled();
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/watch/$seriesId',
+      params: { seriesId: 'series-1' },
+      search: {},
+      replace: true,
+    });
+    // Lands in overview mode
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
+  });
+
+  it('returns to Home/Catalog via history.back() from overview after direct player entry', () => {
+    canGoBackMock.mockReturnValue(true);
+
+    renderWithProviders(
+      <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+    );
+
+    // Back to Overview replaces the player entry...
+    fireEvent.click(
+      screen.getByRole('button', { name: /back to series overview/i })
+    );
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/watch/$seriesId',
+      params: { seriesId: 'series-1' },
+      search: {},
+      replace: true,
+    });
+
+    // ...so Back from overview pops to Home/Catalog, not the player loop.
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(historyBackMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses router.history.back() for Back to Overview when entering overview first then playing', () => {
+    renderWithProviders(<SeriesWatchView series={mockSeries} />);
+
+    // Overview -> player is a history push (Play first episode).
+    fireEvent.click(screen.getByTestId('hero-play'));
+
+    expect(
+      screen.getByRole('button', { name: /back to series overview/i })
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /back to series overview/i })
+    );
+
+    expect(historyBackMock).toHaveBeenCalledTimes(1);
+    expect(navigateMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ replace: true })
+    );
   });
 });

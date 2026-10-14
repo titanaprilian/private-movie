@@ -211,4 +211,64 @@ describe('Home hero showcase & series detail dialog', () => {
       params: { seriesId: 'hero-aot' },
     });
   });
+
+  it('pins the backdrop banner and close button in a non-shrinking header', async () => {
+    mockFetch();
+    const { user } = renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('hero-more-info')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId('hero-more-info'));
+    await screen.findByTestId('series-detail-dialog');
+
+    const layout = screen.getByTestId('series-detail-layout');
+    expect(layout.className).toMatch(/flex/);
+    expect(layout.className).toMatch(/flex-col/);
+    expect(layout.className).toMatch(/overflow-hidden/);
+
+    const header = screen.getByTestId('series-detail-header');
+    expect(header).toContainElement(screen.getByTestId('series-detail-backdrop'));
+    expect(header).toContainElement(screen.getByTestId('series-detail-close'));
+    expect(header).toHaveClass('shrink-0');
+  });
+
+  it('renders badges, title, and synopsis inside a scrollable body', async () => {
+    mockFetch();
+    const { user } = renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('hero-more-info')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId('hero-more-info'));
+    await screen.findByTestId('series-detail-dialog');
+
+    const body = screen.getByTestId('series-detail-body');
+    expect(body).toContainElement(screen.getByTestId('series-detail-badges'));
+    expect(body).toContainElement(screen.getByTestId('series-detail-title'));
+    expect(body).toContainElement(screen.getByTestId('series-detail-synopsis'));
+    expect(body).toHaveClass('flex-1');
+    expect(body).toHaveClass('overflow-y-auto');
+  });
+
+  it('pins the Play Now action in a non-shrinking footer', async () => {
+    mockFetch();
+    const { user } = renderWithProviders(<CinematicHome />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('hero-more-info')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId('hero-more-info'));
+    await screen.findByTestId('series-detail-dialog');
+
+    const footer = screen.getByTestId('series-detail-footer');
+    expect(footer).toContainElement(screen.getByTestId('series-detail-play'));
+    expect(footer).toHaveClass('shrink-0');
+    expect(screen.getByTestId('series-detail-play')).toHaveTextContent(
+      /Play Now/
+    );
+  });
 });
