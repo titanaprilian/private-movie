@@ -11,7 +11,7 @@ import { useUIStore } from '@/store/uiStore';
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const iconBadgeClassName =
-  '!size-9 !h-9 !w-9 shrink-0 flex items-center justify-center rounded-xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-black/20 shadow-sm mr-3.5';
+  '!size-9 !h-9 !w-9 shrink-0 flex items-center justify-center !items-center !justify-center [&_svg]:!m-auto rounded-xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-black/20 shadow-sm mr-3.5';
 
 const toastIcons = {
   success: (

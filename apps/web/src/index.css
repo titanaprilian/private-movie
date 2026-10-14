@@ -16,21 +16,21 @@
   /* Duolingo Brand Palette & Depressed Shadows */
   --green: #58cc02;
   --green-dark: #46a302;
-  --green-soft: rgba(88, 204, 2, 0.15);
+  --green-soft: #f0fdf4;
   --green-tint: rgba(88, 204, 2, 0.15);
   --blue: #1cb0f6;
   --blue-dark: #1899d6;
-  --blue-soft: rgba(28, 176, 246, 0.15);
+  --blue-soft: #f0f9ff;
   --purple: #ce82ff;
   --purple-dark: #a568cc;
   --yellow: #ffc800;
   --yellow-dark: #e6a800;
   --red: #ff4b4b;
   --red-dark: #e63e3e;
-  --red-soft: rgba(255, 75, 75, 0.15);
+  --red-soft: #fdf2f2;
   --gold: #ffc800;
   --gold-dark: #e5a600;
-  --gold-soft: rgba(255, 200, 0, 0.15);
+  --gold-soft: #fefce8;
   --gold-tint: #2b2a14;
   --gold-tint-hover: #363415;
 
@@ -81,17 +81,17 @@
   --green-tint: #1b2f1a;
   --blue: #1cb0f6;
   --blue-dark: #1899d6;
-  --blue-soft: rgba(28, 176, 246, 0.15);
+  --blue-soft: #162734;
   --purple: #ce82ff;
   --purple-dark: #a568cc;
   --yellow: #ffc800;
   --yellow-dark: #e6a800;
   --red: #ff4b4b;
   --red-dark: #e63e3e;
-  --red-soft: rgba(255, 75, 75, 0.15);
+  --red-soft: #2e1a1c;
   --gold: #ffc800;
   --gold-dark: #e5a600;
-  --gold-soft: rgba(255, 200, 0, 0.15);
+  --gold-soft: #2b2a14;
   --gold-tint: #2b2a14;
   --gold-tint-hover: #363415;
 

@@ -28,6 +28,9 @@ const ICON_BADGE_CLASSES = [
   'flex',
   'items-center',
   'justify-center',
+  '!items-center',
+  '!justify-center',
+  '[&_svg]:!m-auto',
 ];
 
 describe('ChunkySonner Toaster component', () => {
@@ -215,6 +218,27 @@ describe('ChunkySonner Toaster component', () => {
     expect(badge).toBeInTheDocument();
     for (const cls of ICON_BADGE_CLASSES) {
       expect(badge?.className).toContain(cls);
+    }
+  });
+
+  it('defines solid opaque hex soft surface tokens in light and dark mode (no alpha transparency)', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const cssPath = path.resolve(__dirname, '../../../../src/index.css');
+    const css = fs.readFileSync(cssPath, 'utf-8');
+    const rootBlock = css.match(/:root\s*{([^}]*)}/)?.[1] ?? '';
+    const darkBlock = css.match(/\.dark\s*{([^}]*)}/)?.[1] ?? '';
+    expect(rootBlock).toBeTruthy();
+    expect(darkBlock).toBeTruthy();
+    const tokens = ['--green-soft', '--red-soft', '--blue-soft', '--gold-soft'];
+    const opaqueHex = /^#[0-9a-fA-F]{6}$/;
+    for (const token of tokens) {
+      const rootValue = rootBlock.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1]?.trim();
+      const darkValue = darkBlock.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1]?.trim();
+      expect(rootValue, `${token} light mode value`).toMatch(opaqueHex);
+      expect(darkValue, `${token} dark mode value`).toMatch(opaqueHex);
+      expect(rootValue).not.toMatch(/rgba?\(/);
+      expect(darkValue).not.toMatch(/rgba?\(/);
     }
   });
 });
