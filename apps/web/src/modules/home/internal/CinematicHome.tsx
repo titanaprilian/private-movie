@@ -46,12 +46,12 @@ export function CinematicHome({ genreSlug }: { genreSlug?: string } = {}) {
   }, [heroCount]);
 
   useEffect(() => {
-    if (heroCount <= 1 || isPaused) return;
+    if (heroCount <= 1 || isPaused || detailOpen) return;
     const interval = setInterval(() => {
       nextSlide();
     }, 6000);
     return () => clearInterval(interval);
-  }, [heroCount, isPaused, nextSlide]);
+  }, [heroCount, isPaused, detailOpen, nextSlide]);
 
   const currentHero = heroesList[activeIndex] || null;
 
