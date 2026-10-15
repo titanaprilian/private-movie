@@ -10,9 +10,13 @@ const INSECURE_PLACEHOLDERS = [
 export function validateJwtSecret(): void {
   const secret = process.env.JWT_SECRET;
   if (process.env.NODE_ENV === "production") {
-    if (!secret || secret.trim() === "" || INSECURE_PLACEHOLDERS.includes(secret.trim().toLowerCase())) {
+    if (
+      !secret ||
+      secret.trim() === "" ||
+      INSECURE_PLACEHOLDERS.includes(secret.trim().toLowerCase())
+    ) {
       throw new Error(
-        "FATAL: Insecure or missing JWT_SECRET in production environment. Please provide a secure JWT_SECRET."
+        "FATAL: Insecure or missing JWT_SECRET in production environment. Please provide a secure JWT_SECRET.",
       );
     }
   }
@@ -20,7 +24,9 @@ export function validateJwtSecret(): void {
 
 function getJwtSecret(): string {
   validateJwtSecret();
-  return process.env.JWT_SECRET || "default-jwt-secret-key-change-in-production";
+  return (
+    process.env.JWT_SECRET || "default-jwt-secret-key-change-in-production"
+  );
 }
 
 function base64urlEncode(str: string): string {
@@ -31,7 +37,10 @@ function base64urlDecode(str: string): string {
   return Buffer.from(str, "base64url").toString("utf8");
 }
 
-export function signJwt(payload: object, expiresInSeconds: number = 15 * 60): string {
+export function signJwt(
+  payload: object,
+  expiresInSeconds: number = 15 * 60,
+): string {
   const secret = getJwtSecret();
   const header = { alg: "HS256", typ: "JWT" };
   const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
@@ -48,7 +57,12 @@ export function signJwt(payload: object, expiresInSeconds: number = 15 * 60): st
   return `${signatureInput}.${signature}`;
 }
 
-export function verifyJwt(token: string): { sub: string; email?: string; name?: string; exp?: number } {
+export function verifyJwt(token: string): {
+  sub: string;
+  email?: string;
+  name?: string;
+  exp?: number;
+} {
   const secret = getJwtSecret();
   const parts = token.split(".");
   if (parts.length !== 3) {
@@ -76,7 +90,10 @@ export function verifyJwt(token: string): { sub: string; email?: string; name?: 
   const sigBuffer = Buffer.from(signature);
   const expectedSigBuffer = Buffer.from(expectedSignature);
 
-  if (sigBuffer.length !== expectedSigBuffer.length || !timingSafeEqual(sigBuffer, expectedSigBuffer)) {
+  if (
+    sigBuffer.length !== expectedSigBuffer.length ||
+    !timingSafeEqual(sigBuffer, expectedSigBuffer)
+  ) {
     throw new Error("Invalid signature");
   }
 

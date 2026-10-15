@@ -1,9 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import {
-  type VideoSourceRow,
-  type StorageProviderRow,
-} from "@repo/db";
+import { type VideoSourceRow, type StorageProviderRow } from "@repo/db";
 import {
   extractS3Key,
   S3NotConfiguredError,
@@ -60,10 +57,7 @@ import {
   VideoSourceNotFoundError,
   MinioCredentialsRejectedError,
 } from "../errors";
-import type {
-  StorageService,
-  StorageServiceOptions,
-} from "../types";
+import type { StorageService, StorageServiceOptions } from "../types";
 import {
   storageRepository,
   type StorageRepository,
@@ -77,20 +71,22 @@ export function createStorageService<
   TSchema extends Record<string, unknown> = Record<string, unknown>,
 >(
   db: PgDatabase<THKT, TSchema>,
-  options?: StorageServiceOptions
+  options?: StorageServiceOptions,
 ): StorageService {
   const defaultS3 = options?.s3StorageService;
   const registry =
     options?.storageProviderRegistry ??
     createStorageProviderRegistry(db, defaultS3);
   const cacheTtlMs = options?.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
-  const minioInspector = options?.minioInspector ?? createDefaultMinioInspector();
+  const minioInspector =
+    options?.minioInspector ?? createDefaultMinioInspector();
   const minioContainerStarter: MinioContainerStarter =
     options?.minioContainerStarter ??
     ((containerName = MINIO_CONTAINER_NAME) =>
       startMinioContainerViaDockerSocket(containerName));
   const minioHealthChecker: MinioHealthChecker =
-    options?.minioHealthChecker ?? ((endpoint) => waitForMinioHealthy(endpoint));
+    options?.minioHealthChecker ??
+    ((endpoint) => waitForMinioHealthy(endpoint));
   const minioBucketProvisioner =
     options?.minioBucketProvisioner ?? ensureMinioBucketWithCors;
   const repository = storageRepository(db);
@@ -108,7 +104,9 @@ export function createStorageService<
       if (match) {
         return match;
       }
-      throw new StorageProviderNotFoundError(`Storage provider with id ${providerId} not found`);
+      throw new StorageProviderNotFoundError(
+        `Storage provider with id ${providerId} not found`,
+      );
     }
 
     try {
@@ -145,7 +143,7 @@ export function createStorageService<
   async function getS3Objects(
     service: S3StorageService,
     cacheKey: string,
-    force = false
+    force = false,
   ): Promise<S3ObjectSummary[]> {
     const now = Date.now();
     const cached = cachedS3ObjectsMap.get(cacheKey);
@@ -161,7 +159,9 @@ export function createStorageService<
     return objects;
   }
 
-  async function getStorageLimitGb(provider: StorageProviderRow | null): Promise<number> {
+  async function getStorageLimitGb(
+    provider: StorageProviderRow | null,
+  ): Promise<number> {
     if (provider) {
       return provider.storageLimitGb ?? DEFAULT_LIMIT_GB;
     }
@@ -192,7 +192,7 @@ export function createStorageService<
 
   async function getCorrelatedInventory(
     providerId?: string,
-    force = false
+    force = false,
   ): Promise<{
     items: StorageResourceItem[];
     totalBytes: number;
@@ -248,12 +248,17 @@ export function createStorageService<
       if (matchedSource) {
         linkedCount++;
         const episodeId = matchedSource.episodeId;
-        const countForEp = episodeId ? (episodeSourceCounts.get(episodeId) ?? 1) : 1;
+        const countForEp = episodeId
+          ? (episodeSourceCounts.get(episodeId) ?? 1)
+          : 1;
         return {
           key,
           filename,
           sizeBytes: obj.size,
-          lastModified: (obj.lastModified instanceof Date ? obj.lastModified : new Date(obj.lastModified)).toISOString(),
+          lastModified: (obj.lastModified instanceof Date
+            ? obj.lastModified
+            : new Date(obj.lastModified)
+          ).toISOString(),
           status: "linked",
           videoSourceId: matchedSource.id,
           label: matchedSource.label,
@@ -274,7 +279,10 @@ export function createStorageService<
           key,
           filename,
           sizeBytes: obj.size,
-          lastModified: (obj.lastModified instanceof Date ? obj.lastModified : new Date(obj.lastModified)).toISOString(),
+          lastModified: (obj.lastModified instanceof Date
+            ? obj.lastModified
+            : new Date(obj.lastModified)
+          ).toISOString(),
           status: "orphaned",
           videoSourceId: null,
           label: null,
@@ -303,7 +311,7 @@ export function createStorageService<
 
   function formatProviderItem(
     provider: StorageProviderRow,
-    linkedSourcesCount: number
+    linkedSourcesCount: number,
   ): StorageProviderItem {
     let accessKeyIdMasked = "••••";
     try {
@@ -316,7 +324,8 @@ export function createStorageService<
     return {
       id: provider.id,
       name: provider.name,
-      providerType: provider.providerType as StorageProviderItem["providerType"],
+      providerType:
+        provider.providerType as StorageProviderItem["providerType"],
       endpoint: provider.endpoint,
       region: provider.region,
       bucket: provider.bucket,
@@ -335,12 +344,14 @@ export function createStorageService<
   const service: StorageService = {
     invalidateCache,
 
-    async getMetrics(providerId?: string): Promise<StorageMetrics> {      const { items, totalBytes, linkedCount, orphanCount, provider } =
+    async getMetrics(providerId?: string): Promise<StorageMetrics> {
+      const { items, totalBytes, linkedCount, orphanCount, provider } =
         await getCorrelatedInventory(providerId);
 
       const limitGb = await getStorageLimitGb(provider);
       const limitBytes = limitGb * 1024 * 1024 * 1024;
-      const percentUsed = limitBytes > 0 ? Math.min(100, (totalBytes / limitBytes) * 100) : 0;
+      const percentUsed =
+        limitBytes > 0 ? Math.min(100, (totalBytes / limitBytes) * 100) : 0;
 
       return {
         totalBytes,
@@ -365,7 +376,9 @@ export function createStorageService<
       return total;
     },
 
-    async getResources(query?: StorageResourcesQuery): Promise<StorageResourcesResponseData> {
+    async getResources(
+      query?: StorageResourcesQuery,
+    ): Promise<StorageResourcesResponseData> {
       const { items } = await getCorrelatedInventory(query?.providerId);
 
       let filtered = items;
@@ -388,8 +401,10 @@ export function createStorageService<
           return (
             item.filename.toLowerCase().includes(searchLower) ||
             item.key.toLowerCase().includes(searchLower) ||
-            (item.seriesTitle && item.seriesTitle.toLowerCase().includes(searchLower)) ||
-            (item.episodeTitle && item.episodeTitle.toLowerCase().includes(searchLower))
+            (item.seriesTitle &&
+              item.seriesTitle.toLowerCase().includes(searchLower)) ||
+            (item.episodeTitle &&
+              item.episodeTitle.toLowerCase().includes(searchLower))
           );
         });
       }
@@ -428,12 +443,16 @@ export function createStorageService<
       };
     },
 
-    async getSeries(query?: StorageSeriesQuery): Promise<StorageSeriesResponseData> {
+    async getSeries(
+      query?: StorageSeriesQuery,
+    ): Promise<StorageSeriesResponseData> {
       const { items } = await getCorrelatedInventory(query?.providerId);
 
       const seriesMap = new Map<
         string,
-        StorageSeriesItem & { seasonMap: Map<string, StorageSeriesItem["seasons"][number]> }
+        StorageSeriesItem & {
+          seasonMap: Map<string, StorageSeriesItem["seasons"][number]>;
+        }
       >();
 
       for (const item of items) {
@@ -476,7 +495,7 @@ export function createStorageService<
         .map(({ seasonMap, ...rest }) => ({
           ...rest,
           seasons: [...seasonMap.values()].sort(
-            (a, b) => a.seasonNumber - b.seasonNumber
+            (a, b) => a.seasonNumber - b.seasonNumber,
           ),
         }))
         .sort((a, b) => a.title.localeCompare(b.title));
@@ -487,7 +506,10 @@ export function createStorageService<
       };
     },
 
-    async scan(force = true, providerId?: string): Promise<{ count: number; totalBytes: number }> {
+    async scan(
+      force = true,
+      providerId?: string,
+    ): Promise<{ count: number; totalBytes: number }> {
       invalidateCache(providerId);
       const { service, provider } = await resolveTargetProvider(providerId);
 
@@ -512,7 +534,7 @@ export function createStorageService<
 
     async updateLimit(
       limitGb: number,
-      providerId?: string
+      providerId?: string,
     ): Promise<{ limitGb: number; limitBytes: number }> {
       if (limitGb <= 0 || Number.isNaN(limitGb)) {
         throw new Error("Storage limit must be a positive number");
@@ -524,7 +546,9 @@ export function createStorageService<
         const updated = await repository.setProviderLimit(providerId, limitGb);
 
         if (!updated) {
-          throw new StorageProviderNotFoundError(`Storage provider with id ${providerId} not found`);
+          throw new StorageProviderNotFoundError(
+            `Storage provider with id ${providerId} not found`,
+          );
         }
       } else {
         // Legacy system setting update
@@ -539,12 +563,14 @@ export function createStorageService<
 
     async updateSourceMetadata(
       videoSourceId: string,
-      input: { label?: string; quality?: string | null }
+      input: { label?: string; quality?: string | null },
     ): Promise<VideoSourceRow> {
       const existing = await repository.findVideoSourceById(videoSourceId);
 
       if (!existing) {
-        throw new VideoSourceNotFoundError(`Video source with id ${videoSourceId} not found`);
+        throw new VideoSourceNotFoundError(
+          `Video source with id ${videoSourceId} not found`,
+        );
       }
 
       const updateData: Partial<VideoSourceRow> = {
@@ -557,7 +583,10 @@ export function createStorageService<
         updateData.quality = input.quality;
       }
 
-      const updated = await repository.updateVideoSource(videoSourceId, updateData);
+      const updated = await repository.updateVideoSource(
+        videoSourceId,
+        updateData,
+      );
 
       invalidateCache();
       return updated!;
@@ -573,11 +602,15 @@ export function createStorageService<
       const existingEp = await repository.findEpisodeById(input.episodeId);
 
       if (!existingEp) {
-        throw new EpisodeNotFoundError(`Episode with id ${input.episodeId} not found`);
+        throw new EpisodeNotFoundError(
+          `Episode with id ${input.episodeId} not found`,
+        );
       }
 
       const { provider } = await resolveTargetProvider(input.providerId);
-      const targetProviderId = provider ? provider.id : input.providerId ?? null;
+      const targetProviderId = provider
+        ? provider.id
+        : (input.providerId ?? null);
 
       const now = new Date();
       const created = await repository.insertVideoSource({
@@ -598,7 +631,7 @@ export function createStorageService<
 
     async deleteResources(
       keys: string[],
-      providerId?: string
+      providerId?: string,
     ): Promise<{
       deletedKeys: string[];
       reclaimedBytes: number;
@@ -665,7 +698,10 @@ export function createStorageService<
       }
 
       const orphanKeys = orphanItems.map((i) => i.key);
-      const reclaimedBytes = orphanItems.reduce((sum, i) => sum + i.sizeBytes, 0);
+      const reclaimedBytes = orphanItems.reduce(
+        (sum, i) => sum + i.sizeBytes,
+        0,
+      );
 
       await service.deleteObjects(orphanKeys);
       invalidateCache(provider?.id);
@@ -676,7 +712,10 @@ export function createStorageService<
       };
     },
 
-    async getPreviewUrl(key: string, providerId?: string): Promise<{ previewUrl: string }> {
+    async getPreviewUrl(
+      key: string,
+      providerId?: string,
+    ): Promise<{ previewUrl: string }> {
       const { service } = await resolveTargetProvider(providerId);
       const previewUrl = await service.getPresignedPlaybackUrl(key);
       return { previewUrl };
@@ -693,13 +732,13 @@ export function createStorageService<
         if (src.storageProviderId) {
           countMap.set(
             src.storageProviderId,
-            (countMap.get(src.storageProviderId) ?? 0) + 1
+            (countMap.get(src.storageProviderId) ?? 0) + 1,
           );
         }
       }
 
       return providers.map((p) =>
-        formatProviderItem(p, countMap.get(p.id) ?? 0)
+        formatProviderItem(p, countMap.get(p.id) ?? 0),
       );
     },
 
@@ -707,7 +746,9 @@ export function createStorageService<
       const provider = await repository.findProviderById(id);
 
       if (!provider) {
-        throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
+        throw new StorageProviderNotFoundError(
+          `Storage provider with id ${id} not found`,
+        );
       }
 
       const sources = await repository.listVideoSourceIdsForProvider(id);
@@ -715,7 +756,9 @@ export function createStorageService<
       return formatProviderItem(provider, sources.length);
     },
 
-    async createProvider(input: CreateStorageProviderRequest): Promise<StorageProviderItem> {
+    async createProvider(
+      input: CreateStorageProviderRequest,
+    ): Promise<StorageProviderItem> {
       const now = new Date();
       const id = randomUUID();
 
@@ -751,12 +794,14 @@ export function createStorageService<
 
     async updateProvider(
       id: string,
-      input: UpdateStorageProviderRequest
+      input: UpdateStorageProviderRequest,
     ): Promise<StorageProviderItem> {
       const existing = await repository.findProviderById(id);
 
       if (!existing) {
-        throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
+        throw new StorageProviderNotFoundError(
+          `Storage provider with id ${id} not found`,
+        );
       }
 
       const now = new Date();
@@ -770,14 +815,19 @@ export function createStorageService<
       };
 
       if (input.name !== undefined) updateData.name = input.name;
-      if (input.providerType !== undefined) updateData.providerType = input.providerType;
+      if (input.providerType !== undefined)
+        updateData.providerType = input.providerType;
       if (input.endpoint !== undefined) updateData.endpoint = input.endpoint;
       if (input.region !== undefined) updateData.region = input.region;
       if (input.bucket !== undefined) updateData.bucket = input.bucket;
       if (input.publicBaseUrl !== undefined)
-        updateData.publicBaseUrl = input.publicBaseUrl ? input.publicBaseUrl.trim() : null;
-      if (input.forcePathStyle !== undefined) updateData.forcePathStyle = input.forcePathStyle;
-      if (input.storageLimitGb !== undefined) updateData.storageLimitGb = input.storageLimitGb;
+        updateData.publicBaseUrl = input.publicBaseUrl
+          ? input.publicBaseUrl.trim()
+          : null;
+      if (input.forcePathStyle !== undefined)
+        updateData.forcePathStyle = input.forcePathStyle;
+      if (input.storageLimitGb !== undefined)
+        updateData.storageLimitGb = input.storageLimitGb;
       if (input.isDefault !== undefined) updateData.isDefault = input.isDefault;
       if (input.isEnabled !== undefined) updateData.isEnabled = input.isEnabled;
 
@@ -785,7 +835,9 @@ export function createStorageService<
         updateData.accessKeyIdEnc = encryptCredential(input.accessKeyId);
       }
       if (input.secretAccessKey) {
-        updateData.secretAccessKeyEnc = encryptCredential(input.secretAccessKey);
+        updateData.secretAccessKeyEnc = encryptCredential(
+          input.secretAccessKey,
+        );
       }
 
       const updated = await repository.updateProvider(id, updateData);
@@ -801,12 +853,14 @@ export function createStorageService<
       const existing = await repository.findProviderById(id);
 
       if (!existing) {
-        throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
+        throw new StorageProviderNotFoundError(
+          `Storage provider with id ${id} not found`,
+        );
       }
 
       if (await repository.hasLinkedSources(id)) {
         throw new StorageProviderInUseError(
-          `Cannot delete storage provider ${id}: linked video sources exist`
+          `Cannot delete storage provider ${id}: linked video sources exist`,
         );
       }
 
@@ -815,7 +869,7 @@ export function createStorageService<
     },
 
     async testProvider(
-      input: TestStorageProviderRequest
+      input: TestStorageProviderRequest,
     ): Promise<TestStorageProviderResponseData> {
       let service: S3StorageService;
 
@@ -824,7 +878,7 @@ export function createStorageService<
 
         if (!row) {
           throw new StorageProviderNotFoundError(
-            `Storage provider with id ${input.providerId} not found`
+            `Storage provider with id ${input.providerId} not found`,
           );
         }
 
@@ -879,7 +933,9 @@ export function createStorageService<
       return buildMinioStatusResponse(container, provider);
     },
 
-    async spinUpMinio(input: MinioSpinUpRequest): Promise<MinioSpinUpResponseData> {
+    async spinUpMinio(
+      input: MinioSpinUpRequest,
+    ): Promise<MinioSpinUpResponseData> {
       const endpoint = resolveMinioEndpoint(input);
       const bucket = input.bucket?.trim() || MINIO_DEFAULT_BUCKET;
       const region = "us-east-1";
@@ -929,7 +985,10 @@ export function createStorageService<
       });
 
       const seen = new Set<string>();
-      let workingCreds: { accessKeyId: string; secretAccessKey: string } | null = null;
+      let workingCreds: {
+        accessKeyId: string;
+        secretAccessKey: string;
+      } | null = null;
       for (const candidate of candidates) {
         const key = `${candidate.accessKeyId}\n${candidate.secretAccessKey}`;
         if (seen.has(key)) continue;
@@ -973,7 +1032,9 @@ export function createStorageService<
           secretAccessKeyEnc,
           forcePathStyle: true,
           isEnabled: true,
-          ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
+          ...(input.isDefault !== undefined
+            ? { isDefault: input.isDefault }
+            : {}),
           updatedAt: now,
         });
         row = updated!;

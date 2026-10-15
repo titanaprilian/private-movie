@@ -4,7 +4,10 @@ import type {
   StorageProviderType,
 } from "@repo/contracts";
 import type { DbClient } from "@repo/db";
-import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  S3StorageService,
+  StorageProviderRegistry,
+} from "@repo/media-service";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import { createStorageService } from "./internal/services/service";
@@ -75,12 +78,16 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
       app.group("/storage", (storage) =>
         storage
           // Storage Provider Management Endpoints
-          .get("/providers", async () => {
-            const providers = await storageService.listProviders();
-            return successResponse(providers);
-          }, {
-            detail: listProvidersDetail,
-          })
+          .get(
+            "/providers",
+            async () => {
+              const providers = await storageService.listProviders();
+              return successResponse(providers);
+            },
+            {
+              detail: listProvidersDetail,
+            },
+          )
           .get(
             "/providers/:id",
             async ({ params }) => {
@@ -90,7 +97,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               params: providerIdParams,
               detail: getProviderDetail,
-            }
+            },
           )
           .post(
             "/providers",
@@ -114,14 +121,15 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               body: createProviderBody,
               detail: createProviderDetail,
-            }
+            },
           )
           .put(
             "/providers/:id",
             async ({ params, body }) => {
               const provider = await storageService.updateProvider(params.id, {
                 name: body.name,
-                providerType: body.providerType as StorageProviderType | undefined,
+                providerType: body.providerType as
+                  StorageProviderType | undefined,
                 endpoint: body.endpoint,
                 region: body.region,
                 bucket: body.bucket,
@@ -139,7 +147,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               params: providerIdParams,
               body: updateProviderBody,
               detail: updateProviderDetail,
-            }
+            },
           )
           .delete(
             "/providers/:id",
@@ -150,7 +158,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               params: providerIdParams,
               detail: deleteProviderDetail,
-            }
+            },
           )
           .post(
             "/providers/test",
@@ -161,14 +169,18 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               body: testProviderBody,
               detail: testProviderDetail,
-            }
+            },
           )
-          .get("/minio/status", async () => {
-            const status = await storageService.getMinioStatus();
-            return successResponse(status);
-          }, {
-            detail: minioStatusDetail,
-          })
+          .get(
+            "/minio/status",
+            async () => {
+              const status = await storageService.getMinioStatus();
+              return successResponse(status);
+            },
+            {
+              detail: minioStatusDetail,
+            },
+          )
           .post(
             "/minio/spin-up",
             async ({ body }) => {
@@ -178,32 +190,40 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               body: spinUpMinioBody,
               detail: spinUpMinioDetail,
-            }
+            },
           )
 
           // Storage Scoped Operations
           .get(
             "/metrics",
             async ({ query }) => {
-              const metrics = await storageService.getMetrics(query?.providerId);
+              const metrics = await storageService.getMetrics(
+                query?.providerId,
+              );
               return successResponse(metrics);
             },
             {
               query: metricsQuery,
               detail: metricsDetail,
-            }
+            },
           )
           .get(
             "/resources",
             async ({ query }) => {
               const page = query?.page ? parseInt(query.page, 10) : undefined;
-              const limit = query?.limit ? parseInt(query.limit, 10) : undefined;
+              const limit = query?.limit
+                ? parseInt(query.limit, 10)
+                : undefined;
               const status =
-                query?.status === "linked" || query?.status === "orphaned" || query?.status === "all"
+                query?.status === "linked" ||
+                query?.status === "orphaned" ||
+                query?.status === "all"
                   ? query.status
                   : undefined;
               const sortBy =
-                query?.sortBy === "size" || query?.sortBy === "date" || query?.sortBy === "name"
+                query?.sortBy === "size" ||
+                query?.sortBy === "date" ||
+                query?.sortBy === "name"
                   ? query.sortBy
                   : undefined;
               const sortOrder =
@@ -228,7 +248,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               query: resourcesQuery,
               detail: resourcesDetail,
-            }
+            },
           )
           .get(
             "/series",
@@ -241,7 +261,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               query: seriesQuery,
               detail: seriesDetail,
-            }
+            },
           )
           .post(
             "/scan",
@@ -252,7 +272,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               body: scanBody,
               detail: scanDetail,
-            }
+            },
           )
           .put(
             "/limit",
@@ -261,32 +281,38 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 return errorResponse(
                   set,
                   400,
-                  new Error("Storage limit must be a positive number")
+                  new Error("Storage limit must be a positive number"),
                 );
               }
 
-              const result = await storageService.updateLimit(body.limitGb, body.providerId);
+              const result = await storageService.updateLimit(
+                body.limitGb,
+                body.providerId,
+              );
               return successResponse(result);
             },
             {
               body: updateLimitBody,
               detail: updateLimitDetail,
-            }
+            },
           )
           .patch(
             "/resources/:id",
             async ({ params, body }) => {
-              const updated = await storageService.updateSourceMetadata(params.id, {
-                label: body.label,
-                quality: body.quality,
-              });
+              const updated = await storageService.updateSourceMetadata(
+                params.id,
+                {
+                  label: body.label,
+                  quality: body.quality,
+                },
+              );
               return successResponse(updated);
             },
             {
               params: resourceIdParams,
               body: updateResourceMetadataBody,
               detail: updateResourceMetadataDetail,
-            }
+            },
           )
           .post(
             "/resources/attach",
@@ -303,7 +329,7 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
             {
               body: attachOrphanBody,
               detail: attachOrphanDetail,
-            }
+            },
           )
           .post(
             "/resources/delete",
@@ -312,28 +338,33 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 return errorResponse(
                   set,
                   400,
-                  new Error("keys array is required and must not be empty")
+                  new Error("keys array is required and must not be empty"),
                 );
               }
 
-              const result = await storageService.deleteResources(body.keys, body.providerId);
+              const result = await storageService.deleteResources(
+                body.keys,
+                body.providerId,
+              );
               return successResponse(result);
             },
             {
               body: deleteResourcesBody,
               detail: deleteResourcesDetail,
-            }
+            },
           )
           .post(
             "/resources/purge-orphans",
             async ({ body }) => {
-              const result = await storageService.purgeOrphans(body?.providerId);
+              const result = await storageService.purgeOrphans(
+                body?.providerId,
+              );
               return successResponse(result);
             },
             {
               body: purgeOrphansBody,
               detail: purgeOrphansDetail,
-            }
+            },
           )
           .get(
             "/resources/preview-url",
@@ -342,18 +373,21 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 return errorResponse(
                   set,
                   400,
-                  new Error("key query parameter is required")
+                  new Error("key query parameter is required"),
                 );
               }
 
-              const result = await storageService.getPreviewUrl(query.key.trim(), query.providerId);
+              const result = await storageService.getPreviewUrl(
+                query.key.trim(),
+                query.providerId,
+              );
               return successResponse(result);
             },
             {
               query: previewUrlQuery,
               detail: previewUrlDetail,
-            }
-          )
-      )
+            },
+          ),
+      ),
   );
 };

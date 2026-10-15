@@ -45,7 +45,7 @@ export const testProviderBody = t.Optional(
     accessKeyId: t.Optional(t.String()),
     secretAccessKey: t.Optional(t.String()),
     forcePathStyle: t.Optional(t.Boolean()),
-  })
+  }),
 );
 
 export const spinUpMinioBody = t.Optional(
@@ -57,13 +57,13 @@ export const spinUpMinioBody = t.Optional(
     accessKeyId: t.Optional(t.String()),
     secretAccessKey: t.Optional(t.String()),
     isDefault: t.Optional(t.Boolean()),
-  })
+  }),
 );
 
 export const metricsQuery = t.Optional(
   t.Object({
     providerId: t.Optional(t.String()),
-  })
+  }),
 );
 
 export const resourcesQuery = t.Optional(
@@ -77,19 +77,19 @@ export const resourcesQuery = t.Optional(
     sortOrder: t.Optional(t.String()),
     page: t.Optional(t.String()),
     limit: t.Optional(t.String()),
-  })
+  }),
 );
 
 export const seriesQuery = t.Optional(
   t.Object({
     providerId: t.Optional(t.String()),
-  })
+  }),
 );
 
 export const scanBody = t.Optional(
   t.Object({
     providerId: t.Optional(t.String()),
-  })
+  }),
 );
 
 export const updateLimitBody = t.Object({
@@ -122,7 +122,7 @@ export const deleteResourcesBody = t.Object({
 export const purgeOrphansBody = t.Optional(
   t.Object({
     providerId: t.Optional(t.String()),
-  })
+  }),
 );
 
 export const previewUrlQuery = t.Object({
@@ -163,7 +163,8 @@ export const deleteProviderDetail = {
 export const testProviderDetail = {
   tags: [storageTag],
   summary: "Test storage provider connection",
-  description: "Tests connectivity and credentials for a storage provider configuration.",
+  description:
+    "Tests connectivity and credentials for a storage provider configuration.",
 };
 
 export const minioStatusDetail = {
@@ -181,7 +182,8 @@ export const spinUpMinioDetail = {
 export const metricsDetail = {
   tags: [storageTag],
   summary: "Get storage metrics",
-  description: "Returns aggregated storage usage metrics, optionally scoped to a provider.",
+  description:
+    "Returns aggregated storage usage metrics, optionally scoped to a provider.",
 };
 
 export const resourcesDetail = {
@@ -200,13 +202,15 @@ export const seriesDetail = {
 export const scanDetail = {
   tags: [storageTag],
   summary: "Trigger storage scan",
-  description: "Triggers a scan of stored objects to reconcile the resource index.",
+  description:
+    "Triggers a scan of stored objects to reconcile the resource index.",
 };
 
 export const updateLimitDetail = {
   tags: [storageTag],
   summary: "Update storage limit",
-  description: "Updates the storage quota limit, optionally scoped to a provider.",
+  description:
+    "Updates the storage quota limit, optionally scoped to a provider.",
 };
 
 export const updateResourceMetadataDetail = {

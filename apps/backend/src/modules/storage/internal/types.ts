@@ -1,5 +1,8 @@
 import type { VideoSourceRow } from "@repo/db";
-import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  S3StorageService,
+  StorageProviderRegistry,
+} from "@repo/media-service";
 import type {
   CreateStorageProviderRequest,
   MinioSpinUpRequest,
@@ -22,7 +25,7 @@ export interface MinioContainerState {
 }
 
 export type MinioContainerInspector = (
-  containerName?: string
+  containerName?: string,
 ) => Promise<MinioContainerState>;
 
 export type MinioContainerStarter = (containerName?: string) => Promise<void>;
@@ -39,7 +42,7 @@ export interface MinioBucketProvisionerInput {
 }
 
 export type MinioBucketProvisioner = (
-  input: MinioBucketProvisionerInput
+  input: MinioBucketProvisionerInput,
 ) => Promise<void>;
 
 export interface MinioDeps {
@@ -64,13 +67,21 @@ export interface StorageService {
   // Scoped storage management
   getMetrics(providerId?: string): Promise<StorageMetrics>;
   getTotalUsedBytes(): Promise<number | null>;
-  getResources(query?: StorageResourcesQuery): Promise<StorageResourcesResponseData>;
+  getResources(
+    query?: StorageResourcesQuery,
+  ): Promise<StorageResourcesResponseData>;
   getSeries(query?: StorageSeriesQuery): Promise<StorageSeriesResponseData>;
-  scan(force?: boolean, providerId?: string): Promise<{ count: number; totalBytes: number }>;
-  updateLimit(limitGb: number, providerId?: string): Promise<{ limitGb: number; limitBytes: number }>;
+  scan(
+    force?: boolean,
+    providerId?: string,
+  ): Promise<{ count: number; totalBytes: number }>;
+  updateLimit(
+    limitGb: number,
+    providerId?: string,
+  ): Promise<{ limitGb: number; limitBytes: number }>;
   updateSourceMetadata(
     videoSourceId: string,
-    input: { label?: string; quality?: string | null }
+    input: { label?: string; quality?: string | null },
   ): Promise<VideoSourceRow>;
   attachOrphan(input: {
     key: string;
@@ -81,7 +92,7 @@ export interface StorageService {
   }): Promise<VideoSourceRow>;
   deleteResources(
     keys: string[],
-    providerId?: string
+    providerId?: string,
   ): Promise<{
     deletedKeys: string[];
     reclaimedBytes: number;
@@ -91,16 +102,26 @@ export interface StorageService {
     deletedKeys: string[];
     reclaimedBytes: number;
   }>;
-  getPreviewUrl(key: string, providerId?: string): Promise<{ previewUrl: string }>;
+  getPreviewUrl(
+    key: string,
+    providerId?: string,
+  ): Promise<{ previewUrl: string }>;
   invalidateCache(providerId?: string): void;
 
   // Provider CRUD & verification
   listProviders(): Promise<StorageProviderItem[]>;
   getProvider(id: string): Promise<StorageProviderItem>;
-  createProvider(input: CreateStorageProviderRequest): Promise<StorageProviderItem>;
-  updateProvider(id: string, input: UpdateStorageProviderRequest): Promise<StorageProviderItem>;
+  createProvider(
+    input: CreateStorageProviderRequest,
+  ): Promise<StorageProviderItem>;
+  updateProvider(
+    id: string,
+    input: UpdateStorageProviderRequest,
+  ): Promise<StorageProviderItem>;
   deleteProvider(id: string): Promise<void>;
-  testProvider(input: TestStorageProviderRequest): Promise<TestStorageProviderResponseData>;
+  testProvider(
+    input: TestStorageProviderRequest,
+  ): Promise<TestStorageProviderResponseData>;
   getMinioStatus(): Promise<MinioStatusResponseData>;
   spinUpMinio(input: MinioSpinUpRequest): Promise<MinioSpinUpResponseData>;
 }

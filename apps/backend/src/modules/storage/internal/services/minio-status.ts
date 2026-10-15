@@ -8,7 +8,9 @@ export type { MinioContainerInspector, MinioContainerState } from "../types";
 export const MINIO_CONTAINER_NAME = "private-movie-minio";
 export const MINIO_SOCKET_PATH = "/var/run/docker.sock";
 
-function inspectViaDockerSocket(containerName: string): Promise<MinioContainerState> {
+function inspectViaDockerSocket(
+  containerName: string,
+): Promise<MinioContainerState> {
   return new Promise((resolve) => {
     if (!existsSync(MINIO_SOCKET_PATH)) {
       resolve({ isAvailable: false, isRunning: false });
@@ -38,12 +40,15 @@ function inspectViaDockerSocket(containerName: string): Promise<MinioContainerSt
         res.on("end", () => {
           try {
             const json = JSON.parse(raw) as { State?: { Running?: boolean } };
-            resolve({ isAvailable: true, isRunning: json.State?.Running === true });
+            resolve({
+              isAvailable: true,
+              isRunning: json.State?.Running === true,
+            });
           } catch {
             resolve({ isAvailable: true, isRunning: false });
           }
         });
-      }
+      },
     );
     req.on("error", () => resolve({ isAvailable: false, isRunning: false }));
     req.setTimeout(2000, () => {
@@ -68,7 +73,7 @@ export function resolveMinioConsoleUrl(): string {
 
 export function buildMinioStatusResponse(
   container: MinioContainerState,
-  provider: { id: string; endpoint: string; bucket: string } | null
+  provider: { id: string; endpoint: string; bucket: string } | null,
 ): MinioStatusResponseData {
   const isConfigured = provider !== null;
   return {
@@ -77,7 +82,11 @@ export function buildMinioStatusResponse(
     isConfigured,
     consoleUrl: resolveMinioConsoleUrl(),
     ...(isConfigured && provider
-      ? { providerId: provider.id, endpoint: provider.endpoint, bucket: provider.bucket }
+      ? {
+          providerId: provider.id,
+          endpoint: provider.endpoint,
+          bucket: provider.bucket,
+        }
       : {}),
   };
 }

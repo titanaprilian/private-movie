@@ -39,7 +39,9 @@ export function authRepository<
 
         if (
           cause.code === "23505" ||
-          cause.message?.includes("duplicate key value violates unique constraint") ||
+          cause.message?.includes(
+            "duplicate key value violates unique constraint",
+          ) ||
           cause.message?.includes("UNIQUE constraint failed")
         ) {
           throw new EmailAlreadyRegisteredError(row.email);
@@ -60,10 +62,7 @@ export function authRepository<
     },
 
     async lockUser(userId: string, lockedUntil: Date): Promise<void> {
-      await db
-        .update(users)
-        .set({ lockedUntil })
-        .where(eq(users.id, userId));
+      await db.update(users).set({ lockedUntil }).where(eq(users.id, userId));
     },
 
     async resetFailedLoginAttempts(userId: string): Promise<void> {
@@ -76,7 +75,10 @@ export function authRepository<
         .where(eq(users.id, userId));
     },
 
-    async setSessionsValidAfter(userId: string, validAfter: Date): Promise<void> {
+    async setSessionsValidAfter(
+      userId: string,
+      validAfter: Date,
+    ): Promise<void> {
       await db
         .update(users)
         .set({ sessionsValidAfter: validAfter })
@@ -89,19 +91,19 @@ export function authRepository<
 
     async findRefreshTokenByIdOrHashedToken(
       idOrToken: string,
-      hashedToken: string
+      hashedToken: string,
     ): Promise<RefreshTokenRow | undefined> {
       const [row] = await db
         .select()
         .from(refreshTokens)
         .where(
-          sql`${refreshTokens.id} = ${idOrToken} OR ${refreshTokens.token} = ${hashedToken}`
+          sql`${refreshTokens.id} = ${idOrToken} OR ${refreshTokens.token} = ${hashedToken}`,
         );
       return row;
     },
 
     async findRefreshTokenByHashedToken(
-      hashedToken: string
+      hashedToken: string,
     ): Promise<RefreshTokenRow | undefined> {
       const [row] = await db
         .select()
@@ -134,7 +136,7 @@ export function authRepository<
       await db
         .delete(refreshTokens)
         .where(
-          sql`${refreshTokens.userId} = ${userId} AND ${refreshTokens.revoked} = false`
+          sql`${refreshTokens.userId} = ${userId} AND ${refreshTokens.revoked} = false`,
         );
     },
   };

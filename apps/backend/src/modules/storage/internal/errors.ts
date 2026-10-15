@@ -20,7 +20,9 @@ export class StorageProviderNotFoundError extends Error {
 }
 
 export class StorageProviderInUseError extends Error {
-  constructor(message = "Cannot delete storage provider with active video sources") {
+  constructor(
+    message = "Cannot delete storage provider with active video sources",
+  ) {
     super(message);
     this.name = "StorageProviderInUseError";
   }
@@ -28,7 +30,7 @@ export class StorageProviderInUseError extends Error {
 
 export class MinioDockerUnavailableError extends Error {
   constructor(
-    message = "Docker daemon is not accessible. Ensure /var/run/docker.sock is mounted into the backend container."
+    message = "Docker daemon is not accessible. Ensure /var/run/docker.sock is mounted into the backend container.",
   ) {
     super(message);
     this.name = "MinioDockerUnavailableError";
@@ -37,7 +39,7 @@ export class MinioDockerUnavailableError extends Error {
 
 export class MinioHealthTimeoutError extends Error {
   constructor(
-    message = "MinIO container did not become healthy in time. Check container logs and port availability."
+    message = "MinIO container did not become healthy in time. Check container logs and port availability.",
   ) {
     super(message);
     this.name = "MinioHealthTimeoutError";
@@ -46,7 +48,7 @@ export class MinioHealthTimeoutError extends Error {
 
 export class MinioCredentialsRejectedError extends Error {
   constructor(
-    message = "MinIO rejected all known credential candidates. The server was initialized with different root credentials — set MINIO_ROOT_USER/MINIO_ROOT_PASSWORD to match, or reset the minio_data volume for a fresh start."
+    message = "MinIO rejected all known credential candidates. The server was initialized with different root credentials — set MINIO_ROOT_USER/MINIO_ROOT_PASSWORD to match, or reset the minio_data volume for a fresh start.",
   ) {
     super(message);
     this.name = "MinioCredentialsRejectedError";

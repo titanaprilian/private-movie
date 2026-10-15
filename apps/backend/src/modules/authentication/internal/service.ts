@@ -19,7 +19,8 @@ import { authRepository } from "./repository";
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MIN_PASSWORD_LENGTH = 8;
-const DUMMY_HASH = "$argon2id$v=19$m=65536,t=2,p=1$vgjJbKuHqF+jCFy0qUcSfo1mWkV+Pj9N8Fy4zVKvJik$beNSxuPEQ9GrO5koaX8+cwCT5eRfPcDjZuiLWAqRsL8";
+const DUMMY_HASH =
+  "$argon2id$v=19$m=65536,t=2,p=1$vgjJbKuHqF+jCFy0qUcSfo1mWkV+Pj9N8Fy4zVKvJik$beNSxuPEQ9GrO5koaX8+cwCT5eRfPcDjZuiLWAqRsL8";
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -30,20 +31,35 @@ function validateRegistration(input: RegisterInput): void {
     throw new InvalidRegistrationInputError("name is required");
   }
   if (!EMAIL_PATTERN.test(input.email.trim())) {
-    throw new InvalidRegistrationInputError("email must be a valid email address");
+    throw new InvalidRegistrationInputError(
+      "email must be a valid email address",
+    );
   }
   if (input.password.length < MIN_PASSWORD_LENGTH) {
     throw new InvalidRegistrationInputError(
-      `password must be at least ${MIN_PASSWORD_LENGTH} characters`
+      `password must be at least ${MIN_PASSWORD_LENGTH} characters`,
     );
   }
 }
 
-function toUser(row: { id: string; email: string; name?: string | null; createdAt: Date }): User {
-  return { id: row.id, name: row.name ?? undefined, email: row.email, createdAt: row.createdAt };
+function toUser(row: {
+  id: string;
+  email: string;
+  name?: string | null;
+  createdAt: Date;
+}): User {
+  return {
+    id: row.id,
+    name: row.name ?? undefined,
+    email: row.email,
+    createdAt: row.createdAt,
+  };
 }
 
-function newRefreshTokenRow(userId: string, hashedToken: string): NewRefreshTokenRow {
+function newRefreshTokenRow(
+  userId: string,
+  hashedToken: string,
+): NewRefreshTokenRow {
   return {
     id: randomUUID(),
     token: hashedToken,
@@ -57,13 +73,18 @@ function newRefreshTokenRow(userId: string, hashedToken: string): NewRefreshToke
 export function createAuthenticationServiceInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
->(
-  db: PgDatabase<THKT, TSchema>
-): AuthenticationService {
+>(db: PgDatabase<THKT, TSchema>): AuthenticationService {
   const repository = authRepository(db);
 
   return {
-    async register(input: RegisterInput): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string }; accessToken: string; refreshToken: string }> {
+    async register(
+      input: RegisterInput,
+    ): Promise<{
+      user: User;
+      tokens: { accessToken: string; refreshToken: string };
+      accessToken: string;
+      refreshToken: string;
+    }> {
       validateRegistration(input);
       const email = normalizeEmail(input.email);
 
@@ -82,12 +103,18 @@ export function createAuthenticationServiceInternal<
       };
 
       const user = toUser(row);
-      const accessToken = signJwt({ sub: user.id, email: user.email, name: user.name });
+      const accessToken = signJwt({
+        sub: user.id,
+        email: user.email,
+        name: user.name,
+      });
       const rawRefreshToken = randomUUID();
       const hashedToken = hashRefreshToken(rawRefreshToken);
 
       await repository.insertUser(row);
-      await repository.insertRefreshToken(newRefreshTokenRow(user.id, hashedToken));
+      await repository.insertRefreshToken(
+        newRefreshTokenRow(user.id, hashedToken),
+      );
 
       return {
         user,
@@ -100,7 +127,14 @@ export function createAuthenticationServiceInternal<
       };
     },
 
-    async verifyCredentials(input: VerifyCredentialsInput): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string }; accessToken: string; refreshToken: string }> {
+    async verifyCredentials(
+      input: VerifyCredentialsInput,
+    ): Promise<{
+      user: User;
+      tokens: { accessToken: string; refreshToken: string };
+      accessToken: string;
+      refreshToken: string;
+    }> {
       const email = normalizeEmail(input.email);
 
       const row = await repository.findUserByEmail(email);
@@ -113,12 +147,18 @@ export function createAuthenticationServiceInternal<
         throw new AccountLockedError();
       }
 
-      const passwordMatches = await verifyPassword(input.password, row.passwordHash);
+      const passwordMatches = await verifyPassword(
+        input.password,
+        row.passwordHash,
+      );
       if (!passwordMatches) {
         const updated = await repository.incrementFailedAttempts(row.id);
 
         if (updated.failedAttempts >= 5) {
-          await repository.lockUser(row.id, new Date(Date.now() + 15 * 60 * 1000));
+          await repository.lockUser(
+            row.id,
+            new Date(Date.now() + 15 * 60 * 1000),
+          );
         }
 
         throw new InvalidCredentialsError();
@@ -129,11 +169,17 @@ export function createAuthenticationServiceInternal<
       }
 
       const user = toUser(row);
-      const accessToken = signJwt({ sub: user.id, email: user.email, name: user.name });
+      const accessToken = signJwt({
+        sub: user.id,
+        email: user.email,
+        name: user.name,
+      });
       const rawRefreshToken = randomUUID();
       const hashedToken = hashRefreshToken(rawRefreshToken);
 
-      await repository.insertRefreshToken(newRefreshTokenRow(user.id, hashedToken));
+      await repository.insertRefreshToken(
+        newRefreshTokenRow(user.id, hashedToken),
+      );
 
       return {
         user,
@@ -158,7 +204,7 @@ export function createAuthenticationServiceInternal<
       const hashedToken = hashRefreshToken(idOrToken);
       const tokenRecord = await repository.findRefreshTokenByIdOrHashedToken(
         idOrToken,
-        hashedToken
+        hashedToken,
       );
 
       if (tokenRecord && !tokenRecord.revoked) {
@@ -171,9 +217,20 @@ export function createAuthenticationServiceInternal<
       await repository.setSessionsValidAfter(userId, new Date());
     },
 
-    async refresh(tokenInput: string | { refreshToken: string }): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string }; accessToken: string; refreshToken: string }> {
+    async refresh(
+      tokenInput: string | { refreshToken: string },
+    ): Promise<{
+      user: User;
+      tokens: { accessToken: string; refreshToken: string };
+      accessToken: string;
+      refreshToken: string;
+    }> {
       let token: string;
-      if (typeof tokenInput === "object" && tokenInput !== null && "refreshToken" in tokenInput) {
+      if (
+        typeof tokenInput === "object" &&
+        tokenInput !== null &&
+        "refreshToken" in tokenInput
+      ) {
         token = tokenInput.refreshToken;
       } else if (typeof tokenInput === "string") {
         token = tokenInput;
@@ -183,7 +240,8 @@ export function createAuthenticationServiceInternal<
 
       const hashedToken = hashRefreshToken(token);
 
-      const tokenRecord = await repository.findRefreshTokenByHashedToken(hashedToken);
+      const tokenRecord =
+        await repository.findRefreshTokenByHashedToken(hashedToken);
 
       if (!tokenRecord) {
         throw new UnauthorizedError("invalid or expired refresh token");
@@ -199,11 +257,18 @@ export function createAuthenticationServiceInternal<
         throw new UnauthorizedError("user not found");
       }
 
-      if (userRecord.lockedUntil && new Date(userRecord.lockedUntil) > new Date()) {
+      if (
+        userRecord.lockedUntil &&
+        new Date(userRecord.lockedUntil) > new Date()
+      ) {
         throw new UnauthorizedError("account is locked");
       }
 
-      if (userRecord.sessionsValidAfter && new Date(tokenRecord.createdAt) < new Date(userRecord.sessionsValidAfter)) {
+      if (
+        userRecord.sessionsValidAfter &&
+        new Date(tokenRecord.createdAt) <
+          new Date(userRecord.sessionsValidAfter)
+      ) {
         throw new UnauthorizedError("invalid or expired refresh token");
       }
 
@@ -217,11 +282,17 @@ export function createAuthenticationServiceInternal<
       await repository.revokeRefreshToken(tokenRecord.id);
 
       const user = toUser(userRecord);
-      const accessToken = signJwt({ sub: user.id, email: user.email, name: user.name });
+      const accessToken = signJwt({
+        sub: user.id,
+        email: user.email,
+        name: user.name,
+      });
       const rawRefreshToken = randomUUID();
       const newHashedToken = hashRefreshToken(rawRefreshToken);
 
-      await repository.insertRefreshToken(newRefreshTokenRow(user.id, newHashedToken));
+      await repository.insertRefreshToken(
+        newRefreshTokenRow(user.id, newHashedToken),
+      );
 
       return {
         user,

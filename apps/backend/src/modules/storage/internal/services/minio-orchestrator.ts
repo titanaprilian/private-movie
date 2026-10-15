@@ -10,7 +10,10 @@ import { MINIO_CONTAINER_NAME, MINIO_SOCKET_PATH } from "./minio-status";
 
 export { MinioDockerUnavailableError };
 
-export { MinioHealthTimeoutError, MinioCredentialsRejectedError } from "../errors";
+export {
+  MinioHealthTimeoutError,
+  MinioCredentialsRejectedError,
+} from "../errors";
 
 const S3_AUTH_ERROR_NAMES = new Set([
   "SignatureDoesNotMatch",
@@ -32,7 +35,8 @@ const S3_AUTH_ERROR_NAMES = new Set([
 export function isS3AuthError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   if (S3_AUTH_ERROR_NAMES.has(error.name)) return true;
-  const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+  const status = (error as { $metadata?: { httpStatusCode?: number } })
+    .$metadata?.httpStatusCode;
   return status === 401 || status === 403;
 }
 
@@ -53,25 +57,35 @@ interface DockerRequestOptions {
 
 function dockerRequest(options: DockerRequestOptions): Promise<number> {
   return new Promise((resolve, reject) => {
-    const payload = options.body !== undefined ? JSON.stringify(options.body) : undefined;
+    const payload =
+      options.body !== undefined ? JSON.stringify(options.body) : undefined;
     const req = httpRequest(
       {
         socketPath: MINIO_SOCKET_PATH,
         path: options.path,
         method: options.method,
         ...(payload !== undefined
-          ? { headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) } }
+          ? {
+              headers: {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(payload),
+              },
+            }
           : {}),
       },
       (res) => {
         res.resume();
         resolve(res.statusCode ?? 0);
-      }
+      },
     );
     req.on("error", () => reject(new MinioDockerUnavailableError()));
     req.setTimeout(options.timeoutMs ?? 10_000, () => {
       req.destroy();
-      reject(new MinioDockerUnavailableError("Timed out contacting the Docker daemon."));
+      reject(
+        new MinioDockerUnavailableError(
+          "Timed out contacting the Docker daemon.",
+        ),
+      );
     });
     if (payload !== undefined) req.write(payload);
     req.end();
@@ -90,7 +104,7 @@ async function ensureMinioImage(): Promise<void> {
   });
   if (status !== 200 && status !== 201 && status !== 204) {
     throw new MinioDockerUnavailableError(
-      `Failed to pull MinIO image "${MINIO_IMAGE}:${MINIO_IMAGE_TAG}": Docker daemon returned status ${status}.`
+      `Failed to pull MinIO image "${MINIO_IMAGE}:${MINIO_IMAGE_TAG}": Docker daemon returned status ${status}.`,
     );
   }
 }
@@ -125,7 +139,9 @@ async function createMinioContainer(containerName: string): Promise<void> {
         Binds: [`${MINIO_DATA_VOLUME}:/data`],
         PortBindings: {
           [`${MINIO_API_PORT}/tcp`]: [{ HostPort: String(MINIO_API_PORT) }],
-          [`${MINIO_CONSOLE_PORT}/tcp`]: [{ HostPort: String(MINIO_CONSOLE_PORT) }],
+          [`${MINIO_CONSOLE_PORT}/tcp`]: [
+            { HostPort: String(MINIO_CONSOLE_PORT) },
+          ],
         },
         RestartPolicy: { Name: "unless-stopped" },
       },
@@ -133,12 +149,14 @@ async function createMinioContainer(containerName: string): Promise<void> {
   });
   if (status !== 201 && status !== 204) {
     throw new MinioDockerUnavailableError(
-      `Failed to create MinIO container "${containerName}": Docker daemon returned status ${status}. Check for port conflicts on 9000/9001.`
+      `Failed to create MinIO container "${containerName}": Docker daemon returned status ${status}. Check for port conflicts on 9000/9001.`,
     );
   }
 }
 
-async function startExistingMinioContainer(containerName: string): Promise<number> {
+async function startExistingMinioContainer(
+  containerName: string,
+): Promise<number> {
   return dockerRequest({
     method: "POST",
     path: `/containers/${containerName}/start`,
@@ -155,7 +173,7 @@ async function startExistingMinioContainer(containerName: string): Promise<numbe
  * reports an unrecoverable failure.
  */
 export function startMinioContainerViaDockerSocket(
-  containerName: string = MINIO_CONTAINER_NAME
+  containerName: string = MINIO_CONTAINER_NAME,
 ): Promise<void> {
   if (!existsSync(MINIO_SOCKET_PATH)) {
     return Promise.reject(new MinioDockerUnavailableError());
@@ -170,11 +188,11 @@ export function startMinioContainerViaDockerSocket(
       const retryStatus = await startExistingMinioContainer(containerName);
       if (retryStatus === 204 || retryStatus === 304) return;
       throw new MinioDockerUnavailableError(
-        `Failed to start newly created MinIO container "${containerName}": Docker daemon returned status ${retryStatus}. Check for port conflicts on 9000/9001.`
+        `Failed to start newly created MinIO container "${containerName}": Docker daemon returned status ${retryStatus}. Check for port conflicts on 9000/9001.`,
       );
     }
     throw new MinioDockerUnavailableError(
-      `Failed to start MinIO container "${containerName}": Docker daemon returned status ${status}. Check for port conflicts on 9000/9001.`
+      `Failed to start MinIO container "${containerName}": Docker daemon returned status ${status}. Check for port conflicts on 9000/9001.`,
     );
   })();
 }
@@ -185,7 +203,7 @@ export function startMinioContainerViaDockerSocket(
  */
 export async function waitForMinioHealthy(
   endpoint: string,
-  options?: { timeoutMs?: number; intervalMs?: number; fetchFn?: typeof fetch }
+  options?: { timeoutMs?: number; intervalMs?: number; fetchFn?: typeof fetch },
 ): Promise<void> {
   const timeoutMs = options?.timeoutMs ?? 60_000;
   const intervalMs = options?.intervalMs ?? 1000;
@@ -207,7 +225,7 @@ export async function waitForMinioHealthy(
 
   throw new MinioHealthTimeoutError(
     `MinIO at ${endpoint} did not become healthy within ${Math.round(timeoutMs / 1000)}s. ` +
-      `Check container logs and port availability. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+      `Check container logs and port availability. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
   );
 }
 
@@ -253,7 +271,8 @@ export function resolveMinioEndpoint(input?: {
 }): string {
   const explicit = input?.endpoint?.trim();
   if (explicit) {
-    if (explicit.startsWith("http://") || explicit.startsWith("https://")) return explicit;
+    if (explicit.startsWith("http://") || explicit.startsWith("https://"))
+      return explicit;
     return `http://${explicit}`;
   }
   const port = input?.port ?? Number(process.env.MINIO_PORT ?? 9000);
@@ -266,7 +285,8 @@ export function resolveMinioConsoleUrlFromInput(input?: {
 }): string {
   const explicit = process.env.MINIO_CONSOLE_URL;
   if (explicit && explicit.trim()) return explicit.trim();
-  const consolePort = input?.consolePort ?? Number(process.env.MINIO_CONSOLE_PORT ?? 9001);
+  const consolePort =
+    input?.consolePort ?? Number(process.env.MINIO_CONSOLE_PORT ?? 9001);
   const endpoint = resolveMinioEndpoint(input);
   try {
     const parsed = new URL(endpoint);

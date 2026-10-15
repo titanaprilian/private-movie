@@ -98,7 +98,7 @@ export function storageRepository<
 
     async findMinioProvider(
       endpoint: string,
-      bucket: string
+      bucket: string,
     ): Promise<StorageProviderRow | null> {
       const [match] = await db
         .select()
@@ -107,8 +107,8 @@ export function storageRepository<
           and(
             eq(storageProviders.providerType, "minio"),
             eq(storageProviders.endpoint, endpoint),
-            eq(storageProviders.bucket, bucket)
-          )
+            eq(storageProviders.bucket, bucket),
+          ),
         );
       return match ?? null;
     },
@@ -122,15 +122,18 @@ export function storageRepository<
     },
 
     async insertProvider(
-      values: typeof storageProviders.$inferInsert
+      values: typeof storageProviders.$inferInsert,
     ): Promise<StorageProviderRow> {
-      const [row] = await db.insert(storageProviders).values(values).returning();
+      const [row] = await db
+        .insert(storageProviders)
+        .values(values)
+        .returning();
       return row!;
     },
 
     async updateProvider(
       id: string,
-      values: Partial<typeof storageProviders.$inferInsert>
+      values: Partial<typeof storageProviders.$inferInsert>,
     ): Promise<StorageProviderRow | null> {
       const [updated] = await db
         .update(storageProviders)
@@ -142,7 +145,7 @@ export function storageRepository<
 
     async setProviderLimit(
       id: string,
-      limitGb: number
+      limitGb: number,
     ): Promise<StorageProviderRow | null> {
       const [updated] = await db
         .update(storageProviders)
@@ -193,7 +196,7 @@ export function storageRepository<
 
     async updateVideoSource(
       id: string,
-      values: Partial<typeof videoSources.$inferInsert>
+      values: Partial<typeof videoSources.$inferInsert>,
     ): Promise<VideoSourceRow | null> {
       const [updated] = await db
         .update(videoSources)
@@ -204,7 +207,7 @@ export function storageRepository<
     },
 
     async insertVideoSource(
-      values: typeof videoSources.$inferInsert
+      values: typeof videoSources.$inferInsert,
     ): Promise<VideoSourceRow> {
       const [created] = await db
         .insert(videoSources)
