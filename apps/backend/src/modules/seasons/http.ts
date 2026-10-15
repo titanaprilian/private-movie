@@ -1,32 +1,30 @@
-import { Elysia, t } from "elysia";
-import type { AuthenticationService } from "@repo/contracts";
-import type { DbClient } from "@repo/db";
-import {
-  createMediaService,
-  createSeasonsRepositoryInternal,
-  SeasonNotFoundError,
-  SeasonNotOngoingError,
-  SeasonMissingScraperUrlError,
-  type BrowserFn,
-  type FetchFn,
-  type MediaService,
-  type S3StorageService,
-} from "@repo/media-service";
+import { Elysia } from "elysia";
+import { createMediaService } from "@repo/media-service";
 import { authGuard } from "../../lib/auth";
 import { successResponse } from "../../lib/response";
+import { createSeasonRepository } from "./internal/repository";
+import { createSeasonService } from "./internal/service";
+import {
+  SeasonMissingScraperUrlError,
+  SeasonNotFoundError,
+  SeasonNotOngoingError,
+} from "./internal/errors";
+import {
+  deleteSeasonDetail,
+  getSeasonDetail,
+  scrapeOngoingSeasonDetail,
+  seasonIdParams,
+  seasonUuidParams,
+  updateSeasonBody,
+  updateSeasonDetail,
+  type SeasonRoutesOptions,
+} from "./schemas";
 
-export interface SeasonRoutesOptions {
-  db: DbClient;
-  authService: AuthenticationService;
-  fetchHtml?: FetchFn;
-  browserFn?: BrowserFn;
-  s3StorageService?: S3StorageService;
-  mediaService?: MediaService;
-}
+export type { SeasonRoutesOptions } from "./schemas";
 
 export const seasonRoutes = (options: SeasonRoutesOptions) => {
   const auth = authGuard(options.authService);
-  const seasonsRepository = createSeasonsRepositoryInternal(options.db);
+  const seasonsRepository = createSeasonRepository(options.db);
   const mediaService =
     options.mediaService ??
     createMediaService(options.db, {
@@ -34,6 +32,10 @@ export const seasonRoutes = (options: SeasonRoutesOptions) => {
       browserFn: options.browserFn,
       s3StorageService: options.s3StorageService,
     });
+  const seasonService = createSeasonService(options.db, {
+    seasonsRepository,
+    scrapeSeason: (season) => mediaService.syncAndScrapeOngoingSeason(season.id),
+  });
 
   return new Elysia({ name: "season-routes" })
     .guard(
@@ -44,95 +46,91 @@ export const seasonRoutes = (options: SeasonRoutesOptions) => {
       },
       (app) =>
         app
-    .get(
-      "/seasons/:id",
-      async ({ params }) => {
-        const season = await seasonsRepository.findById(params.id);
-        if (!season) {
-          throw new SeasonNotFoundError(`Season with id ${params.id} not found`);
-        }
-        return successResponse(season);
-      },
-      {
-        params: t.Object({
-          id: t.String(),
-        }),
-        detail: {
-          summary: "Get season",
-          description: "Returns a single season by id.",
-        },
-      }
-    )
-    .patch(
-      "/seasons/:id",
-      async ({ params, body }) => {
-        const updated = await seasonsRepository.updateSeason(params.id, {
-          ...(body.title !== undefined ? { title: body.title } : {}),
-          ...(body.description !== undefined ? { description: body.description } : {}),
-          ...(body.posterUrl !== undefined ? { posterUrl: body.posterUrl } : {}),
-          ...(body.status !== undefined ? { status: body.status } : {}),
-          ...(body.scraperUrl !== undefined ? { scraperUrl: body.scraperUrl } : {}),
-          ...(body.source !== undefined ? { source: body.source } : {}),
-          ...(body.episodeOffset !== undefined ? { episodeOffset: body.episodeOffset } : {}),
-        });
-        return successResponse(updated);
-      },
-      {
-        beforeHandle: auth,
-        params: t.Object({ id: t.String({ format: "uuid" }) }),
-        body: t.Object({
-          title: t.Optional(t.String({ minLength: 1 })),
-          description: t.Optional(t.Nullable(t.String())),
-          posterUrl: t.Optional(t.Nullable(t.String())),
-          status: t.Optional(t.String()),
-          scraperUrl: t.Optional(t.Nullable(t.String())),
-          source: t.Optional(t.Nullable(t.String())),
-          episodeOffset: t.Optional(t.Integer()),
-        }),
-        detail: {
-          summary: "Update season",
-          description: "Partially updates a season by id. Requires authentication.",
-        },
-      }
-    )
-    .delete(
-      "/seasons/:id",
-      async ({ params }) => {
-        await seasonsRepository.deleteSeason(params.id);
-        return successResponse({ deleted: true });
-      },
-      {
-        beforeHandle: auth,
-        params: t.Object({ id: t.String({ format: "uuid" }) }),
-        detail: {
-          summary: "Delete season",
-          description: "Deletes a season by id. Requires authentication.",
-        },
-      }
-    )
-    .post(
-      "/seasons/:id/scrape-ongoing",
-      async ({ params }) => {
-        const result = await mediaService.syncAndScrapeOngoingSeason(params.id);
-        if (!result.success) {
-          if (result.error?.includes("ongoing status")) {
-            throw new SeasonNotOngoingError(result.error);
-          }
-          if (result.error?.includes("missing scraperUrl")) {
-            throw new SeasonMissingScraperUrlError(result.error);
-          }
-          throw new Error(result.error ?? "Failed to scrape ongoing season");
-        }
-        return successResponse(result);
-      },
-      {
-        beforeHandle: auth,
-        params: t.Object({ id: t.String({ format: "uuid" }) }),
-        detail: {
-          summary: "Scrape ongoing season",
-          description: "Syncs and scrapes new episodes for an ongoing season. Requires authentication.",
-        },
-      }
-    )
+          .get(
+            "/seasons/:id",
+            async ({ params }) => {
+              const season = await seasonsRepository.findById(params.id);
+              if (!season) {
+                throw new SeasonNotFoundError(`Season with id ${params.id} not found`);
+              }
+              return successResponse(season);
+            },
+            {
+              params: seasonIdParams,
+              detail: {
+                summary: getSeasonDetail.summary,
+                description: getSeasonDetail.description,
+              },
+            }
+          )
+          .patch(
+            "/seasons/:id",
+            async ({ params, body }) => {
+              const updated = await seasonsRepository.updateSeason(params.id, {
+                ...(body.title !== undefined ? { title: body.title } : {}),
+                ...(body.description !== undefined ? { description: body.description } : {}),
+                ...(body.posterUrl !== undefined ? { posterUrl: body.posterUrl } : {}),
+                ...(body.status !== undefined ? { status: body.status } : {}),
+                ...(body.scraperUrl !== undefined ? { scraperUrl: body.scraperUrl } : {}),
+                ...(body.source !== undefined ? { source: body.source } : {}),
+                ...(body.episodeOffset !== undefined
+                  ? { episodeOffset: body.episodeOffset }
+                  : {}),
+              });
+              return successResponse(updated);
+            },
+            {
+              beforeHandle: auth,
+              params: seasonUuidParams,
+              body: updateSeasonBody,
+              detail: {
+                summary: updateSeasonDetail.summary,
+                description: updateSeasonDetail.description,
+              },
+            }
+          )
+          .delete(
+            "/seasons/:id",
+            async ({ params }) => {
+              await seasonsRepository.deleteSeason(params.id);
+              return successResponse({ deleted: true });
+            },
+            {
+              beforeHandle: auth,
+              params: seasonUuidParams,
+              detail: {
+                summary: deleteSeasonDetail.summary,
+                description: deleteSeasonDetail.description,
+              },
+            }
+          )
+          .post(
+            "/seasons/:id/scrape-ongoing",
+            async ({ params }) => {
+              try {
+                const result = await seasonService.scrapeOngoingSeason(params.id);
+                return successResponse(result);
+              } catch (error) {
+                if (
+                  error instanceof SeasonNotOngoingError ||
+                  error instanceof SeasonMissingScraperUrlError
+                ) {
+                  await seasonsRepository.updateSeason(params.id, {
+                    lastScrapedAt: new Date(),
+                    lastScrapeError: error.message,
+                  });
+                }
+                throw error;
+              }
+            },
+            {
+              beforeHandle: auth,
+              params: seasonUuidParams,
+              detail: {
+                summary: scrapeOngoingSeasonDetail.summary,
+                description: scrapeOngoingSeasonDetail.description,
+              },
+            }
+          )
     );
 };

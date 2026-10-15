@@ -32,9 +32,12 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
+    "format": "prettier . --check",
+    "format:fix": "prettier . --write",
     "clean": "turbo run clean"
   },
   "devDependencies": {
+    "prettier": "^3.6.2",
     "turbo": "^2.5",
     "vitest": "^3.1.0"
   },

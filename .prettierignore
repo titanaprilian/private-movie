@@ -1,0 +1,9 @@
+dist
+node_modules
+.turbo
+.git
+.codegraph
+coverage
+*.gen.ts
+apps/android-tv
+**/fixtures/**

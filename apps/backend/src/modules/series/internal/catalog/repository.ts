@@ -1,0 +1,785 @@
+import { randomUUID } from "node:crypto";
+import { and, asc, count, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
+import { episodes, genres, seasons, series, seriesToGenres, videoSources, type DbClient, type EpisodeRow, type SeasonRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
+import {
+  normalizeVideoSources,
+  sortVideoSources,
+  type EpisodeWithVideoSources,
+} from "@repo/media-service";
+import { SeriesHighlightWithoutOngoingError, SeriesNotFoundError } from "../errors";
+import type {
+  HomeFeedHero,
+  HomeFeedPayload,
+  HomeFeedRow,
+  RecentlyAddedEpisode,
+  SeasonWithEpisodes,
+  SeriesListParams,
+  SeriesListResult,
+  SeriesRepositoryOptions,
+  SeriesUpsertInput,
+  SeriesWithEpisodes,
+  SeriesWithMetadata,
+  SeriesWithSeasons,
+  UpdateSeriesInput,
+} from "./types";
+import { DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT } from "./types";
+import { compareSeasons } from "./utils/season-comparator";
+
+export type {
+  HomeFeedHero,
+  HomeFeedPayload,
+  HomeFeedRow,
+  RecentlyAddedEpisode,
+  SeasonWithEpisodes,
+  SeriesListParams,
+  SeriesListResult,
+  SeriesRepository,
+  SeriesRepositoryOptions,
+  SeriesUpsertInput,
+  SeriesWithEpisodes,
+  SeriesWithMetadata,
+  SeriesWithSeasons,
+  UpdateSeriesInput,
+} from "./types";
+export { DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT } from "./types";
+export { compareSeasons } from "./utils/season-comparator";
+
+export function createSeriesRepository(db: DbClient, options?: SeriesRepositoryOptions) {
+  async function fetchRecentlyAddedEpisodes(): Promise<RecentlyAddedEpisode[]> {
+    const candidateRows = await db
+      .select({
+        episode: episodes,
+        season: seasons,
+        serie: series,
+        latestSourceAt: sql<Date>`MAX(${videoSources.createdAt})`,
+      })
+      .from(episodes)
+      .innerJoin(videoSources, eq(videoSources.episodeId, episodes.id))
+      .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+      .innerJoin(series, eq(seasons.seriesId, series.id))
+      .groupBy(episodes.id, seasons.id, series.id)
+      .orderBy(sql`MAX(${videoSources.createdAt}) DESC`);
+
+    const seenSeries = new Set<string>();
+    const picked: typeof candidateRows = [];
+    for (const row of candidateRows) {
+      if (seenSeries.has(row.serie.id)) continue;
+      seenSeries.add(row.serie.id);
+      picked.push(row);
+      if (picked.length >= 10) break;
+    }
+
+    if (picked.length === 0) return [];
+
+    const pickedEpisodeIds = picked.map((r) => r.episode.id);
+    const allSources = await db
+      .select()
+      .from(videoSources)
+      .where(inArray(videoSources.episodeId, pickedEpisodeIds))
+      .orderBy(asc(videoSources.createdAt));
+
+    const normalizedSources = await normalizeVideoSources(allSources, {
+      s3StorageService: options?.s3StorageService,
+      storageProviderRegistry: options?.storageProviderRegistry,
+    });
+
+    const sourcesByEpisode = new Map<string, VideoSourceRow[]>();
+    for (const s of normalizedSources) {
+      const list = sourcesByEpisode.get(s.episodeId) ?? [];
+      list.push(s);
+      sourcesByEpisode.set(s.episodeId, list);
+    }
+
+    return picked.map((row) => ({
+      id: row.episode.id,
+      title: row.episode.title,
+      order: row.episode.order,
+      thumbnailUrl: row.episode.thumbnailUrl,
+      duration: row.episode.duration,
+      rating: row.episode.rating,
+      createdAt:
+        row.episode.createdAt instanceof Date
+          ? row.episode.createdAt.toISOString()
+          : String(row.episode.createdAt),
+      series: {
+        id: row.serie.id,
+        title: row.serie.title,
+        posterUrl: row.serie.posterUrl,
+        backdropUrl: row.serie.backdropUrl,
+      },
+      season: {
+        id: row.season.id,
+        seasonNumber: row.season.seasonNumber,
+        title: row.season.title,
+      },
+      videoSources: sortVideoSources(sourcesByEpisode.get(row.episode.id) ?? []),
+    }));
+  }
+
+  return {
+    async upsert(input: SeriesUpsertInput): Promise<SeriesRow> {
+      const now = new Date();
+      const id = input.id ?? randomUUID();
+      const [row] = await db
+        .insert(series)
+        .values({
+          id,
+          title: input.title,
+          description: input.description ?? null,
+          type: input.type ?? "tv",
+          posterUrl: input.posterUrl ?? null,
+          backdropUrl: input.backdropUrl ?? null,
+          rating: input.rating ?? null,
+          tmdbId: input.tmdbId ?? null,
+          tmdbSyncStatus: input.tmdbSyncStatus ?? "PENDING",
+          createdAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: series.id,
+          set: {
+            title: input.title,
+            description: input.description ?? null,
+            ...(input.type ? { type: input.type } : {}),
+            ...(input.posterUrl !== undefined ? { posterUrl: input.posterUrl } : {}),
+            ...(input.backdropUrl !== undefined ? { backdropUrl: input.backdropUrl } : {}),
+            ...(input.rating !== undefined ? { rating: input.rating } : {}),
+            ...(input.tmdbId !== undefined ? { tmdbId: input.tmdbId } : {}),
+            ...(input.tmdbSyncStatus !== undefined ? { tmdbSyncStatus: input.tmdbSyncStatus } : {}),
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return row;
+    },
+
+    async findById(id: string): Promise<SeriesRow | null> {
+      const [row] = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, id));
+      return row ?? null;
+    },
+
+    async findByTmdbId(tmdbId: number): Promise<SeriesRow | null> {
+      const [row] = await db
+        .select()
+        .from(series)
+        .where(eq(series.tmdbId, tmdbId));
+      return row ?? null;
+    },
+
+    async findByIdWithEpisodes(
+      id: string,
+      sourceTypes?: string[]
+    ): Promise<SeriesWithEpisodes | null> {
+      const [seriesRow] = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, id));
+
+      if (!seriesRow) {
+        return null;
+      }
+
+      const childSeasons = await db
+        .select()
+        .from(seasons)
+        .where(eq(seasons.seriesId, id))
+        .orderBy(
+          sql`CASE 
+            WHEN ${seasons.seasonNumber} IS NOT NULL AND ${seasons.seasonNumber} > 0 THEN 1 
+            WHEN ${seasons.seasonNumber} = 0 THEN 2 
+            ELSE 3 
+          END ASC`,
+          asc(seasons.seasonNumber),
+          asc(seasons.createdAt)
+        );
+
+      childSeasons.sort(compareSeasons);
+
+      const seasonIds = childSeasons.map((s) => s.id);
+      let childEpisodes: EpisodeRow[] = [];
+
+      if (seasonIds.length > 0) {
+        childEpisodes = await db
+          .select()
+          .from(episodes)
+          .where(inArray(episodes.seasonId, seasonIds))
+          .orderBy(asc(episodes.order), asc(episodes.createdAt));
+      }
+
+      const episodeIds = childEpisodes.map((ep) => ep.id);
+      const sourcesMap = new Map<string, VideoSourceRow[]>();
+
+      if (episodeIds.length > 0) {
+        const sources = await db
+          .select()
+          .from(videoSources)
+          .where(inArray(videoSources.episodeId, episodeIds))
+          .orderBy(asc(videoSources.createdAt));
+
+        const normalizedSources = await normalizeVideoSources(sources, {
+          s3StorageService: options?.s3StorageService,
+          storageProviderRegistry: options?.storageProviderRegistry,
+        });
+
+        const filterSet =
+          sourceTypes && sourceTypes.length > 0
+            ? new Set(
+                sourceTypes.map((t) => t.trim()).filter((t) => t.length > 0)
+              )
+            : null;
+        const hasFilter = filterSet !== null && filterSet.size > 0;
+
+        for (const s of normalizedSources) {
+          if (hasFilter && !filterSet!.has(s.type)) {
+            continue;
+          }
+          const list = sourcesMap.get(s.episodeId) ?? [];
+          list.push(s);
+          sourcesMap.set(s.episodeId, list);
+        }
+      }
+
+      const episodesWithSources = childEpisodes.map((ep) => ({
+        ...ep,
+        videoSources: sortVideoSources(sourcesMap.get(ep.id) ?? []),
+      }));
+
+      const episodesBySeasonMap = new Map<string, EpisodeWithVideoSources[]>();
+      for (const ep of episodesWithSources) {
+        if (ep.seasonId) {
+          const list = episodesBySeasonMap.get(ep.seasonId) ?? [];
+          list.push(ep);
+          episodesBySeasonMap.set(ep.seasonId, list);
+        }
+      }
+
+      const seasonsWithEpisodes: SeasonWithEpisodes[] = childSeasons.map((s) => ({
+        ...s,
+        episodes: episodesBySeasonMap.get(s.id) ?? [],
+      }));
+
+      const seriesGenres = await db
+        .select({
+          id: genres.id,
+          name: genres.name,
+          slug: genres.slug,
+        })
+        .from(seriesToGenres)
+        .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+        .where(eq(seriesToGenres.seriesId, id))
+        .orderBy(asc(genres.name));
+
+      return {
+        ...seriesRow,
+        seasons: seasonsWithEpisodes,
+        episodes: episodesWithSources,
+        genres: seriesGenres,
+      };
+    },
+
+    async list(params: SeriesListParams): Promise<SeriesListResult> {
+      const limit = Math.max(
+        1,
+        Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT)
+      );
+      const page = Math.max(1, params.page);
+      const offset = (page - 1) * limit;
+
+      const conditions = [];
+
+      if (params.q && params.q.trim() !== "") {
+        const pattern = `%${params.q.trim()}%`;
+        conditions.push(
+          or(
+            ilike(series.title, pattern),
+            ilike(series.description, pattern)
+          )
+        );
+      }
+
+      if (params.filter === "featured") {
+        conditions.push(eq(series.isFeatured, true));
+      } else if (params.filter === "ongoing") {
+        conditions.push(
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(seasons)
+              .where(
+                and(
+                  eq(seasons.seriesId, series.id),
+                  eq(seasons.status, "ongoing")
+                )
+              )
+          )
+        );
+      }
+
+      if (params.highlighted === true) {
+        conditions.push(eq(series.isOngoingHighlighted, true));
+      }
+
+      if (params.genre && params.genre.trim() !== "") {
+        const slugs = params.genre
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        if (slugs.length > 0) {
+          const matchingSeriesIds = db
+            .select({ id: seriesToGenres.seriesId })
+            .from(seriesToGenres)
+            .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+            .where(inArray(genres.slug, slugs))
+            .groupBy(seriesToGenres.seriesId)
+            .having(sql`COUNT(DISTINCT ${genres.slug}) = ${slugs.length}`);
+
+          conditions.push(inArray(series.id, matchingSeriesIds));
+        }
+      }
+
+      const where =
+        conditions.length > 0
+          ? conditions.length === 1
+            ? conditions[0]
+            : and(...conditions)
+          : undefined;
+
+      const [rows, totalRows] = await Promise.all([
+        db
+          .select()
+          .from(series)
+          .where(where)
+          .orderBy(
+            ...(params.filter === "ongoing"
+              ? [desc(series.isOngoingHighlighted), desc(series.updatedAt)]
+              : [desc(series.createdAt)])
+          )
+          .limit(limit)
+          .offset(offset),
+        db.select({ value: count() }).from(series).where(where),
+      ]);
+
+      const seriesIds = rows.map((s) => s.id);
+      const seasonsMap = new Map<string, SeasonRow[]>();
+      const genresMap = new Map<string, Array<{ id: string; name: string; slug: string }>>();
+
+      if (seriesIds.length > 0) {
+        const childSeasons = await db
+          .select()
+          .from(seasons)
+          .where(inArray(seasons.seriesId, seriesIds))
+          .orderBy(
+            sql`CASE 
+              WHEN ${seasons.seasonNumber} IS NOT NULL AND ${seasons.seasonNumber} > 0 THEN 1 
+              WHEN ${seasons.seasonNumber} = 0 THEN 2 
+              ELSE 3 
+            END ASC`,
+            asc(seasons.seasonNumber),
+            asc(seasons.createdAt)
+          );
+
+        childSeasons.sort(compareSeasons);
+
+        for (const s of childSeasons) {
+          const list = seasonsMap.get(s.seriesId) ?? [];
+          list.push(s);
+          seasonsMap.set(s.seriesId, list);
+        }
+
+        const allGenres = await db
+          .select({
+            seriesId: seriesToGenres.seriesId,
+            id: genres.id,
+            name: genres.name,
+            slug: genres.slug,
+          })
+          .from(seriesToGenres)
+          .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+          .where(inArray(seriesToGenres.seriesId, seriesIds))
+          .orderBy(asc(genres.name));
+
+        for (const g of allGenres) {
+          const list = genresMap.get(g.seriesId) ?? [];
+          list.push({ id: g.id, name: g.name, slug: g.slug });
+          genresMap.set(g.seriesId, list);
+        }
+      }
+
+      const seriesWithSeasons: SeriesWithSeasons[] = rows.map((s) => ({
+        ...s,
+        seasons: seasonsMap.get(s.id) ?? [],
+        genres: genresMap.get(s.id) ?? [],
+      }));
+
+      return {
+        series: seriesWithSeasons,
+        total: totalRows[0]?.value ?? 0,
+      };
+    },
+
+    async updateSeries(
+      id: string,
+      input: UpdateSeriesInput
+    ): Promise<SeriesWithSeasons> {
+      const now = new Date();
+      const updateData: Record<string, unknown> = {
+        updatedAt: now,
+      };
+
+      if (input.title !== undefined) updateData.title = input.title;
+      if (input.description !== undefined) updateData.description = input.description;
+      if (input.type !== undefined) updateData.type = input.type;
+      if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
+      if (input.logoUrl !== undefined) updateData.logoUrl = input.logoUrl;
+      if (input.backdropUrl !== undefined) updateData.backdropUrl = input.backdropUrl;
+      if (input.rating !== undefined) updateData.rating = input.rating;
+      if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
+      if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
+      if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
+      if (input.isOngoingHighlighted !== undefined)
+        updateData.isOngoingHighlighted = input.isOngoingHighlighted;
+
+      if (input.isOngoingHighlighted === true) {
+        const ongoingQuery = db
+          .select({ id: seasons.id })
+          .from(seasons)
+          .where(and(eq(seasons.seriesId, id), eq(seasons.status, "ongoing")));
+        const ongoing =
+          ongoingQuery &&
+          typeof ongoingQuery === "object" &&
+          "limit" in ongoingQuery &&
+          typeof ongoingQuery.limit === "function"
+            ? await ongoingQuery.limit(1)
+            : await ongoingQuery;
+        if (!ongoing || (Array.isArray(ongoing) && ongoing.length === 0)) {
+          throw new SeriesHighlightWithoutOngoingError();
+        }
+      }
+
+      const [row] = await db
+        .update(series)
+        .set(updateData)
+        .where(eq(series.id, id))
+        .returning();
+
+      if (!row) {
+        throw new SeriesNotFoundError(`Series with id ${id} not found`);
+      }
+
+      if (input.genreIds !== undefined) {
+        await db
+          .delete(seriesToGenres)
+          .where(eq(seriesToGenres.seriesId, id));
+
+        if (input.genreIds.length > 0) {
+          await db
+            .insert(seriesToGenres)
+            .values(
+              input.genreIds.map((genreId) => ({
+                seriesId: id,
+                genreId,
+              }))
+            );
+        }
+      }
+
+      const childSeasons = await db
+        .select()
+        .from(seasons)
+        .where(eq(seasons.seriesId, id))
+        .orderBy(
+          sql`CASE 
+            WHEN ${seasons.seasonNumber} IS NOT NULL AND ${seasons.seasonNumber} > 0 THEN 1 
+            WHEN ${seasons.seasonNumber} = 0 THEN 2 
+            ELSE 3 
+          END ASC`,
+          asc(seasons.seasonNumber),
+          asc(seasons.createdAt)
+        );
+
+      childSeasons.sort(compareSeasons);
+
+      return {
+        ...row,
+        seasons: childSeasons,
+      };
+    },
+
+    async deleteSeries(id: string): Promise<SeriesRow> {
+      const childSeasons = await db
+        .select({ id: seasons.id })
+        .from(seasons)
+        .where(eq(seasons.seriesId, id));
+      const seasonIds = childSeasons.map((s) => s.id);
+
+      if (seasonIds.length > 0) {
+        await db
+          .delete(episodes)
+          .where(inArray(episodes.seasonId, seasonIds));
+      }
+
+      const [row] = await db
+        .delete(series)
+        .where(eq(series.id, id))
+        .returning();
+
+      if (!row) {
+        throw new SeriesNotFoundError(`Series with id ${id} not found`);
+      }
+
+      return row;
+    },
+
+    async getHomeFeed(sourceTypes?: string[]): Promise<HomeFeedPayload> {
+      const normalizedTypes = (sourceTypes ?? [])
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+      const hasTypeFilter = normalizedTypes.length > 0;
+      const typeList = hasTypeFilter
+        ? sql.join(
+            normalizedTypes.map((t) => sql`${t}`),
+            sql`, `
+          )
+        : null;
+      const hasVideoSources = hasTypeFilter
+        ? sql`EXISTS (
+        SELECT 1
+        FROM ${videoSources}
+        INNER JOIN ${episodes} ON ${videoSources.episodeId} = ${episodes.id}
+        INNER JOIN ${seasons} ON ${episodes.seasonId} = ${seasons.id}
+        WHERE ${seasons.seriesId} = ${series.id}
+        AND ${videoSources.type} IN (${typeList})
+      )`
+        : sql`EXISTS (
+        SELECT 1
+        FROM ${videoSources}
+        INNER JOIN ${episodes} ON ${videoSources.episodeId} = ${episodes.id}
+        INNER JOIN ${seasons} ON ${episodes.seasonId} = ${seasons.id}
+        WHERE ${seasons.seriesId} = ${series.id}
+      )`;
+
+      const hasOngoingSeason = sql`EXISTS (
+        SELECT 1
+        FROM ${seasons}
+        WHERE ${seasons.seriesId} = ${series.id} AND ${seasons.status} = 'ongoing'
+      )`;
+
+      const activeBigGenres = await db
+        .select()
+        .from(genres)
+        .where(eq(genres.isBigGenre, true))
+        .orderBy(asc(genres.displayOrder), asc(genres.name));
+
+      let heroSeriesList = await db
+        .select()
+        .from(series)
+        .where(and(eq(series.isFeatured, true), hasVideoSources))
+        .orderBy(desc(series.updatedAt), desc(series.createdAt))
+        .limit(10);
+
+      if (heroSeriesList.length === 0) {
+        heroSeriesList = await db
+          .select()
+          .from(series)
+          .where(hasVideoSources)
+          .orderBy(desc(series.updatedAt), desc(series.createdAt))
+          .limit(10);
+      }
+
+      const ONGOING_SOFT_CAP = 10;
+      const ONGOING_HARD_CAP = 20;
+
+      async function fetchOngoingRow(
+        extraConditions: ReturnType<typeof and>,
+      ): Promise<SeriesRow[]> {
+        const highlighted = await db
+          .select()
+          .from(series)
+          .where(
+            and(
+              extraConditions,
+              eq(series.isOngoingHighlighted, true),
+            ),
+          )
+          .orderBy(desc(series.updatedAt))
+          .limit(ONGOING_HARD_CAP);
+        if (highlighted.length >= ONGOING_SOFT_CAP) {
+          return highlighted.slice(0, ONGOING_HARD_CAP);
+        }
+        const backfill = await db
+          .select()
+          .from(series)
+          .where(
+            and(
+              extraConditions,
+              eq(series.isOngoingHighlighted, false),
+            ),
+          )
+          .orderBy(desc(series.updatedAt))
+          .limit(ONGOING_SOFT_CAP - highlighted.length);
+        return [...highlighted, ...backfill];
+      }
+
+      const ongoingPerGenrePromises = activeBigGenres.map((bigGenre) => {
+        const hasGenre = sql`EXISTS (
+          SELECT 1
+          FROM ${seriesToGenres}
+          WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${seriesToGenres.genreId} = ${bigGenre.id}
+        )`;
+        return fetchOngoingRow(and(hasOngoingSeason, hasGenre, hasVideoSources));
+      });
+
+      const bigGenreRowsPromises = activeBigGenres.map((bigGenre) => {
+        const hasGenre = sql`EXISTS (
+          SELECT 1
+          FROM ${seriesToGenres}
+          WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${seriesToGenres.genreId} = ${bigGenre.id}
+        )`;
+        return db
+          .select()
+          .from(series)
+          .where(and(hasGenre, hasVideoSources))
+          .orderBy(desc(series.createdAt))
+          .limit(10);
+      });
+
+      const recentlyAddedRowsPromise = db
+        .select()
+        .from(series)
+        .where(hasVideoSources)
+        .orderBy(desc(series.createdAt))
+        .limit(10);
+
+      const [ongoingPerGenreList, bigGenreRowsList, recentlyAddedRows] = await Promise.all([
+        Promise.all(ongoingPerGenrePromises),
+        Promise.all(bigGenreRowsPromises),
+        recentlyAddedRowsPromise,
+      ]);
+
+      let fallbackOngoingRows: SeriesRow[] = [];
+      const hasAnyPerGenreOngoing = ongoingPerGenreList.some(
+        (rows) => rows.length > 0
+      );
+      if (!hasAnyPerGenreOngoing) {
+        fallbackOngoingRows = await fetchOngoingRow(and(hasOngoingSeason, hasVideoSources));
+      }
+
+      const allSeriesMap = new Map<string, SeriesRow>();
+      for (const s of [...heroSeriesList, ...fallbackOngoingRows, ...recentlyAddedRows, ...ongoingPerGenreList.flat(), ...bigGenreRowsList.flat()]) {
+        allSeriesMap.set(s.id, s);
+      }
+
+      const allSeriesList = Array.from(allSeriesMap.values());
+      const allSeriesIds = allSeriesList.map((s) => s.id);
+
+      const genresMap = new Map<string, Array<{ id: string; name: string; slug: string }>>();
+      const seasonsCountMap = new Map<string, number>();
+      const episodesCountMap = new Map<string, number>();
+
+      if (allSeriesIds.length > 0) {
+        const genreMappings = await db
+          .select({
+            seriesId: seriesToGenres.seriesId,
+            id: genres.id,
+            name: genres.name,
+            slug: genres.slug,
+          })
+          .from(seriesToGenres)
+          .innerJoin(genres, eq(seriesToGenres.genreId, genres.id))
+          .where(inArray(seriesToGenres.seriesId, allSeriesIds));
+
+        for (const g of genreMappings) {
+          const list = genresMap.get(g.seriesId) ?? [];
+          list.push({ id: g.id, name: g.name, slug: g.slug });
+          genresMap.set(g.seriesId, list);
+        }
+
+        const seasonCounts = await db
+          .select({
+            seriesId: seasons.seriesId,
+            value: count(seasons.id),
+          })
+          .from(seasons)
+          .where(inArray(seasons.seriesId, allSeriesIds))
+          .groupBy(seasons.seriesId);
+
+        for (const sc of seasonCounts) {
+          seasonsCountMap.set(sc.seriesId, Number(sc.value));
+        }
+
+        const episodeCounts = await db
+          .select({
+            seriesId: seasons.seriesId,
+            value: count(episodes.id),
+          })
+          .from(episodes)
+          .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+          .where(inArray(seasons.seriesId, allSeriesIds))
+          .groupBy(seasons.seriesId);
+
+        for (const ec of episodeCounts) {
+          episodesCountMap.set(ec.seriesId, Number(ec.value));
+        }
+      }
+
+      const enrichedMap = new Map<string, SeriesWithMetadata>();
+      for (const s of allSeriesList) {
+        enrichedMap.set(s.id, {
+          ...s,
+          genres: genresMap.get(s.id) ?? [],
+          seasonsCount: seasonsCountMap.get(s.id) ?? 0,
+          episodesCount: episodesCountMap.get(s.id) ?? 0,
+        });
+      }
+
+      const heroes: HomeFeedHero[] = heroSeriesList.map((s) => {
+        const enrichedHero = enrichedMap.get(s.id)!;
+        const genreNames = enrichedHero.genres.map((g) => g.name);
+        const typeTag = enrichedHero.type === "movie" ? "Movie" : "TV Series";
+        const tags = [typeTag, ...genreNames];
+        return {
+          ...enrichedHero,
+          tags,
+        };
+      });
+
+      const hero: HomeFeedHero | null = heroes[0] ?? null;
+
+      const rows: HomeFeedRow[] = [
+        ...activeBigGenres.map((bigGenre, index) => ({
+          title: `Ongoing ${bigGenre.name}`,
+          items: (ongoingPerGenreList[index] ?? []).map((s) => enrichedMap.get(s.id)!),
+        })),
+        ...(hasAnyPerGenreOngoing
+          ? []
+          : [
+              {
+                title: "Ongoing",
+                items: fallbackOngoingRows.map((s) => enrichedMap.get(s.id)!),
+              },
+            ]),
+        ...activeBigGenres.map((bigGenre, index) => ({
+          title: bigGenre.name,
+          items: (bigGenreRowsList[index] ?? []).map((s) => enrichedMap.get(s.id)!),
+        })),
+        {
+          title: "Recently Added",
+          items: recentlyAddedRows.map((s) => enrichedMap.get(s.id)!),
+        },
+      ].filter((row) => row.items.length > 0);
+
+      const recentlyAddedEpisodes = await fetchRecentlyAddedEpisodes();
+
+      return {
+        hero,
+        heroes,
+        rows,
+        recentlyAddedEpisodes,
+      };
+    },
+  };
+}

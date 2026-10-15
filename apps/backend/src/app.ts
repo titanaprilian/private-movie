@@ -50,14 +50,16 @@ export const createApp = (deps: CreateAppDeps) => {
     .group("/api", (app) =>
       app
         .use(healthRoutes({ db }))
-        .use(authRoutes({ authService: auth, rateLimit: overrides.authRateLimit }))
+        .use(
+          authRoutes({ authService: auth, rateLimit: overrides.authRateLimit }),
+        )
         .use(
           dashboardRoutes({
             db,
             authService: auth,
             scheduler,
             storageUsageProvider,
-          })
+          }),
         )
         .use(
           episodeRoutes({
@@ -67,7 +69,7 @@ export const createApp = (deps: CreateAppDeps) => {
             browserFn,
             s3StorageService,
             storageProviderRegistry,
-          })
+          }),
         )
         .use(
           seriesRoutes({
@@ -78,10 +80,9 @@ export const createApp = (deps: CreateAppDeps) => {
             s3StorageService,
             storageProviderRegistry,
             archiveFetchFn: overrides.archiveFetchFn,
-            archiveExtractFn: overrides.archiveExtractFn,
             archiveStagingBaseDir,
             archiveJobService,
-          })
+          }),
         )
         .use(
           seasonRoutes({
@@ -90,7 +91,7 @@ export const createApp = (deps: CreateAppDeps) => {
             fetchHtml: overrides.fetchHtml,
             browserFn,
             s3StorageService,
-          })
+          }),
         )
         .use(mediaRoutes({ db, authService: auth }))
         .use(genreRoutes({ db, authService: auth }))
@@ -102,8 +103,8 @@ export const createApp = (deps: CreateAppDeps) => {
             storageProviderRegistry,
             storageService: overrides.storage?.service ?? storageService,
             overrides: overrides.storage,
-          })
-        )
+          }),
+        ),
     );
 };
 

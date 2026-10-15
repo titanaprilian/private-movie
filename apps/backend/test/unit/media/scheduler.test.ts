@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createOngoingSeasonScheduler } from "../../../src/modules/media/scheduler";
+import { createOngoingSeasonScheduler } from "../../../src/modules/media";
 import type { BatchOngoingScrapeResult } from "@repo/media-service";
 
 describe("OngoingSeasonScheduler", () => {

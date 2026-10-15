@@ -1,23 +1,47 @@
-import { Elysia, t } from "elysia";
-import type {
-  AuthenticationService,
-  StorageProviderType,
-} from "@repo/contracts";
-import type { DbClient } from "@repo/db";
-import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import { Elysia } from "elysia";
+import type { StorageProviderType } from "@repo/contracts";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
-import { createStorageService } from "./internal/storage-service";
-import type { StorageOverrides, StorageService } from "./internal/storage-service";
+import { createStorageService } from "./internal/services/service";
+import {
+  attachOrphanBody,
+  attachOrphanDetail,
+  createProviderBody,
+  createProviderDetail,
+  deleteProviderDetail,
+  deleteResourcesBody,
+  deleteResourcesDetail,
+  getProviderDetail,
+  listProvidersDetail,
+  metricsDetail,
+  metricsQuery,
+  minioStatusDetail,
+  previewUrlDetail,
+  previewUrlQuery,
+  providerIdParams,
+  purgeOrphansBody,
+  purgeOrphansDetail,
+  resourceIdParams,
+  resourcesDetail,
+  resourcesQuery,
+  scanBody,
+  scanDetail,
+  seriesDetail,
+  seriesQuery,
+  spinUpMinioBody,
+  spinUpMinioDetail,
+  type StorageRoutesOptions,
+  testProviderBody,
+  testProviderDetail,
+  updateLimitBody,
+  updateLimitDetail,
+  updateProviderBody,
+  updateProviderDetail,
+  updateResourceMetadataBody,
+  updateResourceMetadataDetail,
+} from "./schemas";
 
-export interface StorageRoutesOptions {
-  db: DbClient;
-  authService: AuthenticationService;
-  s3StorageService?: S3StorageService;
-  storageProviderRegistry?: StorageProviderRegistry;
-  storageService?: StorageService;
-  overrides?: StorageOverrides;
-}
+export type { StorageRoutesOptions };
 
 export const storageRoutes = (options: StorageRoutesOptions) => {
   const storageService =
@@ -39,16 +63,16 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
       app.group("/storage", (storage) =>
         storage
           // Storage Provider Management Endpoints
-          .get("/providers", async () => {
-            const providers = await storageService.listProviders();
-            return successResponse(providers);
-          }, {
-            detail: {
-              tags: ["Storage"],
-              summary: "List storage providers",
-              description: "Returns all configured storage providers.",
+          .get(
+            "/providers",
+            async () => {
+              const providers = await storageService.listProviders();
+              return successResponse(providers);
             },
-          })
+            {
+              detail: listProvidersDetail,
+            },
+          )
           .get(
             "/providers/:id",
             async ({ params }) => {
@@ -56,15 +80,9 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(provider);
             },
             {
-              params: t.Object({
-                id: t.String({ minLength: 1 }),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Get storage provider",
-                description: "Returns a single storage provider by id.",
-              },
-            }
+              params: providerIdParams,
+              detail: getProviderDetail,
+            },
           )
           .post(
             "/providers",
@@ -86,33 +104,17 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(provider);
             },
             {
-              body: t.Object({
-                name: t.String({ minLength: 1 }),
-                providerType: t.String({ minLength: 1 }),
-                endpoint: t.String({ minLength: 1 }),
-                region: t.String({ minLength: 1 }),
-                bucket: t.String({ minLength: 1 }),
-                accessKeyId: t.String({ minLength: 1 }),
-                secretAccessKey: t.String({ minLength: 1 }),
-                publicBaseUrl: t.Optional(t.Nullable(t.String())),
-                forcePathStyle: t.Optional(t.Boolean()),
-                storageLimitGb: t.Optional(t.Number()),
-                isDefault: t.Optional(t.Boolean()),
-                isEnabled: t.Optional(t.Boolean()),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Create storage provider",
-                description: "Creates a new storage provider configuration.",
-              },
-            }
+              body: createProviderBody,
+              detail: createProviderDetail,
+            },
           )
           .put(
             "/providers/:id",
             async ({ params, body }) => {
               const provider = await storageService.updateProvider(params.id, {
                 name: body.name,
-                providerType: body.providerType as StorageProviderType | undefined,
+                providerType: body.providerType as
+                  StorageProviderType | undefined,
                 endpoint: body.endpoint,
                 region: body.region,
                 bucket: body.bucket,
@@ -127,29 +129,10 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(provider);
             },
             {
-              params: t.Object({
-                id: t.String({ minLength: 1 }),
-              }),
-              body: t.Object({
-                name: t.Optional(t.String({ minLength: 1 })),
-                providerType: t.Optional(t.String({ minLength: 1 })),
-                endpoint: t.Optional(t.String({ minLength: 1 })),
-                region: t.Optional(t.String({ minLength: 1 })),
-                bucket: t.Optional(t.String({ minLength: 1 })),
-                accessKeyId: t.Optional(t.String()),
-                secretAccessKey: t.Optional(t.String()),
-                publicBaseUrl: t.Optional(t.Nullable(t.String())),
-                forcePathStyle: t.Optional(t.Boolean()),
-                storageLimitGb: t.Optional(t.Number()),
-                isDefault: t.Optional(t.Boolean()),
-                isEnabled: t.Optional(t.Boolean()),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Update storage provider",
-                description: "Updates an existing storage provider by id.",
-              },
-            }
+              params: providerIdParams,
+              body: updateProviderBody,
+              detail: updateProviderDetail,
+            },
           )
           .delete(
             "/providers/:id",
@@ -158,15 +141,9 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse({ success: true, deletedId: params.id });
             },
             {
-              params: t.Object({
-                id: t.String({ minLength: 1 }),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Delete storage provider",
-                description: "Deletes a storage provider by id.",
-              },
-            }
+              params: providerIdParams,
+              detail: deleteProviderDetail,
+            },
           )
           .post(
             "/providers/test",
@@ -175,34 +152,20 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(result);
             },
             {
-              body: t.Optional(
-                t.Object({
-                  providerId: t.Optional(t.String()),
-                  endpoint: t.Optional(t.String()),
-                  region: t.Optional(t.String()),
-                  bucket: t.Optional(t.String()),
-                  accessKeyId: t.Optional(t.String()),
-                  secretAccessKey: t.Optional(t.String()),
-                  forcePathStyle: t.Optional(t.Boolean()),
-                })
-              ),
-              detail: {
-                tags: ["Storage"],
-                summary: "Test storage provider connection",
-                description: "Tests connectivity and credentials for a storage provider configuration.",
-              },
-            }
-          )
-          .get("/minio/status", async () => {
-            const status = await storageService.getMinioStatus();
-            return successResponse(status);
-          }, {
-            detail: {
-              tags: ["Storage"],
-              summary: "Get MinIO status",
-              description: "Returns the current MinIO container status.",
+              body: testProviderBody,
+              detail: testProviderDetail,
             },
-          })
+          )
+          .get(
+            "/minio/status",
+            async () => {
+              const status = await storageService.getMinioStatus();
+              return successResponse(status);
+            },
+            {
+              detail: minioStatusDetail,
+            },
+          )
           .post(
             "/minio/spin-up",
             async ({ body }) => {
@@ -210,56 +173,42 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(result);
             },
             {
-              body: t.Optional(
-                t.Object({
-                  endpoint: t.Optional(t.String()),
-                  port: t.Optional(t.Number()),
-                  consolePort: t.Optional(t.Number()),
-                  bucket: t.Optional(t.String()),
-                  accessKeyId: t.Optional(t.String()),
-                  secretAccessKey: t.Optional(t.String()),
-                  isDefault: t.Optional(t.Boolean()),
-                })
-              ),
-              detail: {
-                tags: ["Storage"],
-                summary: "Spin up MinIO",
-                description: "Provisions and starts a local MinIO container.",
-              },
-            }
+              body: spinUpMinioBody,
+              detail: spinUpMinioDetail,
+            },
           )
 
           // Storage Scoped Operations
           .get(
             "/metrics",
             async ({ query }) => {
-              const metrics = await storageService.getMetrics(query?.providerId);
+              const metrics = await storageService.getMetrics(
+                query?.providerId,
+              );
               return successResponse(metrics);
             },
             {
-              query: t.Optional(
-                t.Object({
-                  providerId: t.Optional(t.String()),
-                })
-              ),
-              detail: {
-                tags: ["Storage"],
-                summary: "Get storage metrics",
-                description: "Returns aggregated storage usage metrics, optionally scoped to a provider.",
-              },
-            }
+              query: metricsQuery,
+              detail: metricsDetail,
+            },
           )
           .get(
             "/resources",
             async ({ query }) => {
               const page = query?.page ? parseInt(query.page, 10) : undefined;
-              const limit = query?.limit ? parseInt(query.limit, 10) : undefined;
+              const limit = query?.limit
+                ? parseInt(query.limit, 10)
+                : undefined;
               const status =
-                query?.status === "linked" || query?.status === "orphaned" || query?.status === "all"
+                query?.status === "linked" ||
+                query?.status === "orphaned" ||
+                query?.status === "all"
                   ? query.status
                   : undefined;
               const sortBy =
-                query?.sortBy === "size" || query?.sortBy === "date" || query?.sortBy === "name"
+                query?.sortBy === "size" ||
+                query?.sortBy === "date" ||
+                query?.sortBy === "name"
                   ? query.sortBy
                   : undefined;
               const sortOrder =
@@ -282,25 +231,9 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(resources);
             },
             {
-              query: t.Optional(
-                t.Object({
-                  providerId: t.Optional(t.String()),
-                  seriesId: t.Optional(t.String()),
-                  seasonId: t.Optional(t.String()),
-                  status: t.Optional(t.String()),
-                  search: t.Optional(t.String()),
-                  sortBy: t.Optional(t.String()),
-                  sortOrder: t.Optional(t.String()),
-                  page: t.Optional(t.String()),
-                  limit: t.Optional(t.String()),
-                })
-              ),
-              detail: {
-                tags: ["Storage"],
-                summary: "List storage resources",
-                description: "Lists stored objects with filtering, sorting, and pagination.",
-              },
-            }
+              query: resourcesQuery,
+              detail: resourcesDetail,
+            },
           )
           .get(
             "/series",
@@ -311,18 +244,9 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(series);
             },
             {
-              query: t.Optional(
-                t.Object({
-                  providerId: t.Optional(t.String()),
-                })
-              ),
-              detail: {
-                tags: ["Storage"],
-                summary: "List storage series",
-                description:
-                  "Lists series with aggregated S3 video file counts, byte totals, and season breakdowns.",
-              },
-            }
+              query: seriesQuery,
+              detail: seriesDetail,
+            },
           )
           .post(
             "/scan",
@@ -331,17 +255,9 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(result);
             },
             {
-              body: t.Optional(
-                t.Object({
-                  providerId: t.Optional(t.String()),
-                })
-              ),
-              detail: {
-                tags: ["Storage"],
-                summary: "Trigger storage scan",
-                description: "Triggers a scan of stored objects to reconcile the resource index.",
-              },
-            }
+              body: scanBody,
+              detail: scanDetail,
+            },
           )
           .put(
             "/limit",
@@ -350,48 +266,38 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 return errorResponse(
                   set,
                   400,
-                  new Error("Storage limit must be a positive number")
+                  new Error("Storage limit must be a positive number"),
                 );
               }
 
-              const result = await storageService.updateLimit(body.limitGb, body.providerId);
+              const result = await storageService.updateLimit(
+                body.limitGb,
+                body.providerId,
+              );
               return successResponse(result);
             },
             {
-              body: t.Object({
-                limitGb: t.Number(),
-                providerId: t.Optional(t.String()),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Update storage limit",
-                description: "Updates the storage quota limit, optionally scoped to a provider.",
-              },
-            }
+              body: updateLimitBody,
+              detail: updateLimitDetail,
+            },
           )
           .patch(
             "/resources/:id",
             async ({ params, body }) => {
-              const updated = await storageService.updateSourceMetadata(params.id, {
-                label: body.label,
-                quality: body.quality,
-              });
+              const updated = await storageService.updateSourceMetadata(
+                params.id,
+                {
+                  label: body.label,
+                  quality: body.quality,
+                },
+              );
               return successResponse(updated);
             },
             {
-              params: t.Object({
-                id: t.String(),
-              }),
-              body: t.Object({
-                label: t.Optional(t.String({ minLength: 1 })),
-                quality: t.Optional(t.Nullable(t.String())),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Update resource metadata",
-                description: "Updates label and quality metadata for a storage resource.",
-              },
-            }
+              params: resourceIdParams,
+              body: updateResourceMetadataBody,
+              detail: updateResourceMetadataDetail,
+            },
           )
           .post(
             "/resources/attach",
@@ -406,19 +312,9 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
               return successResponse(attached);
             },
             {
-              body: t.Object({
-                key: t.String({ minLength: 1 }),
-                episodeId: t.String({ minLength: 1 }),
-                label: t.Optional(t.String()),
-                quality: t.Optional(t.Nullable(t.String())),
-                providerId: t.Optional(t.String()),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Attach orphan resource",
-                description: "Attaches an orphaned stored object to an episode.",
-              },
-            }
+              body: attachOrphanBody,
+              detail: attachOrphanDetail,
+            },
           )
           .post(
             "/resources/delete",
@@ -427,43 +323,33 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 return errorResponse(
                   set,
                   400,
-                  new Error("keys array is required and must not be empty")
+                  new Error("keys array is required and must not be empty"),
                 );
               }
 
-              const result = await storageService.deleteResources(body.keys, body.providerId);
+              const result = await storageService.deleteResources(
+                body.keys,
+                body.providerId,
+              );
               return successResponse(result);
             },
             {
-              body: t.Object({
-                keys: t.Array(t.String({ minLength: 1 })),
-                providerId: t.Optional(t.String()),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Delete resources",
-                description: "Deletes stored objects by key.",
-              },
-            }
+              body: deleteResourcesBody,
+              detail: deleteResourcesDetail,
+            },
           )
           .post(
             "/resources/purge-orphans",
             async ({ body }) => {
-              const result = await storageService.purgeOrphans(body?.providerId);
+              const result = await storageService.purgeOrphans(
+                body?.providerId,
+              );
               return successResponse(result);
             },
             {
-              body: t.Optional(
-                t.Object({
-                  providerId: t.Optional(t.String()),
-                })
-              ),
-              detail: {
-                tags: ["Storage"],
-                summary: "Purge orphans",
-                description: "Permanently removes orphaned stored objects.",
-              },
-            }
+              body: purgeOrphansBody,
+              detail: purgeOrphansDetail,
+            },
           )
           .get(
             "/resources/preview-url",
@@ -472,25 +358,21 @@ export const storageRoutes = (options: StorageRoutesOptions) => {
                 return errorResponse(
                   set,
                   400,
-                  new Error("key query parameter is required")
+                  new Error("key query parameter is required"),
                 );
               }
 
-              const result = await storageService.getPreviewUrl(query.key.trim(), query.providerId);
+              const result = await storageService.getPreviewUrl(
+                query.key.trim(),
+                query.providerId,
+              );
               return successResponse(result);
             },
             {
-              query: t.Object({
-                key: t.String({ minLength: 1 }),
-                providerId: t.Optional(t.String()),
-              }),
-              detail: {
-                tags: ["Storage"],
-                summary: "Get preview URL",
-                description: "Returns a signed preview URL for a stored object.",
-              },
-            }
-          )
-      )
+              query: previewUrlQuery,
+              detail: previewUrlDetail,
+            },
+          ),
+      ),
   );
 };
