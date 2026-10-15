@@ -11,3 +11,20 @@ export class SeriesHighlightWithoutOngoingError extends Error {
     this.name = "SeriesHighlightWithoutOngoingError";
   }
 }
+
+export class TmdbFetchError extends Error {
+  constructor(
+    message: string,
+    public readonly status?: number
+  ) {
+    super(message);
+    this.name = "TmdbFetchError";
+  }
+}
+
+export class SeriesFetchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SeriesFetchError";
+  }
+}

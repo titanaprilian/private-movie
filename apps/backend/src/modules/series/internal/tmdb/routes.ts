@@ -1,5 +1,4 @@
 import { Elysia } from "elysia";
-import { createMediaService } from "@repo/media-service";
 import { authGuard } from "../../../../lib/auth";
 import { successResponse } from "../../../../lib/response";
 import type { SeriesRoutesOptions } from "../../schemas";
@@ -13,22 +12,20 @@ import {
   tmdbSyncBodySchema,
   tmdbSyncPreviewQuerySchema,
 } from "../../schemas";
+import { createTmdbService } from "./service";
 
 export const tmdbRoutes = (options: SeriesRoutesOptions) => {
   const auth = authGuard(options.authService);
-  const mediaService =
-    options.mediaService ??
-    createMediaService(options.db, {
-      fetchHtml: options.fetchHtml,
-      browserFn: options.browserFn,
-      s3StorageService: options.s3StorageService,
-    });
+  const tmdbService = createTmdbService(options.db, {
+    fetchHtml: options.fetchHtml,
+    browserFn: options.browserFn,
+  });
 
   return new Elysia({ name: "series-tmdb-routes" })
     .post(
       "/preview-scrape-series",
       async ({ body }) => {
-        const result = await mediaService.previewScrapeSeries(body);
+        const result = await tmdbService.previewScrapeSeries(body);
         return successResponse(result);
       },
       {
@@ -44,7 +41,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .get(
       "/series/tmdb-preview",
       async ({ query }) => {
-        const result = await mediaService.getTmdbPreview(
+        const result = await tmdbService.getTmdbPreview(
           query.type,
           query.tmdbId,
           query.includeSpecials
@@ -64,7 +61,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .post(
       "/series/tmdb-import",
       async ({ body }) => {
-        const result = await mediaService.importTmdb({
+        const result = await tmdbService.importTmdb({
           type: body.type,
           tmdbId: body.tmdbId,
           includeSpecials: body.includeSpecials,
@@ -84,7 +81,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .post(
       "/series/:id/tmdb-sync",
       async ({ params, body }) => {
-        const result = await mediaService.syncTmdb(params.id, body);
+        const result = await tmdbService.syncTmdb(params.id, body);
         return successResponse(result);
       },
       {
@@ -101,7 +98,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .get(
       "/series/:id/tmdb-sync-preview",
       async ({ params, query }) => {
-        const result = await mediaService.getTmdbSyncPreview(params.id, {
+        const result = await tmdbService.getTmdbSyncPreview(params.id, {
           type: query.type,
           tmdbId: query.tmdbId,
           includeSpecials: query.includeSpecials,
@@ -122,7 +119,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .post(
       "/series/:id/preview-bulk-sources",
       async ({ params, body }) => {
-        const result = await mediaService.previewBulkSources({
+        const result = await tmdbService.previewBulkSources({
           seriesId: params.id,
           sourceUrl: body.sourceUrl,
           source: body.source,
