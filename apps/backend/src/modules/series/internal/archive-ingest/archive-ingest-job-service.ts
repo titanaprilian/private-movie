@@ -32,10 +32,10 @@ import {
   detectQuality,
   isVideoFile,
   isSampleFile,
-} from "../../episodes";
-import { GoogleDriveUrlHelper } from "./google-drive-url";
-import { logger } from "../../../lib/logger";
-import { captureException } from "../../../lib/sentry";
+} from "../../../episodes";
+import { GoogleDriveUrlHelper } from "./utils/google-drive-url";
+import { logger } from "../../../../lib/logger";
+import { captureException } from "../../../../lib/sentry";
 import {
   createStorageProviderRegistry,
   createVideoSourceRepositoryInternal,
