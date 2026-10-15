@@ -1,7 +1,6 @@
 import type { DbClient } from "@repo/db";
 import {
   MediaScraper,
-  type BrowserFn,
   type FetchFn as ScraperFetchFn,
 } from "@repo/media-scraper";
 import { SeriesNotFoundError, SeriesFetchError } from "../errors";
@@ -24,14 +23,6 @@ import type {
   TmdbSyncPreviewResult,
   VideoSource,
 } from "./types";
-
-export type { TmdbHtmlFetchFn } from "./types";
-export { defaultFetchHtml, fetchFromTmdb, selectBestTmdbLogo } from "./utils/tmdb-client";
-export {
-  parseBulkScrapedEpisodeNumber,
-  stripSeasonDescriptors,
-} from "./utils/episode-matcher";
-export { getTmdbPreview, fetchTmdbSeriesData };
 
 export function tmdbService(db: DbClient, options?: TmdbServiceOptions): TmdbService {
   const tmdbRepository = createTmdbRepository(db);
@@ -209,8 +200,3 @@ export function tmdbService(db: DbClient, options?: TmdbServiceOptions): TmdbSer
   };
 }
 
-// Backwards-compatible alias: prefer `tmdbService` in new code.
-export const createTmdbService = tmdbService;
-export type TmdbServiceClient = ReturnType<typeof tmdbService>;
-export { TmdbFetchError } from "../errors";
-export type { BrowserFn };

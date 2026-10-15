@@ -1,9 +1,5 @@
 import type { DbClient } from "@repo/db";
 import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
-import type {
-  SeriesWithEpisodes,
-  SeriesWithSeasons,
-} from "./catalog/repository";
 
 export interface SeriesServiceOptions {
   db: DbClient;
@@ -48,40 +44,3 @@ export type {
   SeasonWithEpisodes,
   UpdateSeriesInput,
 } from "./catalog/repository";
-export type { SeriesWithEpisodes as TmdbSeriesWithEpisodes, SeriesWithSeasons as TmdbSeriesWithSeasons };
-
-// TMDB sub-feature types live in `internal/tmdb/types.ts` (colocated per Tier 3).
-// Re-exported here for backwards compatibility with existing import sites.
-export type {
-  VideoSource,
-  TmdbImageItem,
-  TmdbImagesResponse,
-  TmdbSeasonEpisodeItem,
-  TmdbSeasonResponse,
-  TmdbSeriesSeasonMeta,
-  TmdbSeriesDetailsResponse,
-  TmdbEpisodeDetails,
-  TmdbSeasonDetailsResponse,
-  TmdbSeasonFullData,
-  TmdbSeriesFullData,
-  FetchTmdbSeriesOptions,
-  TmdbImportInput,
-  TmdbSyncInput,
-  TmdbSyncPreviewInput,
-  EpisodeChangeItem,
-  SeasonSyncDiffItem,
-  TmdbSyncPreviewResult,
-  TmdbPreviewSeason,
-  TmdbPreviewResult,
-  GetTmdbPreviewOptions,
-  PreviewScrapeSeriesInput,
-  PreviewScrapeSeriesResult,
-  PreviewBulkSourcesInput,
-  ScrapedBulkEpisodeItem,
-  BulkPreviewLocalEpisodeItem,
-  PreviewBulkSourcesResult,
-  TmdbHtmlFetchFn,
-  TmdbServiceOptions,
-  TmdbRepository,
-  TmdbService,
-} from "./tmdb/types";
