@@ -1,6 +1,6 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type { AuthenticationService } from "@repo/contracts";
-import { createAuthenticationServiceInternal } from "./internal/services/auth-service";
+import { createAuthenticationServiceInternal } from "./internal/service";
 import { validateJwtSecret } from "./internal/utils/jwt";
 
 export { validateJwtSecret } from "./internal/utils/jwt";

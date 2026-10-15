@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   AccountLockedError,
@@ -13,9 +12,10 @@ import {
   type User,
   type VerifyCredentialsInput,
 } from "@repo/contracts";
-import { users, refreshTokens, type NewUserRow } from "@repo/db";
-import { hashPassword, verifyPassword } from "../utils/password";
-import { signJwt, verifyJwt, hashRefreshToken } from "../utils/jwt";
+import type { NewRefreshTokenRow, NewUserRow } from "@repo/db";
+import { hashPassword, verifyPassword } from "./utils/password";
+import { signJwt, verifyJwt, hashRefreshToken } from "./utils/jwt";
+import { authRepository } from "./repository";
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -43,18 +43,31 @@ function toUser(row: { id: string; email: string; name?: string | null; createdA
   return { id: row.id, name: row.name ?? undefined, email: row.email, createdAt: row.createdAt };
 }
 
+function newRefreshTokenRow(userId: string, hashedToken: string): NewRefreshTokenRow {
+  return {
+    id: randomUUID(),
+    token: hashedToken,
+    userId,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    revoked: false,
+    createdAt: new Date(),
+  };
+}
+
 export function createAuthenticationServiceInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
 >(
   db: PgDatabase<THKT, TSchema>
 ): AuthenticationService {
+  const repository = authRepository(db);
+
   return {
     async register(input: RegisterInput): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string }; accessToken: string; refreshToken: string }> {
       validateRegistration(input);
       const email = normalizeEmail(input.email);
 
-      const [existing] = await db.select().from(users).where(eq(users.email, email));
+      const existing = await repository.findUserByEmail(email);
       if (existing) {
         throw new EmailAlreadyRegisteredError(email);
       }
@@ -72,47 +85,25 @@ export function createAuthenticationServiceInternal<
       const accessToken = signJwt({ sub: user.id, email: user.email, name: user.name });
       const rawRefreshToken = randomUUID();
       const hashedToken = hashRefreshToken(rawRefreshToken);
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-      try {
-        await db.insert(users).values(row);
-        await db.insert(refreshTokens).values({
-          id: randomUUID(),
-          token: hashedToken,
-          userId: user.id,
-          expiresAt,
-          revoked: false,
-          createdAt: new Date(),
-        });
-        return {
-          user,
-          tokens: {
-            accessToken,
-            refreshToken: rawRefreshToken,
-          },
+      await repository.insertUser(row);
+      await repository.insertRefreshToken(newRefreshTokenRow(user.id, hashedToken));
+
+      return {
+        user,
+        tokens: {
           accessToken,
           refreshToken: rawRefreshToken,
-        };
-      } catch (e: unknown) {
-        // Drizzle may wrap the underlying pgLite error
-        const error = e as { cause?: { code?: string; message?: string }; code?: string; message?: string };
-        const cause = error.cause || error;
-        
-        if (
-          cause.code === "23505" || 
-          cause.message?.includes("duplicate key value violates unique constraint") || 
-          cause.message?.includes("UNIQUE constraint failed")
-        ) {
-          throw new EmailAlreadyRegisteredError(email);
-        }
-        throw e;
-      }
+        },
+        accessToken,
+        refreshToken: rawRefreshToken,
+      };
     },
 
     async verifyCredentials(input: VerifyCredentialsInput): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string }; accessToken: string; refreshToken: string }> {
       const email = normalizeEmail(input.email);
 
-      const [row] = await db.select().from(users).where(eq(users.email, email));
+      const row = await repository.findUserByEmail(email);
       if (!row) {
         await verifyPassword(input.password, DUMMY_HASH);
         throw new InvalidCredentialsError();
@@ -124,50 +115,25 @@ export function createAuthenticationServiceInternal<
 
       const passwordMatches = await verifyPassword(input.password, row.passwordHash);
       if (!passwordMatches) {
-        const [updated] = await db
-          .update(users)
-          .set({
-            failedAttempts: sql`${users.failedAttempts} + 1`,
-          })
-          .where(eq(users.id, row.id))
-          .returning();
+        const updated = await repository.incrementFailedAttempts(row.id);
 
         if (updated.failedAttempts >= 5) {
-          await db
-            .update(users)
-            .set({
-              lockedUntil: new Date(Date.now() + 15 * 60 * 1000),
-            })
-            .where(eq(users.id, row.id));
+          await repository.lockUser(row.id, new Date(Date.now() + 15 * 60 * 1000));
         }
 
         throw new InvalidCredentialsError();
       }
 
       if (row.failedAttempts > 0 || row.lockedUntil !== null) {
-        await db
-          .update(users)
-          .set({
-            failedAttempts: 0,
-            lockedUntil: null,
-          })
-          .where(eq(users.id, row.id));
+        await repository.resetFailedLoginAttempts(row.id);
       }
 
       const user = toUser(row);
       const accessToken = signJwt({ sub: user.id, email: user.email, name: user.name });
       const rawRefreshToken = randomUUID();
       const hashedToken = hashRefreshToken(rawRefreshToken);
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-      await db.insert(refreshTokens).values({
-        id: randomUUID(),
-        token: hashedToken,
-        userId: user.id,
-        expiresAt,
-        revoked: false,
-        createdAt: new Date(),
-      });
+      await repository.insertRefreshToken(newRefreshTokenRow(user.id, hashedToken));
 
       return {
         user,
@@ -181,7 +147,7 @@ export function createAuthenticationServiceInternal<
     },
 
     async getUserProfile(userId: string): Promise<User> {
-      const [row] = await db.select().from(users).where(eq(users.id, userId));
+      const row = await repository.findUserById(userId);
       if (!row) {
         throw new UserNotFoundError();
       }
@@ -190,35 +156,19 @@ export function createAuthenticationServiceInternal<
 
     async logout(idOrToken: string): Promise<void> {
       const hashedToken = hashRefreshToken(idOrToken);
-      const [tokenRecord] = await db
-        .select()
-        .from(refreshTokens)
-        .where(
-          sql`${refreshTokens.id} = ${idOrToken} OR ${refreshTokens.token} = ${hashedToken}`
-        );
+      const tokenRecord = await repository.findRefreshTokenByIdOrHashedToken(
+        idOrToken,
+        hashedToken
+      );
 
       if (tokenRecord && !tokenRecord.revoked) {
-        await db
-          .update(refreshTokens)
-          .set({
-            revoked: true,
-            revokedAt: new Date(),
-          })
-          .where(eq(refreshTokens.id, tokenRecord.id));
+        await repository.revokeRefreshToken(tokenRecord.id);
       }
     },
 
     async logoutAll(userId: string): Promise<void> {
-      await db
-        .delete(refreshTokens)
-        .where(
-          sql`${refreshTokens.userId} = ${userId} AND ${refreshTokens.revoked} = false`
-        );
-
-      await db
-        .update(users)
-        .set({ sessionsValidAfter: new Date() })
-        .where(eq(users.id, userId));
+      await repository.deleteActiveRefreshTokens(userId);
+      await repository.setSessionsValidAfter(userId, new Date());
     },
 
     async refresh(tokenInput: string | { refreshToken: string }): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string }; accessToken: string; refreshToken: string }> {
@@ -233,10 +183,7 @@ export function createAuthenticationServiceInternal<
 
       const hashedToken = hashRefreshToken(token);
 
-      const [tokenRecord] = await db
-        .select()
-        .from(refreshTokens)
-        .where(eq(refreshTokens.token, hashedToken));
+      const tokenRecord = await repository.findRefreshTokenByHashedToken(hashedToken);
 
       if (!tokenRecord) {
         throw new UnauthorizedError("invalid or expired refresh token");
@@ -246,10 +193,7 @@ export function createAuthenticationServiceInternal<
         throw new UnauthorizedError("invalid or expired refresh token");
       }
 
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, tokenRecord.userId));
+      const userRecord = await repository.findUserById(tokenRecord.userId);
 
       if (!userRecord) {
         throw new UnauthorizedError("user not found");
@@ -265,39 +209,19 @@ export function createAuthenticationServiceInternal<
 
       if (tokenRecord.revoked) {
         // Reuse detected! Revoke all tokens for this user.
-        await db
-          .update(refreshTokens)
-          .set({
-            revoked: true,
-            revokedAt: sql`COALESCE(${refreshTokens.revokedAt}, NOW())`,
-          })
-          .where(eq(refreshTokens.userId, tokenRecord.userId));
+        await repository.revokeAllUserRefreshTokens(tokenRecord.userId);
         throw new UnauthorizedError("refresh token has been revoked");
       }
 
       // Mark the current token as revoked
-      await db
-        .update(refreshTokens)
-        .set({
-          revoked: true,
-          revokedAt: new Date(),
-        })
-        .where(eq(refreshTokens.id, tokenRecord.id));
+      await repository.revokeRefreshToken(tokenRecord.id);
 
       const user = toUser(userRecord);
       const accessToken = signJwt({ sub: user.id, email: user.email, name: user.name });
       const rawRefreshToken = randomUUID();
       const newHashedToken = hashRefreshToken(rawRefreshToken);
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-      await db.insert(refreshTokens).values({
-        id: randomUUID(),
-        token: newHashedToken,
-        userId: user.id,
-        expiresAt,
-        revoked: false,
-        createdAt: new Date(),
-      });
+      await repository.insertRefreshToken(newRefreshTokenRow(user.id, newHashedToken));
 
       return {
         user,

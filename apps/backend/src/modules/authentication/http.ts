@@ -12,7 +12,7 @@ import {
 } from "@repo/contracts";
 import { errorResponse, successResponse } from "../../lib/response";
 import { getClientIp } from "../../lib/ip";
-import { createAuthenticationServiceInternal } from "./internal/services/auth-service";
+import { createAuthenticationServiceInternal } from "./internal/service";
 import {
   loginRouteSchema,
   logoutAllRouteSchema,
