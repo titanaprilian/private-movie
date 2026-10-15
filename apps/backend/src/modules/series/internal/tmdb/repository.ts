@@ -15,8 +15,8 @@ import { createSeriesRepository } from "../catalog/repository";
 import type {
   TmdbRepository,
   TmdbSeriesFullData,
-  SeriesWithSeasons,
-} from "../types";
+} from "./types";
+import type { SeriesWithSeasons } from "../catalog/repository";
 
 type DbTransaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
 

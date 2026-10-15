@@ -12,11 +12,11 @@ import {
   tmdbSyncBodySchema,
   tmdbSyncPreviewQuerySchema,
 } from "../../schemas";
-import { createTmdbService } from "./service";
+import { tmdbService } from "./service";
 
 export const tmdbRoutes = (options: SeriesRoutesOptions) => {
   const auth = authGuard(options.authService);
-  const tmdbService = createTmdbService(options.db, {
+  const tmdb = tmdbService(options.db, {
     fetchHtml: options.fetchHtml,
     browserFn: options.browserFn,
   });
@@ -25,7 +25,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .post(
       "/preview-scrape-series",
       async ({ body }) => {
-        const result = await tmdbService.previewScrapeSeries(body);
+        const result = await tmdb.previewScrapeSeries(body);
         return successResponse(result);
       },
       {
@@ -41,7 +41,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .get(
       "/series/tmdb-preview",
       async ({ query }) => {
-        const result = await tmdbService.getTmdbPreview(
+        const result = await tmdb.getTmdbPreview(
           query.type,
           query.tmdbId,
           query.includeSpecials
@@ -61,7 +61,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .post(
       "/series/tmdb-import",
       async ({ body }) => {
-        const result = await tmdbService.importTmdb({
+        const result = await tmdb.importTmdb({
           type: body.type,
           tmdbId: body.tmdbId,
           includeSpecials: body.includeSpecials,
@@ -81,7 +81,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .post(
       "/series/:id/tmdb-sync",
       async ({ params, body }) => {
-        const result = await tmdbService.syncTmdb(params.id, body);
+        const result = await tmdb.syncTmdb(params.id, body);
         return successResponse(result);
       },
       {
@@ -98,7 +98,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .get(
       "/series/:id/tmdb-sync-preview",
       async ({ params, query }) => {
-        const result = await tmdbService.getTmdbSyncPreview(params.id, {
+        const result = await tmdb.getTmdbSyncPreview(params.id, {
           type: query.type,
           tmdbId: query.tmdbId,
           includeSpecials: query.includeSpecials,
@@ -119,7 +119,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
     .post(
       "/series/:id/preview-bulk-sources",
       async ({ params, body }) => {
-        const result = await tmdbService.previewBulkSources({
+        const result = await tmdb.previewBulkSources({
           seriesId: params.id,
           sourceUrl: body.sourceUrl,
           source: body.source,
