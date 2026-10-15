@@ -1,17 +1,8 @@
 import { Elysia } from "elysia";
-import type {
-  AuthenticationService,
-  StorageProviderType,
-} from "@repo/contracts";
-import type { DbClient } from "@repo/db";
-import type {
-  S3StorageService,
-  StorageProviderRegistry,
-} from "@repo/media-service";
+import type { StorageProviderType } from "@repo/contracts";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
 import { createStorageService } from "./internal/services/service";
-import type { StorageOverrides, StorageService } from "./internal/types";
 import {
   attachOrphanBody,
   attachOrphanDetail,
@@ -39,6 +30,7 @@ import {
   seriesQuery,
   spinUpMinioBody,
   spinUpMinioDetail,
+  type StorageRoutesOptions,
   testProviderBody,
   testProviderDetail,
   updateLimitBody,
@@ -49,14 +41,7 @@ import {
   updateResourceMetadataDetail,
 } from "./schemas";
 
-export interface StorageRoutesOptions {
-  db: DbClient;
-  authService: AuthenticationService;
-  s3StorageService?: S3StorageService;
-  storageProviderRegistry?: StorageProviderRegistry;
-  storageService?: StorageService;
-  overrides?: StorageOverrides;
-}
+export type { StorageRoutesOptions };
 
 export const storageRoutes = (options: StorageRoutesOptions) => {
   const storageService =
