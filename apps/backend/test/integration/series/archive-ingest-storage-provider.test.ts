@@ -16,11 +16,16 @@ import {
   type StorageProviderRow,
 } from "@repo/db";
 import {
+  createStorageProviderRegistry,
+  createVideoSourceRepositoryInternal,
   encryptCredential,
   type S3StorageService,
   type StorageProviderRegistry,
 } from "@repo/media-service";
-import { ArchiveIngestJobService } from "../../../src/modules/series";
+import {
+  ArchiveIngestJobManager,
+  createArchiveIngestRepository,
+} from "../../../src/modules/series";
 import { waitForJobStatus } from "../../utils/archive-ingest";
 
 async function createShow() {
@@ -151,11 +156,15 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
       serviceFor: () => createMockS3({ uploadStream: async (key: string) => { uploads.push(key); } }) as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
       storageProviderRegistry: registry,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: createMockS3({ isConfigured: () => false }),
+        storageProviderRegistry: registry,
+      }),
       extractor: makeExtractorStub() as never,
     });
 
@@ -195,11 +204,15 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
       serviceFor: () => createMockS3({ uploadStream: async (key: string) => { uploads.push(key); } }) as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
       storageProviderRegistry: registry,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: createMockS3({ isConfigured: () => false }),
+        storageProviderRegistry: registry,
+      }),
       extractor: makeExtractorStub() as never,
     });
 
@@ -229,11 +242,15 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
       serviceFor: () => createMockS3() as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
       storageProviderRegistry: registry,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: createMockS3({ isConfigured: () => false }),
+        storageProviderRegistry: registry,
+      }),
       extractor: makeExtractorStub() as never,
     });
 
@@ -249,23 +266,27 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
     expect(finalJob?.errorMessage).toContain("Specified storage provider not found");
   });
 
-  it("auto-instantiates a registry when omitted, resolving the default provider from the database", async () => {
+  it("resolves the default provider from the database through an injected registry", async () => {
     const defaultProvider = await seedProvider({ id: "prov-auto-default-693", name: "Auto Default", isDefault: true });
 
-    const service = new ArchiveIngestJobService({ db, stagingBaseDir: testTmpBase });
-    const internal = service as unknown as { storageProviderRegistry?: StorageProviderRegistry };
-    expect(internal.storageProviderRegistry).toBeDefined();
+    const registry = createStorageProviderRegistry(db);
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
+      stagingBaseDir: testTmpBase,
+      storageProviderRegistry: registry,
+    });
+    expect(service).toBeDefined();
 
-    const resolved = await internal.storageProviderRegistry!.getProvider(null);
+    const resolved = await registry.getProvider(null);
     expect(resolved?.provider.id).toBe(defaultProvider.id);
     expect(resolved?.service).toBeDefined();
   });
 
   it("raises S3NotConfiguredError when no providers exist and no fallback is configured", async () => {
     const { userId, seriesId, epIds } = await createShow();
-    // No providers seeded; auto-instantiated registry resolves to null…
-    const service = new ArchiveIngestJobService({
-      db,
+    // No providers seeded and no registry injected: resolution falls through…
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
       extractor: makeExtractorStub() as never,

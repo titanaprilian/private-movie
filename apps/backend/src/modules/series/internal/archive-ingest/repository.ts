@@ -231,5 +231,11 @@ export function createArchiveIngestRepository<
 
       return rows.map((r) => r.id);
     },
+
+    async listAllJobIds(): Promise<string[]> {
+      const rows = await db.select({ id: archiveIngestJobs.id }).from(archiveIngestJobs);
+
+      return rows.map((r) => r.id);
+    },
   };
 }

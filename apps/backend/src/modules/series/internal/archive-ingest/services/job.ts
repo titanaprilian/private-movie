@@ -1,38 +1,32 @@
 import { randomUUID } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, readdir, rm, stat, statfs, unlink } from "node:fs/promises";
+import { mkdir, rm, stat, statfs, unlink } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { Readable } from "node:stream";
-import { eq, and, inArray, desc, sql, lte, isNotNull } from "drizzle-orm";
-import {
-  type DbClient,
-  archiveIngestJobs,
-  type ArchiveIngestJobEntryRow,
-  type ArchiveIngestJobRow,
-  type ArchiveIngestJobSelectionRow,
-  type NewArchiveIngestJobRow,
+import type {
+  ArchiveIngestJobEntryRow,
+  ArchiveIngestJobSelectionRow,
+  NewArchiveIngestJobRow,
 } from "@repo/db";
 import type {
   ArchiveIngestJob,
   ArchiveIngestJobCreateRequest,
-  ArchiveIngestJobEntry,
   ArchiveIngestJobProgress,
   ArchiveIngestJobSelectionItem,
   ArchiveIngestJobStatus,
 } from "@repo/contracts";
-import { ARCHIVE_INGEST_ACTIVE_STATUSES } from "@repo/contracts";
 import {
   SevenZipExtractor,
   type ArchiveEntry,
   type ArchiveExtractor,
   ArchiveEngineError,
-} from "./seven-zip-extractor";
+} from "./extractor";
 import {
   detectEpisodeNumber,
   detectQuality,
   isVideoFile,
   isSampleFile,
-} from "../../episodes";
+} from "../../../../episodes";
 import {
   buildGoogleDriveConfirmRequest,
   collectGoogleDriveCookies,
@@ -40,58 +34,35 @@ import {
   isGoogleDriveInterstitial,
   isGoogleDriveUrl,
   parseGoogleDriveSource,
-} from "./google-drive-url";
-import { logger } from "../../../lib/logger";
-import { captureException } from "../../../lib/sentry";
+} from "../../google-drive-url";
+import { logger } from "../../../../../lib/logger";
+import { captureException } from "../../../../../lib/sentry";
 import {
-  createStorageProviderRegistry,
-  createVideoSourceRepositoryInternal,
   S3NotConfiguredError,
   type S3StorageService,
   type StorageProviderRegistry,
+  type VideoSourceUpsertInput,
 } from "@repo/media-service";
+import type { ArchiveIngestRepository } from "../types";
 
 export const MAX_CONCURRENT_JOBS_DEFAULT = 2;
 export const ARCHIVE_DISK_PREFLIGHT_FACTOR = 2.5;
 export const SIBLING_SIZE_DISPARITY_THRESHOLD = 0.5; // Flag if size differs by >50% from median
 
 export type ArchiveJobFetchFn = (url: string, init?: RequestInit) => Promise<Response>;
+/** Back-compat alias for the pre-refactor fetch hook name. */
+export type ArchiveFetchFn = ArchiveJobFetchFn;
 export type ArchiveJobStatfsFn = (path: string) => Promise<{ bavail: number; bsize: number }>;
 
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
-function mapRowToJob(row: ArchiveIngestJobRow): ArchiveIngestJob {
-  return {
-    id: row.id,
-    ownerId: row.ownerId,
-    seriesId: row.seriesId,
-    sourceKey: row.sourceKey,
-    sourceUrl: row.sourceUrl,
-    referer: row.referer ?? null,
-    status: row.status as ArchiveIngestJobStatus,
-    stage: row.stage,
-    bytesDone: row.bytesDone,
-    bytesTotal: row.bytesTotal,
-    stagingPath: row.stagingPath,
-    archiveFilename: row.archiveFilename,
-    entries: (row.entries ?? []) as ArchiveIngestJobEntry[],
-    selection: row.selection ?? [],
-    storageProviderId: row.storageProviderId,
-    errorCode: row.errorCode,
-    errorMessage: row.errorMessage,
-    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt),
-    updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
-    expiresAt: row.expiresAt
-      ? row.expiresAt instanceof Date
-        ? row.expiresAt.toISOString()
-        : String(row.expiresAt)
-      : null,
-  };
+export interface ArchiveIngestVideoSourceWriter {
+  upsert(input: VideoSourceUpsertInput): Promise<{ id: string }>;
 }
 
-export interface ArchiveIngestJobServiceOptions {
-  db: DbClient;
+export interface ArchiveIngestJobManagerOptions {
+  repository: ArchiveIngestRepository;
   stagingBaseDir: string;
   extractor?: ArchiveExtractor;
   fetchFn?: ArchiveJobFetchFn;
@@ -99,6 +70,7 @@ export interface ArchiveIngestJobServiceOptions {
   maxConcurrentJobs?: number;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  videoSourceRepository?: ArchiveIngestVideoSourceWriter;
 }
 
 export interface ConfirmArchiveIngestJobOptions {
@@ -120,19 +92,20 @@ function keyOf(filename: string, episodeId: string | null | undefined): string {
   return JSON.stringify([filename, episodeId ?? null]);
 }
 
-export class ArchiveIngestJobService {
-  private db: DbClient;
+export class ArchiveIngestJobManager {
+  private repository: ArchiveIngestRepository;
   private stagingBaseDir: string;
   private extractor: ArchiveExtractor;
   private fetchFn: ArchiveJobFetchFn;
   private statfsFn: ArchiveJobStatfsFn;
   private maxConcurrentJobs: number;
   private s3StorageService?: S3StorageService;
-  private storageProviderRegistry: StorageProviderRegistry;
+  private storageProviderRegistry?: StorageProviderRegistry;
+  private videoSourceRepository?: ArchiveIngestVideoSourceWriter;
   private activeControllers = new Map<string, AbortController>();
 
-  constructor(options: ArchiveIngestJobServiceOptions) {
-    this.db = options.db;
+  constructor(options: ArchiveIngestJobManagerOptions) {
+    this.repository = options.repository;
     this.stagingBaseDir = options.stagingBaseDir;
     this.extractor = options.extractor ?? new SevenZipExtractor();
     this.fetchFn = options.fetchFn ?? ((url, init) => fetch(url, init));
@@ -144,14 +117,8 @@ export class ArchiveIngestJobService {
       });
     this.maxConcurrentJobs = options.maxConcurrentJobs ?? MAX_CONCURRENT_JOBS_DEFAULT;
     this.s3StorageService = options.s3StorageService;
-    // Always resolve uploads through the database-backed provider registry so
-    // the active default provider (e.g. IDrive) is used when no explicit
-    // provider is requested. Auto-instantiate from the db connection when the
-    // caller did not supply one (e.g. legacy constructions that only pass an
-    // environment-based S3 service).
-    this.storageProviderRegistry =
-      options.storageProviderRegistry ??
-      createStorageProviderRegistry(this.db, this.s3StorageService);
+    this.storageProviderRegistry = options.storageProviderRegistry;
+    this.videoSourceRepository = options.videoSourceRepository;
   }
 
   public deriveSourceKey(url: string): string {
@@ -189,36 +156,11 @@ export class ArchiveIngestJobService {
   }
 
   async findActiveJob(ownerId: string, sourceKey: string): Promise<ArchiveIngestJob | null> {
-    const rows = await this.db
-      .select()
-      .from(archiveIngestJobs)
-      .where(
-        and(
-          eq(archiveIngestJobs.ownerId, ownerId),
-          eq(archiveIngestJobs.sourceKey, sourceKey),
-          inArray(archiveIngestJobs.status, [...ARCHIVE_INGEST_ACTIVE_STATUSES])
-        )
-      )
-      .limit(1);
-
-    return rows[0] ? mapRowToJob(rows[0]) : null;
+    return this.repository.findActiveJob(ownerId, sourceKey);
   }
 
   async countActiveJobs(ownerId?: string): Promise<number> {
-    const activeStatuses: ArchiveIngestJobStatus[] = ["downloading", "listing", "uploading"];
-    const condition = ownerId
-      ? and(
-          eq(archiveIngestJobs.ownerId, ownerId),
-          inArray(archiveIngestJobs.status, activeStatuses)
-        )
-      : inArray(archiveIngestJobs.status, activeStatuses);
-
-    const rows = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(archiveIngestJobs)
-      .where(condition);
-
-    return Number(rows[0]?.count ?? 0);
+    return this.repository.countActiveJobs(ownerId);
   }
 
   async submitJob(
@@ -280,7 +222,7 @@ export class ArchiveIngestJobService {
     };
 
     try {
-      await this.db.insert(archiveIngestJobs).values(newJob);
+      await this.repository.createJob(newJob);
     } catch (err) {
       // Race condition safety: if duplicate insert violated unique index, retrieve existing
       const duplicate = await this.findActiveJob(ownerId, sourceKey);
@@ -316,20 +258,7 @@ export class ArchiveIngestJobService {
     ownerId: string,
     sourceKey: string
   ): Promise<ArchiveIngestJob | null> {
-    const rows = await this.db
-      .select()
-      .from(archiveIngestJobs)
-      .where(
-        and(
-          eq(archiveIngestJobs.ownerId, ownerId),
-          eq(archiveIngestJobs.sourceKey, sourceKey),
-          eq(archiveIngestJobs.status, "failed")
-        )
-      )
-      .orderBy(desc(archiveIngestJobs.updatedAt))
-      .limit(1);
-
-    return rows[0] ? mapRowToJob(rows[0]) : null;
+    return this.repository.findFailedJob(ownerId, sourceKey);
   }
 
   private async hasArchiveOnDisk(job: ArchiveIngestJob): Promise<boolean> {
@@ -354,31 +283,23 @@ export class ArchiveIngestJobService {
     password?: string | null
   ): Promise<ArchiveIngestJob> {
     if ((job.entries?.length ?? 0) > 0) {
-      await this.db
-        .update(archiveIngestJobs)
-        .set({
-          status: "ready",
-          stage: "ready",
-          errorCode: null,
-          errorMessage: null,
-          updatedAt: new Date(),
-        })
-        .where(eq(archiveIngestJobs.id, job.id));
+      await this.repository.updateJob(job.id, {
+        status: "ready",
+        stage: "ready",
+        errorCode: null,
+        errorMessage: null,
+      });
       const recovered = await this.getJob(job.id);
       if (!recovered) throw new Error(`Job ${job.id} not found after recovery`);
       return recovered;
     }
 
-    await this.db
-      .update(archiveIngestJobs)
-      .set({
-        status: "listing",
-        stage: "listing",
-        errorCode: null,
-        errorMessage: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(archiveIngestJobs.id, job.id));
+    await this.repository.updateJob(job.id, {
+      status: "listing",
+      stage: "listing",
+      errorCode: null,
+      errorMessage: null,
+    });
 
     void this.executeListingPhase(job.id, password ?? null).catch((err) => {
       captureException(err);
@@ -391,13 +312,7 @@ export class ArchiveIngestJobService {
   }
 
   async getJob(jobId: string): Promise<ArchiveIngestJob | null> {
-    const rows = await this.db
-      .select()
-      .from(archiveIngestJobs)
-      .where(eq(archiveIngestJobs.id, jobId))
-      .limit(1);
-
-    return rows[0] ? mapRowToJob(rows[0]) : null;
+    return this.repository.findById(jobId);
   }
 
   /**
@@ -431,14 +346,7 @@ export class ArchiveIngestJobService {
   }
 
   async listJobs(ownerId: string, limit = 50): Promise<ArchiveIngestJob[]> {
-    const rows = await this.db
-      .select()
-      .from(archiveIngestJobs)
-      .where(eq(archiveIngestJobs.ownerId, ownerId))
-      .orderBy(desc(archiveIngestJobs.createdAt))
-      .limit(limit);
-
-    return rows.map(mapRowToJob);
+    return this.repository.listJobsByOwner(ownerId, limit);
   }
 
   async cancelJob(jobId: string): Promise<ArchiveIngestJob | null> {
@@ -462,14 +370,10 @@ export class ArchiveIngestJobService {
     }
 
     // Update status to cancelled
-    await this.db
-      .update(archiveIngestJobs)
-      .set({
-        status: "cancelled",
-        stage: "cancelled",
-        updatedAt: new Date(),
-      })
-      .where(eq(archiveIngestJobs.id, jobId));
+    await this.repository.updateJob(jobId, {
+      status: "cancelled",
+      stage: "cancelled",
+    });
 
     // Clean up staging directory
     if (job.stagingPath) {
@@ -546,10 +450,7 @@ export class ArchiveIngestJobService {
 
       // Update bytesTotal if known
       if (bytesTotal !== null) {
-        await this.db
-          .update(archiveIngestJobs)
-          .set({ bytesTotal, updatedAt: new Date() })
-          .where(eq(archiveIngestJobs.id, jobId));
+        await this.repository.updateJob(jobId, { bytesTotal });
 
         // Disk capacity preflight: check available disk space >= 2.5 * Content-Length
         const freeBytes = await this.getFreeBytes(stagingPath);
@@ -570,10 +471,7 @@ export class ArchiveIngestJobService {
       const archiveFilename = job.archiveFilename ?? "archive.zip";
       const archivePath = join(stagingPath, archiveFilename);
 
-      await this.db
-        .update(archiveIngestJobs)
-        .set({ status: "downloading", stage: "downloading", updatedAt: new Date() })
-        .where(eq(archiveIngestJobs.id, jobId));
+      await this.repository.updateJob(jobId, { status: "downloading", stage: "downloading" });
 
       if (finalRes.body) {
         const fileStream = createWriteStream(archivePath);
@@ -596,18 +494,12 @@ export class ArchiveIngestJobService {
 
             const nowTime = Date.now();
             if (nowTime - lastDbUpdate >= 250) {
-              await this.db
-                .update(archiveIngestJobs)
-                .set({ bytesDone, updatedAt: new Date() })
-                .where(eq(archiveIngestJobs.id, jobId));
+              await this.repository.updateJob(jobId, { bytesDone });
               lastDbUpdate = nowTime;
             }
           }
           // Final progress flush
-          await this.db
-            .update(archiveIngestJobs)
-            .set({ bytesDone, updatedAt: new Date() })
-            .where(eq(archiveIngestJobs.id, jobId));
+          await this.repository.updateJob(jobId, { bytesDone });
         } finally {
           try {
             reader.releaseLock();
@@ -622,10 +514,10 @@ export class ArchiveIngestJobService {
         const buffer = Buffer.from(arrayBuf);
         const { writeFile } = await import("node:fs/promises");
         await writeFile(archivePath, buffer);
-        await this.db
-          .update(archiveIngestJobs)
-          .set({ bytesDone: buffer.byteLength, bytesTotal: buffer.byteLength, updatedAt: new Date() })
-          .where(eq(archiveIngestJobs.id, jobId));
+        await this.repository.updateJob(jobId, {
+          bytesDone: buffer.byteLength,
+          bytesTotal: buffer.byteLength,
+        });
       }
 
       if (signal.aborted) return;
@@ -721,10 +613,7 @@ export class ArchiveIngestJobService {
     const archivePath = join(job.stagingPath, job.archiveFilename ?? "archive.zip");
 
     // Listing stage: inspect entries using SevenZipExtractor.list
-    await this.db
-      .update(archiveIngestJobs)
-      .set({ status: "listing", stage: "listing", updatedAt: new Date() })
-      .where(eq(archiveIngestJobs.id, jobId));
+    await this.repository.updateJob(jobId, { status: "listing", stage: "listing" });
 
     const rawEntries = await this.extractor.list({
       archivePath,
@@ -738,17 +627,13 @@ export class ArchiveIngestJobService {
     const processedEntries = this.processArchiveEntries(rawEntries);
 
     // Transition to ready status and persist entries (retaining raw archive on disk)
-    await this.db
-      .update(archiveIngestJobs)
-      .set({
-        status: "ready",
-        stage: "ready",
-        entries: processedEntries,
-        errorCode: null,
-        errorMessage: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(archiveIngestJobs.id, jobId));
+    await this.repository.updateJob(jobId, {
+      status: "ready",
+      stage: "ready",
+      entries: processedEntries,
+      errorCode: null,
+      errorMessage: null,
+    });
 
     logger.info({ jobId, entryCount: processedEntries.length }, "Archive ingest job is now ready");
   }
@@ -827,22 +712,18 @@ export class ArchiveIngestJobService {
     // Fresh confirmations start progress at 0; resumes preserve prior bytesDone.
     const bytesDone = hasCompleted ? (job.bytesDone ?? 0) : 0;
 
-    await this.db
-      .update(archiveIngestJobs)
-      .set({
-        status: "uploading",
-        stage: "uploading",
-        selection: merged,
-        storageProviderId:
-          options.storageProviderId !== undefined
-            ? (options.storageProviderId ?? null)
-            : job.storageProviderId,
-        bytesDone,
-        errorCode: null,
-        errorMessage: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(archiveIngestJobs.id, jobId));
+    await this.repository.updateJob(jobId, {
+      status: "uploading",
+      stage: "uploading",
+      selection: merged,
+      storageProviderId:
+        options.storageProviderId !== undefined
+          ? (options.storageProviderId ?? null)
+          : job.storageProviderId,
+      bytesDone,
+      errorCode: null,
+      errorMessage: null,
+    });
 
     // Atomic kickoff guard: no await between this check and the kickoff, and
     // the upload loop registers its controller synchronously on entry — so a
@@ -903,16 +784,12 @@ export class ArchiveIngestJobService {
         }
         if (!archiveStat) {
           // Archive missing (e.g. re-confirm after cleanup): fail without deleting progress.
-          await this.db
-            .update(archiveIngestJobs)
-            .set({
-              status: "failed",
-              stage: "failed",
-              errorCode: "ARCHIVE_MISSING",
-              errorMessage: `Archive file ${job.archiveFilename} is missing from staging; cannot resume without re-downloading`,
-              updatedAt: new Date(),
-            })
-            .where(eq(archiveIngestJobs.id, jobId));
+          await this.repository.updateJob(jobId, {
+            status: "failed",
+            stage: "failed",
+            errorCode: "ARCHIVE_MISSING",
+            errorMessage: `Archive file ${job.archiveFilename} is missing from staging; cannot resume without re-downloading`,
+          });
           return;
         }
 
@@ -958,12 +835,13 @@ export class ArchiveIngestJobService {
             signal,
           });
 
-          // Create or upsert the video_sources row.
-          const videoSourceRepo = createVideoSourceRepositoryInternal(this.db, {
-            s3StorageService: this.s3StorageService,
-            storageProviderRegistry: this.storageProviderRegistry,
-          });
-          const row = await videoSourceRepo.upsert({
+          // Create or upsert the video_sources row via the injected writer.
+          // Wiring (routes/subsystem) supplies a database-backed repository;
+          // tests supply fakes. The manager never touches the database itself.
+          if (!this.videoSourceRepository) {
+            throw new Error("videoSourceRepository is not configured for upload phase");
+          }
+          const row = await this.videoSourceRepository.upsert({
             episodeId: item.episodeId!,
             type: "s3",
             url: key,
@@ -980,14 +858,10 @@ export class ArchiveIngestJobService {
                 ? { ...s, completed: true, videoSourceId: row.id }
                 : s
           );
-          await this.db
-            .update(archiveIngestJobs)
-            .set({
-              selection: freshSelection,
-              bytesDone: (fresh?.bytesDone ?? 0) + extractedSize,
-              updatedAt: new Date(),
-            })
-            .where(eq(archiveIngestJobs.id, jobId));
+          await this.repository.updateJob(jobId, {
+            selection: freshSelection,
+            bytesDone: (fresh?.bytesDone ?? 0) + extractedSize,
+          });
 
           logger.info({ jobId, filename, bytes: extractedSize }, "Archive ingest file uploaded");
         } finally {
@@ -1017,16 +891,12 @@ export class ArchiveIngestJobService {
           : (err as { code?: string })?.code ?? "UPLOAD_FAILED";
       const errorMessage = err instanceof Error ? err.message : String(err);
       // Preserve staging + archive for resume/retry (incl. password retry).
-      await this.db
-        .update(archiveIngestJobs)
-        .set({
-          status: "failed",
-          stage: "failed",
-          errorCode,
-          errorMessage,
-          updatedAt: new Date(),
-        })
-        .where(eq(archiveIngestJobs.id, jobId));
+      await this.repository.updateJob(jobId, {
+        status: "failed",
+        stage: "failed",
+        errorCode,
+        errorMessage,
+      });
     } finally {
       this.activeControllers.delete(jobId);
       void this.pumpQueue();
@@ -1051,13 +921,10 @@ export class ArchiveIngestJobService {
         ? job.storageProviderId.trim()
         : null;
 
-    const resolved = await this.storageProviderRegistry.getProvider(requestedProviderId);
+    const resolved = await this.storageProviderRegistry?.getProvider(requestedProviderId);
     if (resolved) {
       if (job && resolved.provider.id !== job.storageProviderId) {
-        await this.db
-          .update(archiveIngestJobs)
-          .set({ storageProviderId: resolved.provider.id, updatedAt: new Date() })
-          .where(eq(archiveIngestJobs.id, jobId));
+        await this.repository.updateJob(jobId, { storageProviderId: resolved.provider.id });
       }
       return { s3: resolved.service, providerId: resolved.provider.id };
     }
@@ -1079,10 +946,7 @@ export class ArchiveIngestJobService {
     if (job.stagingPath) {
       await rm(job.stagingPath, { recursive: true, force: true }).catch(() => {});
     }
-    await this.db
-      .update(archiveIngestJobs)
-      .set({ status: "done", stage: "done", updatedAt: new Date() })
-      .where(eq(archiveIngestJobs.id, jobId));
+    await this.repository.updateJob(jobId, { status: "done", stage: "done" });
     logger.info({ jobId }, "Archive ingest job completed");
   }
 
@@ -1172,16 +1036,12 @@ export class ArchiveIngestJobService {
       return;
     }
 
-    await this.db
-      .update(archiveIngestJobs)
-      .set({
-        status: "failed",
-        stage: "failed",
-        errorCode,
-        errorMessage,
-        updatedAt: new Date(),
-      })
-      .where(eq(archiveIngestJobs.id, jobId));
+    await this.repository.updateJob(jobId, {
+      status: "failed",
+      stage: "failed",
+      errorCode,
+      errorMessage,
+    });
 
     // Listing-resume failures preserve the on-disk archive so a retry can
     // re-list cheaply instead of re-downloading.
@@ -1199,27 +1059,18 @@ export class ArchiveIngestJobService {
       const slotsAvailable = this.maxConcurrentJobs - activeCount;
       if (slotsAvailable <= 0) return;
 
-      const queuedRows = await this.db
-        .select()
-        .from(archiveIngestJobs)
-        .where(eq(archiveIngestJobs.status, "queued"))
-        .orderBy(archiveIngestJobs.createdAt)
-        .limit(slotsAvailable);
+      const queuedJobs = await this.repository.findQueuedJobs(slotsAvailable);
 
-      for (const row of queuedRows) {
+      for (const job of queuedJobs) {
         // Transition to downloading and launch execution
-        await this.db
-          .update(archiveIngestJobs)
-          .set({
-            status: "downloading",
-            stage: "downloading",
-            updatedAt: new Date(),
-          })
-          .where(eq(archiveIngestJobs.id, row.id));
+        await this.repository.updateJob(job.id, {
+          status: "downloading",
+          stage: "downloading",
+        });
 
-        void this.executeJobPipeline(row.id).catch((err) => {
+        void this.executeJobPipeline(job.id).catch((err) => {
           captureException(err);
-          logger.error({ err, jobId: row.id }, "Error processing queued job");
+          logger.error({ err, jobId: job.id }, "Error processing queued job");
         });
       }
     } catch (err) {
@@ -1254,17 +1105,13 @@ export class ArchiveIngestJobService {
     }
 
     // Reset to downloading and re-run the full pipeline
-    await this.db
-      .update(archiveIngestJobs)
-      .set({
-        status: "downloading",
-        stage: "downloading",
-        errorCode: null,
-        errorMessage: null,
-        bytesDone: 0,
-        updatedAt: new Date(),
-      })
-      .where(eq(archiveIngestJobs.id, jobId));
+    await this.repository.updateJob(jobId, {
+      status: "downloading",
+      stage: "downloading",
+      errorCode: null,
+      errorMessage: null,
+      bytesDone: 0,
+    });
 
     void this.executeJobPipeline(jobId, options.password ?? null).catch((err) => {
       captureException(err);
@@ -1277,128 +1124,14 @@ export class ArchiveIngestJobService {
   }
 }
 
-export function createArchiveIngestJobService(
-  options: ArchiveIngestJobServiceOptions
-): ArchiveIngestJobService {
-  return new ArchiveIngestJobService(options);
+export function createArchiveIngestJobManager(
+  options: ArchiveIngestJobManagerOptions
+): ArchiveIngestJobManager {
+  return new ArchiveIngestJobManager(options);
 }
 
-// ─── Boot reconciliation ──────────────────────────────────────────────────
-
-/**
- * Called once at server startup. Any job that was actively running
- * (queued/downloading/listing/uploading) when the process died is
- * transitioned to `failed` with errorCode `SERVER_RESTARTED`.
- * `ready` jobs are preserved — they can still be confirmed by the user.
- */
-export async function markInterruptedJobsOnBoot(db: DbClient): Promise<void> {
-  const interruptedStatuses = ["queued", "downloading", "listing", "uploading"];
-  try {
-    const result = await db
-      .update(archiveIngestJobs)
-      .set({
-        status: "failed",
-        stage: "failed",
-        errorCode: "SERVER_RESTARTED",
-        errorMessage: "Server restarted while job was in progress",
-        updatedAt: new Date(),
-      })
-      .where(inArray(archiveIngestJobs.status, interruptedStatuses))
-      .returning({ id: archiveIngestJobs.id, stagingPath: archiveIngestJobs.stagingPath });
-
-    // Clean up partial staging for interrupted jobs
-    for (const row of result) {
-      if (row.stagingPath) {
-        await rm(row.stagingPath, { recursive: true, force: true }).catch(() => {});
-      }
-    }
-
-    logger.info({ count: result.length }, "Boot reconciliation: marked interrupted jobs as failed");
-  } catch (err) {
-    logger.error({ err }, "Boot reconciliation failed");
-  }
-}
-
-/**
- * Scans the staging base directory and removes any subdirectory that does not
- * correspond to a known job in the database. Orphan directories accumulate
- * when the process dies before completing cleanup.
- */
-export async function purgeOrphanStagingDirs(
-  db: DbClient,
-  stagingBaseDir: string
-): Promise<void> {
-  try {
-    let entries: string[];
-    try {
-      entries = await readdir(stagingBaseDir);
-    } catch {
-      // Directory doesn't exist yet — nothing to purge
-      return;
-    }
-
-    if (entries.length === 0) return;
-
-    // Load all job IDs that have a staging_path inside this directory
-    const rows = await db
-      .select({ id: archiveIngestJobs.id })
-      .from(archiveIngestJobs);
-
-    const knownIds = new Set(rows.map((r) => r.id));
-
-    let purged = 0;
-    for (const entry of entries) {
-      if (!knownIds.has(entry)) {
-        const fullPath = join(stagingBaseDir, entry);
-        await rm(fullPath, { recursive: true, force: true }).catch(() => {});
-        purged++;
-      }
-    }
-
-    if (purged > 0) {
-      logger.info({ purged, stagingBaseDir }, "Purged orphan staging directories");
-    }
-  } catch (err) {
-    logger.error({ err }, "purgeOrphanStagingDirs failed");
-  }
-}
-
-// ─── Background expiration sweeper ───────────────────────────────────────
-
-/**
- * Finds all `ready` jobs whose `expires_at` is in the past, transitions them
- * to `expired`, and deletes their staging directories. Intended to run on a
- * periodic timer (e.g. every 30 minutes).
- */
-export async function sweepExpiredJobs(db: DbClient): Promise<void> {
-  try {
-    const now = new Date();
-    const expired = await db
-      .update(archiveIngestJobs)
-      .set({
-        status: "expired",
-        stage: "expired",
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(archiveIngestJobs.status, "ready"),
-          isNotNull(archiveIngestJobs.expiresAt),
-          lte(archiveIngestJobs.expiresAt, now)
-        )
-      )
-      .returning({ id: archiveIngestJobs.id, stagingPath: archiveIngestJobs.stagingPath });
-
-    for (const row of expired) {
-      if (row.stagingPath) {
-        await rm(row.stagingPath, { recursive: true, force: true }).catch(() => {});
-      }
-    }
-
-    if (expired.length > 0) {
-      logger.info({ count: expired.length }, "Swept expired archive ingest jobs");
-    }
-  } catch (err) {
-    logger.error({ err }, "sweepExpiredJobs failed");
-  }
-}
+/** Back-compat alias: pre-refactor service name. */
+export const ArchiveIngestJobService = ArchiveIngestJobManager;
+export type ArchiveIngestJobService = ArchiveIngestJobManager;
+export type ArchiveIngestJobServiceOptions = ArchiveIngestJobManagerOptions;
+export const createArchiveIngestJobService = createArchiveIngestJobManager;

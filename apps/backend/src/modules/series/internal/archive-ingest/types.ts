@@ -52,6 +52,7 @@ export interface ArchiveIngestRepository {
   listJobsByOwner(ownerId: string, limit?: number): Promise<ArchiveIngestJob[]>;
   findQueuedJobs(limit: number): Promise<ArchiveIngestJob[]>;
   listActiveJobIds(): Promise<string[]>;
+  listAllJobIds(): Promise<string[]>;
 }
 
 export type { ArchiveIngestJob, ArchiveIngestJobStatus };

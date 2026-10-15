@@ -1,6 +1,6 @@
 import { createDbClient } from "@repo/db";
 import { createStealthBrowser } from "@repo/media-scraper";
-import { createMediaService, createS3StorageService, createStorageProviderRegistry } from "@repo/media-service";
+import { createMediaService, createS3StorageService, createStorageProviderRegistry, createVideoSourceRepositoryInternal } from "@repo/media-service";
 import { createApp } from "./app";
 import { loadServerConfig } from "./config/server-config";
 import { logger } from "./lib/logger";
@@ -8,7 +8,7 @@ import { initSentry } from "./lib/sentry";
 import { createAuthenticationService } from "./modules/authentication";
 import { startOngoingSeasonScheduler } from "./modules/media";
 import { createStorageService } from "./modules/storage";
-import { startArchiveIngestSubsystem } from "./modules/series";
+import { createArchiveIngestRepository, startArchiveIngestSubsystem } from "./modules/series";
 import { createShutdownManager } from "./shutdown";
 
 const shutdown = createShutdownManager({ logger });
@@ -51,9 +51,13 @@ async function bootstrap(): Promise<void> {
     "archive-ingest",
     () =>
       startArchiveIngestSubsystem({
-        db,
+        repository: createArchiveIngestRepository(db),
         s3StorageService,
         storageProviderRegistry,
+        videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+          s3StorageService,
+          storageProviderRegistry,
+        }),
         logger,
       }),
     (subsystem) => subsystem.stop(),

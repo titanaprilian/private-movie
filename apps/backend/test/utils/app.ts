@@ -1,7 +1,7 @@
 import type { createApp } from "@/app";
 import type { SchedulerDeps, StorageUsageProvider } from "@/app-types";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
-import type { ArchiveExtractFn, ArchiveFetchFn, ArchiveIngestJobService } from "@/modules/series";
+import type { ArchiveFetchFn, ArchiveIngestJobService } from "@/modules/series";
 import type { AuthRateLimitOptions } from "@/modules/authentication/http";
 import type { RateLimitPluginOptions } from "@/plugins";
 import type { StorageOverrides } from "@/modules/storage";
@@ -29,7 +29,6 @@ export interface BuildAppOptions {
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
   archiveFetchFn?: ArchiveFetchFn;
-  archiveExtractFn?: ArchiveExtractFn;
   archiveStagingBaseDir?: string;
   archiveJobService?: ArchiveIngestJobService;
   scheduler?: SchedulerDeps;
@@ -98,7 +97,6 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
     overrides: {
       fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
       archiveFetchFn: options?.archiveFetchFn,
-      archiveExtractFn: options?.archiveExtractFn,
       storageUsageProvider: options?.storageUsageProvider ?? options?.storage?.usageProvider ?? undefined,
       storage: options?.storage,
       // Rate limiting is disabled by default in tests. Suites asserting

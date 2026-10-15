@@ -19,8 +19,12 @@ import {
 } from "@repo/media-service";
 import { authGuard } from "../../lib/auth";
 import { successResponse, errorResponse } from "../../lib/response";
-import type { ArchiveExtractFn, ArchiveFetchFn } from "./internal/archive-ingest";
-import { ArchiveIngestJobService } from "./internal/archive-ingest-job-service";
+import type { ArchiveFetchFn } from "./internal/archive-ingest/services/job";
+import { ArchiveIngestJobManager } from "./internal/archive-ingest/services/job";
+import { createArchiveIngestRepository } from "./internal/archive-ingest/repository";
+import {
+  createVideoSourceRepositoryInternal,
+} from "@repo/media-service";
 
 export interface SeriesRoutesOptions {
   db: DbClient;
@@ -31,9 +35,8 @@ export interface SeriesRoutesOptions {
   storageProviderRegistry?: StorageProviderRegistry;
   mediaService?: MediaService;
   archiveFetchFn?: ArchiveFetchFn;
-  archiveExtractFn?: ArchiveExtractFn;
   archiveStagingBaseDir?: string;
-  archiveJobService?: ArchiveIngestJobService;
+  archiveJobService?: ArchiveIngestJobManager;
 }
 
 const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
@@ -81,10 +84,16 @@ export const seriesRoutes = (options: SeriesRoutesOptions) => {
       s3StorageService: options.s3StorageService,
     });
 
+  const archiveRepository = createArchiveIngestRepository(options.db);
+  const archiveVideoSources = createVideoSourceRepositoryInternal(options.db, {
+    s3StorageService: options.s3StorageService,
+    storageProviderRegistry: storageRegistry,
+  });
   const archiveJobService =
     options.archiveJobService ??
-    new ArchiveIngestJobService({
-      db: options.db,
+    new ArchiveIngestJobManager({
+      repository: archiveRepository,
+      videoSourceRepository: archiveVideoSources,
       s3StorageService: options.s3StorageService,
       storageProviderRegistry: storageRegistry,
       ...(options.archiveFetchFn ? { fetchFn: options.archiveFetchFn } : {}),

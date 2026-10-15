@@ -78,7 +78,6 @@ export const createApp = (deps: CreateAppDeps) => {
             s3StorageService,
             storageProviderRegistry,
             archiveFetchFn: overrides.archiveFetchFn,
-            archiveExtractFn: overrides.archiveExtractFn,
             archiveStagingBaseDir,
             archiveJobService,
           })

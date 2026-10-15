@@ -22,7 +22,8 @@ import { db } from "../../utils/db";
 import { users, series, seasons, episodes, archiveIngestJobs } from "@repo/db";
 import { eq } from "drizzle-orm";
 import {
-  ArchiveIngestJobService,
+  ArchiveIngestJobManager,
+  createArchiveIngestRepository,
   markInterruptedJobsOnBoot,
   purgeOrphanStagingDirs,
   sweepExpiredJobs,
@@ -135,11 +136,6 @@ async function buildJobApp() {
   return buildApp({
     archiveStagingBaseDir: testTmpBase,
     archiveFetchFn: makeFakeFetchFn(),
-    archiveExtractFn: async (opts) => {
-      await mkdir(opts.destDir!, { recursive: true });
-      await writeFile(join(opts.destDir!, "Show.S01E01.mp4"), "video1");
-      await writeFile(join(opts.destDir!, "Show.S01E02.mp4"), "video2");
-    },
     s3StorageService: makeFakeS3() as never,
   });
 }
@@ -377,7 +373,6 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
             );
           });
         },
-        archiveExtractFn: async () => {},
         s3StorageService: makeFakeS3() as never,
       });
 
@@ -469,15 +464,11 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
         expiresAt: null,
       });
 
-      // Build a confirm app with a working extractor
+      // Build a confirm app with a working fetch stub
       const confirmApp = await buildApp({
         archiveStagingBaseDir: testTmpBase,
         s3StorageService: makeFakeS3() as never,
         archiveFetchFn: makeFakeFetchFn(),
-        archiveExtractFn: async (opts) => {
-          await mkdir(opts.destDir!, { recursive: true });
-          await writeFile(join(opts.destDir!, "Show.S01E01.mp4"), "content");
-        },
       });
 
       // Register a user (who may not own the job, but route just needs auth)
@@ -523,8 +514,8 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
 
     it("retries a failed job with an optional password", async () => {
       const { seriesId: rSeriesId } = await createSeriesAndEpisodes();
-      const service = new ArchiveIngestJobService({
-        db,
+      const service = new ArchiveIngestJobManager({
+        repository: createArchiveIngestRepository(db),
         stagingBaseDir: testTmpBase,
         fetchFn: makeFakeFetchFn() as never,
         extractor: makeFakeExtractor() as never,
@@ -617,7 +608,7 @@ describe("Boot reconciliation (markInterruptedJobsOnBoot + purgeOrphanStagingDir
       });
     }
 
-    await markInterruptedJobsOnBoot(db);
+    await markInterruptedJobsOnBoot(createArchiveIngestRepository(db));
 
     for (const jobId of jobIds) {
       const [row] = await db
@@ -662,7 +653,7 @@ describe("Boot reconciliation (markInterruptedJobsOnBoot + purgeOrphanStagingDir
       expiresAt: null,
     });
 
-    await markInterruptedJobsOnBoot(db);
+    await markInterruptedJobsOnBoot(createArchiveIngestRepository(db));
 
     const [row] = await db
       .select()
@@ -713,7 +704,7 @@ describe("Boot reconciliation (markInterruptedJobsOnBoot + purgeOrphanStagingDir
     const orphanStagingPath = join(testTmpBase, orphanId);
     mkdirSync(orphanStagingPath, { recursive: true });
 
-    await purgeOrphanStagingDirs(db, testTmpBase);
+    await purgeOrphanStagingDirs(createArchiveIngestRepository(db), testTmpBase);
 
     expect(existsSync(validStagingPath)).toBe(true);
     expect(existsSync(orphanStagingPath)).toBe(false);
@@ -763,7 +754,7 @@ describe("sweepExpiredJobs", () => {
       expiresAt: expiredAt,
     });
 
-    await sweepExpiredJobs(db);
+    await sweepExpiredJobs(createArchiveIngestRepository(db));
 
     const [row] = await db
       .select()
@@ -810,7 +801,7 @@ describe("sweepExpiredJobs", () => {
       expiresAt: futureExpiresAt,
     });
 
-    await sweepExpiredJobs(db);
+    await sweepExpiredJobs(createArchiveIngestRepository(db));
 
     const [row] = await db
       .select()
@@ -853,7 +844,7 @@ describe("sweepExpiredJobs", () => {
       expiresAt: null,
     });
 
-    await sweepExpiredJobs(db);
+    await sweepExpiredJobs(createArchiveIngestRepository(db));
 
     const [row] = await db
       .select()

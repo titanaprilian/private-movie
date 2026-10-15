@@ -6,7 +6,10 @@ import { eq } from "drizzle-orm";
 import { db } from "../../utils/db";
 import { createMockS3 } from "../../utils/s3";
 import { users, series, seasons, archiveIngestJobs } from "@repo/db";
-import { ArchiveIngestJobService } from "../../../src/modules/series";
+import {
+  ArchiveIngestJobManager,
+  createArchiveIngestRepository,
+} from "../../../src/modules/series";
 
 async function createOwner(): Promise<string> {
   const userId = crypto.randomUUID();
@@ -25,7 +28,7 @@ async function createOwner(): Promise<string> {
 }
 
 async function waitForStatus(
-  service: ArchiveIngestJobService,
+  service: ArchiveIngestJobManager,
   jobId: string,
   status: string,
   timeoutMs = 8000
@@ -54,8 +57,8 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/season-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),
       fetchFn: (async () => {
@@ -106,8 +109,8 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/unlisted-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),
       fetchFn: (async () => {
@@ -155,8 +158,8 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/gone-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),
       fetchFn: (async () => {

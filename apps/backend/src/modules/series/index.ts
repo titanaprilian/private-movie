@@ -7,10 +7,9 @@ export interface SeriesServiceOptions {
   storageProviderRegistry?: StorageProviderRegistry;
 }
 
-export * from "./internal/archive-ingest";
-export * from "./internal/archive-ingest-job-service";
 export * from "./internal/archive-ingest/repository";
 export * from "./internal/archive-ingest/types";
+export * from "./internal/archive-ingest/services/extractor";
+export * from "./internal/archive-ingest/services/job";
+export * from "./internal/archive-ingest/services/subsystem";
 export * from "./internal/google-drive-url";
-export * from "./internal/seven-zip-extractor";
-export * from "./archive-subsystem";
