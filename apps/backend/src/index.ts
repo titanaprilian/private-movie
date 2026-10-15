@@ -19,8 +19,8 @@ if (initSentry()) {
 }
 
 async function bootstrap(): Promise<void> {
-  const db = createDbClient();
-  shutdown.prependStep({ name: "database", run: () => db.$client.end() });
+  // Stage 1 — Storage & Database (foundational I/O).
+  const db = shutdown.track("database", createDbClient(), (client) => client.$client.end());
 
   const auth = createAuthenticationService(db);
   const s3StorageService = createS3StorageService();
@@ -30,44 +30,53 @@ async function bootstrap(): Promise<void> {
   const storageProviderRegistry = createStorageProviderRegistry(db, s3StorageService);
   const storageService = createStorageService(db, { s3StorageService });
 
-  const browser = await createStealthBrowser();
-  shutdown.prependStep({ name: "browser", run: () => browser.close() });
+  // Stage 2 — Scraping & Media Pipeline (external automation).
+  const browser = await shutdown.manage("browser", () => createStealthBrowser(), (b) =>
+    b.close(),
+  );
 
   const mediaService = createMediaService(db, {
     browserFn: browser.browserFn,
     s3StorageService,
   });
 
-  const scheduler = await startOngoingSeasonScheduler({ db, mediaService, logger });
-  shutdown.prependStep({ name: "scheduler", run: () => scheduler.stop() });
+  // Stage 3 — Background Daemons (schedulers & ingestion).
+  const scheduler = await shutdown.manage(
+    "scheduler",
+    () => startOngoingSeasonScheduler({ db, mediaService, logger }),
+    (s) => s.stop(),
+  );
 
+  const archiveSubsystem = await shutdown.manage(
+    "archive-ingest",
+    () =>
+      startArchiveIngestSubsystem({
+        db,
+        s3StorageService,
+        storageProviderRegistry,
+        logger,
+      }),
+    (subsystem) => subsystem.stop(),
+  );
+
+  // Stage 4 — HTTP Presentation Layer.
   const serverConfig = loadServerConfig();
 
-  const archiveSubsystem = await startArchiveIngestSubsystem({
-    db,
-    s3StorageService,
-    storageProviderRegistry,
-    logger,
-  });
-  shutdown.prependStep({ name: "archive-ingest", run: () => archiveSubsystem.stop() });
-
-  const app = createApp({
-    db,
-    auth,
-    storageService,
-    storageProviderRegistry,
-    browserFn: browser.browserFn,
-    s3StorageService,
-    scheduler,
-    archiveStagingBaseDir: archiveSubsystem.stagingBaseDir,
-    archiveJobService: archiveSubsystem.jobService,
-  }).listen(serverConfig);
-  shutdown.prependStep({
-    name: "http-server",
-    run: async () => {
-      await app.server?.stop(false);
-    },
-  });
+  const app = shutdown.track(
+    "http-server",
+    createApp({
+      db,
+      auth,
+      storageService,
+      storageProviderRegistry,
+      browserFn: browser.browserFn,
+      s3StorageService,
+      scheduler,
+      archiveStagingBaseDir: archiveSubsystem.stagingBaseDir,
+      archiveJobService: archiveSubsystem.jobService,
+    }).listen(serverConfig),
+    (listeningApp) => listeningApp.server?.stop(false),
+  );
 
   logger.info(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
 }

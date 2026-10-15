@@ -271,4 +271,136 @@ describe("createShutdownManager", () => {
     expect(timers.pendingCount()).toBe(0);
     expect(proc.exits).toEqual([0]);
   });
+
+  it("track returns the resource and runs cleanup in LIFO order", async () => {
+    const order: string[] = [];
+    const received: unknown[] = [];
+    const proc = createFakeProcess();
+    const manager = createShutdownManager({
+      proc,
+      timers: createManualTimers(),
+      logger: silentLogger,
+    });
+
+    const db = manager.track("db", { id: "db" }, (res) => {
+      received.push(res);
+      order.push("db");
+    });
+    const browser = manager.track("browser", { id: "browser" }, (res) => {
+      received.push(res);
+      order.push("browser");
+    });
+
+    expect(db).toEqual({ id: "db" });
+    expect(browser).toEqual({ id: "browser" });
+
+    await manager.shutdown();
+
+    expect(order).toEqual(["browser", "db"]);
+    expect(received).toEqual([{ id: "browser" }, { id: "db" }]);
+    expect(proc.exits).toEqual([0]);
+  });
+
+  it("manage resolves sync and async factories and registers LIFO cleanup", async () => {
+    const order: string[] = [];
+    const received: unknown[] = [];
+    const proc = createFakeProcess();
+    const manager = createShutdownManager({
+      proc,
+      timers: createManualTimers(),
+      logger: silentLogger,
+    });
+
+    const syncRes = await manager.manage(
+      "sync",
+      () => ({ id: "sync" }),
+      (res) => {
+        received.push(res);
+        order.push("sync");
+      }
+    );
+    const asyncRes = await manager.manage(
+      "async",
+      async () => {
+        await Promise.resolve();
+        return { id: "async" };
+      },
+      async (res) => {
+        await Promise.resolve();
+        received.push(res);
+        order.push("async");
+      }
+    );
+
+    expect(syncRes).toEqual({ id: "sync" });
+    expect(asyncRes).toEqual({ id: "async" });
+
+    await manager.shutdown();
+
+    expect(order).toEqual(["async", "sync"]);
+    expect(received).toEqual([{ id: "async" }, { id: "sync" }]);
+    expect(proc.exits).toEqual([0]);
+  });
+
+  it("manage propagates factory rejection without registering a cleanup step", async () => {
+    const order: string[] = [];
+    const proc = createFakeProcess();
+    const manager = createShutdownManager({
+      proc,
+      timers: createManualTimers(),
+      logger: silentLogger,
+      steps: [{ name: "existing", run: () => void order.push("existing") }],
+    });
+
+    const failure = new Error("factory boom");
+    await expect(
+      manager.manage("broken", () => Promise.reject(failure), () => {
+        order.push("broken");
+      })
+    ).rejects.toThrow(failure);
+    await expect(
+      manager.manage(
+        "broken-sync",
+        () => {
+          throw failure;
+        },
+        () => {
+          order.push("broken-sync");
+        }
+      )
+    ).rejects.toThrow(failure);
+
+    await manager.shutdown();
+
+    expect(order).toEqual(["existing"]);
+    expect(proc.exits).toEqual([0]);
+  });
+
+  it("isolates failing track/manage cleanups without skipping later steps", async () => {
+    const order: string[] = [];
+    const logger = { error: vi.fn() };
+    const proc = createFakeProcess();
+    const manager = createShutdownManager({
+      proc,
+      timers: createManualTimers(),
+      logger,
+    });
+
+    manager.track("db", { id: "db" }, () => void order.push("db"));
+    manager.track("flaky", { id: "flaky" }, () => {
+      throw new Error("cleanup boom");
+    });
+    await manager.manage("http", () => ({ id: "http" }), () =>
+      void order.push("http")
+    );
+
+    await manager.shutdown();
+
+    expect(order).toEqual(["http", "db"]);
+    expect(logger.error).toHaveBeenCalledWith(
+      '[Shutdown] step "flaky" failed',
+      expect.any(Error)
+    );
+    expect(proc.exits).toEqual([1]);
+  });
 });

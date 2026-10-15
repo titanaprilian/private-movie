@@ -41,6 +41,21 @@ export interface ShutdownManager {
   addStep(step: ShutdownStep): void;
   /** Prepends a step to the front of the shutdown sequence. */
   prependStep(step: ShutdownStep): void;
+  /**
+   * Registers cleanup for an already-acquired resource via prepend step
+   * and returns the resource, coupling acquisition with LIFO teardown.
+   */
+  track<T>(name: string, resource: T, cleanup: (res: T) => void | Promise<void>): T;
+  /**
+   * Executes the factory; on success registers cleanup via prepend step and
+   * returns the resource. On factory failure no step is registered and the
+   * error re-throws.
+   */
+  manage<T>(
+    name: string,
+    factory: () => Promise<T> | T,
+    cleanup: (res: T) => void | Promise<void>
+  ): Promise<T>;
 }
 
 /** Guarantees the process terminates with code 1 if cleanup hangs. */
@@ -114,5 +129,24 @@ export function createShutdownManager(
     steps.unshift(step);
   };
 
-  return { shutdown, registerShutdownHandlers, addStep, prependStep };
+  const track = <T>(
+    name: string,
+    resource: T,
+    cleanup: (res: T) => void | Promise<void>
+  ): T => {
+    prependStep({ name, run: () => cleanup(resource) });
+    return resource;
+  };
+
+  const manage = async <T>(
+    name: string,
+    factory: () => Promise<T> | T,
+    cleanup: (res: T) => void | Promise<void>
+  ): Promise<T> => {
+    const resource = await factory();
+    prependStep({ name, run: () => cleanup(resource) });
+    return resource;
+  };
+
+  return { shutdown, registerShutdownHandlers, addStep, prependStep, track, manage };
 }
