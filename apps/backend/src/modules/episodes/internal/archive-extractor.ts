@@ -1,23 +1,14 @@
-export class ArchivePasswordRequiredError extends Error {
-  constructor(message = "Archive is password-protected; a password is required") {
-    super(message);
-    this.name = "ArchivePasswordRequiredError";
-  }
-}
+import {
+  ArchiveExtractionError,
+  ArchivePasswordRequiredError,
+  InvalidArchivePasswordError,
+} from "./errors";
 
-export class InvalidArchivePasswordError extends Error {
-  constructor(message = "Archive password is incorrect") {
-    super(message);
-    this.name = "InvalidArchivePasswordError";
-  }
-}
-
-export class ArchiveExtractionError extends Error {
-  constructor(message = "Failed to extract archive") {
-    super(message);
-    this.name = "ArchiveExtractionError";
-  }
-}
+export {
+  ArchiveExtractionError,
+  ArchivePasswordRequiredError,
+  InvalidArchivePasswordError,
+} from "./errors";
 
 export interface ArchiveExtractionResult {
   extractedDir: string;

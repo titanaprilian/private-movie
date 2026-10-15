@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { episodes, seasons, series } from "@repo/db";
-import { createEpisodeRepositoryInternal } from "@repo/media-service";
+import { createEpisodeRepository } from "../../../src/modules/episodes";
 import { db } from "../../utils/db";
 
 async function createTestSeason(id = "season-1"): Promise<string> {
@@ -48,7 +48,7 @@ async function insertEpisode(order = 1, seasonId: string | null = null): Promise
 }
 
 describe("episode repository upsert", () => {
-  const repository = createEpisodeRepositoryInternal(db);
+  const repository = createEpisodeRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -90,7 +90,7 @@ describe("episode repository upsert", () => {
 });
 
 describe("episode repository deleteEpisode", () => {
-  const repository = createEpisodeRepositoryInternal(db);
+  const repository = createEpisodeRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -126,7 +126,7 @@ describe("episode repository deleteEpisode", () => {
 });
 
 describe("episode repository updateEpisode", () => {
-  const repository = createEpisodeRepositoryInternal(db);
+  const repository = createEpisodeRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -176,7 +176,7 @@ describe("episode repository updateEpisode", () => {
 });
 
 describe("episode repository updateOrders", () => {
-  const repository = createEpisodeRepositoryInternal(db);
+  const repository = createEpisodeRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
