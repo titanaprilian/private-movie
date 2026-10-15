@@ -11,6 +11,7 @@ coverage/
 # Prompt & shell scratch references
 private-movie-shell/
 PROMPT.md
+!apps/backend/PROMPT.md
 
 # Agent implement reports
 .implement-report.md
