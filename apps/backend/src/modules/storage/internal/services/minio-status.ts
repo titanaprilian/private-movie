@@ -1,18 +1,12 @@
 import { existsSync } from "node:fs";
 import { request as httpRequest } from "node:http";
 import type { MinioStatusResponseData } from "@repo/contracts";
+import type { MinioContainerInspector, MinioContainerState } from "../types";
+
+export type { MinioContainerInspector, MinioContainerState } from "../types";
 
 export const MINIO_CONTAINER_NAME = "private-movie-minio";
 export const MINIO_SOCKET_PATH = "/var/run/docker.sock";
-
-export interface MinioContainerState {
-  isAvailable: boolean;
-  isRunning: boolean;
-}
-
-export type MinioContainerInspector = (
-  containerName?: string
-) => Promise<MinioContainerState>;
 
 function inspectViaDockerSocket(containerName: string): Promise<MinioContainerState> {
   return new Promise((resolve) => {

@@ -1,33 +1,16 @@
 import { existsSync } from "node:fs";
 import { request as httpRequest } from "node:http";
+import {
+  MinioCredentialsRejectedError,
+  MinioDockerUnavailableError,
+  MinioHealthTimeoutError,
+} from "../errors";
+import type { MinioContainerStarter, MinioHealthChecker } from "../types";
 import { MINIO_CONTAINER_NAME, MINIO_SOCKET_PATH } from "./minio-status";
 
-export class MinioDockerUnavailableError extends Error {
-  constructor(
-    message = "Docker daemon is not accessible. Ensure /var/run/docker.sock is mounted into the backend container."
-  ) {
-    super(message);
-    this.name = "MinioDockerUnavailableError";
-  }
-}
+export { MinioDockerUnavailableError };
 
-export class MinioHealthTimeoutError extends Error {
-  constructor(
-    message = "MinIO container did not become healthy in time. Check container logs and port availability."
-  ) {
-    super(message);
-    this.name = "MinioHealthTimeoutError";
-  }
-}
-
-export class MinioCredentialsRejectedError extends Error {
-  constructor(
-    message = "MinIO rejected all known credential candidates. The server was initialized with different root credentials — set MINIO_ROOT_USER/MINIO_ROOT_PASSWORD to match, or reset the minio_data volume for a fresh start."
-  ) {
-    super(message);
-    this.name = "MinioCredentialsRejectedError";
-  }
-}
+export { MinioHealthTimeoutError, MinioCredentialsRejectedError } from "../errors";
 
 const S3_AUTH_ERROR_NAMES = new Set([
   "SignatureDoesNotMatch",
@@ -53,8 +36,7 @@ export function isS3AuthError(error: unknown): boolean {
   return status === 401 || status === 403;
 }
 
-export type MinioContainerStarter = (containerName?: string) => Promise<void>;
-export type MinioHealthChecker = (endpoint: string) => Promise<void>;
+export type { MinioContainerStarter, MinioHealthChecker } from "../types";
 
 export const MINIO_IMAGE = "cgr.dev/chainguard/minio";
 export const MINIO_IMAGE_TAG = "latest";

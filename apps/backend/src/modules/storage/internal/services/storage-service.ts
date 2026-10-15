@@ -52,7 +52,6 @@ import {
   isS3AuthError,
   MINIO_DEFAULT_ROOT_PASSWORD,
   MINIO_DEFAULT_ROOT_USER,
-  MinioCredentialsRejectedError,
   resolveMinioAccessKey,
   resolveMinioConsoleUrlFromInput,
   resolveMinioEndpoint,
@@ -63,109 +62,34 @@ import {
   type MinioHealthChecker,
 } from "./minio-orchestrator";
 
-export class EpisodeNotFoundError extends Error {
-  constructor(message = "Episode not found") {
-    super(message);
-    this.name = "EpisodeNotFoundError";
-  }
-}
+import {
+  EpisodeNotFoundError,
+  StorageProviderInUseError,
+  StorageProviderNotFoundError,
+  VideoSourceNotFoundError,
+  MinioCredentialsRejectedError,
+} from "../errors";
+import type {
+  MinioBucketProvisioner,
+  MinioDeps,
+  StorageOverrides,
+  StorageService,
+  StorageServiceOptions,
+} from "../types";
 
-export class VideoSourceNotFoundError extends Error {
-  constructor(message = "Video source not found") {
-    super(message);
-    this.name = "VideoSourceNotFoundError";
-  }
-}
-
-export class StorageProviderNotFoundError extends Error {
-  constructor(message = "Storage provider not found") {
-    super(message);
-    this.name = "StorageProviderNotFoundError";
-  }
-}
-
-export class StorageProviderInUseError extends Error {
-  constructor(message = "Cannot delete storage provider with active video sources") {
-    super(message);
-    this.name = "StorageProviderInUseError";
-  }
-}
-
-export interface MinioBucketProvisionerInput {
-  endpoint: string;
-  region: string;
-  bucket: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  forcePathStyle: boolean;
-}
-
-export type MinioBucketProvisioner = (
-  input: MinioBucketProvisionerInput
-) => Promise<void>;
-
-export interface MinioDeps {
-  minioInspector?: MinioContainerInspector;
-  minioContainerStarter?: MinioContainerStarter;
-  minioHealthChecker?: MinioHealthChecker;
-  minioBucketProvisioner?: MinioBucketProvisioner;
-}
-
-export interface StorageOverrides extends MinioDeps {
-  service?: StorageService | null;
-  usageProvider?: Pick<StorageService, "getTotalUsedBytes"> | null;
-}
-
-export interface StorageServiceOptions extends MinioDeps {
-  s3StorageService?: S3StorageService;
-  storageProviderRegistry?: StorageProviderRegistry;
-  cacheTtlMs?: number;
-}
-
-export interface StorageService {
-  // Scoped storage management
-  getMetrics(providerId?: string): Promise<StorageMetrics>;
-  getTotalUsedBytes(): Promise<number | null>;
-  getResources(query?: StorageResourcesQuery): Promise<StorageResourcesResponseData>;
-  getSeries(query?: StorageSeriesQuery): Promise<StorageSeriesResponseData>;
-  scan(force?: boolean, providerId?: string): Promise<{ count: number; totalBytes: number }>;
-  updateLimit(limitGb: number, providerId?: string): Promise<{ limitGb: number; limitBytes: number }>;
-  updateSourceMetadata(
-    videoSourceId: string,
-    input: { label?: string; quality?: string | null }
-  ): Promise<VideoSourceRow>;
-  attachOrphan(input: {
-    key: string;
-    episodeId: string;
-    label?: string;
-    quality?: string | null;
-    providerId?: string;
-  }): Promise<VideoSourceRow>;
-  deleteResources(
-    keys: string[],
-    providerId?: string
-  ): Promise<{
-    deletedKeys: string[];
-    reclaimedBytes: number;
-    deletedSourcesCount: number;
-  }>;
-  purgeOrphans(providerId?: string): Promise<{
-    deletedKeys: string[];
-    reclaimedBytes: number;
-  }>;
-  getPreviewUrl(key: string, providerId?: string): Promise<{ previewUrl: string }>;
-  invalidateCache(providerId?: string): void;
-
-  // Provider CRUD & verification
-  listProviders(): Promise<StorageProviderItem[]>;
-  getProvider(id: string): Promise<StorageProviderItem>;
-  createProvider(input: CreateStorageProviderRequest): Promise<StorageProviderItem>;
-  updateProvider(id: string, input: UpdateStorageProviderRequest): Promise<StorageProviderItem>;
-  deleteProvider(id: string): Promise<void>;
-  testProvider(input: TestStorageProviderRequest): Promise<TestStorageProviderResponseData>;
-  getMinioStatus(): Promise<MinioStatusResponseData>;
-  spinUpMinio(input: MinioSpinUpRequest): Promise<MinioSpinUpResponseData>;
-}
+export {
+  EpisodeNotFoundError,
+  StorageProviderInUseError,
+  StorageProviderNotFoundError,
+  VideoSourceNotFoundError,
+};
+export type {
+  MinioBucketProvisioner,
+  MinioDeps,
+  StorageOverrides,
+  StorageService,
+  StorageServiceOptions,
+} from "../types";
 
 const DEFAULT_LIMIT_GB = 50;
 const DEFAULT_CACHE_TTL_MS = 60_000;

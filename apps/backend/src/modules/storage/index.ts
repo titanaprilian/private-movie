@@ -1,29 +1,26 @@
+export { createStorageService } from "./internal/services/storage-service";
+
 export {
-  createStorageService,
   EpisodeNotFoundError,
   VideoSourceNotFoundError,
   StorageProviderNotFoundError,
   StorageProviderInUseError,
-} from "./internal/storage-service";
+  MinioCredentialsRejectedError,
+  MinioDockerUnavailableError,
+  MinioHealthTimeoutError,
+} from "./internal/errors";
 
 export type {
   StorageService,
   StorageServiceOptions,
   StorageOverrides,
   MinioDeps,
-} from "./internal/storage-service";
-export type {
+  MinioBucketProvisioner,
+  MinioBucketProvisionerInput,
   MinioContainerInspector,
   MinioContainerState,
-} from "./internal/minio-status";
-export {
-  MinioCredentialsRejectedError,
-  MinioDockerUnavailableError,
-  MinioHealthTimeoutError,
-  startMinioContainerViaDockerSocket,
-} from "./internal/minio-orchestrator";
-export type {
   MinioContainerStarter,
   MinioHealthChecker,
-} from "./internal/minio-orchestrator";
-export type { MinioBucketProvisioner } from "./internal/storage-service";
+} from "./internal/types";
+
+export { startMinioContainerViaDockerSocket } from "./internal/services/minio-orchestrator";
