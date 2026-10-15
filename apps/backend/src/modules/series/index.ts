@@ -2,6 +2,7 @@ export type { SeriesServiceOptions } from "./internal/types";
 export * from "./internal/errors";
 export * from "./internal/archive-ingest/repository";
 export * from "./internal/archive-ingest/types";
+export * from "./internal/archive-ingest/services/entry-processor";
 export * from "./internal/archive-ingest/services/extractor";
 export * from "./internal/archive-ingest/services/job";
 export * from "./internal/archive-ingest/services/subsystem";
