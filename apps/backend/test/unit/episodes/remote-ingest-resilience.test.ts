@@ -12,9 +12,6 @@ vi.mock("@repo/media-service", async (orig) => {
   const actual = await orig<object>();
   return {
     ...(actual as object),
-    createEpisodeRepositoryInternal: vi.fn(() => ({
-      findById: async () => ({ id: "ep-1" }),
-    })),
     createVideoSourceRepositoryInternal: vi.fn(() => ({
       upsert: async () => ({ id: "vs-1" }),
     })),
@@ -23,7 +20,7 @@ vi.mock("@repo/media-service", async (orig) => {
 
 import { captureException } from "../../../src/lib/sentry";
 import { logger } from "../../../src/lib/logger";
-import { IngestService } from "../../../src/modules/episodes";
+import { IngestService, type EpisodeRepository } from "../../../src/modules/episodes";
 
 function sseEvents(text: string): { event: string; data: unknown }[] {
   return text.split("\n\n").filter(Boolean).map((block) => {
@@ -64,8 +61,34 @@ describe("remote ingest resilience", () => {
       getPresignedUploadUrl: async () => ({ url: "x", key: "k" }),
       uploadStream: uploadImpl,
     };
-    return new IngestService({} as never, fakeS3 as never);
+    const fakeEpisodeRepo = {
+      findById: async () => ({ id: "ep-1" }),
+    } as unknown as EpisodeRepository;
+    return new IngestService({} as never, fakeS3 as never, undefined, {
+      episodeRepository: fakeEpisodeRepo,
+    });
   }
+
+  it("uses the injected episodeRepository (missing episode -> not found)", async () => {
+    const fakeS3 = {
+      isConfigured: () => true,
+      getPresignedUploadUrl: async () => ({ url: "x", key: "k" }),
+      uploadStream: async () => {},
+    };
+    const missingRepo = {
+      findById: async () => null,
+    } as unknown as EpisodeRepository;
+    const svcInst = new IngestService({} as never, fakeS3 as never, undefined, {
+      episodeRepository: missingRepo,
+    });
+    await expect(
+      svcInst.remoteIngestStream(
+        "missing",
+        { url: "https://x/v.mp4", label: "l" },
+        new AbortController().signal
+      )
+    ).rejects.toThrow("Episode with id missing not found");
+  });
 
   it("throttles progress events (many onProgress calls -> few SSE events)", async () => {
     const svcInst = svc(async (_k, _b, opts) => {

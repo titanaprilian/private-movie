@@ -2,20 +2,22 @@ import {
   ArchiveExtractionError,
   ArchivePasswordRequiredError,
   InvalidArchivePasswordError,
-} from "./errors";
+} from "../../errors";
+import type {
+  ArchiveExtractionResult,
+  ArchiveFormat,
+  ArchiveProcessRunner,
+  ExtractArchiveOptions,
+  ProcessRunResult,
+} from "../types";
 
-export {
-  ArchiveExtractionError,
-  ArchivePasswordRequiredError,
-  InvalidArchivePasswordError,
-} from "./errors";
-
-export interface ArchiveExtractionResult {
-  extractedDir: string;
-  stdout: string;
-}
-
-export type ArchiveFormat = "rar" | "zip" | "unknown";
+export type {
+  ArchiveExtractionResult,
+  ArchiveFormat,
+  ArchiveProcessRunner,
+  ExtractArchiveOptions,
+  ProcessRunResult,
+} from "../types";
 
 const RAR_MAGIC = [0x52, 0x61, 0x72, 0x21];
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
@@ -55,14 +57,6 @@ export async function detectArchiveFormat(
   }
 }
 
-export interface ProcessRunResult {
-  exitCode: number;
-  stdout: string;
-  stderr: string;
-}
-
-export type ArchiveProcessRunner = (args: string[]) => Promise<ProcessRunResult>;
-
 const SUPPORTED_ARCHIVE_EXTENSIONS = [".zip", ".rar", ".7z"];
 
 export function isSupportedArchiveFilename(filename: string): boolean {
@@ -90,14 +84,6 @@ function mentionsPassword(output: string): boolean {
 
 function mentionsWrongPassword(output: string): boolean {
   return /wrong password|data error in encrypted|incorrect password|bad password/i.test(output);
-}
-
-export interface ExtractArchiveOptions {
-  archivePath: string;
-  destDir: string;
-  password?: string | null;
-  onProgressFile?: (filename: string) => void;
-  runner?: ArchiveProcessRunner;
 }
 
 export async function extractArchive(options: ExtractArchiveOptions): Promise<ArchiveExtractionResult> {

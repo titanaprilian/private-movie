@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
+import type { PruneStagingSessionsResult } from "../types";
+
+export type { PruneStagingSessionsResult } from "../types";
 
 export const ARCHIVE_STAGING_TTL_MS = 60 * 60 * 1000;
 
@@ -31,11 +34,6 @@ export async function removeArchiveStagingDir(
 ): Promise<void> {
   const dir = getArchiveStagingDir(baseDir, sessionId);
   await rm(dir, { recursive: true, force: true });
-}
-
-export interface PruneStagingSessionsResult {
-  scanned: number;
-  removed: number;
 }
 
 /**

@@ -6,10 +6,41 @@ export interface EpisodeServiceOptions {
   storageProviderRegistry?: StorageProviderRegistry;
 }
 
-export * from "./internal/archive-staging";
-export * from "./internal/archive-extractor";
-export * from "./internal/archive-matcher";
-export * from "./internal/ingest-service";
+export {
+  ARCHIVE_STAGING_TTL_MS,
+  createArchiveStagingSessionId,
+  ensureArchiveStagingDir,
+  getArchiveStagingBaseDir,
+  getArchiveStagingDir,
+  pruneExpiredArchiveStagingSessions,
+  removeArchiveStagingDir,
+} from "./internal/ingest/utils/staging";
+export type { PruneStagingSessionsResult } from "./internal/ingest/utils/staging";
+export {
+  detectArchiveFormat,
+  detectArchiveFormatFromBytes,
+  extractArchive,
+  isSupportedArchiveFilename,
+} from "./internal/ingest/utils/extractor";
+export type {
+  ArchiveExtractionResult,
+  ArchiveFormat,
+  ArchiveProcessRunner,
+  ExtractArchiveOptions,
+  ProcessRunResult,
+} from "./internal/ingest/utils/extractor";
+export {
+  VIDEO_EXTENSIONS,
+  detectEpisodeNumber,
+  detectQuality,
+  filterStagedVideoFiles,
+  isSampleFile,
+  isVideoFile,
+  matchArchiveFilesToEpisodes,
+} from "./internal/ingest/utils/matcher";
+export type { MatchableEpisode, StagedFileEntry } from "./internal/ingest/utils/matcher";
+export { IngestService } from "./internal/ingest/service";
+export type { IngestServiceOptions, ProgressInfo } from "./internal/ingest/service";
 export { createEpisodeRepository } from "./internal/catalog/repository";
 export type {
   EpisodeListParams,

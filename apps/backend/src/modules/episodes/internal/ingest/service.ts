@@ -2,21 +2,19 @@ import { randomUUID } from "node:crypto";
 import type { DbClient } from "@repo/db";
 import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import {
-  createEpisodeRepositoryInternal,
   createVideoSourceRepositoryInternal,
   EpisodeNotFoundError,
   S3NotConfiguredError,
 } from "@repo/media-service";
-import { FileTooLargeError, UploadSessionNotFoundError, DownloadIncompleteError } from "../../../lib/errors";
-import { captureException } from "../../../lib/sentry";
-import { logger } from "../../../lib/logger";
-import { createProgressThrottle } from "../../../lib/sse-progress";
+import { FileTooLargeError, UploadSessionNotFoundError, DownloadIncompleteError } from "../../../../lib/errors";
+import { captureException } from "../../../../lib/sentry";
+import { logger } from "../../../../lib/logger";
+import { createProgressThrottle } from "../../../../lib/sse-progress";
+import { createEpisodeRepository } from "../catalog/repository";
+import type { EpisodeRepository } from "../catalog/types";
+import type { IngestServiceOptions, ProgressInfo } from "./types";
 
-export interface ProgressInfo {
-  loaded: number;
-  total: number;
-  percent: number;
-}
+export type { IngestServiceOptions, ProgressInfo } from "./types";
 
 export class IngestService {
   private uploadProgressCache = new Map<string, ProgressInfo>();
@@ -24,8 +22,13 @@ export class IngestService {
   constructor(
     private db: DbClient,
     private s3StorageService?: S3StorageService,
-    private storageProviderRegistry?: StorageProviderRegistry
+    private storageProviderRegistry?: StorageProviderRegistry,
+    private options?: IngestServiceOptions
   ) {}
+
+  private resolveEpisodeRepository(): EpisodeRepository {
+    return this.options?.episodeRepository ?? createEpisodeRepository(this.db);
+  }
 
   getUploadProgress(sessionId: string): ProgressInfo {
     const progress = this.uploadProgressCache.get(sessionId);
@@ -70,7 +73,7 @@ export class IngestService {
     contentType: string | null | undefined,
     storageProviderId: string | null = null
   ) {
-    const episodeRepo = createEpisodeRepositoryInternal(this.db);
+    const episodeRepo = this.resolveEpisodeRepository();
     const episode = await episodeRepo.findById(episodeId);
     if (!episode) {
       throw new EpisodeNotFoundError(`Episode with id ${episodeId} not found`);
@@ -101,7 +104,7 @@ export class IngestService {
       );
     }
 
-    const episodeRepo = createEpisodeRepositoryInternal(this.db);
+    const episodeRepo = this.resolveEpisodeRepository();
     const episode = await episodeRepo.findById(episodeId);
     if (!episode) {
       throw new EpisodeNotFoundError(`Episode with id ${episodeId} not found`);
@@ -174,7 +177,7 @@ export class IngestService {
     },
     requestSignal: AbortSignal
   ): Promise<ReadableStream> {
-    const episodeRepo = createEpisodeRepositoryInternal(this.db);
+    const episodeRepo = this.resolveEpisodeRepository();
     const videoSourceRepo = createVideoSourceRepositoryInternal(this.db, {
       s3StorageService: this.s3StorageService,
       storageProviderRegistry: this.storageProviderRegistry,

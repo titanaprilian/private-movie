@@ -1,4 +1,7 @@
 import type { ArchiveStagedFileItem } from "@repo/contracts";
+import type { MatchableEpisode, StagedFileEntry } from "../types";
+
+export type { MatchableEpisode, StagedFileEntry } from "../types";
 
 export const VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".webm", ".mov", ".ts"] as const;
 
@@ -10,12 +13,6 @@ export function isVideoFile(filename: string): boolean {
 export function isSampleFile(filename: string): boolean {
   const base = filename.split(/[\\/]/).pop() ?? filename;
   return /(^|[\s._\-()[\]])sample(s)?($|[\s._\-()[\]])/i.test(base);
-}
-
-export interface StagedFileEntry {
-  fileId: string;
-  filename: string;
-  fileSizeBytes: number;
 }
 
 export function filterStagedVideoFiles(files: StagedFileEntry[]): StagedFileEntry[] {
@@ -77,12 +74,6 @@ export function detectQuality(filename: string): string | null {
   const m = RESOLUTION_PATTERN.exec(filename);
   if (m?.[1]) return `${m[1]}p`;
   return null;
-}
-
-export interface MatchableEpisode {
-  id: string;
-  order?: number | null;
-  tmdbEpisodeNumber?: number | null;
 }
 
 export function matchArchiveFilesToEpisodes(
