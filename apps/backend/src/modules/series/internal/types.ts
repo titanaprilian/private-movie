@@ -1,5 +1,8 @@
 import type { DbClient } from "@repo/db";
-import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  S3StorageService,
+  StorageProviderRegistry,
+} from "@repo/media-service";
 
 export interface SeriesServiceOptions {
   db: DbClient;
@@ -7,26 +10,11 @@ export interface SeriesServiceOptions {
   storageProviderRegistry?: StorageProviderRegistry;
 }
 
-export interface ArchiveIngestSubsystemLogger {
-  info(message: string, ...args: unknown[]): void;
-  warn(message: string, ...args: unknown[]): void;
-  error(message: string, ...args: unknown[]): void;
-}
-
-export interface ArchiveIngestSubsystemOptions {
-  db: DbClient;
-  s3StorageService?: S3StorageService;
-  storageProviderRegistry?: StorageProviderRegistry;
-  stagingBaseDir?: string;
-  logger?: ArchiveIngestSubsystemLogger;
-  sweeperIntervalMs?: number;
-}
-
-export interface ArchiveIngestSubsystem {
-  jobService: import("./archive-ingest/archive-ingest-job-service").ArchiveIngestJobService;
-  stagingBaseDir: string;
-  stop: () => void;
-}
+export type {
+  ArchiveIngestSubsystem,
+  ArchiveIngestSubsystemLogger,
+  ArchiveIngestSubsystemOptions,
+} from "./archive-ingest/services/subsystem";
 
 export type {
   SeriesListParams,

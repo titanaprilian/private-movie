@@ -16,11 +16,16 @@ import {
   type StorageProviderRow,
 } from "@repo/db";
 import {
+  createStorageProviderRegistry,
+  createVideoSourceRepositoryInternal,
   encryptCredential,
   type S3StorageService,
   type StorageProviderRegistry,
 } from "@repo/media-service";
-import { ArchiveIngestJobService } from "../../../src/modules/series";
+import {
+  ArchiveIngestJobManager,
+  createArchiveIngestRepository,
+} from "../../../src/modules/series";
 import { waitForJobStatus } from "../../utils/archive-ingest";
 
 async function createShow() {
@@ -33,19 +38,41 @@ async function createShow() {
     createdAt: new Date(),
   });
   const seriesId = crypto.randomUUID();
-  await db.insert(series).values({ id: seriesId, title: "Show", createdAt: new Date(), updatedAt: new Date() });
+  await db.insert(series).values({
+    id: seriesId,
+    title: "Show",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
   const seasonId = crypto.randomUUID();
-  await db.insert(seasons).values({ id: seasonId, seriesId, title: "S1", createdAt: new Date(), updatedAt: new Date() });
+  await db.insert(seasons).values({
+    id: seasonId,
+    seriesId,
+    title: "S1",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
   const epIds: string[] = [];
   for (let i = 1; i <= 2; i += 1) {
     const epId = crypto.randomUUID();
-    await db.insert(episodes).values({ id: epId, title: `E${i}`, seasonId, order: i, createdAt: new Date(), updatedAt: new Date() });
+    await db.insert(episodes).values({
+      id: epId,
+      title: `E${i}`,
+      seasonId,
+      order: i,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     epIds.push(epId);
   }
   return { userId, seriesId, epIds };
 }
 
-async function seedProvider(input: { id: string; name: string; isDefault: boolean }): Promise<StorageProviderRow> {
+async function seedProvider(input: {
+  id: string;
+  name: string;
+  isDefault: boolean;
+}): Promise<StorageProviderRow> {
   const [row] = await db
     .insert(storageProviders)
     .values({
@@ -78,10 +105,16 @@ function makeRegistryDouble(opts: {
     getProvider: async (providerId?: string | null) => {
       opts.seenIds.push(providerId ?? null);
       if (!providerId) {
-        return { provider: opts.defaultProvider, service: opts.serviceFor(null) };
+        return {
+          provider: opts.defaultProvider,
+          service: opts.serviceFor(null),
+        };
       }
       if (providerId === opts.defaultProvider.id) {
-        return { provider: opts.defaultProvider, service: opts.serviceFor(providerId) };
+        return {
+          provider: opts.defaultProvider,
+          service: opts.serviceFor(providerId),
+        };
       }
       return null;
     },
@@ -89,8 +122,10 @@ function makeRegistryDouble(opts: {
       provider: opts.defaultProvider,
       service: opts.serviceFor(null),
     }),
-    getServiceForProvider: (provider: StorageProviderRow) => opts.serviceFor(provider.id),
-    getService: async (providerId?: string | null) => opts.serviceFor(providerId ?? null),
+    getServiceForProvider: (provider: StorageProviderRow) =>
+      opts.serviceFor(provider.id),
+    getService: async (providerId?: string | null) =>
+      opts.serviceFor(providerId ?? null),
     invalidateCache: () => {},
   } as unknown as StorageProviderRegistry;
 }
@@ -121,12 +156,25 @@ async function seedReadyJob(opts: {
   mkdirSync(stagingPath, { recursive: true });
   writeFileSync(join(stagingPath, "pack.7z"), "fake-archive");
   await db.insert(archiveIngestJobs).values({
-    id: jobId, ownerId: opts.ownerId, seriesId: opts.seriesId,
-    sourceKey: `prov-res-${jobId}`, sourceUrl: "https://example.com/pack.7z",
-    status: "ready", stage: "ready", bytesDone: 0, bytesTotal: null,
-    stagingPath, archiveFilename: "pack.7z", entries: [], selection: [],
-    storageProviderId: opts.storageProviderId, errorCode: null, errorMessage: null,
-    createdAt: new Date(), updatedAt: new Date(), expiresAt: null,
+    id: jobId,
+    ownerId: opts.ownerId,
+    seriesId: opts.seriesId,
+    sourceKey: `prov-res-${jobId}`,
+    sourceUrl: "https://example.com/pack.7z",
+    status: "ready",
+    stage: "ready",
+    bytesDone: 0,
+    bytesTotal: null,
+    stagingPath,
+    archiveFilename: "pack.7z",
+    entries: [],
+    selection: [],
+    storageProviderId: opts.storageProviderId,
+    errorCode: null,
+    errorMessage: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    expiresAt: null,
   });
   return jobId;
 }
@@ -135,34 +183,61 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
   let testTmpBase = "";
 
   beforeEach(() => {
-    try { rmSync(testTmpBase, { recursive: true, force: true }); } catch { /* ignore */ }
+    try {
+      rmSync(testTmpBase, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
     testTmpBase = mkdtempSync(join(tmpdir(), "prov-resolution-"));
   });
 
   it("resolves to the default database provider when job.storageProviderId is null and records it", async () => {
     const { userId, seriesId, epIds } = await createShow();
-    const defaultProvider = await seedProvider({ id: "prov-default-693", name: "Default", isDefault: true });
+    const defaultProvider = await seedProvider({
+      id: "prov-default-693",
+      name: "Default",
+      isDefault: true,
+    });
 
     const uploads: string[] = [];
     const seenIds: Array<string | null | undefined> = [];
     const registry = makeRegistryDouble({
       defaultProvider,
       seenIds,
-      serviceFor: () => createMockS3({ uploadStream: async (key: string) => { uploads.push(key); } }) as unknown as S3StorageService,
+      serviceFor: () =>
+        createMockS3({
+          uploadStream: async (key: string) => {
+            uploads.push(key);
+          },
+        }) as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
       storageProviderRegistry: registry,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: createMockS3({ isConfigured: () => false }),
+        storageProviderRegistry: registry,
+      }),
       extractor: makeExtractorStub() as never,
     });
 
-    const jobId = await seedReadyJob({ ownerId: userId, seriesId, stagingBase: testTmpBase, storageProviderId: null });
+    const jobId = await seedReadyJob({
+      ownerId: userId,
+      seriesId,
+      stagingBase: testTmpBase,
+      storageProviderId: null,
+    });
 
     const selection = [
-      { filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1", quality: "1080p" },
+      {
+        filename: "Show.S01E01.mp4",
+        episodeId: epIds[0]!,
+        label: "E1",
+        quality: "1080p",
+      },
     ];
     const result = await service.confirmJob(jobId, selection);
     expect(result.status).toBe("uploading");
@@ -185,26 +260,42 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
 
   it("honors an explicit job.storageProviderId", async () => {
     const { userId, seriesId, epIds } = await createShow();
-    const defaultProvider = await seedProvider({ id: "prov-default-693b", name: "Default", isDefault: true });
+    const defaultProvider = await seedProvider({
+      id: "prov-default-693b",
+      name: "Default",
+      isDefault: true,
+    });
 
     const seenIds: Array<string | null | undefined> = [];
     const uploads: string[] = [];
     const registry = makeRegistryDouble({
       defaultProvider,
       seenIds,
-      serviceFor: () => createMockS3({ uploadStream: async (key: string) => { uploads.push(key); } }) as unknown as S3StorageService,
+      serviceFor: () =>
+        createMockS3({
+          uploadStream: async (key: string) => {
+            uploads.push(key);
+          },
+        }) as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
       storageProviderRegistry: registry,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: createMockS3({ isConfigured: () => false }),
+        storageProviderRegistry: registry,
+      }),
       extractor: makeExtractorStub() as never,
     });
 
     const jobId = await seedReadyJob({
-      ownerId: userId, seriesId, stagingBase: testTmpBase, storageProviderId: defaultProvider.id,
+      ownerId: userId,
+      seriesId,
+      stagingBase: testTmpBase,
+      storageProviderId: defaultProvider.id,
     });
 
     await service.confirmJob(jobId, [
@@ -222,61 +313,95 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
 
   it("fails the job when an explicit storage provider cannot be resolved", async () => {
     const { userId, seriesId, epIds } = await createShow();
-    const defaultProvider = await seedProvider({ id: "prov-default-693c", name: "Default", isDefault: true });
+    const defaultProvider = await seedProvider({
+      id: "prov-default-693c",
+      name: "Default",
+      isDefault: true,
+    });
     const registry = makeRegistryDouble({
       defaultProvider,
       seenIds: [],
       serviceFor: () => createMockS3() as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
       storageProviderRegistry: registry,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: createMockS3({ isConfigured: () => false }),
+        storageProviderRegistry: registry,
+      }),
       extractor: makeExtractorStub() as never,
     });
 
     const jobId = await seedReadyJob({
-      ownerId: userId, seriesId, stagingBase: testTmpBase, storageProviderId: "prov-does-not-exist",
+      ownerId: userId,
+      seriesId,
+      stagingBase: testTmpBase,
+      storageProviderId: "prov-does-not-exist",
     });
 
     await service.confirmJob(jobId, [
       { filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1" },
     ]);
-    const finalJob = await waitForJobStatus(service.getJob.bind(service), jobId, "failed");
+    const finalJob = await waitForJobStatus(
+      service.getJob.bind(service),
+      jobId,
+      "failed",
+    );
     expect(finalJob?.status).toBe("failed");
-    expect(finalJob?.errorMessage).toContain("Specified storage provider not found");
+    expect(finalJob?.errorMessage).toContain(
+      "Specified storage provider not found",
+    );
   });
 
-  it("auto-instantiates a registry when omitted, resolving the default provider from the database", async () => {
-    const defaultProvider = await seedProvider({ id: "prov-auto-default-693", name: "Auto Default", isDefault: true });
+  it("resolves the default provider from the database through an injected registry", async () => {
+    const defaultProvider = await seedProvider({
+      id: "prov-auto-default-693",
+      name: "Auto Default",
+      isDefault: true,
+    });
 
-    const service = new ArchiveIngestJobService({ db, stagingBaseDir: testTmpBase });
-    const internal = service as unknown as { storageProviderRegistry?: StorageProviderRegistry };
-    expect(internal.storageProviderRegistry).toBeDefined();
+    const registry = createStorageProviderRegistry(db);
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
+      stagingBaseDir: testTmpBase,
+      storageProviderRegistry: registry,
+    });
+    expect(service).toBeDefined();
 
-    const resolved = await internal.storageProviderRegistry!.getProvider(null);
+    const resolved = await registry.getProvider(null);
     expect(resolved?.provider.id).toBe(defaultProvider.id);
     expect(resolved?.service).toBeDefined();
   });
 
   it("raises S3NotConfiguredError when no providers exist and no fallback is configured", async () => {
     const { userId, seriesId, epIds } = await createShow();
-    // No providers seeded; auto-instantiated registry resolves to null…
-    const service = new ArchiveIngestJobService({
-      db,
+    // No providers seeded and no registry injected: resolution falls through…
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
       extractor: makeExtractorStub() as never,
     });
 
-    const jobId = await seedReadyJob({ ownerId: userId, seriesId, stagingBase: testTmpBase, storageProviderId: null });
+    const jobId = await seedReadyJob({
+      ownerId: userId,
+      seriesId,
+      stagingBase: testTmpBase,
+      storageProviderId: null,
+    });
 
     await service.confirmJob(jobId, [
       { filename: "Show.S01E01.mp4", episodeId: epIds[0]!, label: "E1" },
     ]);
-    const finalJob = await waitForJobStatus(service.getJob.bind(service), jobId, "failed");
+    const finalJob = await waitForJobStatus(
+      service.getJob.bind(service),
+      jobId,
+      "failed",
+    );
     expect(finalJob?.status).toBe("failed");
     expect(finalJob?.errorMessage).toContain("not configured");
   });

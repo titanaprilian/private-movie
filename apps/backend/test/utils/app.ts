@@ -1,7 +1,12 @@
 import type { createApp } from "@/app";
 import type { SchedulerDeps, StorageUsageProvider } from "@/app-types";
-import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
-import type { ArchiveExtractFn, ArchiveFetchFn, ArchiveIngestJobService } from "@/modules/series";
+import type {
+  FetchFn,
+  BrowserFn,
+  S3StorageService,
+  StorageProviderRegistry,
+} from "@repo/media-service";
+import type { ArchiveFetchFn, ArchiveIngestJobService } from "@/modules/series";
 import type { AuthRateLimitOptions } from "@/modules/authentication/schemas";
 import type { RateLimitPluginOptions } from "@/plugins";
 import type { StorageOverrides } from "@/modules/storage";
@@ -29,7 +34,6 @@ export interface BuildAppOptions {
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
   archiveFetchFn?: ArchiveFetchFn;
-  archiveExtractFn?: ArchiveExtractFn;
   archiveStagingBaseDir?: string;
   archiveJobService?: ArchiveIngestJobService;
   scheduler?: SchedulerDeps;
@@ -46,7 +50,8 @@ export interface BuildAppOptions {
  */
 export async function buildApp(options?: BuildAppOptions): Promise<App> {
   const { createApp } = await import("@/app");
-  const { createAuthenticationService } = await import("@/modules/authentication");
+  const { createAuthenticationService } =
+    await import("@/modules/authentication");
   const { createStorageService } = await import("@/modules/storage");
   const { createDbClient } = await import("@repo/db");
   const { readFileSync } = await import("node:fs");
@@ -69,8 +74,11 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
   const defaultFetchHtml: FetchFn = {
     async get() {
       return readFileSync(
-        resolve(import.meta.dirname, "../fixtures/series/sample-series-list.html"),
-        "utf8"
+        resolve(
+          import.meta.dirname,
+          "../fixtures/series/sample-series-list.html",
+        ),
+        "utf8",
       );
     },
     async post() {
@@ -98,8 +106,10 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
     overrides: {
       fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
       archiveFetchFn: options?.archiveFetchFn,
-      archiveExtractFn: options?.archiveExtractFn,
-      storageUsageProvider: options?.storageUsageProvider ?? options?.storage?.usageProvider ?? undefined,
+      storageUsageProvider:
+        options?.storageUsageProvider ??
+        options?.storage?.usageProvider ??
+        undefined,
       storage: options?.storage,
       // Rate limiting is disabled by default in tests. Suites asserting
       // throttling behavior opt in explicitly via these overrides.
@@ -114,7 +124,11 @@ function createTestScheduler() {
   let enabled = true;
   let intervalMs = 30 * 60000;
   let lastRunAt: Date | null = null;
-  let lastRunResult: { totalProcessed: number; successCount: number; failureCount: number } | null = null;
+  let lastRunResult: {
+    totalProcessed: number;
+    successCount: number;
+    failureCount: number;
+  } | null = null;
   const startedAt = Date.now();
   return {
     async runNow() {
@@ -123,7 +137,12 @@ function createTestScheduler() {
       try {
         lastRunAt = new Date();
         lastRunResult = { totalProcessed: 0, successCount: 0, failureCount: 0 };
-        return { totalProcessed: 0, successCount: 0, failureCount: 0, results: [] };
+        return {
+          totalProcessed: 0,
+          successCount: 0,
+          failureCount: 0,
+          results: [],
+        };
       } finally {
         executing = false;
       }
@@ -149,7 +168,7 @@ function createTestScheduler() {
  */
 export async function request(
   app: App,
-  options: RequestOptions
+  options: RequestOptions,
 ): Promise<RequestResult> {
   const normalizedPath = options.path.startsWith("/api")
     ? options.path
@@ -157,7 +176,8 @@ export async function request(
   const url = new URL(normalizedPath, "http://localhost");
   const headers = new Headers();
 
-  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
 
   if (options.body && !isFormData) {
     headers.set("Content-Type", "application/json");
@@ -182,7 +202,9 @@ export async function request(
   };
 
   if (options.body) {
-    init.body = isFormData ? (options.body as FormData) : JSON.stringify(options.body);
+    init.body = isFormData
+      ? (options.body as FormData)
+      : JSON.stringify(options.body);
   }
 
   const response = await app.handle(new Request(url.toString(), init));
@@ -211,7 +233,7 @@ export async function request(
  */
 export function extractCookie(
   setCookieHeader: string | null,
-  name: string
+  name: string,
 ): string | undefined {
   if (!setCookieHeader) {
     return undefined;

@@ -1,57 +1,93 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
-  ArchiveIngestJobService,
-  GoogleDriveUrlHelper,
+  ArchiveIngestJobManager,
+  isGoogleDriveInterstitial,
+  isGoogleDriveUrl,
   type ArchiveEntry,
 } from "../../../src/modules/series";
-import type { DbClient } from "@repo/db";
+import type { ArchiveIngestRepository } from "../../../src/modules/series";
+import type { ArchiveIngestJob } from "@repo/contracts";
 
-describe("ArchiveIngestJobService Unit Tests", () => {
-  const dummyDb = {} as unknown as DbClient;
+function mockRepository(): ArchiveIngestRepository {
+  return {
+    findActiveJob: vi.fn(),
+    countActiveJobs: vi.fn(),
+    createJob: vi.fn(),
+    findById: vi.fn(),
+    findFailedJob: vi.fn(),
+    updateJob: vi.fn(),
+    markInterruptedJobsAsFailed: vi.fn(),
+    findExpiredReadyJobs: vi.fn(),
+    markJobsExpired: vi.fn(),
+    listJobsByOwner: vi.fn(),
+    findQueuedJobs: vi.fn(),
+    listActiveJobIds: vi.fn(),
+    listAllJobIds: vi.fn(),
+  };
+}
+
+describe("ArchiveIngestJobManager Unit Tests", () => {
+  const repository = mockRepository();
 
   it("extractFilename correctly parses filename or falls back", () => {
-    const service = new ArchiveIngestJobService({
-      db: dummyDb,
+    const service = new ArchiveIngestJobManager({
+      repository,
       stagingBaseDir: "/tmp",
     });
 
-    expect(service.extractFilename("https://example.com/downloads/MySeries.S01.7z")).toBe(
-      "MySeries.S01.7z"
-    );
     expect(
-      service.extractFilename("https://example.com/files/Attack%20on%20Titan%20S04.rar?token=123")
+      service.extractFilename("https://example.com/downloads/MySeries.S01.7z"),
+    ).toBe("MySeries.S01.7z");
+    expect(
+      service.extractFilename(
+        "https://example.com/files/Attack%20on%20Titan%20S04.rar?token=123",
+      ),
     ).toBe("Attack on Titan S04.rar");
     expect(service.extractFilename("invalid-url")).toBe("archive.zip");
   });
 
   it("deriveSourceKey normalizes URLs and identifies Google Drive files", () => {
-    const service = new ArchiveIngestJobService({
-      db: dummyDb,
+    const service = new ArchiveIngestJobManager({
+      repository,
       stagingBaseDir: "/tmp",
     });
 
     expect(
       service.deriveSourceKey(
-        "https://drive.google.com/file/d/1a2b3c4d5e6f7g8h9i0j/view?usp=sharing"
-      )
+        "https://drive.google.com/file/d/1a2b3c4d5e6f7g8h9i0j/view?usp=sharing",
+      ),
     ).toBe("gdrive:1a2b3c4d5e6f7g8h9i0j");
 
     expect(
-      service.deriveSourceKey("https://example.com/anime/pack.zip?auth=secret123")
+      service.deriveSourceKey(
+        "https://example.com/anime/pack.zip?auth=secret123",
+      ),
     ).toBe("https://example.com/anime/pack.zip");
   });
 
   describe("processArchiveEntries (Episode Matching & Size Disparity)", () => {
     it("filters out non-video files and sample files", () => {
-      const service = new ArchiveIngestJobService({
-        db: dummyDb,
+      const service = new ArchiveIngestJobManager({
+        repository,
         stagingBaseDir: "/tmp",
       });
 
       const entries: ArchiveEntry[] = [
-        { path: "Season 1/S01E01.mp4", sizeBytes: 500_000_000, isDirectory: false },
-        { path: "Season 1/S01E02.mkv", sizeBytes: 510_000_000, isDirectory: false },
-        { path: "Season 1/sample-s01e01.mp4", sizeBytes: 15_000_000, isDirectory: false },
+        {
+          path: "Season 1/S01E01.mp4",
+          sizeBytes: 500_000_000,
+          isDirectory: false,
+        },
+        {
+          path: "Season 1/S01E02.mkv",
+          sizeBytes: 510_000_000,
+          isDirectory: false,
+        },
+        {
+          path: "Season 1/sample-s01e01.mp4",
+          sizeBytes: 15_000_000,
+          isDirectory: false,
+        },
         { path: "Season 1/readme.txt", sizeBytes: 1024, isDirectory: false },
         { path: "Season 1/Subtitles/", sizeBytes: 0, isDirectory: true },
       ];
@@ -68,8 +104,8 @@ describe("ArchiveIngestJobService Unit Tests", () => {
     });
 
     it("flags unusually small sibling videos with needsReview = true", () => {
-      const service = new ArchiveIngestJobService({
-        db: dummyDb,
+      const service = new ArchiveIngestJobManager({
+        repository,
         stagingBaseDir: "/tmp",
       });
 
@@ -95,15 +131,27 @@ describe("ArchiveIngestJobService Unit Tests", () => {
     });
 
     it("flags unparseable episode names or duplicate episode collisions with needsReview = true", () => {
-      const service = new ArchiveIngestJobService({
-        db: dummyDb,
+      const service = new ArchiveIngestJobManager({
+        repository,
         stagingBaseDir: "/tmp",
       });
 
       const entries: ArchiveEntry[] = [
-        { path: "Show/Episode 01 - 1080p.mp4", sizeBytes: 500_000_000, isDirectory: false },
-        { path: "Show/Episode 01 - 720p version.mp4", sizeBytes: 300_000_000, isDirectory: false },
-        { path: "Show/Special OVA.mp4", sizeBytes: 500_000_000, isDirectory: false }, // No episode number
+        {
+          path: "Show/Episode 01 - 1080p.mp4",
+          sizeBytes: 500_000_000,
+          isDirectory: false,
+        },
+        {
+          path: "Show/Episode 01 - 720p version.mp4",
+          sizeBytes: 300_000_000,
+          isDirectory: false,
+        },
+        {
+          path: "Show/Special OVA.mp4",
+          sizeBytes: 500_000_000,
+          isDirectory: false,
+        }, // No episode number
       ];
 
       const processed = service.processArchiveEntries(entries);
@@ -129,44 +177,137 @@ describe("ArchiveIngestJobService Unit Tests", () => {
   describe("GDrive interstitial guard + referer resolution", () => {
     it("does NOT treat an HTML 200 OK response from a non-GDrive URL as an interstitial", () => {
       const mediafireUrl = "https://download.mediafire.com/abc123/pack.zip";
-      const htmlRes = new Response("<html><body><form action='/captcha'></form></body></html>", {
-        status: 200,
-        headers: { "Content-Type": "text/html" },
-      });
+      const htmlRes = new Response(
+        "<html><body><form action='/captcha'></form></body></html>",
+        {
+          status: 200,
+          headers: { "Content-Type": "text/html" },
+        },
+      );
 
       // Raw interstitial signal fires (content-type based) ...
-      expect(GoogleDriveUrlHelper.isInterstitial(htmlRes)).toBe(true);
+      expect(isGoogleDriveInterstitial(htmlRes)).toBe(true);
       // ... but the pipeline guard gates on hostname, so non-GDrive skips it.
       const shouldEnterConfirmPath =
-        GoogleDriveUrlHelper.isGoogleDriveUrl(mediafireUrl) &&
-        GoogleDriveUrlHelper.isInterstitial(htmlRes);
+        isGoogleDriveUrl(mediafireUrl) && isGoogleDriveInterstitial(htmlRes);
       expect(shouldEnterConfirmPath).toBe(false);
 
       // Sanity: a real GDrive HTML interstitial still enters the confirm path.
       const gdriveUrl =
         "https://drive.usercontent.google.com/download?id=1a2b3c4d5e6f7g8h9i0j&export=download";
-      expect(GoogleDriveUrlHelper.isGoogleDriveUrl(gdriveUrl)).toBe(true);
+      expect(isGoogleDriveUrl(gdriveUrl)).toBe(true);
       const gdriveShouldEnter =
-        GoogleDriveUrlHelper.isGoogleDriveUrl(gdriveUrl) &&
-        GoogleDriveUrlHelper.isInterstitial(htmlRes);
+        isGoogleDriveUrl(gdriveUrl) && isGoogleDriveInterstitial(htmlRes);
       expect(gdriveShouldEnter).toBe(true);
     });
 
     it("resolveReferer prefers explicit referer and defaults to URL origin", () => {
-      const service = new ArchiveIngestJobService({
-        db: dummyDb,
+      const service = new ArchiveIngestJobManager({
+        repository,
         stagingBaseDir: "/tmp",
       });
 
-      expect(service.resolveReferer("https://mediafire.com/f/abc", "https://example.com/page")).toBe(
-        "https://example.com/page"
-      );
+      expect(
+        service.resolveReferer(
+          "https://mediafire.com/f/abc",
+          "https://example.com/page",
+        ),
+      ).toBe("https://example.com/page");
       expect(service.resolveReferer("https://mediafire.com/f/abc", null)).toBe(
-        "https://mediafire.com"
+        "https://mediafire.com",
       );
       expect(service.resolveReferer("https://mediafire.com/f/abc", "  ")).toBe(
-        "https://mediafire.com"
+        "https://mediafire.com",
       );
+    });
+  });
+
+  describe("repository-injected lifecycle (mocked persistence)", () => {
+    function fakeJob(
+      overrides: Partial<ArchiveIngestJob> = {},
+    ): ArchiveIngestJob {
+      return {
+        id: "job-1",
+        ownerId: "owner-1",
+        seriesId: "series-1",
+        sourceKey: "https://example.com/pack.zip",
+        sourceUrl: "https://example.com/pack.zip",
+        referer: null,
+        status: "downloading",
+        stage: "downloading",
+        bytesDone: 0,
+        bytesTotal: null,
+        stagingPath: "/tmp/staging/job-1",
+        archiveFilename: "pack.zip",
+        entries: [],
+        selection: [],
+        storageProviderId: null,
+        errorCode: null,
+        errorMessage: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        expiresAt: null,
+        ...overrides,
+      };
+    }
+
+    it("submitJob returns the existing active job without creating a duplicate", async () => {
+      const repo = mockRepository();
+      const existing = fakeJob();
+      vi.mocked(repo.findActiveJob).mockResolvedValue(existing);
+
+      const service = new ArchiveIngestJobManager({
+        repository: repo,
+        stagingBaseDir: "/tmp",
+      });
+
+      const result = await service.submitJob("owner-1", {
+        sourceUrl: "https://example.com/pack.zip",
+      });
+
+      expect(result.id).toBe(existing.id);
+      expect(repo.createJob).not.toHaveBeenCalled();
+    });
+
+    it("submitJob queues when the concurrency limit is reached", async () => {
+      const repo = mockRepository();
+      vi.mocked(repo.findActiveJob).mockResolvedValue(null);
+      vi.mocked(repo.findFailedJob).mockResolvedValue(null);
+      vi.mocked(repo.countActiveJobs).mockResolvedValue(2);
+      const created = fakeJob({ status: "queued", stage: "queued" });
+      vi.mocked(repo.createJob).mockResolvedValue(created);
+      vi.mocked(repo.findById).mockResolvedValue(created);
+
+      const service = new ArchiveIngestJobManager({
+        repository: repo,
+        stagingBaseDir: "/tmp",
+        maxConcurrentJobs: 2,
+      });
+
+      const result = await service.submitJob("owner-1", {
+        sourceUrl: "https://example.com/other.zip",
+      });
+
+      expect(result.status).toBe("queued");
+      expect(vi.mocked(repo.createJob).mock.calls[0]?.[0]).toMatchObject({
+        status: "queued",
+      });
+    });
+
+    it("cancelJob returns terminal jobs untouched without persistence writes", async () => {
+      const repo = mockRepository();
+      const done = fakeJob({ status: "done", stage: "done" });
+      vi.mocked(repo.findById).mockResolvedValue(done);
+
+      const service = new ArchiveIngestJobManager({
+        repository: repo,
+        stagingBaseDir: "/tmp",
+      });
+
+      const result = await service.cancelJob(done.id);
+
+      expect(result?.status).toBe("done");
+      expect(repo.updateJob).not.toHaveBeenCalled();
     });
   });
 });

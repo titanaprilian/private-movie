@@ -1,12 +1,21 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
+import {
+  mkdtempSync,
+  rmSync,
+  mkdirSync,
+  writeFileSync,
+  existsSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { db } from "../../utils/db";
 import { createMockS3 } from "../../utils/s3";
 import { users, series, seasons, archiveIngestJobs } from "@repo/db";
-import { ArchiveIngestJobService } from "../../../src/modules/series";
+import {
+  ArchiveIngestJobManager,
+  createArchiveIngestRepository,
+} from "../../../src/modules/series";
 
 async function createOwner(): Promise<string> {
   const userId = crypto.randomUUID();
@@ -18,24 +27,37 @@ async function createOwner(): Promise<string> {
     createdAt: new Date(),
   });
   const seriesId = crypto.randomUUID();
-  await db.insert(series).values({ id: seriesId, title: "Show", createdAt: new Date(), updatedAt: new Date() });
+  await db.insert(series).values({
+    id: seriesId,
+    title: "Show",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
   const seasonId = crypto.randomUUID();
-  await db.insert(seasons).values({ id: seasonId, seriesId, title: "S1", createdAt: new Date(), updatedAt: new Date() });
+  await db.insert(seasons).values({
+    id: seasonId,
+    seriesId,
+    title: "S1",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
   return userId;
 }
 
 async function waitForStatus(
-  service: ArchiveIngestJobService,
+  service: ArchiveIngestJobManager,
   jobId: string,
   status: string,
-  timeoutMs = 8000
+  timeoutMs = 8000,
 ): Promise<void> {
   const start = Date.now();
   for (;;) {
     const job = await service.getJob(jobId);
     if (job?.status === status) return;
     if (Date.now() - start > timeoutMs) {
-      throw new Error(`timed out waiting for job ${jobId} to reach status '${status}' (at '${job?.status}')`);
+      throw new Error(
+        `timed out waiting for job ${jobId} to reach status '${status}' (at '${job?.status}')`,
+      );
     }
     await new Promise((r) => setTimeout(r, 50));
   }
@@ -45,7 +67,11 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
   let testTmpBase = "";
 
   beforeEach(() => {
-    try { rmSync(testTmpBase, { recursive: true, force: true }); } catch { /* ignore */ }
+    try {
+      rmSync(testTmpBase, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
     testTmpBase = mkdtempSync(join(tmpdir(), "staging-reuse-"));
   });
 
@@ -54,8 +80,8 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/season-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),
       fetchFn: (async () => {
@@ -64,8 +90,12 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
       }) as never,
       extractor: {
         binaryPath: "7zz",
-        list: async () => { throw new Error("must not re-list"); },
-        extract: async () => { throw new Error("must not extract"); },
+        list: async () => {
+          throw new Error("must not re-list");
+        },
+        extract: async () => {
+          throw new Error("must not extract");
+        },
         run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
       },
     });
@@ -77,16 +107,40 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     writeFileSync(join(stagingPath, "season-pack.7z"), "fake-archive-bytes");
     const sourceKey = service.deriveSourceKey(sourceUrl);
     await db.insert(archiveIngestJobs).values({
-      id: failedJobId, ownerId: userId, seriesId: null, sourceKey, sourceUrl,
-      status: "failed", stage: "failed", bytesDone: 100, bytesTotal: 100,
-      stagingPath, archiveFilename: "season-pack.7z",
+      id: failedJobId,
+      ownerId: userId,
+      seriesId: null,
+      sourceKey,
+      sourceUrl,
+      status: "failed",
+      stage: "failed",
+      bytesDone: 100,
+      bytesTotal: 100,
+      stagingPath,
+      archiveFilename: "season-pack.7z",
       entries: [
-        { filename: "Show.S01E01.mp4", sizeBytes: 100, detectedEpisodeNumber: 1, quality: "1080p", needsReview: false },
-        { filename: "Show.S01E02.mp4", sizeBytes: 100, detectedEpisodeNumber: 2, quality: "1080p", needsReview: false },
+        {
+          filename: "Show.S01E01.mp4",
+          sizeBytes: 100,
+          detectedEpisodeNumber: 1,
+          quality: "1080p",
+          needsReview: false,
+        },
+        {
+          filename: "Show.S01E02.mp4",
+          sizeBytes: 100,
+          detectedEpisodeNumber: 2,
+          quality: "1080p",
+          needsReview: false,
+        },
       ],
       selection: [],
-      storageProviderId: null, errorCode: "UPLOAD_FAILED", errorMessage: "boom",
-      createdAt: new Date(), updatedAt: new Date(), expiresAt: null,
+      storageProviderId: null,
+      errorCode: "UPLOAD_FAILED",
+      errorMessage: "boom",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expiresAt: null,
     });
 
     const result = await service.submitJob(userId, { sourceUrl });
@@ -106,8 +160,8 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/unlisted-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),
       fetchFn: (async () => {
@@ -120,7 +174,9 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
           { path: "Show.S01E01.mp4", sizeBytes: 100, isDirectory: false },
           { path: "Show.S01E02.mp4", sizeBytes: 100, isDirectory: false },
         ],
-        extract: async () => { throw new Error("must not extract"); },
+        extract: async () => {
+          throw new Error("must not extract");
+        },
         run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
       },
     });
@@ -131,11 +187,25 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     writeFileSync(join(stagingPath, "unlisted-pack.7z"), "fake-archive-bytes");
     const sourceKey = service.deriveSourceKey(sourceUrl);
     await db.insert(archiveIngestJobs).values({
-      id: failedJobId, ownerId: userId, seriesId: null, sourceKey, sourceUrl,
-      status: "failed", stage: "failed", bytesDone: 18, bytesTotal: 18,
-      stagingPath, archiveFilename: "unlisted-pack.7z", entries: [], selection: [],
-      storageProviderId: null, errorCode: "LIST_FAILED", errorMessage: "list boom",
-      createdAt: new Date(), updatedAt: new Date(), expiresAt: null,
+      id: failedJobId,
+      ownerId: userId,
+      seriesId: null,
+      sourceKey,
+      sourceUrl,
+      status: "failed",
+      stage: "failed",
+      bytesDone: 18,
+      bytesTotal: 18,
+      stagingPath,
+      archiveFilename: "unlisted-pack.7z",
+      entries: [],
+      selection: [],
+      storageProviderId: null,
+      errorCode: "LIST_FAILED",
+      errorMessage: "list boom",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expiresAt: null,
     });
 
     const result = await service.submitJob(userId, { sourceUrl });
@@ -155,8 +225,8 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/gone-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),
       fetchFn: (async () => {
@@ -171,7 +241,9 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
         list: async () => [
           { path: "Show.S01E01.mp4", sizeBytes: 4, isDirectory: false },
         ],
-        extract: async () => { throw new Error("must not extract"); },
+        extract: async () => {
+          throw new Error("must not extract");
+        },
         run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
       },
     });
@@ -180,13 +252,33 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const failedJobId = crypto.randomUUID();
     const sourceKey = service.deriveSourceKey(sourceUrl);
     await db.insert(archiveIngestJobs).values({
-      id: failedJobId, ownerId: userId, seriesId: null, sourceKey, sourceUrl,
-      status: "failed", stage: "failed", bytesDone: 0, bytesTotal: null,
-      stagingPath: join(testTmpBase, failedJobId), archiveFilename: "gone-pack.7z",
-      entries: [{ filename: "Show.S01E01.mp4", sizeBytes: 4, detectedEpisodeNumber: 1, quality: null, needsReview: false }],
+      id: failedJobId,
+      ownerId: userId,
+      seriesId: null,
+      sourceKey,
+      sourceUrl,
+      status: "failed",
+      stage: "failed",
+      bytesDone: 0,
+      bytesTotal: null,
+      stagingPath: join(testTmpBase, failedJobId),
+      archiveFilename: "gone-pack.7z",
+      entries: [
+        {
+          filename: "Show.S01E01.mp4",
+          sizeBytes: 4,
+          detectedEpisodeNumber: 1,
+          quality: null,
+          needsReview: false,
+        },
+      ],
       selection: [],
-      storageProviderId: null, errorCode: "UPLOAD_FAILED", errorMessage: "boom",
-      createdAt: new Date(), updatedAt: new Date(), expiresAt: null,
+      storageProviderId: null,
+      errorCode: "UPLOAD_FAILED",
+      errorMessage: "boom",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expiresAt: null,
     });
 
     const result = await service.submitJob(userId, { sourceUrl });
@@ -199,7 +291,10 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     expect(downloaded?.entries).toHaveLength(1);
 
     // The old failed job stays untouched.
-    const oldRows = await db.select().from(archiveIngestJobs).where(eq(archiveIngestJobs.id, failedJobId));
+    const oldRows = await db
+      .select()
+      .from(archiveIngestJobs)
+      .where(eq(archiveIngestJobs.id, failedJobId));
     expect(oldRows[0]?.status).toBe("failed");
   });
 });

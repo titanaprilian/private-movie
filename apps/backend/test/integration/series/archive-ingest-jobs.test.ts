@@ -12,7 +12,13 @@
  *  - Background sweeper (sweepExpiredJobs)
  */
 import { describe, expect, it, beforeAll, afterEach } from "vitest";
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
+import {
+  mkdtempSync,
+  rmSync,
+  mkdirSync,
+  writeFileSync,
+  existsSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, basename } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -22,7 +28,8 @@ import { db } from "../../utils/db";
 import { users, series, seasons, episodes, archiveIngestJobs } from "@repo/db";
 import { eq } from "drizzle-orm";
 import {
-  ArchiveIngestJobService,
+  ArchiveIngestJobManager,
+  createArchiveIngestRepository,
   markInterruptedJobsOnBoot,
   purgeOrphanStagingDirs,
   sweepExpiredJobs,
@@ -49,21 +56,52 @@ async function createSeriesAndEpisodes() {
   const now = new Date();
   const [sRow] = await db
     .insert(series)
-    .values({ id: crypto.randomUUID(), title: "Test Series", createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      title: "Test Series",
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
   const [seasonRow] = await db
     .insert(seasons)
-    .values({ id: crypto.randomUUID(), seriesId: sRow!.id, title: "S1", seasonNumber: 1, createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      seriesId: sRow!.id,
+      title: "S1",
+      seasonNumber: 1,
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
   const [ep1] = await db
     .insert(episodes)
-    .values({ id: crypto.randomUUID(), seasonId: seasonRow!.id, title: "E1", order: 1, createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      seasonId: seasonRow!.id,
+      title: "E1",
+      order: 1,
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
   const [ep2] = await db
     .insert(episodes)
-    .values({ id: crypto.randomUUID(), seasonId: seasonRow!.id, title: "E2", order: 2, createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      seasonId: seasonRow!.id,
+      title: "E2",
+      order: 2,
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
-  return { seriesId: sRow!.id, seasonId: seasonRow!.id, ep1Id: ep1!.id, ep2Id: ep2!.id };
+  return {
+    seriesId: sRow!.id,
+    seasonId: seasonRow!.id,
+    ep1Id: ep1!.id,
+    ep2Id: ep2!.id,
+  };
 }
 
 function makeFakeFetchFn() {
@@ -78,13 +116,21 @@ function makeFakeFetchFn() {
 
 function makeFakeExtractor(
   videoEntries = ["Show.S01E01.mp4", "Show.S01E02.mp4"],
-  extractFn?: (opts: { targets: string[]; destDir: string }) => Promise<void>
+  extractFn?: (opts: { targets: string[]; destDir: string }) => Promise<void>,
 ) {
   return {
     binaryPath: "7zz",
     list: async () =>
-      videoEntries.map((p) => ({ path: p, sizeBytes: 1_000_000, isDirectory: false })),
-    extract: async (opts: { targets: string[]; destDir: string; [key: string]: unknown }) => {
+      videoEntries.map((p) => ({
+        path: p,
+        sizeBytes: 1_000_000,
+        isDirectory: false,
+      })),
+    extract: async (opts: {
+      targets: string[];
+      destDir: string;
+      [key: string]: unknown;
+    }) => {
       if (extractFn) {
         await extractFn(opts);
       } else {
@@ -94,7 +140,10 @@ function makeFakeExtractor(
         await writeFile(abs, "video-content");
       }
       return {
-        extractedFiles: opts.targets.map((t: string) => ({ path: basename(t), sizeBytes: 100 })),
+        extractedFiles: opts.targets.map((t: string) => ({
+          path: basename(t),
+          sizeBytes: 100,
+        })),
       };
     },
     run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
@@ -115,7 +164,11 @@ function makeFakeS3() {
           const { done } = await reader.read();
           if (done) break;
         }
-        try { reader.releaseLock(); } catch { /* ignore */ }
+        try {
+          reader.releaseLock();
+        } catch {
+          /* ignore */
+        }
       }
     },
     deleteObject: async () => {},
@@ -123,7 +176,10 @@ function makeFakeS3() {
     listObjects: async () => ({ objects: [], isTruncated: false }),
     listAllObjects: async () => [],
     getBucketStorageUsage: async () => ({ totalSizeBytes: 0, objectCount: 0 }),
-    purgeDanglingVersions: async () => ({ purgedVersionsCount: 0, purgedDeleteMarkersCount: 0 }),
+    purgeDanglingVersions: async () => ({
+      purgedVersionsCount: 0,
+      purgedDeleteMarkersCount: 0,
+    }),
     abortStaleMultipartUploads: async () => ({ abortedUploadsCount: 0 }),
     testConnection: async () => ({ success: true, latencyMs: 0 }),
     getPublicBaseUrl: () => null,
@@ -135,11 +191,6 @@ async function buildJobApp() {
   return buildApp({
     archiveStagingBaseDir: testTmpBase,
     archiveFetchFn: makeFakeFetchFn(),
-    archiveExtractFn: async (opts) => {
-      await mkdir(opts.destDir!, { recursive: true });
-      await writeFile(join(opts.destDir!, "Show.S01E01.mp4"), "video1");
-      await writeFile(join(opts.destDir!, "Show.S01E02.mp4"), "video2");
-    },
     s3StorageService: makeFakeS3() as never,
   });
 }
@@ -192,10 +243,14 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
         body: { sourceUrl: "https://example.com/unique-pack-201.zip" },
       });
       expect(res.status).toBe(200);
-      const body = res.body as { data: { id: string; status: string; seriesId: string } };
+      const body = res.body as {
+        data: { id: string; status: string; seriesId: string };
+      };
       expect(body.data.id).toBeDefined();
       expect(body.data.seriesId).toBe(seriesId);
-      expect(["queued", "downloading", "ready", "listing"]).toContain(body.data.status);
+      expect(["queued", "downloading", "ready", "listing"]).toContain(
+        body.data.status,
+      );
     });
 
     it("returns the same job (idempotent) when submitted twice with the same URL", async () => {
@@ -267,7 +322,9 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
         headers: authHeaders(accessToken),
       });
       expect(res.status).toBe(200);
-      const job = (res.body as { data: { id: string; entries: unknown[]; status: string } }).data;
+      const job = (
+        res.body as { data: { id: string; entries: unknown[]; status: string } }
+      ).data;
       expect(job.id).toBe(jobId);
       // Job should have progressed — entries or status set
       expect(job).toHaveProperty("entries");
@@ -317,7 +374,8 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
         headers: authHeaders(accessToken),
       });
       expect(summaryRes.status).toBe(200);
-      const progress = (summaryRes.body as { data: Record<string, unknown> }).data;
+      const progress = (summaryRes.body as { data: Record<string, unknown> })
+        .data;
       expect(progress).toMatchObject({
         id: jobId,
         status: "uploading",
@@ -373,11 +431,10 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
               new Response(hangingBody, {
                 status: 200,
                 headers: { "Content-Length": "1000000" },
-              })
+              }),
             );
           });
         },
-        archiveExtractFn: async () => {},
         s3StorageService: makeFakeS3() as never,
       });
 
@@ -427,13 +484,17 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
         method: "POST",
         path: `/api/series/${seriesId}/archive-ingest/jobs/${crypto.randomUUID()}/confirm`,
         headers: authHeaders(accessToken),
-        body: { selection: [{ filename: "f.mp4", episodeId: ep1Id }], storageProviderId: null },
+        body: {
+          selection: [{ filename: "f.mp4", episodeId: ep1Id }],
+          storageProviderId: null,
+        },
       });
       expect(res.status).toBe(404);
     });
 
     it("confirms a ready job, uploads, and returns done", async () => {
-      const { seriesId: cSeriesId, ep1Id: cEp1Id } = await createSeriesAndEpisodes();
+      const { seriesId: cSeriesId, ep1Id: cEp1Id } =
+        await createSeriesAndEpisodes();
       const userId = crypto.randomUUID();
       await db.insert(users).values({
         id: userId,
@@ -469,15 +530,11 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
         expiresAt: null,
       });
 
-      // Build a confirm app with a working extractor
+      // Build a confirm app with a working fetch stub
       const confirmApp = await buildApp({
         archiveStagingBaseDir: testTmpBase,
         s3StorageService: makeFakeS3() as never,
         archiveFetchFn: makeFakeFetchFn(),
-        archiveExtractFn: async (opts) => {
-          await mkdir(opts.destDir!, { recursive: true });
-          await writeFile(join(opts.destDir!, "Show.S01E01.mp4"), "content");
-        },
       });
 
       // Register a user (who may not own the job, but route just needs auth)
@@ -488,7 +545,9 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
         path: `/api/series/${cSeriesId}/archive-ingest/jobs/${jobId}/confirm`,
         headers: authHeaders(accessToken),
         body: {
-          selection: [{ filename: "Show.S01E01.mp4", episodeId: cEp1Id, label: "E1" }],
+          selection: [
+            { filename: "Show.S01E01.mp4", episodeId: cEp1Id, label: "E1" },
+          ],
           storageProviderId: null,
         },
       });
@@ -523,8 +582,8 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
 
     it("retries a failed job with an optional password", async () => {
       const { seriesId: rSeriesId } = await createSeriesAndEpisodes();
-      const service = new ArchiveIngestJobService({
-        db,
+      const service = new ArchiveIngestJobManager({
+        repository: createArchiveIngestRepository(db),
         stagingBaseDir: testTmpBase,
         fetchFn: makeFakeFetchFn() as never,
         extractor: makeFakeExtractor() as never,
@@ -566,7 +625,9 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
       await new Promise((r) => setTimeout(r, 300));
 
       const finalJob = await service.getJob(retried.id);
-      expect(["ready", "downloading", "listing", "failed"]).toContain(finalJob?.status);
+      expect(["ready", "downloading", "listing", "failed"]).toContain(
+        finalJob?.status,
+      );
     });
   });
 });
@@ -617,7 +678,7 @@ describe("Boot reconciliation (markInterruptedJobsOnBoot + purgeOrphanStagingDir
       });
     }
 
-    await markInterruptedJobsOnBoot(db);
+    await markInterruptedJobsOnBoot(createArchiveIngestRepository(db));
 
     for (const jobId of jobIds) {
       const [row] = await db
@@ -662,7 +723,7 @@ describe("Boot reconciliation (markInterruptedJobsOnBoot + purgeOrphanStagingDir
       expiresAt: null,
     });
 
-    await markInterruptedJobsOnBoot(db);
+    await markInterruptedJobsOnBoot(createArchiveIngestRepository(db));
 
     const [row] = await db
       .select()
@@ -713,7 +774,10 @@ describe("Boot reconciliation (markInterruptedJobsOnBoot + purgeOrphanStagingDir
     const orphanStagingPath = join(testTmpBase, orphanId);
     mkdirSync(orphanStagingPath, { recursive: true });
 
-    await purgeOrphanStagingDirs(db, testTmpBase);
+    await purgeOrphanStagingDirs(
+      createArchiveIngestRepository(db),
+      testTmpBase,
+    );
 
     expect(existsSync(validStagingPath)).toBe(true);
     expect(existsSync(orphanStagingPath)).toBe(false);
@@ -763,7 +827,7 @@ describe("sweepExpiredJobs", () => {
       expiresAt: expiredAt,
     });
 
-    await sweepExpiredJobs(db);
+    await sweepExpiredJobs(createArchiveIngestRepository(db));
 
     const [row] = await db
       .select()
@@ -810,7 +874,7 @@ describe("sweepExpiredJobs", () => {
       expiresAt: futureExpiresAt,
     });
 
-    await sweepExpiredJobs(db);
+    await sweepExpiredJobs(createArchiveIngestRepository(db));
 
     const [row] = await db
       .select()
@@ -853,7 +917,7 @@ describe("sweepExpiredJobs", () => {
       expiresAt: null,
     });
 
-    await sweepExpiredJobs(db);
+    await sweepExpiredJobs(createArchiveIngestRepository(db));
 
     const [row] = await db
       .select()

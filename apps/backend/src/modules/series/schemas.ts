@@ -9,10 +9,9 @@ import type {
   StorageProviderRegistry,
 } from "@repo/media-service";
 import type {
-  ArchiveExtractFn,
   ArchiveFetchFn,
-} from "./internal/archive-ingest/archive-ingest";
-import type { ArchiveIngestJobService } from "./internal/archive-ingest/archive-ingest-job-service";
+  ArchiveIngestJobManager,
+} from "./internal/archive-ingest/services/job";
 
 export interface SeriesRoutesOptions {
   db: DbClient;
@@ -23,9 +22,8 @@ export interface SeriesRoutesOptions {
   storageProviderRegistry?: StorageProviderRegistry;
   mediaService?: MediaService;
   archiveFetchFn?: ArchiveFetchFn;
-  archiveExtractFn?: ArchiveExtractFn;
   archiveStagingBaseDir?: string;
-  archiveJobService?: ArchiveIngestJobService;
+  archiveJobService?: ArchiveIngestJobManager;
 }
 
 export const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
@@ -36,7 +34,9 @@ export const seriesListQuerySchema = t.Object({
   source: t.Optional(scraperSourceSchema),
   q: t.Optional(t.String()),
   genre: t.Optional(t.String()),
-  filter: t.Optional(t.Union([t.Literal("all"), t.Literal("featured"), t.Literal("ongoing")])),
+  filter: t.Optional(
+    t.Union([t.Literal("all"), t.Literal("featured"), t.Literal("ongoing")]),
+  ),
   highlighted: t.Optional(t.Boolean()),
 });
 
@@ -106,7 +106,11 @@ export const createSeasonBodySchema = t.Object({
   description: t.Optional(t.Nullable(t.String())),
   posterUrl: t.Optional(t.Nullable(t.String())),
   status: t.Optional(
-    t.Union([t.Literal("completed"), t.Literal("ongoing"), t.Literal("pending")])
+    t.Union([
+      t.Literal("completed"),
+      t.Literal("ongoing"),
+      t.Literal("pending"),
+    ]),
   ),
   scraperUrl: t.Optional(t.Nullable(t.String())),
   source: t.Optional(t.Nullable(t.String())),
@@ -118,7 +122,7 @@ export const reorderEpisodesBodySchema = t.Array(
     id: t.String({ format: "uuid" }),
     order: t.Number(),
     seasonId: t.Optional(t.String({ format: "uuid" })),
-  })
+  }),
 );
 
 export const archiveJobCreateBodySchema = t.Object({
@@ -145,7 +149,7 @@ export const archiveJobConfirmBodySchema = t.Object({
       label: t.Optional(t.Nullable(t.String())),
       quality: t.Optional(t.Nullable(t.String())),
       isIgnored: t.Optional(t.Boolean()),
-    })
+    }),
   ),
   storageProviderId: t.Optional(t.Nullable(t.String())),
   password: t.Optional(t.Nullable(t.String())),
@@ -154,5 +158,5 @@ export const archiveJobConfirmBodySchema = t.Object({
 export const archiveJobRetryBodySchema = t.Optional(
   t.Object({
     password: t.Optional(t.Nullable(t.String())),
-  })
+  }),
 );

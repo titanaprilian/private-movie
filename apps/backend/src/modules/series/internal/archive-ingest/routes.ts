@@ -4,7 +4,9 @@ import { authGuard } from "../../../../lib/auth";
 import { successResponse, errorResponse } from "../../../../lib/response";
 import { SeriesNotFoundError } from "../errors";
 import { createSeriesRepository } from "../catalog/repository";
-import { ArchiveIngestJobService } from "./archive-ingest-job-service";
+import { ArchiveIngestJobManager } from "./services/job";
+import { createArchiveIngestRepository } from "./repository";
+import { createVideoSourceRepositoryInternal } from "@repo/media-service";
 import type { SeriesRoutesOptions } from "../../schemas";
 import {
   archiveJobConfirmBodySchema,
@@ -26,10 +28,20 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
     storageProviderRegistry: storageRegistry,
   });
 
+  const repository = createArchiveIngestRepository(options.db);
+  const videoSourceRepository = createVideoSourceRepositoryInternal(
+    options.db,
+    {
+      s3StorageService: options.s3StorageService,
+      storageProviderRegistry: storageRegistry,
+    },
+  );
+
   const archiveJobService =
     options.archiveJobService ??
-    new ArchiveIngestJobService({
-      db: options.db,
+    new ArchiveIngestJobManager({
+      repository,
+      videoSourceRepository,
       s3StorageService: options.s3StorageService,
       storageProviderRegistry: storageRegistry,
       ...(options.archiveFetchFn ? { fetchFn: options.archiveFetchFn } : {}),
@@ -37,16 +49,20 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
         ? { stagingBaseDir: options.archiveStagingBaseDir }
         : { stagingBaseDir: "/tmp/archive-ingest-staging" }),
     });
-
   return new Elysia({ name: "series-archive-ingest-routes" })
     .post(
       "/series/:id/archive-ingest/jobs",
       async ({ params, body, headers }) => {
         const seriesRow = await seriesRepository.findById(params.id);
         if (!seriesRow) {
-          throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
+          throw new SeriesNotFoundError(
+            `Series with id ${params.id} not found`,
+          );
         }
-        const token = (headers["authorization"] ?? "").replace(/^Bearer\s+/i, "");
+        const token = (headers["authorization"] ?? "").replace(
+          /^Bearer\s+/i,
+          "",
+        );
         const ownerId = await options.authService.verifyAccessToken(token);
         const job = await archiveJobService.submitJob(ownerId, {
           sourceUrl: body.sourceUrl,
@@ -67,7 +83,7 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
         },
         params: seriesUuidParamsSchema,
         body: archiveJobCreateBodySchema,
-      }
+      },
     )
     .get(
       "/series/:id/archive-ingest/jobs/:jobId",
@@ -91,7 +107,7 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
         },
         params: archiveJobParamsSchema,
         query: archiveJobPollQuerySchema,
-      }
+      },
     )
     .post(
       "/series/:id/archive-ingest/jobs/:jobId/confirm",
@@ -113,11 +129,15 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
             {
               storageProviderId: body.storageProviderId ?? null,
               password: body.password ?? null,
-            }
+            },
           );
           return successResponse(confirmed);
         } catch (err) {
-          return errorResponse(set, 422, err instanceof Error ? err : new Error(String(err)));
+          return errorResponse(
+            set,
+            422,
+            err instanceof Error ? err : new Error(String(err)),
+          );
         }
       },
       {
@@ -130,7 +150,7 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
         },
         params: archiveJobParamsSchema,
         body: archiveJobConfirmBodySchema,
-      }
+      },
     )
     .post(
       "/series/:id/archive-ingest/jobs/:jobId/cancel",
@@ -150,7 +170,7 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
             "Cancels an active archive ingest job, aborts its running download/upload, and purges its staging directory. Requires authentication.",
         },
         params: archiveJobParamsSchema,
-      }
+      },
     )
     .post(
       "/series/:id/archive-ingest/jobs/:jobId/retry",
@@ -165,7 +185,11 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
           });
           return successResponse(retried);
         } catch (err) {
-          return errorResponse(set, 422, err instanceof Error ? err : new Error(String(err)));
+          return errorResponse(
+            set,
+            422,
+            err instanceof Error ? err : new Error(String(err)),
+          );
         }
       },
       {
@@ -178,6 +202,6 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
         },
         params: archiveJobParamsSchema,
         body: archiveJobRetryBodySchema,
-      }
+      },
     );
 };

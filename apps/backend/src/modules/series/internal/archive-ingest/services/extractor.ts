@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import { access, constants, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
+import {
+  access,
+  constants,
+  mkdir,
+  readdir,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { delimiter, join, relative, sep } from "node:path";
 
 export const SEVEN_ZIP_BIN_ENV = "ARCHIVE_7Z_BIN";
@@ -23,7 +31,11 @@ export class ArchiveEngineError extends Error {
   readonly code: ArchiveEngineErrorCode;
   readonly exitCode: number | null;
 
-  constructor(code: ArchiveEngineErrorCode, message: string, exitCode: number | null = null) {
+  constructor(
+    code: ArchiveEngineErrorCode,
+    message: string,
+    exitCode: number | null = null,
+  ) {
     super(message);
     this.name = "ArchiveEngineError";
     this.code = code;
@@ -45,13 +57,15 @@ export interface ArchiveProcessOptions {
 export type ArchiveSpawnFn = (
   command: string,
   args: string[],
-  options: ArchiveProcessOptions
+  options: ArchiveProcessOptions,
 ) => Promise<ArchiveProcessResult>;
 
 const defaultSpawnFn: ArchiveSpawnFn = (command, args, options) =>
   new Promise<ArchiveProcessResult>((resolve, reject) => {
     if (options.signal?.aborted) {
-      reject(new ArchiveEngineError("CANCELLED", "Archive operation cancelled"));
+      reject(
+        new ArchiveEngineError("CANCELLED", "Archive operation cancelled"),
+      );
       return;
     }
 
@@ -106,19 +120,26 @@ const defaultSpawnFn: ArchiveSpawnFn = (command, args, options) =>
           reject(
             new ArchiveEngineError(
               "BINARY_NOT_FOUND",
-              `7-Zip binary not found: ${command}. Set ${SEVEN_ZIP_BIN_ENV} to an absolute path.`
-            )
+              `7-Zip binary not found: ${command}. Set ${SEVEN_ZIP_BIN_ENV} to an absolute path.`,
+            ),
           );
           return;
         }
-        reject(new ArchiveEngineError("EXTRACT_FAILED", `Failed to run 7-Zip: ${err.message}`));
+        reject(
+          new ArchiveEngineError(
+            "EXTRACT_FAILED",
+            `Failed to run 7-Zip: ${err.message}`,
+          ),
+        );
       });
     });
 
     child.on("close", (exitCode) => {
       settle(() => {
         if (aborted) {
-          reject(new ArchiveEngineError("CANCELLED", "Archive operation cancelled"));
+          reject(
+            new ArchiveEngineError("CANCELLED", "Archive operation cancelled"),
+          );
           return;
         }
         resolve({ exitCode, stdout, stderr });
@@ -136,7 +157,10 @@ async function isExecutableFile(path: string): Promise<boolean> {
   }
 }
 
-async function probeBinary(command: string, env: NodeJS.ProcessEnv): Promise<string | null> {
+async function probeBinary(
+  command: string,
+  env: NodeJS.ProcessEnv,
+): Promise<string | null> {
   if (command.includes("/")) {
     return (await isExecutableFile(command)) ? command : null;
   }
@@ -149,7 +173,7 @@ async function probeBinary(command: string, env: NodeJS.ProcessEnv): Promise<str
 }
 
 export async function resolveSevenZipBinary(
-  options: { env?: NodeJS.ProcessEnv } = {}
+  options: { env?: NodeJS.ProcessEnv } = {},
 ): Promise<string> {
   const env = options.env ?? process.env;
   const configured = env[SEVEN_ZIP_BIN_ENV]?.trim();
@@ -160,7 +184,7 @@ export async function resolveSevenZipBinary(
   }
   throw new ArchiveEngineError(
     "BINARY_NOT_FOUND",
-    `No 7-Zip binary found. Install it or point ${SEVEN_ZIP_BIN_ENV} at the executable.`
+    `No 7-Zip binary found. Install it or point ${SEVEN_ZIP_BIN_ENV} at the executable.`,
   );
 }
 
@@ -193,7 +217,10 @@ function looksLikeDirectory(fields: Record<string, string>): boolean {
   const folder = fields["Folder"]?.trim();
   if (folder) return folder === "+";
   const attributes = fields["Attributes"] ?? "";
-  return /(^|\s)d[rwxst-]{9}(\s|$)/.test(attributes) || /(^|\s)D(\s|$)/.test(attributes);
+  return (
+    /(^|\s)d[rwxst-]{9}(\s|$)/.test(attributes) ||
+    /(^|\s)D(\s|$)/.test(attributes)
+  );
 }
 
 /**
@@ -241,11 +268,15 @@ export function parseSevenZipListOutput(stdout: string): ArchiveEntry[] {
 
 function classifyFailure(
   result: ArchiveProcessResult,
-  hadPassword: boolean
+  hadPassword: boolean,
 ): ArchiveEngineErrorCode | null {
   const combined = `${result.stdout}\n${result.stderr}`;
   if (/unsupported archive type/i.test(combined)) return "UNSUPPORTED_FORMAT";
-  if (/wrong password|data error in encrypted file|cannot open encrypted archive/i.test(combined)) {
+  if (
+    /wrong password|data error in encrypted file|cannot open encrypted archive/i.test(
+      combined,
+    )
+  ) {
     return hadPassword ? "PASSWORD_INCORRECT" : "PASSWORD_REQUIRED";
   }
   if (/enter password|password is required|encrypted headers/i.test(combined)) {
@@ -285,15 +316,20 @@ export interface ExtractArchiveFilesResult {
 export interface ArchiveExtractor {
   readonly binaryPath: string;
   list(options: ListArchiveOptions): Promise<ArchiveEntry[]>;
-  extract(options: ExtractArchiveFilesOptions): Promise<ExtractArchiveFilesResult>;
-  run(args: string[], options?: ArchiveProcessOptions): Promise<ArchiveProcessResult>;
+  extract(
+    options: ExtractArchiveFilesOptions,
+  ): Promise<ExtractArchiveFilesResult>;
+  run(
+    args: string[],
+    options?: ArchiveProcessOptions,
+  ): Promise<ArchiveProcessResult>;
 }
 
 export function assertSafeArchivePath(target: string): void {
   const reject = (reason: string): never => {
     throw new ArchiveEngineError(
       "UNSAFE_ARCHIVE_PATH",
-      `Refusing to extract unsafe archive path ${JSON.stringify(target)}: ${reason}`
+      `Refusing to extract unsafe archive path ${JSON.stringify(target)}: ${reason}`,
     );
   };
 
@@ -348,9 +384,12 @@ export class SevenZipExtractor implements ArchiveExtractor {
 
   async run(
     args: string[],
-    options: ArchiveProcessOptions = {}
+    options: ArchiveProcessOptions = {},
   ): Promise<ArchiveProcessResult> {
-    return this.spawnFn(this.binaryPath, args, { cwd: options.cwd ?? this.cwd, signal: options.signal });
+    return this.spawnFn(this.binaryPath, args, {
+      cwd: options.cwd ?? this.cwd,
+      signal: options.signal,
+    });
   }
 
   async list(options: ListArchiveOptions): Promise<ArchiveEntry[]> {
@@ -365,19 +404,26 @@ export class SevenZipExtractor implements ArchiveExtractor {
     const classified = classifyFailure(result, Boolean(password));
     throw new ArchiveEngineError(
       classified ?? "LIST_FAILED",
-      classified ? failureDetail(result) : `Failed to list archive: ${failureDetail(result)}`,
-      result.exitCode
+      classified
+        ? failureDetail(result)
+        : `Failed to list archive: ${failureDetail(result)}`,
+      result.exitCode,
     );
   }
 
-  async extract(options: ExtractArchiveFilesOptions): Promise<ExtractArchiveFilesResult> {
+  async extract(
+    options: ExtractArchiveFilesOptions,
+  ): Promise<ExtractArchiveFilesResult> {
     if (options.targets.length === 0) return { extractedFiles: [] };
     // Validate every target before touching the filesystem or spawning 7-Zip.
     for (const target of options.targets) assertSafeArchivePath(target);
 
     await mkdir(options.destDir, { recursive: true });
     await mkdir(options.listFileDir, { recursive: true });
-    const listFile = join(options.listFileDir, `7z-targets-${randomUUID()}.lst`);
+    const listFile = join(
+      options.listFileDir,
+      `7z-targets-${randomUUID()}.lst`,
+    );
     await writeFile(listFile, `${options.targets.join("\n")}\n`, "utf8");
 
     try {
@@ -395,7 +441,7 @@ export class SevenZipExtractor implements ArchiveExtractor {
           classified
             ? failureDetail(result)
             : `Failed to extract archive: ${failureDetail(result)}`,
-          result.exitCode
+          result.exitCode,
         );
       }
 
@@ -409,10 +455,13 @@ export class SevenZipExtractor implements ArchiveExtractor {
 }
 
 export async function createSevenZipExtractor(
-  options: SevenZipExtractorOptions = {}
+  options: SevenZipExtractorOptions = {},
 ): Promise<SevenZipExtractor> {
   if (options.binaryPath) return new SevenZipExtractor(options);
-  return new SevenZipExtractor({ ...options, binaryPath: await resolveSevenZipBinary() });
+  return new SevenZipExtractor({
+    ...options,
+    binaryPath: await resolveSevenZipBinary(),
+  });
 }
 
 export interface SevenZipFormatSupport {
@@ -456,13 +505,15 @@ export function parseSevenZipFormats(stdout: string): string[] {
  * job lifecycle, so this is worth surfacing at boot.
  */
 export async function probeSevenZipFormatSupport(
-  binaryPath?: string
+  binaryPath?: string,
 ): Promise<SevenZipFormatSupport> {
   const binary = binaryPath ?? (await resolveSevenZipBinary());
   const result = await defaultSpawnFn(binary, ["i"], {});
-  const formats = result.exitCode === 0 ? parseSevenZipFormats(result.stdout) : [];
+  const formats =
+    result.exitCode === 0 ? parseSevenZipFormats(result.stdout) : [];
   const missing = REQUIRED_ARCHIVE_FORMATS.filter(
-    (required) => !formats.some((format) => format.toLowerCase().startsWith(required))
+    (required) =>
+      !formats.some((format) => format.toLowerCase().startsWith(required)),
   );
   return { binary, formats, missing };
 }

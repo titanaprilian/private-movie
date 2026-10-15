@@ -5,7 +5,10 @@ import { join } from "node:path";
 import { db } from "../../utils/db";
 import { users, archiveIngestJobs } from "@repo/db";
 import { eq } from "drizzle-orm";
-import { ArchiveIngestJobService } from "../../../src/modules/series";
+import {
+  ArchiveIngestJobManager,
+  createArchiveIngestRepository,
+} from "../../../src/modules/series";
 
 describe("ArchiveIngestJobService Integration Tests", () => {
   let testTmpBase = "";
@@ -33,8 +36,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
   });
 
   it("submitting the same source_key returns existing active job without creating duplicate", async () => {
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async () => {
         const data = new TextEncoder().encode("dummy-content");
@@ -46,7 +49,11 @@ describe("ArchiveIngestJobService Integration Tests", () => {
       extractor: {
         binaryPath: "7zz",
         list: async () => [
-          { path: "Series.S01E01.mp4", sizeBytes: 1024 * 1024 * 500, isDirectory: false },
+          {
+            path: "Series.S01E01.mp4",
+            sizeBytes: 1024 * 1024 * 500,
+            isDirectory: false,
+          },
         ],
         extract: async () => ({ extractedFiles: [] }),
         run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
@@ -79,8 +86,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
     const contentLength = 100 * 1024 * 1024; // 100MB
     const availableSpace = 200 * 1024 * 1024; // 200MB (< 250MB required)
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       statfsFn: async () => ({ bavail: availableSpace, bsize: 1 }),
       fetchFn: async () => {
@@ -125,8 +132,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
     const chunk2 = new Uint8Array(1024 * 50);
     const totalBytes = chunk1.byteLength + chunk2.byteLength;
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async () => {
         const stream = new ReadableStream({
@@ -167,8 +174,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
   });
 
   it("listing inspects entries, matches episode numbers, flags size disparity anomalies, and transitions job to ready", async () => {
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async () => {
         const data = new TextEncoder().encode("archive-body");
@@ -180,10 +187,26 @@ describe("ArchiveIngestJobService Integration Tests", () => {
       extractor: {
         binaryPath: "7zz",
         list: async () => [
-          { path: "Show/Show.S01E01.1080p.mp4", sizeBytes: 500_000_000, isDirectory: false },
-          { path: "Show/Show.S01E02.1080p.mp4", sizeBytes: 520_000_000, isDirectory: false },
-          { path: "Show/Show.S01E03.1080p.mp4", sizeBytes: 50_000_000, isDirectory: false }, // tiny size anomaly
-          { path: "Show/Show.S01E04.sample.mp4", sizeBytes: 20_000_000, isDirectory: false }, // sample file
+          {
+            path: "Show/Show.S01E01.1080p.mp4",
+            sizeBytes: 500_000_000,
+            isDirectory: false,
+          },
+          {
+            path: "Show/Show.S01E02.1080p.mp4",
+            sizeBytes: 520_000_000,
+            isDirectory: false,
+          },
+          {
+            path: "Show/Show.S01E03.1080p.mp4",
+            sizeBytes: 50_000_000,
+            isDirectory: false,
+          }, // tiny size anomaly
+          {
+            path: "Show/Show.S01E04.sample.mp4",
+            sizeBytes: 20_000_000,
+            isDirectory: false,
+          }, // sample file
           { path: "Show/readme.txt", sizeBytes: 200, isDirectory: false }, // non video
         ],
         extract: async () => ({ extractedFiles: [] }),
@@ -230,8 +253,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
       },
     });
 
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async (_url, init) => {
         init?.signal?.addEventListener("abort", () => {
@@ -269,8 +292,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
   });
 
   it("enforces concurrency limit: extra jobs are queued and can be started sequentially", async () => {
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       maxConcurrentJobs: 1, // Allow only 1 active job at a time
       fetchFn: async () => {
@@ -289,8 +312,12 @@ describe("ArchiveIngestJobService Integration Tests", () => {
       },
     });
 
-    const job1 = await service.submitJob(testUserId, { sourceUrl: "https://example.com/job1.zip" });
-    const job2 = await service.submitJob(testUserId, { sourceUrl: "https://example.com/job2.zip" });
+    const job1 = await service.submitJob(testUserId, {
+      sourceUrl: "https://example.com/job1.zip",
+    });
+    const job2 = await service.submitJob(testUserId, {
+      sourceUrl: "https://example.com/job2.zip",
+    });
 
     expect(job1.status).toBe("downloading");
     expect(job2.status).toBe("queued");
@@ -305,8 +332,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
 
   it("persists referer in the DB row and forwards it in the fetch Referer header", async () => {
     const seenHeaders: Record<string, string>[] = [];
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async (_url, init) => {
         const headers = new Headers(init?.headers as HeadersInit);
@@ -350,8 +377,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
 
   it("defaults the Referer header to the source URL origin when no referer is given", async () => {
     const seenHeaders: Record<string, string>[] = [];
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async (_url, init) => {
         const headers = new Headers(init?.headers as HeadersInit);
@@ -386,15 +413,15 @@ describe("ArchiveIngestJobService Integration Tests", () => {
 
   it("does NOT enter the GDrive confirm path for an HTML 200 OK response on a non-GDrive URL", async () => {
     let fetchCount = 0;
-    const service = new ArchiveIngestJobService({
-      db,
+    const service = new ArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async () => {
         fetchCount++;
         // MediaFire-style HTML landing page with 200 OK + a fake form.
         return new Response(
           "<html><body><form action='https://evil.example/confirm'><input name='x' value='1'></form></body></html>",
-          { status: 200, headers: { "Content-Type": "text/html" } }
+          { status: 200, headers: { "Content-Type": "text/html" } },
         );
       },
       extractor: {
@@ -417,6 +444,8 @@ describe("ArchiveIngestJobService Integration Tests", () => {
     expect(fetchCount).toBe(1);
     const finished = await service.getJob(job.id);
     expect(finished?.status).toBe("ready");
-    expect(finished?.errorMessage ?? "").not.toContain("Google Drive confirmation");
+    expect(finished?.errorMessage ?? "").not.toContain(
+      "Google Drive confirmation",
+    );
   });
 });
