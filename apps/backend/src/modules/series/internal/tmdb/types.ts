@@ -2,7 +2,7 @@ import type { BrowserFn } from "@repo/media-scraper";
 import type {
   SeriesWithEpisodes,
   SeriesWithSeasons,
-} from "../catalog/repository";
+} from "../catalog/types";
 
 export type VideoSource = "otakudesu" | "dramula";
 

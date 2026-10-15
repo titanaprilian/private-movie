@@ -1,7 +1,5 @@
 export type { SeriesServiceOptions } from "./internal/types";
 export * from "./internal/errors";
-export * from "./internal/catalog/repository";
-export * from "./internal/catalog/utils/source-types";
 export * from "./internal/archive-ingest/archive-ingest";
 export * from "./internal/archive-ingest/archive-ingest-job-service";
 export * from "./internal/archive-ingest/seven-zip-extractor";

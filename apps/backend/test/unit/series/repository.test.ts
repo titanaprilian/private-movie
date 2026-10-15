@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { episodes, seasons, series } from "@repo/db";
-import { createSeriesRepository } from "../../../src/modules/series";
+// eslint-disable-next-line deep-modules/no-cross-module-internal-imports -- ticket #864 mandates importing the factory from its internal path, not the public seam
+import { createSeriesRepository } from "../../../src/modules/series/internal/catalog/repository";
 import { db } from "../../utils/db";
 
 async function insertSeries(overrides?: {

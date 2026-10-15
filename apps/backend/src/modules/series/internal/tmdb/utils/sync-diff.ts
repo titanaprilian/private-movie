@@ -1,4 +1,4 @@
-import type { SeriesWithEpisodes } from "../../catalog/repository";
+import type { SeriesWithEpisodes } from "../../catalog/types";
 import type {
   EpisodeChangeItem,
   SeasonSyncDiffItem,
