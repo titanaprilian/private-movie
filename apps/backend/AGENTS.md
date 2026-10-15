@@ -10,8 +10,8 @@ This application strictly follows the monorepo Deep Modules architecture, mapped
 
 - **Public Seam (`src/modules/<feature>/index.ts`)**: The ONLY allowed export point for inter-module consumers, background jobs, schedulers, and CLI tools. Strictly protocol-agnostic (never exports Elysia plugins, routes, or HTTP types).
 - **HTTP Adapter (`src/modules/<feature>/http.ts`)**: The ONLY allowed HTTP entry point per module. Builds and exports an Elysia plugin mounting the feature's routes. Must remain a thin transport coordinator.
-- **Validation & Schemas (`src/modules/<feature>/schemas.ts`)**: Extracted TypeBox request/response schemas and OpenAPI documentation metadata. Lives at the module root alongside `http.ts` to keep `http.ts` readable as a route table.
-- **Internal Logic (`src/modules/<feature>/internal/`)**: All services, repositories, query builders, external clients, extractors, and utilities specific to the feature MUST reside in `internal/`.
+- **Validation & Schemas (`src/modules/<feature>/schemas.ts`)**: Extracted TypeBox request/response schemas, OpenAPI documentation metadata, and ALL transport-layer interfaces (specifically `<Feature>RoutesOptions` and transport-related options). Lives at the module root alongside `http.ts` to keep `http.ts` readable as a route table. Never define interfaces or schemas inline in `http.ts`.
+- **Internal Logic (`src/modules/<feature>/internal/`)**: All services, repositories, query builders, external clients, extractors, and utilities specific to the feature MUST reside in `internal/`. All domain interfaces and types must be centralized in `internal/types.ts` rather than defined across individual service or repository files.
 - **Clean Module Root**: The root of `src/modules/<feature>/` MUST contain ONLY `index.ts`, `http.ts` (if an HTTP surface exists), `schemas.ts` (if schemas are extracted), and `internal/`. Placing background jobs, schedulers (`scheduler.ts`), subsystems (`archive-subsystem.ts`), or utility files at the module root is strictly forbidden — they belong inside `internal/`.
 - **Strict Isolation**: A module must never import from the `internal/` directory of another module.
 - **Module Data Ownership**: Each module must own its database queries and domain logic directly in its own `internal/` files. Never create artificial workspace packages (like `@repo/media-service`) that are only consumed by backend modules.
@@ -45,8 +45,8 @@ The public seam is fixed (`index.ts` is the single export point, `internal/` sta
     - `service.ts` — Orchestration and domain logic (introduced only when business workflows or external integrations exist).
     - `repository.ts` — Database queries and persistence via Drizzle.
     - `errors.ts` — Module-specific domain error classes.
-    - `types.ts` — Internal DTOs and interfaces not covered by `@repo/contracts`.
-  - Rule for `http.ts` in Tier 1: Inline TypeBox schemas (`t.Object(...)`) are allowed only if `http.ts` stays under ~120 lines. Once it exceeds that, extract schemas to `schemas.ts` at the module root.
+    - `types.ts` — Mandatory centralized file for ALL internal interfaces and types (e.g. `<Feature>Db`, `<Feature>Repository`, `<Feature>Service`, `<Feature>ServiceOptions`, provider interfaces, internal DTOs). Never scatter interface definitions across `service.ts` or `repository.ts`; define them in `types.ts` and import them where needed.
+  - Rule for `http.ts` in Tier 1: `http.ts` must remain a thin route coordinator. All transport options (e.g. `<Feature>RoutesOptions`), TypeBox request/response schemas, and OpenAPI metadata MUST reside in `schemas.ts` at the module root. `http.ts` imports and re-exports `export type { <Feature>RoutesOptions } from "./schemas"`.
 
 - **Tier 2 — Role-Based Grouping (6 to 12 files)**:
   - Group by technical responsibility when a flat layout becomes hard to scan:
@@ -54,7 +54,7 @@ The public seam is fixed (`index.ts` is the single export point, `internal/` sta
     - `internal/repositories/` — Drizzle data access layers.
     - `internal/utils/` — Pure helper functions and parsers.
     - `internal/errors.ts` — Domain error classes.
-    - `internal/types.ts` — Module-internal types and interfaces.
+    - `internal/types.ts` — Centralized module-internal types, repository/service interfaces, options, and DTOs.
   - `schemas.ts` is extracted at the module root alongside `http.ts` so `http.ts` reads cleanly as a route table of contents.
 
 - **Tier 3 — Sub-Feature Clustering (13 or more files, or multi-subsystem modules)**:
@@ -80,6 +80,7 @@ The public seam is fixed (`index.ts` is the single export point, `internal/` sta
 Transport concerns live **inside** each domain module but must never leak out of it. Routes are built as Elysia plugins and composed at a single root. Follow this protocol whenever you add or modify any HTTP surface.
 
 - **Colocated HTTP Adapters (`src/modules/<feature>/http.ts`)**: Every module that exposes an API contains an `http.ts` file that builds and exports an Elysia plugin containing only that feature's routes (or mounting sub-routers from `internal/<sub-feature>/routes.ts`). Import the feature's domain services/repositories from the module's `/internal/` directory, or accept them via the plugin's options object (e.g. `{ db }`, `{ authService }`), so the adapter stays self-contained and testable.
+- **Transport Interfaces & Schemas in `schemas.ts`**: All transport interfaces (specifically `<Feature>RoutesOptions` and any transport-related parameter types) and route schemas (TypeBox validation + OpenAPI metadata) MUST be defined in `schemas.ts`. `http.ts` imports them and re-exports `<Feature>RoutesOptions` via `export type { <Feature>RoutesOptions } from "./schemas"`. Never define route options or schemas directly inside `http.ts`.
 - **Response Helpers (`src/lib/response.ts`)**: All route handlers MUST build responses through the `successResponse` and `errorResponse` helpers. `successResponse<T>(data)` returns the success envelope `{ data: T }`. `errorResponse(set, status, error)` sets `set.status` for you and returns `{ error: { code, message } }`, deriving `code` automatically from the error class name (e.g. `EmailAlreadyRegisteredError` → `EMAIL_ALREADY_REGISTERED`). Manual `set.status` + inline `{ error: ... }` construction is forbidden in route handlers — every success and error branch must go through the helpers.
 - **Never Export Adapters Through Public Barrels**: A module's `index.ts` must **never** export `http.ts`, its route builders, or their types. The module's public boundary is strictly protocol-agnostic; background jobs and CLI scripts importing the module must not gain a dependency on Elysia.
 - **Composition Root (`src/app.ts`)**: All feature plugins are chained onto a single Elysia instance in `src/app.ts` through a `createApp(deps)` factory. The factory takes dependencies explicitly (e.g. `{ db, auth }`) for dependency injection and testing, applies global plugins and error handling (CORS, `.onError`, etc.) inside the factory, and exports `type App = ReturnType<typeof createApp>`. It must **never** call `.listen()`.
@@ -94,6 +95,8 @@ Transport concerns live **inside** each domain module but must never leak out of
 - Registering routes directly in `src/index.ts`, or anywhere other than a module's `http.ts` and the `app.ts` composition root.
 - Calling `.listen()` anywhere except the process entry point (`src/index.ts`).
 - Bypassing the `createApp` factory by composing feature plugins elsewhere. Feature `http.ts` files are imported by path (e.g. `import { authRoutes } from "./modules/authentication/http"`) only at the composition root.
+- Defining TypeScript interfaces or TypeBox schemas directly inside `http.ts` (e.g. `<Feature>RoutesOptions`). All transport interfaces and schemas belong in `schemas.ts` and are re-exported by `http.ts`.
+- Defining domain interfaces (e.g. repository interfaces, service interfaces, database handles, options) directly inside `service.ts` or `repository.ts`. All module-internal interfaces belong in `internal/types.ts`.
 ## Testing
 
 Tests live in `test/` at the app root:
