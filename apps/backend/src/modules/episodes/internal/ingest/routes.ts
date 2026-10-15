@@ -23,7 +23,8 @@ import {
 export const ingestRoutes = (options: EpisodeRoutesOptions) => {
   const auth = authGuard(options.authService);
   const storageRegistry =
-    options.storageProviderRegistry ?? createStorageProviderRegistry(options.db);
+    options.storageProviderRegistry ??
+    createStorageProviderRegistry(options.db);
   const episodeRepo = createEpisodeRepository(options.db, {
     s3StorageService: options.s3StorageService,
     storageProviderRegistry: storageRegistry,
@@ -54,7 +55,7 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Returns the current progress of an upload session by session id.",
         },
-      }
+      },
     )
     .post(
       "/episodes/:id/sources/remote-ingest",
@@ -62,7 +63,7 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
         const stream = await ingestService.remoteIngestStream(
           params.id,
           body,
-          request.signal
+          request.signal,
         );
         return new Response(stream, {
           status: 200,
@@ -84,7 +85,7 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
             "Ingests a remote stream URL into episode storage and streams progress as a long-lived server-sent events (SSE) response. Requires authentication.",
           hide: false,
         },
-      }
+      },
     )
     .post(
       "/episodes/:id/sources/presign-upload",
@@ -93,7 +94,7 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
           params.id,
           body.filename,
           body.contentType,
-          body.storageProviderId ?? null
+          body.storageProviderId ?? null,
         );
         return successResponse(res);
       },
@@ -107,7 +108,7 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Generates a presigned upload URL for direct file upload to an episode. Requires authentication.",
         },
-      }
+      },
     )
     .post(
       "/episodes/:id/sources/upload",
@@ -119,7 +120,7 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
           body.quality,
           body.uploadSessionId,
           body.storageProviderId ?? null,
-          request.signal
+          request.signal,
         );
         const updated = await episodeRepo.findById(params.id);
         return successResponse(updated);
@@ -134,14 +135,14 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Uploads a video file to an episode's sources. Requires authentication.",
         },
-      }
+      },
     )
     .post(
       "/episodes/:id/scrape-sources",
       async ({ params, body }) => {
         const result = await mediaService.scrapeAndSaveSources(
           params.id,
-          body.sourceUrl
+          body.sourceUrl,
         );
         return successResponse(result);
       },
@@ -155,7 +156,7 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Scrapes video sources from a URL and saves them to the episode. Requires authentication.",
         },
-      }
+      },
     )
     .post(
       "/preview-scrape",
@@ -172,7 +173,7 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Previews scraped media from a source URL without saving. Requires authentication.",
         },
-      }
+      },
     )
     .post(
       "/save-media",
@@ -195,6 +196,6 @@ export const ingestRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Saves previously scraped media as episodes and series records. Requires authentication.",
         },
-      }
+      },
     );
 };

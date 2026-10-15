@@ -33,7 +33,9 @@ export interface ProcessRunResult {
 }
 
 /** Injectable 7z process runner (overridden in tests). */
-export type ArchiveProcessRunner = (args: string[]) => Promise<ProcessRunResult>;
+export type ArchiveProcessRunner = (
+  args: string[],
+) => Promise<ProcessRunResult>;
 
 /** Options for extracting an archive with 7z. */
 export interface ExtractArchiveOptions {

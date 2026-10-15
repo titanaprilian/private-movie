@@ -21,7 +21,8 @@ import {
 export const catalogRoutes = (options: EpisodeRoutesOptions) => {
   const auth = authGuard(options.authService);
   const storageRegistry =
-    options.storageProviderRegistry ?? createStorageProviderRegistry(options.db);
+    options.storageProviderRegistry ??
+    createStorageProviderRegistry(options.db);
   const episodeRepo = createEpisodeRepository(options.db, {
     s3StorageService: options.s3StorageService,
     storageProviderRegistry: storageRegistry,
@@ -60,14 +61,16 @@ export const catalogRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Returns a paginated list of episodes, optionally filtered by seasonId.",
         },
-      }
+      },
     )
     .get(
       "/episodes/:id",
       async ({ params }) => {
         const episode = await episodeRepo.findById(params.id);
         if (!episode) {
-          throw new EpisodeNotFoundError(`Episode with id ${params.id} not found`);
+          throw new EpisodeNotFoundError(
+            `Episode with id ${params.id} not found`,
+          );
         }
         return successResponse(episode);
       },
@@ -78,14 +81,16 @@ export const catalogRoutes = (options: EpisodeRoutesOptions) => {
           summary: "Get episode by id",
           description: "Returns a single episode by id.",
         },
-      }
+      },
     )
     .post(
       "/episodes/:id/sources",
       async ({ params, body }) => {
         const episode = await episodeRepo.findById(params.id);
         if (!episode) {
-          throw new EpisodeNotFoundError(`Episode with id ${params.id} not found`);
+          throw new EpisodeNotFoundError(
+            `Episode with id ${params.id} not found`,
+          );
         }
 
         for (const source of body.videoSources) {
@@ -109,22 +114,25 @@ export const catalogRoutes = (options: EpisodeRoutesOptions) => {
         detail: {
           tags: ["Episodes"],
           summary: "Add video sources",
-          description: "Adds video sources to an episode. Requires authentication.",
+          description:
+            "Adds video sources to an episode. Requires authentication.",
         },
-      }
+      },
     )
     .patch(
       "/episodes/:id/sources/:sourceId",
       async ({ params, body }) => {
         const episode = await episodeRepo.findById(params.id);
         if (!episode) {
-          throw new EpisodeNotFoundError(`Episode with id ${params.id} not found`);
+          throw new EpisodeNotFoundError(
+            `Episode with id ${params.id} not found`,
+          );
         }
 
         const source = await videoSourceRepo.findById(params.sourceId);
         if (!source || source.episodeId !== params.id) {
           throw new VideoSourceNotFoundError(
-            `Video source with id ${params.sourceId} not found`
+            `Video source with id ${params.sourceId} not found`,
           );
         }
 
@@ -142,20 +150,22 @@ export const catalogRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Updates a video source belonging to an episode. Requires authentication.",
         },
-      }
+      },
     )
     .delete(
       "/episodes/:id/sources/:sourceId",
       async ({ params }) => {
         const episode = await episodeRepo.findById(params.id);
         if (!episode) {
-          throw new EpisodeNotFoundError(`Episode with id ${params.id} not found`);
+          throw new EpisodeNotFoundError(
+            `Episode with id ${params.id} not found`,
+          );
         }
 
         const source = await videoSourceRepo.findById(params.sourceId);
         if (!source || source.episodeId !== params.id) {
           throw new VideoSourceNotFoundError(
-            `Video source with id ${params.sourceId} not found`
+            `Video source with id ${params.sourceId} not found`,
           );
         }
 
@@ -172,7 +182,7 @@ export const catalogRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Deletes a video source belonging to an episode. Requires authentication.",
         },
-      }
+      },
     )
     .patch(
       "/episodes/:id",
@@ -190,7 +200,7 @@ export const catalogRoutes = (options: EpisodeRoutesOptions) => {
           description:
             "Updates an episode's title and description. Requires authentication.",
         },
-      }
+      },
     )
     .delete(
       "/episodes/:id",
@@ -206,6 +216,6 @@ export const catalogRoutes = (options: EpisodeRoutesOptions) => {
           summary: "Delete episode",
           description: "Deletes an episode by id. Requires authentication.",
         },
-      }
+      },
     );
 };

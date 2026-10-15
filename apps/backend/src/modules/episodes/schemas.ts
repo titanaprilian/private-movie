@@ -84,7 +84,7 @@ export const addVideoSourcesBodySchema = t.Object({
       label: t.String(),
       quality: t.Optional(t.Nullable(t.String())),
       storageProviderId: t.Optional(t.Nullable(t.String())),
-    })
+    }),
   ),
 });
 
@@ -94,7 +94,7 @@ export const scrapeSourcesBodySchema = t.Object({
 
 export const updateVideoSourceBodySchema = t.Object({
   type: t.Optional(
-    t.Union([t.Literal("embed"), t.Literal("direct"), t.Literal("s3")])
+    t.Union([t.Literal("embed"), t.Literal("direct"), t.Literal("s3")]),
   ),
   url: t.Optional(t.String()),
   label: t.Optional(t.String()),
@@ -121,8 +121,8 @@ export const saveMediaBodySchema = t.Object({
           url: t.String(),
           label: t.String(),
           quality: t.Optional(t.Nullable(t.String())),
-        })
-      )
+        }),
+      ),
     ),
     metadata: t.Optional(t.Record(t.String(), t.Unknown())),
   }),
@@ -134,8 +134,8 @@ export const saveMediaBodySchema = t.Object({
         title: t.String(),
         description: t.Nullable(t.String()),
         posterUrl: t.Nullable(t.String()),
-      })
-    )
+      }),
+    ),
   ),
 });
 

@@ -1,4 +1,7 @@
-import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  S3StorageService,
+  StorageProviderRegistry,
+} from "@repo/media-service";
 import type { EpisodeRow, VideoSourceRow } from "@repo/db";
 
 export interface EpisodeRepositoryOptions {
@@ -53,11 +56,17 @@ export interface EpisodeListResult {
 
 export interface EpisodeRepository {
   upsert(input: EpisodeUpsertInput): Promise<EpisodeRow>;
-  findBySeasonIdAndOrder(seasonId: string, order: number): Promise<EpisodeRow | null>;
+  findBySeasonIdAndOrder(
+    seasonId: string,
+    order: number,
+  ): Promise<EpisodeRow | null>;
   findById(id: string): Promise<EpisodeWithVideoSources | null>;
   getMaxOrder(seasonId: string | null): Promise<number>;
   list(params: EpisodeListParams): Promise<EpisodeListResult>;
-  updateEpisode(id: string, input: Partial<UpdateEpisodeInput>): Promise<EpisodeWithVideoSources>;
+  updateEpisode(
+    id: string,
+    input: Partial<UpdateEpisodeInput>,
+  ): Promise<EpisodeWithVideoSources>;
   updateOrders(items: EpisodeOrderUpdateInput[]): Promise<void>;
   deleteEpisode(id: string): Promise<EpisodeRow>;
 }

@@ -13,7 +13,9 @@ export class VideoSourceNotFoundError extends Error {
 }
 
 export class ArchivePasswordRequiredError extends Error {
-  constructor(message = "Archive is password-protected; a password is required") {
+  constructor(
+    message = "Archive is password-protected; a password is required",
+  ) {
     super(message);
     this.name = "ArchivePasswordRequiredError";
   }

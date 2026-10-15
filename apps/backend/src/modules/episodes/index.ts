@@ -1,5 +1,8 @@
 import type { DbClient } from "@repo/db";
-import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  S3StorageService,
+  StorageProviderRegistry,
+} from "@repo/media-service";
 export interface EpisodeServiceOptions {
   db: DbClient;
   s3StorageService?: S3StorageService;
@@ -38,9 +41,15 @@ export {
   isVideoFile,
   matchArchiveFilesToEpisodes,
 } from "./internal/ingest/utils/matcher";
-export type { MatchableEpisode, StagedFileEntry } from "./internal/ingest/utils/matcher";
+export type {
+  MatchableEpisode,
+  StagedFileEntry,
+} from "./internal/ingest/utils/matcher";
 export { IngestService } from "./internal/ingest/service";
-export type { IngestServiceOptions, ProgressInfo } from "./internal/ingest/service";
+export type {
+  IngestServiceOptions,
+  ProgressInfo,
+} from "./internal/ingest/service";
 export { createEpisodeRepository } from "./internal/catalog/repository";
 export type {
   EpisodeListParams,

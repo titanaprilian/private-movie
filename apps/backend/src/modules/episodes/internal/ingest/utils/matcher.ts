@@ -3,7 +3,14 @@ import type { MatchableEpisode, StagedFileEntry } from "../types";
 
 export type { MatchableEpisode, StagedFileEntry } from "../types";
 
-export const VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".webm", ".mov", ".ts"] as const;
+export const VIDEO_EXTENSIONS = [
+  ".mp4",
+  ".mkv",
+  ".avi",
+  ".webm",
+  ".mov",
+  ".ts",
+] as const;
 
 export function isVideoFile(filename: string): boolean {
   const lower = filename.toLowerCase();
@@ -15,8 +22,12 @@ export function isSampleFile(filename: string): boolean {
   return /(^|[\s._\-()[\]])sample(s)?($|[\s._\-()[\]])/i.test(base);
 }
 
-export function filterStagedVideoFiles(files: StagedFileEntry[]): StagedFileEntry[] {
-  return files.filter((f) => isVideoFile(f.filename) && !isSampleFile(f.filename));
+export function filterStagedVideoFiles(
+  files: StagedFileEntry[],
+): StagedFileEntry[] {
+  return files.filter(
+    (f) => isVideoFile(f.filename) && !isSampleFile(f.filename),
+  );
 }
 
 const SEASON_EPISODE_PATTERN = /s\d{1,3}e(\d{1,4})/i;
@@ -25,13 +36,22 @@ const EP_ATTACHED_PATTERN = /(?:^|[^a-zA-Z0-9])e(\d{1,4})\b/i;
 // Bare-number fallback only accepts zero-padded or multi-digit tokens
 // ("- 02", "[12]") so release years, quality tags, and phrases like
 // "Volume 3" are never mistaken for episode numbers.
-const BRACKET_DASH_PATTERN = /(?:^|[\s\-_[(])(0\d{1,2}|[1-9]\d{1,2})(?=$|[\s\-_\].) \]])/;
+const BRACKET_DASH_PATTERN =
+  /(?:^|[\s\-_[(])(0\d{1,2}|[1-9]\d{1,2})(?=$|[\s\-_\].) \]])/;
 
-function digitRunQualityGuard(filename: string, matchIndex: number, matchLength: number): boolean {
+function digitRunQualityGuard(
+  filename: string,
+  matchIndex: number,
+  matchLength: number,
+): boolean {
   const before = filename[matchIndex - 1];
   const after = filename[matchIndex + matchLength];
   if (before !== undefined && /\d/.test(before)) return false;
-  if (after !== undefined && (/\d/.test(after) || after === "p" || after === "P")) return false;
+  if (
+    after !== undefined &&
+    (/\d/.test(after) || after === "p" || after === "P")
+  )
+    return false;
   return true;
 }
 
@@ -47,7 +67,10 @@ export function detectEpisodeNumber(filename: string): number | null {
   const ep = EP_WORD_PATTERN.exec(base) ?? EP_ATTACHED_PATTERN.exec(base);
   if (ep?.[1] && ep.index !== undefined) {
     const n = parseInt(ep[1], 10);
-    if (!Number.isNaN(n) && digitRunQualityGuard(base, ep.index + ep[0].indexOf(ep[1]), ep[1].length)) {
+    if (
+      !Number.isNaN(n) &&
+      digitRunQualityGuard(base, ep.index + ep[0].indexOf(ep[1]), ep[1].length)
+    ) {
       return n;
     }
   }
@@ -78,7 +101,7 @@ export function detectQuality(filename: string): string | null {
 
 export function matchArchiveFilesToEpisodes(
   files: StagedFileEntry[],
-  episodes: MatchableEpisode[]
+  episodes: MatchableEpisode[],
 ): ArchiveStagedFileItem[] {
   const byNumber = new Map<number, string>();
   for (const ep of episodes) {
@@ -91,7 +114,9 @@ export function matchArchiveFilesToEpisodes(
   const items: ArchiveStagedFileItem[] = files.map((f) => {
     const detectedEpisodeNumber = detectEpisodeNumber(f.filename);
     const matchedEpisodeId =
-      detectedEpisodeNumber !== null ? (byNumber.get(detectedEpisodeNumber) ?? null) : null;
+      detectedEpisodeNumber !== null
+        ? (byNumber.get(detectedEpisodeNumber) ?? null)
+        : null;
     return {
       fileId: f.fileId,
       filename: f.filename,
@@ -106,7 +131,10 @@ export function matchArchiveFilesToEpisodes(
   const counts = new Map<string, number>();
   for (const item of items) {
     if (item.matchedEpisodeId) {
-      counts.set(item.matchedEpisodeId, (counts.get(item.matchedEpisodeId) ?? 0) + 1);
+      counts.set(
+        item.matchedEpisodeId,
+        (counts.get(item.matchedEpisodeId) ?? 0) + 1,
+      );
     }
   }
   for (const item of items) {

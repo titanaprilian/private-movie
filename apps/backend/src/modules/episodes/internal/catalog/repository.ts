@@ -1,7 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, count, eq, inArray, isNull, max } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@repo/db";
+import {
+  episodes,
+  videoSources,
+  type EpisodeRow,
+  type VideoSourceRow,
+} from "@repo/db";
 import {
   extractS3Key,
   normalizeVideoSources,
@@ -24,7 +29,10 @@ import {
 export function createEpisodeRepository<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
->(db: PgDatabase<THKT, TSchema>, options?: EpisodeRepositoryOptions): EpisodeRepository {
+>(
+  db: PgDatabase<THKT, TSchema>,
+  options?: EpisodeRepositoryOptions,
+): EpisodeRepository {
   return {
     async upsert(input: EpisodeUpsertInput): Promise<EpisodeRow> {
       const now = new Date();
@@ -62,9 +70,15 @@ export function createEpisodeRepository<
           target: [episodes.seasonId, episodes.order],
           set: {
             title: input.title,
-            ...(input.description !== undefined ? { description: input.description } : {}),
-            ...(input.duration !== undefined ? { duration: input.duration } : {}),
-            ...(input.thumbnailUrl !== undefined ? { thumbnailUrl: input.thumbnailUrl } : {}),
+            ...(input.description !== undefined
+              ? { description: input.description }
+              : {}),
+            ...(input.duration !== undefined
+              ? { duration: input.duration }
+              : {}),
+            ...(input.thumbnailUrl !== undefined
+              ? { thumbnailUrl: input.thumbnailUrl }
+              : {}),
             ...(input.rating !== undefined ? { rating: input.rating } : {}),
             ...(input.airDate !== undefined ? { airDate: input.airDate } : {}),
             updatedAt: now,
@@ -74,7 +88,10 @@ export function createEpisodeRepository<
       return row;
     },
 
-    async findBySeasonIdAndOrder(seasonId: string, order: number): Promise<EpisodeRow | null> {
+    async findBySeasonIdAndOrder(
+      seasonId: string,
+      order: number,
+    ): Promise<EpisodeRow | null> {
       const [row] = await db
         .select()
         .from(episodes)
@@ -83,10 +100,7 @@ export function createEpisodeRepository<
     },
 
     async findById(id: string): Promise<EpisodeWithVideoSources | null> {
-      const [row] = await db
-        .select()
-        .from(episodes)
-        .where(eq(episodes.id, id));
+      const [row] = await db.select().from(episodes).where(eq(episodes.id, id));
       if (!row) return null;
 
       const sources = await db
@@ -119,7 +133,7 @@ export function createEpisodeRepository<
     async list(params: EpisodeListParams): Promise<EpisodeListResult> {
       const limit = Math.max(
         1,
-        Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT)
+        Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT),
       );
       const page = Math.max(1, params.page);
       const offset = (page - 1) * limit;
@@ -174,7 +188,7 @@ export function createEpisodeRepository<
 
     async updateEpisode(
       id: string,
-      input: Partial<UpdateEpisodeInput>
+      input: Partial<UpdateEpisodeInput>,
     ): Promise<EpisodeWithVideoSources> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
@@ -182,7 +196,8 @@ export function createEpisodeRepository<
       };
 
       if (input.title !== undefined) updateData.title = input.title;
-      if (input.description !== undefined) updateData.description = input.description;
+      if (input.description !== undefined)
+        updateData.description = input.description;
 
       const [row] = await db
         .update(episodes)
@@ -229,7 +244,9 @@ export function createEpisodeRepository<
             .returning({ id: episodes.id });
 
           if (!updated) {
-            throw new EpisodeNotFoundError(`Episode with id ${item.id} not found`);
+            throw new EpisodeNotFoundError(
+              `Episode with id ${item.id} not found`,
+            );
           }
         }
 
@@ -305,7 +322,8 @@ export function createEpisodeRepository<
         for (const [providerId, keys] of targetsByProvider) {
           let s3 = options?.s3StorageService;
           if (options?.storageProviderRegistry) {
-            const regS3 = await options.storageProviderRegistry.getService(providerId);
+            const regS3 =
+              await options.storageProviderRegistry.getService(providerId);
             if (regS3) s3 = regS3;
           }
 
@@ -315,7 +333,7 @@ export function createEpisodeRepository<
             } catch (err) {
               console.warn(
                 `[media-service] Failed to delete ${keys.length} S3 object(s) for episode ${id} (provider: ${providerId}):`,
-                err instanceof Error ? err.message : err
+                err instanceof Error ? err.message : err,
               );
             }
           }

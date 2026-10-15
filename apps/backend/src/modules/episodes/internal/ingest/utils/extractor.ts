@@ -22,7 +22,9 @@ export type {
 const RAR_MAGIC = [0x52, 0x61, 0x72, 0x21];
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
 
-export function detectArchiveFormatFromBytes(bytes: Uint8Array | number[]): ArchiveFormat {
+export function detectArchiveFormatFromBytes(
+  bytes: Uint8Array | number[],
+): ArchiveFormat {
   if (
     bytes.length >= 4 &&
     bytes[0] === RAR_MAGIC[0] &&
@@ -46,10 +48,13 @@ export function detectArchiveFormatFromBytes(bytes: Uint8Array | number[]): Arch
 
 export async function detectArchiveFormat(
   archivePath: string,
-  readFn?: (path: string) => Promise<Uint8Array>
+  readFn?: (path: string) => Promise<Uint8Array>,
 ): Promise<ArchiveFormat> {
   try {
-    const read = readFn ?? (async (p: string) => new Uint8Array(await Bun.file(p).slice(0, 4).arrayBuffer()));
+    const read =
+      readFn ??
+      (async (p: string) =>
+        new Uint8Array(await Bun.file(p).slice(0, 4).arrayBuffer()));
     const bytes = await read(archivePath);
     return detectArchiveFormatFromBytes(bytes.slice(0, 4));
   } catch {
@@ -83,10 +88,14 @@ function mentionsPassword(output: string): boolean {
 }
 
 function mentionsWrongPassword(output: string): boolean {
-  return /wrong password|data error in encrypted|incorrect password|bad password/i.test(output);
+  return /wrong password|data error in encrypted|incorrect password|bad password/i.test(
+    output,
+  );
 }
 
-export async function extractArchive(options: ExtractArchiveOptions): Promise<ArchiveExtractionResult> {
+export async function extractArchive(
+  options: ExtractArchiveOptions,
+): Promise<ArchiveExtractionResult> {
   const { archivePath, destDir, password, onProgressFile } = options;
   const runner = options.runner ?? defaultRunner;
 
@@ -101,7 +110,9 @@ export async function extractArchive(options: ExtractArchiveOptions): Promise<Ar
     result = await runner(args);
   } catch (err) {
     throw new ArchiveExtractionError(
-      err instanceof Error ? `Failed to run 7z: ${err.message}` : "Failed to run 7z"
+      err instanceof Error
+        ? `Failed to run 7z: ${err.message}`
+        : "Failed to run 7z",
     );
   }
 
@@ -124,8 +135,15 @@ export async function extractArchive(options: ExtractArchiveOptions): Promise<Ar
     throw new ArchivePasswordRequiredError();
   }
 
-  const detail = result.stderr.trim().split("\n").slice(-3).join(" ").slice(0, 300);
+  const detail = result.stderr
+    .trim()
+    .split("\n")
+    .slice(-3)
+    .join(" ")
+    .slice(0, 300);
   throw new ArchiveExtractionError(
-    detail ? `Failed to extract archive: ${detail}` : "Failed to extract archive"
+    detail
+      ? `Failed to extract archive: ${detail}`
+      : "Failed to extract archive",
   );
 }
