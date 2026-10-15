@@ -7,7 +7,7 @@ import type { DbClient } from "@repo/db";
 import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
-import { createStorageService } from "./internal/services/storage-service";
+import { createStorageService } from "./internal/services/service";
 import type { StorageOverrides, StorageService } from "./internal/types";
 import {
   attachOrphanBody,

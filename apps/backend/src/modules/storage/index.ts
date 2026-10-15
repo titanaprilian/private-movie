@@ -1,4 +1,4 @@
-export { createStorageService } from "./internal/services/storage-service";
+export { createStorageService } from "./internal/services/service";
 
 export {
   EpisodeNotFoundError,

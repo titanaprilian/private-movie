@@ -1,13 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { and, eq, inArray } from "drizzle-orm";
 import {
-  episodes,
-  seasons,
-  series,
-  system,
-  videoSources,
-  storageProviders,
   type VideoSourceRow,
   type StorageProviderRow,
 } from "@repo/db";
@@ -23,7 +16,6 @@ import {
   MINIO_DEFAULT_BUCKET,
   type S3ObjectSummary,
   type S3StorageService,
-  type StorageProviderRegistry,
 } from "@repo/media-service";
 import type {
   StorageMetrics,
@@ -46,7 +38,6 @@ import {
   buildMinioStatusResponse,
   createDefaultMinioInspector,
   MINIO_CONTAINER_NAME,
-  type MinioContainerInspector,
 } from "./minio-status";
 import {
   isS3AuthError,
@@ -70,26 +61,13 @@ import {
   MinioCredentialsRejectedError,
 } from "../errors";
 import type {
-  MinioBucketProvisioner,
-  MinioDeps,
-  StorageOverrides,
   StorageService,
   StorageServiceOptions,
 } from "../types";
-
-export {
-  EpisodeNotFoundError,
-  StorageProviderInUseError,
-  StorageProviderNotFoundError,
-  VideoSourceNotFoundError,
-};
-export type {
-  MinioBucketProvisioner,
-  MinioDeps,
-  StorageOverrides,
-  StorageService,
-  StorageServiceOptions,
-} from "../types";
+import {
+  storageRepository,
+  type StorageRepository,
+} from "../repositories/repository";
 
 const DEFAULT_LIMIT_GB = 50;
 const DEFAULT_CACHE_TTL_MS = 60_000;
@@ -115,6 +93,7 @@ export function createStorageService<
     options?.minioHealthChecker ?? ((endpoint) => waitForMinioHealthy(endpoint));
   const minioBucketProvisioner =
     options?.minioBucketProvisioner ?? ensureMinioBucketWithCors;
+  const repository = storageRepository(db);
 
   // Per-provider cache
   const cachedS3ObjectsMap = new Map<string, S3ObjectSummary[]>();
@@ -188,13 +167,10 @@ export function createStorageService<
     }
 
     try {
-      const [sysRow] = await db
-        .select()
-        .from(system)
-        .where(eq(system.key, "s3_storage_limit_gb"));
+      const value = await repository.getSystemLimitValue();
 
-      if (sysRow?.value) {
-        const parsed = parseFloat(sysRow.value);
+      if (value) {
+        const parsed = parseFloat(value);
         if (!Number.isNaN(parsed) && parsed > 0) {
           return parsed;
         }
@@ -229,29 +205,7 @@ export function createStorageService<
     const s3Objects = await getS3Objects(service, cacheKey, force);
 
     // Fetch video sources belonging to this provider or all S3 sources if no provider exists
-    const queryBuilder = db
-      .select({
-        id: videoSources.id,
-        episodeId: videoSources.episodeId,
-        type: videoSources.type,
-        url: videoSources.url,
-        label: videoSources.label,
-        quality: videoSources.quality,
-        storageProviderId: videoSources.storageProviderId,
-        episodeTitle: episodes.title,
-        episodeOrder: episodes.order,
-        seasonId: seasons.id,
-        seasonNumber: seasons.seasonNumber,
-        seasonTitle: seasons.title,
-        seriesId: series.id,
-        seriesTitle: series.title,
-      })
-      .from(videoSources)
-      .leftJoin(episodes, eq(videoSources.episodeId, episodes.id))
-      .leftJoin(seasons, eq(episodes.seasonId, seasons.id))
-      .leftJoin(series, eq(seasons.seriesId, series.id));
-
-    const dbSources = await queryBuilder;
+    const dbSources = await repository.listCorrelatedSources();
 
     // Filter to sources matching the current provider (or unlinked sources if default)
     const matchingDbSources = dbSources.filter((src) => {
@@ -565,37 +519,16 @@ export function createStorageService<
       }
 
       const limitBytes = limitGb * 1024 * 1024 * 1024;
-      const now = new Date();
 
       if (providerId) {
-        const [updated] = await db
-          .update(storageProviders)
-          .set({
-            storageLimitGb: limitGb,
-            updatedAt: now,
-          })
-          .where(eq(storageProviders.id, providerId))
-          .returning();
+        const updated = await repository.setProviderLimit(providerId, limitGb);
 
         if (!updated) {
           throw new StorageProviderNotFoundError(`Storage provider with id ${providerId} not found`);
         }
       } else {
         // Legacy system setting update
-        await db
-          .insert(system)
-          .values({
-            id: randomUUID(),
-            key: "s3_storage_limit_gb",
-            value: String(limitGb),
-            createdAt: now,
-          })
-          .onConflictDoUpdate({
-            target: system.key,
-            set: {
-              value: String(limitGb),
-            },
-          });
+        await repository.upsertSystemLimit(limitGb);
       }
 
       return {
@@ -608,10 +541,7 @@ export function createStorageService<
       videoSourceId: string,
       input: { label?: string; quality?: string | null }
     ): Promise<VideoSourceRow> {
-      const [existing] = await db
-        .select()
-        .from(videoSources)
-        .where(eq(videoSources.id, videoSourceId));
+      const existing = await repository.findVideoSourceById(videoSourceId);
 
       if (!existing) {
         throw new VideoSourceNotFoundError(`Video source with id ${videoSourceId} not found`);
@@ -627,11 +557,7 @@ export function createStorageService<
         updateData.quality = input.quality;
       }
 
-      const [updated] = await db
-        .update(videoSources)
-        .set(updateData)
-        .where(eq(videoSources.id, videoSourceId))
-        .returning();
+      const updated = await repository.updateVideoSource(videoSourceId, updateData);
 
       invalidateCache();
       return updated!;
@@ -644,10 +570,7 @@ export function createStorageService<
       quality?: string | null;
       providerId?: string;
     }): Promise<VideoSourceRow> {
-      const [existingEp] = await db
-        .select()
-        .from(episodes)
-        .where(eq(episodes.id, input.episodeId));
+      const existingEp = await repository.findEpisodeById(input.episodeId);
 
       if (!existingEp) {
         throw new EpisodeNotFoundError(`Episode with id ${input.episodeId} not found`);
@@ -657,20 +580,17 @@ export function createStorageService<
       const targetProviderId = provider ? provider.id : input.providerId ?? null;
 
       const now = new Date();
-      const [created] = await db
-        .insert(videoSources)
-        .values({
-          id: randomUUID(),
-          episodeId: input.episodeId,
-          type: "s3",
-          url: input.key,
-          label: input.label || "S3 Source",
-          quality: input.quality ?? null,
-          storageProviderId: targetProviderId,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning();
+      const created = await repository.insertVideoSource({
+        id: randomUUID(),
+        episodeId: input.episodeId,
+        type: "s3",
+        url: input.key,
+        label: input.label || "S3 Source",
+        quality: input.quality ?? null,
+        storageProviderId: targetProviderId,
+        createdAt: now,
+        updatedAt: now,
+      });
 
       invalidateCache(targetProviderId ?? undefined);
       return created!;
@@ -708,7 +628,7 @@ export function createStorageService<
       }
 
       if (sourceIdsToDelete.length > 0) {
-        await db.delete(videoSources).where(inArray(videoSources.id, sourceIdsToDelete));
+        await repository.deleteVideoSources(sourceIdsToDelete);
       }
 
       await service.deleteObjects(validKeys);
@@ -764,14 +684,9 @@ export function createStorageService<
 
     // Provider CRUD methods
     async listProviders(): Promise<StorageProviderItem[]> {
-      const providers = await db
-        .select()
-        .from(storageProviders)
-        .orderBy(storageProviders.createdAt);
+      const providers = await repository.listProviders();
 
-      const allSources = await db
-        .select({ storageProviderId: videoSources.storageProviderId })
-        .from(videoSources);
+      const allSources = await repository.listVideoSourceProviderIds();
 
       const countMap = new Map<string, number>();
       for (const src of allSources) {
@@ -789,19 +704,13 @@ export function createStorageService<
     },
 
     async getProvider(id: string): Promise<StorageProviderItem> {
-      const [provider] = await db
-        .select()
-        .from(storageProviders)
-        .where(eq(storageProviders.id, id));
+      const provider = await repository.findProviderById(id);
 
       if (!provider) {
         throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
       }
 
-      const sources = await db
-        .select({ id: videoSources.id })
-        .from(videoSources)
-        .where(eq(videoSources.storageProviderId, id));
+      const sources = await repository.listVideoSourceIdsForProvider(id);
 
       return formatProviderItem(provider, sources.length);
     },
@@ -812,35 +721,29 @@ export function createStorageService<
 
       // If marked as default, unset existing default
       if (input.isDefault) {
-        await db
-          .update(storageProviders)
-          .set({ isDefault: false, updatedAt: now })
-          .where(eq(storageProviders.isDefault, true));
+        await repository.unsetDefaultProviders();
       }
 
       const accessKeyIdEnc = encryptCredential(input.accessKeyId);
       const secretAccessKeyEnc = encryptCredential(input.secretAccessKey);
 
-      const [row] = await db
-        .insert(storageProviders)
-        .values({
-          id,
-          name: input.name,
-          providerType: input.providerType,
-          endpoint: input.endpoint,
-          region: input.region,
-          bucket: input.bucket,
-          accessKeyIdEnc,
-          secretAccessKeyEnc,
-          publicBaseUrl: input.publicBaseUrl ? input.publicBaseUrl.trim() : null,
-          forcePathStyle: input.forcePathStyle ?? false,
-          storageLimitGb: input.storageLimitGb ?? DEFAULT_LIMIT_GB,
-          isDefault: input.isDefault ?? false,
-          isEnabled: input.isEnabled ?? true,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning();
+      const row = await repository.insertProvider({
+        id,
+        name: input.name,
+        providerType: input.providerType,
+        endpoint: input.endpoint,
+        region: input.region,
+        bucket: input.bucket,
+        accessKeyIdEnc,
+        secretAccessKeyEnc,
+        publicBaseUrl: input.publicBaseUrl ? input.publicBaseUrl.trim() : null,
+        forcePathStyle: input.forcePathStyle ?? false,
+        storageLimitGb: input.storageLimitGb ?? DEFAULT_LIMIT_GB,
+        isDefault: input.isDefault ?? false,
+        isEnabled: input.isEnabled ?? true,
+        createdAt: now,
+        updatedAt: now,
+      });
 
       invalidateCache();
       return formatProviderItem(row!, 0);
@@ -850,10 +753,7 @@ export function createStorageService<
       id: string,
       input: UpdateStorageProviderRequest
     ): Promise<StorageProviderItem> {
-      const [existing] = await db
-        .select()
-        .from(storageProviders)
-        .where(eq(storageProviders.id, id));
+      const existing = await repository.findProviderById(id);
 
       if (!existing) {
         throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
@@ -862,13 +762,10 @@ export function createStorageService<
       const now = new Date();
 
       if (input.isDefault) {
-        await db
-          .update(storageProviders)
-          .set({ isDefault: false, updatedAt: now })
-          .where(eq(storageProviders.isDefault, true));
+        await repository.unsetDefaultProviders();
       }
 
-      const updateData: Partial<typeof storageProviders.$inferInsert> = {
+      const updateData: Parameters<StorageRepository["updateProvider"]>[1] = {
         updatedAt: now,
       };
 
@@ -891,45 +788,29 @@ export function createStorageService<
         updateData.secretAccessKeyEnc = encryptCredential(input.secretAccessKey);
       }
 
-      const [updated] = await db
-        .update(storageProviders)
-        .set(updateData)
-        .where(eq(storageProviders.id, id))
-        .returning();
+      const updated = await repository.updateProvider(id, updateData);
 
       invalidateCache(id);
 
-      const sources = await db
-        .select({ id: videoSources.id })
-        .from(videoSources)
-        .where(eq(videoSources.storageProviderId, id));
+      const sources = await repository.listVideoSourceIdsForProvider(id);
 
       return formatProviderItem(updated!, sources.length);
     },
 
     async deleteProvider(id: string): Promise<void> {
-      const [existing] = await db
-        .select()
-        .from(storageProviders)
-        .where(eq(storageProviders.id, id));
+      const existing = await repository.findProviderById(id);
 
       if (!existing) {
         throw new StorageProviderNotFoundError(`Storage provider with id ${id} not found`);
       }
 
-      const linkedSources = await db
-        .select({ id: videoSources.id })
-        .from(videoSources)
-        .where(eq(videoSources.storageProviderId, id))
-        .limit(1);
-
-      if (linkedSources.length > 0) {
+      if (await repository.hasLinkedSources(id)) {
         throw new StorageProviderInUseError(
           `Cannot delete storage provider ${id}: linked video sources exist`
         );
       }
 
-      await db.delete(storageProviders).where(eq(storageProviders.id, id));
+      await repository.deleteProvider(id);
       invalidateCache(id);
     },
 
@@ -939,10 +820,7 @@ export function createStorageService<
       let service: S3StorageService;
 
       if (input.providerId) {
-        const [row] = await db
-          .select()
-          .from(storageProviders)
-          .where(eq(storageProviders.id, input.providerId));
+        const row = await repository.findProviderById(input.providerId);
 
         if (!row) {
           throw new StorageProviderNotFoundError(
@@ -992,16 +870,7 @@ export function createStorageService<
 
     async getMinioStatus(): Promise<MinioStatusResponseData> {
       const container = await minioInspector();
-      const rows = await db
-        .select({
-          id: storageProviders.id,
-          endpoint: storageProviders.endpoint,
-          bucket: storageProviders.bucket,
-          isDefault: storageProviders.isDefault,
-          isEnabled: storageProviders.isEnabled,
-        })
-        .from(storageProviders)
-        .where(eq(storageProviders.providerType, "minio"));
+      const rows = await repository.listMinioProviders();
       const provider =
         rows.find((r) => r.isDefault && r.isEnabled) ??
         rows.find((r) => r.isEnabled) ??
@@ -1030,16 +899,7 @@ export function createStorageService<
       // the server actually accepts: requested keys first, then the stored
       // provider credentials, then the configured root env, then MinIO's own
       // defaults.
-      const [match] = await db
-        .select()
-        .from(storageProviders)
-        .where(
-          and(
-            eq(storageProviders.providerType, "minio"),
-            eq(storageProviders.endpoint, endpoint),
-            eq(storageProviders.bucket, bucket)
-          )
-        );
+      const match = await repository.findMinioProvider(endpoint, bucket);
 
       const candidates: { accessKeyId: string; secretAccessKey: string }[] = [
         {
@@ -1097,10 +957,7 @@ export function createStorageService<
 
       const now = new Date();
       if (input.isDefault) {
-        await db
-          .update(storageProviders)
-          .set({ isDefault: false, updatedAt: now })
-          .where(eq(storageProviders.isDefault, true));
+        await repository.unsetDefaultProviders();
       }
 
       const accessKeyIdEnc = encryptCredential(accessKeyId);
@@ -1108,44 +965,36 @@ export function createStorageService<
 
       let row: StorageProviderRow;
       if (match) {
-        const [updated] = await db
-          .update(storageProviders)
-          .set({
-            endpoint,
-            region,
-            bucket,
-            accessKeyIdEnc,
-            secretAccessKeyEnc,
-            forcePathStyle: true,
-            isEnabled: true,
-            ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
-            updatedAt: now,
-          })
-          .where(eq(storageProviders.id, match.id))
-          .returning();
+        const updated = await repository.updateProvider(match.id, {
+          endpoint,
+          region,
+          bucket,
+          accessKeyIdEnc,
+          secretAccessKeyEnc,
+          forcePathStyle: true,
+          isEnabled: true,
+          ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
+          updatedAt: now,
+        });
         row = updated!;
       } else {
-        const [created] = await db
-          .insert(storageProviders)
-          .values({
-            id: randomUUID(),
-            name: "Local MinIO",
-            providerType: "minio",
-            endpoint,
-            region,
-            bucket,
-            accessKeyIdEnc,
-            secretAccessKeyEnc,
-            publicBaseUrl: null,
-            forcePathStyle: true,
-            storageLimitGb: DEFAULT_LIMIT_GB,
-            isDefault: input.isDefault ?? false,
-            isEnabled: true,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning();
-        row = created!;
+        row = await repository.insertProvider({
+          id: randomUUID(),
+          name: "Local MinIO",
+          providerType: "minio",
+          endpoint,
+          region,
+          bucket,
+          accessKeyIdEnc,
+          secretAccessKeyEnc,
+          publicBaseUrl: null,
+          forcePathStyle: true,
+          storageLimitGb: DEFAULT_LIMIT_GB,
+          isDefault: input.isDefault ?? false,
+          isEnabled: true,
+          createdAt: now,
+          updatedAt: now,
+        });
       }
 
       invalidateCache(row.id);
