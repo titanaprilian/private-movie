@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GoogleDriveUrlHelper } from "../../../src/modules/series";
+import { buildGoogleDriveConfirmRequest, buildGoogleDriveDirectDownloadUrl, collectGoogleDriveCookies, extractGoogleDriveConfirmForm, extractGoogleDriveFileId, isGoogleDriveFileId, isGoogleDriveInterstitial, isGoogleDriveUrl, parseGoogleDriveSource } from "../../../src/modules/series";
 
 const FILE_ID = "1a2B3c4D5e6F7g8H9i0J";
 
@@ -16,42 +16,59 @@ const INTERSTITIAL_HTML = `<!doctype html>
   </form>
 </body></html>`;
 
-describe("GoogleDriveUrlHelper.extractFileId", () => {
+describe("isGoogleDriveFileId", () => {
+  it("validates file id shape", () => {
+    expect(isGoogleDriveFileId(FILE_ID)).toBe(true);
+    expect(isGoogleDriveFileId("  " + FILE_ID + "  ")).toBe(true);
+    expect(isGoogleDriveFileId("short")).toBe(false);
+    expect(isGoogleDriveFileId("not a url")).toBe(false);
+  });
+});
+
+describe("buildGoogleDriveDirectDownloadUrl", () => {
+  it("builds the canonical direct download URL", () => {
+    expect(buildGoogleDriveDirectDownloadUrl(FILE_ID)).toBe(
+      `https://drive.usercontent.google.com/download?id=${FILE_ID}&export=download`
+    );
+  });
+});
+
+describe("extractGoogleDriveFileId", () => {
   it("extracts the file id from share, open, and uc links", () => {
     expect(
-      GoogleDriveUrlHelper.extractFileId(
+      extractGoogleDriveFileId(
         `https://drive.google.com/file/d/${FILE_ID}/view?usp=sharing`
       )
     ).toBe(FILE_ID);
     expect(
-      GoogleDriveUrlHelper.extractFileId(`https://drive.google.com/open?id=${FILE_ID}`)
+      extractGoogleDriveFileId(`https://drive.google.com/open?id=${FILE_ID}`)
     ).toBe(FILE_ID);
     expect(
-      GoogleDriveUrlHelper.extractFileId(`https://drive.google.com/uc?export=download&id=${FILE_ID}`)
+      extractGoogleDriveFileId(`https://drive.google.com/uc?export=download&id=${FILE_ID}`)
     ).toBe(FILE_ID);
     expect(
-      GoogleDriveUrlHelper.extractFileId(
+      extractGoogleDriveFileId(
         `https://drive.usercontent.google.com/download?id=${FILE_ID}&export=download&confirm=t`
       )
     ).toBe(FILE_ID);
     expect(
-      GoogleDriveUrlHelper.extractFileId(`https://docs.google.com/uc?id=${FILE_ID}&export=download`)
+      extractGoogleDriveFileId(`https://docs.google.com/uc?id=${FILE_ID}&export=download`)
     ).toBe(FILE_ID);
   });
 
   it("returns null for folder links, non-Drive hosts, and malformed URLs", () => {
     expect(
-      GoogleDriveUrlHelper.extractFileId("https://drive.google.com/drive/folders/abcDEF12345")
+      extractGoogleDriveFileId("https://drive.google.com/drive/folders/abcDEF12345")
     ).toBeNull();
     expect(
-      GoogleDriveUrlHelper.extractFileId(`https://example.com/file/d/${FILE_ID}/view`)
+      extractGoogleDriveFileId(`https://example.com/file/d/${FILE_ID}/view`)
     ).toBeNull();
-    expect(GoogleDriveUrlHelper.extractFileId("not a url")).toBeNull();
-    expect(GoogleDriveUrlHelper.extractFileId("https://drive.google.com/file/d/short/view")).toBeNull();
+    expect(extractGoogleDriveFileId("not a url")).toBeNull();
+    expect(extractGoogleDriveFileId("https://drive.google.com/file/d/short/view")).toBeNull();
   });
 });
 
-describe("GoogleDriveUrlHelper.parseSource", () => {
+describe("parseGoogleDriveSource", () => {
   it("normalizes every share link shape to the same direct download URL", () => {
     const expected = {
       fileId: FILE_ID,
@@ -59,42 +76,42 @@ describe("GoogleDriveUrlHelper.parseSource", () => {
     };
 
     expect(
-      GoogleDriveUrlHelper.parseSource(
+      parseGoogleDriveSource(
         `https://drive.google.com/file/d/${FILE_ID}/view?usp=sharing`
       )
     ).toEqual(expected);
     expect(
-      GoogleDriveUrlHelper.parseSource(`https://drive.google.com/uc?id=${FILE_ID}&export=download`)
+      parseGoogleDriveSource(`https://drive.google.com/uc?id=${FILE_ID}&export=download`)
     ).toEqual(expected);
     expect(
-      GoogleDriveUrlHelper.parseSource(
+      parseGoogleDriveSource(
         `https://drive.usercontent.google.com/download?id=${FILE_ID}&confirm=t`
       )
     ).toEqual(expected);
   });
 
   it("returns null for URLs that are not Drive files", () => {
-    expect(GoogleDriveUrlHelper.parseSource("https://example.com/pack.7z")).toBeNull();
+    expect(parseGoogleDriveSource("https://example.com/pack.7z")).toBeNull();
     expect(
-      GoogleDriveUrlHelper.parseSource("https://drive.google.com/drive/folders/abcDEF12345")
+      parseGoogleDriveSource("https://drive.google.com/drive/folders/abcDEF12345")
     ).toBeNull();
   });
 });
 
-describe("GoogleDriveUrlHelper.isGoogleDriveUrl", () => {
+describe("isGoogleDriveUrl", () => {
   it("recognizes Drive hosts only", () => {
-    expect(GoogleDriveUrlHelper.isGoogleDriveUrl("https://drive.google.com/x")).toBe(true);
-    expect(GoogleDriveUrlHelper.isGoogleDriveUrl("https://docs.google.com/x")).toBe(true);
-    expect(GoogleDriveUrlHelper.isGoogleDriveUrl("https://drive.usercontent.google.com/x")).toBe(true);
-    expect(GoogleDriveUrlHelper.isGoogleDriveUrl("https://notdrive.google.com.evil.com/x")).toBe(false);
-    expect(GoogleDriveUrlHelper.isGoogleDriveUrl("https://example.com/x")).toBe(false);
+    expect(isGoogleDriveUrl("https://drive.google.com/x")).toBe(true);
+    expect(isGoogleDriveUrl("https://docs.google.com/x")).toBe(true);
+    expect(isGoogleDriveUrl("https://drive.usercontent.google.com/x")).toBe(true);
+    expect(isGoogleDriveUrl("https://notdrive.google.com.evil.com/x")).toBe(false);
+    expect(isGoogleDriveUrl("https://example.com/x")).toBe(false);
   });
 });
 
-describe("GoogleDriveUrlHelper.isInterstitial", () => {
+describe("isGoogleDriveInterstitial", () => {
   it("treats an HTML 200 response as the virus-scan interstitial", () => {
     expect(
-      GoogleDriveUrlHelper.isInterstitial({
+      isGoogleDriveInterstitial({
         status: 200,
         headers: new Headers({ "content-type": "text/html; charset=utf-8" }),
       })
@@ -103,13 +120,13 @@ describe("GoogleDriveUrlHelper.isInterstitial", () => {
 
   it("treats archive bytes and error responses as real downloads", () => {
     expect(
-      GoogleDriveUrlHelper.isInterstitial({
+      isGoogleDriveInterstitial({
         status: 200,
         headers: new Headers({ "content-type": "application/x-7z-compressed" }),
       })
     ).toBe(false);
     expect(
-      GoogleDriveUrlHelper.isInterstitial({
+      isGoogleDriveInterstitial({
         status: 404,
         headers: new Headers({ "content-type": "text/html" }),
       })
@@ -117,9 +134,9 @@ describe("GoogleDriveUrlHelper.isInterstitial", () => {
   });
 });
 
-describe("GoogleDriveUrlHelper.extractConfirmForm", () => {
+describe("extractGoogleDriveConfirmForm", () => {
   it("extracts the action and every hidden field from the interstitial", () => {
-    const form = GoogleDriveUrlHelper.extractConfirmForm(INTERSTITIAL_HTML);
+    const form = extractGoogleDriveConfirmForm(INTERSTITIAL_HTML);
 
     expect(form).toEqual({
       action: "https://drive.usercontent.google.com/download",
@@ -134,12 +151,12 @@ describe("GoogleDriveUrlHelper.extractConfirmForm", () => {
 
   it("returns null when the page carries no form", () => {
     expect(
-      GoogleDriveUrlHelper.extractConfirmForm("<html><body>Google Drive - Quota exceeded</body></html>")
+      extractGoogleDriveConfirmForm("<html><body>Google Drive - Quota exceeded</body></html>")
     ).toBeNull();
   });
 
   it("decodes HTML entities inside attribute values", () => {
-    const form = GoogleDriveUrlHelper.extractConfirmForm(
+    const form = extractGoogleDriveConfirmForm(
       `<form action="https://drive.usercontent.google.com/download?a=1&amp;b=2"><input name="n" value="x&amp;y"></form>`
     );
 
@@ -150,11 +167,11 @@ describe("GoogleDriveUrlHelper.extractConfirmForm", () => {
   });
 });
 
-describe("GoogleDriveUrlHelper.buildConfirmRequest", () => {
+describe("buildGoogleDriveConfirmRequest", () => {
   it("merges the hidden fields into the form action", () => {
-    const form = GoogleDriveUrlHelper.extractConfirmForm(INTERSTITIAL_HTML)!;
+    const form = extractGoogleDriveConfirmForm(INTERSTITIAL_HTML)!;
 
-    const request = GoogleDriveUrlHelper.buildConfirmRequest(form);
+    const request = buildGoogleDriveConfirmRequest(form);
 
     const url = new URL(request.url);
     expect(url.origin + url.pathname).toBe("https://drive.usercontent.google.com/download");
@@ -165,7 +182,7 @@ describe("GoogleDriveUrlHelper.buildConfirmRequest", () => {
   });
 
   it("adds confirm=t when the interstitial omits it", () => {
-    const request = GoogleDriveUrlHelper.buildConfirmRequest({
+    const request = buildGoogleDriveConfirmRequest({
       action: "https://drive.usercontent.google.com/download",
       fields: { id: FILE_ID },
     });
@@ -178,8 +195,8 @@ describe("GoogleDriveUrlHelper.buildConfirmRequest", () => {
     headers.append("set-cookie", "DRIVE_STREAM=abc; Path=/; HttpOnly; SameSite=None");
     headers.append("set-cookie", "NID=xyz; Path=/");
 
-    const cookie = GoogleDriveUrlHelper.collectCookies(headers);
-    const request = GoogleDriveUrlHelper.buildConfirmRequest(
+    const cookie = collectGoogleDriveCookies(headers);
+    const request = buildGoogleDriveConfirmRequest(
       {
         action: "https://drive.usercontent.google.com/download",
         fields: { id: FILE_ID, confirm: "t" },
@@ -192,7 +209,7 @@ describe("GoogleDriveUrlHelper.buildConfirmRequest", () => {
   });
 
   it("omits the Cookie header when no cookies were set", () => {
-    const request = GoogleDriveUrlHelper.buildConfirmRequest({
+    const request = buildGoogleDriveConfirmRequest({
       action: "https://drive.usercontent.google.com/download",
       fields: { id: FILE_ID, confirm: "t" },
     });

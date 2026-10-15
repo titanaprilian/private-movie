@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   ArchiveIngestJobService,
-  GoogleDriveUrlHelper,
+  isGoogleDriveInterstitial,
+  isGoogleDriveUrl,
   type ArchiveEntry,
 } from "../../../src/modules/series";
 import type { DbClient } from "@repo/db";
@@ -135,20 +136,20 @@ describe("ArchiveIngestJobService Unit Tests", () => {
       });
 
       // Raw interstitial signal fires (content-type based) ...
-      expect(GoogleDriveUrlHelper.isInterstitial(htmlRes)).toBe(true);
+      expect(isGoogleDriveInterstitial(htmlRes)).toBe(true);
       // ... but the pipeline guard gates on hostname, so non-GDrive skips it.
       const shouldEnterConfirmPath =
-        GoogleDriveUrlHelper.isGoogleDriveUrl(mediafireUrl) &&
-        GoogleDriveUrlHelper.isInterstitial(htmlRes);
+        isGoogleDriveUrl(mediafireUrl) &&
+        isGoogleDriveInterstitial(htmlRes);
       expect(shouldEnterConfirmPath).toBe(false);
 
       // Sanity: a real GDrive HTML interstitial still enters the confirm path.
       const gdriveUrl =
         "https://drive.usercontent.google.com/download?id=1a2b3c4d5e6f7g8h9i0j&export=download";
-      expect(GoogleDriveUrlHelper.isGoogleDriveUrl(gdriveUrl)).toBe(true);
+      expect(isGoogleDriveUrl(gdriveUrl)).toBe(true);
       const gdriveShouldEnter =
-        GoogleDriveUrlHelper.isGoogleDriveUrl(gdriveUrl) &&
-        GoogleDriveUrlHelper.isInterstitial(htmlRes);
+        isGoogleDriveUrl(gdriveUrl) &&
+        isGoogleDriveInterstitial(htmlRes);
       expect(gdriveShouldEnter).toBe(true);
     });
 

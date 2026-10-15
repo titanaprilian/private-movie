@@ -33,7 +33,14 @@ import {
   isVideoFile,
   isSampleFile,
 } from "../../episodes";
-import { GoogleDriveUrlHelper } from "./google-drive-url";
+import {
+  buildGoogleDriveConfirmRequest,
+  collectGoogleDriveCookies,
+  extractGoogleDriveConfirmForm,
+  isGoogleDriveInterstitial,
+  isGoogleDriveUrl,
+  parseGoogleDriveSource,
+} from "./google-drive-url";
 import { logger } from "../../../lib/logger";
 import { captureException } from "../../../lib/sentry";
 import {
@@ -148,7 +155,7 @@ export class ArchiveIngestJobService {
   }
 
   public deriveSourceKey(url: string): string {
-    const gdRef = GoogleDriveUrlHelper.parseSource(url);
+    const gdRef = parseGoogleDriveSource(url);
     if (gdRef) return `gdrive:${gdRef.fileId}`;
     try {
       const parsed = new URL(url);
@@ -492,7 +499,7 @@ export class ArchiveIngestJobService {
 
       // 1. Resolve source URL (handling Google Drive if necessary)
       let directUrl = job.sourceUrl;
-      const gdRef = GoogleDriveUrlHelper.parseSource(job.sourceUrl);
+      const gdRef = parseGoogleDriveSource(job.sourceUrl);
       if (gdRef) {
         directUrl = gdRef.downloadUrl;
       }
@@ -515,14 +522,14 @@ export class ArchiveIngestJobService {
       // must NOT enter the confirmation code path.
       let finalRes = headOrInitialRes;
       if (
-        GoogleDriveUrlHelper.isGoogleDriveUrl(directUrl) &&
-        GoogleDriveUrlHelper.isInterstitial(headOrInitialRes)
+        isGoogleDriveUrl(directUrl) &&
+        isGoogleDriveInterstitial(headOrInitialRes)
       ) {
         const html = await headOrInitialRes.text();
-        const form = GoogleDriveUrlHelper.extractConfirmForm(html);
+        const form = extractGoogleDriveConfirmForm(html);
         if (form) {
-          const cookie = GoogleDriveUrlHelper.collectCookies(headOrInitialRes.headers);
-          const reqDetails = GoogleDriveUrlHelper.buildConfirmRequest(form, cookie);
+          const cookie = collectGoogleDriveCookies(headOrInitialRes.headers);
+          const reqDetails = buildGoogleDriveConfirmRequest(form, cookie);
           finalRes = await this.fetchFn(reqDetails.url, {
             headers: { "User-Agent": USER_AGENT, Referer: referer, ...reqDetails.headers },
             signal,

@@ -51,96 +51,94 @@ function readAttributes(fragment: string): Record<string, string> {
  * its hidden fields (and replaying the cookies set on the interstitial
  * response) yields the real bytes.
  */
-export class GoogleDriveUrlHelper {
-  static isFileId(value: string): boolean {
-    return GOOGLE_DRIVE_FILE_ID_PATTERN.test(value.trim());
+export function isGoogleDriveFileId(value: string): boolean {
+  return GOOGLE_DRIVE_FILE_ID_PATTERN.test(value.trim());
+}
+
+export function isGoogleDriveUrl(rawUrl: string): boolean {
+  try {
+    return GOOGLE_DRIVE_HOSTNAMES.has(new URL(rawUrl).hostname.toLowerCase());
+  } catch {
+    return false;
   }
+}
 
-  static isGoogleDriveUrl(rawUrl: string): boolean {
-    try {
-      return GOOGLE_DRIVE_HOSTNAMES.has(new URL(rawUrl).hostname.toLowerCase());
-    } catch {
-      return false;
-    }
-  }
-
-  static extractFileId(rawUrl: string): string | null {
-    let url: URL;
-    try {
-      url = new URL(rawUrl);
-    } catch {
-      return null;
-    }
-    if (!GOOGLE_DRIVE_HOSTNAMES.has(url.hostname.toLowerCase())) return null;
-
-    const pathMatch = /^\/(?:file|document|spreadsheets)\/d\/([^/]+)/.exec(url.pathname);
-    const candidate = pathMatch?.[1] ?? url.searchParams.get("id");
-    if (!candidate || !GoogleDriveUrlHelper.isFileId(candidate)) return null;
-    return candidate;
-  }
-
-  static buildDirectDownloadUrl(fileId: string): string {
-    return `${GOOGLE_DRIVE_DIRECT_DOWNLOAD_BASE}?id=${encodeURIComponent(fileId)}&export=download`;
-  }
-
-  static parseSource(rawUrl: string): GoogleDriveFileRef | null {
-    const fileId = GoogleDriveUrlHelper.extractFileId(rawUrl);
-    if (!fileId) return null;
-    return { fileId, downloadUrl: GoogleDriveUrlHelper.buildDirectDownloadUrl(fileId) };
-  }
-
-  static isInterstitial(response: { headers: Headers; status: number }): boolean {
-    if (response.status < 200 || response.status >= 400) return false;
-    return /text\/html/i.test(response.headers.get("content-type") ?? "");
-  }
-
-  static extractConfirmForm(html: string): GoogleDriveConfirmForm | null {
-    const formPattern = /<form\b([^>]*)>([\s\S]*?)<\/form>/gi;
-    let match: RegExpExecArray | null;
-    while ((match = formPattern.exec(html)) !== null) {
-      const action = readAttributes(match[1]).action;
-      if (!action) continue;
-      const fields: Record<string, string> = {};
-      const inputPattern = /<input\b([^>]*)>/gi;
-      let inputMatch: RegExpExecArray | null;
-      while ((inputMatch = inputPattern.exec(match[2])) !== null) {
-        const attributes = readAttributes(inputMatch[1]);
-        if (attributes.name) fields[attributes.name] = attributes.value ?? "";
-      }
-      return { action, fields };
-    }
+export function extractGoogleDriveFileId(rawUrl: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
     return null;
   }
+  if (!GOOGLE_DRIVE_HOSTNAMES.has(url.hostname.toLowerCase())) return null;
 
-  static collectCookies(headers: Headers): string {
-    const raw = typeof headers.getSetCookie === "function" ? headers.getSetCookie() : [];
-    const cookies = raw.length
-      ? raw
-      : (headers.get("set-cookie") ? [headers.get("set-cookie") as string] : []);
-    return cookies
-      .map((cookie) => cookie.split(";")[0]?.trim() ?? "")
-      .filter(Boolean)
-      .join("; ");
-  }
+  const pathMatch = /^\/(?:file|document|spreadsheets)\/d\/([^/]+)/.exec(url.pathname);
+  const candidate = pathMatch?.[1] ?? url.searchParams.get("id");
+  if (!candidate || !isGoogleDriveFileId(candidate)) return null;
+  return candidate;
+}
 
-  static buildConfirmRequest(
-    form: GoogleDriveConfirmForm,
-    cookie?: string
-  ): GoogleDriveConfirmRequest {
-    let action: URL;
-    try {
-      action = new URL(form.action);
-    } catch {
-      action = new URL(GOOGLE_DRIVE_DIRECT_DOWNLOAD_BASE);
+export function buildGoogleDriveDirectDownloadUrl(fileId: string): string {
+  return `${GOOGLE_DRIVE_DIRECT_DOWNLOAD_BASE}?id=${encodeURIComponent(fileId)}&export=download`;
+}
+
+export function parseGoogleDriveSource(rawUrl: string): GoogleDriveFileRef | null {
+  const fileId = extractGoogleDriveFileId(rawUrl);
+  if (!fileId) return null;
+  return { fileId, downloadUrl: buildGoogleDriveDirectDownloadUrl(fileId) };
+}
+
+export function isGoogleDriveInterstitial(response: { headers: Headers; status: number }): boolean {
+  if (response.status < 200 || response.status >= 400) return false;
+  return /text\/html/i.test(response.headers.get("content-type") ?? "");
+}
+
+export function extractGoogleDriveConfirmForm(html: string): GoogleDriveConfirmForm | null {
+  const formPattern = /<form\b([^>]*)>([\s\S]*?)<\/form>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = formPattern.exec(html)) !== null) {
+    const action = readAttributes(match[1]).action;
+    if (!action) continue;
+    const fields: Record<string, string> = {};
+    const inputPattern = /<input\b([^>]*)>/gi;
+    let inputMatch: RegExpExecArray | null;
+    while ((inputMatch = inputPattern.exec(match[2])) !== null) {
+      const attributes = readAttributes(inputMatch[1]);
+      if (attributes.name) fields[attributes.name] = attributes.value ?? "";
     }
-    for (const [name, value] of Object.entries(form.fields)) {
-      action.searchParams.set(name, value);
-    }
-    if (GOOGLE_DRIVE_HOSTNAMES.has(action.hostname.toLowerCase()) && !action.searchParams.has("confirm")) {
-      action.searchParams.set("confirm", "t");
-    }
-    const headers: Record<string, string> = {};
-    if (cookie) headers.Cookie = cookie;
-    return { url: action.toString(), headers };
+    return { action, fields };
   }
+  return null;
+}
+
+export function collectGoogleDriveCookies(headers: Headers): string {
+  const raw = typeof headers.getSetCookie === "function" ? headers.getSetCookie() : [];
+  const cookies = raw.length
+    ? raw
+    : (headers.get("set-cookie") ? [headers.get("set-cookie") as string] : []);
+  return cookies
+    .map((cookie) => cookie.split(";")[0]?.trim() ?? "")
+    .filter(Boolean)
+    .join("; ");
+}
+
+export function buildGoogleDriveConfirmRequest(
+  form: GoogleDriveConfirmForm,
+  cookie?: string
+): GoogleDriveConfirmRequest {
+  let action: URL;
+  try {
+    action = new URL(form.action);
+  } catch {
+    action = new URL(GOOGLE_DRIVE_DIRECT_DOWNLOAD_BASE);
+  }
+  for (const [name, value] of Object.entries(form.fields)) {
+    action.searchParams.set(name, value);
+  }
+  if (GOOGLE_DRIVE_HOSTNAMES.has(action.hostname.toLowerCase()) && !action.searchParams.has("confirm")) {
+    action.searchParams.set("confirm", "t");
+  }
+  const headers: Record<string, string> = {};
+  if (cookie) headers.Cookie = cookie;
+  return { url: action.toString(), headers };
 }
