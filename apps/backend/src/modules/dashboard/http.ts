@@ -3,7 +3,7 @@ import type { AuthenticationService } from "@repo/contracts";
 import type { DbClient } from "@repo/db";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
-import type { OngoingSeasonScheduler } from "../media/scheduler";
+import type { OngoingSeasonScheduler } from "../media";
 import { createDashboardService, type StorageUsageProvider } from "./internal/dashboard-service";
 import {
   saveSchedulerConfig,

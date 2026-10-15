@@ -7,7 +7,7 @@ import type {
   StorageProviderRegistry,
 } from "@repo/media-service";
 import type { AuthRateLimitOptions } from "./modules/authentication/http";
-import type { OngoingSeasonScheduler } from "./modules/media/scheduler";
+import type { OngoingSeasonScheduler } from "./modules/media";
 import type { RateLimitPluginOptions } from "./plugins";
 import type { ArchiveExtractFn, ArchiveFetchFn, ArchiveIngestJobService } from "./modules/series";
 import type {

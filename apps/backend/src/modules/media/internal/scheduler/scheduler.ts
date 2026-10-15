@@ -1,41 +1,11 @@
-import type { BatchOngoingScrapeResult, MediaService } from "@repo/media-service";
-import {
-  loadSchedulerConfig,
-  type SchedulerConfigDb,
-} from "./scheduler-config";
-
-export interface OngoingSeasonSchedulerOptions {
-  mediaService: Pick<MediaService, "scrapeAllOngoingSeasons">;
-  intervalMs?: number;
-  runImmediately?: boolean;
-  enabled?: boolean;
-  logger?: {
-    info(message: string, ...args: unknown[]): void;
-    error(message: string, ...args: unknown[]): void;
-    warn(message: string, ...args: unknown[]): void;
-  };
-}
-
-export interface SchedulerLastRunResult {
-  totalProcessed: number;
-  successCount: number;
-  failureCount: number;
-}
-
-export interface OngoingSeasonScheduler {
-  start(): void;
-  stop(): Promise<void>;
-  runNow(): Promise<BatchOngoingScrapeResult | null>;
-  isRunning(): boolean;
-  isExecuting(): boolean;
-  isEnabled(): boolean;
-  setEnabled(enabled: boolean): void;
-  getIntervalMs(): number;
-  updateInterval(intervalMs: number): void;
-  getLastRunAt(): Date | null;
-  getLastRunResult(): SchedulerLastRunResult | null;
-  getNextRunAt(): Date | null;
-}
+import type { BatchOngoingScrapeResult } from "@repo/media-service";
+import { loadSchedulerConfig } from "./scheduler-config";
+import type {
+  OngoingSeasonScheduler,
+  OngoingSeasonSchedulerOptions,
+  SchedulerLastRunResult,
+  StartOngoingSeasonSchedulerOptions,
+} from "../types";
 
 const DEFAULT_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -43,13 +13,6 @@ const MS_PER_MINUTE = 60 * 1000;
 
 export const SCHEDULER_DEFAULT_INTERVAL_MINUTES = 30;
 export const SCHEDULER_DEFAULT_ENABLED = true;
-
-export interface StartOngoingSeasonSchedulerOptions {
-  db: SchedulerConfigDb;
-  mediaService: Pick<MediaService, "scrapeAllOngoingSeasons">;
-  runImmediately?: boolean;
-  logger?: OngoingSeasonSchedulerOptions["logger"];
-}
 
 /**
  * Encapsulated scheduler startup for the server entry point: loads persisted

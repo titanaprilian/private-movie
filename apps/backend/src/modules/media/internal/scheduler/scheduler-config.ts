@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
-import { system, type DbClient } from "@repo/db";
+import { system } from "@repo/db";
+import type { SchedulerConfig, SchedulerConfigDb } from "../types";
 
 export const SCHEDULER_INTERVAL_KEY = "scheduler_interval_minutes";
 export const SCHEDULER_ENABLED_KEY = "scheduler_enabled";
@@ -7,16 +8,6 @@ export const SCHEDULER_ENABLED_KEY = "scheduler_enabled";
 export const ALLOWED_SCHEDULER_INTERVALS = [15, 30, 60, 180, 360, 720, 1440] as const;
 export const DEFAULT_SCHEDULER_INTERVAL_MINUTES = 30;
 export const DEFAULT_SCHEDULER_ENABLED = true;
-
-export interface SchedulerConfig {
-  intervalMinutes: number;
-  isEnabled: boolean;
-}
-
-export type SchedulerConfigDb = Pick<DbClient, "select" | "insert"> & {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-};
 
 async function readKey(db: SchedulerConfigDb, key: string): Promise<string | null> {
   const rows = await db.select({ value: system.value }).from(system).where(eq(system.key, key));
