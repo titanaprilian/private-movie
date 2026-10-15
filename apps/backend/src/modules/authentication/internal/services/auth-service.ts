@@ -14,8 +14,8 @@ import {
   type VerifyCredentialsInput,
 } from "@repo/contracts";
 import { users, refreshTokens, type NewUserRow } from "@repo/db";
-import { hashPassword, verifyPassword } from "./password";
-import { signJwt, verifyJwt, hashRefreshToken } from "./jwt";
+import { hashPassword, verifyPassword } from "../utils/password";
+import { signJwt, verifyJwt, hashRefreshToken } from "../utils/jwt";
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MIN_PASSWORD_LENGTH = 8;
