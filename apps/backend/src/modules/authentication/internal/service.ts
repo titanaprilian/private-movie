@@ -77,9 +77,7 @@ export function createAuthenticationServiceInternal<
   const repository = authRepository(db);
 
   return {
-    async register(
-      input: RegisterInput,
-    ): Promise<{
+    async register(input: RegisterInput): Promise<{
       user: User;
       tokens: { accessToken: string; refreshToken: string };
       accessToken: string;
@@ -127,9 +125,7 @@ export function createAuthenticationServiceInternal<
       };
     },
 
-    async verifyCredentials(
-      input: VerifyCredentialsInput,
-    ): Promise<{
+    async verifyCredentials(input: VerifyCredentialsInput): Promise<{
       user: User;
       tokens: { accessToken: string; refreshToken: string };
       accessToken: string;
@@ -217,9 +213,7 @@ export function createAuthenticationServiceInternal<
       await repository.setSessionsValidAfter(userId, new Date());
     },
 
-    async refresh(
-      tokenInput: string | { refreshToken: string },
-    ): Promise<{
+    async refresh(tokenInput: string | { refreshToken: string }): Promise<{
       user: User;
       tokens: { accessToken: string; refreshToken: string };
       accessToken: string;
