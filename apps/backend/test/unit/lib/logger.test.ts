@@ -76,7 +76,7 @@ describe("createLogger", () => {
     await manager.shutdown();
     expect(exits).toEqual([0]);
 
-    const { createOngoingSeasonScheduler } = await import("@/modules/media/scheduler");
+    const { createOngoingSeasonScheduler } = await import("@/modules/media");
     const scheduler = createOngoingSeasonScheduler({
       mediaService: { scrapeAllOngoingSeasons: async () => ({ totalProcessed: 0, successCount: 0, failureCount: 0, results: [] }) },
       runImmediately: false,

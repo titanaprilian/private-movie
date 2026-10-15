@@ -1,36 +1,23 @@
-import type { DbClient } from "@repo/db";
-import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
-import { logger as defaultLogger } from "../../lib/logger";
+import { logger as defaultLogger } from "../../../../lib/logger";
+import type {
+  ArchiveIngestSubsystem,
+  ArchiveIngestSubsystemLogger,
+  ArchiveIngestSubsystemOptions,
+} from "../types";
 import {
   ArchiveIngestJobService,
   markInterruptedJobsOnBoot,
   purgeOrphanStagingDirs,
   sweepExpiredJobs,
-} from "./internal/archive-ingest-job-service";
-import { probeSevenZipFormatSupport } from "./internal/seven-zip-extractor";
+} from "./archive-ingest-job-service";
+import { probeSevenZipFormatSupport } from "./seven-zip-extractor";
 
 export const ARCHIVE_INGEST_SWEEPER_INTERVAL_MS_DEFAULT = 30 * 60 * 1000;
-
-export interface ArchiveIngestSubsystemLogger {
-  info(message: string, ...args: unknown[]): void;
-  warn(message: string, ...args: unknown[]): void;
-  error(message: string, ...args: unknown[]): void;
-}
-
-export interface ArchiveIngestSubsystemOptions {
-  db: DbClient;
-  s3StorageService?: S3StorageService;
-  storageProviderRegistry?: StorageProviderRegistry;
-  stagingBaseDir?: string;
-  logger?: ArchiveIngestSubsystemLogger;
-  sweeperIntervalMs?: number;
-}
-
-export interface ArchiveIngestSubsystem {
-  jobService: ArchiveIngestJobService;
-  stagingBaseDir: string;
-  stop: () => void;
-}
+export type {
+  ArchiveIngestSubsystem,
+  ArchiveIngestSubsystemLogger,
+  ArchiveIngestSubsystemOptions,
+};
 
 /**
  * Encapsulated archive ingest startup for the server entry point: probes

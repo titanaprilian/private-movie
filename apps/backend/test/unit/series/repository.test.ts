@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { episodes, seasons, series } from "@repo/db";
-import { createSeriesRepositoryInternal } from "@repo/media-service";
+import { createSeriesRepository } from "../../../src/modules/series";
 import { db } from "../../utils/db";
 
 async function insertSeries(overrides?: {
@@ -93,7 +93,7 @@ async function insertEpisodeForSeries(
 }
 
 describe("series repository list", () => {
-  const repository = createSeriesRepositoryInternal(db);
+  const repository = createSeriesRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -149,7 +149,7 @@ describe("series repository list", () => {
 });
 
 describe("series repository findByIdWithEpisodes", () => {
-  const repository = createSeriesRepositoryInternal(db);
+  const repository = createSeriesRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -249,7 +249,7 @@ describe("series repository findByIdWithEpisodes", () => {
 });
 
 describe("series repository updateSeries", () => {
-  const repository = createSeriesRepositoryInternal(db);
+  const repository = createSeriesRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -282,7 +282,7 @@ describe("series repository updateSeries", () => {
 });
 
 describe("series repository deleteSeries", () => {
-  const repository = createSeriesRepositoryInternal(db);
+  const repository = createSeriesRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);

@@ -14,12 +14,12 @@ import type {
 } from "@repo/media-service";
 import {
   createEpisodeRepositoryInternal,
-  createSeriesRepositoryInternal,
   createVideoSourceRepositoryInternal,
   createStorageProviderRegistry,
   S3NotConfiguredError,
-  SeriesNotFoundError,
 } from "@repo/media-service";
+import { createSeriesRepository } from "../catalog/repository";
+import { SeriesNotFoundError } from "../errors";
 import {
   createArchiveStagingSessionId,
   ensureArchiveStagingDir,
@@ -31,16 +31,16 @@ import {
   InvalidArchivePasswordError,
   matchArchiveFilesToEpisodes,
   type ArchiveProcessRunner,
-} from "../../episodes";
-import { captureException } from "../../../lib/sentry";
-import { logger } from "../../../lib/logger";
-import { DownloadIncompleteError } from "../../../lib/errors";
+} from "../../../episodes";
+import { captureException } from "../../../../lib/sentry";
+import { logger } from "../../../../lib/logger";
+import { DownloadIncompleteError } from "../../../../lib/errors";
 import {
   createProgressThrottle,
   SSE_HEARTBEAT_COMMENT,
   SSE_HEARTBEAT_MS,
   shouldSendHeartbeat,
-} from "../../../lib/sse-progress";
+} from "../../../../lib/sse-progress";
 
 export const MAX_ARCHIVE_DOWNLOAD_MB_DEFAULT = 5120;
 export const ARCHIVE_DISK_SAFETY_MARGIN_BYTES = 2 * 1024 * 1024 * 1024;
@@ -187,7 +187,7 @@ export class ArchiveIngestService {
   }
 
   private async resolveSeriesOrThrow(seriesId: string) {
-    const seriesRepo = createSeriesRepositoryInternal(this.db, {
+    const seriesRepo = createSeriesRepository(this.db, {
       s3StorageService: this.s3StorageService,
       storageProviderRegistry: this.storageProviderRegistry,
     });

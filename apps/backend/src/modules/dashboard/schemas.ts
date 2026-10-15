@@ -1,7 +1,7 @@
 import { t } from "elysia";
 import type { AuthenticationService } from "@repo/contracts";
 import type { DbClient } from "@repo/db";
-import type { OngoingSeasonScheduler } from "../media/scheduler";
+import type { OngoingSeasonScheduler } from "../media";
 import type { StorageUsageProvider } from "./internal/types";
 
 /**

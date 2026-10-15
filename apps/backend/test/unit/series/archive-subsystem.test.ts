@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../../src/modules/series/internal/seven-zip-extractor", async (importOriginal) => {
+vi.mock("../../../src/modules/series/internal/archive-ingest/seven-zip-extractor", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("../../../src/modules/series/internal/seven-zip-extractor")>();
+    await importOriginal<typeof import("../../../src/modules/series/internal/archive-ingest/seven-zip-extractor")>();
   return {
     ...actual,
     probeSevenZipFormatSupport: vi.fn(),
@@ -10,10 +10,10 @@ vi.mock("../../../src/modules/series/internal/seven-zip-extractor", async (impor
 });
 
 vi.mock(
-  "../../../src/modules/series/internal/archive-ingest-job-service",
+  "../../../src/modules/series/internal/archive-ingest/archive-ingest-job-service",
   async (importOriginal) => {
     const actual = await importOriginal<
-      typeof import("../../../src/modules/series/internal/archive-ingest-job-service")
+      typeof import("../../../src/modules/series/internal/archive-ingest/archive-ingest-job-service")
     >();
     return {
       ...actual,
