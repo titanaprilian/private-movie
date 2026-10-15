@@ -23,7 +23,7 @@ import {
   type StorageProviderRegistry,
 } from "@repo/media-service";
 import {
-  ArchiveIngestJobManager,
+  createArchiveIngestJobManager,
   createArchiveIngestRepository,
 } from "../../../src/modules/series";
 import { waitForJobStatus } from "../../utils/archive-ingest";
@@ -212,7 +212,7 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
         }) as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
@@ -279,7 +279,7 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
         }) as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
@@ -324,7 +324,7 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
       serviceFor: () => createMockS3() as unknown as S3StorageService,
     });
 
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),
@@ -365,7 +365,7 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
     });
 
     const registry = createStorageProviderRegistry(db);
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       storageProviderRegistry: registry,
@@ -380,7 +380,7 @@ describe("ArchiveIngest storage provider resolution (ticket 693)", () => {
   it("raises S3NotConfiguredError when no providers exist and no fallback is configured", async () => {
     const { userId, seriesId, epIds } = await createShow();
     // No providers seeded and no registry injected: resolution falls through…
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3({ isConfigured: () => false }),

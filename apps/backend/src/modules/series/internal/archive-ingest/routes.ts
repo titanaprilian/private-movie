@@ -4,7 +4,7 @@ import { authGuard } from "../../../../lib/auth";
 import { successResponse, errorResponse } from "../../../../lib/response";
 import { SeriesNotFoundError } from "../errors";
 import { createSeriesRepository } from "../catalog/repository";
-import { ArchiveIngestJobManager } from "./services/job";
+import { createArchiveIngestJobManager } from "./services/job";
 import { createArchiveIngestRepository } from "./repository";
 import { createVideoSourceRepositoryInternal } from "@repo/media-service";
 import type { SeriesRoutesOptions } from "../../schemas";
@@ -39,7 +39,7 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
 
   const archiveJobService =
     options.archiveJobService ??
-    new ArchiveIngestJobManager({
+    createArchiveIngestJobManager({
       repository,
       videoSourceRepository,
       s3StorageService: options.s3StorageService,

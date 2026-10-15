@@ -13,8 +13,9 @@ import { db } from "../../utils/db";
 import { createMockS3 } from "../../utils/s3";
 import { users, series, seasons, archiveIngestJobs } from "@repo/db";
 import {
-  ArchiveIngestJobManager,
+  createArchiveIngestJobManager,
   createArchiveIngestRepository,
+  type ArchiveIngestJobManager,
 } from "../../../src/modules/series";
 
 async function createOwner(): Promise<string> {
@@ -80,7 +81,7 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/season-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),
@@ -160,7 +161,7 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/unlisted-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),
@@ -225,7 +226,7 @@ describe("ArchiveIngest smart staging reuse on submit (ticket 693)", () => {
     const sourceUrl = "https://example.com/gone-pack.7z";
 
     let downloadCalls = 0;
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: createMockS3(),

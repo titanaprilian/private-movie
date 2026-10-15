@@ -28,7 +28,7 @@ import { db } from "../../utils/db";
 import { users, series, seasons, episodes, archiveIngestJobs } from "@repo/db";
 import { eq } from "drizzle-orm";
 import {
-  ArchiveIngestJobManager,
+  createArchiveIngestJobManager,
   createArchiveIngestRepository,
   markInterruptedJobsOnBoot,
   purgeOrphanStagingDirs,
@@ -582,7 +582,7 @@ describe("Archive Ingest Jobs REST Endpoints", () => {
 
     it("retries a failed job with an optional password", async () => {
       const { seriesId: rSeriesId } = await createSeriesAndEpisodes();
-      const service = new ArchiveIngestJobManager({
+      const service = createArchiveIngestJobManager({
         repository: createArchiveIngestRepository(db),
         stagingBaseDir: testTmpBase,
         fetchFn: makeFakeFetchFn() as never,

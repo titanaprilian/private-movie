@@ -21,7 +21,7 @@ import {
 import { createVideoSourceRepositoryInternal } from "@repo/media-service";
 import {
   ArchiveEngineError,
-  ArchiveIngestJobManager,
+  createArchiveIngestJobManager,
   createArchiveIngestRepository,
 } from "../../../src/modules/series";
 import { writeFile, mkdir } from "node:fs/promises";
@@ -150,7 +150,7 @@ describe("ArchiveIngest upload execution (ticket 688)", () => {
     const uploads: string[] = [];
     let lastExtractedAbs: string | null = null;
 
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: makeFakeS3(uploads) as never,
@@ -269,7 +269,7 @@ describe("ArchiveIngest upload execution (ticket 688)", () => {
 
     const extractOrder: string[] = [];
     const uploads: string[] = [];
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: makeFakeS3(uploads) as never,
@@ -331,7 +331,7 @@ describe("ArchiveIngest upload execution (ticket 688)", () => {
 
     let attempts = 0;
     const uploads: string[] = [];
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: makeFakeS3(uploads) as never,
@@ -425,7 +425,7 @@ describe("ArchiveIngest upload execution (ticket 688)", () => {
       releaseExtract = resolve;
     });
     const uploads: string[] = [];
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: makeFakeS3(uploads) as never,
@@ -562,7 +562,7 @@ describe("ArchiveIngest idempotent re-confirm (ticket 695)", () => {
     });
     const extractOrder: string[] = [];
     const uploads: string[] = [];
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: makeFakeS3(uploads) as never,
@@ -663,7 +663,7 @@ describe("ArchiveIngest idempotent re-confirm (ticket 695)", () => {
 
     const extractOrder: string[] = [];
     const uploads: string[] = [];
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: makeFakeS3(uploads) as never,
@@ -724,7 +724,7 @@ describe("ArchiveIngest idempotent re-confirm (ticket 695)", () => {
 
     const extractOrder: string[] = [];
     const uploads: string[] = [];
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       s3StorageService: makeFakeS3(uploads) as never,

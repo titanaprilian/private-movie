@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  ArchiveIngestJobManager,
+  createArchiveIngestJobManager,
   isGoogleDriveInterstitial,
   isGoogleDriveUrl,
   type ArchiveEntry,
@@ -26,11 +26,11 @@ function mockRepository(): ArchiveIngestRepository {
   };
 }
 
-describe("ArchiveIngestJobManager Unit Tests", () => {
+describe("createArchiveIngestJobManager Unit Tests", () => {
   const repository = mockRepository();
 
   it("extractFilename correctly parses filename or falls back", () => {
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository,
       stagingBaseDir: "/tmp",
     });
@@ -47,7 +47,7 @@ describe("ArchiveIngestJobManager Unit Tests", () => {
   });
 
   it("deriveSourceKey normalizes URLs and identifies Google Drive files", () => {
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository,
       stagingBaseDir: "/tmp",
     });
@@ -67,7 +67,7 @@ describe("ArchiveIngestJobManager Unit Tests", () => {
 
   describe("processArchiveEntries (Episode Matching & Size Disparity)", () => {
     it("filters out non-video files and sample files", () => {
-      const service = new ArchiveIngestJobManager({
+      const service = createArchiveIngestJobManager({
         repository,
         stagingBaseDir: "/tmp",
       });
@@ -104,7 +104,7 @@ describe("ArchiveIngestJobManager Unit Tests", () => {
     });
 
     it("flags unusually small sibling videos with needsReview = true", () => {
-      const service = new ArchiveIngestJobManager({
+      const service = createArchiveIngestJobManager({
         repository,
         stagingBaseDir: "/tmp",
       });
@@ -131,7 +131,7 @@ describe("ArchiveIngestJobManager Unit Tests", () => {
     });
 
     it("flags unparseable episode names or duplicate episode collisions with needsReview = true", () => {
-      const service = new ArchiveIngestJobManager({
+      const service = createArchiveIngestJobManager({
         repository,
         stagingBaseDir: "/tmp",
       });
@@ -202,7 +202,7 @@ describe("ArchiveIngestJobManager Unit Tests", () => {
     });
 
     it("resolveReferer prefers explicit referer and defaults to URL origin", () => {
-      const service = new ArchiveIngestJobManager({
+      const service = createArchiveIngestJobManager({
         repository,
         stagingBaseDir: "/tmp",
       });
@@ -256,7 +256,7 @@ describe("ArchiveIngestJobManager Unit Tests", () => {
       const existing = fakeJob();
       vi.mocked(repo.findActiveJob).mockResolvedValue(existing);
 
-      const service = new ArchiveIngestJobManager({
+      const service = createArchiveIngestJobManager({
         repository: repo,
         stagingBaseDir: "/tmp",
       });
@@ -278,7 +278,7 @@ describe("ArchiveIngestJobManager Unit Tests", () => {
       vi.mocked(repo.createJob).mockResolvedValue(created);
       vi.mocked(repo.findById).mockResolvedValue(created);
 
-      const service = new ArchiveIngestJobManager({
+      const service = createArchiveIngestJobManager({
         repository: repo,
         stagingBaseDir: "/tmp",
         maxConcurrentJobs: 2,
@@ -299,7 +299,7 @@ describe("ArchiveIngestJobManager Unit Tests", () => {
       const done = fakeJob({ status: "done", stage: "done" });
       vi.mocked(repo.findById).mockResolvedValue(done);
 
-      const service = new ArchiveIngestJobManager({
+      const service = createArchiveIngestJobManager({
         repository: repo,
         stagingBaseDir: "/tmp",
       });

@@ -6,7 +6,7 @@ import { db } from "../../utils/db";
 import { users, archiveIngestJobs } from "@repo/db";
 import { eq } from "drizzle-orm";
 import {
-  ArchiveIngestJobManager,
+  createArchiveIngestJobManager,
   createArchiveIngestRepository,
 } from "../../../src/modules/series";
 
@@ -36,7 +36,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
   });
 
   it("submitting the same source_key returns existing active job without creating duplicate", async () => {
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async () => {
@@ -86,7 +86,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
     const contentLength = 100 * 1024 * 1024; // 100MB
     const availableSpace = 200 * 1024 * 1024; // 200MB (< 250MB required)
 
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       statfsFn: async () => ({ bavail: availableSpace, bsize: 1 }),
@@ -132,7 +132,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
     const chunk2 = new Uint8Array(1024 * 50);
     const totalBytes = chunk1.byteLength + chunk2.byteLength;
 
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async () => {
@@ -174,7 +174,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
   });
 
   it("listing inspects entries, matches episode numbers, flags size disparity anomalies, and transitions job to ready", async () => {
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async () => {
@@ -253,7 +253,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
       },
     });
 
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async (_url, init) => {
@@ -292,7 +292,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
   });
 
   it("enforces concurrency limit: extra jobs are queued and can be started sequentially", async () => {
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       maxConcurrentJobs: 1, // Allow only 1 active job at a time
@@ -332,7 +332,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
 
   it("persists referer in the DB row and forwards it in the fetch Referer header", async () => {
     const seenHeaders: Record<string, string>[] = [];
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async (_url, init) => {
@@ -377,7 +377,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
 
   it("defaults the Referer header to the source URL origin when no referer is given", async () => {
     const seenHeaders: Record<string, string>[] = [];
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async (_url, init) => {
@@ -413,7 +413,7 @@ describe("ArchiveIngestJobService Integration Tests", () => {
 
   it("does NOT enter the GDrive confirm path for an HTML 200 OK response on a non-GDrive URL", async () => {
     let fetchCount = 0;
-    const service = new ArchiveIngestJobManager({
+    const service = createArchiveIngestJobManager({
       repository: createArchiveIngestRepository(db),
       stagingBaseDir: testTmpBase,
       fetchFn: async () => {

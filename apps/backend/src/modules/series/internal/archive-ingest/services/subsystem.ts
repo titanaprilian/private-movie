@@ -5,9 +5,12 @@ import type {
   StorageProviderRegistry,
 } from "@repo/media-service";
 import { logger as defaultLogger } from "../../../../../lib/logger";
-import type { ArchiveIngestRepository } from "../types";
-import {
+import type {
   ArchiveIngestJobManager,
+  ArchiveIngestRepository,
+} from "../types";
+import {
+  createArchiveIngestJobManager,
   type ArchiveIngestJobManagerOptions,
   type ArchiveIngestVideoSourceWriter,
 } from "./job";
@@ -190,7 +193,7 @@ export async function startArchiveIngestSubsystem(
     logger.warn("7-Zip binary not found; archive ingest will fail", error);
   }
 
-  const jobService = new ArchiveIngestJobManager({
+  const jobService = createArchiveIngestJobManager({
     repository,
     s3StorageService,
     storageProviderRegistry,
