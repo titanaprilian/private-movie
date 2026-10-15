@@ -14,13 +14,13 @@ export const loginBodySchema = t.Object({
 export const logoutBodySchema = t.Optional(
   t.Object({
     refreshToken: t.Optional(t.String()),
-  })
+  }),
 );
 
 export const refreshBodySchema = t.Optional(
   t.Object({
     refreshToken: t.Optional(t.String()),
-  })
+  }),
 );
 
 export const registerRouteSchema = {
@@ -28,7 +28,8 @@ export const registerRouteSchema = {
   detail: {
     tags: ["Authentication"],
     summary: "Register a new user",
-    description: "Creates a new user account and returns access and refresh tokens.",
+    description:
+      "Creates a new user account and returns access and refresh tokens.",
   },
 };
 
@@ -45,7 +46,8 @@ export const meRouteSchema = {
   detail: {
     tags: ["Authentication"],
     summary: "Get current user",
-    description: "Returns the profile of the user identified by the bearer access token.",
+    description:
+      "Returns the profile of the user identified by the bearer access token.",
   },
 };
 
@@ -54,7 +56,8 @@ export const logoutRouteSchema = {
   detail: {
     tags: ["Authentication"],
     summary: "Log out",
-    description: "Revokes the current refresh token and clears the refresh cookie.",
+    description:
+      "Revokes the current refresh token and clears the refresh cookie.",
   },
 };
 
@@ -71,6 +74,7 @@ export const refreshRouteSchema = {
   detail: {
     tags: ["Authentication"],
     summary: "Refresh tokens",
-    description: "Exchanges a valid refresh token for a new access and refresh token pair.",
+    description:
+      "Exchanges a valid refresh token for a new access and refresh token pair.",
   },
 };
