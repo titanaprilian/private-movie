@@ -14,7 +14,10 @@ import type {
 } from "@repo/contracts";
 import { loadSchedulerConfig } from "../../media";
 
-export type DashboardDb = Pick<DbClient, "select" | "selectDistinct" | "insert"> & {
+export type DashboardDb = Pick<
+  DbClient,
+  "select" | "selectDistinct" | "insert"
+> & {
   // Allow the concrete Drizzle PostgresJsDatabase while keeping the
   // repository unit-testable against narrower fakes.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +41,9 @@ export interface DashboardRepository {
   getSchedulerConfig(): Promise<SchedulerConfig>;
 }
 
-export function createDashboardRepository(db: DashboardDb): DashboardRepository {
+export function createDashboardRepository(
+  db: DashboardDb,
+): DashboardRepository {
   return {
     async getCatalogStats(): Promise<AdminDashboardCatalogStats> {
       const [seriesRow] = await db.select({ value: count() }).from(series);
@@ -102,7 +107,9 @@ export function createDashboardRepository(db: DashboardDb): DashboardRepository 
         seasonNumber: row.seasonNumber ?? null,
         posterUrl: row.posterUrl ?? null,
         episodeCount: row.episodeCount ?? 0,
-        lastScrapedAt: row.lastScrapedAt ? row.lastScrapedAt.toISOString() : null,
+        lastScrapedAt: row.lastScrapedAt
+          ? row.lastScrapedAt.toISOString()
+          : null,
         lastScrapeError: row.lastScrapeError ?? null,
       }));
     },
@@ -138,7 +145,9 @@ export function createDashboardRepository(db: DashboardDb): DashboardRepository 
         .select({ storageLimitGb: storageProviders.storageLimitGb })
         .from(storageProviders)
         .where(eq(storageProviders.isEnabled, true));
-      return providers.map((p) => ({ storageLimitGb: p.storageLimitGb ?? null }));
+      return providers.map((p) => ({
+        storageLimitGb: p.storageLimitGb ?? null,
+      }));
     },
 
     async getSchedulerConfig(): Promise<SchedulerConfig> {

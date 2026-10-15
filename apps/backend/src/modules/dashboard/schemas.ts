@@ -15,17 +15,20 @@ export const updateSchedulerConfigBody = t.Object({
 export const getDashboardDetail = {
   tags: ["Dashboard & Scheduler"],
   summary: "Get admin dashboard",
-  description: "Returns aggregated library statistics, scheduler status, and storage usage.",
+  description:
+    "Returns aggregated library statistics, scheduler status, and storage usage.",
 };
 
 export const runSchedulerDetail = {
   tags: ["Dashboard & Scheduler"],
   summary: "Run ongoing-season scheduler",
-  description: "Triggers an immediate run of the ongoing-season sync scheduler.",
+  description:
+    "Triggers an immediate run of the ongoing-season sync scheduler.",
 };
 
 export const updateSchedulerConfigDetail = {
   tags: ["Dashboard & Scheduler"],
   summary: "Update scheduler config",
-  description: "Updates the ongoing-season scheduler interval and enabled state.",
+  description:
+    "Updates the ongoing-season scheduler interval and enabled state.",
 };

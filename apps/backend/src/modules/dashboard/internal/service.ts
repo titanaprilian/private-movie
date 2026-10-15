@@ -64,7 +64,10 @@ function idleScheduler(): AdminDashboardSchedulerTelemetry {
   };
 }
 
-export function computePercentUsed(totalUsedBytes: number, totalLimitBytes: number): number {
+export function computePercentUsed(
+  totalUsedBytes: number,
+  totalLimitBytes: number,
+): number {
   return totalLimitBytes > 0 && totalUsedBytes > 0
     ? Number(Math.min(100, (totalUsedBytes / totalLimitBytes) * 100).toFixed(2))
     : 0;
@@ -88,7 +91,10 @@ export async function getStorageStats(
   let totalUsedBytes = 0;
   if (storageUsageProvider) {
     try {
-      const used = await withTimeout(storageUsageProvider.getTotalUsedBytes(), timeoutMs);
+      const used = await withTimeout(
+        storageUsageProvider.getTotalUsedBytes(),
+        timeoutMs,
+      );
       if (typeof used === "number" && Number.isFinite(used) && used > 0) {
         totalUsedBytes = Math.floor(used);
       }
@@ -153,7 +159,10 @@ export function createDashboardService(
       );
       const ongoingSeasons = await repository.getOngoingSeasons();
       const recentSeries = await repository.getRecentSeries();
-      const scheduler = await getSchedulerTelemetry(repository, options?.scheduler ?? null);
+      const scheduler = await getSchedulerTelemetry(
+        repository,
+        options?.scheduler ?? null,
+      );
       return {
         catalog,
         storage,
