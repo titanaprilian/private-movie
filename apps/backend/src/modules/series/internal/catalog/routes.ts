@@ -1,11 +1,11 @@
 import { Elysia } from "elysia";
 import {
   createEpisodeRepositoryInternal,
-  createSeasonsRepositoryInternal,
   createStorageProviderRegistry,
 } from "@repo/media-service";
 import { authGuard } from "../../../../lib/auth";
 import { successResponse } from "../../../../lib/response";
+import { createSeasonRepository } from "../../../seasons";
 import { SeriesNotFoundError } from "../errors";
 import { createSeriesRepository } from "./repository";
 import { parseSourceTypesParam } from "./utils/source-types";
@@ -34,7 +34,7 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
     s3StorageService: options.s3StorageService,
     storageProviderRegistry: storageRegistry,
   });
-  const seasonsRepository = createSeasonsRepositoryInternal(options.db);
+  const seasonsRepository = createSeasonRepository(options.db);
 
   return new Elysia({ name: "series-catalog-routes" })
     .get(
