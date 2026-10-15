@@ -1,22 +1,27 @@
 import { randomUUID } from "node:crypto";
 import type { DbClient } from "@repo/db";
-import type { S3StorageService, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  S3StorageService,
+  StorageProviderRegistry,
+} from "@repo/media-service";
 import {
-  createEpisodeRepositoryInternal,
   createVideoSourceRepositoryInternal,
   EpisodeNotFoundError,
   S3NotConfiguredError,
 } from "@repo/media-service";
-import { FileTooLargeError, UploadSessionNotFoundError, DownloadIncompleteError } from "../../../lib/errors";
-import { captureException } from "../../../lib/sentry";
-import { logger } from "../../../lib/logger";
-import { createProgressThrottle } from "../../../lib/sse-progress";
+import {
+  FileTooLargeError,
+  UploadSessionNotFoundError,
+  DownloadIncompleteError,
+} from "../../../../lib/errors";
+import { captureException } from "../../../../lib/sentry";
+import { logger } from "../../../../lib/logger";
+import { createProgressThrottle } from "../../../../lib/sse-progress";
+import { createEpisodeRepository } from "../catalog/repository";
+import type { EpisodeRepository } from "../catalog/types";
+import type { IngestServiceOptions, ProgressInfo } from "./types";
 
-export interface ProgressInfo {
-  loaded: number;
-  total: number;
-  percent: number;
-}
+export type { IngestServiceOptions, ProgressInfo } from "./types";
 
 export class IngestService {
   private uploadProgressCache = new Map<string, ProgressInfo>();
@@ -24,13 +29,20 @@ export class IngestService {
   constructor(
     private db: DbClient,
     private s3StorageService?: S3StorageService,
-    private storageProviderRegistry?: StorageProviderRegistry
+    private storageProviderRegistry?: StorageProviderRegistry,
+    private options?: IngestServiceOptions,
   ) {}
+
+  private resolveEpisodeRepository(): EpisodeRepository {
+    return this.options?.episodeRepository ?? createEpisodeRepository(this.db);
+  }
 
   getUploadProgress(sessionId: string): ProgressInfo {
     const progress = this.uploadProgressCache.get(sessionId);
     if (!progress) {
-      throw new UploadSessionNotFoundError(`Upload session with id ${sessionId} not found`);
+      throw new UploadSessionNotFoundError(
+        `Upload session with id ${sessionId} not found`,
+      );
     }
     return progress;
   }
@@ -55,7 +67,8 @@ export class IngestService {
 
     let resolvedProviderId = targetProviderId;
     if (!resolvedProviderId && this.storageProviderRegistry) {
-      const defaultProv = await this.storageProviderRegistry.getDefaultProvider();
+      const defaultProv =
+        await this.storageProviderRegistry.getDefaultProvider();
       if (defaultProv) {
         resolvedProviderId = defaultProv.provider.id;
       }
@@ -68,9 +81,9 @@ export class IngestService {
     episodeId: string,
     filename: string,
     contentType: string | null | undefined,
-    storageProviderId: string | null = null
+    storageProviderId: string | null = null,
   ) {
-    const episodeRepo = createEpisodeRepositoryInternal(this.db);
+    const episodeRepo = this.resolveEpisodeRepository();
     const episode = await episodeRepo.findById(episodeId);
     if (!episode) {
       throw new EpisodeNotFoundError(`Episode with id ${episodeId} not found`);
@@ -88,26 +101,28 @@ export class IngestService {
     quality: string | null | undefined,
     uploadSessionId: string | null | undefined,
     storageProviderId: string | null = null,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ) {
-    const maxUploadMb = parseInt(process.env.MAX_UPLOAD_SIZE_MB || "1024", 10) || 1024;
+    const maxUploadMb =
+      parseInt(process.env.MAX_UPLOAD_SIZE_MB || "1024", 10) || 1024;
     const maxSizeBytes = maxUploadMb * 1024 * 1024;
 
     if (file && typeof file.size === "number" && file.size > maxSizeBytes) {
       throw new FileTooLargeError(
         maxUploadMb >= 1024 && maxUploadMb % 1024 === 0
           ? `File size exceeds the maximum allowed limit of ${maxUploadMb / 1024}GB`
-          : `File size exceeds the maximum allowed limit of ${maxUploadMb}MB`
+          : `File size exceeds the maximum allowed limit of ${maxUploadMb}MB`,
       );
     }
 
-    const episodeRepo = createEpisodeRepositoryInternal(this.db);
+    const episodeRepo = this.resolveEpisodeRepository();
     const episode = await episodeRepo.findById(episodeId);
     if (!episode) {
       throw new EpisodeNotFoundError(`Episode with id ${episodeId} not found`);
     }
 
-    const { s3, resolvedProviderId } = await this.getS3ServiceAndProviderId(storageProviderId);
+    const { s3, resolvedProviderId } =
+      await this.getS3ServiceAndProviderId(storageProviderId);
 
     const filename = file.name || "video.mp4";
     const key = `episodes/${episodeId}/${randomUUID()}-${filename}`;
@@ -128,7 +143,9 @@ export class IngestService {
         onProgress: ({ loaded, total }) => {
           if (uploadSessionId) {
             const effectiveTotal =
-              (file.size && typeof file.size === "number" && file.size > 0 ? file.size : total) ?? 0;
+              (file.size && typeof file.size === "number" && file.size > 0
+                ? file.size
+                : total) ?? 0;
             const percent =
               effectiveTotal && effectiveTotal > 0
                 ? Math.min(100, Math.round((loaded / effectiveTotal) * 100))
@@ -142,10 +159,10 @@ export class IngestService {
         },
       });
 
-    const videoSourceRepo = createVideoSourceRepositoryInternal(this.db, {
-      s3StorageService: s3,
-      storageProviderRegistry: this.storageProviderRegistry,
-    });
+      const videoSourceRepo = createVideoSourceRepositoryInternal(this.db, {
+        s3StorageService: s3,
+        storageProviderRegistry: this.storageProviderRegistry,
+      });
       await videoSourceRepo.upsert({
         episodeId,
         type: "s3",
@@ -172,9 +189,9 @@ export class IngestService {
       referer?: string;
       storageProviderId?: string;
     },
-    requestSignal: AbortSignal
+    requestSignal: AbortSignal,
   ): Promise<ReadableStream> {
-    const episodeRepo = createEpisodeRepositoryInternal(this.db);
+    const episodeRepo = this.resolveEpisodeRepository();
     const videoSourceRepo = createVideoSourceRepositoryInternal(this.db, {
       s3StorageService: this.s3StorageService,
       storageProviderRegistry: this.storageProviderRegistry,
@@ -186,7 +203,7 @@ export class IngestService {
     }
 
     const { s3, resolvedProviderId } = await this.getS3ServiceAndProviderId(
-      body.storageProviderId ?? null
+      body.storageProviderId ?? null,
     );
 
     let targetUrl: URL;
@@ -199,7 +216,9 @@ export class IngestService {
     let filename = "video.mp4";
     const pathnameSegments = targetUrl.pathname.split("/").filter(Boolean);
     if (pathnameSegments.length > 0) {
-      const rawFilename = decodeURIComponent(pathnameSegments[pathnameSegments.length - 1]);
+      const rawFilename = decodeURIComponent(
+        pathnameSegments[pathnameSegments.length - 1],
+      );
       const sanitized = rawFilename.replace(/[^a-zA-Z0-9_.-]/g, "_");
       if (sanitized.length > 0) {
         filename = sanitized;
@@ -208,14 +227,18 @@ export class IngestService {
 
     const key = `episodes/${episodeId}/${randomUUID()}-${filename}`;
     const refererHeader =
-      body.referer && body.referer.trim().length > 0 ? body.referer.trim() : targetUrl.origin;
+      body.referer && body.referer.trim().length > 0
+        ? body.referer.trim()
+        : targetUrl.origin;
 
     const userAgentHeader =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
     const abortController = new AbortController();
     const onClientAbort = () => {
-      console.log(`[remote-ingest] Client request.signal aborted for key ${key}`);
+      console.log(
+        `[remote-ingest] Client request.signal aborted for key ${key}`,
+      );
       abortController.abort();
     };
 
@@ -226,7 +249,7 @@ export class IngestService {
     }
 
     console.log(
-      `[remote-ingest] Starting ingestion for episode ${episodeId}, target URL: ${targetUrl.toString()}`
+      `[remote-ingest] Starting ingestion for episode ${episodeId}, target URL: ${targetUrl.toString()}`,
     );
 
     const encoder = new TextEncoder();
@@ -234,14 +257,23 @@ export class IngestService {
       async start(controller) {
         const sendEvent = (event: string, data: unknown) => {
           try {
-            controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+            controller.enqueue(
+              encoder.encode(
+                `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+              ),
+            );
           } catch (e) {
-            console.error(`[remote-ingest] Failed to enqueue event ${event}:`, e);
+            console.error(
+              `[remote-ingest] Failed to enqueue event ${event}:`,
+              e,
+            );
           }
         };
 
         try {
-          console.log(`[remote-ingest] Fetching upstream URL with referer: ${refererHeader}`);
+          console.log(
+            `[remote-ingest] Fetching upstream URL with referer: ${refererHeader}`,
+          );
           const remoteRes = await fetch(targetUrl.toString(), {
             headers: {
               "User-Agent": userAgentHeader,
@@ -252,7 +284,7 @@ export class IngestService {
 
           if (!remoteRes.ok) {
             console.error(
-              `[remote-ingest] Upstream returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`
+              `[remote-ingest] Upstream returned HTTP ${remoteRes.status}: ${remoteRes.statusText}`,
             );
             sendEvent("error", {
               code: "REMOTE_FETCH_FAILED",
@@ -268,7 +300,9 @@ export class IngestService {
           }
 
           if (!remoteRes.body) {
-            console.error("[remote-ingest] Upstream returned empty response body");
+            console.error(
+              "[remote-ingest] Upstream returned empty response body",
+            );
             sendEvent("error", {
               code: "REMOTE_FETCH_FAILED",
               message: "Remote server returned empty response body",
@@ -283,17 +317,20 @@ export class IngestService {
           }
 
           const contentLengthHeader = remoteRes.headers.get("content-length");
-          const parsedLength = contentLengthHeader ? parseInt(contentLengthHeader, 10) : undefined;
+          const parsedLength = contentLengthHeader
+            ? parseInt(contentLengthHeader, 10)
+            : undefined;
           const expectedTotal =
             parsedLength && !Number.isNaN(parsedLength) && parsedLength > 0
               ? parsedLength
               : undefined;
 
-          const contentType = remoteRes.headers.get("content-type") || "video/mp4";
+          const contentType =
+            remoteRes.headers.get("content-type") || "video/mp4";
           console.log(
             `[remote-ingest] Upstream connected OK (Content-Length: ${
               expectedTotal ?? "unknown"
-            }, Content-Type: ${contentType}). Streaming to S3 key: ${key}`
+            }, Content-Type: ${contentType}). Streaming to S3 key: ${key}`,
           );
 
           let lastLoggedMb = 0;
@@ -315,7 +352,7 @@ export class IngestService {
               if (currentMb > lastLoggedMb) {
                 lastLoggedMb = currentMb;
                 console.log(
-                  `[remote-ingest] Upload progress: ${(loaded / (1024 * 1024)).toFixed(1)} MB (${percent}%)`
+                  `[remote-ingest] Upload progress: ${(loaded / (1024 * 1024)).toFixed(1)} MB (${percent}%)`,
                 );
               }
               const sample = { loaded, total: effectiveTotal ?? null, percent };
@@ -329,12 +366,16 @@ export class IngestService {
             },
           });
 
-          if (expectedTotal !== undefined && hasReportedProgress && lastLoaded < expectedTotal) {
+          if (
+            expectedTotal !== undefined &&
+            hasReportedProgress &&
+            lastLoaded < expectedTotal
+          ) {
             throw new DownloadIncompleteError(lastLoaded, expectedTotal);
           }
 
           console.log(
-            `[remote-ingest] S3 uploadStream finished successfully for key: ${key}. Updating DB...`
+            `[remote-ingest] S3 uploadStream finished successfully for key: ${key}. Updating DB...`,
           );
 
           const videoSourceRow = await videoSourceRepo.upsert({
@@ -349,7 +390,7 @@ export class IngestService {
           const updatedEpisode = await episodeRepo.findById(episodeId);
 
           console.log(
-            `[remote-ingest] DB upsert complete for episode ${episodeId}. Sending complete event...`
+            `[remote-ingest] DB upsert complete for episode ${episodeId}. Sending complete event...`,
           );
 
           sendEvent("complete", {
@@ -362,10 +403,14 @@ export class IngestService {
           } catch {
             /* ignore */
           }
-          console.log(`[remote-ingest] Ingestion completed successfully for episode ${episodeId}`);
+          console.log(
+            `[remote-ingest] Ingestion completed successfully for episode ${episodeId}`,
+          );
         } catch (err: unknown) {
           if (abortController.signal.aborted) {
-            console.warn(`[remote-ingest] Ingestion aborted for episode ${episodeId}`);
+            console.warn(
+              `[remote-ingest] Ingestion aborted for episode ${episodeId}`,
+            );
             try {
               controller.close();
             } catch {
@@ -373,11 +418,17 @@ export class IngestService {
             }
             return;
           }
-          console.error("[remote-ingest] Remote video ingestion failed with exception:", err);
+          console.error(
+            "[remote-ingest] Remote video ingestion failed with exception:",
+            err,
+          );
           captureException(err, { episodeId, key });
           logger.error({ err, episodeId, key }, "remote ingest stream failed");
           const errorMessage = err instanceof Error ? err.message : String(err);
-          const code = err instanceof DownloadIncompleteError ? "DOWNLOAD_INCOMPLETE" : "INGEST_FAILED";
+          const code =
+            err instanceof DownloadIncompleteError
+              ? "DOWNLOAD_INCOMPLETE"
+              : "INGEST_FAILED";
           sendEvent("error", {
             code,
             message: errorMessage,

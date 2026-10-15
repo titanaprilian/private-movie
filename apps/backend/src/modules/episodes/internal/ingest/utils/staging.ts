@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
+import type { PruneStagingSessionsResult } from "../types";
+
+export type { PruneStagingSessionsResult } from "../types";
 
 export const ARCHIVE_STAGING_TTL_MS = 60 * 60 * 1000;
 
@@ -12,13 +15,16 @@ export function createArchiveStagingSessionId(): string {
   return randomUUID();
 }
 
-export function getArchiveStagingDir(baseDir: string, sessionId: string): string {
+export function getArchiveStagingDir(
+  baseDir: string,
+  sessionId: string,
+): string {
   return join(baseDir, sessionId);
 }
 
 export async function ensureArchiveStagingDir(
   baseDir: string,
-  sessionId: string
+  sessionId: string,
 ): Promise<string> {
   const dir = getArchiveStagingDir(baseDir, sessionId);
   await mkdir(dir, { recursive: true });
@@ -27,15 +33,10 @@ export async function ensureArchiveStagingDir(
 
 export async function removeArchiveStagingDir(
   baseDir: string,
-  sessionId: string
+  sessionId: string,
 ): Promise<void> {
   const dir = getArchiveStagingDir(baseDir, sessionId);
   await rm(dir, { recursive: true, force: true });
-}
-
-export interface PruneStagingSessionsResult {
-  scanned: number;
-  removed: number;
 }
 
 /**
@@ -47,7 +48,7 @@ export interface PruneStagingSessionsResult {
 export async function pruneExpiredArchiveStagingSessions(
   baseDir: string,
   ttlMs: number = ARCHIVE_STAGING_TTL_MS,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): Promise<PruneStagingSessionsResult> {
   let entries: string[];
   try {

@@ -5,16 +5,19 @@ vi.mock("../../../src/lib/sentry", () => ({
   initSentry: vi.fn(() => false),
 }));
 vi.mock("../../../src/lib/logger", () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), child: vi.fn() },
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    child: vi.fn(),
+  },
   createLogger: vi.fn(),
 }));
 vi.mock("@repo/media-service", async (orig) => {
   const actual = await orig<object>();
   return {
     ...(actual as object),
-    createEpisodeRepositoryInternal: vi.fn(() => ({
-      findById: async () => ({ id: "ep-1" }),
-    })),
     createVideoSourceRepositoryInternal: vi.fn(() => ({
       upsert: async () => ({ id: "vs-1" }),
     })),
@@ -23,14 +26,26 @@ vi.mock("@repo/media-service", async (orig) => {
 
 import { captureException } from "../../../src/lib/sentry";
 import { logger } from "../../../src/lib/logger";
-import { IngestService } from "../../../src/modules/episodes";
+import {
+  IngestService,
+  type EpisodeRepository,
+} from "../../../src/modules/episodes";
 
 function sseEvents(text: string): { event: string; data: unknown }[] {
-  return text.split("\n\n").filter(Boolean).map((block) => {
-    const el = block.split("\n").find((l) => l.startsWith("event: "))!.slice(7);
-    const dl = block.split("\n").find((l) => l.startsWith("data: "))!.slice(6);
-    return { event: el, data: JSON.parse(dl) };
-  });
+  return text
+    .split("\n\n")
+    .filter(Boolean)
+    .map((block) => {
+      const el = block
+        .split("\n")
+        .find((l) => l.startsWith("event: "))!
+        .slice(7);
+      const dl = block
+        .split("\n")
+        .find((l) => l.startsWith("data: "))!
+        .slice(6);
+      return { event: el, data: JSON.parse(dl) };
+    });
 }
 
 async function readAll(stream: ReadableStream): Promise<string> {
@@ -49,7 +64,8 @@ function chunked(total: number, chunk = 1024): ReadableStream<Uint8Array> {
   const n = Math.ceil(total / chunk);
   return new ReadableStream<Uint8Array>({
     start(c) {
-      for (let i = 0; i < n; i++) c.enqueue(new Uint8Array(Math.min(chunk, total - i * chunk)));
+      for (let i = 0; i < n; i++)
+        c.enqueue(new Uint8Array(Math.min(chunk, total - i * chunk)));
       c.close();
     },
   });
@@ -58,24 +74,66 @@ function chunked(total: number, chunk = 1024): ReadableStream<Uint8Array> {
 describe("remote ingest resilience", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  function svc(uploadImpl: (key: string, body: unknown, opts: { onProgress?: (p: { loaded: number; total: number }) => void }) => Promise<unknown>) {
+  function svc(
+    uploadImpl: (
+      key: string,
+      body: unknown,
+      opts: { onProgress?: (p: { loaded: number; total: number }) => void },
+    ) => Promise<unknown>,
+  ) {
     const fakeS3 = {
       isConfigured: () => true,
       getPresignedUploadUrl: async () => ({ url: "x", key: "k" }),
       uploadStream: uploadImpl,
     };
-    return new IngestService({} as never, fakeS3 as never);
+    const fakeEpisodeRepo = {
+      findById: async () => ({ id: "ep-1" }),
+    } as unknown as EpisodeRepository;
+    return new IngestService({} as never, fakeS3 as never, undefined, {
+      episodeRepository: fakeEpisodeRepo,
+    });
   }
+
+  it("uses the injected episodeRepository (missing episode -> not found)", async () => {
+    const fakeS3 = {
+      isConfigured: () => true,
+      getPresignedUploadUrl: async () => ({ url: "x", key: "k" }),
+      uploadStream: async () => {},
+    };
+    const missingRepo = {
+      findById: async () => null,
+    } as unknown as EpisodeRepository;
+    const svcInst = new IngestService({} as never, fakeS3 as never, undefined, {
+      episodeRepository: missingRepo,
+    });
+    await expect(
+      svcInst.remoteIngestStream(
+        "missing",
+        { url: "https://x/v.mp4", label: "l" },
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow("Episode with id missing not found");
+  });
 
   it("throttles progress events (many onProgress calls -> few SSE events)", async () => {
     const svcInst = svc(async (_k, _b, opts) => {
-      for (let i = 1; i <= 60; i++) opts.onProgress?.({ loaded: i * 100, total: 10 * 1024 * 1024 });
+      for (let i = 1; i <= 60; i++)
+        opts.onProgress?.({ loaded: i * 100, total: 10 * 1024 * 1024 });
     });
-    vi.stubGlobal("fetch", async () =>
-      new Response(chunked(60 * 100), { status: 200, headers: { "content-type": "video/mp4" } }),
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(chunked(60 * 100), {
+          status: 200,
+          headers: { "content-type": "video/mp4" },
+        }),
     );
     try {
-      const stream = await svcInst.remoteIngestStream("ep-1", { url: "https://x/v.mp4", label: "l" }, new AbortController().signal);
+      const stream = await svcInst.remoteIngestStream(
+        "ep-1",
+        { url: "https://x/v.mp4", label: "l" },
+        new AbortController().signal,
+      );
       const events = sseEvents(await readAll(stream));
       const progress = events.filter((e) => e.event === "progress");
       expect(progress.length).toBeLessThan(60);
@@ -89,11 +147,23 @@ describe("remote ingest resilience", () => {
     const svcInst = svc(async (_k, _b, opts) => {
       opts.onProgress?.({ loaded: 2 * 1024, total: 10 * 1024 });
     });
-    vi.stubGlobal("fetch", async () =>
-      new Response(chunked(2 * 1024), { status: 200, headers: { "content-length": String(10 * 1024), "content-type": "video/mp4" } }),
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(chunked(2 * 1024), {
+          status: 200,
+          headers: {
+            "content-length": String(10 * 1024),
+            "content-type": "video/mp4",
+          },
+        }),
     );
     try {
-      const stream = await svcInst.remoteIngestStream("ep-1", { url: "https://x/v.mp4", label: "l" }, new AbortController().signal);
+      const stream = await svcInst.remoteIngestStream(
+        "ep-1",
+        { url: "https://x/v.mp4", label: "l" },
+        new AbortController().signal,
+      );
       const events = sseEvents(await readAll(stream));
       const err = events.find((e) => e.event === "error");
       expect(err?.data).toMatchObject({ code: "DOWNLOAD_INCOMPLETE" });
@@ -105,12 +175,23 @@ describe("remote ingest resilience", () => {
   });
 
   it("reports unhandled streaming failures to Sentry and logger", async () => {
-    const svcInst = svc(async () => { throw new Error("s3-boom"); });
-    vi.stubGlobal("fetch", async () =>
-      new Response(chunked(1024), { status: 200, headers: { "content-length": "1024", "content-type": "video/mp4" } }),
+    const svcInst = svc(async () => {
+      throw new Error("s3-boom");
+    });
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(chunked(1024), {
+          status: 200,
+          headers: { "content-length": "1024", "content-type": "video/mp4" },
+        }),
     );
     try {
-      const stream = await svcInst.remoteIngestStream("ep-1", { url: "https://x/v.mp4", label: "l" }, new AbortController().signal);
+      const stream = await svcInst.remoteIngestStream(
+        "ep-1",
+        { url: "https://x/v.mp4", label: "l" },
+        new AbortController().signal,
+      );
       const events = sseEvents(await readAll(stream));
       expect(events.some((e) => e.event === "error")).toBe(true);
       expect(captureException).toHaveBeenCalled();

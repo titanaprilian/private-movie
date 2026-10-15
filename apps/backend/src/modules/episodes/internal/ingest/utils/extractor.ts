@@ -1,35 +1,30 @@
-export class ArchivePasswordRequiredError extends Error {
-  constructor(message = "Archive is password-protected; a password is required") {
-    super(message);
-    this.name = "ArchivePasswordRequiredError";
-  }
-}
+import {
+  ArchiveExtractionError,
+  ArchivePasswordRequiredError,
+  InvalidArchivePasswordError,
+} from "../../errors";
+import type {
+  ArchiveExtractionResult,
+  ArchiveFormat,
+  ArchiveProcessRunner,
+  ExtractArchiveOptions,
+  ProcessRunResult,
+} from "../types";
 
-export class InvalidArchivePasswordError extends Error {
-  constructor(message = "Archive password is incorrect") {
-    super(message);
-    this.name = "InvalidArchivePasswordError";
-  }
-}
-
-export class ArchiveExtractionError extends Error {
-  constructor(message = "Failed to extract archive") {
-    super(message);
-    this.name = "ArchiveExtractionError";
-  }
-}
-
-export interface ArchiveExtractionResult {
-  extractedDir: string;
-  stdout: string;
-}
-
-export type ArchiveFormat = "rar" | "zip" | "unknown";
+export type {
+  ArchiveExtractionResult,
+  ArchiveFormat,
+  ArchiveProcessRunner,
+  ExtractArchiveOptions,
+  ProcessRunResult,
+} from "../types";
 
 const RAR_MAGIC = [0x52, 0x61, 0x72, 0x21];
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
 
-export function detectArchiveFormatFromBytes(bytes: Uint8Array | number[]): ArchiveFormat {
+export function detectArchiveFormatFromBytes(
+  bytes: Uint8Array | number[],
+): ArchiveFormat {
   if (
     bytes.length >= 4 &&
     bytes[0] === RAR_MAGIC[0] &&
@@ -53,24 +48,19 @@ export function detectArchiveFormatFromBytes(bytes: Uint8Array | number[]): Arch
 
 export async function detectArchiveFormat(
   archivePath: string,
-  readFn?: (path: string) => Promise<Uint8Array>
+  readFn?: (path: string) => Promise<Uint8Array>,
 ): Promise<ArchiveFormat> {
   try {
-    const read = readFn ?? (async (p: string) => new Uint8Array(await Bun.file(p).slice(0, 4).arrayBuffer()));
+    const read =
+      readFn ??
+      (async (p: string) =>
+        new Uint8Array(await Bun.file(p).slice(0, 4).arrayBuffer()));
     const bytes = await read(archivePath);
     return detectArchiveFormatFromBytes(bytes.slice(0, 4));
   } catch {
     return "unknown";
   }
 }
-
-export interface ProcessRunResult {
-  exitCode: number;
-  stdout: string;
-  stderr: string;
-}
-
-export type ArchiveProcessRunner = (args: string[]) => Promise<ProcessRunResult>;
 
 const SUPPORTED_ARCHIVE_EXTENSIONS = [".zip", ".rar", ".7z"];
 
@@ -98,18 +88,14 @@ function mentionsPassword(output: string): boolean {
 }
 
 function mentionsWrongPassword(output: string): boolean {
-  return /wrong password|data error in encrypted|incorrect password|bad password/i.test(output);
+  return /wrong password|data error in encrypted|incorrect password|bad password/i.test(
+    output,
+  );
 }
 
-export interface ExtractArchiveOptions {
-  archivePath: string;
-  destDir: string;
-  password?: string | null;
-  onProgressFile?: (filename: string) => void;
-  runner?: ArchiveProcessRunner;
-}
-
-export async function extractArchive(options: ExtractArchiveOptions): Promise<ArchiveExtractionResult> {
+export async function extractArchive(
+  options: ExtractArchiveOptions,
+): Promise<ArchiveExtractionResult> {
   const { archivePath, destDir, password, onProgressFile } = options;
   const runner = options.runner ?? defaultRunner;
 
@@ -124,7 +110,9 @@ export async function extractArchive(options: ExtractArchiveOptions): Promise<Ar
     result = await runner(args);
   } catch (err) {
     throw new ArchiveExtractionError(
-      err instanceof Error ? `Failed to run 7z: ${err.message}` : "Failed to run 7z"
+      err instanceof Error
+        ? `Failed to run 7z: ${err.message}`
+        : "Failed to run 7z",
     );
   }
 
@@ -147,8 +135,15 @@ export async function extractArchive(options: ExtractArchiveOptions): Promise<Ar
     throw new ArchivePasswordRequiredError();
   }
 
-  const detail = result.stderr.trim().split("\n").slice(-3).join(" ").slice(0, 300);
+  const detail = result.stderr
+    .trim()
+    .split("\n")
+    .slice(-3)
+    .join(" ")
+    .slice(0, 300);
   throw new ArchiveExtractionError(
-    detail ? `Failed to extract archive: ${detail}` : "Failed to extract archive"
+    detail
+      ? `Failed to extract archive: ${detail}`
+      : "Failed to extract archive",
   );
 }
