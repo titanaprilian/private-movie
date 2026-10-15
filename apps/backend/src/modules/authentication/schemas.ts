@@ -1,4 +1,23 @@
 import { t } from "elysia";
+import type { AuthenticationService, User } from "@repo/contracts";
+import type { createAuthenticationServiceInternal } from "./internal/service";
+
+export interface AuthRateLimitOptions {
+  disabled?: boolean;
+  max?: number;
+  duration?: number;
+}
+
+export interface AuthRoutesOptions {
+  db?: Parameters<typeof createAuthenticationServiceInternal>[0];
+  authService?: AuthenticationService;
+  rateLimit?: AuthRateLimitOptions;
+}
+
+export interface AuthResultPayload {
+  user: User;
+  tokens: { accessToken: string; refreshToken: string };
+}
 
 export const registerBodySchema = t.Object({
   name: t.String(),

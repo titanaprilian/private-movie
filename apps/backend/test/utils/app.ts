@@ -2,7 +2,7 @@ import type { createApp } from "@/app";
 import type { SchedulerDeps, StorageUsageProvider } from "@/app-types";
 import type { FetchFn, BrowserFn, S3StorageService, StorageProviderRegistry } from "@repo/media-service";
 import type { ArchiveExtractFn, ArchiveFetchFn, ArchiveIngestJobService } from "@/modules/series";
-import type { AuthRateLimitOptions } from "@/modules/authentication/http";
+import type { AuthRateLimitOptions } from "@/modules/authentication/schemas";
 import type { RateLimitPluginOptions } from "@/plugins";
 import type { StorageOverrides } from "@/modules/storage";
 
