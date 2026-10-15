@@ -5,18 +5,18 @@ export {
   getStorageStats,
   GB_IN_BYTES,
   STORAGE_USAGE_TIMEOUT_MS,
-  type DashboardService,
-  type DashboardServiceOptions,
-  type SchedulerTelemetryProvider,
-  type StorageUsageProvider,
 } from "./internal/service";
-export {
-  createDashboardRepository,
-  type DashboardRepository,
-  type DashboardDb,
-  type StorageProviderLimit,
-  type SchedulerConfig,
-} from "./internal/repository";
+export { createDashboardRepository } from "./internal/repository";
+export type {
+  DashboardService,
+  DashboardServiceOptions,
+  SchedulerTelemetryProvider,
+  StorageUsageProvider,
+  DashboardRepository,
+  DashboardDb,
+  StorageProviderLimit,
+  SchedulerConfig,
+} from "./internal/types";
 // Scheduler persistence lives in the media domain; re-exported here so
 // dashboard admin endpoints keep working without route changes.
 export {

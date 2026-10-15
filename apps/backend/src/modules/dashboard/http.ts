@@ -1,40 +1,17 @@
 import { Elysia } from "elysia";
-import type { AuthenticationService } from "@repo/contracts";
-import type { DbClient } from "@repo/db";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
-import type { OngoingSeasonScheduler } from "../media/scheduler";
 import { saveSchedulerConfig, validateSchedulerConfigInput } from "../media";
 import { createDashboardRepository } from "./internal/repository";
+import { createDashboardService } from "./internal/service";
 import {
-  createDashboardService,
-  type StorageUsageProvider,
-} from "./internal/service";
-import {
-  getDashboardDetail,
-  runSchedulerDetail,
-  updateSchedulerConfigBody,
-  updateSchedulerConfigDetail,
+  getDashboardRouteSchema,
+  runSchedulerRouteSchema,
+  updateSchedulerConfigRouteSchema,
+  type DashboardRoutesOptions,
 } from "./schemas";
 
-export interface DashboardRoutesOptions {
-  db: DbClient;
-  authService: AuthenticationService;
-  scheduler?: Pick<
-    OngoingSeasonScheduler,
-    | "runNow"
-    | "isEnabled"
-    | "isExecuting"
-    | "getIntervalMs"
-    | "getLastRunAt"
-    | "getLastRunResult"
-    | "getNextRunAt"
-    | "setEnabled"
-    | "updateInterval"
-  >;
-  storageUsageProvider?: StorageUsageProvider;
-  storageService?: StorageUsageProvider;
-}
+export type { DashboardRoutesOptions } from "./schemas";
 
 export const dashboardRoutes = (options: DashboardRoutesOptions) => {
   const repository = createDashboardRepository(options.db);
@@ -49,10 +26,7 @@ export const dashboardRoutes = (options: DashboardRoutesOptions) => {
     .get(
       "/admin/dashboard",
       async () => successResponse(await dashboardService.getDashboard()),
-      {
-        beforeHandle: auth,
-        detail: { ...getDashboardDetail },
-      },
+      { ...getDashboardRouteSchema, beforeHandle: auth },
     )
     .post(
       "/admin/scheduler/run",
@@ -81,7 +55,7 @@ export const dashboardRoutes = (options: DashboardRoutesOptions) => {
             : null,
         });
       },
-      { beforeHandle: auth, detail: { ...runSchedulerDetail } },
+      { ...runSchedulerRouteSchema, beforeHandle: auth },
     )
     .patch(
       "/admin/scheduler/config",
@@ -108,10 +82,6 @@ export const dashboardRoutes = (options: DashboardRoutesOptions) => {
           isEnabled: saved.isEnabled,
         });
       },
-      {
-        beforeHandle: auth,
-        body: updateSchedulerConfigBody,
-        detail: { ...updateSchedulerConfigDetail },
-      },
+      { ...updateSchedulerConfigRouteSchema, beforeHandle: auth },
     );
 };

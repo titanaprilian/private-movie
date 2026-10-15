@@ -4,44 +4,17 @@ import type {
   AdminDashboardSchedulerTelemetry,
   AdminDashboardStorageStats,
 } from "@repo/contracts";
-import type { StorageService } from "../../storage";
-import type { DashboardRepository } from "./repository";
+import type {
+  DashboardRepository,
+  DashboardService,
+  DashboardServiceOptions,
+  SchedulerTelemetryProvider,
+  StorageUsageProvider,
+} from "./types";
 
 export const GB_IN_BYTES = 1024 * 1024 * 1024;
 
 export const STORAGE_USAGE_TIMEOUT_MS = 2500;
-
-export interface SchedulerTelemetryProvider {
-  isEnabled(): boolean;
-  isExecuting(): boolean;
-  getIntervalMs(): number;
-  getLastRunAt(): Date | null;
-  getLastRunResult(): {
-    totalProcessed: number;
-    successCount: number;
-    failureCount: number;
-  } | null;
-  getNextRunAt(): Date | null;
-}
-
-/**
- * Supplies real storage usage in bytes (summed across enabled providers).
- * Implemented by the composition root with the storage module's cached S3
- * inventory scan. Return null when usage is unavailable; throw on failure —
- * both are treated as untracked so the dashboard never breaks.
- */
-export type StorageUsageProvider = Pick<StorageService, "getTotalUsedBytes">;
-
-export interface DashboardServiceOptions {
-  scheduler?: SchedulerTelemetryProvider | null;
-  storageUsageProvider?: StorageUsageProvider | null;
-  storageTimeoutMs?: number;
-}
-
-export interface DashboardService {
-  getCatalogStats(): Promise<AdminDashboardCatalogStats>;
-  getDashboard(): Promise<AdminDashboardDto>;
-}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;

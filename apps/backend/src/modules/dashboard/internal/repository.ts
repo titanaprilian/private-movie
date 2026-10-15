@@ -1,45 +1,17 @@
 import { count, desc, eq } from "drizzle-orm";
-import {
-  episodes,
-  genres,
-  seasons,
-  series,
-  storageProviders,
-  type DbClient,
-} from "@repo/db";
+import { episodes, genres, seasons, series, storageProviders } from "@repo/db";
 import type {
   AdminDashboardCatalogStats,
   AdminDashboardOngoingSeason,
   AdminDashboardRecentSeries,
 } from "@repo/contracts";
 import { loadSchedulerConfig } from "../../media";
-
-export type DashboardDb = Pick<
-  DbClient,
-  "select" | "selectDistinct" | "insert"
-> & {
-  // Allow the concrete Drizzle PostgresJsDatabase while keeping the
-  // repository unit-testable against narrower fakes.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-};
-
-export interface StorageProviderLimit {
-  storageLimitGb: number | null;
-}
-
-export interface SchedulerConfig {
-  intervalMinutes: number;
-  isEnabled: boolean;
-}
-
-export interface DashboardRepository {
-  getCatalogStats(): Promise<AdminDashboardCatalogStats>;
-  getOngoingSeasons(): Promise<AdminDashboardOngoingSeason[]>;
-  getRecentSeries(): Promise<AdminDashboardRecentSeries[]>;
-  getStorageProviderLimits(): Promise<StorageProviderLimit[]>;
-  getSchedulerConfig(): Promise<SchedulerConfig>;
-}
+import type {
+  DashboardDb,
+  DashboardRepository,
+  SchedulerConfig,
+  StorageProviderLimit,
+} from "./types";
 
 export function createDashboardRepository(
   db: DashboardDb,
