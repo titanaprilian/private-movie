@@ -1,95 +1,55 @@
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
 import type { AuthenticationService } from "@repo/contracts";
 import { successResponse } from "../../lib/response";
-import { createGenreRepositoryInternal } from "./internal/genres-repository";
+import { genreRepository } from "./internal/repository";
 import { authGuard } from "../../lib/auth";
+import {
+  createGenreBody,
+  createGenreDetail,
+  deleteGenreDetail,
+  genreIdParams,
+  listGenresDetail,
+  updateGenreBody,
+  updateGenreDetail,
+} from "./schemas";
 
 export interface GenreRoutesOptions {
-  db: Parameters<typeof createGenreRepositoryInternal>[0];
+  db: Parameters<typeof genreRepository>[0];
   authService: AuthenticationService;
 }
 
 export const genreRoutes = (options: GenreRoutesOptions) => {
-  const genreRepository = createGenreRepositoryInternal(options.db);
+  const repository = genreRepository(options.db);
   const auth = authGuard(options.authService);
 
   return new Elysia({ name: "genre-routes" })
-    .get(
-      "/genres",
-      async () => {
-        const result = await genreRepository.findAll();
-        return successResponse(result);
-      },
-      {
-        detail: {
-          tags: ["Genres"],
-          summary: "List genres",
-          description: "Returns all genres ordered for display.",
-        },
-      }
-    )
+    .get("/genres", async () => successResponse(await repository.findAll()), {
+      detail: listGenresDetail,
+    })
     .post(
       "/genres",
       async ({ body, set }) => {
-        const created = await genreRepository.create(body);
+        const created = await repository.create(body);
         set.status = 201;
         return successResponse(created);
       },
-      {
-        beforeHandle: auth,
-        body: t.Object({
-          name: t.String({ minLength: 1 }),
-          slug: t.String({ minLength: 1 }),
-          isBigGenre: t.Optional(t.Boolean()),
-          displayOrder: t.Optional(t.Number()),
-        }),
-        detail: {
-          tags: ["Genres"],
-          summary: "Create genre",
-          description: "Creates a new genre. Requires authentication.",
-        },
-      }
+      { beforeHandle: auth, body: createGenreBody, detail: createGenreDetail }
     )
     .put(
       "/genres/:id",
-      async ({ params, body }) => {
-        const updated = await genreRepository.update(params.id, body);
-        return successResponse(updated);
-      },
+      async ({ params, body }) =>
+        successResponse(await repository.update(params.id, body)),
       {
         beforeHandle: auth,
-        params: t.Object({
-          id: t.String(),
-        }),
-        body: t.Object({
-          name: t.String({ minLength: 1 }),
-          slug: t.String({ minLength: 1 }),
-          isBigGenre: t.Optional(t.Boolean()),
-          displayOrder: t.Optional(t.Number()),
-        }),
-        detail: {
-          tags: ["Genres"],
-          summary: "Update genre",
-          description: "Updates an existing genre by id. Requires authentication.",
-        },
+        params: genreIdParams,
+        body: updateGenreBody,
+        detail: updateGenreDetail,
       }
     )
     .delete(
       "/genres/:id",
-      async ({ params }) => {
-        const deleted = await genreRepository.delete(params.id);
-        return successResponse(deleted);
-      },
-      {
-        beforeHandle: auth,
-        params: t.Object({
-          id: t.String(),
-        }),
-        detail: {
-          tags: ["Genres"],
-          summary: "Delete genre",
-          description: "Deletes a genre by id. Requires authentication.",
-        },
-      }
+      async ({ params }) =>
+        successResponse(await repository.delete(params.id)),
+      { beforeHandle: auth, params: genreIdParams, detail: deleteGenreDetail }
     );
 };

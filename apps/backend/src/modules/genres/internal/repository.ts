@@ -18,7 +18,7 @@ export interface UpdateGenreInput {
   displayOrder?: number;
 }
 
-export function createGenreRepositoryInternal<
+export function genreRepository<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown>,
 >(db: PgDatabase<THKT, TSchema>) {
@@ -126,3 +126,5 @@ export function createGenreRepositoryInternal<
     },
   };
 }
+
+export const createGenreRepositoryInternal = genreRepository;
