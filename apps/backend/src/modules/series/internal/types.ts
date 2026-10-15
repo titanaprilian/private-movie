@@ -43,4 +43,4 @@ export type {
   RecentlyAddedEpisode,
   SeasonWithEpisodes,
   UpdateSeriesInput,
-} from "./catalog/repository";
+} from "./catalog/types";
