@@ -1,8 +1,9 @@
 export {
+  genreRepository,
   createGenreRepositoryInternal,
   type CreateGenreInput,
   type UpdateGenreInput,
-} from "./internal/genres-repository";
+} from "./internal/repository";
 export {
   GenreNotFoundError,
   GenreAlreadyExistsError,

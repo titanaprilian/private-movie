@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { episodes, seasons, series } from "@repo/db";
-import { createEpisodeRepositoryInternal } from "@repo/media-service";
+import { createEpisodeRepository } from "../../../src/modules/episodes";
 import { db } from "../../utils/db";
 
 async function createTestSeason(id = "season-1"): Promise<string> {
@@ -30,9 +30,13 @@ async function createTestSeason(id = "season-1"): Promise<string> {
   return seasonRow.id;
 }
 
-async function insertEpisode(order = 1, seasonId: string | null = null): Promise<{ id: string }> {
+async function insertEpisode(
+  order = 1,
+  seasonId: string | null = null,
+): Promise<{ id: string }> {
   const now = new Date();
-  const sId = seasonId ?? (await createTestSeason(`season-${crypto.randomUUID()}`));
+  const sId =
+    seasonId ?? (await createTestSeason(`season-${crypto.randomUUID()}`));
   const rows = await db
     .insert(episodes)
     .values({
@@ -48,7 +52,7 @@ async function insertEpisode(order = 1, seasonId: string | null = null): Promise
 }
 
 describe("episode repository upsert", () => {
-  const repository = createEpisodeRepositoryInternal(db);
+  const repository = createEpisodeRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -90,7 +94,7 @@ describe("episode repository upsert", () => {
 });
 
 describe("episode repository deleteEpisode", () => {
-  const repository = createEpisodeRepositoryInternal(db);
+  const repository = createEpisodeRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -120,13 +124,13 @@ describe("episode repository deleteEpisode", () => {
     const result = repository.deleteEpisode(missingId);
     await expect(result).rejects.toSatisfy(
       (error: unknown) =>
-        error instanceof Error && error.name === "EpisodeNotFoundError"
+        error instanceof Error && error.name === "EpisodeNotFoundError",
     );
   });
 });
 
 describe("episode repository updateEpisode", () => {
-  const repository = createEpisodeRepositoryInternal(db);
+  const repository = createEpisodeRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -170,13 +174,13 @@ describe("episode repository updateEpisode", () => {
     });
     await expect(result).rejects.toSatisfy(
       (error: unknown) =>
-        error instanceof Error && error.name === "EpisodeNotFoundError"
+        error instanceof Error && error.name === "EpisodeNotFoundError",
     );
   });
 });
 
 describe("episode repository updateOrders", () => {
-  const repository = createEpisodeRepositoryInternal(db);
+  const repository = createEpisodeRepository(db);
 
   beforeEach(async () => {
     await db.delete(episodes);
@@ -191,8 +195,14 @@ describe("episode repository updateOrders", () => {
       { id: ep2.id, order: 10 },
     ]);
 
-    const updated1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
-    const updated2 = await db.select().from(episodes).where(eq(episodes.id, ep2.id));
+    const updated1 = await db
+      .select()
+      .from(episodes)
+      .where(eq(episodes.id, ep1.id));
+    const updated2 = await db
+      .select()
+      .from(episodes)
+      .where(eq(episodes.id, ep2.id));
 
     expect(updated1[0].order).toBe(5);
     expect(updated2[0].order).toBe(10);
@@ -200,7 +210,10 @@ describe("episode repository updateOrders", () => {
 
   it("rolls back transaction if any episode in batch does not exist", async () => {
     const ep1 = await insertEpisode(1);
-    const initialEp1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
+    const initialEp1 = await db
+      .select()
+      .from(episodes)
+      .where(eq(episodes.id, ep1.id));
     const initialOrder = initialEp1[0].order;
 
     const missingId = crypto.randomUUID();
@@ -209,13 +222,16 @@ describe("episode repository updateOrders", () => {
       repository.updateOrders([
         { id: ep1.id, order: 99 },
         { id: missingId, order: 100 },
-      ])
+      ]),
     ).rejects.toSatisfy(
       (error: unknown) =>
-        error instanceof Error && error.name === "EpisodeNotFoundError"
+        error instanceof Error && error.name === "EpisodeNotFoundError",
     );
 
-    const checkEp1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
+    const checkEp1 = await db
+      .select()
+      .from(episodes)
+      .where(eq(episodes.id, ep1.id));
     expect(checkEp1[0].order).toBe(initialOrder);
   });
 
@@ -230,11 +246,17 @@ describe("episode repository updateOrders", () => {
       { id: epInA.id, order: 2, seasonId: seasonB },
     ]);
 
-    const [moved] = await db.select().from(episodes).where(eq(episodes.id, epInA.id));
+    const [moved] = await db
+      .select()
+      .from(episodes)
+      .where(eq(episodes.id, epInA.id));
     expect(moved.seasonId).toBe(seasonB);
     expect(moved.order).toBe(2);
 
-    const [untouched] = await db.select().from(episodes).where(eq(episodes.id, otherInB.id));
+    const [untouched] = await db
+      .select()
+      .from(episodes)
+      .where(eq(episodes.id, otherInB.id));
     expect(untouched.seasonId).toBe(seasonB);
     expect(untouched.order).toBe(1);
   });

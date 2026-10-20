@@ -6,14 +6,11 @@ import type {
   S3StorageService,
   StorageProviderRegistry,
 } from "@repo/media-service";
-import type { AuthRateLimitOptions } from "./modules/authentication/http";
-import type { OngoingSeasonScheduler } from "./modules/media/scheduler";
+import type { AuthRateLimitOptions } from "./modules/authentication/schemas";
+import type { OngoingSeasonScheduler } from "./modules/media";
 import type { RateLimitPluginOptions } from "./plugins";
-import type { ArchiveExtractFn, ArchiveFetchFn, ArchiveIngestJobService } from "./modules/series";
-import type {
-  StorageOverrides,
-  StorageService,
-} from "./modules/storage";
+import type { ArchiveFetchFn, ArchiveIngestJobService } from "./modules/series";
+import type { StorageOverrides, StorageService } from "./modules/storage";
 
 export type SchedulerDeps = Pick<
   OngoingSeasonScheduler,
@@ -33,7 +30,6 @@ export type StorageUsageProvider = Pick<StorageService, "getTotalUsedBytes">;
 export interface CreateAppOverrides {
   fetchHtml?: FetchFn;
   archiveFetchFn?: ArchiveFetchFn;
-  archiveExtractFn?: ArchiveExtractFn;
   storageUsageProvider?: StorageUsageProvider;
   storage?: StorageOverrides;
   rateLimit?: RateLimitPluginOptions;

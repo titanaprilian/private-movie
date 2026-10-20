@@ -1,64 +1,45 @@
-import { Elysia, t } from "elysia";
-import type { AuthenticationService } from "@repo/contracts";
-import type { DbClient } from "@repo/db";
+import { Elysia } from "elysia";
 import { authGuard } from "../../lib/auth";
 import { errorResponse, successResponse } from "../../lib/response";
-import type { OngoingSeasonScheduler } from "../media/scheduler";
-import { createDashboardService, type StorageUsageProvider } from "./internal/dashboard-service";
+import { saveSchedulerConfig, validateSchedulerConfigInput } from "../media";
+import { createDashboardRepository } from "./internal/repository";
+import { createDashboardService } from "./internal/service";
 import {
-  saveSchedulerConfig,
-  validateSchedulerConfigInput,
-} from "../media";
+  getDashboardRouteSchema,
+  runSchedulerRouteSchema,
+  updateSchedulerConfigRouteSchema,
+  type DashboardRoutesOptions,
+} from "./schemas";
 
-export interface DashboardRoutesOptions {
-  db: DbClient;
-  authService: AuthenticationService;
-  scheduler?: Pick<
-    OngoingSeasonScheduler,
-    "runNow" | "isEnabled" | "isExecuting" | "getIntervalMs" | "getLastRunAt" | "getLastRunResult" | "getNextRunAt" | "setEnabled" | "updateInterval"
-  >;
-  storageUsageProvider?: StorageUsageProvider;
-  storageService?: StorageUsageProvider;
-}
+export type { DashboardRoutesOptions } from "./schemas";
 
 export const dashboardRoutes = (options: DashboardRoutesOptions) => {
-  const dashboardService = createDashboardService(options.db, {
+  const repository = createDashboardRepository(options.db);
+  const dashboardService = createDashboardService(repository, {
     scheduler: options.scheduler ?? undefined,
-    storageUsageProvider: options.storageUsageProvider ?? options.storageService ?? undefined,
+    storageUsageProvider:
+      options.storageUsageProvider ?? options.storageService ?? undefined,
   });
   const auth = authGuard(options.authService);
 
   return new Elysia({ name: "dashboard-routes" })
     .get(
       "/admin/dashboard",
-      async () => {
-        const dashboard = await dashboardService.getDashboard();
-        return successResponse(dashboard);
-      },
-      {
-        beforeHandle: auth,
-        detail: {
-          tags: ["Dashboard & Scheduler"],
-          summary: "Get admin dashboard",
-          description: "Returns aggregated library statistics, scheduler status, and storage usage.",
-        },
-      },
+      async () => successResponse(await dashboardService.getDashboard()),
+      { ...getDashboardRouteSchema, beforeHandle: auth },
     )
     .post(
       "/admin/scheduler/run",
       async ({ set }) => {
-        if (!options.scheduler) {
-          return errorResponse(set, 503, new Error("SchedulerUnavailable"));
-        }
+        if (!options.scheduler)
+          return errorResponse(set, 503, new Error("Scheduler unavailable"));
         if (options.scheduler.isExecuting()) {
           set.status = 409;
-          return {
-            data: {
-              started: false,
-              alreadyExecuting: true,
-              isExecuting: true,
-            },
-          };
+          return successResponse({
+            started: false,
+            alreadyExecuting: true,
+            isExecuting: true,
+          });
         }
         const result = await options.scheduler.runNow();
         return successResponse({
@@ -74,50 +55,33 @@ export const dashboardRoutes = (options: DashboardRoutesOptions) => {
             : null,
         });
       },
-      {
-        beforeHandle: auth,
-        detail: {
-          tags: ["Dashboard & Scheduler"],
-          summary: "Run ongoing-season scheduler",
-          description: "Triggers an immediate run of the ongoing-season sync scheduler.",
-        },
-      },
+      { ...runSchedulerRouteSchema, beforeHandle: auth },
     )
     .patch(
       "/admin/scheduler/config",
       async ({ body, set }) => {
-        const input = body as { intervalMinutes?: unknown; isEnabled?: unknown };
-        const validation = validateSchedulerConfigInput(input);
+        const validation = validateSchedulerConfigInput(
+          body as { intervalMinutes?: unknown; isEnabled?: unknown },
+        );
         if (!validation.valid) {
-          set.status = 400;
-          return {
-            error: { code: "VALIDATION", message: validation.message ?? "invalid scheduler config" },
-          };
+          return errorResponse(
+            set,
+            400,
+            new Error(validation.message ?? "Invalid scheduler config"),
+          );
         }
+        const input = body as { intervalMinutes?: number; isEnabled?: boolean };
         const saved = await saveSchedulerConfig(options.db, {
-          intervalMinutes: input.intervalMinutes as number | undefined,
-          isEnabled: input.isEnabled as boolean | undefined,
+          intervalMinutes: input.intervalMinutes,
+          isEnabled: input.isEnabled,
         });
-        if (options.scheduler) {
-          options.scheduler.updateInterval(saved.intervalMinutes * 60000);
-          options.scheduler.setEnabled(saved.isEnabled);
-        }
+        options.scheduler?.updateInterval(saved.intervalMinutes * 60000);
+        options.scheduler?.setEnabled(saved.isEnabled);
         return successResponse({
           intervalMinutes: saved.intervalMinutes,
           isEnabled: saved.isEnabled,
         });
       },
-      {
-        beforeHandle: auth,
-        body: t.Object({
-          intervalMinutes: t.Optional(t.Number()),
-          isEnabled: t.Optional(t.Boolean()),
-        }),
-        detail: {
-          tags: ["Dashboard & Scheduler"],
-          summary: "Update scheduler config",
-          description: "Updates the ongoing-season scheduler interval and enabled state.",
-        },
-      },
+      { ...updateSchedulerConfigRouteSchema, beforeHandle: auth },
     );
 };
