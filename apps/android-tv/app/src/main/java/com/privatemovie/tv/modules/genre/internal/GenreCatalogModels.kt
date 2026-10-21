@@ -1,5 +1,6 @@
 package com.privatemovie.tv.modules.genre.internal
 
+import androidx.compose.ui.focus.FocusRequester
 import com.privatemovie.tv.dto.models.SeriesSummary
 
 /** Catalog filter pills on the Big Genre screen. */
@@ -30,4 +31,16 @@ sealed interface GenreCatalogUiState {
 fun shouldPrefetch(focusedIndex: Int, totalLoaded: Int, prefetchDistance: Int = 10): Boolean {
     if (totalLoaded <= 0) return false
     return focusedIndex >= totalLoaded - prefetchDistance
+}
+
+/**
+ * Resolves the target [FocusRequester] when pressing D-Pad Up from the top row
+ * of the catalog grid, targeting the active filter pill (falling back to ALL if unset).
+ */
+fun resolveFilterPillFocusTarget(
+    pillFocusers: Map<GenreCatalogFilter, FocusRequester>,
+    activeFilter: GenreCatalogFilter?
+): FocusRequester? {
+    val filter = activeFilter ?: GenreCatalogFilter.ALL
+    return pillFocusers[filter] ?: pillFocusers[GenreCatalogFilter.ALL]
 }

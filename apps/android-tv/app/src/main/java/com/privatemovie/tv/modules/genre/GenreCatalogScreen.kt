@@ -21,6 +21,7 @@ import com.privatemovie.tv.modules.genre.internal.GenreCatalogFilter
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogGrid
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogLoading
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogUiState
+import com.privatemovie.tv.modules.genre.internal.resolveFilterPillFocusTarget
 import kotlinx.coroutines.launch
 
 /**
@@ -31,7 +32,7 @@ import kotlinx.coroutines.launch
  * `TvNavigationDrawer` shell (owned by `AppNavigation`) provides Search /
  * Home / genre navigation from the collapsed 72dp left rail. D-pad Left from
  * a leftmost-column card shifts focus into the drawer via [onFocusDrawer].
- * D-pad Up from the pills/top row returns to the header focus target;
+ * D-pad Up from the top row transfers focus to the active filter pill;
  * remote Back navigates to Home via [onNavigateHome]; selecting another
  * genre goes through [onSelectGenre].
  */
@@ -50,12 +51,8 @@ fun GenreCatalogScreen(
     onFocusDrawer: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val headerFocus = remember { FocusRequester() }
     val pillFocusers = remember {
-        mapOf(
-            GenreCatalogFilter.ALL to FocusRequester(),
-            GenreCatalogFilter.ONGOING to FocusRequester()
-        )
+        GenreCatalogFilter.entries.associateWith { FocusRequester() }
     }
     val coroutineScope = rememberCoroutineScope()
 
@@ -63,11 +60,14 @@ fun GenreCatalogScreen(
         onNavigateHome()
     }
 
-    val focusHeader: () -> Unit = {
-        coroutineScope.launch {
-            requestFocusSafely(headerFocus)
+    val focusFilterPill: () -> Unit = {
+        val activeFilter = (uiState as? GenreCatalogUiState.Success)?.filter
+        val target = resolveFilterPillFocusTarget(pillFocusers, activeFilter)
+        if (target != null) {
+            coroutineScope.launch {
+                requestFocusSafely(target)
+            }
         }
-        Unit
     }
 
     Box(
@@ -101,7 +101,7 @@ fun GenreCatalogScreen(
                     isNextPageError = state.isNextPageError,
                     onRetryNextPage = { viewModel.retryNextPage() },
                     onNearBottom = { viewModel.loadNextPage() },
-                    onUpToHeader = focusHeader,
+                    onUpToHeader = focusFilterPill,
                     onLeftFromEdge = onFocusDrawer,
                     pillFocusers = pillFocusers,
                     gridState = gridState
