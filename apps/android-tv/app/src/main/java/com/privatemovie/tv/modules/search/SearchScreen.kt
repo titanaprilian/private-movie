@@ -46,10 +46,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.components.isRepeatKeyEvent
 import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.genre.internal.GenrePosterCard
+import com.privatemovie.tv.modules.search.internal.resolveSearchReturnFocus
 import kotlinx.coroutines.launch
 
 private const val SEARCH_GRID_COLUMNS = 5
@@ -77,18 +79,45 @@ fun SearchScreen(
     onFocusDrawer: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
     val fieldFocus = remember { FocusRequester() }
-    val firstResultFocus = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
+    val focusCoordinator = remember(coroutineScope) { FocusTransitionCoordinator(coroutineScope) }
     val gridState = rememberLazyGridState()
     var isFieldFocused by remember { mutableStateOf(false) }
+
+    // Retain focus requesters per card index so return focus can restore to any position
+    val cardFocusRequesters = remember(uiState.results) {
+        List(uiState.results.size) { FocusRequester() }
+    }
 
     BackHandler {
         onNavigateHome()
     }
 
-    LaunchedEffect(Unit) {
-        requestFocusSafely(fieldFocus)
+    LaunchedEffect(pendingReturnFocus, uiState.results) {
+        val target = pendingReturnFocus
+        if (target != null && uiState.results.isNotEmpty()) {
+            val resolved = resolveSearchReturnFocus(uiState.results, target)
+            if (resolved != null) {
+                focusCoordinator.tryRequestFocus {
+                    try {
+                        gridState.animateScrollToItem(resolved.index)
+                    } catch (_: Exception) {
+                    }
+                    val requester = cardFocusRequesters.getOrNull(resolved.index)
+                    val success = if (requester != null) requestFocusSafely(requester) else false
+                    viewModel.consumeReturnFocus()
+                    success
+                }
+                return@LaunchedEffect
+            }
+        }
+        if (target == null && !isFieldFocused && gridState.firstVisibleItemIndex == 0) {
+            focusCoordinator.tryRequestFocus {
+                requestFocusSafely(fieldFocus)
+            }
+        }
     }
 
     Column(
@@ -144,10 +173,14 @@ fun SearchScreen(
                     if (keyEvent.nativeKeyEvent.keyCode == KEYCODE_DPAD_DOWN &&
                         uiState.results.isNotEmpty()
                     ) {
-                        coroutineScope.launch {
-                            requestFocusSafely(firstResultFocus)
+                        focusCoordinator.tryRequestFocus {
+                            val targetRequester = cardFocusRequesters.firstOrNull()
+                            if (targetRequester != null) {
+                                requestFocusSafely(targetRequester)
+                            } else {
+                                false
+                            }
                         }
-                        true
                     } else {
                         false
                     }
@@ -197,8 +230,18 @@ fun SearchScreen(
                         GenrePosterCard(
                             series = item,
                             baseUrl = activeBackendUrl,
-                            onSelect = { onSelectSeries(item.id) },
-                            focusRequester = if (index == 0) firstResultFocus else null,
+                            onSelect = {
+                                viewModel.recordReturnFocus(index = index, seriesId = item.id)
+                                onSelectSeries(item.id)
+                            },
+                            focusRequester = cardFocusRequesters.getOrNull(index),
+                            onUp = if (index < SEARCH_GRID_COLUMNS) {
+                                {
+                                    focusCoordinator.tryRequestFocus {
+                                        requestFocusSafely(fieldFocus)
+                                    }
+                                }
+                            } else null,
                             onLeft = if (index % SEARCH_GRID_COLUMNS == 0) onFocusDrawer else null
                         )
                     }

@@ -4,6 +4,8 @@ import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.dto.models.HomeFeed
 import com.privatemovie.tv.dto.models.SeriesDetails
 import com.privatemovie.tv.dto.models.SeriesSummary
+import com.privatemovie.tv.modules.search.internal.SearchReturnFocusTarget
+import org.junit.Assert.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -142,5 +144,21 @@ class SearchViewModelTest {
         assertFalse(vm.uiState.value.isLoading)
         assertTrue(vm.uiState.value.hasSearched)
         assertEquals("abc", vm.uiState.value.query)
+    }
+
+    @Test
+    fun `records, exposes, and consumes pendingReturnFocus correctly`() {
+        val vm = SearchViewModel(
+            mediaRepository = repoWith { _, _ -> Result.success(emptyList()) }
+        )
+
+        assertNull(vm.pendingReturnFocus.value)
+
+        vm.recordReturnFocus(index = 3, seriesId = "series-123")
+        assertEquals(3, vm.pendingReturnFocus.value?.index)
+        assertEquals("series-123", vm.pendingReturnFocus.value?.seriesId)
+
+        vm.consumeReturnFocus()
+        assertNull(vm.pendingReturnFocus.value)
     }
 }

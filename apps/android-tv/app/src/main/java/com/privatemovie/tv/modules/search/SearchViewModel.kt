@@ -2,6 +2,7 @@ package com.privatemovie.tv.modules.search
 
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.dto.models.SeriesSummary
+import com.privatemovie.tv.modules.search.internal.SearchReturnFocusTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,7 +46,18 @@ class SearchViewModel(
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
+    private val _pendingReturnFocus = MutableStateFlow<SearchReturnFocusTarget?>(null)
+    val pendingReturnFocus: StateFlow<SearchReturnFocusTarget?> = _pendingReturnFocus.asStateFlow()
+
     private var searchJob: Job? = null
+
+    fun recordReturnFocus(index: Int, seriesId: String) {
+        _pendingReturnFocus.value = SearchReturnFocusTarget(index = index, seriesId = seriesId)
+    }
+
+    fun consumeReturnFocus() {
+        _pendingReturnFocus.value = null
+    }
 
     fun onQueryChange(query: String) {
         searchJob?.cancel()
