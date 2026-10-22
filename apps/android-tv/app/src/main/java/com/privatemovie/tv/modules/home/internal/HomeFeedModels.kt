@@ -75,6 +75,26 @@ data class TvRecentlyAddedEpisode(
     val videoSources: List<TvRecentlyAddedVideoSource>
 )
 
+/**
+ * Where focus lands when the user presses D-Pad Down on the Featured Hero CTA.
+ *
+ * The "Recently Added Episodes" carousel sits directly below the hero slider,
+ * so it takes precedence over the regular series rows; when it is empty the
+ * focus descends to the first non-empty regular row instead.
+ */
+enum class HeroDownFocusTarget {
+    EpisodeCarousel,
+    FirstRow,
+    None
+}
+
+/** Resolves the D-Pad Down focus target for the hero CTA of [feed]. */
+fun resolveHeroDownFocusTarget(feed: TvHomeFeed): HeroDownFocusTarget {
+    if (feed.recentlyAddedEpisodes.isNotEmpty()) return HeroDownFocusTarget.EpisodeCarousel
+    if (feed.rows.any { it.items.isNotEmpty() }) return HeroDownFocusTarget.FirstRow
+    return HeroDownFocusTarget.None
+}
+
 data class TvHomeFeed(
     val hero: TvHomeHero?,
     val heroes: List<TvHomeHero> = emptyList(),
