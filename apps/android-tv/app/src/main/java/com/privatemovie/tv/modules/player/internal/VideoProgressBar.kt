@@ -37,23 +37,26 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.privatemovie.tv.modules.player.DEFAULT_SEEK_SECONDS
-
 /**
  * YouTube TV style interactive video progress bar.
  *
  * Displays elapsed playback time, a focusable track with buffered and played
  * progress, and total duration. When focused via D-pad, the track expands,
- * highlights with a scrubber thumb, and accepts Left/Right keys to seek ±10s
- * and Center/OK to toggle play/pause.
+ * highlights with a scrubber thumb, and accepts Left/Right keys to drive the
+ * accelerated hold-to-seek scrub (virtual while held, committed on release) and
+ * Center/OK to toggle play/pause.
+ *
+ * The bar is a pure display: the *position* it renders is supplied by the caller so
+ * the shell can bind it to the virtual scrub position while a scrub is active.
  */
 @Composable
 fun VideoProgressBar(
     positionMs: Long,
     durationMs: Long,
     bufferedPositionMs: Long,
-    onSeek: (Int) -> Unit,
     onTogglePlayPause: () -> Unit,
+    onScrubKeyDown: (direction: SeekDirection, repeatCount: Int) -> Unit = { _, _ -> },
+    onScrubKeyUp: (direction: SeekDirection) -> Unit = {},
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
@@ -93,19 +96,25 @@ fun VideoProgressBar(
             .fillMaxWidth()
             .focusable(interactionSource = interactionSource)
             .onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyUp) return@onPreviewKeyEvent false
                 when (event.key.nativeKeyCode) {
-                    AndroidKeyEvent.KEYCODE_DPAD_LEFT -> {
-                        onSeek(-DEFAULT_SEEK_SECONDS)
-                        true
-                    }
+                    AndroidKeyEvent.KEYCODE_DPAD_LEFT,
                     AndroidKeyEvent.KEYCODE_DPAD_RIGHT -> {
-                        onSeek(DEFAULT_SEEK_SECONDS)
+                        val direction = if (event.key.nativeKeyCode == AndroidKeyEvent.KEYCODE_DPAD_LEFT) {
+                            SeekDirection.BACKWARD
+                        } else {
+                            SeekDirection.FORWARD
+                        }
+                        if (event.type == KeyEventType.KeyDown) {
+                            onScrubKeyDown(direction, event.nativeKeyEvent.repeatCount)
+                        } else {
+                            onScrubKeyUp(direction)
+                        }
                         true
                     }
                     AndroidKeyEvent.KEYCODE_DPAD_CENTER,
                     AndroidKeyEvent.KEYCODE_ENTER,
                     AndroidKeyEvent.KEYCODE_NUMPAD_ENTER -> {
+                        if (event.type != KeyEventType.KeyUp) return@onPreviewKeyEvent false
                         onTogglePlayPause()
                         true
                     }

@@ -69,10 +69,15 @@ import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.PlayerControlAction
 import com.privatemovie.tv.modules.player.internal.PlaybackRenderer
+import com.privatemovie.tv.modules.player.internal.AcceleratedSeekCoordinator
 import com.privatemovie.tv.modules.player.internal.PlayerExitGuard
 import com.privatemovie.tv.modules.player.internal.PlayerFocusTarget
 import com.privatemovie.tv.modules.player.internal.RemoteControlKey
+import com.privatemovie.tv.modules.player.internal.SeekDirection
+import com.privatemovie.tv.modules.player.internal.SeekEvent
 import com.privatemovie.tv.modules.player.internal.VideoProgressBar
+import com.privatemovie.tv.modules.player.internal.DEFAULT_SEEK_COMMIT_DEBOUNCE_MS
+import com.privatemovie.tv.modules.player.internal.mapSeekDirection
 import com.privatemovie.tv.modules.player.internal.resolvePlayerFocusTarget
 import com.privatemovie.tv.modules.player.internal.buildPlayerHandoff
 import com.privatemovie.tv.modules.player.internal.calculateClampedSeekPosition
@@ -177,6 +182,72 @@ fun PlayerScreen(
     val exitGuard = remember { PlayerExitGuard() }
     var isExiting by remember { mutableStateOf(false) }
 
+    // Accelerated hold-to-seek state.
+    //
+    // While a scrub is active the *virtual* scrub position is rendered (timestamp and
+    // progress bar) instead of the ExoPlayer position, and no hardware seek is issued.
+    // The seek is committed (KeyUp or 400ms debounce) and playback resumes afterwards.
+    val seekCoordinator = remember { AcceleratedSeekCoordinator() }
+    var scrubbingPositionMs by remember { mutableStateOf<Long?>(null) }
+    var scrubActivityNonce by remember { mutableLongStateOf(0L) }
+
+    /**
+     * Applies the side effects of a virtual scrub to the player and the HUD.
+     *
+     * - [SeekEvent.PausePlayback] pauses playback while the user navigates the timeline.
+     * - [SeekEvent.ScrubPositionChanged] binds the HUD to the virtual scrub position.
+     * - [SeekEvent.CommitSeek] issues the single hardware seek and resumes playback.
+     */
+    fun applySeekEvents(events: List<SeekEvent>) {
+        if (events.isEmpty()) return
+        events.forEach { event ->
+            when (event) {
+                is SeekEvent.PausePlayback -> {
+                    exoPlayer?.pause()
+                    isPlaying = false
+                }
+                is SeekEvent.ScrubPositionChanged -> {
+                    scrubbingPositionMs = event.positionMs
+                    // Reset the HUD auto-hide countdown so the controls stay visible
+                    // while the user navigates the timeline.
+                    userActivityNonce++
+                }
+                is SeekEvent.CommitSeek -> {
+                    exoPlayer?.seekTo(event.positionMs)
+                    if (event.resumePlayback) {
+                        exoPlayer?.play()
+                    }
+                    currentPositionMs = event.positionMs
+                    scrubbingPositionMs = null
+                    statusText = if (event.resumePlayback) "Playing" else "Paused"
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles a seek key press / key repeat: reveals the HUD and advances the virtual
+     * scrub position without issuing a hardware seek.
+     */
+    fun onScrubKeyDown(direction: SeekDirection, repeatCount: Int) {
+        controlsVisible = true
+        exitConfirmationVisible = false
+        userActivityNonce++
+        val events = seekCoordinator.onKeyDown(
+            direction = direction,
+            repeatCount = repeatCount,
+            currentPositionMs = scrubbingPositionMs ?: currentPositionMs,
+            isPlaying = exoPlayer?.isPlaying ?: isPlaying
+        )
+        applySeekEvents(events)
+        scrubActivityNonce++
+    }
+
+    /** Handles the release of a seek key: commits the virtual scrub position. */
+    fun onScrubKeyUp(direction: SeekDirection) {
+        applySeekEvents(seekCoordinator.onKeyUp(direction))
+    }
+
     fun requestExit() {
         if (exitGuard.tryExit()) {
             isExiting = true
@@ -205,6 +276,20 @@ fun PlayerScreen(
         if (controlsVisible && isPlaying) {
             delay(DEFAULT_CONTROLS_TIMEOUT_MS)
             controlsVisible = false
+        }
+    }
+
+    // Keep the virtual scrub aware of the media duration so positions stay in bounds.
+    LaunchedEffect(durationMs) {
+        seekCoordinator.controller.durationMs = durationMs
+    }
+
+    // Debounced hardware commit: when the user stops pressing the seek key (but keeps
+    // holding it), the accumulated virtual position is committed to ExoPlayer.
+    LaunchedEffect(scrubActivityNonce) {
+        if (scrubActivityNonce > 0L) {
+            delay(DEFAULT_SEEK_COMMIT_DEBOUNCE_MS)
+            applySeekEvents(seekCoordinator.onDebounceElapsed())
         }
     }
 
@@ -347,6 +432,17 @@ fun PlayerScreen(
             .focusRequester(playerFocus)
             .focusable()
             .onPreviewKeyEvent { event ->
+                val direction = mapSeekDirection(event.key.nativeKeyCode)
+                if (direction != null && (!controlsVisible || seekCoordinator.isScrubbing)) {
+                    // Left/Right while the HUD is hidden (or while a scrub is running)
+                    // immediately reveals the HUD and drives the virtual scrub.
+                    if (event.type == KeyEventType.KeyDown) {
+                        onScrubKeyDown(direction, event.nativeKeyEvent.repeatCount)
+                    } else {
+                        onScrubKeyUp(direction)
+                    }
+                    return@onPreviewKeyEvent true
+                }
                 val key = mapKeyEvent(event) ?: return@onPreviewKeyEvent false
                 when (key) {
                     RemoteControlKey.BACK -> {
@@ -481,11 +577,12 @@ fun PlayerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         VideoProgressBar(
-                            positionMs = currentPositionMs,
+                            positionMs = scrubbingPositionMs ?: currentPositionMs,
                             durationMs = durationMs,
                             bufferedPositionMs = bufferedPositionMs,
-                            onSeek = { seconds -> applyAction(if (seconds < 0) PlayerControlAction.SeekBackward(-seconds) else PlayerControlAction.SeekForward(seconds)) },
                             onTogglePlayPause = { applyAction(PlayerControlAction.TogglePlayPause) },
+                            onScrubKeyDown = { direction, repeatCount -> onScrubKeyDown(direction, repeatCount) },
+                            onScrubKeyUp = { direction -> onScrubKeyUp(direction) },
                             modifier = Modifier.fillMaxWidth()
                         )
 
