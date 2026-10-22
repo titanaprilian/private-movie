@@ -33,7 +33,6 @@ import {
 } from "../utils/google-drive-url";
 import { logger } from "../../../../../lib/logger";
 import { captureException } from "../../../../../lib/sentry";
-import type { ArchiveIngestRepository } from "../types";
 import type {
   ArchiveIngestJobManager,
   ArchiveIngestJobManagerOptions,
