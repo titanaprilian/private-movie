@@ -176,4 +176,42 @@ class TvNavigationDrawerStateTest {
         assertNull(resolveActiveDestination("genre/unknown-slug", genres))
         assertNull(resolveActiveDestination(null, genres))
     }
+
+    // ---- Drawer state shared across screen transitions ----
+
+    @Test
+    fun `an expanded drawer stays collapsed after a destination selection`() {
+        val state = NavigationDrawerState()
+        state.onDrawerItemFocused()
+        assertTrue(state.expanded)
+
+        state.selectDestination(DrawerDestination.Search)
+
+        assertFalse(state.expanded)
+        assertEquals(TvDrawerDefaults.COLLAPSED_WIDTH_DP, state.drawerWidthDp)
+    }
+
+    @Test
+    fun `collapsing the drawer leaves it collapsed when the next screen opens`() {
+        // The drawer state is hoisted above the NavHost, so the expanded flag
+        // survives navigation. Collapse must therefore be explicit.
+        val state = NavigationDrawerState()
+        state.onDrawerItemFocused()
+
+        state.collapse()
+
+        assertFalse(state.expanded)
+        assertEquals(72, state.drawerWidthDp)
+    }
+
+    @Test
+    fun `focusing a drawer item after a collapse expands it again`() {
+        val state = NavigationDrawerState()
+        state.onDrawerItemFocused()
+        state.selectDestination(DrawerDestination.Home)
+        state.onDrawerItemFocused()
+
+        assertTrue(state.expanded)
+        assertEquals(TvDrawerDefaults.EXPANDED_WIDTH_DP, state.drawerWidthDp)
+    }
 }

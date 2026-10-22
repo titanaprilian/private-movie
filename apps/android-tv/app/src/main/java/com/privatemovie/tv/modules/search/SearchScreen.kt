@@ -76,11 +76,15 @@ fun SearchScreen(
     viewModel: SearchViewModel = remember(mediaRepository) {
         SearchViewModel(mediaRepository = mediaRepository)
     },
-    onFocusDrawer: () -> Unit = {}
+    onFocusDrawer: () -> Unit = {},
+    contentFocusRequester: FocusRequester? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
-    val fieldFocus = remember { FocusRequester() }
+    val internalFieldFocus = remember { FocusRequester() }
+    // The drawer shell hands focus back to the text field when it collapses.
+    val fieldFocus = contentFocusRequester ?: internalFieldFocus
+    val firstResultFocus = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
     val focusCoordinator = remember(coroutineScope) { FocusTransitionCoordinator(coroutineScope) }
     val gridState = rememberLazyGridState()

@@ -6,6 +6,7 @@ import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeason
 import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeries
 import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedVideoSource
 import com.privatemovie.tv.modules.home.internal.buildRecentEpisodePlayerNavArgs
+import com.privatemovie.tv.components.drawer.NavigationDrawerState
 import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
@@ -290,5 +291,96 @@ class NavigationTest {
         assertEquals("episode-886", navArgs.episodeId)
         assertNull(navArgs.source)
         assertEquals("Demon Slayer", navArgs.metadata?.seriesTitle)
+    }
+
+    // ---- Drawer collapse + content focus handoff ----
+
+    @Test
+    fun `browsing routes map to their content focus target`() {
+        assertEquals(BrowsingContentTarget.HOME_HERO, browsingContentTargetForRoute(TvScreen.Home.route))
+        assertEquals(BrowsingContentTarget.SEARCH_FIELD, browsingContentTargetForRoute(TvScreen.Search.route))
+        assertEquals(BrowsingContentTarget.GENRE_HEADER, browsingContentTargetForRoute(TvScreen.Genre.route))
+        assertEquals(
+            BrowsingContentTarget.GENRE_HEADER,
+            browsingContentTargetForRoute(TvScreen.Genre.createRoute("animation"))
+        )
+    }
+
+    @Test
+    fun `routes without drawer content have no focus target`() {
+        assertNull(browsingContentTargetForRoute(TvScreen.Detail.createRoute("series-42")))
+        assertNull(browsingContentTargetForRoute(TvScreen.Player.createRoute("episode-108")))
+        assertNull(browsingContentTargetForRoute(null))
+        assertNull(browsingContentTargetForRoute("unknown"))
+    }
+
+    @Test
+    fun `drawer destinations map to the focus target of the screen they open`() {
+        assertEquals(
+            BrowsingContentTarget.SEARCH_FIELD,
+            browsingContentTargetForDestination(DrawerDestination.Search)
+        )
+        assertEquals(
+            BrowsingContentTarget.HOME_HERO,
+            browsingContentTargetForDestination(DrawerDestination.Home)
+        )
+        assertEquals(
+            BrowsingContentTarget.GENRE_HEADER,
+            browsingContentTargetForDestination(DrawerDestination.Genre(slug = "k-drama", name = "Korean Drama"))
+        )
+    }
+
+    @Test
+    fun `selecting a drawer destination collapses the drawer and navigates`() {
+        val drawerState = NavigationDrawerState()
+        var navigated: DrawerDestination? = null
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = { navigated = it },
+            onFocusContent = {},
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.selectDestination(DrawerDestination.Search)
+
+        assertFalse(drawerState.expanded)
+        assertEquals(72, drawerState.drawerWidthDp)
+        assertEquals(DrawerDestination.Search, navigated)
+    }
+
+    @Test
+    fun `selecting a drawer destination never leaves the drawer expanded`() {
+        val drawerState = NavigationDrawerState()
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = {},
+        )
+
+        drawerState.onDrawerItemFocused()
+        coordinator.selectDestination(DrawerDestination.Genre(slug = "animation", name = "Animation"))
+        assertFalse(drawerState.expanded)
+
+        drawerState.onDrawerItemFocused()
+        coordinator.selectDestination(DrawerDestination.Home)
+        assertFalse(drawerState.expanded)
+        assertEquals(72, drawerState.drawerWidthDp)
+    }
+
+    @Test
+    fun `collapsing the drawer hands focus back to the page content`() {
+        val drawerState = NavigationDrawerState()
+        var focusReturned = false
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { focusReturned = true },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertTrue(focusReturned)
     }
 }

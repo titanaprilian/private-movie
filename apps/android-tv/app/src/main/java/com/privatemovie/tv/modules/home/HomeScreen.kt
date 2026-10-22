@@ -40,11 +40,14 @@ fun HomeScreen(
         HomeViewModel(mediaRepository = mediaRepository)
     },
     onFocusDrawer: () -> Unit = {},
+    contentFocusRequester: FocusRequester? = null,
     onPlayNavArgs: ((PlayerNavArgs) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
-    val heroFocus = remember { FocusRequester() }
+    val internalHeroFocus = remember { FocusRequester() }
+    // The drawer shell hands focus back to the hero when it collapses.
+    val heroFocus = contentFocusRequester ?: internalHeroFocus
 
     LaunchedEffect(activeBackendUrl) {
         viewModel.loadFeed()

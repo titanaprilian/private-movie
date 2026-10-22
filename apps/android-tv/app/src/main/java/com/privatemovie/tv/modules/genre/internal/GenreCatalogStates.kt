@@ -1,6 +1,7 @@
 package com.privatemovie.tv.modules.genre.internal
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -24,10 +25,33 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button as TvButton
 import androidx.tv.material3.ButtonDefaults as TvButtonDefaults
+import com.privatemovie.tv.components.requestFocusSafely
 
+/**
+ * Loading state of the genre catalog.
+ *
+ * The container is focusable and grabs focus on mount: while the catalog is
+ * being fetched there is no focusable page content, and without an anchor the
+ * TV focus engine would escape to the drawer rail items.
+ */
 @Composable
-fun GenreCatalogLoading(modifier: Modifier = Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+fun GenreCatalogLoading(
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
+) {
+    val internalFocus = remember { FocusRequester() }
+    val target = focusRequester ?: internalFocus
+
+    LaunchedEffect(target) {
+        requestFocusSafely(target)
+    }
+
+    Box(
+        modifier = modifier
+            .focusRequester(target)
+            .focusable(),
+        contentAlignment = Alignment.Center,
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator(
                 color = MaterialTheme.colorScheme.primary,

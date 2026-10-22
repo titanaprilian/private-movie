@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -22,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.privatemovie.tv.components.drawer.DrawerDestination
+import com.privatemovie.tv.components.drawer.NavigationDrawerState
 import com.privatemovie.tv.components.drawer.TvDrawerDefaults
 import com.privatemovie.tv.components.drawer.TvNavigationDrawer
 import com.privatemovie.tv.components.requestFocusSafely
@@ -99,6 +101,23 @@ fun AppNavigation(
     )
 
     val drawerFocusRequester = remember { FocusRequester() }
+    // The drawer state is hoisted here so it survives screen transitions:
+    // navigating away from an expanded drawer must not leave the drawer
+    // expanded on the next screen.
+    val drawerState = remember { NavigationDrawerState() }
+    // One focus requester per browsing screen. The drawer shell uses these to
+    // hand focus back to the page content when the drawer collapses.
+    val contentFocusRequesters = remember {
+        mapOf(
+            BrowsingContentTarget.HOME_HERO to FocusRequester(),
+            BrowsingContentTarget.SEARCH_FIELD to FocusRequester(),
+            BrowsingContentTarget.GENRE_HEADER to FocusRequester(),
+        )
+    }
+    // Target whose content should receive focus once the active route matches
+    // it (the destination screen is only attached after navigation completes).
+    var pendingContentFocus by remember { mutableStateOf<BrowsingContentTarget?>(null) }
+    val currentRoute by rememberUpdatedState(destinationRoute)
     val coroutineScope = rememberCoroutineScope()
     val focusDrawer: () -> Unit = {
         coroutineScope.launch {
@@ -108,6 +127,11 @@ fun AppNavigation(
     }
 
     fun navigateFromDrawer(destination: DrawerDestination) {
+        // Always collapse first: an expanded drawer must never survive a
+        // screen transition.
+        drawerState.collapse()
+        // Remember where focus has to land once the destination is composed.
+        pendingContentFocus = browsingContentTargetForDestination(destination)
         when (destination) {
             DrawerDestination.Search -> {
                 navController.navigate(TvScreen.Search.route) {
@@ -128,6 +152,27 @@ fun AppNavigation(
                 }
             }
         }
+    }
+
+    // Coordinator keeps the two drawer rules in one place: collapse on
+    // selection, and hand focus back to the page content on collapse.
+    val drawerCoordinator = remember(drawerState) {
+        DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = { destination -> navigateFromDrawer(destination) },
+            onFocusContent = {
+                pendingContentFocus = browsingContentTargetForRoute(currentRoute)
+            },
+        )
+    }
+
+    // The destination screen only attaches its focus target after navigation
+    // completes, so the focus handoff waits for the route to match.
+    LaunchedEffect(destinationRoute, pendingContentFocus) {
+        val target = pendingContentFocus ?: return@LaunchedEffect
+        if (target != browsingContentTargetForRoute(destinationRoute)) return@LaunchedEffect
+        pendingContentFocus = null
+        contentFocusRequesters[target]?.let { requestFocusSafely(it) }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -155,6 +200,7 @@ fun AppNavigation(
                     }
                 },
                 onFocusDrawer = focusDrawer,
+                contentFocusRequester = contentFocusRequesters[BrowsingContentTarget.HOME_HERO],
                 onPlayNavArgs = { playerNavArgs ->
                     navController.currentBackStackEntry?.savedStateHandle?.set(PLAYER_NAV_ARGS_KEY, playerNavArgs)
                     navController.navigate(TvScreen.Player.createRoute(playerNavArgs.episodeId))
@@ -173,7 +219,8 @@ fun AppNavigation(
                 onNavigateHome = {
                     navController.popBackStack(TvScreen.Home.route, inclusive = false)
                 },
-                onFocusDrawer = focusDrawer
+                onFocusDrawer = focusDrawer,
+                contentFocusRequester = contentFocusRequesters[BrowsingContentTarget.SEARCH_FIELD],
             )
         }
 
@@ -198,7 +245,8 @@ fun AppNavigation(
                         launchSingleTop = true
                     }
                 },
-                onFocusDrawer = focusDrawer
+                onFocusDrawer = focusDrawer,
+                contentFocusRequester = contentFocusRequesters[BrowsingContentTarget.GENRE_HEADER],
             )
         }
 
@@ -316,8 +364,10 @@ fun AppNavigation(
             TvNavigationDrawer(
                 bigGenres = bigGenres,
                 currentRoute = drawerCurrentRoute,
+                drawerState = drawerState,
                 drawerFocusRequester = drawerFocusRequester,
-                onSelectDestination = { destination -> navigateFromDrawer(destination) }
+                onSelectDestination = { destination -> drawerCoordinator.selectDestination(destination) },
+                onCollapseFocusContent = { drawerCoordinator.collapseAndFocusContent() },
             )
         }
     }

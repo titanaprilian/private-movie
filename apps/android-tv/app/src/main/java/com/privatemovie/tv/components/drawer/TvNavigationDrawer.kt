@@ -125,7 +125,12 @@ fun TvNavigationDrawer(
                     expanded = drawerState.expanded,
                     isActive = destination == activeDestination,
                     onFocused = { drawerState.onDrawerItemFocused() },
-                    onSelected = { onSelectDestination(destination) },
+                    onSelected = {
+                        // Collapse before handing the destination over so the
+                        // drawer can never stay expanded across a transition.
+                        drawerState.collapse()
+                        onSelectDestination(destination)
+                    },
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }
