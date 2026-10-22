@@ -3,15 +3,23 @@ package com.privatemovie.tv.modules.home
 import androidx.compose.ui.focus.FocusRequester
 import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.components.requestFocusSafely
+import com.privatemovie.tv.modules.home.internal.HeroDownFocusTarget
 import com.privatemovie.tv.modules.home.internal.TvHomeFeed
 import com.privatemovie.tv.modules.home.internal.TvHomeHero
 import com.privatemovie.tv.modules.home.internal.TvHomeRow
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedEpisode
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeason
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeries
 import com.privatemovie.tv.modules.home.internal.TvSeries
+import com.privatemovie.tv.modules.home.internal.episodeBadgeLabel
+import com.privatemovie.tv.modules.home.internal.formatEpisodeDuration
+import com.privatemovie.tv.modules.home.internal.resolveHeroDownFocusTarget
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicInteger
@@ -33,6 +41,29 @@ class HomeScreenTest {
             TvHomeRow(title = "Row $i", items = (0 until size).map { makeSeries("s-$i-$it") })
         }
         return TvHomeFeed(hero = null, heroes = listOf(hero), rows = rows)
+    }
+
+    private fun makeEpisode(id: String, order: Int = 1): TvRecentlyAddedEpisode {
+        return TvRecentlyAddedEpisode(
+            id = id,
+            title = "Episode $order",
+            order = order,
+            thumbnailUrl = null,
+            duration = 2535,
+            rating = null,
+            series = TvRecentlyAddedSeries(
+                id = "series-1",
+                title = "Demon Slayer",
+                posterUrl = null,
+                backdropUrl = null
+            ),
+            season = TvRecentlyAddedSeason(
+                id = "season-1",
+                title = "Season 1",
+                seasonNumber = 1
+            ),
+            videoSources = emptyList()
+        )
     }
 
     // Simulates the focusRowCard helper from HomeFeedContent.
@@ -259,5 +290,65 @@ class HomeScreenTest {
                 left, isKeyDown = true, isLeftmost = false
             )
         )
+    }
+
+    // ── recently added episodes carousel ──────────────────────────────────────
+
+    @Test
+    fun `downward focus from Hero CTA targets the episodes carousel when episodes are present`() = runTest {
+        val feed = makeFeed(listOf(3)).copy(
+            recentlyAddedEpisodes = listOf(makeEpisode("e-1", 1), makeEpisode("e-2", 2))
+        )
+
+        assertEquals(HeroDownFocusTarget.EpisodeCarousel, resolveHeroDownFocusTarget(feed))
+
+        val episodeRequesters = listOf(FocusRequester(), FocusRequester())
+        var focusedEpisodeIndex = -1
+        val coordinator = FocusTransitionCoordinator(this)
+        val handled = coordinator.tryRequestFocus {
+            focusedEpisodeIndex = 0
+            requestFocusSafely(episodeRequesters[0], maxRetries = 2, rawRequest = { true })
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertEquals(0, focusedEpisodeIndex)
+    }
+
+    @Test
+    fun `downward focus from Hero CTA falls back to the first regular row when no episodes exist`() {
+        val feed = makeFeed(listOf(2))
+
+        assertEquals(HeroDownFocusTarget.FirstRow, resolveHeroDownFocusTarget(feed))
+    }
+
+    @Test
+    fun `downward focus from Hero CTA has no target when the feed has neither episodes nor rows`() {
+        val feed = TvHomeFeed(
+            hero = null,
+            heroes = listOf(TvHomeHero(series = makeSeries("hero"), tags = emptyList())),
+            rows = emptyList(),
+            recentlyAddedEpisodes = emptyList()
+        )
+
+        assertEquals(HeroDownFocusTarget.None, resolveHeroDownFocusTarget(feed))
+    }
+
+    @Test
+    fun `episode duration badge formats seconds as mm and ss and hides unknown durations`() {
+        assertEquals("00:30", formatEpisodeDuration(30))
+        assertEquals("42:15", formatEpisodeDuration(2535))
+        assertEquals("60:00" /* 60 minutes */, formatEpisodeDuration(3600))
+        assertNull(formatEpisodeDuration(0))
+        assertNull(formatEpisodeDuration(null))
+    }
+
+    @Test
+    fun `episode badge combines the season and the episode order`() {
+        val season = TvRecentlyAddedSeason(id = "s1", title = "Season 1", seasonNumber = 1)
+        assertEquals("S1 · EP 12", episodeBadgeLabel(season, 12))
+
+        val seasonWithoutNumber = TvRecentlyAddedSeason(id = "s2", title = "Season 2", seasonNumber = null)
+        assertEquals("S2 · EP 3", episodeBadgeLabel(seasonWithoutNumber, 3))
     }
 }

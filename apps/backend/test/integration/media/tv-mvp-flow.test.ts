@@ -108,7 +108,6 @@ describe("Android TV MVP flow: home-feed -> series details -> playback targets (
     expect(homeBody.data.rows.map((row) => row.title)).toEqual([
       "Ongoing Korean Drama",
       "Korean Drama",
-      "Recently Added",
     ]);
     const catalogIds = homeBody.data.rows.flatMap((row) =>
       row.items.map((item) => item.id),

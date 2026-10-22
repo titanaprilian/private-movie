@@ -4,6 +4,10 @@ import com.privatemovie.tv.dto.models.Genre
 import com.privatemovie.tv.dto.models.HomeFeed
 import com.privatemovie.tv.dto.models.HomeFeedHero
 import com.privatemovie.tv.dto.models.HomeFeedRow
+import com.privatemovie.tv.dto.models.RecentlyAddedEpisodeDto
+import com.privatemovie.tv.dto.models.RecentlyAddedSeasonDto
+import com.privatemovie.tv.dto.models.RecentlyAddedSeriesDto
+import com.privatemovie.tv.dto.models.RecentlyAddedVideoSourceDto
 import com.privatemovie.tv.dto.models.SeriesMetadata
 import com.privatemovie.tv.modules.home.internal.toTvHomeFeed
 import org.junit.Assert.assertEquals
@@ -205,6 +209,126 @@ class HomeFeedModelMappingTest {
         assertNotNull(tvHomeFeed.hero)
         assertEquals("hero-only", tvHomeFeed.hero?.series?.id)
         assertEquals(0, tvHomeFeed.heroes.size)
+    }
+
+    @Test
+    fun mapsRecentlyAddedEpisodesToTvRecentlyAddedEpisode() {
+        val episodeDto = RecentlyAddedEpisodeDto(
+            id = "ep-12",
+            title = "The Final Battle",
+            order = 12,
+            createdAt = "2026-02-01T00:00:00.000Z",
+            series = RecentlyAddedSeriesDto(
+                id = "s-aot",
+                title = "Attack on Titan",
+                posterUrl = "https://example.com/aot-poster.jpg",
+                backdropUrl = "https://example.com/aot-backdrop.jpg"
+            ),
+            season = RecentlyAddedSeasonDto(
+                id = "season-1",
+                title = "Season 1",
+                seasonNumber = 1
+            ),
+            videoSources = listOf(
+                RecentlyAddedVideoSourceDto(
+                    id = "vs-1",
+                    episodeId = "ep-12",
+                    type = "hls",
+                    url = "https://example.com/ep12.m3u8",
+                    label = "1080p",
+                    createdAt = "2026-02-01T00:00:00.000Z",
+                    updatedAt = "2026-02-01T00:00:00.000Z",
+                    quality = "1080p"
+                )
+            ),
+            thumbnailUrl = "https://example.com/ep12.jpg",
+            duration = 1440,
+            rating = "TV-MA"
+        )
+
+        val homeFeedDto = HomeFeed(
+            hero = null,
+            rows = emptyList(),
+            recentlyAddedEpisodes = listOf(episodeDto)
+        )
+
+        val tvHomeFeed = homeFeedDto.toTvHomeFeed()
+
+        assertEquals(1, tvHomeFeed.recentlyAddedEpisodes.size)
+        val mapped = tvHomeFeed.recentlyAddedEpisodes[0]
+        assertEquals("ep-12", mapped.id)
+        assertEquals("The Final Battle", mapped.title)
+        assertEquals(12, mapped.order)
+        assertEquals("https://example.com/ep12.jpg", mapped.thumbnailUrl)
+        assertEquals(1440, mapped.duration)
+        assertEquals("TV-MA", mapped.rating)
+
+        assertEquals("s-aot", mapped.series.id)
+        assertEquals("Attack on Titan", mapped.series.title)
+        assertEquals("https://example.com/aot-poster.jpg", mapped.series.posterUrl)
+        assertEquals("https://example.com/aot-backdrop.jpg", mapped.series.backdropUrl)
+
+        assertEquals("season-1", mapped.season.id)
+        assertEquals("Season 1", mapped.season.title)
+        assertEquals(1, mapped.season.seasonNumber)
+
+        assertEquals(1, mapped.videoSources.size)
+        assertEquals("vs-1", mapped.videoSources[0].id)
+        assertEquals("ep-12", mapped.videoSources[0].episodeId)
+        assertEquals("hls", mapped.videoSources[0].type)
+        assertEquals("https://example.com/ep12.m3u8", mapped.videoSources[0].url)
+        assertEquals("1080p", mapped.videoSources[0].label)
+        assertEquals("1080p", mapped.videoSources[0].quality)
+    }
+
+    @Test
+    fun mapsRecentlyAddedEpisodesWithNullMetadata() {
+        val episodeDto = RecentlyAddedEpisodeDto(
+            id = "ep-3",
+            title = "No Thumbnail Episode",
+            order = 3,
+            createdAt = "2026-02-02T00:00:00.000Z",
+            series = RecentlyAddedSeriesDto(
+                id = "s-other",
+                title = "Other Show",
+                posterUrl = null,
+                backdropUrl = null
+            ),
+            season = RecentlyAddedSeasonDto(
+                id = "season-2",
+                title = "Season 2",
+                seasonNumber = null
+            ),
+            videoSources = emptyList()
+        )
+
+        val homeFeedDto = HomeFeed(
+            hero = null,
+            rows = emptyList(),
+            recentlyAddedEpisodes = listOf(episodeDto)
+        )
+
+        val mapped = homeFeedDto.toTvHomeFeed().recentlyAddedEpisodes[0]
+
+        assertNull(mapped.thumbnailUrl)
+        assertNull(mapped.duration)
+        assertNull(mapped.rating)
+        assertNull(mapped.series.posterUrl)
+        assertNull(mapped.series.backdropUrl)
+        assertNull(mapped.season.seasonNumber)
+        assertEquals(0, mapped.videoSources.size)
+    }
+
+    @Test
+    fun defaultsToEmptyRecentlyAddedEpisodesWhenAbsent() {
+        val homeFeedDto = HomeFeed(
+            hero = null,
+            rows = emptyList()
+        )
+
+        val tvHomeFeed = homeFeedDto.toTvHomeFeed()
+
+        assertEquals(emptyList<Any>(), tvHomeFeed.recentlyAddedEpisodes)
     }
 
     @Test

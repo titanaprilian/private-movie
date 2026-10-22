@@ -321,6 +321,129 @@ class DtoSerializationTest {
     }
 
     @Test
+    fun deserializesHomeFeedWithRecentlyAddedEpisodes() {
+        val payload = """
+            {
+              "data": {
+                "hero": null,
+                "heroes": [],
+                "rows": [],
+                "recentlyAddedEpisodes": [
+                  {
+                    "id": "ep-12",
+                    "title": "The Final Battle",
+                    "order": 12,
+                    "thumbnailUrl": "https://example.com/ep12.jpg",
+                    "duration": 1440,
+                    "rating": "TV-MA",
+                    "createdAt": "2026-02-01T00:00:00.000Z",
+                    "series": {
+                      "id": "s-aot",
+                      "title": "Attack on Titan",
+                      "posterUrl": "https://example.com/aot-poster.jpg",
+                      "backdropUrl": "https://example.com/aot-backdrop.jpg"
+                    },
+                    "season": {
+                      "id": "season-1",
+                      "seasonNumber": 1,
+                      "title": "Season 1"
+                    },
+                    "videoSources": [
+                      {
+                        "id": "vs-1",
+                        "episodeId": "ep-12",
+                        "type": "hls",
+                        "url": "https://example.com/ep12.m3u8",
+                        "label": "1080p",
+                        "quality": "1080p",
+                        "createdAt": "2026-02-01T00:00:00.000Z",
+                        "updatedAt": "2026-02-01T00:00:00.000Z"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "ep-3",
+                    "title": "No Thumbnail Episode",
+                    "order": 3,
+                    "thumbnailUrl": null,
+                    "duration": null,
+                    "rating": null,
+                    "createdAt": "2026-02-02T00:00:00.000Z",
+                    "series": {
+                      "id": "s-other",
+                      "title": "Other Show",
+                      "posterUrl": null,
+                      "backdropUrl": null
+                    },
+                    "season": {
+                      "id": "season-2",
+                      "seasonNumber": null,
+                      "title": "Season 2"
+                    },
+                    "videoSources": []
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<HomeFeedSuccessResponse>(payload)
+        val episodes = response.data.recentlyAddedEpisodes
+
+        assertEquals(2, episodes.size)
+
+        val episode = episodes[0]
+        assertEquals("ep-12", episode.id)
+        assertEquals("The Final Battle", episode.title)
+        assertEquals(12, episode.order)
+        assertEquals("https://example.com/ep12.jpg", episode.thumbnailUrl)
+        assertEquals(1440, episode.duration)
+        assertEquals("TV-MA", episode.rating)
+        assertEquals("2026-02-01T00:00:00.000Z", episode.createdAt)
+
+        assertEquals("s-aot", episode.series.id)
+        assertEquals("Attack on Titan", episode.series.title)
+        assertEquals("https://example.com/aot-poster.jpg", episode.series.posterUrl)
+        assertEquals("https://example.com/aot-backdrop.jpg", episode.series.backdropUrl)
+
+        assertEquals("season-1", episode.season.id)
+        assertEquals(1, episode.season.seasonNumber)
+        assertEquals("Season 1", episode.season.title)
+
+        assertEquals(1, episode.videoSources.size)
+        assertEquals("vs-1", episode.videoSources[0].id)
+        assertEquals("ep-12", episode.videoSources[0].episodeId)
+        assertEquals("hls", episode.videoSources[0].type)
+        assertEquals("https://example.com/ep12.m3u8", episode.videoSources[0].url)
+        assertEquals("1080p", episode.videoSources[0].label)
+        assertEquals("1080p", episode.videoSources[0].quality)
+
+        val bareEpisode = episodes[1]
+        assertNull(bareEpisode.thumbnailUrl)
+        assertNull(bareEpisode.duration)
+        assertNull(bareEpisode.rating)
+        assertNull(bareEpisode.season.seasonNumber)
+        assertEquals(0, bareEpisode.videoSources.size)
+    }
+
+    @Test
+    fun deserializesHomeFeedWithoutRecentlyAddedEpisodesDefaultsToEmptyList() {
+        val payload = """
+            {
+              "data": {
+                "hero": null,
+                "heroes": [],
+                "rows": []
+              }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<HomeFeedSuccessResponse>(payload)
+
+        assertEquals(emptyList<Any>(), response.data.recentlyAddedEpisodes)
+    }
+
+    @Test
     fun deserializesGenresListResponse() {
         val payload = """
             {

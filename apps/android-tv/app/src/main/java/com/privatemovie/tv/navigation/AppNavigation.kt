@@ -154,7 +154,11 @@ fun AppNavigation(
                         launchSingleTop = true
                     }
                 },
-                onFocusDrawer = focusDrawer
+                onFocusDrawer = focusDrawer,
+                onPlayNavArgs = { playerNavArgs ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set(PLAYER_NAV_ARGS_KEY, playerNavArgs)
+                    navController.navigate(TvScreen.Player.createRoute(playerNavArgs.episodeId))
+                }
             )
         }
 
