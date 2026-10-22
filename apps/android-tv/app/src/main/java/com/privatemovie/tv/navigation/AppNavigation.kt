@@ -42,6 +42,7 @@ import com.privatemovie.tv.modules.player.PlayerNavArgs
 import com.privatemovie.tv.modules.player.PlayerScreen
 import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
 import com.privatemovie.tv.modules.search.SearchScreen
+import com.privatemovie.tv.modules.search.SearchViewModel
 import kotlinx.coroutines.launch
 
 sealed class TvScreen(val route: String) {
@@ -78,6 +79,11 @@ fun AppNavigation(
     // return-focus origin survives navigation and focus can be restored.
     val homeViewModel = remember(mediaRepository) {
         HomeViewModel(mediaRepository = mediaRepository)
+    }
+    // Retain the SearchViewModel across Search -> Detail -> Search so search query,
+    // results, and recorded return-focus origin survive navigation.
+    val searchViewModel = remember(mediaRepository) {
+        SearchViewModel(mediaRepository = mediaRepository)
     }
     var bigGenres by remember { mutableStateOf<List<com.privatemovie.tv.dto.models.GenreItem>>(emptyList()) }
     LaunchedEffect(mediaRepository) {
@@ -156,6 +162,7 @@ fun AppNavigation(
             SearchScreen(
                 activeBackendUrl = activeUrl,
                 mediaRepository = mediaRepository,
+                viewModel = searchViewModel,
                 onSelectSeries = { seriesId ->
                     navController.navigate(TvScreen.Detail.createRoute(seriesId))
                 },
