@@ -265,17 +265,14 @@ describe("GET /series/home-feed", () => {
     expect(body.data.hero.seasonsCount).toBe(2);
     expect(body.data.hero.episodesCount).toBe(1);
 
-    expect(body.data.rows).toHaveLength(2);
+    expect(body.data.rows).toHaveLength(1);
 
     const ongoingRow = body.data.rows[0];
     expect(ongoingRow.title).toBe("Ongoing");
     expect(ongoingRow.items).toHaveLength(1);
     expect(ongoingRow.items[0].id).toBe(tvSeriesId);
 
-    const recentlyAddedRow = body.data.rows[1];
-    expect(recentlyAddedRow.title).toBe("Recently Added");
-    expect(recentlyAddedRow.items).toHaveLength(2);
-    expect(recentlyAddedRow.items.map((i) => i.id)).toEqual([movieSeriesId, tvSeriesId]);
+    expect(body.data.rows.map((r) => r.title)).not.toContain("Recently Added");
   });
 
   it("dynamically queries active Big Genres sorted by displayOrder asc and generates carousel rows", async () => {
@@ -416,11 +413,10 @@ describe("GET /series/home-feed", () => {
       };
     };
 
-    expect(body.data.rows).toHaveLength(4);
+    expect(body.data.rows).toHaveLength(3);
     expect(body.data.rows[0].title).toBe("Ongoing Korean Drama");
     expect(body.data.rows[1].title).toBe("Korean Drama");
     expect(body.data.rows[2].title).toBe("Anime");
-    expect(body.data.rows[3].title).toBe("Recently Added");
 
     expect(body.data.rows[0].items).toHaveLength(1);
     expect(body.data.rows[0].items[0].id).toBe(kdSeriesId);
@@ -665,10 +661,10 @@ describe("GET /series/home-feed", () => {
     // Ongoing rows first in display order: KD (1) before Animation (2)
     expect(titles[0]).toBe("Ongoing Korean Drama");
     expect(titles[1]).toBe("Ongoing Animation");
-    // Catalog + recently added follow ongoing rows
+    // Catalog rows follow ongoing rows
     expect(titles.indexOf("Korean Drama")).toBeGreaterThan(1);
     expect(titles.indexOf("Animation")).toBeGreaterThan(1);
-    expect(titles[titles.length - 1]).toBe("Recently Added");
+    expect(titles).not.toContain("Recently Added");
 
     const kdRow = body.data.rows.find((r) => r.title === "Ongoing Korean Drama")!;
     expect(kdRow.items.map((i) => i.id)).toEqual([kdNew, kdOld]);
@@ -1351,7 +1347,7 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
     expect(bulkEntries[0].id).toBe(newEpId);
   });
 
-  it("keeps the legacy Recently Added series row for Android TV backward compatibility", async () => {
+  it("omits the legacy Recently Added series row while keeping recentlyAddedEpisodes populated", async () => {
     await seedEpisodeWithSource({
       seriesTitle: "Legacy Show",
       episodeTitle: "Legacy Episode",
@@ -1363,9 +1359,10 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
     const body = response.body as FeedBody;
 
     const legacyRow = body.data.rows.find((r) => r.title === "Recently Added");
-    expect(legacyRow).toBeDefined();
-    expect(legacyRow!.items.length).toBeGreaterThan(0);
+    expect(legacyRow).toBeUndefined();
     expect(body.data.recentlyAddedEpisodes.length).toBeGreaterThan(0);
+    expect(body.data.recentlyAddedEpisodes[0].series.title).toBe("Legacy Show");
+    expect(body.data.recentlyAddedEpisodes[0].title).toBe("Legacy Episode");
   });
 
   it("returns canonically sorted videoSources for recentlyAddedEpisodes", async () => {

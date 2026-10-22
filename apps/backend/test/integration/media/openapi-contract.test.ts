@@ -122,7 +122,6 @@ describe("MVP public media OpenAPI contract", () => {
     expect(body.data.rows.map((row) => row.title)).toEqual([
       "Ongoing Korean Drama",
       "Korean Drama",
-      "Recently Added",
     ]);
   });
 
