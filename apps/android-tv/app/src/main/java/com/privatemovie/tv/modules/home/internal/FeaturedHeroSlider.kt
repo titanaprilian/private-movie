@@ -68,6 +68,8 @@ fun FeaturedHeroSlider(
 
     val currentHero = sliderState.activeHero ?: heroes.first()
     var isCtaFocused by remember { mutableStateOf(false) }
+    val leftChevronPulse = rememberChevronPulse()
+    val rightChevronPulse = rememberChevronPulse()
 
     Box(
         modifier = modifier
@@ -103,26 +105,38 @@ fun FeaturedHeroSlider(
                     .onFocusChanged {
                         isCtaFocused = it.isFocused
                         sliderState.onCtaFocusChanged(it.isFocused)
+                        if (!it.isFocused) {
+                            leftChevronPulse.reset()
+                            rightChevronPulse.reset()
+                        }
                     }
                     .onKeyEvent { keyEvent ->
                         if (isRepeatKeyEvent(keyEvent)) {
                             return@onKeyEvent true
                         }
-                        if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
-                            when (keyEvent.nativeKeyEvent.keyCode) {
-                                android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                    if (onDownFromCta != null) {
-                                        onDownFromCta()
-                                        true
-                                    } else false
+                        val nativeKeyEvent = keyEvent.nativeKeyEvent
+                        if (nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
+                            when (sliderState.resolveCtaKeyAction(true, nativeKeyEvent.keyCode)) {
+                                HeroCtaKeyAction.PREVIOUS_SLIDE -> {
+                                    leftChevronPulse.trigger()
+                                    sliderState.handleCtaKey(
+                                        isKeyDown = true,
+                                        keyCode = nativeKeyEvent.keyCode
+                                    )
                                 }
-                                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
-                                    if (onLeftFromCta != null) {
-                                        onLeftFromCta()
-                                        true
-                                    } else false
+                                HeroCtaKeyAction.NEXT_SLIDE -> {
+                                    rightChevronPulse.trigger()
+                                    sliderState.handleCtaKey(
+                                        isKeyDown = true,
+                                        keyCode = nativeKeyEvent.keyCode
+                                    )
                                 }
-                                else -> sliderState.handleKeyEvent(keyEvent)
+                                else -> sliderState.handleCtaKey(
+                                    isKeyDown = true,
+                                    keyCode = nativeKeyEvent.keyCode,
+                                    onDownFromCta = onDownFromCta,
+                                    onLeftFromCta = onLeftFromCta
+                                )
                             }
                         } else {
                             sliderState.handleKeyEvent(keyEvent)
@@ -156,11 +170,10 @@ fun FeaturedHeroSlider(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (isCtaFocused && sliderState.heroCount > 1) {
-                        Icon(
+                        PulseChevronIcon(
                             imageVector = MediaPlaceholderIcons.ChevronLeft,
                             contentDescription = "Previous Slide",
-                            modifier = Modifier.size(16.dp),
-                            tint = Color.White.copy(alpha = 0.85f)
+                            pulse = leftChevronPulse
                         )
                     }
                     Text(
@@ -168,11 +181,10 @@ fun FeaturedHeroSlider(
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     if (isCtaFocused && sliderState.heroCount > 1) {
-                        Icon(
+                        PulseChevronIcon(
                             imageVector = MediaPlaceholderIcons.ChevronRight,
                             contentDescription = "Next Slide",
-                            modifier = Modifier.size(16.dp),
-                            tint = Color.White.copy(alpha = 0.85f)
+                            pulse = rightChevronPulse
                         )
                     }
                 }
