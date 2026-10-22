@@ -1,11 +1,9 @@
 import { existsSync } from "node:fs";
 import { request as httpRequest } from "node:http";
 import {
-  MinioCredentialsRejectedError,
   MinioDockerUnavailableError,
   MinioHealthTimeoutError,
 } from "../errors";
-import type { MinioContainerStarter, MinioHealthChecker } from "../types";
 import { MINIO_CONTAINER_NAME, MINIO_SOCKET_PATH } from "./minio-status";
 
 export { MinioDockerUnavailableError };

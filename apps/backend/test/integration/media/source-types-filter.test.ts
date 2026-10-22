@@ -172,7 +172,12 @@ describe("sourceTypes filtering on home feed and series details", () => {
     expect(body.data.hero).not.toBeNull();
     expect(body.data.hero?.id).toBe(nativeSeriesId);
 
-    expect(body.data.rows).toHaveLength(3);
+    expect(body.data.rows).toHaveLength(2);
+    expect(body.data.rows.map((r) => r.title)).toEqual([
+      "Ongoing Korean Drama",
+      "Korean Drama",
+    ]);
+    expect(body.data.rows.map((r) => r.title)).not.toContain("Recently Added");
     for (const row of body.data.rows) {
       const ids = row.items.map((i) => i.id);
       expect(ids).toContain(nativeSeriesId);
@@ -209,7 +214,12 @@ describe("sourceTypes filtering on home feed and series details", () => {
     // The newest featured series (embed-only) wins the hero slot.
     expect(body.data.hero?.id).toBe(embedOnlySeriesId);
 
-    expect(body.data.rows).toHaveLength(3);
+    expect(body.data.rows).toHaveLength(2);
+    expect(body.data.rows.map((r) => r.title)).toEqual([
+      "Ongoing Korean Drama",
+      "Korean Drama",
+    ]);
+    expect(body.data.rows.map((r) => r.title)).not.toContain("Recently Added");
     for (const row of body.data.rows) {
       const ids = row.items.map((i) => i.id);
       expect(ids).toContain(nativeSeriesId);
