@@ -47,13 +47,19 @@ fun GenreCatalogScreen(
     viewModel: GenreCatalogViewModel = remember(mediaRepository, genreSlug) {
         GenreCatalogViewModel(mediaRepository = mediaRepository, genreSlug = genreSlug)
     },
-    onFocusDrawer: () -> Unit = {}
+    onFocusDrawer: () -> Unit = {},
+    contentFocusRequester: FocusRequester? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val headerFocus = remember { FocusRequester() }
-    val pillFocusers = remember {
+    val internalHeaderFocus = remember { FocusRequester() }
+    // The drawer shell hands focus back to the filter pills when it collapses.
+    val headerFocus = contentFocusRequester ?: internalHeaderFocus
+    // Dedicated requester for the loading container so focus stays anchored
+    // inside the page while the catalog is fetched.
+    val loadingFocus = remember { FocusRequester() }
+    val pillFocusers = remember(headerFocus) {
         mapOf(
-            GenreCatalogFilter.ALL to FocusRequester(),
+            GenreCatalogFilter.ALL to headerFocus,
             GenreCatalogFilter.ONGOING to FocusRequester()
         )
     }
@@ -76,7 +82,10 @@ fun GenreCatalogScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         when (val state = uiState) {
-            is GenreCatalogUiState.Loading -> GenreCatalogLoading(modifier = Modifier.fillMaxSize())
+            is GenreCatalogUiState.Loading -> GenreCatalogLoading(
+                modifier = Modifier.fillMaxSize(),
+                focusRequester = loadingFocus,
+            )
             is GenreCatalogUiState.Error -> GenreCatalogError(
                 message = state.message,
                 onRetry = { viewModel.retry() },
@@ -84,6 +93,11 @@ fun GenreCatalogScreen(
             )
             is GenreCatalogUiState.Success -> {
                 val gridState = rememberLazyGridState()
+                // Focus was held by the loading container; move it into the
+                // page (filter pills) now that the catalog is available.
+                LaunchedEffect(Unit) {
+                    requestFocusSafely(headerFocus)
+                }
                 LaunchedEffect(genreSlug, state.filter) {
                     try {
                         gridState.scrollToItem(0)
