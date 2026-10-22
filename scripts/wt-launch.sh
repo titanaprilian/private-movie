@@ -32,7 +32,7 @@ fi
 # after the harness exits so a startup error stays readable. ORCH_PANE and
 # IMPL_PANE are exported for the implementor; values are passed as
 # positional args to avoid quoting problems.
-prompt="${IMPLEMENTOR_PROMPT:-/implement $issue}"
+prompt="${IMPLEMENTOR_PROMPT:-@implement $issue}"
 impl_pane="$(tmux split-window -v -d -t "$orch_pane" -P -F '#{pane_id}' -c "$dir" \
   bash -c 'export ORCH_PANE="$3" IMPL_PANE="$4"; "$1" --prompt "$2"; rc=$?; echo "[implementor exited: $rc]"; exec bash' \
   _ "$harness" "$prompt" "$orch_pane" "$tag")"

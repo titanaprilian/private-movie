@@ -16,6 +16,8 @@ import com.privatemovie.tv.modules.home.internal.HomeError
 import com.privatemovie.tv.modules.home.internal.HomeFeedContent
 import com.privatemovie.tv.modules.home.internal.HomeLoading
 import com.privatemovie.tv.modules.home.internal.HomeUiState
+import com.privatemovie.tv.modules.home.internal.buildRecentEpisodePlayerNavArgs
+import com.privatemovie.tv.modules.player.PlayerNavArgs
 
 /**
  * Public seam for the Android TV home browsing experience.
@@ -37,11 +39,15 @@ fun HomeScreen(
     viewModel: HomeViewModel = remember(mediaRepository, activeBackendUrl) {
         HomeViewModel(mediaRepository = mediaRepository)
     },
-    onFocusDrawer: () -> Unit = {}
+    onFocusDrawer: () -> Unit = {},
+    contentFocusRequester: FocusRequester? = null,
+    onPlayNavArgs: ((PlayerNavArgs) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
-    val heroFocus = remember { FocusRequester() }
+    val internalHeroFocus = remember { FocusRequester() }
+    // The drawer shell hands focus back to the hero when it collapses.
+    val heroFocus = contentFocusRequester ?: internalHeroFocus
 
     LaunchedEffect(activeBackendUrl) {
         viewModel.loadFeed()
@@ -74,7 +80,10 @@ fun HomeScreen(
                 returnFocusTarget = pendingReturnFocus,
                 onReturnFocusConsumed = { viewModel.consumeReturnFocus() },
                 externalCtaFocusRequester = heroFocus,
-                onLeftFromEdge = onFocusDrawer
+                onLeftFromEdge = onFocusDrawer,
+                onSelectEpisode = { episode ->
+                    onPlayNavArgs?.invoke(buildRecentEpisodePlayerNavArgs(episode))
+                }
             )
         }
     }

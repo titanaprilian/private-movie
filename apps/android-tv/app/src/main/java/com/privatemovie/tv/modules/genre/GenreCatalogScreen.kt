@@ -21,6 +21,7 @@ import com.privatemovie.tv.modules.genre.internal.GenreCatalogFilter
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogGrid
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogLoading
 import com.privatemovie.tv.modules.genre.internal.GenreCatalogUiState
+import com.privatemovie.tv.modules.genre.internal.resolveFilterPillFocusTarget
 import kotlinx.coroutines.launch
 
 /**
@@ -31,7 +32,7 @@ import kotlinx.coroutines.launch
  * `TvNavigationDrawer` shell (owned by `AppNavigation`) provides Search /
  * Home / genre navigation from the collapsed 72dp left rail. D-pad Left from
  * a leftmost-column card shifts focus into the drawer via [onFocusDrawer].
- * D-pad Up from the pills/top row returns to the header focus target;
+ * D-pad Up from the top row transfers focus to the active filter pill;
  * remote Back navigates to Home via [onNavigateHome]; selecting another
  * genre goes through [onSelectGenre].
  */
@@ -47,13 +48,19 @@ fun GenreCatalogScreen(
     viewModel: GenreCatalogViewModel = remember(mediaRepository, genreSlug) {
         GenreCatalogViewModel(mediaRepository = mediaRepository, genreSlug = genreSlug)
     },
-    onFocusDrawer: () -> Unit = {}
+    onFocusDrawer: () -> Unit = {},
+    contentFocusRequester: FocusRequester? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val headerFocus = remember { FocusRequester() }
-    val pillFocusers = remember {
+    val internalHeaderFocus = remember { FocusRequester() }
+    // The drawer shell hands focus back to the filter pills when it collapses.
+    val headerFocus = contentFocusRequester ?: internalHeaderFocus
+    // Dedicated requester for the loading container so focus stays anchored
+    // inside the page while the catalog is fetched.
+    val loadingFocus = remember { FocusRequester() }
+    val pillFocusers = remember(headerFocus) {
         mapOf(
-            GenreCatalogFilter.ALL to FocusRequester(),
+            GenreCatalogFilter.ALL to headerFocus,
             GenreCatalogFilter.ONGOING to FocusRequester()
         )
     }
@@ -63,11 +70,14 @@ fun GenreCatalogScreen(
         onNavigateHome()
     }
 
-    val focusHeader: () -> Unit = {
-        coroutineScope.launch {
-            requestFocusSafely(headerFocus)
+    val focusFilterPill: () -> Unit = {
+        val activeFilter = (uiState as? GenreCatalogUiState.Success)?.filter
+        val target = resolveFilterPillFocusTarget(pillFocusers, activeFilter)
+        if (target != null) {
+            coroutineScope.launch {
+                requestFocusSafely(target)
+            }
         }
-        Unit
     }
 
     Box(
@@ -76,7 +86,10 @@ fun GenreCatalogScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         when (val state = uiState) {
-            is GenreCatalogUiState.Loading -> GenreCatalogLoading(modifier = Modifier.fillMaxSize())
+            is GenreCatalogUiState.Loading -> GenreCatalogLoading(
+                modifier = Modifier.fillMaxSize(),
+                focusRequester = loadingFocus,
+            )
             is GenreCatalogUiState.Error -> GenreCatalogError(
                 message = state.message,
                 onRetry = { viewModel.retry() },
@@ -84,6 +97,11 @@ fun GenreCatalogScreen(
             )
             is GenreCatalogUiState.Success -> {
                 val gridState = rememberLazyGridState()
+                // Focus was held by the loading container; move it into the
+                // page (filter pills) now that the catalog is available.
+                LaunchedEffect(Unit) {
+                    requestFocusSafely(headerFocus)
+                }
                 LaunchedEffect(genreSlug, state.filter) {
                     try {
                         gridState.scrollToItem(0)
@@ -101,7 +119,7 @@ fun GenreCatalogScreen(
                     isNextPageError = state.isNextPageError,
                     onRetryNextPage = { viewModel.retryNextPage() },
                     onNearBottom = { viewModel.loadNextPage() },
-                    onUpToHeader = focusHeader,
+                    onUpToHeader = focusFilterPill,
                     onLeftFromEdge = onFocusDrawer,
                     pillFocusers = pillFocusers,
                     gridState = gridState

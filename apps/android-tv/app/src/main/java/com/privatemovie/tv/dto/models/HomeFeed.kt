@@ -25,6 +25,7 @@ package com.privatemovie.tv.dto.models
 
 import com.privatemovie.tv.dto.models.HomeFeedHero
 import com.privatemovie.tv.dto.models.HomeFeedRow
+import com.privatemovie.tv.dto.models.RecentlyAddedEpisodeDto
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
@@ -48,7 +49,10 @@ data class HomeFeed (
     val hero: HomeFeedHero? = null,
 
     @SerialName(value = "heroes")
-    val heroes: kotlin.collections.List<HomeFeedHero>? = null
+    val heroes: kotlin.collections.List<HomeFeedHero>? = null,
+
+    @SerialName(value = "recentlyAddedEpisodes")
+    val recentlyAddedEpisodes: kotlin.collections.List<RecentlyAddedEpisodeDto> = emptyList()
 
 ) {
 

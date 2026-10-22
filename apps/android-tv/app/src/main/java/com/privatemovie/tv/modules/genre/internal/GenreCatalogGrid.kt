@@ -47,8 +47,9 @@ private const val GENRE_GRID_COLUMNS = 5
  * Filter pill row + 5-column vertical poster grid for the genre catalog.
  *
  * - Focusing a card near the loaded boundary invokes [onNearBottom] for
- *   infinite lazy-loading; focusing the active pill row keeps header access.
- * - D-pad Up from the pills or the top grid row invokes [onUpToHeader].
+ *   infinite lazy-loading.
+ * - D-pad Up from the top grid row invokes [onUpToHeader] to transfer focus
+ *   to the active filter pill.
  * - Bottom span shows a loading spinner while [isFetchingNextPage], a
  *   focusable retry button when [isNextPageError], and an empty state when
  *   the catalog has no series.
@@ -82,7 +83,6 @@ fun GenreCatalogGrid(
         FilterPillRow(
             activeFilter = activeFilter,
             onFilterChange = onFilterChange,
-            onUpToHeader = onUpToHeader,
             pillFocusers = pillFocusers,
             modifier = Modifier
                 .fillMaxWidth()
@@ -170,7 +170,6 @@ private fun FilterPillRow(
     activeFilter: GenreCatalogFilter,
     onFilterChange: (GenreCatalogFilter) -> Unit,
     modifier: Modifier = Modifier,
-    onUpToHeader: (() -> Unit)? = null,
     pillFocusers: Map<GenreCatalogFilter, FocusRequester>? = null
 ) {
     Row(
@@ -185,21 +184,6 @@ private fun FilterPillRow(
             val focuser = pillFocusers?.get(filter)
             if (focuser != null) {
                 pillModifier = pillModifier.focusRequester(focuser)
-            }
-            if (onUpToHeader != null) {
-                pillModifier = pillModifier.onKeyEvent { keyEvent ->
-                    if (isRepeatKeyEvent(keyEvent)) {
-                        return@onKeyEvent true
-                    }
-                    if (keyEvent.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN &&
-                        keyEvent.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP
-                    ) {
-                        onUpToHeader()
-                        true
-                    } else {
-                        false
-                    }
-                }
             }
             TvButton(
                 onClick = { onFilterChange(filter) },

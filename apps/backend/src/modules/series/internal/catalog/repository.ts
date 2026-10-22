@@ -647,17 +647,9 @@ export function createSeriesRepository(db: DbClient, options?: SeriesRepositoryO
           .limit(10);
       });
 
-      const recentlyAddedRowsPromise = db
-        .select()
-        .from(series)
-        .where(hasVideoSources)
-        .orderBy(desc(series.createdAt))
-        .limit(10);
-
-      const [ongoingPerGenreList, bigGenreRowsList, recentlyAddedRows] = await Promise.all([
+      const [ongoingPerGenreList, bigGenreRowsList] = await Promise.all([
         Promise.all(ongoingPerGenrePromises),
         Promise.all(bigGenreRowsPromises),
-        recentlyAddedRowsPromise,
       ]);
 
       let fallbackOngoingRows: SeriesRow[] = [];
@@ -669,7 +661,7 @@ export function createSeriesRepository(db: DbClient, options?: SeriesRepositoryO
       }
 
       const allSeriesMap = new Map<string, SeriesRow>();
-      for (const s of [...heroSeriesList, ...fallbackOngoingRows, ...recentlyAddedRows, ...ongoingPerGenreList.flat(), ...bigGenreRowsList.flat()]) {
+      for (const s of [...heroSeriesList, ...fallbackOngoingRows, ...ongoingPerGenreList.flat(), ...bigGenreRowsList.flat()]) {
         allSeriesMap.set(s.id, s);
       }
 
@@ -766,10 +758,6 @@ export function createSeriesRepository(db: DbClient, options?: SeriesRepositoryO
           title: bigGenre.name,
           items: (bigGenreRowsList[index] ?? []).map((s) => enrichedMap.get(s.id)!),
         })),
-        {
-          title: "Recently Added",
-          items: recentlyAddedRows.map((s) => enrichedMap.get(s.id)!),
-        },
       ].filter((row) => row.items.length > 0);
 
       const recentlyAddedEpisodes = await fetchRecentlyAddedEpisodes();

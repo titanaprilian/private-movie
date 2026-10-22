@@ -1,6 +1,12 @@
 package com.privatemovie.tv.navigation
 
 import com.privatemovie.tv.components.drawer.DrawerDestination
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedEpisode
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeason
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeries
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedVideoSource
+import com.privatemovie.tv.modules.home.internal.buildRecentEpisodePlayerNavArgs
+import com.privatemovie.tv.components.drawer.NavigationDrawerState
 import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
@@ -217,5 +223,164 @@ class NavigationTest {
         assertFalse(shouldFocusDrawerOnKey(left, isKeyDown = true, isLeftmost = false))
         assertFalse(shouldFocusDrawerOnKey(left, isKeyDown = false, isLeftmost = true))
         assertFalse(shouldFocusDrawerOnKey(right, isKeyDown = true, isLeftmost = true))
+    }
+
+    // ── recently added episodes direct playback ───────────────────────────────
+
+    private fun makeRecentEpisode(withSource: Boolean = true): TvRecentlyAddedEpisode {
+        return TvRecentlyAddedEpisode(
+            id = "episode-886",
+            title = "Enter the Demon",
+            order = 12,
+            thumbnailUrl = null,
+            duration = 2535,
+            rating = null,
+            series = TvRecentlyAddedSeries(
+                id = "series-42",
+                title = "Demon Slayer",
+                posterUrl = null,
+                backdropUrl = null
+            ),
+            season = TvRecentlyAddedSeason(
+                id = "season-1",
+                title = "Season 1",
+                seasonNumber = 1
+            ),
+            videoSources = if (withSource) {
+                listOf(
+                    TvRecentlyAddedVideoSource(
+                        id = "source-1",
+                        episodeId = "episode-886",
+                        type = "embed",
+                        url = "/embed/abc123",
+                        label = "Embed",
+                        quality = "1080p"
+                    )
+                )
+            } else {
+                emptyList()
+            }
+        )
+    }
+
+    @Test
+    fun `selecting a recently added episode builds player nav args with source and metadata`() {
+        val navArgs = buildRecentEpisodePlayerNavArgs(makeRecentEpisode())
+
+        assertEquals("episode-886", navArgs.episodeId)
+        assertEquals("embed", navArgs.source?.type)
+        assertEquals("/embed/abc123", navArgs.source?.url)
+        assertEquals("Demon Slayer", navArgs.metadata?.seriesTitle)
+        assertEquals("Season 1", navArgs.metadata?.seasonTitle)
+        assertEquals(1, navArgs.metadata?.seasonNumber)
+        assertEquals(12, navArgs.metadata?.episodeOrder)
+        assertEquals("Enter the Demon", navArgs.metadata?.episodeTitle)
+    }
+
+    @Test
+    fun `recently added episode navigation targets the player route directly`() {
+        val navArgs = buildRecentEpisodePlayerNavArgs(makeRecentEpisode())
+
+        assertEquals("player/episode-886", TvScreen.Player.createRoute(navArgs.episodeId))
+    }
+
+    @Test
+    fun `recently added episode without sources builds player nav args without a source`() {
+        val navArgs = buildRecentEpisodePlayerNavArgs(makeRecentEpisode(withSource = false))
+
+        assertEquals("episode-886", navArgs.episodeId)
+        assertNull(navArgs.source)
+        assertEquals("Demon Slayer", navArgs.metadata?.seriesTitle)
+    }
+
+    // ---- Drawer collapse + content focus handoff ----
+
+    @Test
+    fun `browsing routes map to their content focus target`() {
+        assertEquals(BrowsingContentTarget.HOME_HERO, browsingContentTargetForRoute(TvScreen.Home.route))
+        assertEquals(BrowsingContentTarget.SEARCH_FIELD, browsingContentTargetForRoute(TvScreen.Search.route))
+        assertEquals(BrowsingContentTarget.GENRE_HEADER, browsingContentTargetForRoute(TvScreen.Genre.route))
+        assertEquals(
+            BrowsingContentTarget.GENRE_HEADER,
+            browsingContentTargetForRoute(TvScreen.Genre.createRoute("animation"))
+        )
+    }
+
+    @Test
+    fun `routes without drawer content have no focus target`() {
+        assertNull(browsingContentTargetForRoute(TvScreen.Detail.createRoute("series-42")))
+        assertNull(browsingContentTargetForRoute(TvScreen.Player.createRoute("episode-108")))
+        assertNull(browsingContentTargetForRoute(null))
+        assertNull(browsingContentTargetForRoute("unknown"))
+    }
+
+    @Test
+    fun `drawer destinations map to the focus target of the screen they open`() {
+        assertEquals(
+            BrowsingContentTarget.SEARCH_FIELD,
+            browsingContentTargetForDestination(DrawerDestination.Search)
+        )
+        assertEquals(
+            BrowsingContentTarget.HOME_HERO,
+            browsingContentTargetForDestination(DrawerDestination.Home)
+        )
+        assertEquals(
+            BrowsingContentTarget.GENRE_HEADER,
+            browsingContentTargetForDestination(DrawerDestination.Genre(slug = "k-drama", name = "Korean Drama"))
+        )
+    }
+
+    @Test
+    fun `selecting a drawer destination collapses the drawer and navigates`() {
+        val drawerState = NavigationDrawerState()
+        var navigated: DrawerDestination? = null
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = { navigated = it },
+            onFocusContent = {},
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.selectDestination(DrawerDestination.Search)
+
+        assertFalse(drawerState.expanded)
+        assertEquals(72, drawerState.drawerWidthDp)
+        assertEquals(DrawerDestination.Search, navigated)
+    }
+
+    @Test
+    fun `selecting a drawer destination never leaves the drawer expanded`() {
+        val drawerState = NavigationDrawerState()
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = {},
+        )
+
+        drawerState.onDrawerItemFocused()
+        coordinator.selectDestination(DrawerDestination.Genre(slug = "animation", name = "Animation"))
+        assertFalse(drawerState.expanded)
+
+        drawerState.onDrawerItemFocused()
+        coordinator.selectDestination(DrawerDestination.Home)
+        assertFalse(drawerState.expanded)
+        assertEquals(72, drawerState.drawerWidthDp)
+    }
+
+    @Test
+    fun `collapsing the drawer hands focus back to the page content`() {
+        val drawerState = NavigationDrawerState()
+        var focusReturned = false
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { focusReturned = true },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertTrue(focusReturned)
     }
 }

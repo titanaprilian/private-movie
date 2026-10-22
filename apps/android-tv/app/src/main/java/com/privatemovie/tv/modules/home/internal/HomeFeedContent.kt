@@ -194,7 +194,8 @@ fun HomeFeedContent(
     returnFocusTarget: HomeReturnFocusTarget? = null,
     onReturnFocusConsumed: (() -> Unit)? = null,
     externalCtaFocusRequester: FocusRequester? = null,
-    onLeftFromEdge: (() -> Unit)? = null
+    onLeftFromEdge: (() -> Unit)? = null,
+    onSelectEpisode: ((TvRecentlyAddedEpisode) -> Unit)? = null
 ) {
     val effectiveHeroes = remember(feed) {
         if (feed.heroes.isNotEmpty()) {
@@ -206,7 +207,8 @@ fun HomeFeedContent(
         }
     }
 
-    val hasContent = effectiveHeroes.isNotEmpty() || feed.rows.any { it.items.isNotEmpty() }
+    val hasContent = effectiveHeroes.isNotEmpty() || feed.rows.any { it.items.isNotEmpty() } ||
+        feed.recentlyAddedEpisodes.isNotEmpty()
     if (!hasContent) {
         HomeEmpty(onRetry = onRetry, modifier = modifier)
         return
@@ -228,6 +230,22 @@ fun HomeFeedContent(
             rowIndex to List(row.items.size) { FocusRequester() }
         }.toMap()
     }
+
+    // "Recently Added Episodes" carousel state: one FocusRequester per episode
+    // plus a dedicated LazyListState so the first card can be scrolled into view
+    // before focus is requested.
+    val recentEpisodes = feed.recentlyAddedEpisodes
+    val hasRecentEpisodes = recentEpisodes.isNotEmpty()
+    val episodeFocusRequesters = remember(recentEpisodes) {
+        recentEpisodes.map { FocusRequester() }
+    }
+    val episodeListState = remember(recentEpisodes) {
+        androidx.compose.foundation.lazy.LazyListState()
+    }
+
+    // LazyColumn item offsets: the hero slider is item 0, the "Recently Added
+    // Episodes" carousel (when present) is item 1, rows start after that.
+    val rowItemOffset = if (hasRecentEpisodes) 2 else 1
 
     val handleSelectHero: (String) -> Unit = { seriesId ->
         if (onSelectHero != null) onSelectHero(seriesId) else onSelectSeries(seriesId)
@@ -266,7 +284,7 @@ fun HomeFeedContent(
                 requestCardFocus = { rowIndex, cardIndex ->
                     // LazyColumn item index: hero is item 0, rows start at item 1.
                     val lazyItemIndex =
-                        if (effectiveHeroes.isNotEmpty()) rowIndex + 1 else rowIndex
+                        if (effectiveHeroes.isNotEmpty()) rowIndex + rowItemOffset else rowIndex
                     try {
                         lazyListState.animateScrollToItem(lazyItemIndex)
                     } catch (_: Exception) {
@@ -309,7 +327,7 @@ fun HomeFeedContent(
             val rememberedIndex = rowFocusIndices[targetRowIndex] ?: 0
             val clampedIndex = rememberedIndex.coerceIn(0, requesters.size - 1)
             // LazyColumn item index: hero is item 0, rows start at item 1.
-            val lazyItemIndex = if (effectiveHeroes.isNotEmpty()) targetRowIndex + 1 else targetRowIndex
+            val lazyItemIndex = if (effectiveHeroes.isNotEmpty()) targetRowIndex + rowItemOffset else targetRowIndex
             lazyListState.animateScrollToItem(lazyItemIndex)
             val targetRequester = requesters[clampedIndex]
             val success = requestFocusSafely(targetRequester)
@@ -354,11 +372,31 @@ fun HomeFeedContent(
                             onSelectSeries = handleSelectHero,
                             ctaFocusRequester = heroFocus,
                             onDownFromCta = {
-                                val firstNonEmptyRowIndex = feed.rows.indexOfFirst { it.items.isNotEmpty() }
-                                if (firstNonEmptyRowIndex >= 0) {
-                                    focusCoordinator.tryRequestFocus {
-                                        focusRowCard(firstNonEmptyRowIndex)
+                                when (resolveHeroDownFocusTarget(feed)) {
+                                    HeroDownFocusTarget.EpisodeCarousel -> {
+                                        focusCoordinator.tryRequestFocus {
+                                            // The episodes carousel is the LazyColumn
+                                            // item right below the hero slider.
+                                            try {
+                                                lazyListState.animateScrollToItem(1)
+                                            } catch (_: Exception) {
+                                                // Best-effort: a failed scroll must not block focus.
+                                            }
+                                            val firstEpisodeRequester = episodeFocusRequesters.firstOrNull()
+                                            if (firstEpisodeRequester != null) {
+                                                requestFocusSafely(firstEpisodeRequester)
+                                            } else false
+                                        }
                                     }
+                                    HeroDownFocusTarget.FirstRow -> {
+                                        val firstNonEmptyRowIndex = feed.rows.indexOfFirst { it.items.isNotEmpty() }
+                                        if (firstNonEmptyRowIndex >= 0) {
+                                            focusCoordinator.tryRequestFocus {
+                                                focusRowCard(firstNonEmptyRowIndex)
+                                            }
+                                        }
+                                    }
+                                    HeroDownFocusTarget.None -> Unit
                                 }
                             },
                             onLeftFromCta = onLeftFromEdge,
@@ -366,6 +404,58 @@ fun HomeFeedContent(
                                 .fillParentMaxHeight()
                                 .clipToBounds()
                         )
+                    }
+                }
+
+                if (hasRecentEpisodes) {
+                    @OptIn(
+                        androidx.compose.foundation.ExperimentalFoundationApi::class,
+                        androidx.compose.ui.ExperimentalComposeUiApi::class
+                    )
+                    item(key = "recent-episodes") {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "Recently Added Episodes",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(start = 48.dp, end = 48.dp, bottom = 12.dp)
+                            )
+                            androidx.compose.runtime.CompositionLocalProvider(
+                                androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides horizontalBringIntoViewSpec
+                            ) {
+                                androidx.compose.foundation.lazy.LazyRow(
+                                    state = episodeListState,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .focusRestorer(),
+                                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                                    contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp)
+                                ) {
+                                    itemsIndexed(recentEpisodes, key = { _, episode -> episode.id }) { index, episode ->
+                                        val transformOrigin = EdgeScaleTransform(index, recentEpisodes.size)
+                                        RecentEpisodeCard(
+                                            episode = episode,
+                                            baseUrl = baseUrl,
+                                            onSelect = { onSelectEpisode?.invoke(episode) },
+                                            transformOrigin = transformOrigin,
+                                            focusRequester = episodeFocusRequesters.getOrNull(index),
+                                            onLeft = if (index == 0) onLeftFromEdge else null,
+                                            onUp = if (effectiveHeroes.isNotEmpty()) {
+                                                {
+                                                    focusCoordinator.tryRequestFocus {
+                                                        lazyListState.animateScrollToItem(0)
+                                                        requestFocusSafely(heroFocus)
+                                                    }
+                                                }
+                                            } else null
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 

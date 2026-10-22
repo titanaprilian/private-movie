@@ -19,6 +19,26 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+/**
+ * Action resolved for a D-Pad key press while the Hero CTA button is focused.
+ */
+enum class HeroCtaKeyAction {
+    /** Key is not handled by the Hero CTA. */
+    NONE,
+
+    /** Focus should move down to the first content row. */
+    FOCUS_DOWN,
+
+    /** The slider should cycle to the previous slide (multi-hero only). */
+    PREVIOUS_SLIDE,
+
+    /** The slider should cycle to the next slide (multi-hero only). */
+    NEXT_SLIDE,
+
+    /** The left navigation drawer should be opened (single hero only). */
+    OPEN_DRAWER
+}
+
 class HeroSliderState(
     val heroes: List<TvHomeHero>,
     val autoAdvanceIntervalMs: Long = 6000L
@@ -97,6 +117,60 @@ class HeroSliderState(
             }
         }
         return false
+    }
+
+    /**
+     * Resolves which action a D-Pad key press should trigger while the CTA is focused.
+     *
+     * D-Pad Left is intentionally slide-first: with more than one hero it cycles to the
+     * previous slide, and only with a single hero does it fall back to the drawer.
+     */
+    fun resolveCtaKeyAction(isKeyDown: Boolean, keyCode: Int): HeroCtaKeyAction {
+        if (!isKeyDown) return HeroCtaKeyAction.NONE
+        return when (keyCode) {
+            android.view.KeyEvent.KEYCODE_DPAD_DOWN -> HeroCtaKeyAction.FOCUS_DOWN
+            android.view.KeyEvent.KEYCODE_DPAD_LEFT -> if (heroCount > 1) {
+                HeroCtaKeyAction.PREVIOUS_SLIDE
+            } else {
+                HeroCtaKeyAction.OPEN_DRAWER
+            }
+            android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> if (heroCount > 1) {
+                HeroCtaKeyAction.NEXT_SLIDE
+            } else {
+                HeroCtaKeyAction.NONE
+            }
+            else -> HeroCtaKeyAction.NONE
+        }
+    }
+
+    /**
+     * Executes the resolved CTA action and reports whether the key event was consumed.
+     */
+    fun handleCtaKey(
+        isKeyDown: Boolean,
+        keyCode: Int,
+        onDownFromCta: (() -> Unit)? = null,
+        onLeftFromCta: (() -> Unit)? = null
+    ): Boolean {
+        return when (resolveCtaKeyAction(isKeyDown, keyCode)) {
+            HeroCtaKeyAction.FOCUS_DOWN -> {
+                onDownFromCta?.invoke()
+                onDownFromCta != null
+            }
+            HeroCtaKeyAction.PREVIOUS_SLIDE -> {
+                previousSlide(resetTimer = true)
+                true
+            }
+            HeroCtaKeyAction.NEXT_SLIDE -> {
+                advanceSlide(resetTimer = true)
+                true
+            }
+            HeroCtaKeyAction.OPEN_DRAWER -> {
+                onLeftFromCta?.invoke()
+                onLeftFromCta != null
+            }
+            HeroCtaKeyAction.NONE -> false
+        }
     }
 
     fun handleKeyEvent(event: KeyEvent): Boolean {

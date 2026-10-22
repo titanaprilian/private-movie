@@ -3,6 +3,7 @@ package com.privatemovie.tv.modules.home.internal
 import com.privatemovie.tv.dto.models.Genre
 import com.privatemovie.tv.dto.models.HomeFeed
 import com.privatemovie.tv.dto.models.HomeFeedHero
+import com.privatemovie.tv.dto.models.RecentlyAddedEpisodeDto
 import com.privatemovie.tv.dto.models.SeriesMetadata
 
 data class TvGenre(
@@ -36,10 +37,69 @@ data class TvHomeRow(
     val items: List<TvSeries>
 )
 
+/** Series summary shown next to a recently added episode. */
+data class TvRecentlyAddedSeries(
+    val id: String,
+    val title: String,
+    val posterUrl: String?,
+    val backdropUrl: String?
+)
+
+/** Season summary shown next to a recently added episode. */
+data class TvRecentlyAddedSeason(
+    val id: String,
+    val title: String,
+    val seasonNumber: Int?
+)
+
+/** Playback source of a recently added episode. */
+data class TvRecentlyAddedVideoSource(
+    val id: String,
+    val episodeId: String,
+    val type: String,
+    val url: String,
+    val label: String,
+    val quality: String?
+)
+
+/** Domain model of an episode recently added to the catalog. */
+data class TvRecentlyAddedEpisode(
+    val id: String,
+    val title: String,
+    val order: Int,
+    val thumbnailUrl: String?,
+    val duration: Int?,
+    val rating: String?,
+    val series: TvRecentlyAddedSeries,
+    val season: TvRecentlyAddedSeason,
+    val videoSources: List<TvRecentlyAddedVideoSource>
+)
+
+/**
+ * Where focus lands when the user presses D-Pad Down on the Featured Hero CTA.
+ *
+ * The "Recently Added Episodes" carousel sits directly below the hero slider,
+ * so it takes precedence over the regular series rows; when it is empty the
+ * focus descends to the first non-empty regular row instead.
+ */
+enum class HeroDownFocusTarget {
+    EpisodeCarousel,
+    FirstRow,
+    None
+}
+
+/** Resolves the D-Pad Down focus target for the hero CTA of [feed]. */
+fun resolveHeroDownFocusTarget(feed: TvHomeFeed): HeroDownFocusTarget {
+    if (feed.recentlyAddedEpisodes.isNotEmpty()) return HeroDownFocusTarget.EpisodeCarousel
+    if (feed.rows.any { it.items.isNotEmpty() }) return HeroDownFocusTarget.FirstRow
+    return HeroDownFocusTarget.None
+}
+
 data class TvHomeFeed(
     val hero: TvHomeHero?,
     val heroes: List<TvHomeHero> = emptyList(),
-    val rows: List<TvHomeRow>
+    val rows: List<TvHomeRow>,
+    val recentlyAddedEpisodes: List<TvRecentlyAddedEpisode> = emptyList()
 )
 
 /** UI state for the TV home browsing experience. */
@@ -58,7 +118,45 @@ fun HomeFeed.toTvHomeFeed(): TvHomeFeed {
             items = rowDto.items.map { itemDto -> itemDto.toTvSeries() }
         )
     }
-    return TvHomeFeed(hero = tvHero, heroes = tvHeroes, rows = tvRows)
+    val tvRecentlyAddedEpisodes = recentlyAddedEpisodes.map { it.toTvRecentlyAddedEpisode() }
+    return TvHomeFeed(
+        hero = tvHero,
+        heroes = tvHeroes,
+        rows = tvRows,
+        recentlyAddedEpisodes = tvRecentlyAddedEpisodes
+    )
+}
+
+fun RecentlyAddedEpisodeDto.toTvRecentlyAddedEpisode(): TvRecentlyAddedEpisode {
+    return TvRecentlyAddedEpisode(
+        id = id,
+        title = title,
+        order = order,
+        thumbnailUrl = thumbnailUrl,
+        duration = duration,
+        rating = rating,
+        series = TvRecentlyAddedSeries(
+            id = series.id,
+            title = series.title,
+            posterUrl = series.posterUrl,
+            backdropUrl = series.backdropUrl
+        ),
+        season = TvRecentlyAddedSeason(
+            id = season.id,
+            title = season.title,
+            seasonNumber = season.seasonNumber
+        ),
+        videoSources = videoSources.map { sourceDto ->
+            TvRecentlyAddedVideoSource(
+                id = sourceDto.id,
+                episodeId = sourceDto.episodeId,
+                type = sourceDto.type,
+                url = sourceDto.url,
+                label = sourceDto.label,
+                quality = sourceDto.quality
+            )
+        }
+    )
 }
 
 fun HomeFeedHero.toTvHomeHero(): TvHomeHero {
