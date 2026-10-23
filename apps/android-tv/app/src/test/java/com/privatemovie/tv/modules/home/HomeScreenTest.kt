@@ -472,4 +472,53 @@ class HomeScreenTest {
         assertEquals(1, targetIndexAttempted) // clamped to last index (size 2 -> index 1)
         assertTrue(fallbackUsed)
     }
+
+    // ── drawer return focus tests ─────────────────────────────────────────────
+
+    @Test
+    fun `returning from drawer restores focus to remembered section and card 0 scrolling into view first`() = runTest {
+        val feed = makeFeed(listOf(3, 3)).copy(
+            recentlyAddedEpisodes = listOf(makeEpisode("e-1", 1))
+        )
+        val coordinator = FocusTransitionCoordinator(this)
+        val rowFocusRequesters = mapOf(
+            0 to List(3) { FocusRequester() },
+            1 to List(3) { FocusRequester() }
+        )
+        val hasRecentEpisodes = feed.recentlyAddedEpisodes.isNotEmpty()
+        val effectiveHeroesCount = 1
+        val rowItemOffset = if (hasRecentEpisodes) 2 else 1
+
+        var scrolledLazyColumnIndex = -1
+        var scrolledRowCardIndex = -1
+        var focusedRowCard: Pair<Int, Int>? = null
+
+        // Simulating the drawer return focus restoration for HomeDrawerReturnTarget.Row(1)
+        val target = com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget.Row(1)
+        val handled = coordinator.tryRequestFocus {
+            val res = com.privatemovie.tv.modules.home.internal.executeHomeDrawerReturnFocus(
+                target = target,
+                feed = feed,
+                requestHeroFocus = { false },
+                requestRecentEpisodesFocus = { false },
+                requestRowCardFocus = { rowIndex, cardIndex ->
+                    val lazyItemIndex = if (effectiveHeroesCount > 0) rowIndex + rowItemOffset else rowIndex
+                    scrolledLazyColumnIndex = lazyItemIndex
+                    scrolledRowCardIndex = cardIndex
+                    val requester = rowFocusRequesters[rowIndex]?.getOrNull(cardIndex)
+                    val ok = requester != null && requestFocusSafely(requester, maxRetries = 2, rawRequest = { true })
+                    if (ok) focusedRowCard = rowIndex to cardIndex
+                    ok
+                }
+            )
+            res != com.privatemovie.tv.modules.home.internal.HomeDrawerReturnFocusResult.Unfocused
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        // rowIndex 1 + rowItemOffset 2 = 3
+        assertEquals(3, scrolledLazyColumnIndex)
+        assertEquals(0, scrolledRowCardIndex)
+        assertEquals(1 to 0, focusedRowCard)
+    }
 }

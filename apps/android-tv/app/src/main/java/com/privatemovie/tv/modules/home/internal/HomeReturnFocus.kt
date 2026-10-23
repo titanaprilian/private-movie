@@ -159,3 +159,54 @@ suspend fun executeHomeReturnFocus(
         }
     }
 }
+
+/**
+ * Outcome of executing a drawer return-focus restoration.
+ */
+sealed interface HomeDrawerReturnFocusResult {
+    data object HeroFocused : HomeDrawerReturnFocusResult
+    data object RecentlyAddedEpisodesFocused : HomeDrawerReturnFocusResult
+    data class RowCardFocused(val rowIndex: Int, val cardIndex: Int) : HomeDrawerReturnFocusResult
+    data object Unfocused : HomeDrawerReturnFocusResult
+}
+
+/**
+ * Executes a drawer return focus plan with a 3-step fallback hierarchy:
+ * 1. Target item (Hero CTA, Recently Added Episodes card 0, or Row(rowIndex) card 0).
+ * 2. If row card 0 (or recent episodes card 0) fails, falls back to card 0.
+ * 3. Scrolls to top and focuses the Hero CTA button.
+ */
+suspend fun executeHomeDrawerReturnFocus(
+    target: HomeDrawerReturnTarget,
+    feed: TvHomeFeed,
+    requestHeroFocus: suspend () -> Boolean,
+    requestRecentEpisodesFocus: suspend () -> Boolean,
+    requestRowCardFocus: suspend (rowIndex: Int, cardIndex: Int) -> Boolean
+): HomeDrawerReturnFocusResult {
+    when (target) {
+        is HomeDrawerReturnTarget.Hero -> {
+            if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            return HomeDrawerReturnFocusResult.Unfocused
+        }
+        is HomeDrawerReturnTarget.RecentlyAddedEpisodes -> {
+            if (feed.recentlyAddedEpisodes.isNotEmpty() && requestRecentEpisodesFocus()) {
+                return HomeDrawerReturnFocusResult.RecentlyAddedEpisodesFocused
+            }
+            // Fallback hierarchy step 3: scroll to top and focus Hero CTA
+            if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            return HomeDrawerReturnFocusResult.Unfocused
+        }
+        is HomeDrawerReturnTarget.Row -> {
+            val row = feed.rows.getOrNull(target.rowIndex)
+            if (row != null && row.items.isNotEmpty()) {
+                // Try target card 0
+                if (requestRowCardFocus(target.rowIndex, 0)) {
+                    return HomeDrawerReturnFocusResult.RowCardFocused(target.rowIndex, 0)
+                }
+            }
+            // Fallback hierarchy step 3: scroll to top and focus Hero CTA
+            if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            return HomeDrawerReturnFocusResult.Unfocused
+        }
+    }
+}

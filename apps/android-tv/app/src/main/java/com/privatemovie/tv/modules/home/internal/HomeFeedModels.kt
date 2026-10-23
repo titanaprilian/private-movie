@@ -95,6 +95,24 @@ fun resolveHeroDownFocusTarget(feed: TvHomeFeed): HeroDownFocusTarget {
     return HeroDownFocusTarget.None
 }
 
+/**
+ * Origin target for returning focus on the Home screen when collapsing the navigation drawer.
+ */
+sealed interface HomeDrawerReturnTarget {
+    /** Hero CTA button. */
+    data object Hero : HomeDrawerReturnTarget
+
+    /** First card of Recently Added Episodes carousel. */
+    data object RecentlyAddedEpisodes : HomeDrawerReturnTarget
+
+    /**
+     * Card 0 of a catalog row.
+     *
+     * @param rowIndex index into [TvHomeFeed.rows].
+     */
+    data class Row(val rowIndex: Int) : HomeDrawerReturnTarget
+}
+
 data class TvHomeFeed(
     val hero: TvHomeHero?,
     val heroes: List<TvHomeHero> = emptyList(),

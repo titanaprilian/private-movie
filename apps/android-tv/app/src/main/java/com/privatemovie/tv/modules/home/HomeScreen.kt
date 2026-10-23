@@ -45,6 +45,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
+    val pendingDrawerReturnFocus by viewModel.pendingDrawerReturnFocus.collectAsState()
     val internalHeroFocus = remember { FocusRequester() }
     // The drawer shell hands focus back to the hero when it collapses.
     val heroFocus = contentFocusRequester ?: internalHeroFocus
@@ -81,6 +82,11 @@ fun HomeScreen(
                 onReturnFocusConsumed = { viewModel.consumeReturnFocus() },
                 externalCtaFocusRequester = heroFocus,
                 onLeftFromEdge = onFocusDrawer,
+                onLeftFromHero = { viewModel.recordDrawerOrigin(com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget.Hero) },
+                onLeftFromRecentEpisodes = { viewModel.recordDrawerOrigin(com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget.RecentlyAddedEpisodes) },
+                onLeftFromRow = { rowIndex -> viewModel.recordDrawerOrigin(com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget.Row(rowIndex)) },
+                drawerReturnTarget = pendingDrawerReturnFocus,
+                onDrawerReturnConsumed = { viewModel.consumeDrawerReturnFocus() },
                 onSelectEpisode = { episode ->
                     onPlayNavArgs?.invoke(buildRecentEpisodePlayerNavArgs(episode))
                 }

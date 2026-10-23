@@ -82,6 +82,19 @@ class TvNavigationDrawerStateTest {
     }
 
     @Test
+    fun `escape while expanded collapses and requests content focus`() {
+        var focusReturned = false
+        val state = NavigationDrawerState(onCollapseFocusContent = { focusReturned = true })
+        state.onDrawerItemFocused()
+
+        val action = state.handleKeyDown(android.view.KeyEvent.KEYCODE_ESCAPE, isKeyDown = true)
+
+        assertEquals(DrawerKeyAction.COLLAPSE_AND_FOCUS_CONTENT, action)
+        assertFalse(state.expanded)
+        assertTrue(focusReturned)
+    }
+
+    @Test
     fun `keys are ignored while collapsed`() {
         val state = NavigationDrawerState()
         assertNull(state.handleKeyDown(KEYCODE_DPAD_RIGHT, isKeyDown = true))

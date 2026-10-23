@@ -4,6 +4,8 @@ import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.dto.models.HomeFeed
 import com.privatemovie.tv.dto.models.SeriesDetails
+import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnFocusResult
+import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget
 import com.privatemovie.tv.modules.home.internal.HomeReturnFocusResult
 import com.privatemovie.tv.modules.home.internal.HomeReturnFocusTarget
 import com.privatemovie.tv.modules.home.internal.ResolvedHomeReturnFocus
@@ -11,6 +13,7 @@ import com.privatemovie.tv.modules.home.internal.TvHomeFeed
 import com.privatemovie.tv.modules.home.internal.TvHomeHero
 import com.privatemovie.tv.modules.home.internal.TvHomeRow
 import com.privatemovie.tv.modules.home.internal.TvSeries
+import com.privatemovie.tv.modules.home.internal.executeHomeDrawerReturnFocus
 import com.privatemovie.tv.modules.home.internal.executeHomeReturnFocus
 import com.privatemovie.tv.modules.home.internal.heroSelectionTarget
 import com.privatemovie.tv.modules.home.internal.resolveHomeReturnFocus
@@ -229,6 +232,65 @@ class HomeReturnFocusTest {
         assertEquals(HomeReturnFocusResult.Unfocused, result)
         assertEquals(1, attempts)
         assertEquals(1, heroAttempts)
+    }
+
+    @Test
+    fun `drawer origin recording and consumption in viewModel`() {
+        val vm = viewModel()
+        assertNull(vm.pendingDrawerReturnFocus.value)
+
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Hero)
+        assertEquals(HomeDrawerReturnTarget.Hero, vm.pendingDrawerReturnFocus.value)
+
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
+        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, vm.pendingDrawerReturnFocus.value)
+
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(2))
+        assertEquals(HomeDrawerReturnTarget.Row(2), vm.pendingDrawerReturnFocus.value)
+
+        vm.consumeDrawerReturnFocus()
+        assertNull(vm.pendingDrawerReturnFocus.value)
+    }
+
+    @Test
+    fun `drawer return focus executes 3-step fallback hierarchy`() = runTest {
+        val feed = makeFeed()
+
+        // 1. Hero target
+        var heroRequested = false
+        val heroRes = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Hero,
+            feed = feed,
+            requestHeroFocus = { heroRequested = true; true },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { _, _ -> false }
+        )
+        assertEquals(HomeDrawerReturnFocusResult.HeroFocused, heroRes)
+        assertTrue(heroRequested)
+
+        // 2. Row target success
+        var rowRequested: Pair<Int, Int>? = null
+        val rowRes = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Row(1),
+            feed = feed,
+            requestHeroFocus = { false },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { r, c -> rowRequested = r to c; true }
+        )
+        assertEquals(HomeDrawerReturnFocusResult.RowCardFocused(1, 0), rowRes)
+        assertEquals(1 to 0, rowRequested)
+
+        // 3. Row target failure falls back to Hero CTA
+        heroRequested = false
+        val rowFallbackRes = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Row(1),
+            feed = feed,
+            requestHeroFocus = { heroRequested = true; true },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { _, _ -> false }
+        )
+        assertEquals(HomeDrawerReturnFocusResult.HeroFocused, rowFallbackRes)
+        assertTrue(heroRequested)
     }
 
     // ── focus coordinator safety ──

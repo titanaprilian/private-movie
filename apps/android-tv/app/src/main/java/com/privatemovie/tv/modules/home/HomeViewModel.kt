@@ -1,6 +1,7 @@
 package com.privatemovie.tv.modules.home
 
 import com.privatemovie.tv.data.repository.MediaRepository
+import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget
 import com.privatemovie.tv.modules.home.internal.HomeReturnFocusTarget
 import com.privatemovie.tv.modules.home.internal.HomeUiState
 import com.privatemovie.tv.modules.home.internal.heroSelectionTarget
@@ -32,6 +33,12 @@ class HomeViewModel(
      */
     private val _pendingReturnFocus = MutableStateFlow<HomeReturnFocusTarget?>(null)
     val pendingReturnFocus: StateFlow<HomeReturnFocusTarget?> = _pendingReturnFocus.asStateFlow()
+
+    /**
+     * Origin recorded when exiting to the navigation drawer, consumed to restore Home focus on return.
+     */
+    private val _pendingDrawerReturnFocus = MutableStateFlow<HomeDrawerReturnTarget?>(null)
+    val pendingDrawerReturnFocus: StateFlow<HomeDrawerReturnTarget?> = _pendingDrawerReturnFocus.asStateFlow()
 
     init {
         loadFeed()
@@ -68,5 +75,15 @@ class HomeViewModel(
      */
     fun consumeReturnFocus() {
         _pendingReturnFocus.value = null
+    }
+
+    /** Records the drawer-exit origin target. */
+    fun recordDrawerOrigin(target: HomeDrawerReturnTarget) {
+        _pendingDrawerReturnFocus.value = target
+    }
+
+    /** Consumes the pending drawer return focus target. */
+    fun consumeDrawerReturnFocus() {
+        _pendingDrawerReturnFocus.value = null
     }
 }

@@ -122,14 +122,14 @@ class HeroSliderState(
     /**
      * Resolves which action a D-Pad key press should trigger while the CTA is focused.
      *
-     * D-Pad Left is intentionally slide-first: with more than one hero it cycles to the
-     * previous slide, and only with a single hero does it fall back to the drawer.
+     * D-Pad Left opens the navigation drawer when at the first slide (activeIndex == 0),
+     * and cycles to the previous slide when activeIndex > 0.
      */
     fun resolveCtaKeyAction(isKeyDown: Boolean, keyCode: Int): HeroCtaKeyAction {
         if (!isKeyDown) return HeroCtaKeyAction.NONE
         return when (keyCode) {
             android.view.KeyEvent.KEYCODE_DPAD_DOWN -> HeroCtaKeyAction.FOCUS_DOWN
-            android.view.KeyEvent.KEYCODE_DPAD_LEFT -> if (heroCount > 1) {
+            android.view.KeyEvent.KEYCODE_DPAD_LEFT -> if (heroCount > 1 && activeIndex > 0) {
                 HeroCtaKeyAction.PREVIOUS_SLIDE
             } else {
                 HeroCtaKeyAction.OPEN_DRAWER
