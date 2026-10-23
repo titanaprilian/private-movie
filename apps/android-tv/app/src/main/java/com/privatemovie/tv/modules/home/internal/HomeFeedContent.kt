@@ -200,7 +200,8 @@ fun HomeFeedContent(
     onLeftFromRecentEpisodes: (() -> Unit)? = null,
     onLeftFromRow: ((rowIndex: Int) -> Unit)? = null,
     drawerReturnTarget: HomeDrawerReturnTarget? = null,
-    onDrawerReturnConsumed: (() -> Unit)? = null
+    onDrawerReturnConsumed: (() -> Unit)? = null,
+    drawerReturnTrigger: kotlinx.coroutines.flow.SharedFlow<Unit>? = null
 ) {
     val effectiveHeroes = remember(feed) {
         if (feed.heroes.isNotEmpty()) {
@@ -326,10 +327,9 @@ fun HomeFeedContent(
 
     // Drawer return focus: when returning from navigation drawer, restore focus to
     // the remembered section and card 0 with 3-step fallback:
-    // target section card 0 -> card 0 -> Hero CTA.
-    LaunchedEffect(drawerReturnTarget, feed) {
-        val target = drawerReturnTarget ?: return@LaunchedEffect
-        isInitialFocusPlaced = true
+    // target section card 0 -> first section card 0 -> Hero CTA.
+    val performDrawerReturnFocus: suspend () -> Boolean = {
+        val target = drawerReturnTarget ?: HomeDrawerReturnTarget.Hero
         focusCoordinator.tryRequestFocus {
             val result = executeHomeDrawerReturnFocus(
                 target = target,
@@ -351,7 +351,7 @@ fun HomeFeedContent(
                         episodeListState.animateScrollToItem(0)
                     } catch (_: Exception) {
                     }
-                    val requester = episodeFocusRequesters.getOrNull(0)
+                    val requester = episodeFocusRequesters.firstOrNull()
                     if (requester != null) requestFocusSafely(requester) else false
                 },
                 requestRowCardFocus = { rowIndex, cardIndex ->
@@ -376,6 +376,11 @@ fun HomeFeedContent(
         }
     }
 
+    LaunchedEffect(drawerReturnTrigger) {
+        drawerReturnTrigger?.collect {
+            performDrawerReturnFocus()
+        }
+    }
     // Scroll to the catalog rows section and restore focus to the remembered card for a given row.
     // Falls back to card 0 if the remembered index is out of range or focus acquisition fails.
     val focusRowCard: suspend (targetRowIndex: Int) -> Boolean = { targetRowIndex ->

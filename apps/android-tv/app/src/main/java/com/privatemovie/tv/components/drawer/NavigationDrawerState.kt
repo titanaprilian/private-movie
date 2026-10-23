@@ -30,8 +30,8 @@ enum class DrawerKeyAction {
  *   hands focus to content via [onSelectDestination].
  */
 class NavigationDrawerState(
-    val onCollapseFocusContent: () -> Unit = {},
-    val onSelectDestination: (DrawerDestination) -> Unit = {},
+    var onCollapseFocusContent: () -> Unit = {},
+    var onSelectDestination: (DrawerDestination) -> Unit = {},
 ) {
     var expanded: Boolean by mutableStateOf(false)
         private set
@@ -52,6 +52,15 @@ class NavigationDrawerState(
     }
 
     /**
+     * Collapses the drawer and triggers [onCollapseFocusContent].
+     * Single source of truth for programmatic or key-driven collapse with content handoff.
+     */
+    fun collapseAndFocusContent() {
+        collapse()
+        onCollapseFocusContent()
+    }
+
+    /**
      * Handles a hardware key-down inside the drawer. Returns the action the
      * caller must perform, or `null` when the key is not handled.
      *
@@ -67,8 +76,7 @@ class NavigationDrawerState(
             android.view.KeyEvent.KEYCODE_BACK,
             android.view.KeyEvent.KEYCODE_ESCAPE,
             -> {
-                collapse()
-                onCollapseFocusContent()
+                collapseAndFocusContent()
                 DrawerKeyAction.COLLAPSE_AND_FOCUS_CONTENT
             }
             else -> null

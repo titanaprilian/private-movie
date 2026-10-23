@@ -56,20 +56,44 @@ fun browsingContentTargetForDestination(destination: DrawerDestination): Browsin
 /**
  * Coordinates the drawer ⇄ page-content interaction of the browsing shell.
  *
- * Two rules are enforced here so they cannot drift apart:
+ * Enforces key rules across drawer and route focus interactions:
  * - Selecting a destination always collapses the drawer *before* navigating,
  *   so the drawer never stays expanded across a screen transition.
  * - Collapsing the drawer (D-pad Right / Back) always hands focus back to the
  *   page content instead of leaving it on the collapsed rail.
+ * - On [TvScreen.Home], collapsing the drawer activates the home screen's origin
+ *   return focus restoration when a target is pending, falling back to default
+ *   content focus when no origin is recorded.
+ * - Hardware / remote Back when expanded collapses the drawer and returns focus to
+ *   the active screen without triggering the underlying screen's back handler.
  *
  * Deliberately free of Compose UI so the behaviour is unit-testable on the
  * plain JVM.
  */
 class DrawerNavigationCoordinator(
-    private val drawerState: NavigationDrawerState,
+    val drawerState: NavigationDrawerState,
     private val onNavigate: (DrawerDestination) -> Unit,
     private val onFocusContent: () -> Unit,
+    private val onRestoreHomeFocus: (() -> Boolean)? = null,
+    private val currentRoute: () -> String? = { null },
 ) {
+    /**
+     * Intercepts Back when the drawer is expanded, collapsing it and returning
+     * focus to the active page content.
+     *
+     * @param onFallbackBack fallback invoked when the drawer is collapsed and does
+     *   not intercept the back event (e.g. underlying screen's back handler).
+     * @return true if the back event was consumed by the drawer, false otherwise.
+     */
+    fun handleBack(onFallbackBack: (() -> Unit)? = null): Boolean {
+        if (drawerState.expanded) {
+            collapseAndFocusContent()
+            return true
+        }
+        onFallbackBack?.invoke()
+        return false
+    }
+
     /**
      * Collapses the drawer and forwards the destination to the caller, which
      * performs the actual navigation.
@@ -81,9 +105,15 @@ class DrawerNavigationCoordinator(
 
     /**
      * Collapses the drawer and hands focus back to the active page content.
+     * When collapsing on the Home screen with origin return focus available,
+     * activates the home return focus flow.
      */
     fun collapseAndFocusContent() {
         drawerState.collapse()
-        onFocusContent()
+        val isHome = currentRoute() == TvScreen.Home.route
+        val homeRestored = if (isHome) onRestoreHomeFocus?.invoke() == true else false
+        if (!homeRestored) {
+            onFocusContent()
+        }
     }
 }

@@ -57,28 +57,72 @@ class TvNavigationDrawerStateTest {
 
     @Test
     fun `dpad right while expanded collapses and requests content focus`() {
-        var focusReturned = false
-        val state = NavigationDrawerState(onCollapseFocusContent = { focusReturned = true })
+        var callbackCount = 0
+        val state = NavigationDrawerState(onCollapseFocusContent = { callbackCount++ })
         state.onDrawerItemFocused()
 
         val action = state.handleKeyDown(KEYCODE_DPAD_RIGHT, isKeyDown = true)
 
         assertEquals(DrawerKeyAction.COLLAPSE_AND_FOCUS_CONTENT, action)
         assertFalse(state.expanded)
-        assertTrue(focusReturned)
+        assertEquals(1, callbackCount)
     }
 
     @Test
     fun `remote back while expanded collapses and requests content focus`() {
-        var focusReturned = false
-        val state = NavigationDrawerState(onCollapseFocusContent = { focusReturned = true })
+        var callbackCount = 0
+        val state = NavigationDrawerState(onCollapseFocusContent = { callbackCount++ })
         state.onDrawerItemFocused()
 
         val action = state.handleKeyDown(KEYCODE_BACK, isKeyDown = true)
 
         assertEquals(DrawerKeyAction.COLLAPSE_AND_FOCUS_CONTENT, action)
         assertFalse(state.expanded)
-        assertTrue(focusReturned)
+        assertEquals(1, callbackCount)
+    }
+
+    @Test
+    fun `escape while expanded collapses and triggers callback exactly once`() {
+        var callbackCount = 0
+        val state = NavigationDrawerState(onCollapseFocusContent = { callbackCount++ })
+        state.onDrawerItemFocused()
+
+        val action = state.handleKeyDown(android.view.KeyEvent.KEYCODE_ESCAPE, isKeyDown = true)
+
+        assertEquals(DrawerKeyAction.COLLAPSE_AND_FOCUS_CONTENT, action)
+        assertFalse(state.expanded)
+        assertEquals(1, callbackCount)
+    }
+
+    @Test
+    fun `re-registering onCollapseFocusContent unifies callback without duplicated executions`() {
+        var firstCount = 0
+        var secondCount = 0
+        val state = NavigationDrawerState(onCollapseFocusContent = { firstCount++ })
+        state.onDrawerItemFocused()
+
+        // Unify callback to new single source of truth
+        state.onCollapseFocusContent = { secondCount++ }
+
+        val action = state.handleKeyDown(KEYCODE_DPAD_RIGHT, isKeyDown = true)
+
+        assertEquals(DrawerKeyAction.COLLAPSE_AND_FOCUS_CONTENT, action)
+        assertFalse(state.expanded)
+        assertEquals(0, firstCount)
+        assertEquals(1, secondCount)
+    }
+
+    @Test
+    fun `collapseAndFocusContent directly collapses drawer and invokes callback single source of truth`() {
+        var callbackCount = 0
+        val state = NavigationDrawerState(onCollapseFocusContent = { callbackCount++ })
+        state.onDrawerItemFocused()
+        assertTrue(state.expanded)
+
+        state.collapseAndFocusContent()
+
+        assertFalse(state.expanded)
+        assertEquals(1, callbackCount)
     }
 
     @Test

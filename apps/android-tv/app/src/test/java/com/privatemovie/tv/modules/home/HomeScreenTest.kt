@@ -4,6 +4,8 @@ import androidx.compose.ui.focus.FocusRequester
 import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.modules.home.internal.HeroDownFocusTarget
+import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnFocusResult
+import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget
 import com.privatemovie.tv.modules.home.internal.TvHomeFeed
 import com.privatemovie.tv.modules.home.internal.TvHomeHero
 import com.privatemovie.tv.modules.home.internal.TvHomeRow
@@ -12,6 +14,7 @@ import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeason
 import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeries
 import com.privatemovie.tv.modules.home.internal.TvSeries
 import com.privatemovie.tv.modules.home.internal.episodeBadgeLabel
+import com.privatemovie.tv.modules.home.internal.executeHomeDrawerReturnFocus
 import com.privatemovie.tv.modules.home.internal.formatEpisodeDuration
 import com.privatemovie.tv.modules.home.internal.resolveHeroDownFocusTarget
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -472,7 +475,6 @@ class HomeScreenTest {
         assertEquals(1, targetIndexAttempted) // clamped to last index (size 2 -> index 1)
         assertTrue(fallbackUsed)
     }
-
     // ── drawer return focus tests ─────────────────────────────────────────────
 
     @Test
@@ -494,9 +496,9 @@ class HomeScreenTest {
         var focusedRowCard: Pair<Int, Int>? = null
 
         // Simulating the drawer return focus restoration for HomeDrawerReturnTarget.Row(1)
-        val target = com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget.Row(1)
+        val target = HomeDrawerReturnTarget.Row(1)
         val handled = coordinator.tryRequestFocus {
-            val res = com.privatemovie.tv.modules.home.internal.executeHomeDrawerReturnFocus(
+            val res = executeHomeDrawerReturnFocus(
                 target = target,
                 feed = feed,
                 requestHeroFocus = { false },
@@ -511,7 +513,7 @@ class HomeScreenTest {
                     ok
                 }
             )
-            res != com.privatemovie.tv.modules.home.internal.HomeDrawerReturnFocusResult.Unfocused
+            res != HomeDrawerReturnFocusResult.Unfocused
         }
 
         assertTrue(handled)
@@ -520,5 +522,176 @@ class HomeScreenTest {
         assertEquals(3, scrolledLazyColumnIndex)
         assertEquals(0, scrolledRowCardIndex)
         assertEquals(1 to 0, focusedRowCard)
+    }
+
+    @Test
+    fun `returning from drawer to recently added episodes scrolls carousel into view and focuses card 0`() = runTest {
+        val feed = makeFeed(listOf(3)).copy(
+            recentlyAddedEpisodes = listOf(makeEpisode("e-1", 1), makeEpisode("e-2", 2))
+        )
+        val coordinator = FocusTransitionCoordinator(this)
+        val episodeFocusRequesters = listOf(FocusRequester(), FocusRequester())
+        val effectiveHeroesCount = 1
+
+        var scrolledLazyColumnIndex = -1
+        var scrolledEpisodeIndex = -1
+        var focusedEpisodeIndex = -1
+
+        val target = HomeDrawerReturnTarget.RecentlyAddedEpisodes
+        val handled = coordinator.tryRequestFocus {
+            val res = executeHomeDrawerReturnFocus(
+                target = target,
+                feed = feed,
+                requestHeroFocus = { false },
+                requestRecentEpisodesFocus = {
+                    val episodeItemIndex = if (effectiveHeroesCount > 0) 1 else 0
+                    scrolledLazyColumnIndex = episodeItemIndex
+                    scrolledEpisodeIndex = 0
+                    val requester = episodeFocusRequesters.firstOrNull()
+                    val ok = requester != null && requestFocusSafely(requester, maxRetries = 2, rawRequest = { true })
+                    if (ok) focusedEpisodeIndex = 0
+                    ok
+                },
+                requestRowCardFocus = { _, _ -> false }
+            )
+            res == HomeDrawerReturnFocusResult.RecentlyAddedEpisodesFocused
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertEquals(1, scrolledLazyColumnIndex)
+        assertEquals(0, scrolledEpisodeIndex)
+        assertEquals(0, focusedEpisodeIndex)
+    }
+
+    @Test
+    fun `returning from drawer to hero scrolls to top and focuses hero CTA`() = runTest {
+        val feed = makeFeed(listOf(3))
+        val coordinator = FocusTransitionCoordinator(this)
+        val heroFocus = FocusRequester()
+
+        var scrolledLazyColumnIndex = -1
+        var heroFocused = false
+
+        val target = HomeDrawerReturnTarget.Hero
+        val handled = coordinator.tryRequestFocus {
+            val res = executeHomeDrawerReturnFocus(
+                target = target,
+                feed = feed,
+                requestHeroFocus = {
+                    scrolledLazyColumnIndex = 0
+                    heroFocused = requestFocusSafely(heroFocus, maxRetries = 2, rawRequest = { true })
+                    heroFocused
+                },
+                requestRecentEpisodesFocus = { false },
+                requestRowCardFocus = { _, _ -> false }
+            )
+            res == HomeDrawerReturnFocusResult.HeroFocused
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertEquals(0, scrolledLazyColumnIndex)
+        assertTrue(heroFocused)
+    }
+
+    @Test
+    fun `drawer return focus fallback to card 0 of first section when target row fails`() = runTest {
+        val feed = makeFeed(listOf(3, 3)).copy(
+            recentlyAddedEpisodes = listOf(makeEpisode("e-1", 1))
+        )
+        val coordinator = FocusTransitionCoordinator(this)
+        val episodeFocusRequester = FocusRequester()
+        var fallbackEpisodeFocused = false
+
+        val target = HomeDrawerReturnTarget.Row(1)
+        val handled = coordinator.tryRequestFocus {
+            val res = executeHomeDrawerReturnFocus(
+                target = target,
+                feed = feed,
+                requestHeroFocus = { false },
+                requestRecentEpisodesFocus = {
+                    fallbackEpisodeFocused = requestFocusSafely(episodeFocusRequester, maxRetries = 2, rawRequest = { true })
+                    fallbackEpisodeFocused
+                },
+                requestRowCardFocus = { rowIndex, _ ->
+                    if (rowIndex == 1) false else true
+                }
+            )
+            res == HomeDrawerReturnFocusResult.RecentlyAddedEpisodesFocused
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertTrue(fallbackEpisodeFocused)
+    }
+
+    @Test
+    fun `drawer return focus fallback to Hero CTA when both target and first section fail`() = runTest {
+        val feed = makeFeed(listOf(3))
+        val coordinator = FocusTransitionCoordinator(this)
+        val heroFocus = FocusRequester()
+        var fallbackHeroFocused = false
+
+        val target = HomeDrawerReturnTarget.Row(0)
+        val handled = coordinator.tryRequestFocus {
+            val res = executeHomeDrawerReturnFocus(
+                target = target,
+                feed = feed,
+                requestHeroFocus = {
+                    fallbackHeroFocused = requestFocusSafely(heroFocus, maxRetries = 2, rawRequest = { true })
+                    fallbackHeroFocused
+                },
+                requestRecentEpisodesFocus = { false },
+                requestRowCardFocus = { _, _ -> false }
+            )
+            res == HomeDrawerReturnFocusResult.HeroFocused
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertTrue(fallbackHeroFocused)
+    }
+
+    @Test
+    fun `recording drawer origin on edge key event preserves drawerReturnTarget without premature execution`() = runTest {
+        val repo = object : com.privatemovie.tv.data.repository.MediaRepository {
+            override suspend fun getHomeFeed() = Result.success(com.privatemovie.tv.dto.models.HomeFeed(rows = emptyList(), hero = null, heroes = emptyList()))
+            override suspend fun getSeriesById(id: String) = Result.failure<com.privatemovie.tv.dto.models.SeriesDetails>(NotImplementedError())
+        }
+        val vm = HomeViewModel(mediaRepository = repo, coroutineScope = this)
+
+        // D-pad Left from Hero
+        var onFocusDrawerCalled = false
+        val onLeftFromHero = { vm.recordDrawerOrigin(HomeDrawerReturnTarget.Hero) }
+        val onFocusDrawer = { onFocusDrawerCalled = true }
+
+        onLeftFromHero()
+        onFocusDrawer()
+
+        assertEquals(HomeDrawerReturnTarget.Hero, vm.drawerReturnTarget.value)
+        assertTrue(onFocusDrawerCalled)
+
+        // D-pad Left from Recent Episodes
+        onFocusDrawerCalled = false
+        val onLeftFromRecent = { vm.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes) }
+        onLeftFromRecent()
+        onFocusDrawer()
+
+        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, vm.drawerReturnTarget.value)
+        assertTrue(onFocusDrawerCalled)
+
+        // D-pad Left from Row
+        onFocusDrawerCalled = false
+        val onLeftFromRow = { r: Int -> vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(r)) }
+        onLeftFromRow(3)
+        onFocusDrawer()
+
+        assertEquals(HomeDrawerReturnTarget.Row(3), vm.drawerReturnTarget.value)
+        assertTrue(onFocusDrawerCalled)
+
+        // Consuming cleans up
+        vm.consumeDrawerReturnTarget()
+        assertNull(vm.drawerReturnTarget.value)
     }
 }

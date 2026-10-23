@@ -10,8 +10,11 @@ import com.privatemovie.tv.modules.home.internal.toTvHomeFeed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -37,8 +40,12 @@ class HomeViewModel(
     /**
      * Origin recorded when exiting to the navigation drawer, consumed to restore Home focus on return.
      */
-    private val _pendingDrawerReturnFocus = MutableStateFlow<HomeDrawerReturnTarget?>(null)
-    val pendingDrawerReturnFocus: StateFlow<HomeDrawerReturnTarget?> = _pendingDrawerReturnFocus.asStateFlow()
+    private val _drawerReturnTarget = MutableStateFlow<HomeDrawerReturnTarget?>(null)
+    val drawerReturnTarget: StateFlow<HomeDrawerReturnTarget?> = _drawerReturnTarget.asStateFlow()
+    val pendingDrawerReturnFocus: StateFlow<HomeDrawerReturnTarget?> get() = drawerReturnTarget
+
+    private val _drawerReturnTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val drawerReturnTrigger: SharedFlow<Unit> = _drawerReturnTrigger.asSharedFlow()
 
     init {
         loadFeed()
@@ -79,11 +86,22 @@ class HomeViewModel(
 
     /** Records the drawer-exit origin target. */
     fun recordDrawerOrigin(target: HomeDrawerReturnTarget) {
-        _pendingDrawerReturnFocus.value = target
+        _drawerReturnTarget.value = target
     }
 
     /** Consumes the pending drawer return focus target. */
-    fun consumeDrawerReturnFocus() {
-        _pendingDrawerReturnFocus.value = null
+    fun consumeDrawerReturnTarget() {
+        _drawerReturnTarget.value = null
     }
+
+    fun consumeDrawerReturnFocus() {
+        consumeDrawerReturnTarget()
+    }
+
+    /** Triggers execution of drawer return focus restoration. */
+    fun restoreDrawerReturnFocus(): Boolean {
+        return _drawerReturnTrigger.tryEmit(Unit)
+    }
+
+    fun restoreDrawerFocus(): Boolean = restoreDrawerReturnFocus()
 }
