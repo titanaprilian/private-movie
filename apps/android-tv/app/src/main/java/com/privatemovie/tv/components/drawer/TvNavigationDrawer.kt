@@ -71,12 +71,19 @@ fun TvNavigationDrawer(
     drawerState: NavigationDrawerState = remember { NavigationDrawerState() },
     drawerFocusRequester: FocusRequester? = null,
     onSelectDestination: (DrawerDestination) -> Unit = drawerState::selectDestination,
-    onCollapseFocusContent: () -> Unit = {},
+    onCollapseFocusContent: (() -> Unit)? = null,
 ) {
+    if (onCollapseFocusContent != null) {
+        drawerState.onCollapseFocusContent = onCollapseFocusContent
+    }
+
     val visibleGenres = remember(bigGenres) { bigGenresSorted(bigGenres) }
     val destinations = remember(visibleGenres) { drawerDestinations(visibleGenres) }
     val activeDestination = remember(currentRoute, visibleGenres) {
         resolveActiveDestination(currentRoute, visibleGenres)
+    }
+    val entryDestination = remember(activeDestination, destinations) {
+        resolveDrawerEntryDestination(activeDestination, destinations)
     }
 
     val animatedWidth by animateDpAsState(
@@ -100,19 +107,13 @@ fun TvNavigationDrawer(
                 .fillMaxHeight()
                 .width(animatedWidth)
                 .background(if (drawerState.expanded) ExpandedBackground else RailBackground)
-                .then(if (drawerFocusRequester != null) Modifier.focusRequester(drawerFocusRequester) else Modifier)
                 .onKeyEvent { keyEvent ->
                     if (isRepeatKeyEvent(keyEvent)) return@onKeyEvent false
                     val action = drawerState.handleKeyDown(
                         keyCode = keyEvent.nativeKeyEvent.keyCode,
                         isKeyDown = keyEvent.type == KeyEventType.KeyDown,
                     )
-                    if (action == DrawerKeyAction.COLLAPSE_AND_FOCUS_CONTENT) {
-                        onCollapseFocusContent()
-                        true
-                    } else {
-                        false
-                    }
+                    action == DrawerKeyAction.COLLAPSE_AND_FOCUS_CONTENT
                 }
                 .padding(vertical = 12.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.Start,
@@ -124,6 +125,7 @@ fun TvNavigationDrawer(
                     destination = destination,
                     expanded = drawerState.expanded,
                     isActive = destination == activeDestination,
+                    focusRequester = if (destination == entryDestination) drawerFocusRequester else null,
                     onFocused = { drawerState.onDrawerItemFocused() },
                     onSelected = {
                         // Collapse before handing the destination over so the
@@ -177,6 +179,7 @@ private fun DrawerItemRow(
     destination: DrawerDestination,
     expanded: Boolean,
     isActive: Boolean,
+    focusRequester: FocusRequester? = null,
     onFocused: () -> Unit,
     onSelected: () -> Unit,
 ) {
@@ -194,6 +197,7 @@ private fun DrawerItemRow(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .clip(RoundedCornerShape(20.dp))
             .background(if (isActive) ActivePillColor else Color.Transparent)
             .onFocusChanged { isFocused = it.isFocused }
