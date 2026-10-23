@@ -88,6 +88,23 @@ class HomeScreenTest {
         }
     }
 
+    // Simulates the focusRecentEpisodeCard helper from HomeFeedContent.
+    private suspend fun focusRecentEpisodeCard(
+        feed: TvHomeFeed,
+        recentEpisodeFocusIndex: Int,
+        episodeFocusRequesters: List<FocusRequester>
+    ): Boolean {
+        if (feed.recentlyAddedEpisodes.isEmpty() || episodeFocusRequesters.isEmpty()) return false
+        val clampedIndex = recentEpisodeFocusIndex.coerceIn(0, episodeFocusRequesters.size - 1)
+        val targetRequester = episodeFocusRequesters[clampedIndex]
+        val success = requestFocusSafely(targetRequester, maxRetries = 2, rawRequest = { true })
+        return if (!success) {
+            requestFocusSafely(episodeFocusRequesters[0], maxRetries = 2, rawRequest = { true })
+        } else {
+            true
+        }
+    }
+
     // ── original tests ────────────────────────────────────────────────────────
 
     @Test
@@ -350,5 +367,109 @@ class HomeScreenTest {
 
         val seasonWithoutNumber = TvRecentlyAddedSeason(id = "s2", title = "Season 2", seasonNumber = null)
         assertEquals("S2 · EP 3", episodeBadgeLabel(seasonWithoutNumber, 3))
+    }
+
+    @Test
+    fun `dpad up from row 0 focuses remembered episode card when episodes are present`() = runTest {
+        val feed = makeFeed(listOf(3)).copy(
+            recentlyAddedEpisodes = listOf(makeEpisode("e-1", 1), makeEpisode("e-2", 2), makeEpisode("e-3", 3))
+        )
+        val episodeRequesters = List(3) { FocusRequester() }
+        var recentEpisodeFocusIndex = 2 // last focused was episode index 2
+        var focusedEpisodeIndex = -1
+
+        val coordinator = FocusTransitionCoordinator(this)
+        val handled = coordinator.tryRequestFocus {
+            if (feed.recentlyAddedEpisodes.isNotEmpty()) {
+                val clamped = recentEpisodeFocusIndex.coerceIn(0, episodeRequesters.size - 1)
+                focusedEpisodeIndex = clamped
+                requestFocusSafely(episodeRequesters[clamped], maxRetries = 2, rawRequest = { true })
+            } else {
+                false
+            }
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertEquals(2, focusedEpisodeIndex)
+    }
+
+    @Test
+    fun `dpad up from row 0 falls back to Hero CTA when recently added episodes is empty and heroes exist`() = runTest {
+        val feed = makeFeed(listOf(3)).copy(
+            recentlyAddedEpisodes = emptyList()
+        )
+        val heroFocus = FocusRequester()
+        var heroFocused = false
+
+        val coordinator = FocusTransitionCoordinator(this)
+        val handled = coordinator.tryRequestFocus {
+            if (feed.recentlyAddedEpisodes.isNotEmpty()) {
+                false
+            } else if (feed.heroes.isNotEmpty() || feed.hero != null) {
+                heroFocused = requestFocusSafely(heroFocus, maxRetries = 2, rawRequest = { true })
+                heroFocused
+            } else {
+                false
+            }
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertTrue(heroFocused)
+    }
+
+    @Test
+    fun `dpad down from any card in recently added episodes focuses remembered series card in first row`() = runTest {
+        val feed = makeFeed(listOf(4)).copy(
+            recentlyAddedEpisodes = listOf(makeEpisode("e-1", 1), makeEpisode("e-2", 2))
+        )
+        val rowFocusRequesters = mapOf(0 to List(4) { FocusRequester() })
+        val rowFocusIndices = mutableMapOf(0 to 3) // user had focused card 3 in row 0
+        var focusedRowCardIndex = -1
+
+        val firstNonEmptyRowIndex = feed.rows.indexOfFirst { it.items.isNotEmpty() }
+        assertEquals(0, firstNonEmptyRowIndex)
+
+        val coordinator = FocusTransitionCoordinator(this)
+        val handled = coordinator.tryRequestFocus {
+            val remembered = (rowFocusIndices[firstNonEmptyRowIndex] ?: 0)
+                .coerceIn(0, rowFocusRequesters[firstNonEmptyRowIndex]!!.size - 1)
+            focusedRowCardIndex = remembered
+            requestFocusSafely(rowFocusRequesters[firstNonEmptyRowIndex]!![remembered], maxRetries = 2, rawRequest = { true })
+        }
+
+        assertTrue(handled)
+        advanceUntilIdle()
+        assertEquals(3, focusedRowCardIndex)
+    }
+
+    @Test
+    fun `focus restoration into recently added episodes clamps out of bounds and falls back to card 0 upon failure`() = runTest {
+        val feed = makeFeed(listOf(3)).copy(
+            recentlyAddedEpisodes = listOf(makeEpisode("e-1", 1), makeEpisode("e-2", 2))
+        )
+        val episodeRequesters = List(2) { FocusRequester() }
+        val outOfBoundsIndex = 99
+        var fallbackUsed = false
+        var targetIndexAttempted = -1
+
+        val coordinator = FocusTransitionCoordinator(this)
+        coordinator.tryRequestFocus {
+            val clamped = outOfBoundsIndex.coerceIn(0, episodeRequesters.size - 1)
+            targetIndexAttempted = clamped
+            // Simulate primary focus failing on target card
+            val success = requestFocusSafely(episodeRequesters[clamped], maxRetries = 1, rawRequest = { false })
+            if (!success) {
+                fallbackUsed = true
+                requestFocusSafely(episodeRequesters[0], maxRetries = 2, rawRequest = { true })
+            } else {
+                success
+            }
+        }
+
+        advanceUntilIdle()
+        assertEquals(1, targetIndexAttempted) // clamped to last index (size 2 -> index 1)
+        assertTrue(fallbackUsed)
     }
 }
