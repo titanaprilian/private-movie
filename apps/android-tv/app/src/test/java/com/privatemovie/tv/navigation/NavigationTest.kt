@@ -7,11 +7,20 @@ import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeries
 import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedVideoSource
 import com.privatemovie.tv.modules.home.internal.buildRecentEpisodePlayerNavArgs
 import com.privatemovie.tv.components.drawer.NavigationDrawerState
+import com.privatemovie.tv.data.repository.MediaRepository
+import com.privatemovie.tv.dto.models.HomeFeed
+import com.privatemovie.tv.dto.models.SeriesDetails
+import com.privatemovie.tv.modules.home.HomeViewModel
+import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget
 import com.privatemovie.tv.modules.player.PLAYER_NAV_ARGS_KEY
 import com.privatemovie.tv.modules.player.PlaybackMetadataHandoff
 import com.privatemovie.tv.modules.player.PlaybackSourceRef
 import com.privatemovie.tv.modules.player.PlayerNavArgs
 import com.privatemovie.tv.modules.player.PlaylistEpisodeItem
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -382,5 +391,231 @@ class NavigationTest {
 
         assertFalse(drawerState.expanded)
         assertTrue(focusReturned)
+    }
+
+    // ── drawer BackHandler & route focus coordination ────────────────────────
+
+    @Test
+    fun `pressing remote back when drawer is expanded collapses drawer and returns focus without triggering destination back navigation`() {
+        val drawerState = NavigationDrawerState()
+        var focusReturned = false
+        var destinationBackTriggered = false
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { focusReturned = true },
+        )
+        drawerState.onDrawerItemFocused() // expand drawer
+
+        val consumed = coordinator.handleBack(onFallbackBack = { destinationBackTriggered = true })
+
+        assertTrue(consumed)
+        assertFalse(drawerState.expanded)
+        assertTrue(focusReturned)
+        assertFalse(destinationBackTriggered)
+    }
+
+    @Test
+    fun `pressing remote back when drawer is collapsed does not intercept and triggers destination back navigation`() {
+        val drawerState = NavigationDrawerState()
+        var focusReturned = false
+        var destinationBackTriggered = false
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { focusReturned = true },
+        )
+        assertFalse(drawerState.expanded)
+
+        val consumed = coordinator.handleBack(onFallbackBack = { destinationBackTriggered = true })
+
+        assertFalse(consumed)
+        assertFalse(drawerState.expanded)
+        assertFalse(focusReturned)
+        assertTrue(destinationBackTriggered)
+    }
+
+    @Test
+    fun `collapsing the drawer while on HomeScreen activates origin return focus flow`() {
+        val drawerState = NavigationDrawerState()
+        var homeOriginFocusRestored = false
+        var fallbackFocusContentCalled = false
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { fallbackFocusContentCalled = true },
+            onRestoreHomeFocus = {
+                homeOriginFocusRestored = true
+                true
+            },
+            currentRoute = { TvScreen.Home.route },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertTrue(homeOriginFocusRestored)
+        assertFalse(fallbackFocusContentCalled)
+    }
+
+    @Test
+    fun `collapsing the drawer while on HomeScreen without origin return target falls back to page content focus`() {
+        val drawerState = NavigationDrawerState()
+        var homeOriginFocusChecked = false
+        var fallbackFocusContentCalled = false
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { fallbackFocusContentCalled = true },
+            onRestoreHomeFocus = {
+                homeOriginFocusChecked = true
+                false // no pending target to restore
+            },
+            currentRoute = { TvScreen.Home.route },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertTrue(homeOriginFocusChecked)
+        assertTrue(fallbackFocusContentCalled)
+    }
+
+    @Test
+    fun `collapsing the drawer on search screen hands focus back to search content without invoking home return focus`() {
+        val drawerState = NavigationDrawerState()
+        var homeOriginFocusChecked = false
+        var searchFocusReturned = false
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { searchFocusReturned = true },
+            onRestoreHomeFocus = {
+                homeOriginFocusChecked = true
+                true
+            },
+            currentRoute = { TvScreen.Search.route },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertFalse(homeOriginFocusChecked)
+        assertTrue(searchFocusReturned)
+    }
+
+    @Test
+    fun `collapsing the drawer on genre screen hands focus back to genre content without invoking home return focus`() {
+        val drawerState = NavigationDrawerState()
+        var homeOriginFocusChecked = false
+        var genreFocusReturned = false
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { genreFocusReturned = true },
+            onRestoreHomeFocus = {
+                homeOriginFocusChecked = true
+                true
+            },
+            currentRoute = { "genre/animation" },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertFalse(homeOriginFocusChecked)
+        assertTrue(genreFocusReturned)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `collapsing the drawer while on HomeScreen with recorded origin activates HomeViewModel return focus flow`() = runTest {
+        val repo = object : MediaRepository {
+            override suspend fun getHomeFeed() = Result.success(
+                HomeFeed(rows = emptyList(), hero = null, heroes = emptyList())
+            )
+            override suspend fun getSeriesById(id: String) = Result.failure<SeriesDetails>(NotImplementedError())
+        }
+        val homeViewModel = HomeViewModel(mediaRepository = repo, coroutineScope = this)
+        homeViewModel.recordDrawerOrigin(HomeDrawerReturnTarget.Row(1))
+
+        val drawerState = NavigationDrawerState()
+        var triggerEmitted = false
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            homeViewModel.drawerReturnTrigger.collect {
+                triggerEmitted = true
+            }
+        }
+
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = {},
+            onRestoreHomeFocus = {
+                if (homeViewModel.drawerReturnTarget.value != null) {
+                    homeViewModel.restoreDrawerReturnFocus()
+                } else {
+                    false
+                }
+            },
+            currentRoute = { TvScreen.Home.route },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertTrue(triggerEmitted)
+        assertEquals(HomeDrawerReturnTarget.Row(1), homeViewModel.drawerReturnTarget.value)
+        job.cancel()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `pressing remote back while on HomeScreen with recorded origin activates HomeViewModel return focus flow`() = runTest {
+        val repo = object : MediaRepository {
+            override suspend fun getHomeFeed() = Result.success(
+                HomeFeed(rows = emptyList(), hero = null, heroes = emptyList())
+            )
+            override suspend fun getSeriesById(id: String) = Result.failure<SeriesDetails>(NotImplementedError())
+        }
+        val homeViewModel = HomeViewModel(mediaRepository = repo, coroutineScope = this)
+        homeViewModel.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
+
+        val drawerState = NavigationDrawerState()
+        var triggerEmitted = false
+        var destinationBackTriggered = false
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            homeViewModel.drawerReturnTrigger.collect {
+                triggerEmitted = true
+            }
+        }
+
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = {},
+            onRestoreHomeFocus = {
+                if (homeViewModel.drawerReturnTarget.value != null) {
+                    homeViewModel.restoreDrawerReturnFocus()
+                } else {
+                    false
+                }
+            },
+            currentRoute = { TvScreen.Home.route },
+        )
+        drawerState.onDrawerItemFocused()
+
+        val handled = coordinator.handleBack(onFallbackBack = { destinationBackTriggered = true })
+
+        assertTrue(handled)
+        assertFalse(drawerState.expanded)
+        assertTrue(triggerEmitted)
+        assertFalse(destinationBackTriggered)
+        job.cancel()
     }
 }
