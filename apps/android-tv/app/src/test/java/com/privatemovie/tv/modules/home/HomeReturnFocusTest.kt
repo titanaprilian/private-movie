@@ -4,19 +4,26 @@ import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.dto.models.HomeFeed
 import com.privatemovie.tv.dto.models.SeriesDetails
+import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnFocusResult
+import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget
 import com.privatemovie.tv.modules.home.internal.HomeReturnFocusResult
 import com.privatemovie.tv.modules.home.internal.HomeReturnFocusTarget
 import com.privatemovie.tv.modules.home.internal.ResolvedHomeReturnFocus
 import com.privatemovie.tv.modules.home.internal.TvHomeFeed
 import com.privatemovie.tv.modules.home.internal.TvHomeHero
 import com.privatemovie.tv.modules.home.internal.TvHomeRow
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedEpisode
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeason
+import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeries
 import com.privatemovie.tv.modules.home.internal.TvSeries
+import com.privatemovie.tv.modules.home.internal.executeHomeDrawerReturnFocus
 import com.privatemovie.tv.modules.home.internal.executeHomeReturnFocus
 import com.privatemovie.tv.modules.home.internal.heroSelectionTarget
 import com.privatemovie.tv.modules.home.internal.resolveHomeReturnFocus
 import com.privatemovie.tv.modules.home.internal.rowCardSelectionTarget
 import com.privatemovie.tv.modules.home.internal.shouldRestoreHomeFocus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -250,5 +257,242 @@ class HomeReturnFocusTest {
         assertFalse(second)
         advanceUntilIdle()
         assertEquals(1, counter.get())
+    }
+
+    // ── drawer return focus origin tracking & lifecycle ──
+
+    private fun makeEpisode(id: String, order: Int = 1) = TvRecentlyAddedEpisode(
+        id = id,
+        title = "Episode $order",
+        order = order,
+        thumbnailUrl = null,
+        duration = 2400,
+        rating = null,
+        series = TvRecentlyAddedSeries(id = "s-1", title = "Series 1", posterUrl = null, backdropUrl = null),
+        season = TvRecentlyAddedSeason(id = "sn-1", title = "Season 1", seasonNumber = 1),
+        videoSources = emptyList()
+    )
+
+    @Test
+    fun `drawer origin recording preserves drawerReturnTarget in HomeViewModel without premature clearing`() {
+        val vm = viewModel()
+        assertNull(vm.drawerReturnTarget.value)
+        assertNull(vm.pendingDrawerReturnFocus.value)
+
+        // Recording Hero preserves target
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Hero)
+        assertEquals(HomeDrawerReturnTarget.Hero, vm.drawerReturnTarget.value)
+        assertEquals(HomeDrawerReturnTarget.Hero, vm.pendingDrawerReturnFocus.value)
+
+        // Recording RecentlyAddedEpisodes preserves target
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
+        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, vm.drawerReturnTarget.value)
+
+        // Recording Row(2) preserves target
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(2))
+        assertEquals(HomeDrawerReturnTarget.Row(2), vm.drawerReturnTarget.value)
+
+        // Consuming cleans up target cleanly
+        vm.consumeDrawerReturnTarget()
+        assertNull(vm.drawerReturnTarget.value)
+        assertNull(vm.pendingDrawerReturnFocus.value)
+    }
+
+    @Test
+    fun `consumeDrawerReturnFocus clears pending drawer return target`() {
+        val vm = viewModel()
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(0))
+        assertEquals(HomeDrawerReturnTarget.Row(0), vm.drawerReturnTarget.value)
+
+        vm.consumeDrawerReturnFocus()
+        assertNull(vm.drawerReturnTarget.value)
+    }
+
+    @Test
+    fun `restoreDrawerReturnFocus emits trigger without prematurely consuming target`() = runTest {
+        val vm = HomeViewModel(
+            mediaRepository = object : MediaRepository {
+                override suspend fun getHomeFeed(): Result<HomeFeed> =
+                    Result.success(HomeFeed(rows = emptyList(), hero = null, heroes = emptyList()))
+                override suspend fun getSeriesById(id: String): Result<SeriesDetails> =
+                    Result.failure(NotImplementedError())
+            },
+            coroutineScope = this
+        )
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(1))
+
+        var triggered = false
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            vm.drawerReturnTrigger.collect {
+                triggered = true
+            }
+        }
+
+        vm.restoreDrawerReturnFocus()
+        advanceUntilIdle()
+
+        assertTrue(triggered)
+        // Target is preserved until explicitly consumed by the restoration executor
+        assertEquals(HomeDrawerReturnTarget.Row(1), vm.drawerReturnTarget.value)
+        job.cancel()
+    }
+
+    // ── drawer return focus 3-step fallback execution ──
+
+    @Test
+    fun `drawer return focus executes Hero target directly`() = runTest {
+        val feed = makeFeed()
+        var heroRequested = false
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Hero,
+            feed = feed,
+            requestHeroFocus = { heroRequested = true; true },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { _, _ -> false }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.HeroFocused, result)
+        assertTrue(heroRequested)
+    }
+
+    @Test
+    fun `drawer return focus executes RecentlyAddedEpisodes target card 0 on step 1`() = runTest {
+        val feed = makeFeed().copy(recentlyAddedEpisodes = listOf(makeEpisode("e-1")))
+        var episodesRequested = false
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.RecentlyAddedEpisodes,
+            feed = feed,
+            requestHeroFocus = { false },
+            requestRecentEpisodesFocus = { episodesRequested = true; true },
+            requestRowCardFocus = { _, _ -> false }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.RecentlyAddedEpisodesFocused, result)
+        assertTrue(episodesRequested)
+    }
+
+    @Test
+    fun `drawer return focus from RecentlyAddedEpisodes falls back to first row card 0 when episodes focus fails`() = runTest {
+        val feed = makeFeed().copy(recentlyAddedEpisodes = listOf(makeEpisode("e-1")))
+        var rowRequested: Pair<Int, Int>? = null
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.RecentlyAddedEpisodes,
+            feed = feed,
+            requestHeroFocus = { false },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { r, c -> rowRequested = r to c; true }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.RowCardFocused(0, 0), result)
+        assertEquals(0 to 0, rowRequested)
+    }
+
+    @Test
+    fun `drawer return focus from RecentlyAddedEpisodes falls back to Hero CTA when step 1 and step 2 fail`() = runTest {
+        val feed = makeFeed().copy(recentlyAddedEpisodes = listOf(makeEpisode("e-1")))
+        var heroRequested = false
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.RecentlyAddedEpisodes,
+            feed = feed,
+            requestHeroFocus = { heroRequested = true; true },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { _, _ -> false }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.HeroFocused, result)
+        assertTrue(heroRequested)
+    }
+
+    @Test
+    fun `drawer return focus to target row succeeds on step 1`() = runTest {
+        val feed = makeFeed()
+        var rowRequested: Pair<Int, Int>? = null
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Row(1),
+            feed = feed,
+            requestHeroFocus = { false },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { r, c -> rowRequested = r to c; true }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.RowCardFocused(1, 0), result)
+        assertEquals(1 to 0, rowRequested)
+    }
+
+    @Test
+    fun `drawer return focus to target row falls back to recent episodes when target row fails`() = runTest {
+        val feed = makeFeed().copy(recentlyAddedEpisodes = listOf(makeEpisode("e-1")))
+        var episodesRequested = false
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Row(1),
+            feed = feed,
+            requestHeroFocus = { false },
+            requestRecentEpisodesFocus = { episodesRequested = true; true },
+            requestRowCardFocus = { r, _ -> if (r == 1) false else true }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.RecentlyAddedEpisodesFocused, result)
+        assertTrue(episodesRequested)
+    }
+
+    @Test
+    fun `drawer return focus to target row falls back to first row card 0 when target row fails and no episodes`() = runTest {
+        val feed = makeFeed()
+        var rowRequested: Pair<Int, Int>? = null
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Row(1),
+            feed = feed,
+            requestHeroFocus = { false },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { r, c ->
+                if (r == 1) false
+                else {
+                    rowRequested = r to c
+                    true
+                }
+            }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.RowCardFocused(0, 0), result)
+        assertEquals(0 to 0, rowRequested)
+    }
+
+    @Test
+    fun `drawer return focus to target row falls back to Hero CTA on step 3 when rows and episodes fail`() = runTest {
+        val feed = makeFeed()
+        var heroRequested = false
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Row(1),
+            feed = feed,
+            requestHeroFocus = { heroRequested = true; true },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { _, _ -> false }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.HeroFocused, result)
+        assertTrue(heroRequested)
+    }
+
+    @Test
+    fun `drawer return focus returns Unfocused when all 3 fallback steps fail`() = runTest {
+        val feed = makeFeed()
+
+        val result = executeHomeDrawerReturnFocus(
+            target = HomeDrawerReturnTarget.Row(1),
+            feed = feed,
+            requestHeroFocus = { false },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { _, _ -> false }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.Unfocused, result)
     }
 }
