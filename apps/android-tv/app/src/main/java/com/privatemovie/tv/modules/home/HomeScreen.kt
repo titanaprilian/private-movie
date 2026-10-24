@@ -1,7 +1,6 @@
 package com.privatemovie.tv.modules.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -12,11 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import com.privatemovie.tv.components.requestFocusSafely
 import com.privatemovie.tv.data.repository.MediaRepository
-import kotlinx.coroutines.launch
 import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget
 import com.privatemovie.tv.modules.home.internal.HomeError
 import com.privatemovie.tv.modules.home.internal.HomeFeedContent
@@ -52,10 +47,9 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
     val drawerReturnTarget by viewModel.drawerReturnTarget.collectAsState()
-    val drawerReturnFocusRequester = contentFocusRequester ?: remember { FocusRequester() }
     val internalHeroFocus = remember { FocusRequester() }
-    val heroFocus = internalHeroFocus
-    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    // The drawer shell hands focus directly to the hero CTA when it collapses.
+    val heroFocus = contentFocusRequester ?: internalHeroFocus
 
     LaunchedEffect(activeBackendUrl) {
         viewModel.loadFeed()
@@ -64,19 +58,6 @@ fun HomeScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .focusRequester(drawerReturnFocusRequester)
-            .onFocusChanged { focusState ->
-                if (focusState.isFocused) {
-                    if (drawerReturnTarget != null) {
-                        viewModel.restoreDrawerReturnFocus()
-                    } else {
-                        coroutineScope.launch {
-                            requestFocusSafely(heroFocus)
-                        }
-                    }
-                }
-            }
-            .focusable()
             .background(MaterialTheme.colorScheme.background)
     ) {
         when (val state = uiState) {
