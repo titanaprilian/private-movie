@@ -1,5 +1,6 @@
 package com.privatemovie.tv.navigation
 
+import com.privatemovie.tv.components.TvFocusLog
 import com.privatemovie.tv.components.drawer.DrawerDestination
 import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedEpisode
 import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeason
@@ -464,6 +465,19 @@ class NavigationTest {
         val drawerState = NavigationDrawerState()
         var homeOriginFocusChecked = false
         var fallbackFocusContentCalled = false
+        var loggedTag: String? = null
+        var loggedMessage: String? = null
+
+        TvFocusLog.debugOverride = true
+        TvFocusLog.logger = object : TvFocusLog.Logger {
+            override fun d(tag: String, message: String) {
+                loggedTag = tag
+                loggedMessage = message
+            }
+            override fun i(tag: String, message: String) {}
+            override fun w(tag: String, message: String, throwable: Throwable?) {}
+        }
+
         val coordinator = DrawerNavigationCoordinator(
             drawerState = drawerState,
             onNavigate = {},
@@ -481,6 +495,8 @@ class NavigationTest {
         assertFalse(drawerState.expanded)
         assertTrue(homeOriginFocusChecked)
         assertTrue(fallbackFocusContentCalled)
+        assertEquals("TvFocus/Fallback", loggedTag)
+        assertTrue(loggedMessage?.contains("home") == true)
     }
 
     @Test

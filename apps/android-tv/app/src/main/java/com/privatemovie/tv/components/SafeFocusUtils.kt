@@ -65,7 +65,9 @@ suspend fun requestFocusSafely(
         }
     }
 
-    Log.w(TAG, "Focus request retries exhausted after $maxRetries frames; target focus node was not attached.")
+    TvFocusLog.w("Acquisition") {
+        "Focus request retries exhausted after $maxRetries frames for requester $focusRequester; target focus node was not attached."
+    }
     return false
 }
 
