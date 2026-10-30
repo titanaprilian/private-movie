@@ -594,10 +594,10 @@ class NavigationTest {
         homeViewModel.recordDrawerOrigin(HomeDrawerReturnTarget.Row(1))
 
         val drawerState = NavigationDrawerState()
-        var triggerEmitted = false
+        var emittedTarget: HomeDrawerReturnTarget? = null
         val job = launch(UnconfinedTestDispatcher(testScheduler)) {
-            homeViewModel.drawerReturnTrigger.collect {
-                triggerEmitted = true
+            homeViewModel.drawerReturnEvents.collect {
+                emittedTarget = it
             }
         }
 
@@ -606,11 +606,7 @@ class NavigationTest {
             onNavigate = {},
             onFocusContent = {},
             onRestoreHomeFocus = {
-                if (homeViewModel.drawerReturnTarget.value != null) {
-                    homeViewModel.restoreDrawerReturnFocus()
-                } else {
-                    false
-                }
+                homeViewModel.restoreDrawerReturnFocus()
             },
             currentRoute = { TvScreen.Home.route },
         )
@@ -619,8 +615,7 @@ class NavigationTest {
         coordinator.collapseAndFocusContent()
 
         assertFalse(drawerState.expanded)
-        assertTrue(triggerEmitted)
-        assertEquals(HomeDrawerReturnTarget.Row(1), homeViewModel.drawerReturnTarget.value)
+        assertEquals(HomeDrawerReturnTarget.Row(1), emittedTarget)
         job.cancel()
     }
 
@@ -637,11 +632,11 @@ class NavigationTest {
         homeViewModel.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
 
         val drawerState = NavigationDrawerState()
-        var triggerEmitted = false
+        var emittedTarget: HomeDrawerReturnTarget? = null
         var destinationBackTriggered = false
         val job = launch(UnconfinedTestDispatcher(testScheduler)) {
-            homeViewModel.drawerReturnTrigger.collect {
-                triggerEmitted = true
+            homeViewModel.drawerReturnEvents.collect {
+                emittedTarget = it
             }
         }
 
@@ -650,11 +645,7 @@ class NavigationTest {
             onNavigate = {},
             onFocusContent = {},
             onRestoreHomeFocus = {
-                if (homeViewModel.drawerReturnTarget.value != null) {
-                    homeViewModel.restoreDrawerReturnFocus()
-                } else {
-                    false
-                }
+                homeViewModel.restoreDrawerReturnFocus()
             },
             currentRoute = { TvScreen.Home.route },
         )
@@ -664,7 +655,7 @@ class NavigationTest {
 
         assertTrue(handled)
         assertFalse(drawerState.expanded)
-        assertTrue(triggerEmitted)
+        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, emittedTarget)
         assertFalse(destinationBackTriggered)
         job.cancel()
     }

@@ -166,11 +166,7 @@ fun AppNavigation(
                 pendingContentFocus = browsingContentTargetForRoute(currentRoute)
             },
             onRestoreHomeFocus = {
-                if (homeViewModel.drawerReturnTarget.value != null) {
-                    homeViewModel.restoreDrawerReturnFocus()
-                } else {
-                    false
-                }
+                homeViewModel.restoreDrawerReturnFocus()
             },
             currentRoute = { currentRoute },
         )

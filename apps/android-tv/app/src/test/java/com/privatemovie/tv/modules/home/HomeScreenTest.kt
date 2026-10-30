@@ -659,12 +659,19 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `recording drawer origin on edge key event preserves drawerReturnTarget without premature execution`() = runTest {
+    fun `recording drawer origin on edge key event stages target and emits upon restoreDrawerReturnFocus`() = runTest {
         val repo = object : com.privatemovie.tv.data.repository.MediaRepository {
             override suspend fun getHomeFeed() = Result.success(com.privatemovie.tv.dto.models.HomeFeed(rows = emptyList(), hero = null, heroes = emptyList()))
             override suspend fun getSeriesById(id: String) = Result.failure<com.privatemovie.tv.dto.models.SeriesDetails>(NotImplementedError())
         }
         val vm = HomeViewModel(mediaRepository = repo, coroutineScope = this)
+
+        var collectedTarget: HomeDrawerReturnTarget? = null
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            vm.drawerReturnEvents.collect {
+                collectedTarget = it
+            }
+        }
 
         // D-pad Left from Hero
         var onFocusDrawerCalled = false
@@ -673,31 +680,31 @@ class HomeScreenTest {
 
         onLeftFromHero()
         onFocusDrawer()
-
-        assertEquals(HomeDrawerReturnTarget.Hero, vm.drawerReturnTarget.value)
         assertTrue(onFocusDrawerCalled)
+        assertTrue(vm.restoreDrawerReturnFocus())
+        assertEquals(HomeDrawerReturnTarget.Hero, collectedTarget)
 
         // D-pad Left from Recent Episodes
         onFocusDrawerCalled = false
         val onLeftFromRecent = { vm.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes) }
         onLeftFromRecent()
         onFocusDrawer()
-
-        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, vm.drawerReturnTarget.value)
         assertTrue(onFocusDrawerCalled)
+        assertTrue(vm.restoreDrawerReturnFocus())
+        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, collectedTarget)
 
         // D-pad Left from Row
         onFocusDrawerCalled = false
         val onLeftFromRow = { r: Int -> vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(r)) }
         onLeftFromRow(3)
         onFocusDrawer()
-
-        assertEquals(HomeDrawerReturnTarget.Row(3), vm.drawerReturnTarget.value)
         assertTrue(onFocusDrawerCalled)
+        assertTrue(vm.restoreDrawerReturnFocus())
+        assertEquals(HomeDrawerReturnTarget.Row(3), collectedTarget)
 
-        // Consuming cleans up
-        vm.consumeDrawerReturnTarget()
-        assertNull(vm.drawerReturnTarget.value)
+        // Subsequent restore has no pending target
+        assertFalse(vm.restoreDrawerReturnFocus())
+        job.cancel()
     }
 
     @Test
@@ -762,7 +769,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `flow collector with rememberUpdatedState invokes latest closure capturing updated drawerReturnTarget upon emission`() = runTest {
+    fun `flow collector directly consumes target from drawerReturnEvents stream eliminating stale closure capture`() = runTest {
         val feed = makeFeed(listOf(3)).copy(
             recentlyAddedEpisodes = listOf(makeEpisode("e-1", 1))
         )
@@ -772,52 +779,30 @@ class HomeScreenTest {
         }
         val vm = HomeViewModel(mediaRepository = repo, coroutineScope = this)
 
-        // At initial composition, drawerReturnTarget is null -> performDrawerReturnFocus defaults to Hero
-        var currentTarget: HomeDrawerReturnTarget? = null
         var executedTarget: HomeDrawerReturnTarget? = null
 
-        // Simulating the rememberUpdatedState pattern: latest closure reference
-        var latestPerformDrawerReturnFocus: suspend () -> HomeDrawerReturnFocusResult = {
-            val target = currentTarget ?: HomeDrawerReturnTarget.Hero
-            executedTarget = target
-            executeHomeDrawerReturnFocus(
-                target = target,
-                feed = feed,
-                requestHeroFocus = { true },
-                requestRecentEpisodesFocus = { true },
-                requestRowCardFocus = { _, _ -> true }
-            )
-        }
-
-        // The trigger collector starts at initial composition time
+        // The event collector receives the target directly from the stream payload
         val job = launch(UnconfinedTestDispatcher(testScheduler)) {
-            vm.drawerReturnTrigger.collect {
-                latestPerformDrawerReturnFocus()
+            vm.drawerReturnEvents.collect { target ->
+                executedTarget = target
+                executeHomeDrawerReturnFocus(
+                    target = target,
+                    feed = feed,
+                    requestHeroFocus = { true },
+                    requestRecentEpisodesFocus = { true },
+                    requestRowCardFocus = { _, _ -> true }
+                )
             }
         }
 
-        // User navigates left from RecentlyAddedEpisodes -> records origin and updates state
+        // User navigates left from RecentlyAddedEpisodes -> records origin
         vm.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
-        currentTarget = vm.drawerReturnTarget.value
 
-        // Recomposition updates latestPerformDrawerReturnFocus via rememberUpdatedState
-        latestPerformDrawerReturnFocus = {
-            val target = currentTarget ?: HomeDrawerReturnTarget.Hero
-            executedTarget = target
-            executeHomeDrawerReturnFocus(
-                target = target,
-                feed = feed,
-                requestHeroFocus = { true },
-                requestRecentEpisodesFocus = { true },
-                requestRowCardFocus = { _, _ -> true }
-            )
-        }
-
-        // Drawer collapses and triggers return focus
-        vm.restoreDrawerReturnFocus()
+        // Drawer collapses and triggers return focus via restoreDrawerReturnFocus
+        val restored = vm.restoreDrawerReturnFocus()
         advanceUntilIdle()
 
-        // Collector must have accessed the updated closure with RecentlyAddedEpisodes, NOT the initial null/Hero
+        assertTrue(restored)
         assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, executedTarget)
         job.cancel()
     }

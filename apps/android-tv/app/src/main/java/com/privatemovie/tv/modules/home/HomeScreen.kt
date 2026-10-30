@@ -46,7 +46,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pendingReturnFocus by viewModel.pendingReturnFocus.collectAsState()
-    val drawerReturnTarget by viewModel.drawerReturnTarget.collectAsState()
     val internalHeroFocus = remember { FocusRequester() }
     // The drawer shell hands focus directly to the hero CTA when it collapses.
     val heroFocus = contentFocusRequester ?: internalHeroFocus
@@ -86,9 +85,7 @@ fun HomeScreen(
                 onLeftFromHero = { viewModel.recordDrawerOrigin(HomeDrawerReturnTarget.Hero) },
                 onLeftFromRecentEpisodes = { viewModel.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes) },
                 onLeftFromRow = { rowIndex -> viewModel.recordDrawerOrigin(HomeDrawerReturnTarget.Row(rowIndex)) },
-                drawerReturnTarget = drawerReturnTarget,
-                onDrawerReturnConsumed = { viewModel.consumeDrawerReturnTarget() },
-                drawerReturnTrigger = viewModel.drawerReturnTrigger,
+                drawerReturnEvents = viewModel.drawerReturnEvents,
                 onSelectEpisode = { episode ->
                     onPlayNavArgs?.invoke(buildRecentEpisodePlayerNavArgs(episode))
                 }

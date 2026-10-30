@@ -1,5 +1,6 @@
 package com.privatemovie.tv.modules.home
 
+import com.privatemovie.tv.components.TvFocusLog
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.modules.home.internal.HomeDrawerReturnTarget
 import com.privatemovie.tv.modules.home.internal.HomeReturnFocusTarget
@@ -38,14 +39,13 @@ class HomeViewModel(
     val pendingReturnFocus: StateFlow<HomeReturnFocusTarget?> = _pendingReturnFocus.asStateFlow()
 
     /**
-     * Origin recorded when exiting to the navigation drawer, consumed to restore Home focus on return.
+     * Origin recorded when exiting to the navigation drawer, encapsulated privately
+     * and emitted to [drawerReturnEvents] upon focus restoration.
      */
-    private val _drawerReturnTarget = MutableStateFlow<HomeDrawerReturnTarget?>(null)
-    val drawerReturnTarget: StateFlow<HomeDrawerReturnTarget?> = _drawerReturnTarget.asStateFlow()
-    val pendingDrawerReturnFocus: StateFlow<HomeDrawerReturnTarget?> get() = drawerReturnTarget
+    private var _drawerReturnTarget: HomeDrawerReturnTarget? = null
 
-    private val _drawerReturnTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val drawerReturnTrigger: SharedFlow<Unit> = _drawerReturnTrigger.asSharedFlow()
+    private val _drawerReturnEvents = MutableSharedFlow<HomeDrawerReturnTarget>(extraBufferCapacity = 1)
+    val drawerReturnEvents: SharedFlow<HomeDrawerReturnTarget> = _drawerReturnEvents.asSharedFlow()
 
     init {
         loadFeed()
@@ -86,21 +86,21 @@ class HomeViewModel(
 
     /** Records the drawer-exit origin target. */
     fun recordDrawerOrigin(target: HomeDrawerReturnTarget) {
-        _drawerReturnTarget.value = target
+        TvFocusLog.d("Origin") { "Recording drawer exit origin target: $target" }
+        _drawerReturnTarget = target
     }
 
-    /** Consumes the pending drawer return focus target. */
-    fun consumeDrawerReturnTarget() {
-        _drawerReturnTarget.value = null
-    }
-
-    fun consumeDrawerReturnFocus() {
-        consumeDrawerReturnTarget()
-    }
-
-    /** Triggers execution of drawer return focus restoration. */
+    /**
+     * Restores focus after drawer collapse: checks the pending target, emits it to
+     * [drawerReturnEvents], clears the pending target, and returns true.
+     * If no target was pending, returns false.
+     */
     fun restoreDrawerReturnFocus(): Boolean {
-        return _drawerReturnTrigger.tryEmit(Unit)
+        val target = _drawerReturnTarget ?: return false
+        _drawerReturnTarget = null
+        TvFocusLog.d("Origin") { "Restoring drawer return focus, emitting target: $target" }
+        _drawerReturnEvents.tryEmit(target)
+        return true
     }
 
     fun restoreDrawerFocus(): Boolean = restoreDrawerReturnFocus()

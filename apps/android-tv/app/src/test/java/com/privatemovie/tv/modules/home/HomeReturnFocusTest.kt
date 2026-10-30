@@ -241,23 +241,28 @@ class HomeReturnFocusTest {
     }
 
     @Test
-    fun `drawer origin recording and consumption in viewModel`() {
+    fun `restoreDrawerReturnFocus atomically consumes pending target and emits to drawerReturnEvents`() = runTest {
         val vm = viewModel()
-        assertNull(vm.pendingDrawerReturnFocus.value)
+        // Initially when no target is pending, restoreDrawerReturnFocus returns false
+        assertFalse(vm.restoreDrawerReturnFocus())
 
-        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Hero)
-        assertEquals(HomeDrawerReturnTarget.Hero, vm.pendingDrawerReturnFocus.value)
+        var collectedTarget: HomeDrawerReturnTarget? = null
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            vm.drawerReturnEvents.collect {
+                collectedTarget = it
+            }
+        }
 
-        vm.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
-        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, vm.pendingDrawerReturnFocus.value)
-
+        // Record origin Row(2) and restore
         vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(2))
-        assertEquals(HomeDrawerReturnTarget.Row(2), vm.pendingDrawerReturnFocus.value)
+        val restored = vm.restoreDrawerReturnFocus()
+        assertTrue(restored)
+        assertEquals(HomeDrawerReturnTarget.Row(2), collectedTarget)
 
-        vm.consumeDrawerReturnFocus()
-        assertNull(vm.pendingDrawerReturnFocus.value)
+        // Subsequent restore immediately returns false because target was consumed
+        assertFalse(vm.restoreDrawerReturnFocus())
+        job.cancel()
     }
-
     @Test
     fun `drawer return focus executes section target card 0 or returns Unfocused without hero fallback`() = runTest {
         val feed = makeFeed()
@@ -335,42 +340,7 @@ class HomeReturnFocusTest {
     )
 
     @Test
-    fun `drawer origin recording preserves drawerReturnTarget in HomeViewModel without premature clearing`() {
-        val vm = viewModel()
-        assertNull(vm.drawerReturnTarget.value)
-        assertNull(vm.pendingDrawerReturnFocus.value)
-
-        // Recording Hero preserves target
-        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Hero)
-        assertEquals(HomeDrawerReturnTarget.Hero, vm.drawerReturnTarget.value)
-        assertEquals(HomeDrawerReturnTarget.Hero, vm.pendingDrawerReturnFocus.value)
-
-        // Recording RecentlyAddedEpisodes preserves target
-        vm.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
-        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, vm.drawerReturnTarget.value)
-
-        // Recording Row(2) preserves target
-        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(2))
-        assertEquals(HomeDrawerReturnTarget.Row(2), vm.drawerReturnTarget.value)
-
-        // Consuming cleans up target cleanly
-        vm.consumeDrawerReturnTarget()
-        assertNull(vm.drawerReturnTarget.value)
-        assertNull(vm.pendingDrawerReturnFocus.value)
-    }
-
-    @Test
-    fun `consumeDrawerReturnFocus clears pending drawer return target`() {
-        val vm = viewModel()
-        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(0))
-        assertEquals(HomeDrawerReturnTarget.Row(0), vm.drawerReturnTarget.value)
-
-        vm.consumeDrawerReturnFocus()
-        assertNull(vm.drawerReturnTarget.value)
-    }
-
-    @Test
-    fun `restoreDrawerReturnFocus emits trigger without prematurely consuming target`() = runTest {
+    fun `restoreDrawerReturnFocus emits sequence of recorded origins on demand`() = runTest {
         val vm = HomeViewModel(
             mediaRepository = object : MediaRepository {
                 override suspend fun getHomeFeed(): Result<HomeFeed> =
@@ -380,24 +350,36 @@ class HomeReturnFocusTest {
             },
             coroutineScope = this
         )
-        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(1))
 
-        var triggered = false
+        val events = mutableListOf<HomeDrawerReturnTarget>()
         val job = launch(UnconfinedTestDispatcher(testScheduler)) {
-            vm.drawerReturnTrigger.collect {
-                triggered = true
+            vm.drawerReturnEvents.collect {
+                events.add(it)
             }
         }
 
-        vm.restoreDrawerReturnFocus()
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Hero)
+        assertTrue(vm.restoreDrawerReturnFocus())
         advanceUntilIdle()
 
-        assertTrue(triggered)
-        // Target is preserved until explicitly consumed by the restoration executor
-        assertEquals(HomeDrawerReturnTarget.Row(1), vm.drawerReturnTarget.value)
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
+        assertTrue(vm.restoreDrawerReturnFocus())
+        advanceUntilIdle()
+
+        vm.recordDrawerOrigin(HomeDrawerReturnTarget.Row(1))
+        assertTrue(vm.restoreDrawerReturnFocus())
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                HomeDrawerReturnTarget.Hero,
+                HomeDrawerReturnTarget.RecentlyAddedEpisodes,
+                HomeDrawerReturnTarget.Row(1)
+            ),
+            events
+        )
         job.cancel()
     }
-
     // ── drawer return focus 3-step fallback execution ──
 
     @Test
