@@ -1,5 +1,7 @@
 package com.privatemovie.tv.modules.home
 
+import com.privatemovie.tv.components.TvFocusLog
+
 import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.data.repository.MediaRepository
 import com.privatemovie.tv.dto.models.HomeFeed
@@ -257,7 +259,7 @@ class HomeReturnFocusTest {
     }
 
     @Test
-    fun `drawer return focus executes 3-step fallback hierarchy`() = runTest {
+    fun `drawer return focus executes section target card 0 or returns Unfocused without hero fallback`() = runTest {
         val feed = makeFeed()
 
         // 1. Hero target
@@ -284,7 +286,7 @@ class HomeReturnFocusTest {
         assertEquals(HomeDrawerReturnFocusResult.RowCardFocused(1, 0), rowRes)
         assertEquals(1 to 0, rowRequested)
 
-        // 3. Row target failure falls back to Hero CTA
+        // 3. Row target failure returns Unfocused and does NOT request Hero CTA
         heroRequested = false
         val rowFallbackRes = executeHomeDrawerReturnFocus(
             target = HomeDrawerReturnTarget.Row(1),
@@ -293,8 +295,8 @@ class HomeReturnFocusTest {
             requestRecentEpisodesFocus = { false },
             requestRowCardFocus = { _, _ -> false }
         )
-        assertEquals(HomeDrawerReturnFocusResult.HeroFocused, rowFallbackRes)
-        assertTrue(heroRequested)
+        assertEquals(HomeDrawerReturnFocusResult.Unfocused, rowFallbackRes)
+        assertFalse(heroRequested)
     }
 
     // ── focus coordinator safety ──
@@ -450,9 +452,21 @@ class HomeReturnFocusTest {
     }
 
     @Test
-    fun `drawer return focus from RecentlyAddedEpisodes falls back to Hero CTA when step 1 and step 2 fail`() = runTest {
+    fun `drawer return focus from RecentlyAddedEpisodes returns Unfocused and logs warning when section focus fails`() = runTest {
         val feed = makeFeed().copy(recentlyAddedEpisodes = listOf(makeEpisode("e-1")))
         var heroRequested = false
+        var loggedTag: String? = null
+        var loggedMessage: String? = null
+
+        TvFocusLog.debugOverride = true
+        TvFocusLog.logger = object : TvFocusLog.Logger {
+            override fun d(tag: String, message: String) {}
+            override fun i(tag: String, message: String) {}
+            override fun w(tag: String, message: String, throwable: Throwable?) {
+                loggedTag = tag
+                loggedMessage = message
+            }
+        }
 
         val result = executeHomeDrawerReturnFocus(
             target = HomeDrawerReturnTarget.RecentlyAddedEpisodes,
@@ -462,8 +476,10 @@ class HomeReturnFocusTest {
             requestRowCardFocus = { _, _ -> false }
         )
 
-        assertEquals(HomeDrawerReturnFocusResult.HeroFocused, result)
-        assertTrue(heroRequested)
+        assertEquals(HomeDrawerReturnFocusResult.Unfocused, result)
+        assertFalse(heroRequested)
+        assertEquals("TvFocus/Fallback", loggedTag)
+        assertEquals("Failed to focus target RecentlyAddedEpisodes; returning Unfocused", loggedMessage)
     }
 
     @Test
@@ -524,20 +540,65 @@ class HomeReturnFocusTest {
     }
 
     @Test
-    fun `drawer return focus to target row falls back to Hero CTA on step 3 when rows and episodes fail`() = runTest {
+    fun `drawer return focus to target row returns Unfocused and logs warning when rows and episodes fail`() = runTest {
         val feed = makeFeed()
         var heroRequested = false
+        var loggedTag: String? = null
+        var loggedMessage: String? = null
 
+        TvFocusLog.debugOverride = true
+        TvFocusLog.logger = object : TvFocusLog.Logger {
+            override fun d(tag: String, message: String) {}
+            override fun i(tag: String, message: String) {}
+            override fun w(tag: String, message: String, throwable: Throwable?) {
+                loggedTag = tag
+                loggedMessage = message
+            }
+        }
+
+        val target = HomeDrawerReturnTarget.Row(1)
         val result = executeHomeDrawerReturnFocus(
-            target = HomeDrawerReturnTarget.Row(1),
+            target = target,
             feed = feed,
             requestHeroFocus = { heroRequested = true; true },
             requestRecentEpisodesFocus = { false },
             requestRowCardFocus = { _, _ -> false }
         )
 
-        assertEquals(HomeDrawerReturnFocusResult.HeroFocused, result)
-        assertTrue(heroRequested)
+        assertEquals(HomeDrawerReturnFocusResult.Unfocused, result)
+        assertFalse(heroRequested)
+        assertEquals("TvFocus/Fallback", loggedTag)
+        assertEquals("Failed to focus target Row(rowIndex=1); returning Unfocused", loggedMessage)
+    }
+
+    @Test
+    fun `drawer return focus to hero returns Unfocused and logs warning when hero focus fails`() = runTest {
+        val feed = makeFeed()
+        var loggedTag: String? = null
+        var loggedMessage: String? = null
+
+        TvFocusLog.debugOverride = true
+        TvFocusLog.logger = object : TvFocusLog.Logger {
+            override fun d(tag: String, message: String) {}
+            override fun i(tag: String, message: String) {}
+            override fun w(tag: String, message: String, throwable: Throwable?) {
+                loggedTag = tag
+                loggedMessage = message
+            }
+        }
+
+        val target = HomeDrawerReturnTarget.Hero
+        val result = executeHomeDrawerReturnFocus(
+            target = target,
+            feed = feed,
+            requestHeroFocus = { false },
+            requestRecentEpisodesFocus = { false },
+            requestRowCardFocus = { _, _ -> false }
+        )
+
+        assertEquals(HomeDrawerReturnFocusResult.Unfocused, result)
+        assertEquals("TvFocus/Fallback", loggedTag)
+        assertEquals("Failed to focus target Hero; returning Unfocused", loggedMessage)
     }
 
     @Test

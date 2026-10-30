@@ -629,11 +629,12 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `drawer return focus fallback to Hero CTA when both target and first section fail`() = runTest {
+    fun `drawer return focus returns Unfocused without silent Hero CTA fallback when target and first section fail`() = runTest {
         val feed = makeFeed(listOf(3))
         val coordinator = FocusTransitionCoordinator(this)
         val heroFocus = FocusRequester()
         var fallbackHeroFocused = false
+        var executionResult: HomeDrawerReturnFocusResult? = null
 
         val target = HomeDrawerReturnTarget.Row(0)
         val handled = coordinator.tryRequestFocus {
@@ -647,12 +648,14 @@ class HomeScreenTest {
                 requestRecentEpisodesFocus = { false },
                 requestRowCardFocus = { _, _ -> false }
             )
-            res == HomeDrawerReturnFocusResult.HeroFocused
+            executionResult = res
+            res != HomeDrawerReturnFocusResult.Unfocused
         }
 
         assertTrue(handled)
         advanceUntilIdle()
-        assertTrue(fallbackHeroFocused)
+        assertEquals(HomeDrawerReturnFocusResult.Unfocused, executionResult)
+        assertFalse(fallbackHeroFocused)
     }
 
     @Test

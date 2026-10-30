@@ -500,6 +500,40 @@ class NavigationTest {
     }
 
     @Test
+    fun `collapsing the drawer when drawer return focus restoration returns false falls back to onFocusContent`() {
+        val drawerState = NavigationDrawerState()
+        var fallbackFocusContentCalled = false
+        var loggedTag: String? = null
+        var loggedMessage: String? = null
+
+        TvFocusLog.debugOverride = true
+        TvFocusLog.logger = object : TvFocusLog.Logger {
+            override fun d(tag: String, message: String) {
+                loggedTag = tag
+                loggedMessage = message
+            }
+            override fun i(tag: String, message: String) {}
+            override fun w(tag: String, message: String, throwable: Throwable?) {}
+        }
+
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { fallbackFocusContentCalled = true },
+            onRestoreHomeFocus = { false },
+            currentRoute = { TvScreen.Home.route },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertTrue(fallbackFocusContentCalled)
+        assertEquals("TvFocus/Fallback", loggedTag)
+        assertTrue(loggedMessage?.contains("home") == true)
+    }
+
+    @Test
     fun `collapsing the drawer on search screen hands focus back to search content without invoking home return focus`() {
         val drawerState = NavigationDrawerState()
         var homeOriginFocusChecked = false
