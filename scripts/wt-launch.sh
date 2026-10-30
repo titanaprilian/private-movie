@@ -5,7 +5,8 @@ set -euo pipefail
 shared=0
 [ "${1:-}" = "--shared" ] && { shared=1; shift; }
 issue="${1:?issue number}"; dir="${2:?worktree path}"
-harness="${IMPLEMENTOR_CMD:-opencode}"
+harness="${IMPLEMENTOR_CMD:-omp}"
+model="${IMPLEMENTOR_MODEL:-9router/ag/gemini-3.8-flash-low}"
 
 [ -n "${TMUX:-}" ]            || { echo "not inside tmux" >&2; exit 2; }
 [ -n "${TMUX_PANE:-}" ]       || { echo "no TMUX_PANE (run from the orchestrator's pane)" >&2; exit 2; }
@@ -32,10 +33,10 @@ fi
 # after the harness exits so a startup error stays readable. ORCH_PANE and
 # IMPL_PANE are exported for the implementor; values are passed as
 # positional args to avoid quoting problems.
-prompt="${IMPLEMENTOR_PROMPT:-@implement $issue}"
+prompt="${IMPLEMENTOR_PROMPT:-Read skill://implement first and implement ticket $issue}"
 impl_pane="$(tmux split-window -v -d -t "$orch_pane" -P -F '#{pane_id}' -c "$dir" \
-  bash -c 'export ORCH_PANE="$3" IMPL_PANE="$4"; "$1" --prompt "$2"; rc=$?; echo "[implementor exited: $rc]"; exec bash' \
-  _ "$harness" "$prompt" "$orch_pane" "$tag")"
+  bash -c 'export ORCH_PANE="$4" IMPL_PANE="$5"; "$1" --model="$2" "$3"; rc=$?; echo "[implementor exited: $rc]"; exec bash' \
+  _ "$harness" "$model" "$prompt" "$orch_pane" "$tag")"
 
 tmux set-option -p -t "$impl_pane" @ticket "$tag"
 tmux select-pane -T "$tag" -t "$impl_pane" 2>/dev/null || true
