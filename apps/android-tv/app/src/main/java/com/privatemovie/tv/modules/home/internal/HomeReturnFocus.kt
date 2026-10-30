@@ -1,5 +1,7 @@
 package com.privatemovie.tv.modules.home.internal
 
+import com.privatemovie.tv.components.TvFocusLog
+
 /**
  * Origin-tracked focus target for returning from the Detail screen to Home.
  *
@@ -171,10 +173,10 @@ sealed interface HomeDrawerReturnFocusResult {
 }
 
 /**
- * Executes a drawer return focus plan with a 3-step fallback hierarchy:
+ * Executes a drawer return focus plan:
  * 1. Target section card 0 (Hero CTA, Recently Added Episodes card 0, or Row(rowIndex) card 0).
  * 2. If target section card 0 fails, falls back to first section card 0.
- * 3. Scrolls to top and focuses the Hero CTA button.
+ * If both fail, logs a warning and returns Unfocused; route-level fallback is left to DrawerNavigationCoordinator.
  */
 suspend fun executeHomeDrawerReturnFocus(
     target: HomeDrawerReturnTarget,
@@ -186,6 +188,7 @@ suspend fun executeHomeDrawerReturnFocus(
     when (target) {
         is HomeDrawerReturnTarget.Hero -> {
             if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            TvFocusLog.w("Fallback") { "Failed to focus target $target; returning Unfocused" }
             return HomeDrawerReturnFocusResult.Unfocused
         }
         is HomeDrawerReturnTarget.RecentlyAddedEpisodes -> {
@@ -198,8 +201,7 @@ suspend fun executeHomeDrawerReturnFocus(
             if (firstNonEmptyRowIndex >= 0 && requestRowCardFocus(firstNonEmptyRowIndex, 0)) {
                 return HomeDrawerReturnFocusResult.RowCardFocused(firstNonEmptyRowIndex, 0)
             }
-            // Step 3: Hero CTA
-            if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            TvFocusLog.w("Fallback") { "Failed to focus target $target; returning Unfocused" }
             return HomeDrawerReturnFocusResult.Unfocused
         }
         is HomeDrawerReturnTarget.Row -> {
@@ -222,8 +224,7 @@ suspend fun executeHomeDrawerReturnFocus(
                     return HomeDrawerReturnFocusResult.RowCardFocused(firstNonEmptyRowIndex, 0)
                 }
             }
-            // Step 3: Hero CTA
-            if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            TvFocusLog.w("Fallback") { "Failed to focus target $target; returning Unfocused" }
             return HomeDrawerReturnFocusResult.Unfocused
         }
     }

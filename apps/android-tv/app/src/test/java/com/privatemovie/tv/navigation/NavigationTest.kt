@@ -1,5 +1,6 @@
 package com.privatemovie.tv.navigation
 
+import com.privatemovie.tv.components.TvFocusLog
 import com.privatemovie.tv.components.drawer.DrawerDestination
 import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedEpisode
 import com.privatemovie.tv.modules.home.internal.TvRecentlyAddedSeason
@@ -464,6 +465,19 @@ class NavigationTest {
         val drawerState = NavigationDrawerState()
         var homeOriginFocusChecked = false
         var fallbackFocusContentCalled = false
+        var loggedTag: String? = null
+        var loggedMessage: String? = null
+
+        TvFocusLog.debugOverride = true
+        TvFocusLog.logger = object : TvFocusLog.Logger {
+            override fun d(tag: String, message: String) {
+                loggedTag = tag
+                loggedMessage = message
+            }
+            override fun i(tag: String, message: String) {}
+            override fun w(tag: String, message: String, throwable: Throwable?) {}
+        }
+
         val coordinator = DrawerNavigationCoordinator(
             drawerState = drawerState,
             onNavigate = {},
@@ -481,6 +495,42 @@ class NavigationTest {
         assertFalse(drawerState.expanded)
         assertTrue(homeOriginFocusChecked)
         assertTrue(fallbackFocusContentCalled)
+        assertEquals("TvFocus/Fallback", loggedTag)
+        assertTrue(loggedMessage?.contains("home") == true)
+    }
+
+    @Test
+    fun `collapsing the drawer when drawer return focus restoration returns false falls back to onFocusContent`() {
+        val drawerState = NavigationDrawerState()
+        var fallbackFocusContentCalled = false
+        var loggedTag: String? = null
+        var loggedMessage: String? = null
+
+        TvFocusLog.debugOverride = true
+        TvFocusLog.logger = object : TvFocusLog.Logger {
+            override fun d(tag: String, message: String) {
+                loggedTag = tag
+                loggedMessage = message
+            }
+            override fun i(tag: String, message: String) {}
+            override fun w(tag: String, message: String, throwable: Throwable?) {}
+        }
+
+        val coordinator = DrawerNavigationCoordinator(
+            drawerState = drawerState,
+            onNavigate = {},
+            onFocusContent = { fallbackFocusContentCalled = true },
+            onRestoreHomeFocus = { false },
+            currentRoute = { TvScreen.Home.route },
+        )
+        drawerState.onDrawerItemFocused()
+
+        coordinator.collapseAndFocusContent()
+
+        assertFalse(drawerState.expanded)
+        assertTrue(fallbackFocusContentCalled)
+        assertEquals("TvFocus/Fallback", loggedTag)
+        assertTrue(loggedMessage?.contains("home") == true)
     }
 
     @Test
@@ -544,10 +594,10 @@ class NavigationTest {
         homeViewModel.recordDrawerOrigin(HomeDrawerReturnTarget.Row(1))
 
         val drawerState = NavigationDrawerState()
-        var triggerEmitted = false
+        var emittedTarget: HomeDrawerReturnTarget? = null
         val job = launch(UnconfinedTestDispatcher(testScheduler)) {
-            homeViewModel.drawerReturnTrigger.collect {
-                triggerEmitted = true
+            homeViewModel.drawerReturnEvents.collect {
+                emittedTarget = it
             }
         }
 
@@ -556,11 +606,7 @@ class NavigationTest {
             onNavigate = {},
             onFocusContent = {},
             onRestoreHomeFocus = {
-                if (homeViewModel.drawerReturnTarget.value != null) {
-                    homeViewModel.restoreDrawerReturnFocus()
-                } else {
-                    false
-                }
+                homeViewModel.restoreDrawerReturnFocus()
             },
             currentRoute = { TvScreen.Home.route },
         )
@@ -569,8 +615,7 @@ class NavigationTest {
         coordinator.collapseAndFocusContent()
 
         assertFalse(drawerState.expanded)
-        assertTrue(triggerEmitted)
-        assertEquals(HomeDrawerReturnTarget.Row(1), homeViewModel.drawerReturnTarget.value)
+        assertEquals(HomeDrawerReturnTarget.Row(1), emittedTarget)
         job.cancel()
     }
 
@@ -587,11 +632,11 @@ class NavigationTest {
         homeViewModel.recordDrawerOrigin(HomeDrawerReturnTarget.RecentlyAddedEpisodes)
 
         val drawerState = NavigationDrawerState()
-        var triggerEmitted = false
+        var emittedTarget: HomeDrawerReturnTarget? = null
         var destinationBackTriggered = false
         val job = launch(UnconfinedTestDispatcher(testScheduler)) {
-            homeViewModel.drawerReturnTrigger.collect {
-                triggerEmitted = true
+            homeViewModel.drawerReturnEvents.collect {
+                emittedTarget = it
             }
         }
 
@@ -600,11 +645,7 @@ class NavigationTest {
             onNavigate = {},
             onFocusContent = {},
             onRestoreHomeFocus = {
-                if (homeViewModel.drawerReturnTarget.value != null) {
-                    homeViewModel.restoreDrawerReturnFocus()
-                } else {
-                    false
-                }
+                homeViewModel.restoreDrawerReturnFocus()
             },
             currentRoute = { TvScreen.Home.route },
         )
@@ -614,7 +655,7 @@ class NavigationTest {
 
         assertTrue(handled)
         assertFalse(drawerState.expanded)
-        assertTrue(triggerEmitted)
+        assertEquals(HomeDrawerReturnTarget.RecentlyAddedEpisodes, emittedTarget)
         assertFalse(destinationBackTriggered)
         job.cancel()
     }

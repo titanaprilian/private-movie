@@ -100,9 +100,21 @@ class SafeFocusUtilsTest {
     }
 
     @Test
-    fun `requestFocusSafely exhausts retries without crashing and returns false`() = runTest {
+    fun `requestFocusSafely exhausts retries without crashing and logs warning via TvFocusLog`() = runTest {
         var attempts = 0
         val focusRequester = FocusRequester()
+        var loggedTag: String? = null
+        var loggedMessage: String? = null
+
+        TvFocusLog.debugOverride = true
+        TvFocusLog.logger = object : TvFocusLog.Logger {
+            override fun d(tag: String, message: String) {}
+            override fun i(tag: String, message: String) {}
+            override fun w(tag: String, message: String, throwable: Throwable?) {
+                loggedTag = tag
+                loggedMessage = message
+            }
+        }
 
         val job = requestFocusSafelyAsync(
             focusRequester = focusRequester,
@@ -118,6 +130,9 @@ class SafeFocusUtilsTest {
 
         assertFalse(result)
         assertEquals(4, attempts)
+        assertEquals("TvFocus/Acquisition", loggedTag)
+        assertTrue(loggedMessage?.contains("retries exhausted after 4 frames") == true)
+        assertTrue(loggedMessage?.contains(focusRequester.toString()) == true)
     }
 
     @Test

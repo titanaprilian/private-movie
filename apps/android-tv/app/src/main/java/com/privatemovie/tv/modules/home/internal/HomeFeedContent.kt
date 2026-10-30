@@ -25,7 +25,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.rememberUpdatedState
+import kotlinx.coroutines.flow.SharedFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +44,7 @@ import com.privatemovie.tv.components.EdgeScaleTransform
 import com.privatemovie.tv.components.FocusTransitionCoordinator
 import com.privatemovie.tv.components.TvHorizontalBringIntoViewSpec
 import com.privatemovie.tv.components.TvVerticalHeaderBringIntoViewSpec
+import com.privatemovie.tv.components.TvFocusLog
 import com.privatemovie.tv.components.requestFocusSafely
 @Composable
 fun HomeLoading(modifier: Modifier = Modifier) {
@@ -200,9 +201,7 @@ fun HomeFeedContent(
     onLeftFromHero: (() -> Unit)? = null,
     onLeftFromRecentEpisodes: (() -> Unit)? = null,
     onLeftFromRow: ((rowIndex: Int) -> Unit)? = null,
-    drawerReturnTarget: HomeDrawerReturnTarget? = null,
-    onDrawerReturnConsumed: (() -> Unit)? = null,
-    drawerReturnTrigger: kotlinx.coroutines.flow.SharedFlow<Unit>? = null
+    drawerReturnEvents: SharedFlow<HomeDrawerReturnTarget>? = null
 ) {
     val effectiveHeroes = remember(feed) {
         if (feed.heroes.isNotEmpty()) {
@@ -251,9 +250,8 @@ fun HomeFeedContent(
     }
     var recentEpisodeFocusIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
 
-    // LazyColumn item offsets: the hero slider is item 0, the "Recently Added
-    // Episodes" carousel (when present) is item 1, rows start after that.
-    val rowItemOffset = if (hasRecentEpisodes) 2 else 1
+    // LazyColumn item offsets: hero slider (when present), "Recently Added Episodes" (when present).
+    val rowItemOffset = (if (effectiveHeroes.isNotEmpty()) 1 else 0) + (if (hasRecentEpisodes) 1 else 0)
 
     val handleSelectHero: (String) -> Unit = { seriesId ->
         if (onSelectHero != null) onSelectHero(seriesId) else onSelectSeries(seriesId)
@@ -290,9 +288,7 @@ fun HomeFeedContent(
             val result = executeHomeReturnFocus(
                 resolved = resolved,
                 requestCardFocus = { rowIndex, cardIndex ->
-                    // LazyColumn item index: hero is item 0, rows start at item 1.
-                    val lazyItemIndex =
-                        if (effectiveHeroes.isNotEmpty()) rowIndex + rowItemOffset else rowIndex
+                    val lazyItemIndex = rowIndex + rowItemOffset
                     try {
                         lazyListState.animateScrollToItem(lazyItemIndex)
                     } catch (_: Exception) {
@@ -327,60 +323,52 @@ fun HomeFeedContent(
     }
 
     // Drawer return focus: when returning from navigation drawer, restore focus to
-    // the remembered section and card 0 with 3-step fallback:
-    // target section card 0 -> first section card 0 -> Hero CTA.
-    val performDrawerReturnFocus: suspend () -> Boolean = {
-        val target = drawerReturnTarget ?: HomeDrawerReturnTarget.Hero
-        focusCoordinator.tryRequestFocus {
-            val result = executeHomeDrawerReturnFocus(
-                target = target,
-                feed = feed,
-                requestHeroFocus = {
-                    try {
-                        lazyListState.animateScrollToItem(0)
-                    } catch (_: Exception) {
-                    }
-                    requestFocusSafely(heroFocus)
-                },
-                requestRecentEpisodesFocus = {
-                    val episodeItemIndex = if (effectiveHeroes.isNotEmpty()) 1 else 0
-                    try {
-                        lazyListState.animateScrollToItem(episodeItemIndex)
-                    } catch (_: Exception) {
-                    }
-                    try {
-                        episodeListState.animateScrollToItem(0)
-                    } catch (_: Exception) {
-                    }
-                    val requester = episodeFocusRequesters.firstOrNull()
-                    if (requester != null) requestFocusSafely(requester) else false
-                },
-                requestRowCardFocus = { rowIndex, cardIndex ->
-                    val lazyItemIndex =
-                        if (effectiveHeroes.isNotEmpty()) rowIndex + rowItemOffset else rowIndex
-                    try {
-                        lazyListState.animateScrollToItem(lazyItemIndex)
-                    } catch (_: Exception) {
-                    }
-                    rowListStates.getOrNull(rowIndex)?.let {
+    // the target delivered in the event stream.
+    LaunchedEffect(drawerReturnEvents) {
+        drawerReturnEvents?.collect { target ->
+            TvFocusLog.d("Return") { "Collected drawer return event for target: $target" }
+            focusCoordinator.tryRequestFocus {
+                val result = executeHomeDrawerReturnFocus(
+                    target = target,
+                    feed = feed,
+                    requestHeroFocus = {
                         try {
-                            it.animateScrollToItem(cardIndex)
+                            lazyListState.animateScrollToItem(0)
                         } catch (_: Exception) {
                         }
+                        requestFocusSafely(heroFocus)
+                    },
+                    requestRecentEpisodesFocus = {
+                        val episodeItemIndex = if (effectiveHeroes.isNotEmpty()) 1 else 0
+                        try {
+                            lazyListState.animateScrollToItem(episodeItemIndex)
+                        } catch (_: Exception) {
+                        }
+                        try {
+                            episodeListState.animateScrollToItem(0)
+                        } catch (_: Exception) {
+                        }
+                        val requester = episodeFocusRequesters.firstOrNull()
+                        if (requester != null) requestFocusSafely(requester) else false
+                    },
+                    requestRowCardFocus = { rowIndex, cardIndex ->
+                        val lazyItemIndex = rowIndex + rowItemOffset
+                        try {
+                            lazyListState.animateScrollToItem(lazyItemIndex)
+                        } catch (_: Exception) {
+                        }
+                        rowListStates.getOrNull(rowIndex)?.let {
+                            try {
+                                it.animateScrollToItem(cardIndex)
+                            } catch (_: Exception) {
+                            }
+                        }
+                        val requester = rowFocusRequesters[rowIndex]?.getOrNull(cardIndex)
+                        if (requester != null) requestFocusSafely(requester) else false
                     }
-                    val requester = rowFocusRequesters[rowIndex]?.getOrNull(cardIndex)
-                    if (requester != null) requestFocusSafely(requester) else false
-                }
-            )
-            onDrawerReturnConsumed?.invoke()
-            result != HomeDrawerReturnFocusResult.Unfocused
-        }
-    }
-    val currentPerformDrawerReturnFocus by rememberUpdatedState(performDrawerReturnFocus)
-
-    LaunchedEffect(drawerReturnTrigger) {
-        drawerReturnTrigger?.collect {
-            currentPerformDrawerReturnFocus()
+                )
+                result != HomeDrawerReturnFocusResult.Unfocused
+            }
         }
     }
     // Scroll to the catalog rows section and restore focus to the remembered card for a given row.

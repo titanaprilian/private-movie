@@ -2,6 +2,7 @@ package com.privatemovie.tv.navigation
 
 import com.privatemovie.tv.components.drawer.DrawerDestination
 import com.privatemovie.tv.components.drawer.NavigationDrawerState
+import com.privatemovie.tv.components.TvFocusLog
 
 /**
  * Content area of a browsing screen that must regain focus once the
@@ -113,6 +114,9 @@ class DrawerNavigationCoordinator(
         val isHome = currentRoute() == TvScreen.Home.route
         val homeRestored = if (isHome) onRestoreHomeFocus?.invoke() == true else false
         if (!homeRestored) {
+            TvFocusLog.d("Fallback") {
+                "Drawer collapsed; routing to fallback content focus for route '${currentRoute()}'"
+            }
             onFocusContent()
         }
     }
