@@ -250,9 +250,8 @@ fun HomeFeedContent(
     }
     var recentEpisodeFocusIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
 
-    // LazyColumn item offsets: the hero slider is item 0, the "Recently Added
-    // Episodes" carousel (when present) is item 1, rows start after that.
-    val rowItemOffset = if (hasRecentEpisodes) 2 else 1
+    // LazyColumn item offsets: hero slider (when present), "Recently Added Episodes" (when present).
+    val rowItemOffset = (if (effectiveHeroes.isNotEmpty()) 1 else 0) + (if (hasRecentEpisodes) 1 else 0)
 
     val handleSelectHero: (String) -> Unit = { seriesId ->
         if (onSelectHero != null) onSelectHero(seriesId) else onSelectSeries(seriesId)
@@ -289,9 +288,7 @@ fun HomeFeedContent(
             val result = executeHomeReturnFocus(
                 resolved = resolved,
                 requestCardFocus = { rowIndex, cardIndex ->
-                    // LazyColumn item index: hero is item 0, rows start at item 1.
-                    val lazyItemIndex =
-                        if (effectiveHeroes.isNotEmpty()) rowIndex + rowItemOffset else rowIndex
+                    val lazyItemIndex = rowIndex + rowItemOffset
                     try {
                         lazyListState.animateScrollToItem(lazyItemIndex)
                     } catch (_: Exception) {
@@ -355,8 +352,7 @@ fun HomeFeedContent(
                         if (requester != null) requestFocusSafely(requester) else false
                     },
                     requestRowCardFocus = { rowIndex, cardIndex ->
-                        val lazyItemIndex =
-                            if (effectiveHeroes.isNotEmpty()) rowIndex + rowItemOffset else rowIndex
+                        val lazyItemIndex = rowIndex + rowItemOffset
                         try {
                             lazyListState.animateScrollToItem(lazyItemIndex)
                         } catch (_: Exception) {

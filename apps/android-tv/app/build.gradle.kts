@@ -63,6 +63,16 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { testTask ->
+            // Compose UI tests using createComposeRule() require ComponentActivity registered
+            // by debugImplementation(libs.androidx.compose.ui.test.manifest).
+            // In release unit test tasks (testReleaseUnitTest), exclude Compose UI tests so that
+            // ./gradlew test executes unit tests without missing debug manifest activity failures.
+            if (testTask.name == "testReleaseUnitTest") {
+                testTask.exclude("com/privatemovie/tv/modules/home/HomeComposeFocusTest*")
+            }
+        }
     }
 }
 
@@ -86,9 +96,12 @@ dependencies {
     implementation(libs.media3.ui)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
     // Real org.json implementation for JVM unit tests: the Android-bundled
     // org.json stubs throw "not mocked" under plain JUnit.
     testImplementation("org.json:json:20240303")
