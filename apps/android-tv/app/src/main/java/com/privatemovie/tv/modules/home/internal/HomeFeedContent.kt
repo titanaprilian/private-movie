@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -195,7 +196,13 @@ fun HomeFeedContent(
     onReturnFocusConsumed: (() -> Unit)? = null,
     externalCtaFocusRequester: FocusRequester? = null,
     onLeftFromEdge: (() -> Unit)? = null,
-    onSelectEpisode: ((TvRecentlyAddedEpisode) -> Unit)? = null
+    onSelectEpisode: ((TvRecentlyAddedEpisode) -> Unit)? = null,
+    onLeftFromHero: (() -> Unit)? = null,
+    onLeftFromRecentEpisodes: (() -> Unit)? = null,
+    onLeftFromRow: ((rowIndex: Int) -> Unit)? = null,
+    drawerReturnTarget: HomeDrawerReturnTarget? = null,
+    onDrawerReturnConsumed: (() -> Unit)? = null,
+    drawerReturnTrigger: kotlinx.coroutines.flow.SharedFlow<Unit>? = null
 ) {
     val effectiveHeroes = remember(feed) {
         if (feed.heroes.isNotEmpty()) {
@@ -242,6 +249,7 @@ fun HomeFeedContent(
     val episodeListState = remember(recentEpisodes) {
         androidx.compose.foundation.lazy.LazyListState()
     }
+    var recentEpisodeFocusIndex by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
 
     // LazyColumn item offsets: the hero slider is item 0, the "Recently Added
     // Episodes" carousel (when present) is item 1, rows start after that.
@@ -318,6 +326,63 @@ fun HomeFeedContent(
         }
     }
 
+    // Drawer return focus: when returning from navigation drawer, restore focus to
+    // the remembered section and card 0 with 3-step fallback:
+    // target section card 0 -> first section card 0 -> Hero CTA.
+    val performDrawerReturnFocus: suspend () -> Boolean = {
+        val target = drawerReturnTarget ?: HomeDrawerReturnTarget.Hero
+        focusCoordinator.tryRequestFocus {
+            val result = executeHomeDrawerReturnFocus(
+                target = target,
+                feed = feed,
+                requestHeroFocus = {
+                    try {
+                        lazyListState.animateScrollToItem(0)
+                    } catch (_: Exception) {
+                    }
+                    requestFocusSafely(heroFocus)
+                },
+                requestRecentEpisodesFocus = {
+                    val episodeItemIndex = if (effectiveHeroes.isNotEmpty()) 1 else 0
+                    try {
+                        lazyListState.animateScrollToItem(episodeItemIndex)
+                    } catch (_: Exception) {
+                    }
+                    try {
+                        episodeListState.animateScrollToItem(0)
+                    } catch (_: Exception) {
+                    }
+                    val requester = episodeFocusRequesters.firstOrNull()
+                    if (requester != null) requestFocusSafely(requester) else false
+                },
+                requestRowCardFocus = { rowIndex, cardIndex ->
+                    val lazyItemIndex =
+                        if (effectiveHeroes.isNotEmpty()) rowIndex + rowItemOffset else rowIndex
+                    try {
+                        lazyListState.animateScrollToItem(lazyItemIndex)
+                    } catch (_: Exception) {
+                    }
+                    rowListStates.getOrNull(rowIndex)?.let {
+                        try {
+                            it.animateScrollToItem(cardIndex)
+                        } catch (_: Exception) {
+                        }
+                    }
+                    val requester = rowFocusRequesters[rowIndex]?.getOrNull(cardIndex)
+                    if (requester != null) requestFocusSafely(requester) else false
+                }
+            )
+            onDrawerReturnConsumed?.invoke()
+            result != HomeDrawerReturnFocusResult.Unfocused
+        }
+    }
+    val currentPerformDrawerReturnFocus by rememberUpdatedState(performDrawerReturnFocus)
+
+    LaunchedEffect(drawerReturnTrigger) {
+        drawerReturnTrigger?.collect {
+            currentPerformDrawerReturnFocus()
+        }
+    }
     // Scroll to the catalog rows section and restore focus to the remembered card for a given row.
     // Falls back to card 0 if the remembered index is out of range or focus acquisition fails.
     val focusRowCard: suspend (targetRowIndex: Int) -> Boolean = { targetRowIndex ->
@@ -334,6 +399,33 @@ fun HomeFeedContent(
             if (!success) {
                 // Fallback: try Card 0
                 requestFocusSafely(requesters[0])
+            } else {
+                true
+            }
+        } else {
+            false
+        }
+    }
+
+    // Scroll to the "Recently Added Episodes" carousel and restore focus to the remembered card.
+    // Falls back to card 0 if the remembered index is out of range or focus acquisition fails.
+    val focusRecentEpisodeCard: suspend () -> Boolean = {
+        if (hasRecentEpisodes && episodeFocusRequesters.isNotEmpty()) {
+            val clampedIndex = recentEpisodeFocusIndex.coerceIn(0, episodeFocusRequesters.size - 1)
+            val episodeItemIndex = if (effectiveHeroes.isNotEmpty()) 1 else 0
+            try {
+                lazyListState.animateScrollToItem(episodeItemIndex)
+            } catch (_: Exception) {
+            }
+            try {
+                episodeListState.animateScrollToItem(clampedIndex)
+            } catch (_: Exception) {
+            }
+            val targetRequester = episodeFocusRequesters[clampedIndex]
+            val success = requestFocusSafely(targetRequester)
+            if (!success) {
+                // Fallback: try Card 0
+                requestFocusSafely(episodeFocusRequesters[0])
             } else {
                 true
             }
@@ -375,17 +467,7 @@ fun HomeFeedContent(
                                 when (resolveHeroDownFocusTarget(feed)) {
                                     HeroDownFocusTarget.EpisodeCarousel -> {
                                         focusCoordinator.tryRequestFocus {
-                                            // The episodes carousel is the LazyColumn
-                                            // item right below the hero slider.
-                                            try {
-                                                lazyListState.animateScrollToItem(1)
-                                            } catch (_: Exception) {
-                                                // Best-effort: a failed scroll must not block focus.
-                                            }
-                                            val firstEpisodeRequester = episodeFocusRequesters.firstOrNull()
-                                            if (firstEpisodeRequester != null) {
-                                                requestFocusSafely(firstEpisodeRequester)
-                                            } else false
+                                            focusRecentEpisodeCard()
                                         }
                                     }
                                     HeroDownFocusTarget.FirstRow -> {
@@ -399,7 +481,10 @@ fun HomeFeedContent(
                                     HeroDownFocusTarget.None -> Unit
                                 }
                             },
-                            onLeftFromCta = onLeftFromEdge,
+                            onLeftFromCta = {
+                                onLeftFromHero?.invoke()
+                                onLeftFromEdge?.invoke()
+                            },
                             modifier = Modifier
                                 .fillParentMaxHeight()
                                 .clipToBounds()
@@ -442,7 +527,15 @@ fun HomeFeedContent(
                                             onSelect = { onSelectEpisode?.invoke(episode) },
                                             transformOrigin = transformOrigin,
                                             focusRequester = episodeFocusRequesters.getOrNull(index),
-                                            onLeft = if (index == 0) onLeftFromEdge else null,
+                                            onFocused = {
+                                                recentEpisodeFocusIndex = index
+                                            },
+                                            onLeft = if (index == 0) {
+                                                {
+                                                    onLeftFromRecentEpisodes?.invoke()
+                                                    onLeftFromEdge?.invoke()
+                                                }
+                                            } else null,
                                             onUp = if (effectiveHeroes.isNotEmpty()) {
                                                 {
                                                     focusCoordinator.tryRequestFocus {
@@ -450,7 +543,15 @@ fun HomeFeedContent(
                                                         requestFocusSafely(heroFocus)
                                                     }
                                                 }
-                                            } else null
+                                            } else null,
+                                            onDown = {
+                                                val firstNonEmptyRowIndex = feed.rows.indexOfFirst { it.items.isNotEmpty() }
+                                                if (firstNonEmptyRowIndex >= 0) {
+                                                    focusCoordinator.tryRequestFocus {
+                                                        focusRowCard(firstNonEmptyRowIndex)
+                                                    }
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -502,15 +603,28 @@ fun HomeFeedContent(
                                                 onFocused = {
                                                     rowFocusIndices[rowIndex] = index
                                                 },
-                                                onUp = if (rowIndex == 0 && effectiveHeroes.isNotEmpty()) {
-                                                    {
-                                                        focusCoordinator.tryRequestFocus {
-                                                            lazyListState.animateScrollToItem(0)
-                                                            requestFocusSafely(heroFocus)
+                                                onUp = if (rowIndex == 0) {
+                                                    if (hasRecentEpisodes) {
+                                                        {
+                                                            focusCoordinator.tryRequestFocus {
+                                                                focusRecentEpisodeCard()
+                                                            }
                                                         }
-                                                    }
+                                                    } else if (effectiveHeroes.isNotEmpty()) {
+                                                        {
+                                                            focusCoordinator.tryRequestFocus {
+                                                                lazyListState.animateScrollToItem(0)
+                                                                requestFocusSafely(heroFocus)
+                                                            }
+                                                        }
+                                                    } else null
                                                 } else null,
-                                                onLeft = if (index == 0) onLeftFromEdge else null
+                                                onLeft = if (index == 0) {
+                                                    {
+                                                        onLeftFromRow?.invoke(rowIndex)
+                                                        onLeftFromEdge?.invoke()
+                                                    }
+                                                } else null
                                             )
                                         }
                                     }

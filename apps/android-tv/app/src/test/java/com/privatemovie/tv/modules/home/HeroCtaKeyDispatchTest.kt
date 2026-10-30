@@ -37,7 +37,7 @@ class HeroCtaKeyDispatchTest {
     }
 
     @Test
-    fun leftPressWithMultipleHeroesCyclesToPreviousSlide() {
+    fun leftPressWithMultipleHeroesCyclesToPreviousSlideWhenActiveIndexGreaterThanZero() {
         val state = stateWithHeroes(3)
         state.activeIndex = 1
         var drawerOpened = false
@@ -54,13 +54,33 @@ class HeroCtaKeyDispatchTest {
     }
 
     @Test
-    fun leftPressWithMultipleHeroesResolvesToPreviousSlideAction() {
+    fun leftPressWithMultipleHeroesResolvesToPreviousSlideActionWhenActiveIndexGreaterThanZero() {
         val state = stateWithHeroes(3)
+        state.activeIndex = 1
 
         assertEquals(
             HeroCtaKeyAction.PREVIOUS_SLIDE,
             state.resolveCtaKeyAction(true, android.view.KeyEvent.KEYCODE_DPAD_LEFT)
         )
+    }
+
+    @Test
+    fun leftPressWithMultipleHeroesAtActiveIndexZeroResolvesToOpenDrawer() {
+        val state = stateWithHeroes(3)
+        state.activeIndex = 0
+        var drawerOpened = false
+
+        val action = state.resolveCtaKeyAction(true, android.view.KeyEvent.KEYCODE_DPAD_LEFT)
+        assertEquals(HeroCtaKeyAction.OPEN_DRAWER, action)
+
+        val consumed = state.handleCtaKey(
+            isKeyDown = true,
+            keyCode = android.view.KeyEvent.KEYCODE_DPAD_LEFT,
+            onLeftFromCta = { drawerOpened = true }
+        )
+        assertTrue(consumed)
+        assertTrue(drawerOpened)
+        assertEquals(0, state.activeIndex)
     }
 
     @Test

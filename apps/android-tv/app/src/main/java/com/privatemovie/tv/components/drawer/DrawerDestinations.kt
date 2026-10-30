@@ -64,3 +64,36 @@ fun resolveActiveDestination(
         else -> null
     }
 }
+
+/**
+ * Resolves which drawer destination receives focus when navigating into the
+ * collapsible drawer from content.
+ *
+ * Lands directly on the active destination's item row, falling back to
+ * [DrawerDestination.Search] when no destination matches the current route.
+ */
+fun resolveDrawerEntryDestination(
+    currentRoute: String?,
+    bigGenres: List<GenreItem>,
+): DrawerDestination {
+    return resolveActiveDestination(currentRoute, bigGenres) ?: DrawerDestination.Search
+}
+
+/**
+ * Resolves which drawer destination receives focus given an already resolved
+ * active destination and the list of available drawer destinations.
+ *
+ * Falls back to [DrawerDestination.Search] (or the first available destination)
+ * when [activeDestination] is null or not present in [destinations].
+ */
+fun resolveDrawerEntryDestination(
+    activeDestination: DrawerDestination?,
+    destinations: List<DrawerDestination> = emptyList(),
+): DrawerDestination {
+    if (activeDestination != null && (destinations.isEmpty() || destinations.contains(activeDestination))) {
+        return activeDestination
+    }
+    return destinations.firstOrNull { it == DrawerDestination.Search }
+        ?: destinations.firstOrNull()
+        ?: DrawerDestination.Search
+}

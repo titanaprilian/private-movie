@@ -1,5 +1,6 @@
 package com.privatemovie.tv.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -154,15 +155,24 @@ fun AppNavigation(
         }
     }
 
-    // Coordinator keeps the two drawer rules in one place: collapse on
-    // selection, and hand focus back to the page content on collapse.
-    val drawerCoordinator = remember(drawerState) {
+    // Coordinator keeps the drawer rules in one place: collapse on
+    // selection, hand focus back to the page content on collapse, and activate
+    // origin return focus when returning to HomeScreen.
+    val drawerCoordinator = remember(drawerState, homeViewModel) {
         DrawerNavigationCoordinator(
             drawerState = drawerState,
             onNavigate = { destination -> navigateFromDrawer(destination) },
             onFocusContent = {
                 pendingContentFocus = browsingContentTargetForRoute(currentRoute)
             },
+            onRestoreHomeFocus = {
+                if (homeViewModel.drawerReturnTarget.value != null) {
+                    homeViewModel.restoreDrawerReturnFocus()
+                } else {
+                    false
+                }
+            },
+            currentRoute = { currentRoute },
         )
     }
 
@@ -361,6 +371,11 @@ fun AppNavigation(
         }
     }
         if (drawerVisible) {
+            if (drawerState.expanded) {
+                BackHandler(enabled = drawerState.expanded) {
+                    drawerCoordinator.handleBack()
+                }
+            }
             TvNavigationDrawer(
                 bigGenres = bigGenres,
                 currentRoute = drawerCurrentRoute,

@@ -159,3 +159,72 @@ suspend fun executeHomeReturnFocus(
         }
     }
 }
+
+/**
+ * Outcome of executing a drawer return-focus restoration.
+ */
+sealed interface HomeDrawerReturnFocusResult {
+    data object HeroFocused : HomeDrawerReturnFocusResult
+    data object RecentlyAddedEpisodesFocused : HomeDrawerReturnFocusResult
+    data class RowCardFocused(val rowIndex: Int, val cardIndex: Int) : HomeDrawerReturnFocusResult
+    data object Unfocused : HomeDrawerReturnFocusResult
+}
+
+/**
+ * Executes a drawer return focus plan with a 3-step fallback hierarchy:
+ * 1. Target section card 0 (Hero CTA, Recently Added Episodes card 0, or Row(rowIndex) card 0).
+ * 2. If target section card 0 fails, falls back to first section card 0.
+ * 3. Scrolls to top and focuses the Hero CTA button.
+ */
+suspend fun executeHomeDrawerReturnFocus(
+    target: HomeDrawerReturnTarget,
+    feed: TvHomeFeed,
+    requestHeroFocus: suspend () -> Boolean,
+    requestRecentEpisodesFocus: suspend () -> Boolean,
+    requestRowCardFocus: suspend (rowIndex: Int, cardIndex: Int) -> Boolean
+): HomeDrawerReturnFocusResult {
+    when (target) {
+        is HomeDrawerReturnTarget.Hero -> {
+            if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            return HomeDrawerReturnFocusResult.Unfocused
+        }
+        is HomeDrawerReturnTarget.RecentlyAddedEpisodes -> {
+            // Step 1: Target section card 0 (Recently Added Episodes)
+            if (feed.recentlyAddedEpisodes.isNotEmpty() && requestRecentEpisodesFocus()) {
+                return HomeDrawerReturnFocusResult.RecentlyAddedEpisodesFocused
+            }
+            // Step 2: First section card 0 (first non-empty catalog row card 0)
+            val firstNonEmptyRowIndex = feed.rows.indexOfFirst { it.items.isNotEmpty() }
+            if (firstNonEmptyRowIndex >= 0 && requestRowCardFocus(firstNonEmptyRowIndex, 0)) {
+                return HomeDrawerReturnFocusResult.RowCardFocused(firstNonEmptyRowIndex, 0)
+            }
+            // Step 3: Hero CTA
+            if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            return HomeDrawerReturnFocusResult.Unfocused
+        }
+        is HomeDrawerReturnTarget.Row -> {
+            // Step 1: Target section card 0
+            val row = feed.rows.getOrNull(target.rowIndex)
+            if (row != null && row.items.isNotEmpty()) {
+                if (requestRowCardFocus(target.rowIndex, 0)) {
+                    return HomeDrawerReturnFocusResult.RowCardFocused(target.rowIndex, 0)
+                }
+            }
+            // Step 2: First section card 0
+            if (feed.recentlyAddedEpisodes.isNotEmpty()) {
+                if (requestRecentEpisodesFocus()) {
+                    return HomeDrawerReturnFocusResult.RecentlyAddedEpisodesFocused
+                }
+            }
+            val firstNonEmptyRowIndex = feed.rows.indexOfFirst { it.items.isNotEmpty() }
+            if (firstNonEmptyRowIndex >= 0 && firstNonEmptyRowIndex != target.rowIndex) {
+                if (requestRowCardFocus(firstNonEmptyRowIndex, 0)) {
+                    return HomeDrawerReturnFocusResult.RowCardFocused(firstNonEmptyRowIndex, 0)
+                }
+            }
+            // Step 3: Hero CTA
+            if (requestHeroFocus()) return HomeDrawerReturnFocusResult.HeroFocused
+            return HomeDrawerReturnFocusResult.Unfocused
+        }
+    }
+}

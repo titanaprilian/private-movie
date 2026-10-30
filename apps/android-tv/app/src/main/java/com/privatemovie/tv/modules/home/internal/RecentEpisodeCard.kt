@@ -94,8 +94,10 @@ fun RecentEpisodeCard(
     modifier: Modifier = Modifier,
     transformOrigin: TransformOrigin = TransformOrigin.Center,
     focusRequester: FocusRequester? = null,
+    onFocused: (() -> Unit)? = null,
     onLeft: (() -> Unit)? = null,
-    onUp: (() -> Unit)? = null
+    onUp: (() -> Unit)? = null,
+    onDown: (() -> Unit)? = null
 ) {
     val cardShape = RoundedCornerShape(12.dp)
     var isFocused by remember { mutableStateOf(false) }
@@ -107,13 +109,16 @@ fun RecentEpisodeCard(
         }
         .onFocusChanged { state ->
             isFocused = state.isFocused
+            if (state.isFocused) {
+                onFocused?.invoke()
+            }
         }
 
     if (focusRequester != null) {
         cardModifier = cardModifier.focusRequester(focusRequester)
     }
 
-    if (onUp != null || onLeft != null) {
+    if (onUp != null || onLeft != null || onDown != null) {
         cardModifier = cardModifier.onKeyEvent { keyEvent ->
             if (isRepeatKeyEvent(keyEvent)) {
                 return@onKeyEvent true
@@ -123,6 +128,12 @@ fun RecentEpisodeCard(
                     android.view.KeyEvent.KEYCODE_DPAD_UP -> {
                         if (onUp != null) {
                             onUp()
+                            true
+                        } else false
+                    }
+                    android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        if (onDown != null) {
+                            onDown()
                             true
                         } else false
                     }
