@@ -17,6 +17,7 @@
     "dev:backend": "turbo run dev --filter=@repo/backend",
     "dev:web": "turbo run dev --filter=@repo/web",
     "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
     "test:web": "turbo run test --filter=@repo/web",
     "test:backend": "turbo run test --filter=@repo/backend",
     "test:android-tv": "turbo run test --filter=@repo/android-tv",

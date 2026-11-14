@@ -170,6 +170,16 @@ Tests use a conventional folder-based structure with Vitest as the test runner v
   - `bunx turbo run test --filter=@repo/web -- --silent=false test/unit/<feature>/<name>.test.ts`
 - For full-suite verbose output: `bun run test -- -- --silent=false` (or per-package `bun run test:<pkg> -- -- --silent=false`).
 
+### Coverage
+
+- `bun run test:coverage` runs unit tests with V8 coverage; filter with `bun run test:coverage --filter=@repo/backend`.
+- Universe is the whole `src/**` tree — an untested file counts as 0%, so new features move the number.
+- Thresholds are per-package ratchets in each `vitest.config.ts` and are enforced in CI. Raising a threshold when a package improves is encouraged; lowering one to make a PR pass is a review failure — delete the dead code or write the test instead.
+- `test:coverage` is non-cacheable by design. Never wire it into `test`, `verify`, `pre-push`, or `lint-staged`.
+- Reports land in `coverage/` per package (gitignored), as the `coverage-reports` CI artifact, and as a table in the PR job summary.
+- Backend HTTP/persistence coverage comes from the integration suite, which is NOT part of these thresholds yet (follow-up).
+- Running the full `bun run test:coverage` across all packages is a reviewer/orchestrator action, not an implementer TDD loop action (see the implementer test restriction above).
+
 ---
 
 ## Platform Mappings
