@@ -17,4 +17,39 @@ if (typeof window !== "undefined") {
   if (typeof Element !== "undefined") {
     Element.prototype.scrollIntoView = () => {};
   }
+
+  // Node 26+ experimental localStorage can evaluate to undefined under JSDOM
+  // unless --localstorage-file is supplied. Provide an in-memory fallback.
+  if (
+    typeof window.localStorage === "undefined" ||
+    typeof window.localStorage.clear !== "function"
+  ) {
+    const store = new Map<string, string>();
+    const storageMock = {
+      getItem: (key: string) => store.get(String(key)) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(String(key), String(value));
+      },
+      removeItem: (key: string) => {
+        store.delete(String(key));
+      },
+      clear: () => {
+        store.clear();
+      },
+      key: (i: number) => Array.from(store.keys())[i] ?? null,
+      get length() {
+        return store.size;
+      },
+    };
+    Object.defineProperty(window, "localStorage", {
+      value: storageMock,
+      configurable: true,
+      writable: true,
+    });
+    Object.defineProperty(globalThis, "localStorage", {
+      value: storageMock,
+      configurable: true,
+      writable: true,
+    });
+  }
 }

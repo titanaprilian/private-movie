@@ -46,6 +46,24 @@ jobs:
           bun x turbo run db:migrate --env-mode=loose
           bun x turbo run typecheck lint test test:integration build --continue --filter=!@repo/android-tv --env-mode=loose
 
+      - name: Run coverage
+        run: bun x turbo run test:coverage --continue --filter=!@repo/android-tv --env-mode=loose
+
+      - name: Coverage summary
+        if: always()
+        run: bun scripts/coverage-summary.ts
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            apps/*/coverage
+            packages/*/coverage
+          if-no-files-found: warn
+          retention-days: 14
+
   android:
     runs-on: ubuntu-latest
 
@@ -76,7 +94,6 @@ jobs:
 
       - name: Run Android CI pipeline
         run: bun x turbo run typecheck lint test build --continue --filter=@repo/android-tv --env-mode=loose
-
 
   publish-and-deploy:
     name: Publish & Deploy

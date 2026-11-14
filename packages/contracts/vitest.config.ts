@@ -6,6 +6,14 @@ export default mergeConfig(
   defineConfig({
     test: {
       passWithNoTests: true,
+      coverage: {
+        thresholds: {
+          lines: 96,
+          statements: 96,
+          functions: 31,
+          branches: 99,
+        },
+      },
     },
   }),
 );
