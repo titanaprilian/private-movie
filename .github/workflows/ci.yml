@@ -46,6 +46,9 @@ jobs:
           bun x turbo run db:migrate --env-mode=loose
           bun x turbo run typecheck lint test test:integration build --continue --filter=!@repo/android-tv --env-mode=loose
 
+      - name: Run Quality Gate Check (L3)
+        run: bun run gate:check
+
       - name: Run coverage
         run: bun x turbo run test:coverage --continue --filter=!@repo/android-tv --env-mode=loose
 

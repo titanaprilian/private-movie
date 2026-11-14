@@ -1,0 +1,56 @@
+{
+  "$schema": "https://unpkg.com/knip@5/overview/configuration-schema.json",
+  "ignoreWorkspaces": ["apps/android-tv"],
+  "ignore": [
+    "**/dist/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/.jscpd/**",
+    "**/*.d.ts",
+  ],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.ts"],
+      "project": ["scripts/**/*.ts"],
+    },
+    "apps/web": {
+      "entry": [
+        "src/main.tsx",
+        "src/routes/**",
+        "src/modules/*/index.ts",
+        "vite.config.ts",
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+    },
+    "apps/backend": {
+      "entry": [
+        "src/index.ts",
+        "src/client.ts",
+        "src/app.ts",
+        "src/modules/*/index.ts",
+        "vitest.integration.config.ts",
+      ],
+      "project": ["src/**/*.ts"],
+    },
+    "packages/contracts": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+    },
+    "packages/db": {
+      "entry": ["src/index.ts", "src/schema/**/*.ts", "drizzle.config.ts"],
+      "project": ["src/**/*.ts"],
+    },
+    "packages/media-scraper": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+    },
+    "packages/media-service": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+    },
+    "packages/config-vitest": {
+      "entry": ["*.ts"],
+      "project": ["*.ts"],
+    },
+  },
+}
