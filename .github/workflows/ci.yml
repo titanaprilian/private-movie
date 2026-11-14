@@ -59,7 +59,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: "library"
           severity: "CRITICAL"
-          trivyopts: "--skip-dirs node_modules --skip-dirs apps/android-tv/.gradle --skip-dirs apps/android-tv/build"
+          skip-dirs: "node_modules,apps/android-tv/.gradle,apps/android-tv/build"
 
       - name: Run coverage
         run: bun x turbo run test:coverage --continue --filter=!@repo/android-tv --env-mode=loose
