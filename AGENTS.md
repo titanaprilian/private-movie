@@ -182,6 +182,38 @@ Tests use a conventional folder-based structure with Vitest as the test runner v
 
 ---
 
+## Structural Quality Gates (`gate:check`)
+
+The repository enforces **Level L3 Quality Gate maturity**: existing technical debt is baselined, but new or worsening structural debt (unused exports, unused dependencies, or copy-paste code duplication) will immediately fail CI.
+
+### Running Quality Gates Locally
+
+- `bun run gate:check` — Runs both structural duplication (`jscpd`) and unused code/dependency audits (`knip`) against checked-in baselines (`.jscpd-baseline.json` and `.knip-baseline.json`).
+- `bun run gate:knip` — Direct Knip check (identifies specific unused exports, types, or dependencies).
+- `bun run gate:jscpd` — Direct JSCPD check (identifies duplicated source blocks across packages and apps).
+- `bun run gate:update-baseline` — Updates the baselines to lock in structural debt reduction.
+
+### When Quality Gate Blocks CI or Local Check
+
+If `gate:check` fails, follow this remediation runbook:
+
+1. **Unused Exports / Dead Code (`knip`)**:
+   - If an export is only used within its own file/module, remove the `export` keyword.
+   - If the code is dead/obsolete, delete it.
+   - If the export was intended to be hooked up to a caller or test, wire it up.
+   - If an export is an intentional public API or dynamic plugin entrypoint, document it in `knip.jsonc`.
+2. **Unused / Unlisted Dependencies (`knip`)**:
+   - Unused: remove it from `package.json` (`bun remove <pkg> --filter <workspace>`).
+   - Unlisted: add it explicitly to the workspace `package.json` so the module does not rely on hoisted dependencies.
+3. **Code Duplication (`jscpd`)**:
+   - Refactor duplicated logic into shared utilities (`internal/` within module, or `@repo/contracts` / shared package across modules/apps).
+   - If the duplication is unavoidable generated code or boilerplate, configure the path ignore in `.jscpd.json`.
+4. **Ratchet Rule**:
+   - Baselines and thresholds can only be tightened (updated to reflect reductions in tech debt), never loosened to bypass checks.
+   - If `gate:check` blocks CI during feature implementation, **report the violation to the human before proceeding with fixes**.
+
+---
+
 ## Platform Mappings
 
 The Deep Modules architecture maps onto each framework in the monorepo as follows. Consult the application-specific `AGENTS.md` (if present) for authoritative details within that application.

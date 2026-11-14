@@ -1,0 +1,23 @@
+{
+  "path": [
+    "apps/web/src",
+    "apps/backend/src",
+    "packages/contracts/src",
+    "packages/db/src",
+    "packages/media-scraper/src",
+    "packages/media-service/src"
+  ],
+  "format": ["typescript", "tsx"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/test/**",
+    "**/__tests__/**",
+    "**/routeTree.gen.ts"
+  ],
+  "baseline": ".jscpd-baseline.json",
+  "failOnNewClones": 0,
+  "reporters": ["console"]
+}

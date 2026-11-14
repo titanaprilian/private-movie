@@ -1,0 +1,5849 @@
+{
+  "issues": [
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/bulk/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [
+        {
+          "name": "apps/web/src/modules/videos/internal/ingestion/bulk/index.ts"
+        }
+      ],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/scrape/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [
+        {
+          "name": "apps/web/src/modules/videos/internal/ingestion/scrape/index.ts"
+        }
+      ],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/sync/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [
+        {
+          "name": "apps/web/src/modules/videos/internal/ingestion/sync/index.ts"
+        }
+      ],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/sources/components/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [
+        {
+          "name": "apps/web/src/modules/videos/internal/sources/components/index.ts"
+        }
+      ],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/sources/components/table/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [
+        {
+          "name": "apps/web/src/modules/videos/internal/sources/components/table/index.ts"
+        }
+      ],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/config/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [
+        {
+          "name": "apps/backend/src/config/index.ts"
+        }
+      ],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "package.json",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [
+        {
+          "name": "drizzle-orm",
+          "line": 59,
+          "col": 6,
+          "pos": 2110
+        }
+      ],
+      "devDependencies": [
+        {
+          "name": "vitest",
+          "line": 56,
+          "col": 6,
+          "pos": 2062
+        }
+      ],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/package.json",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [
+        {
+          "name": "pino-pretty",
+          "line": 29,
+          "col": 6,
+          "pos": 1127
+        }
+      ],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/package.json",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [
+        {
+          "name": "@testing-library/jest-dom",
+          "line": 52,
+          "col": 6,
+          "pos": 1565
+        },
+        {
+          "name": "@testing-library/user-event",
+          "line": 54,
+          "col": 6,
+          "pos": 1649
+        }
+      ],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/contracts/test/unit/domain-contracts.test.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": [
+        {
+          "name": "../src",
+          "line": 13,
+          "col": 8,
+          "pos": 275
+        }
+      ]
+    },
+    {
+      "file": "apps/web/src/lib/queryClient.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "OUTAGE_TOAST_DEBOUNCE_MS",
+          "line": 8,
+          "col": 14,
+          "pos": 360
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-button.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "chunkyButtonVariants",
+          "line": 59,
+          "col": 24,
+          "pos": 2378
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyButtonProps",
+          "line": 38,
+          "col": 18,
+          "pos": 1748
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-chip.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "chunkyChipVariants",
+          "line": 50,
+          "col": 22,
+          "pos": 1972
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyChipProps",
+          "line": 27,
+          "col": 18,
+          "pos": 1309
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-dialog.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "ChunkyDialogOverlay",
+          "line": 151,
+          "col": 3,
+          "pos": 5201
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-drawer.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "ChunkyDrawerClose",
+          "line": 142,
+          "col": 3,
+          "pos": 4556
+        },
+        {
+          "name": "ChunkyDrawerOverlay",
+          "line": 143,
+          "col": 3,
+          "pos": 4577
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-select.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "ChunkySelectGroup",
+          "line": 150,
+          "col": 3,
+          "pos": 6214
+        },
+        {
+          "name": "ChunkySelectLabel",
+          "line": 154,
+          "col": 3,
+          "pos": 6302
+        },
+        {
+          "name": "ChunkySelectSeparator",
+          "line": 156,
+          "col": 3,
+          "pos": 6343
+        },
+        {
+          "name": "ChunkySelectScrollUpButton",
+          "line": 157,
+          "col": 3,
+          "pos": 6368
+        },
+        {
+          "name": "ChunkySelectScrollDownButton",
+          "line": 158,
+          "col": 3,
+          "pos": 6398
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/sonner.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "default",
+          "line": 2,
+          "col": 19,
+          "pos": 83
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ToasterProps",
+          "line": 2,
+          "col": 33,
+          "pos": 97
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/storage/internal/components/StorageResourceTable.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "STORAGE_RESOURCE_PAGE_SIZE",
+          "line": 33,
+          "col": 14,
+          "pos": 1095
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/store/themeStore.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "useUIStore",
+          "line": 1,
+          "col": 10,
+          "pos": 9
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "Theme",
+          "line": 1,
+          "col": 56,
+          "pos": 55
+        },
+        {
+          "name": "ThemeState",
+          "line": 1,
+          "col": 79,
+          "pos": 78
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "formatGenreTriggerLabel",
+          "line": 9,
+          "col": 3,
+          "pos": 131
+        },
+        {
+          "name": "GENRE_FILTER_NO_HIGHLIGHT",
+          "line": 10,
+          "col": 3,
+          "pos": 158
+        },
+        {
+          "name": "useGenreFilter",
+          "line": 11,
+          "col": 3,
+          "pos": 187
+        },
+        {
+          "name": "getSeriesCardEpisodeCount",
+          "line": 12,
+          "col": 3,
+          "pos": 205
+        },
+        {
+          "name": "useSeriesCard",
+          "line": 13,
+          "col": 3,
+          "pos": 234
+        },
+        {
+          "name": "useSeriesGridSearch",
+          "line": 14,
+          "col": 3,
+          "pos": 251
+        },
+        {
+          "name": "buildSeriesGridQueryParams",
+          "line": 15,
+          "col": 3,
+          "pos": 274
+        },
+        {
+          "name": "useSeriesGridMutations",
+          "line": 16,
+          "col": 3,
+          "pos": 304
+        },
+        {
+          "name": "useSeriesGrid",
+          "line": 17,
+          "col": 3,
+          "pos": 330
+        },
+        {
+          "name": "AddMediaStepInput",
+          "line": 21,
+          "col": 3,
+          "pos": 391
+        },
+        {
+          "name": "AddMediaStepPreview",
+          "line": 22,
+          "col": 3,
+          "pos": 412
+        },
+        {
+          "name": "EditSeriesDialog",
+          "line": 23,
+          "col": 3,
+          "pos": 435
+        },
+        {
+          "name": "EditEpisodeDialog",
+          "line": 24,
+          "col": 3,
+          "pos": 455
+        },
+        {
+          "name": "useAddMediaDialog",
+          "line": 25,
+          "col": 3,
+          "pos": 476
+        },
+        {
+          "name": "useEditSeriesForm",
+          "line": 26,
+          "col": 3,
+          "pos": 497
+        },
+        {
+          "name": "useEditEpisodeForm",
+          "line": 27,
+          "col": 3,
+          "pos": 518
+        },
+        {
+          "name": "SeriesDetailHero",
+          "line": 33,
+          "col": 3,
+          "pos": 633
+        },
+        {
+          "name": "SeriesDetailSeasonBar",
+          "line": 34,
+          "col": 3,
+          "pos": 653
+        },
+        {
+          "name": "SeriesDetailDialogs",
+          "line": 36,
+          "col": 3,
+          "pos": 700
+        },
+        {
+          "name": "useSeriesDetail",
+          "line": 37,
+          "col": 3,
+          "pos": 723
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "AddMediaStepInputProps",
+          "line": 45,
+          "col": 3,
+          "pos": 930
+        },
+        {
+          "name": "AddMediaStoreState",
+          "line": 46,
+          "col": 3,
+          "pos": 956
+        },
+        {
+          "name": "ScrapeWorkerState",
+          "line": 47,
+          "col": 3,
+          "pos": 978
+        },
+        {
+          "name": "AddMediaStepPreviewProps",
+          "line": 48,
+          "col": 3,
+          "pos": 999
+        },
+        {
+          "name": "EditEpisodeDialogProps",
+          "line": 49,
+          "col": 3,
+          "pos": 1027
+        },
+        {
+          "name": "EditSeriesDialogProps",
+          "line": 50,
+          "col": 3,
+          "pos": 1053
+        },
+        {
+          "name": "ManageSourcesInitialTab",
+          "line": 54,
+          "col": 3,
+          "pos": 1144
+        },
+        {
+          "name": "SeasonDetails",
+          "line": 56,
+          "col": 3,
+          "pos": 1197
+        },
+        {
+          "name": "SeriesCardItem",
+          "line": 57,
+          "col": 3,
+          "pos": 1214
+        },
+        {
+          "name": "SeriesDetailDialogsProps",
+          "line": 61,
+          "col": 3,
+          "pos": 1306
+        },
+        {
+          "name": "SeriesDetailModalsState",
+          "line": 62,
+          "col": 3,
+          "pos": 1334
+        },
+        {
+          "name": "SeriesDetailHeroProps",
+          "line": 64,
+          "col": 3,
+          "pos": 1384
+        },
+        {
+          "name": "SeriesDetailSeasonBarProps",
+          "line": 65,
+          "col": 3,
+          "pos": 1409
+        },
+        {
+          "name": "SeriesDetails",
+          "line": 67,
+          "col": 3,
+          "pos": 1464
+        },
+        {
+          "name": "SeriesItem",
+          "line": 68,
+          "col": 3,
+          "pos": 1481
+        },
+        {
+          "name": "SeriesListQueryData",
+          "line": 69,
+          "col": 3,
+          "pos": 1495
+        },
+        {
+          "name": "SeriesSearch",
+          "line": 71,
+          "col": 3,
+          "pos": 1543
+        },
+        {
+          "name": "SeriesGridQueryParams",
+          "line": 72,
+          "col": 3,
+          "pos": 1559
+        },
+        {
+          "name": "SeriesGridTab",
+          "line": 73,
+          "col": 3,
+          "pos": 1584
+        },
+        {
+          "name": "TmdbPreviewResult",
+          "line": 74,
+          "col": 3,
+          "pos": 1601
+        },
+        {
+          "name": "UpdateEpisodeData",
+          "line": 75,
+          "col": 3,
+          "pos": 1622
+        },
+        {
+          "name": "UpdateEpisodeMutation",
+          "line": 76,
+          "col": 3,
+          "pos": 1643
+        },
+        {
+          "name": "UseEditEpisodeFormOptions",
+          "line": 77,
+          "col": 3,
+          "pos": 1668
+        },
+        {
+          "name": "UseEditSeriesFormOptions",
+          "line": 78,
+          "col": 3,
+          "pos": 1697
+        },
+        {
+          "name": "UseAddMediaDialogReturn",
+          "line": 79,
+          "col": 3,
+          "pos": 1725
+        },
+        {
+          "name": "UseEpisodeBatchOperationsOptions",
+          "line": 80,
+          "col": 3,
+          "pos": 1752
+        },
+        {
+          "name": "UseGenreFilterOptions",
+          "line": 81,
+          "col": 3,
+          "pos": 1788
+        },
+        {
+          "name": "UseGenreFilterReturn",
+          "line": 82,
+          "col": 3,
+          "pos": 1813
+        },
+        {
+          "name": "UseSeriesCardOptions",
+          "line": 83,
+          "col": 3,
+          "pos": 1837
+        },
+        {
+          "name": "UseSeriesCardReturn",
+          "line": 84,
+          "col": 3,
+          "pos": 1861
+        },
+        {
+          "name": "UseSeriesDetailDndOptions",
+          "line": 85,
+          "col": 3,
+          "pos": 1884
+        },
+        {
+          "name": "UseSeriesDetailOptions",
+          "line": 86,
+          "col": 3,
+          "pos": 1913
+        },
+        {
+          "name": "UseSeriesDrawerSyncOptions",
+          "line": 87,
+          "col": 3,
+          "pos": 1939
+        },
+        {
+          "name": "UseSeriesGridMutationsOptions",
+          "line": 88,
+          "col": 3,
+          "pos": 1969
+        },
+        {
+          "name": "UseSeriesGridMutationsResult",
+          "line": 89,
+          "col": 3,
+          "pos": 2002
+        },
+        {
+          "name": "UseSeriesGridResult",
+          "line": 90,
+          "col": 3,
+          "pos": 2034
+        },
+        {
+          "name": "UseSeriesGridSearchResult",
+          "line": 91,
+          "col": 3,
+          "pos": 2057
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/seasons/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "getEpisodeDrawerInitialState",
+          "line": 11,
+          "col": 3,
+          "pos": 559
+        },
+        {
+          "name": "parseEpisodeDurationToSeconds",
+          "line": 15,
+          "col": 3,
+          "pos": 660
+        },
+        {
+          "name": "getEpisodeReleaseDate",
+          "line": 16,
+          "col": 3,
+          "pos": 693
+        },
+        {
+          "name": "formatEpisodeDuration",
+          "line": 22,
+          "col": 10,
+          "pos": 854
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "BatchDeleteDialogProps",
+          "line": 30,
+          "col": 3,
+          "pos": 1062
+        },
+        {
+          "name": "Episode",
+          "line": 33,
+          "col": 3,
+          "pos": 1132
+        },
+        {
+          "name": "EpisodeDetailDrawerProps",
+          "line": 34,
+          "col": 3,
+          "pos": 1143
+        },
+        {
+          "name": "EpisodeDrawerEpisode",
+          "line": 35,
+          "col": 3,
+          "pos": 1171
+        },
+        {
+          "name": "EpisodeDrawerFormState",
+          "line": 36,
+          "col": 3,
+          "pos": 1195
+        },
+        {
+          "name": "EpisodeTableEpisode",
+          "line": 37,
+          "col": 3,
+          "pos": 1221
+        },
+        {
+          "name": "EpisodeTableProps",
+          "line": 38,
+          "col": 3,
+          "pos": 1244
+        },
+        {
+          "name": "EpisodeTableSortDirection",
+          "line": 39,
+          "col": 3,
+          "pos": 1265
+        },
+        {
+          "name": "EpisodeTableSortField",
+          "line": 40,
+          "col": 3,
+          "pos": 1294
+        },
+        {
+          "name": "ReorderEpisodeItem",
+          "line": 42,
+          "col": 3,
+          "pos": 1346
+        },
+        {
+          "name": "SeasonDetails",
+          "line": 43,
+          "col": 3,
+          "pos": 1368
+        },
+        {
+          "name": "SeasonStatus",
+          "line": 44,
+          "col": 3,
+          "pos": 1385
+        },
+        {
+          "name": "SeriesDetails",
+          "line": 45,
+          "col": 3,
+          "pos": 1401
+        },
+        {
+          "name": "SortDirection",
+          "line": 46,
+          "col": 3,
+          "pos": 1418
+        },
+        {
+          "name": "SortField",
+          "line": 47,
+          "col": 3,
+          "pos": 1435
+        },
+        {
+          "name": "UpdateEpisodeData",
+          "line": 48,
+          "col": 3,
+          "pos": 1448
+        },
+        {
+          "name": "UseAddSeasonFormOptions",
+          "line": 49,
+          "col": 3,
+          "pos": 1469
+        },
+        {
+          "name": "UseEditSeasonFormOptions",
+          "line": 50,
+          "col": 3,
+          "pos": 1496
+        },
+        {
+          "name": "UseEpisodeDetailDrawerOptions",
+          "line": 51,
+          "col": 3,
+          "pos": 1524
+        },
+        {
+          "name": "UseEpisodeTableOptions",
+          "line": 52,
+          "col": 3,
+          "pos": 1557
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "TargetEpisodeCombobox",
+          "line": 4,
+          "col": 10,
+          "pos": 181
+        },
+        {
+          "name": "labelClassName",
+          "line": 30,
+          "col": 3,
+          "pos": 999
+        },
+        {
+          "name": "BulkScrapeStepSource",
+          "line": 33,
+          "col": 10,
+          "pos": 1143
+        },
+        {
+          "name": "BulkScrapeStepReview",
+          "line": 34,
+          "col": 10,
+          "pos": 1224
+        },
+        {
+          "name": "BulkScrapeStepProgress",
+          "line": 35,
+          "col": 10,
+          "pos": 1305
+        },
+        {
+          "name": "BulkScrapeOverwriteDialog",
+          "line": 36,
+          "col": 10,
+          "pos": 1390
+        },
+        {
+          "name": "useBulkScrapeModal",
+          "line": 37,
+          "col": 10,
+          "pos": 1481
+        },
+        {
+          "name": "useTargetEpisodeOptions",
+          "line": 38,
+          "col": 10,
+          "pos": 1553
+        },
+        {
+          "name": "formatTargetEpisodeLabel",
+          "line": 38,
+          "col": 35,
+          "pos": 1578
+        },
+        {
+          "name": "checkEpisodeHasSources",
+          "line": 40,
+          "col": 3,
+          "pos": 1663
+        },
+        {
+          "name": "getSeasonOptions",
+          "line": 41,
+          "col": 3,
+          "pos": 1689
+        },
+        {
+          "name": "ARCHIVE_POLL_STATUSES",
+          "line": 47,
+          "col": 3,
+          "pos": 1850
+        },
+        {
+          "name": "isPasswordErrorCode",
+          "line": 50,
+          "col": 3,
+          "pos": 1941
+        },
+        {
+          "name": "useSyncTmdb",
+          "line": 54,
+          "col": 10,
+          "pos": 2112
+        },
+        {
+          "name": "SyncSnapshotCard",
+          "line": 55,
+          "col": 10,
+          "pos": 2168
+        },
+        {
+          "name": "SyncSeasonDiffList",
+          "line": 56,
+          "col": 10,
+          "pos": 2239
+        },
+        {
+          "name": "SyncEpisodeChangesList",
+          "line": 57,
+          "col": 10,
+          "pos": 2314
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "IngestTab",
+          "line": 9,
+          "col": 15,
+          "pos": 569
+        },
+        {
+          "name": "UseBulkIngestModalOptions",
+          "line": 9,
+          "col": 26,
+          "pos": 580
+        },
+        {
+          "name": "UseBulkIngestModalReturn",
+          "line": 9,
+          "col": 53,
+          "pos": 607
+        },
+        {
+          "name": "ArchiveDownloadProgress",
+          "line": 64,
+          "col": 3,
+          "pos": 2507
+        },
+        {
+          "name": "ArchiveExtractProgress",
+          "line": 65,
+          "col": 3,
+          "pos": 2534
+        },
+        {
+          "name": "ArchiveJobPhase",
+          "line": 66,
+          "col": 3,
+          "pos": 2560
+        },
+        {
+          "name": "ArchivePreviewPhase",
+          "line": 67,
+          "col": 3,
+          "pos": 2579
+        },
+        {
+          "name": "ArchiveReviewItem",
+          "line": 68,
+          "col": 3,
+          "pos": 2602
+        },
+        {
+          "name": "ArchiveUploadView",
+          "line": 69,
+          "col": 3,
+          "pos": 2623
+        },
+        {
+          "name": "CountBadgeProps",
+          "line": 73,
+          "col": 3,
+          "pos": 2710
+        },
+        {
+          "name": "IngestionBadgeProps",
+          "line": 74,
+          "col": 3,
+          "pos": 2729
+        },
+        {
+          "name": "IngestionProgressBarProps",
+          "line": 75,
+          "col": 3,
+          "pos": 2752
+        },
+        {
+          "name": "IngestionStatusBadgeProps",
+          "line": 76,
+          "col": 3,
+          "pos": 2781
+        },
+        {
+          "name": "SeriesDetails",
+          "line": 83,
+          "col": 3,
+          "pos": 2938
+        },
+        {
+          "name": "StorageProviderOption",
+          "line": 84,
+          "col": 3,
+          "pos": 2955
+        },
+        {
+          "name": "StorageProviderSelectProps",
+          "line": 85,
+          "col": 3,
+          "pos": 2980
+        },
+        {
+          "name": "SyncSnapshotCardProps",
+          "line": 87,
+          "col": 3,
+          "pos": 3032
+        },
+        {
+          "name": "SyncSeasonDiffListProps",
+          "line": 88,
+          "col": 3,
+          "pos": 3057
+        },
+        {
+          "name": "SyncEpisodeChangesListProps",
+          "line": 89,
+          "col": 3,
+          "pos": 3084
+        },
+        {
+          "name": "TargetEpisodeComboboxProps",
+          "line": 90,
+          "col": 3,
+          "pos": 3115
+        },
+        {
+          "name": "UseArchiveIngestSourcesOptions",
+          "line": 91,
+          "col": 3,
+          "pos": 3145
+        },
+        {
+          "name": "UseSyncTmdbOptions",
+          "line": 92,
+          "col": 3,
+          "pos": 3179
+        },
+        {
+          "name": "UseSyncTmdbReturn",
+          "line": 93,
+          "col": 3,
+          "pos": 3201
+        },
+        {
+          "name": "UseBulkScrapeSourcesOptions",
+          "line": 95,
+          "col": 3,
+          "pos": 3253
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/sources/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "useSourceHealthProbe",
+          "line": 8,
+          "col": 3,
+          "pos": 398
+        },
+        {
+          "name": "useSourceMutations",
+          "line": 9,
+          "col": 3,
+          "pos": 422
+        },
+        {
+          "name": "useS3Upload",
+          "line": 10,
+          "col": 3,
+          "pos": 444
+        },
+        {
+          "name": "useManageSourcesDialog",
+          "line": 11,
+          "col": 3,
+          "pos": 459
+        },
+        {
+          "name": "useSourceManagementTable",
+          "line": 12,
+          "col": 3,
+          "pos": 485
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ManageSourcesDialogProps",
+          "line": 2,
+          "col": 15,
+          "pos": 86
+        },
+        {
+          "name": "SourceManagementTableProps",
+          "line": 4,
+          "col": 15,
+          "pos": 219
+        },
+        {
+          "name": "VideoPreviewModalProps",
+          "line": 6,
+          "col": 15,
+          "pos": 346
+        },
+        {
+          "name": "UseS3UploadOptions",
+          "line": 15,
+          "col": 3,
+          "pos": 545
+        },
+        {
+          "name": "UseS3UploadReturn",
+          "line": 16,
+          "col": 3,
+          "pos": 567
+        },
+        {
+          "name": "S3UploadStatus",
+          "line": 17,
+          "col": 3,
+          "pos": 588
+        },
+        {
+          "name": "S3UploadPhase",
+          "line": 18,
+          "col": 3,
+          "pos": 606
+        },
+        {
+          "name": "S3UploadProgress",
+          "line": 19,
+          "col": 3,
+          "pos": 623
+        },
+        {
+          "name": "SourceType",
+          "line": 22,
+          "col": 3,
+          "pos": 675
+        },
+        {
+          "name": "SourceHealthStatus",
+          "line": 23,
+          "col": 3,
+          "pos": 689
+        },
+        {
+          "name": "SourceFormValues",
+          "line": 24,
+          "col": 3,
+          "pos": 711
+        },
+        {
+          "name": "SourceMutationValues",
+          "line": 25,
+          "col": 3,
+          "pos": 731
+        },
+        {
+          "name": "SourceTypeBadgeProps",
+          "line": 26,
+          "col": 3,
+          "pos": 755
+        },
+        {
+          "name": "SourceHealthBadgeProps",
+          "line": 27,
+          "col": 3,
+          "pos": 779
+        },
+        {
+          "name": "SourceInlineEditFormProps",
+          "line": 28,
+          "col": 3,
+          "pos": 805
+        },
+        {
+          "name": "SourceAddFormProps",
+          "line": 29,
+          "col": 3,
+          "pos": 834
+        },
+        {
+          "name": "SourceTableRowProps",
+          "line": 30,
+          "col": 3,
+          "pos": 856
+        },
+        {
+          "name": "UseSourceHealthProbeOptions",
+          "line": 31,
+          "col": 3,
+          "pos": 879
+        },
+        {
+          "name": "UseSourceHealthProbeReturn",
+          "line": 32,
+          "col": 3,
+          "pos": 910
+        },
+        {
+          "name": "UseSourceMutationsOptions",
+          "line": 33,
+          "col": 3,
+          "pos": 940
+        },
+        {
+          "name": "UseSourceMutationsReturn",
+          "line": 34,
+          "col": 3,
+          "pos": 969
+        },
+        {
+          "name": "ManageSourcesTab",
+          "line": 35,
+          "col": 3,
+          "pos": 997
+        },
+        {
+          "name": "DirectUrlTabProps",
+          "line": 36,
+          "col": 3,
+          "pos": 1017
+        },
+        {
+          "name": "ScraperPreviewTabProps",
+          "line": 37,
+          "col": 3,
+          "pos": 1038
+        },
+        {
+          "name": "RemoteIngestTabProps",
+          "line": 38,
+          "col": 3,
+          "pos": 1064
+        },
+        {
+          "name": "S3UploadTabProps",
+          "line": 39,
+          "col": 3,
+          "pos": 1088
+        },
+        {
+          "name": "EditExistingSourcesTabProps",
+          "line": 40,
+          "col": 3,
+          "pos": 1108
+        },
+        {
+          "name": "EditSourceRowProps",
+          "line": 41,
+          "col": 3,
+          "pos": 1139
+        },
+        {
+          "name": "RemotePrefillState",
+          "line": 42,
+          "col": 3,
+          "pos": 1161
+        },
+        {
+          "name": "UseManageSourcesDialogOptions",
+          "line": 43,
+          "col": 3,
+          "pos": 1183
+        },
+        {
+          "name": "UseManageSourcesDialogReturn",
+          "line": 44,
+          "col": 3,
+          "pos": 1216
+        },
+        {
+          "name": "UseSourceManagementTableOptions",
+          "line": 45,
+          "col": 3,
+          "pos": 1248
+        },
+        {
+          "name": "UseSourceManagementTableReturn",
+          "line": 46,
+          "col": 3,
+          "pos": 1283
+        },
+        {
+          "name": "CheckVideoSourceResult",
+          "line": 48,
+          "col": 15,
+          "pos": 1347
+        },
+        {
+          "name": "Episode",
+          "line": 48,
+          "col": 39,
+          "pos": 1371
+        },
+        {
+          "name": "VideoSource",
+          "line": 48,
+          "col": 48,
+          "pos": 1380
+        },
+        {
+          "name": "VideoSourceInput",
+          "line": 48,
+          "col": 61,
+          "pos": 1393
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/grid/components/SeriesCard.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "getEpisodeCount",
+          "line": 11,
+          "col": 17,
+          "pos": 514
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/grid/hooks/useSeriesGridSearch.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "SERIES_GRID_SEARCH_DEBOUNCE_MS",
+          "line": 11,
+          "col": 14,
+          "pos": 305
+        },
+        {
+          "name": "buildSeriesGridQueryParams",
+          "line": 19,
+          "col": 17,
+          "pos": 527
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/media/VideoSettingsPopover.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "PLAYBACK_SPEEDS",
+          "line": 12,
+          "col": 14,
+          "pos": 340
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-sonner.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "default",
+          "line": 97,
+          "col": 16,
+          "pos": 3571
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ToasterProps",
+          "line": 96,
+          "col": 24,
+          "pos": 3540
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/dashboard/internal/formatters.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "GB_IN_BYTES",
+          "line": 1,
+          "col": 14,
+          "pos": 13
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ActivityEventKind",
+          "line": 169,
+          "col": 13,
+          "pos": 6121
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/home/internal/api.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "fetchHomeFeed",
+          "line": 21,
+          "col": 23,
+          "pos": 437
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "MediaGenre",
+          "line": 13,
+          "col": 3,
+          "pos": 289
+        },
+        {
+          "name": "MediaHomeFeedRow",
+          "line": 16,
+          "col": 3,
+          "pos": 341
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/watch/internal/SeriesWatchView.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "WatchViewSkeleton",
+          "line": 12,
+          "col": 10,
+          "pos": 287
+        },
+        {
+          "name": "WatchViewErrorState",
+          "line": 12,
+          "col": 29,
+          "pos": 306
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/shutdown/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "SHUTDOWN_TIMEOUT_MS",
+          "line": 3,
+          "col": 3,
+          "pos": 36
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ShutdownManager",
+          "line": 4,
+          "col": 8,
+          "pos": 64
+        },
+        {
+          "name": "ShutdownManagerOptions",
+          "line": 5,
+          "col": 8,
+          "pos": 88
+        },
+        {
+          "name": "ShutdownStep",
+          "line": 6,
+          "col": 8,
+          "pos": 119
+        },
+        {
+          "name": "ShutdownProcess",
+          "line": 7,
+          "col": 8,
+          "pos": 140
+        },
+        {
+          "name": "ShutdownTimers",
+          "line": 8,
+          "col": 8,
+          "pos": 164
+        },
+        {
+          "name": "ShutdownLogger",
+          "line": 9,
+          "col": 8,
+          "pos": 187
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/lib/sse-progress.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "SSE_HEARTBEAT_MS",
+          "line": 26,
+          "col": 14,
+          "pos": 734
+        },
+        {
+          "name": "SSE_HEARTBEAT_COMMENT",
+          "line": 28,
+          "col": 14,
+          "pos": 775
+        },
+        {
+          "name": "shouldSendHeartbeat",
+          "line": 30,
+          "col": 17,
+          "pos": 830
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ProgressThrottle",
+          "line": 34,
+          "col": 13,
+          "pos": 1001
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/lib/errors.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "SeriesHighlightWithoutOngoingError",
+          "line": 14,
+          "col": 10,
+          "pos": 310
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/plugins/rate-limit.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "GLOBAL_RATE_LIMIT_DURATION_MS",
+          "line": 7,
+          "col": 14,
+          "pos": 291
+        },
+        {
+          "name": "GLOBAL_RATE_LIMIT_MAX",
+          "line": 8,
+          "col": 14,
+          "pos": 343
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/catalog/repository.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "DEFAULT_LIST_LIMIT",
+          "line": 44,
+          "col": 10,
+          "pos": 1266
+        },
+        {
+          "name": "MAX_LIST_LIMIT",
+          "line": 44,
+          "col": 30,
+          "pos": 1286
+        },
+        {
+          "name": "compareSeasons",
+          "line": 45,
+          "col": 10,
+          "pos": 1328
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "HomeFeedHero",
+          "line": 29,
+          "col": 3,
+          "pos": 951
+        },
+        {
+          "name": "HomeFeedRow",
+          "line": 31,
+          "col": 3,
+          "pos": 986
+        },
+        {
+          "name": "SeasonWithEpisodes",
+          "line": 33,
+          "col": 3,
+          "pos": 1025
+        },
+        {
+          "name": "SeriesRepository",
+          "line": 36,
+          "col": 3,
+          "pos": 1087
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/media/http.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "AD_BLOCK_NOOP_RESPONSE",
+          "line": 12,
+          "col": 3,
+          "pos": 484
+        },
+        {
+          "name": "embedHashParamsSchema",
+          "line": 14,
+          "col": 3,
+          "pos": 546
+        },
+        {
+          "name": "proxyEmbedQuerySchema",
+          "line": 15,
+          "col": 3,
+          "pos": 571
+        },
+        {
+          "name": "relayQuerySchema",
+          "line": 16,
+          "col": 3,
+          "pos": 596
+        },
+        {
+          "name": "sourceCheckBodySchema",
+          "line": 17,
+          "col": 3,
+          "pos": 616
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/http.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "archiveJobConfirmBodySchema",
+          "line": 9,
+          "col": 3,
+          "pos": 337
+        },
+        {
+          "name": "archiveJobCreateBodySchema",
+          "line": 10,
+          "col": 3,
+          "pos": 368
+        },
+        {
+          "name": "archiveJobParamsSchema",
+          "line": 11,
+          "col": 3,
+          "pos": 398
+        },
+        {
+          "name": "archiveJobPollQuerySchema",
+          "line": 12,
+          "col": 3,
+          "pos": 424
+        },
+        {
+          "name": "archiveJobRetryBodySchema",
+          "line": 13,
+          "col": 3,
+          "pos": 453
+        },
+        {
+          "name": "createSeasonBodySchema",
+          "line": 14,
+          "col": 3,
+          "pos": 482
+        },
+        {
+          "name": "homeFeedQuerySchema",
+          "line": 15,
+          "col": 3,
+          "pos": 508
+        },
+        {
+          "name": "previewBulkSourcesBodySchema",
+          "line": 16,
+          "col": 3,
+          "pos": 531
+        },
+        {
+          "name": "previewScrapeSeriesBodySchema",
+          "line": 17,
+          "col": 3,
+          "pos": 563
+        },
+        {
+          "name": "reorderEpisodesBodySchema",
+          "line": 18,
+          "col": 3,
+          "pos": 596
+        },
+        {
+          "name": "scraperSourceSchema",
+          "line": 19,
+          "col": 3,
+          "pos": 625
+        },
+        {
+          "name": "seriesIdParamsSchema",
+          "line": 20,
+          "col": 3,
+          "pos": 648
+        },
+        {
+          "name": "seriesListQuerySchema",
+          "line": 21,
+          "col": 3,
+          "pos": 672
+        },
+        {
+          "name": "seriesUuidParamsSchema",
+          "line": 22,
+          "col": 3,
+          "pos": 697
+        },
+        {
+          "name": "tmdbImportBodySchema",
+          "line": 23,
+          "col": 3,
+          "pos": 723
+        },
+        {
+          "name": "tmdbPreviewQuerySchema",
+          "line": 24,
+          "col": 3,
+          "pos": 747
+        },
+        {
+          "name": "tmdbSyncBodySchema",
+          "line": 25,
+          "col": 3,
+          "pos": 773
+        },
+        {
+          "name": "tmdbSyncPreviewQuerySchema",
+          "line": 26,
+          "col": 3,
+          "pos": 795
+        },
+        {
+          "name": "updateSeriesBodySchema",
+          "line": 27,
+          "col": 3,
+          "pos": 825
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/plugins/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "REQUEST_ID_HEADER",
+          "line": 6,
+          "col": 3,
+          "pos": 195
+        },
+        {
+          "name": "isUnthrottledRoute",
+          "line": 11,
+          "col": 3,
+          "pos": 306
+        },
+        {
+          "name": "GLOBAL_RATE_LIMIT_DURATION_MS",
+          "line": 12,
+          "col": 3,
+          "pos": 328
+        },
+        {
+          "name": "GLOBAL_RATE_LIMIT_MAX",
+          "line": 13,
+          "col": 3,
+          "pos": 361
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "OpenapiPluginOptions",
+          "line": 2,
+          "col": 30,
+          "pos": 66
+        },
+        {
+          "name": "RequestLoggerPluginOptions",
+          "line": 7,
+          "col": 8,
+          "pos": 221
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/media/internal/scheduler/scheduler-config.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "SCHEDULER_INTERVAL_KEY",
+          "line": 5,
+          "col": 14,
+          "pos": 151
+        },
+        {
+          "name": "SCHEDULER_ENABLED_KEY",
+          "line": 6,
+          "col": 14,
+          "pos": 219
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/media/internal/proxy/sanitize.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "buildProxyShim",
+          "line": 6,
+          "col": 17,
+          "pos": 119
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/storage/internal/services/minio-orchestrator.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "MinioDockerUnavailableError",
+          "line": 9,
+          "col": 10,
+          "pos": 261
+        },
+        {
+          "name": "MinioHealthTimeoutError",
+          "line": 12,
+          "col": 3,
+          "pos": 304
+        },
+        {
+          "name": "MinioCredentialsRejectedError",
+          "line": 13,
+          "col": 3,
+          "pos": 331
+        },
+        {
+          "name": "MINIO_IMAGE",
+          "line": 43,
+          "col": 14,
+          "pos": 1248
+        },
+        {
+          "name": "MINIO_IMAGE_TAG",
+          "line": 44,
+          "col": 14,
+          "pos": 1303
+        },
+        {
+          "name": "MINIO_DATA_VOLUME",
+          "line": 45,
+          "col": 14,
+          "pos": 1344
+        },
+        {
+          "name": "MINIO_API_PORT",
+          "line": 46,
+          "col": 14,
+          "pos": 1391
+        },
+        {
+          "name": "MINIO_CONSOLE_PORT",
+          "line": 47,
+          "col": 14,
+          "pos": 1427
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/episodes/repository.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "DEFAULT_LIST_LIMIT",
+          "line": 23,
+          "col": 14,
+          "pos": 908
+        },
+        {
+          "name": "MAX_LIST_LIMIT",
+          "line": 24,
+          "col": 14,
+          "pos": 946
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/series/repository.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "DEFAULT_LIST_LIMIT",
+          "line": 62,
+          "col": 14,
+          "pos": 1950
+        },
+        {
+          "name": "MAX_LIST_LIMIT",
+          "line": 63,
+          "col": 14,
+          "pos": 1988
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/tmdb/orchestrator.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "getTmdbPreview",
+          "line": 474,
+          "col": 32,
+          "pos": 17400
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "TmdbPreviewResult",
+          "line": 475,
+          "col": 15,
+          "pos": 17432
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/playback/normalization.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [
+        [
+          {
+            "name": "normalizeVideoSourceAsync",
+            "line": 31,
+            "col": 23,
+            "pos": 964
+          },
+          {
+            "name": "normalizeVideoSource",
+            "line": 110,
+            "col": 14,
+            "pos": 3162
+          }
+        ]
+      ],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "normalizeVideoSourceAsync",
+          "line": 31,
+          "col": 23,
+          "pos": 964
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/grid/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "formatGenreTriggerLabel",
+          "line": 19,
+          "col": 3,
+          "pos": 365
+        },
+        {
+          "name": "GENRE_FILTER_NO_HIGHLIGHT",
+          "line": 20,
+          "col": 3,
+          "pos": 392
+        },
+        {
+          "name": "useGenreFilter",
+          "line": 21,
+          "col": 3,
+          "pos": 421
+        },
+        {
+          "name": "getSeriesCardEpisodeCount",
+          "line": 22,
+          "col": 3,
+          "pos": 439
+        },
+        {
+          "name": "useSeriesCard",
+          "line": 23,
+          "col": 3,
+          "pos": 468
+        },
+        {
+          "name": "useSeriesGridSearch",
+          "line": 24,
+          "col": 3,
+          "pos": 485
+        },
+        {
+          "name": "buildSeriesGridQueryParams",
+          "line": 25,
+          "col": 3,
+          "pos": 508
+        },
+        {
+          "name": "useSeriesGridMutations",
+          "line": 26,
+          "col": 3,
+          "pos": 538
+        },
+        {
+          "name": "useSeriesGrid",
+          "line": 27,
+          "col": 3,
+          "pos": 564
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeriesCardProps",
+          "line": 11,
+          "col": 3,
+          "pos": 197
+        },
+        {
+          "name": "FeaturedStarProps",
+          "line": 12,
+          "col": 3,
+          "pos": 216
+        },
+        {
+          "name": "StarToggleButtonProps",
+          "line": 13,
+          "col": 3,
+          "pos": 237
+        },
+        {
+          "name": "SeriesPosterCardProps",
+          "line": 14,
+          "col": 3,
+          "pos": 262
+        },
+        {
+          "name": "GenreFilterProps",
+          "line": 15,
+          "col": 3,
+          "pos": 287
+        },
+        {
+          "name": "RecentEpisodeCardProps",
+          "line": 16,
+          "col": 3,
+          "pos": 307
+        },
+        {
+          "name": "UseGenreFilterOptions",
+          "line": 30,
+          "col": 3,
+          "pos": 613
+        },
+        {
+          "name": "UseGenreFilterReturn",
+          "line": 31,
+          "col": 3,
+          "pos": 638
+        },
+        {
+          "name": "UseSeriesCardOptions",
+          "line": 32,
+          "col": 3,
+          "pos": 662
+        },
+        {
+          "name": "UseSeriesCardReturn",
+          "line": 33,
+          "col": 3,
+          "pos": 686
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/dialogs/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "EditSeriesDialog",
+          "line": 2,
+          "col": 10,
+          "pos": 60
+        },
+        {
+          "name": "EditEpisodeDialog",
+          "line": 4,
+          "col": 10,
+          "pos": 180
+        },
+        {
+          "name": "AddMediaStepInput",
+          "line": 6,
+          "col": 10,
+          "pos": 304
+        },
+        {
+          "name": "ErrorBanner",
+          "line": 6,
+          "col": 29,
+          "pos": 323
+        },
+        {
+          "name": "AddMediaStepPreview",
+          "line": 6,
+          "col": 42,
+          "pos": 336
+        },
+        {
+          "name": "useAddMediaDialog",
+          "line": 8,
+          "col": 10,
+          "pos": 474
+        },
+        {
+          "name": "useEditSeriesForm",
+          "line": 8,
+          "col": 29,
+          "pos": 493
+        },
+        {
+          "name": "useEditEpisodeForm",
+          "line": 8,
+          "col": 48,
+          "pos": 512
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "EditSeriesDialogProps",
+          "line": 3,
+          "col": 15,
+          "pos": 120
+        },
+        {
+          "name": "EditEpisodeDialogProps",
+          "line": 5,
+          "col": 15,
+          "pos": 242
+        },
+        {
+          "name": "AddMediaStepInputProps",
+          "line": 7,
+          "col": 15,
+          "pos": 393
+        },
+        {
+          "name": "AddMediaStepPreviewProps",
+          "line": 7,
+          "col": 39,
+          "pos": 417
+        },
+        {
+          "name": "UseAddMediaDialogReturn",
+          "line": 9,
+          "col": 15,
+          "pos": 603
+        },
+        {
+          "name": "UseEditSeriesFormOptions",
+          "line": 9,
+          "col": 40,
+          "pos": 628
+        },
+        {
+          "name": "AddMediaStoreState",
+          "line": 10,
+          "col": 15,
+          "pos": 685
+        },
+        {
+          "name": "ScrapeWorkerState",
+          "line": 10,
+          "col": 35,
+          "pos": 705
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/detail/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "SeriesDetailHero",
+          "line": 3,
+          "col": 3,
+          "pos": 66
+        },
+        {
+          "name": "SeriesDetailSeasonBar",
+          "line": 4,
+          "col": 3,
+          "pos": 86
+        },
+        {
+          "name": "SeriesDetailDialogs",
+          "line": 6,
+          "col": 3,
+          "pos": 133
+        },
+        {
+          "name": "useSeriesDetail",
+          "line": 9,
+          "col": 3,
+          "pos": 188
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/seasons/hooks/useEpisodeDetailDrawer.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "getEpisodeDrawerInitialState",
+          "line": 10,
+          "col": 17,
+          "pos": 279
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/seasons/hooks/useEpisodeTable.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "parseEpisodeDurationToSeconds",
+          "line": 9,
+          "col": 17,
+          "pos": 204
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/scrape/hooks/useBulkScrapeSources.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "checkEpisodeHasSources",
+          "line": 25,
+          "col": 17,
+          "pos": 671
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/bulk/hooks/useArchiveIngestSources.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "ARCHIVE_POLL_STATUSES",
+          "line": 44,
+          "col": 14,
+          "pos": 1266
+        },
+        {
+          "name": "isPasswordErrorCode",
+          "line": 82,
+          "col": 17,
+          "pos": 2569
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ArchiveDownloadProgress",
+          "line": 29,
+          "col": 3,
+          "pos": 708
+        },
+        {
+          "name": "ArchiveExtractProgress",
+          "line": 30,
+          "col": 3,
+          "pos": 735
+        },
+        {
+          "name": "ArchiveJobPhase",
+          "line": 31,
+          "col": 3,
+          "pos": 761
+        },
+        {
+          "name": "ArchivePreviewPhase",
+          "line": 32,
+          "col": 3,
+          "pos": 780
+        },
+        {
+          "name": "ArchiveUploadView",
+          "line": 34,
+          "col": 3,
+          "pos": 824
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/scrape/hooks/useTargetEpisodeOptions.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "formatTargetEpisodeLabel",
+          "line": 17,
+          "col": 17,
+          "pos": 449
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "TargetEpisodeOption",
+          "line": 4,
+          "col": 18,
+          "pos": 123
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/sources/hooks/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "useSourceHealthProbe",
+          "line": 1,
+          "col": 10,
+          "pos": 9
+        },
+        {
+          "name": "useSourceMutations",
+          "line": 2,
+          "col": 10,
+          "pos": 72
+        },
+        {
+          "name": "useS3Upload",
+          "line": 3,
+          "col": 10,
+          "pos": 131
+        },
+        {
+          "name": "useManageSourcesDialog",
+          "line": 4,
+          "col": 10,
+          "pos": 176
+        },
+        {
+          "name": "useSourceManagementTable",
+          "line": 5,
+          "col": 10,
+          "pos": 243
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "UseS3UploadOptions",
+          "line": 7,
+          "col": 3,
+          "pos": 321
+        },
+        {
+          "name": "UseS3UploadReturn",
+          "line": 8,
+          "col": 3,
+          "pos": 343
+        },
+        {
+          "name": "S3UploadStatus",
+          "line": 9,
+          "col": 3,
+          "pos": 364
+        },
+        {
+          "name": "S3UploadPhase",
+          "line": 10,
+          "col": 3,
+          "pos": 382
+        },
+        {
+          "name": "S3UploadProgress",
+          "line": 11,
+          "col": 3,
+          "pos": 399
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/dialogs/components/AddMediaStepInput.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "ErrorBanner",
+          "line": 11,
+          "col": 10,
+          "pos": 347
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/popover.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "PopoverAnchor",
+          "line": 33,
+          "col": 51,
+          "pos": 1599
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/home/internal/mappers.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "EPISODE_THUMBNAIL_PLACEHOLDER",
+          "line": 8,
+          "col": 14,
+          "pos": 160
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/authentication/schemas.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "registerBodySchema",
+          "line": 22,
+          "col": 14,
+          "pos": 583
+        },
+        {
+          "name": "loginBodySchema",
+          "line": 28,
+          "col": 14,
+          "pos": 698
+        },
+        {
+          "name": "logoutBodySchema",
+          "line": 33,
+          "col": 14,
+          "pos": 790
+        },
+        {
+          "name": "refreshBodySchema",
+          "line": 39,
+          "col": 14,
+          "pos": 899
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/lib/auth.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "createAuthPlugin",
+          "line": 19,
+          "col": 14,
+          "pos": 654
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/dashboard/schemas.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "updateSchedulerConfigBody",
+          "line": 33,
+          "col": 14,
+          "pos": 974
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/episodes/schemas.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "scraperSourceSchema",
+          "line": 15,
+          "col": 14,
+          "pos": 431
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/seasons/schemas.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "seasonTagsDetail",
+          "line": 38,
+          "col": 14,
+          "pos": 981
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/schemas.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "scraperSourceSchema",
+          "line": 29,
+          "col": 14,
+          "pos": 787
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/archive-ingest/services/upload-pipeline.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "resolveUploadStorage",
+          "line": 48,
+          "col": 23,
+          "pos": 1980
+        },
+        {
+          "name": "finalizeUploadJob",
+          "line": 78,
+          "col": 23,
+          "pos": 3004
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/storage/internal/services/minio-status.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "resolveMinioConsoleUrl",
+          "line": 67,
+          "col": 17,
+          "pos": 2027
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/grid/hooks/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "formatGenreTriggerLabel",
+          "line": 1,
+          "col": 10,
+          "pos": 9
+        },
+        {
+          "name": "GENRE_FILTER_NO_HIGHLIGHT",
+          "line": 1,
+          "col": 35,
+          "pos": 34
+        },
+        {
+          "name": "useGenreFilter",
+          "line": 1,
+          "col": 62,
+          "pos": 61
+        },
+        {
+          "name": "getSeriesCardEpisodeCount",
+          "line": 3,
+          "col": 10,
+          "pos": 197
+        },
+        {
+          "name": "useSeriesCard",
+          "line": 3,
+          "col": 37,
+          "pos": 224
+        },
+        {
+          "name": "useSeriesGridSearch",
+          "line": 5,
+          "col": 10,
+          "pos": 355
+        },
+        {
+          "name": "buildSeriesGridQueryParams",
+          "line": 5,
+          "col": 31,
+          "pos": 376
+        },
+        {
+          "name": "useSeriesGridMutations",
+          "line": 6,
+          "col": 10,
+          "pos": 444
+        },
+        {
+          "name": "useSeriesGrid",
+          "line": 7,
+          "col": 10,
+          "pos": 511
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "UseGenreFilterOptions",
+          "line": 2,
+          "col": 15,
+          "pos": 117
+        },
+        {
+          "name": "UseGenreFilterReturn",
+          "line": 2,
+          "col": 38,
+          "pos": 140
+        },
+        {
+          "name": "UseSeriesCardOptions",
+          "line": 4,
+          "col": 15,
+          "pos": 278
+        },
+        {
+          "name": "UseSeriesCardReturn",
+          "line": 4,
+          "col": 37,
+          "pos": 300
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/dialogs/components/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "AddMediaStepInput",
+          "line": 1,
+          "col": 10,
+          "pos": 9
+        },
+        {
+          "name": "ErrorBanner",
+          "line": 1,
+          "col": 29,
+          "pos": 28
+        },
+        {
+          "name": "AddMediaStepPreview",
+          "line": 3,
+          "col": 10,
+          "pos": 146
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "AddMediaStepInputProps",
+          "line": 2,
+          "col": 15,
+          "pos": 84
+        },
+        {
+          "name": "AddMediaStepPreviewProps",
+          "line": 4,
+          "col": 15,
+          "pos": 212
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/dialogs/hooks/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "useAddMediaDialog",
+          "line": 1,
+          "col": 10,
+          "pos": 9
+        },
+        {
+          "name": "useEditSeriesForm",
+          "line": 3,
+          "col": 10,
+          "pos": 134
+        },
+        {
+          "name": "useEditEpisodeForm",
+          "line": 5,
+          "col": 10,
+          "pos": 260
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "UseAddMediaDialogReturn",
+          "line": 2,
+          "col": 15,
+          "pos": 71
+        },
+        {
+          "name": "UseEditSeriesFormOptions",
+          "line": 4,
+          "col": 15,
+          "pos": 196
+        },
+        {
+          "name": "AddMediaStoreState",
+          "line": 7,
+          "col": 15,
+          "pos": 401
+        },
+        {
+          "name": "ScrapeWorkerState",
+          "line": 7,
+          "col": 35,
+          "pos": 421
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/detail/components/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "SeriesDetailHero",
+          "line": 1,
+          "col": 10,
+          "pos": 9
+        },
+        {
+          "name": "SeriesDetailSeasonBar",
+          "line": 2,
+          "col": 10,
+          "pos": 64
+        },
+        {
+          "name": "SeriesDetailDialogs",
+          "line": 4,
+          "col": 10,
+          "pos": 188
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/detail/hooks/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "useSeriesDetail",
+          "line": 1,
+          "col": 10,
+          "pos": 9
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/sources/components/tabs/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "EditSourceRow",
+          "line": 9,
+          "col": 34,
+          "pos": 477
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "DirectUrlTabProps",
+          "line": 2,
+          "col": 15,
+          "pos": 61
+        },
+        {
+          "name": "ScraperPreviewTabProps",
+          "line": 4,
+          "col": 15,
+          "pos": 175
+        },
+        {
+          "name": "S3UploadTabProps",
+          "line": 6,
+          "col": 15,
+          "pos": 287
+        },
+        {
+          "name": "RemoteIngestTabProps",
+          "line": 8,
+          "col": 15,
+          "pos": 395
+        },
+        {
+          "name": "EditExistingSourcesTabProps",
+          "line": 10,
+          "col": 15,
+          "pos": 540
+        },
+        {
+          "name": "EditSourceRowProps",
+          "line": 10,
+          "col": 44,
+          "pos": 569
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/sources/components/tabs/EditExistingSourcesTab.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "EditSourceRow",
+          "line": 21,
+          "col": 17,
+          "pos": 622
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "EditSourceRowProps",
+          "line": 19,
+          "col": 15,
+          "pos": 564
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/tmdb/utils/tmdb-client.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "fetchFromTmdb",
+          "line": 36,
+          "col": 23,
+          "pos": 936
+        },
+        {
+          "name": "selectBestTmdbLogo",
+          "line": 62,
+          "col": 17,
+          "pos": 1727
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/tmdb/utils/episode-matcher.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [
+        {
+          "name": "stripSeasonDescriptors",
+          "line": 3,
+          "col": 17,
+          "pos": 73
+        },
+        {
+          "name": "parseBulkScrapedEpisodeNumber",
+          "line": 17,
+          "col": 17,
+          "pos": 619
+        }
+      ],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-action-menu.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyActionMenuItem",
+          "line": 6,
+          "col": 18,
+          "pos": 190
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-checkbox.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyCheckboxProps",
+          "line": 5,
+          "col": 18,
+          "pos": 129
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-confirm-dialog.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyConfirmVariant",
+          "line": 13,
+          "col": 13,
+          "pos": 342
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-textarea.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyTextareaProps",
+          "line": 4,
+          "col": 13,
+          "pos": 79
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-input.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyInputProps",
+          "line": 4,
+          "col": 13,
+          "pos": 79
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-skeleton.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkySkeletonProps",
+          "line": 4,
+          "col": 13,
+          "pos": 79
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-card.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyCardListProps",
+          "line": 4,
+          "col": 13,
+          "pos": 79
+        },
+        {
+          "name": "ChunkyCardProps",
+          "line": 15,
+          "col": 18,
+          "pos": 336
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-spinner.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkySpinnerSize",
+          "line": 11,
+          "col": 13,
+          "pos": 197
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-tooltip.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyTooltipProps",
+          "line": 37,
+          "col": 18,
+          "pos": 1612
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/error-state.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ErrorStateTone",
+          "line": 6,
+          "col": 13,
+          "pos": 196
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/label.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "LabelProps",
+          "line": 9,
+          "col": 18,
+          "pos": 277
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/hooks/useInputMode.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "InputModeState",
+          "line": 4,
+          "col": 15,
+          "pos": 131
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-copy-button.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyCopyButtonProps",
+          "line": 6,
+          "col": 18,
+          "pos": 192
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/components/ui/chunky-table.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ChunkyTableProps",
+          "line": 4,
+          "col": 13,
+          "pos": 79
+        },
+        {
+          "name": "ChunkyTableToolbarProps",
+          "line": 12,
+          "col": 13,
+          "pos": 296
+        },
+        {
+          "name": "ChunkyTableHeaderProps",
+          "line": 27,
+          "col": 13,
+          "pos": 652
+        },
+        {
+          "name": "ChunkyTableHeaderCellProps",
+          "line": 44,
+          "col": 18,
+          "pos": 1111
+        },
+        {
+          "name": "ChunkyTableBodyProps",
+          "line": 102,
+          "col": 13,
+          "pos": 2723
+        },
+        {
+          "name": "ChunkyTableRowProps",
+          "line": 110,
+          "col": 18,
+          "pos": 2967
+        },
+        {
+          "name": "ChunkyTableCellProps",
+          "line": 147,
+          "col": 13,
+          "pos": 4148
+        },
+        {
+          "name": "ChunkyTableIndexBadgeProps",
+          "line": 153,
+          "col": 18,
+          "pos": 4370
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeasonDetails",
+          "line": 11,
+          "col": 3,
+          "pos": 170
+        },
+        {
+          "name": "SeriesDetails",
+          "line": 12,
+          "col": 3,
+          "pos": 187
+        },
+        {
+          "name": "SeriesItem",
+          "line": 13,
+          "col": 3,
+          "pos": 204
+        },
+        {
+          "name": "TmdbPreviewResult",
+          "line": 14,
+          "col": 3,
+          "pos": 218
+        },
+        {
+          "name": "UpdateEpisodeData",
+          "line": 15,
+          "col": 3,
+          "pos": 239
+        },
+        {
+          "name": "SeriesDetailModalsState",
+          "line": 57,
+          "col": 18,
+          "pos": 1309
+        },
+        {
+          "name": "UseEditEpisodeFormOptions",
+          "line": 433,
+          "col": 18,
+          "pos": 12348
+        },
+        {
+          "name": "UseEpisodeBatchOperationsOptions",
+          "line": 440,
+          "col": 18,
+          "pos": 12534
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/watch/internal/api.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "WatchEpisode",
+          "line": 11,
+          "col": 15,
+          "pos": 287
+        },
+        {
+          "name": "WatchSeason",
+          "line": 11,
+          "col": 29,
+          "pos": 301
+        },
+        {
+          "name": "WatchVideoSource",
+          "line": 11,
+          "col": 62,
+          "pos": 334
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/dashboard/internal/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "AdminDashboardCatalogStats",
+          "line": 16,
+          "col": 3,
+          "pos": 426
+        },
+        {
+          "name": "AdminDashboardDto",
+          "line": 17,
+          "col": 3,
+          "pos": 456
+        },
+        {
+          "name": "AdminDashboardOngoingSeason",
+          "line": 18,
+          "col": 3,
+          "pos": 477
+        },
+        {
+          "name": "AdminDashboardRecentSeries",
+          "line": 19,
+          "col": 3,
+          "pos": 508
+        },
+        {
+          "name": "AdminDashboardSchedulerTelemetry",
+          "line": 20,
+          "col": 3,
+          "pos": 538
+        },
+        {
+          "name": "AdminDashboardStorageStats",
+          "line": 21,
+          "col": 3,
+          "pos": 574
+        },
+        {
+          "name": "ScrapeOngoingSeasonResult",
+          "line": 22,
+          "col": 3,
+          "pos": 604
+        },
+        {
+          "name": "SchedulerConfigResult",
+          "line": 23,
+          "col": 3,
+          "pos": 633
+        },
+        {
+          "name": "SchedulerRunResult",
+          "line": 24,
+          "col": 3,
+          "pos": 658
+        },
+        {
+          "name": "ActivityEvent",
+          "line": 27,
+          "col": 15,
+          "pos": 696
+        },
+        {
+          "name": "ActivityEventKind",
+          "line": 27,
+          "col": 30,
+          "pos": 711
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/genres/internal/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "CreateGenrePayload",
+          "line": 18,
+          "col": 18,
+          "pos": 488
+        },
+        {
+          "name": "UpdateGenrePayload",
+          "line": 25,
+          "col": 18,
+          "pos": 610
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/watch/internal/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "MediaEpisodeWithSources",
+          "line": 14,
+          "col": 3,
+          "pos": 359
+        },
+        {
+          "name": "MediaSeasonWithEpisodes",
+          "line": 15,
+          "col": 3,
+          "pos": 386
+        },
+        {
+          "name": "MediaSeriesDetails",
+          "line": 16,
+          "col": 3,
+          "pos": 413
+        },
+        {
+          "name": "MediaVideoSource",
+          "line": 17,
+          "col": 3,
+          "pos": 435
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/watch/internal/components/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "WatchOverviewModeProps",
+          "line": 3,
+          "col": 15,
+          "pos": 124
+        },
+        {
+          "name": "WatchPlayerModeProps",
+          "line": 3,
+          "col": 39,
+          "pos": 148
+        },
+        {
+          "name": "WatchPlayerFrameProps",
+          "line": 11,
+          "col": 3,
+          "pos": 586
+        },
+        {
+          "name": "WatchToolbarProps",
+          "line": 12,
+          "col": 3,
+          "pos": 611
+        },
+        {
+          "name": "ActiveEpisodeCardProps",
+          "line": 13,
+          "col": 3,
+          "pos": 632
+        },
+        {
+          "name": "AdblockWarningDialogProps",
+          "line": 14,
+          "col": 3,
+          "pos": 658
+        },
+        {
+          "name": "SeriesHeroBannerProps",
+          "line": 16,
+          "col": 15,
+          "pos": 718
+        },
+        {
+          "name": "WatchTopNavMode",
+          "line": 18,
+          "col": 15,
+          "pos": 818
+        },
+        {
+          "name": "WatchTopNavProps",
+          "line": 18,
+          "col": 32,
+          "pos": 835
+        },
+        {
+          "name": "EpisodeExplorerProps",
+          "line": 20,
+          "col": 15,
+          "pos": 938
+        },
+        {
+          "name": "EpisodeCardProps",
+          "line": 22,
+          "col": 15,
+          "pos": 1037
+        },
+        {
+          "name": "EpisodeRowProps",
+          "line": 24,
+          "col": 15,
+          "pos": 1130
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/watch/internal/hooks/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "AdblockDetectorResult",
+          "line": 7,
+          "col": 3,
+          "pos": 318
+        },
+        {
+          "name": "UseWatchNavOptions",
+          "line": 8,
+          "col": 3,
+          "pos": 343
+        },
+        {
+          "name": "UseWatchNavReturn",
+          "line": 9,
+          "col": 3,
+          "pos": 365
+        },
+        {
+          "name": "UseWatchStateOptions",
+          "line": 10,
+          "col": 3,
+          "pos": 386
+        },
+        {
+          "name": "UseWatchStateReturn",
+          "line": 11,
+          "col": 3,
+          "pos": 410
+        },
+        {
+          "name": "UseWatchSpatialFocusOptions",
+          "line": 12,
+          "col": 3,
+          "pos": 433
+        },
+        {
+          "name": "UseWatchSpatialFocusReturn",
+          "line": 13,
+          "col": 3,
+          "pos": 464
+        },
+        {
+          "name": "UseSeriesWatchViewOptions",
+          "line": 14,
+          "col": 3,
+          "pos": 494
+        },
+        {
+          "name": "UseSeriesWatchViewReturn",
+          "line": 15,
+          "col": 3,
+          "pos": 523
+        },
+        {
+          "name": "WatchZone",
+          "line": 16,
+          "col": 3,
+          "pos": 551
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/shutdown/shutdown-manager.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ShutdownStep",
+          "line": 5,
+          "col": 18,
+          "pos": 168
+        },
+        {
+          "name": "ShutdownLogger",
+          "line": 22,
+          "col": 18,
+          "pos": 654
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/app-types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SchedulerDeps",
+          "line": 15,
+          "col": 13,
+          "pos": 586
+        },
+        {
+          "name": "StorageUsageProvider",
+          "line": 28,
+          "col": 13,
+          "pos": 816
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/media/internal/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SchedulerLogger",
+          "line": 4,
+          "col": 18,
+          "pos": 143
+        },
+        {
+          "name": "SourceCheckType",
+          "line": 65,
+          "col": 13,
+          "pos": 1754
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeriesListParams",
+          "line": 20,
+          "col": 3,
+          "pos": 453
+        },
+        {
+          "name": "SeriesListResult",
+          "line": 21,
+          "col": 3,
+          "pos": 473
+        },
+        {
+          "name": "SeriesRepository",
+          "line": 22,
+          "col": 3,
+          "pos": 493
+        },
+        {
+          "name": "SeriesRepositoryOptions",
+          "line": 23,
+          "col": 3,
+          "pos": 513
+        },
+        {
+          "name": "SeriesUpsertInput",
+          "line": 24,
+          "col": 3,
+          "pos": 540
+        },
+        {
+          "name": "SeriesWithEpisodes",
+          "line": 25,
+          "col": 3,
+          "pos": 561
+        },
+        {
+          "name": "SeriesWithMetadata",
+          "line": 26,
+          "col": 3,
+          "pos": 583
+        },
+        {
+          "name": "SeriesWithSeasons",
+          "line": 27,
+          "col": 3,
+          "pos": 605
+        },
+        {
+          "name": "HomeFeedHero",
+          "line": 28,
+          "col": 3,
+          "pos": 626
+        },
+        {
+          "name": "HomeFeedPayload",
+          "line": 29,
+          "col": 3,
+          "pos": 642
+        },
+        {
+          "name": "HomeFeedRow",
+          "line": 30,
+          "col": 3,
+          "pos": 661
+        },
+        {
+          "name": "RecentlyAddedEpisode",
+          "line": 31,
+          "col": 3,
+          "pos": 676
+        },
+        {
+          "name": "SeasonWithEpisodes",
+          "line": 32,
+          "col": 3,
+          "pos": 700
+        },
+        {
+          "name": "UpdateSeriesInput",
+          "line": 33,
+          "col": 3,
+          "pos": 722
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/bulk/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "BulkServiceInternal",
+          "line": 10,
+          "col": 8,
+          "pos": 293
+        },
+        {
+          "name": "BulkServiceOptions",
+          "line": 11,
+          "col": 8,
+          "pos": 321
+        },
+        {
+          "name": "PreviewScrapeSeriesFn",
+          "line": 20,
+          "col": 8,
+          "pos": 596
+        },
+        {
+          "name": "BulkVideoSource",
+          "line": 21,
+          "col": 23,
+          "pos": 641
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/media/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "MediaServiceInternal",
+          "line": 7,
+          "col": 8,
+          "pos": 121
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/ongoing/service.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "TmdbOrchestrator",
+          "line": 43,
+          "col": 18,
+          "pos": 1224
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/storage/internal/hooks/useStorageQueries.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "StorageQueries",
+          "line": 117,
+          "col": 13,
+          "pos": 3268
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/storage/internal/hooks/useStorageModals.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "StorageModals",
+          "line": 135,
+          "col": 13,
+          "pos": 4444
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/api/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "namespace": "apiModule",
+          "name": "PreviewScrapeEpisodeData",
+          "line": 74,
+          "col": 13,
+          "pos": 2284
+        },
+        {
+          "namespace": "apiModule",
+          "name": "PreviewScrapeSeriesData",
+          "line": 75,
+          "col": 13,
+          "pos": 2354
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/api/ingest.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "namespace": "apiModule",
+          "name": "ScrapedBulkEpisodeItem",
+          "line": 217,
+          "col": 18,
+          "pos": 5632
+        },
+        {
+          "namespace": "apiModule",
+          "name": "BulkPreviewLocalEpisodeItem",
+          "line": 226,
+          "col": 18,
+          "pos": 5869
+        },
+        {
+          "namespace": "apiModule",
+          "name": "SaveBulkSourcesMappingItem",
+          "line": 263,
+          "col": 18,
+          "pos": 6874
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/seasons/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeasonDetails",
+          "line": 10,
+          "col": 3,
+          "pos": 147
+        },
+        {
+          "name": "SeriesDetails",
+          "line": 11,
+          "col": 3,
+          "pos": 164
+        },
+        {
+          "name": "UpdateEpisodeData",
+          "line": 12,
+          "col": 3,
+          "pos": 181
+        },
+        {
+          "name": "SortField",
+          "line": 30,
+          "col": 13,
+          "pos": 691
+        },
+        {
+          "name": "SortDirection",
+          "line": 31,
+          "col": 13,
+          "pos": 738
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/scrape/BulkScrapeModal.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeasonGroupOption",
+          "line": 14,
+          "col": 37,
+          "pos": 388
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/bulk/hooks/useBulkIngestModal.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "UseBulkIngestModalReturn",
+          "line": 92,
+          "col": 13,
+          "pos": 2555
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/bulk/components/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ArchiveStep1Props",
+          "line": 2,
+          "col": 15,
+          "pos": 69
+        },
+        {
+          "name": "ArchiveStep2Props",
+          "line": 4,
+          "col": 15,
+          "pos": 189
+        },
+        {
+          "name": "ArchiveStep3Props",
+          "line": 6,
+          "col": 15,
+          "pos": 309
+        },
+        {
+          "name": "UrlStep1Props",
+          "line": 8,
+          "col": 15,
+          "pos": 417
+        },
+        {
+          "name": "UrlStep2Props",
+          "line": 10,
+          "col": 15,
+          "pos": 513
+        },
+        {
+          "name": "UrlStep3Props",
+          "line": 12,
+          "col": 15,
+          "pos": 609
+        },
+        {
+          "name": "BulkIngestTabsProps",
+          "line": 14,
+          "col": 15,
+          "pos": 713
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/scrape/hooks/useBulkScrapeModal.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "UseBulkScrapeModalReturn",
+          "line": 88,
+          "col": 13,
+          "pos": 2409
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/ingestion/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "StorageProviderOption",
+          "line": 247,
+          "col": 18,
+          "pos": 6184
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/sources/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "CheckVideoSourceResult",
+          "line": 10,
+          "col": 15,
+          "pos": 220
+        },
+        {
+          "name": "Episode",
+          "line": 10,
+          "col": 39,
+          "pos": 244
+        },
+        {
+          "name": "VideoSource",
+          "line": 10,
+          "col": 48,
+          "pos": 253
+        },
+        {
+          "name": "VideoSourceInput",
+          "line": 10,
+          "col": 61,
+          "pos": 266
+        },
+        {
+          "name": "StorageProviderItem",
+          "line": 11,
+          "col": 15,
+          "pos": 300
+        },
+        {
+          "name": "SourceHealthStatus",
+          "line": 15,
+          "col": 13,
+          "pos": 383
+        },
+        {
+          "name": "SourceFormValues",
+          "line": 17,
+          "col": 18,
+          "pos": 468
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/dialogs/hooks/useAddMediaStore.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [
+        [
+          {
+            "name": "useAddMediaStore",
+            "line": 18,
+            "col": 14,
+            "pos": 424
+          },
+          {
+            "name": "useScrapeWorkerStore",
+            "line": 70,
+            "col": 14,
+            "pos": 2001
+          }
+        ]
+      ],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ScrapeWorkerState",
+          "line": 5,
+          "col": 35,
+          "pos": 198
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/catalog/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeriesRepository",
+          "line": 124,
+          "col": 18,
+          "pos": 2790
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/bulk/service.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "VideoSource",
+          "line": 9,
+          "col": 13,
+          "pos": 367
+        },
+        {
+          "name": "BulkPreviewScrapeSeriesResult",
+          "line": 67,
+          "col": 18,
+          "pos": 1615
+        },
+        {
+          "name": "BulkServiceInternal",
+          "line": 190,
+          "col": 13,
+          "pos": 5683
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/internal/media/service.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "MediaServiceInternal",
+          "line": 551,
+          "col": 13,
+          "pos": 15926
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/grid/components/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeriesCardProps",
+          "line": 2,
+          "col": 15,
+          "pos": 57
+        },
+        {
+          "name": "FeaturedStarProps",
+          "line": 4,
+          "col": 15,
+          "pos": 157
+        },
+        {
+          "name": "StarToggleButtonProps",
+          "line": 6,
+          "col": 15,
+          "pos": 269
+        },
+        {
+          "name": "SeriesPosterCardProps",
+          "line": 8,
+          "col": 15,
+          "pos": 389
+        },
+        {
+          "name": "GenreFilterProps",
+          "line": 10,
+          "col": 15,
+          "pos": 499
+        },
+        {
+          "name": "RecentEpisodeCardProps",
+          "line": 12,
+          "col": 15,
+          "pos": 611
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/sources/hooks/useS3Upload.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "S3UploadStatus",
+          "line": 19,
+          "col": 3,
+          "pos": 414
+        },
+        {
+          "name": "S3UploadPhase",
+          "line": 20,
+          "col": 3,
+          "pos": 432
+        },
+        {
+          "name": "S3UploadProgress",
+          "line": 21,
+          "col": 3,
+          "pos": 449
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/home/internal/hooks/useDragScroll.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "DragScrollHandlers",
+          "line": 6,
+          "col": 18,
+          "pos": 199
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/detail/hooks/useSeriesDetail.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeriesDetailEpisode",
+          "line": 14,
+          "col": 15,
+          "pos": 385
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/detail/components/SeriesDetailDialogs.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "ManageSourcesInitialTab",
+          "line": 2,
+          "col": 15,
+          "pos": 75
+        },
+        {
+          "name": "UpdateEpisodeMutation",
+          "line": 2,
+          "col": 66,
+          "pos": 126
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/catalog/detail/components/SeriesDetailDialog.tsx",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "SeriesDetailDialogSeries",
+          "line": 10,
+          "col": 40,
+          "pos": 317
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/tmdb/repository.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "TmdbRepositoryClient",
+          "line": 404,
+          "col": 13,
+          "pos": 13827
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/tmdb/types.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [
+        {
+          "name": "TmdbSeasonEpisodeItem",
+          "line": 21,
+          "col": 18,
+          "pos": 446
+        },
+        {
+          "name": "TmdbSeasonResponse",
+          "line": 34,
+          "col": 18,
+          "pos": 752
+        },
+        {
+          "name": "TmdbSeriesSeasonMeta",
+          "line": 44,
+          "col": 18,
+          "pos": 967
+        },
+        {
+          "name": "TmdbEpisodeDetails",
+          "line": 71,
+          "col": 18,
+          "pos": 1637
+        },
+        {
+          "name": "TmdbPreviewSeason",
+          "line": 194,
+          "col": 18,
+          "pos": 4516
+        }
+      ],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "packages/media-service/src/index.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [
+        [
+          {
+            "name": "createMediaService",
+            "line": 62,
+            "col": 17,
+            "pos": 7221
+          },
+          {
+            "name": "createSaveEpisodeService",
+            "line": 93,
+            "col": 14,
+            "pos": 9686
+          }
+        ]
+      ],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/genres/internal/repository.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [
+        [
+          {
+            "name": "genreRepository",
+            "line": 21,
+            "col": 17,
+            "pos": 541
+          },
+          {
+            "name": "createGenreRepositoryInternal",
+            "line": 130,
+            "col": 14,
+            "pos": 3208
+          }
+        ]
+      ],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/backend/src/modules/series/internal/archive-ingest/services/job.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [
+        [
+          {
+            "name": "createArchiveIngestJobManager",
+            "line": 78,
+            "col": 17,
+            "pos": 2330
+          },
+          {
+            "name": "createArchiveIngestJobService",
+            "line": 854,
+            "col": 14,
+            "pos": 24917
+          }
+        ]
+      ],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    },
+    {
+      "file": "apps/web/src/modules/videos/internal/api/sources.ts",
+      "binaries": [],
+      "catalog": [],
+      "catalogReferences": [],
+      "dependencies": [],
+      "devDependencies": [],
+      "duplicates": [
+        [
+          {
+            "name": "addVideoSource",
+            "line": 9,
+            "col": 23,
+            "pos": 228
+          },
+          {
+            "name": "addVideoSources",
+            "line": 28,
+            "col": 14,
+            "pos": 791
+          }
+        ]
+      ],
+      "enumMembers": [],
+      "exports": [],
+      "files": [],
+      "namespaceMembers": [],
+      "optionalPeerDependencies": [],
+      "subpaths": [],
+      "types": [],
+      "unlisted": [],
+      "unresolved": []
+    }
+  ]
+}
