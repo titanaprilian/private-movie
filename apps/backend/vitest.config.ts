@@ -16,10 +16,19 @@ export default mergeConfig(
       fileParallelism: false,
       env: {
         NODE_ENV: "test",
-        DATABASE_URL: "postgres://postgres:root_password@localhost:5432/private_movie_test",
+        DATABASE_URL:
+          "postgres://postgres:root_password@localhost:5432/private_movie_test",
         JWT_SECRET: "test-only-secret-do-not-use-in-production",
       },
       setupFiles: ["./test/setup.ts"],
+      coverage: {
+        thresholds: {
+          lines: 52,
+          statements: 52,
+          functions: 51,
+          branches: 75,
+        },
+      },
     },
   }),
 );
