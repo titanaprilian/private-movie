@@ -49,6 +49,17 @@ jobs:
       - name: Run Quality Gate Check (L3)
         run: bun run gate:check
 
+      - name: Run Trivy vulnerability scanner (dependency audit)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "library"
+          severity: "CRITICAL"
+
       - name: Run coverage
         run: bun x turbo run test:coverage --continue --filter=!@repo/android-tv --env-mode=loose
 
