@@ -32,11 +32,18 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
+    "verify": "turbo run typecheck lint --filter=!@repo/android-tv --continue",
+    "verify:android": "turbo run typecheck lint --filter=@repo/android-tv",
+    "lint:staged": "lint-staged",
+    "scope:check": "bash scripts/check-commit-scope.sh",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "prettier": "^3.6.2",
     "turbo": "^2.5",
     "vitest": "^3.1.0"

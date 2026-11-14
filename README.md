@@ -135,6 +135,7 @@ cp .env.example .env
 ```
 
 Key environment variables:
+
 - `DATABASE_URL`: PostgreSQL connection string
 - `JWT_SECRET`: Secret key for authentication tokens
 - `PORT`: Backend server port (default: `3000`)
@@ -216,8 +217,12 @@ Refer to [`AGENTS.md`](./AGENTS.md) for full testing conventions, silent mode fl
 ## Build & Code Quality
 
 ```bash
-bun run build        # Build all applications and packages
-bun run typecheck    # Typecheck all TypeScript code
-bun run lint         # Lint all workspaces
-bun run clean        # Clean build outputs
+bun run build           # Build all applications and packages
+bun run typecheck       # Typecheck all TypeScript code
+bun run lint            # Lint all workspaces
+bun run verify          # Typecheck + lint every workspace except Android TV (same as pre-push)
+bun run verify:android  # Typecheck + lint apps/android-tv via Gradle (manual; needs Android SDK)
+bun run clean           # Clean build outputs
 ```
+
+Commits are gated by Husky + lint-staged — one app per commit, formatting/ESLint on staged files, typecheck on push (see [`AGENTS.md`](./AGENTS.md#local-git-hooks-pre-commit--commit-msg--pre-push)).
