@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg role="img" aria-labelledby="pm-domain-title pm-domain-desc" viewBox="0 0 1200 780" width="1200" height="780" xmlns="http://www.w3.org/2000/svg" id="domain-context-map-root">
+        <title id="pm-domain-title">Private Movie Domain Model and Context Map</title>
+        <desc id="pm-domain-desc">Entities and relationships across Catalog, Storage, Ingestion, and Security bounded contexts</desc>
+        <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');
+      #domain-context-map-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; }
+      #domain-context-map-root .wrapper { max-width: 1280px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+      #domain-context-map-root .content { padding: 24px 32px; }</style>
+          <filter id="domain-context-map-box-shadow" x="-4%" y="-4%" width="108%" height="112%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.05"/>
+          </filter>
+          <marker id="domain-context-map-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b"/>
+          </marker>
+          <marker id="domain-context-map-arrow-blue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284c7"/>
+          </marker>
+          <marker id="domain-context-map-arrow-pink" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#db2777"/>
+          </marker>
+        </defs>
+
+        <!-- CONTEXT 1: CATALOG MANAGEMENT -->
+        <g transform="translate(40, 20)">
+          <rect x="0" y="0" width="750" height="420" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#domain-context-map-box-shadow)"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#0369a1" letter-spacing="0.05em">CATALOG BOUNDED CONTEXT (Metadata Aggregates)</text>
+
+          <!-- Series -->
+          <g transform="translate(20, 36)">
+            <rect x="0" y="0" width="220" height="160" rx="6" fill="#f8fafc" stroke="#0284c7" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="24" rx="6" fill="#e0f2fe"/>
+            <rect x="0" y="16" width="220" height="8" fill="#e0f2fe"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#0369a1">Series (Aggregate Root)</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">id: uuid (PK)</text>
+            <text x="12" y="58" font-size="10.5" fill="#475569">title: varchar(255)</text>
+            <text x="12" y="74" font-size="10.5" fill="#475569">overview: text</text>
+            <text x="12" y="90" font-size="10.5" fill="#475569">posterUrl, backdropUrl</text>
+            <text x="12" y="106" font-size="10.5" fill="#475569">firstAirDate: date</text>
+            <text x="12" y="122" font-size="10.5" fill="#475569">status: ongoing | ended</text>
+            <text x="12" y="146" font-size="10" font-weight="600" fill="#0284c7">Rule: Unique title per year</text>
+          </g>
+
+          <!-- Season -->
+          <g transform="translate(265, 36)">
+            <rect x="0" y="0" width="220" height="160" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="24" rx="6" fill="#f1f5f9"/>
+            <rect x="0" y="16" width="220" height="8" fill="#f1f5f9"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#334155">Season (Child Entity)</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">id: uuid (PK)</text>
+            <text x="12" y="58" font-size="10.5" font-weight="600" fill="#4f46e5">seriesId: uuid (FK)</text>
+            <text x="12" y="74" font-size="10.5" fill="#475569">seasonNumber: integer</text>
+            <text x="12" y="90" font-size="10.5" fill="#475569">name, overview: text</text>
+            <text x="12" y="106" font-size="10.5" fill="#475569">posterUrl: text</text>
+            <text x="12" y="122" font-size="10.5" fill="#475569">airDate: date</text>
+            <text x="12" y="146" font-size="10" font-weight="600" fill="#b45309">unique(seriesId, seasonNumber)</text>
+          </g>
+
+          <!-- Episode -->
+          <g transform="translate(510, 36)">
+            <rect x="0" y="0" width="220" height="160" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="24" rx="6" fill="#f1f5f9"/>
+            <rect x="0" y="16" width="220" height="8" fill="#f1f5f9"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#334155">Episode (Child Entity)</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">id: uuid (PK)</text>
+            <text x="12" y="58" font-size="10.5" font-weight="600" fill="#4f46e5">seasonId: uuid (FK)</text>
+            <text x="12" y="74" font-size="10.5" fill="#475569">episodeNumber: integer</text>
+            <text x="12" y="90" font-size="10.5" fill="#475569">title, overview: text</text>
+            <text x="12" y="106" font-size="10.5" fill="#475569">stillUrl: text</text>
+            <text x="12" y="122" font-size="10.5" fill="#475569">durationMinutes: integer</text>
+            <text x="12" y="146" font-size="10" font-weight="600" fill="#b45309">unique(seasonId, episodeNum)</text>
+          </g>
+
+          <!-- Movie -->
+          <g transform="translate(20, 225)">
+            <rect x="0" y="0" width="220" height="160" rx="6" fill="#f8fafc" stroke="#0284c7" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="24" rx="6" fill="#e0f2fe"/>
+            <rect x="0" y="16" width="220" height="8" fill="#e0f2fe"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#0369a1">Movie (Aggregate Root)</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">id: uuid (PK)</text>
+            <text x="12" y="58" font-size="10.5" fill="#475569">title: varchar(255)</text>
+            <text x="12" y="74" font-size="10.5" fill="#475569">releaseDate: date</text>
+            <text x="12" y="90" font-size="10.5" fill="#475569">durationMinutes: integer</text>
+            <text x="12" y="106" font-size="10.5" fill="#475569">posterUrl, backdropUrl</text>
+            <text x="12" y="146" font-size="10" font-weight="600" fill="#0284c7">Standalone Playable</text>
+          </g>
+
+          <!-- Genre -->
+          <g transform="translate(265, 225)">
+            <rect x="0" y="0" width="220" height="160" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+            <rect x="0" y="0" width="220" height="24" rx="6" fill="#f1f5f9"/>
+            <rect x="0" y="16" width="220" height="8" fill="#f1f5f9"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#334155">Genre / MediaGenre</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">Genre: id, name, slug</text>
+            <text x="12" y="60" font-size="10.5" fill="#475569">MediaGenre Join Table:</text>
+            <text x="12" y="76" font-size="10.5" fill="#475569">• mediaId (Series/Movie)</text>
+            <text x="12" y="92" font-size="10.5" fill="#475569">• genreId (FK Genre)</text>
+            <text x="12" y="146" font-size="10" font-weight="600" fill="#64748b">Cross-catalog indexing</text>
+          </g>
+
+          <!-- Hierarchy Arrows -->
+          <path d="M 240 110 L 265 110" stroke="#0284c7" stroke-width="2" marker-end="url(#domain-context-map-arrow-blue)"/>
+          <path d="M 485 110 L 510 110" stroke="#0284c7" stroke-width="2" marker-end="url(#domain-context-map-arrow-blue)"/>
+        </g>
+
+        <!-- CONTEXT 2: ASSET & PLAYBACK -->
+        <g transform="translate(815, 20)">
+          <rect x="0" y="0" width="345" height="420" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#domain-context-map-box-shadow)"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#be185d" letter-spacing="0.05em">ASSET &amp; PLAYBACK CONTEXT</text>
+
+          <!-- VideoSource -->
+          <g transform="translate(20, 36)">
+            <rect x="0" y="0" width="305" height="180" rx="6" fill="#f8fafc" stroke="#db2777" stroke-width="1.5"/>
+            <rect x="0" y="0" width="305" height="24" rx="6" fill="#fce7f3"/>
+            <rect x="0" y="16" width="305" height="8" fill="#fce7f3"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#9d174d">VideoSource (Playable Stream)</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">id: uuid (PK)</text>
+            <text x="12" y="58" font-size="10.5" font-weight="600" fill="#be185d">episodeId: uuid (Nullable FK)</text>
+            <text x="12" y="74" font-size="10.5" font-weight="600" fill="#be185d">movieId: uuid (Nullable FK)</text>
+            <text x="12" y="90" font-size="10.5" fill="#475569">storageId: uuid (FK Storage)</text>
+            <text x="12" y="106" font-size="10.5" fill="#475569">sourceType: s3_direct | hls | remote</text>
+            <text x="12" y="122" font-size="10.5" fill="#475569">quality: 1080p | 720p | 4k | auto</text>
+            <text x="12" y="138" font-size="10.5" fill="#475569">objectKey: varchar(512)</text>
+            <text x="12" y="164" font-size="10" font-weight="600" fill="#be185d">Rule: One of episodeId/movieId set</text>
+          </g>
+
+          <!-- Storage Target -->
+          <g transform="translate(20, 240)">
+            <rect x="0" y="0" width="305" height="145" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+            <rect x="0" y="0" width="305" height="24" rx="6" fill="#f1f5f9"/>
+            <rect x="0" y="16" width="305" height="8" fill="#f1f5f9"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#334155">Storage Target</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">id: uuid (PK)</text>
+            <text x="12" y="58" font-size="10.5" fill="#475569">name: varchar(100) (e.g. "Primary S3")</text>
+            <text x="12" y="74" font-size="10.5" fill="#475569">bucket, endpoint, region: text</text>
+            <text x="12" y="90" font-size="10.5" fill="#475569">accessKey, secretKey (encrypted)</text>
+            <text x="12" y="106" font-size="10.5" fill="#475569">isActive, isDefault: boolean</text>
+            <text x="12" y="130" font-size="10" font-weight="600" fill="#64748b">Encapsulates S3 endpoint settings</text>
+          </g>
+        </g>
+
+        <!-- Episode to VideoSource Connector -->
+        <path d="M 770 110 L 815 110" stroke="#db2777" stroke-width="2" marker-end="url(#domain-context-map-arrow-pink)"/>
+
+        <!-- CONTEXT 3: INGESTION & SCRAPING -->
+        <g transform="translate(40, 465)">
+          <rect x="0" y="0" width="750" height="270" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#domain-context-map-box-shadow)"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#7e22ce" letter-spacing="0.05em">INGESTION &amp; SCRAPING BOUNDED CONTEXT (Async Work)</text>
+
+          <!-- Ingest Job -->
+          <g transform="translate(20, 36)">
+            <rect x="0" y="0" width="340" height="200" rx="6" fill="#f8fafc" stroke="#7e22ce" stroke-width="1.5"/>
+            <rect x="0" y="0" width="340" height="24" rx="6" fill="#f3e8ff"/>
+            <rect x="0" y="16" width="340" height="8" fill="#f3e8ff"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#6b21a8">ArchiveIngestJob (Queue Item)</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">id: uuid (PK)</text>
+            <text x="12" y="58" font-size="10.5" fill="#475569">sourceUrl: text (Target web address)</text>
+            <text x="12" y="74" font-size="10.5" fill="#475569">targetEpisodeId, targetMovieId: uuid</text>
+            <text x="12" y="90" font-size="10.5" fill="#475569">status: pending | processing | completed | failed</text>
+            <text x="12" y="106" font-size="10.5" fill="#475569">attemptCount, maxAttempts: integer</text>
+            <text x="12" y="122" font-size="10.5" fill="#475569">errorMessage: text</text>
+            <text x="12" y="138" font-size="10.5" fill="#475569">s3ObjectKey: text</text>
+            <text x="12" y="180" font-size="10" font-weight="600" fill="#7e22ce">Anti-Corruption Layer to External Streams</text>
+          </g>
+
+          <!-- Extractor Registry -->
+          <g transform="translate(385, 36)">
+            <rect x="0" y="0" width="340" height="200" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+            <rect x="0" y="0" width="340" height="24" rx="6" fill="#f1f5f9"/>
+            <rect x="0" y="16" width="340" height="8" fill="#f1f5f9"/>
+            <text x="12" y="17" font-size="11" font-weight="700" fill="#334155">Scraper Engine &amp; Extractor Registry</text>
+            <text x="12" y="42" font-size="10.5" font-weight="600" fill="#0f172a">@repo/media-scraper / providers/</text>
+            <text x="12" y="60" font-size="10.5" fill="#475569">• Browser automation (Playwright/Puppeteer)</text>
+            <text x="12" y="78" font-size="10.5" fill="#475569">• Provider registry: matches target domains</text>
+            <text x="12" y="96" font-size="10.5" fill="#475569">• Sandboxed execution &amp; anti-bot parsing</text>
+            <text x="12" y="114" font-size="10.5" fill="#475569">• Emits canonical DirectStreamPayload</text>
+            <text x="12" y="180" font-size="10" font-weight="600" fill="#059669">Strictly decoupled from Database</text>
+          </g>
+        </g>
+
+        <!-- CONTEXT 4: IDENTITY & ACCESS -->
+        <g transform="translate(815, 465)">
+          <rect x="0" y="0" width="345" height="270" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#domain-context-map-box-shadow)"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#334155" letter-spacing="0.05em">SECURITY &amp; IDENTITY CONTEXT</text>
+
+          <g transform="translate(20, 36)">
+            <rect x="0" y="0" width="305" height="90" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+            <text x="12" y="20" font-size="11" font-weight="700" fill="#0f172a">User &amp; Session</text>
+            <text x="12" y="38" font-size="10.5" fill="#475569">id, username, passwordHash, role</text>
+            <text x="12" y="54" font-size="10.5" fill="#475569">sessionToken: varchar(255), expiresAt</text>
+            <text x="12" y="74" font-size="10" font-weight="600" fill="#059669">Secures web admin &amp; API routes</text>
+          </g>
+
+          <g transform="translate(20, 145)">
+            <rect x="0" y="0" width="305" height="90" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+            <text x="12" y="20" font-size="11" font-weight="700" fill="#0f172a">Client Pairing &amp; Streaming Tokens</text>
+            <text x="12" y="38" font-size="10.5" fill="#475569">Ephemeral presigned playback keys for TV/Web</text>
+            <text x="12" y="54" font-size="10.5" fill="#475569">Stateless playback authentication</text>
+            <text x="12" y="74" font-size="10" font-weight="600" fill="#4f46e5">Zero persistent state on TV device</text>
+          </g>
+        </g>
+      </svg>

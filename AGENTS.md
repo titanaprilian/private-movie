@@ -4,6 +4,17 @@
 
 Welcome! This monorepo uses a **Deep Modules** architecture tailored for AI agents. This document defines the generic rules of engagement shared across all applications in the monorepo. Framework-specific details live in each application's own `AGENTS.md`.
 
+## Architectural & Domain Navigation (Essential References)
+
+Before starting any feature or bug fix, consult the canonical system and domain documentation:
+
+- **System Architecture & Monorepo Codemap**: [`ARCHITECTURE.md`](ARCHITECTURE.md) (diagram: [`docs/diagrams/architecture-codemap.png`](docs/diagrams/architecture-codemap.png) / [interactive HTML](docs/diagrams/architecture-codemap.html))
+- **Domain Models & Glossary**: [`docs/DOMAIN.md`](docs/DOMAIN.md) (context map: [`docs/diagrams/domain-context-map.png`](docs/diagrams/domain-context-map.png) / ingest lifecycle: [`docs/diagrams/ingest-lifecycle.png`](docs/diagrams/ingest-lifecycle.png))
+
+These documents define application boundaries, shared package constraints, entity invariants, and asynchronous job state transitions.
+
+---
+
 ## Feature Delivery Pipeline
 
 When implementing a feature or fixing a bug, follow this strict execution sequence:

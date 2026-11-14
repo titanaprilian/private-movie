@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Media Ingestion &amp; Archive Lifecycle</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 40px;
+        background: #f8fafc;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #0f172a;
+      }
+      .wrapper {
+        max-width: 1280px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+      .header {
+        padding: 24px 32px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .header h1 {
+        margin: 0 0 6px 0;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .header p {
+        margin: 0;
+        font-size: 13px;
+        color: #64748b;
+      }
+      .content {
+        padding: 24px 32px;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="header">
+        <h1>Private Movie — Media Ingestion &amp; Archive Lifecycle</h1>
+        <p>
+          State machine for scraper extraction, stream verification, and S3
+          archival
+        </p>
+      </div>
+      <div class="content">
+        <svg
+          role="img"
+          aria-labelledby="pm-ingest-title pm-ingest-desc"
+          viewBox="0 0 1200 680"
+          width="1200"
+          height="680"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <title id="pm-ingest-title">
+            Media Ingestion and Archive Lifecycle
+          </title>
+          <desc id="pm-ingest-desc">
+            State transitions and error handling for remote scraping and S3
+            archival jobs
+          </desc>
+          <defs>
+            <filter
+              id="box-shadow"
+              x="-4%"
+              y="-4%"
+              width="108%"
+              height="112%"
+              filterUnits="userSpaceOnUse"
+            >
+              <feDropShadow
+                dx="0"
+                dy="2"
+                stdDeviation="4"
+                flood-color="#0f172a"
+                flood-opacity="0.05"
+              />
+            </filter>
+            <filter
+              id="focus-shadow"
+              x="-6%"
+              y="-6%"
+              width="112%"
+              height="116%"
+              filterUnits="userSpaceOnUse"
+            >
+              <feDropShadow
+                dx="0"
+                dy="3"
+                stdDeviation="6"
+                flood-color="#4f46e5"
+                flood-opacity="0.12"
+              />
+            </filter>
+
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="7"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+            </marker>
+            <marker
+              id="arrow-green"
+              viewBox="0 0 10 10"
+              refX="7"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#059669" />
+            </marker>
+            <marker
+              id="arrow-red"
+              viewBox="0 0 10 10"
+              refX="7"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#dc2626" />
+            </marker>
+            <marker
+              id="arrow-indigo"
+              viewBox="0 0 10 10"
+              refX="7"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#4f46e5" />
+            </marker>
+          </defs>
+
+          <!-- Top Lifecycle Flow Steps -->
+          <g transform="translate(40, 20)">
+            <rect
+              x="0"
+              y="0"
+              width="1120"
+              height="80"
+              rx="8"
+              fill="#ffffff"
+              stroke="#e2e8f0"
+              stroke-width="1.5"
+              filter="url(#box-shadow)"
+            />
+
+            <g transform="translate(20, 16)">
+              <circle cx="18" cy="24" r="14" fill="#e0e7ff" />
+              <text
+                x="18"
+                y="28"
+                font-size="11"
+                font-weight="700"
+                fill="#4338ca"
+                text-anchor="middle"
+              >
+                1
+              </text>
+              <text
+                x="42"
+                y="20"
+                font-size="13"
+                font-weight="700"
+                fill="#0f172a"
+              >
+                Scrape Trigger
+              </text>
+              <text x="42" y="36" font-size="11" fill="#64748b">
+                URL from Web UI or CLI
+              </text>
+            </g>
+
+            <line
+              x1="280"
+              y1="16"
+              x2="280"
+              y2="64"
+              stroke="#f1f5f9"
+              stroke-width="2"
+            />
+
+            <g transform="translate(300, 16)">
+              <circle cx="18" cy="24" r="14" fill="#fef3c7" />
+              <text
+                x="18"
+                y="28"
+                font-size="11"
+                font-weight="700"
+                fill="#b45309"
+                text-anchor="middle"
+              >
+                2
+              </text>
+              <text
+                x="42"
+                y="20"
+                font-size="13"
+                font-weight="700"
+                fill="#0f172a"
+              >
+                Extraction
+              </text>
+              <text x="42" y="36" font-size="11" fill="#64748b">
+                Resolves stream URLs
+              </text>
+            </g>
+
+            <line
+              x1="560"
+              y1="16"
+              x2="560"
+              y2="64"
+              stroke="#f1f5f9"
+              stroke-width="2"
+            />
+
+            <g transform="translate(580, 16)">
+              <circle cx="18" cy="24" r="14" fill="#ede9fe" />
+              <text
+                x="18"
+                y="28"
+                font-size="11"
+                font-weight="700"
+                fill="#6d28d9"
+                text-anchor="middle"
+              >
+                3
+              </text>
+              <text
+                x="42"
+                y="20"
+                font-size="13"
+                font-weight="700"
+                fill="#0f172a"
+              >
+                S3 Archival
+              </text>
+              <text x="42" y="36" font-size="11" fill="#64748b">
+                Upload stream to bucket
+              </text>
+            </g>
+
+            <line
+              x1="840"
+              y1="16"
+              x2="840"
+              y2="64"
+              stroke="#f1f5f9"
+              stroke-width="2"
+            />
+
+            <g transform="translate(860, 16)">
+              <circle cx="18" cy="24" r="14" fill="#d1fae5" />
+              <text
+                x="18"
+                y="28"
+                font-size="11"
+                font-weight="700"
+                fill="#047857"
+                text-anchor="middle"
+              >
+                4
+              </text>
+              <text
+                x="42"
+                y="20"
+                font-size="13"
+                font-weight="700"
+                fill="#0f172a"
+              >
+                Catalog Link
+              </text>
+              <text x="42" y="36" font-size="11" fill="#64748b">
+                Attach VideoSource
+              </text>
+            </g>
+          </g>
+
+          <!-- Main State Machine Canvas -->
+          <g transform="translate(40, 125)">
+            <rect
+              x="0"
+              y="0"
+              width="1120"
+              height="520"
+              rx="8"
+              fill="#ffffff"
+              stroke="#cbd5e1"
+              stroke-width="1.5"
+              filter="url(#box-shadow)"
+            />
+            <text
+              x="20"
+              y="24"
+              font-size="11"
+              font-weight="700"
+              fill="#475569"
+              letter-spacing="0.04em"
+            >
+              ARCHIVE INGEST JOB STATE MACHINE
+              (`packages/db/src/schema/archive-ingest.ts`)
+            </text>
+
+            <!-- Start Node -->
+            <g transform="translate(30, 150)">
+              <circle cx="20" cy="20" r="15" fill="#e2e8f0" />
+              <circle cx="20" cy="20" r="9" fill="#0f172a" />
+              <text
+                x="20"
+                y="50"
+                font-size="10"
+                font-weight="600"
+                fill="#64748b"
+                text-anchor="middle"
+              >
+                Start
+              </text>
+            </g>
+
+            <path
+              d="M 65 170 L 120 170"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow)"
+            />
+
+            <!-- State: PENDING -->
+            <g transform="translate(120, 120)">
+              <rect
+                x="0"
+                y="0"
+                width="180"
+                height="96"
+                rx="8"
+                fill="#f8fafc"
+                stroke="#94a3b8"
+                stroke-width="1.5"
+              />
+              <rect x="0" y="0" width="180" height="24" rx="8" fill="#e2e8f0" />
+              <rect x="0" y="16" width="180" height="8" fill="#e2e8f0" />
+              <text
+                x="12"
+                y="17"
+                font-size="11"
+                font-weight="700"
+                fill="#1e293b"
+              >
+                PENDING
+              </text>
+              <text x="12" y="44" font-size="10.5" fill="#475569">
+                Job registered in DB
+              </text>
+              <text x="12" y="60" font-size="10.5" fill="#64748b">
+                Worker locks record
+              </text>
+              <text
+                x="12"
+                y="76"
+                font-size="10"
+                font-weight="600"
+                fill="#0284c7"
+              >
+                attemptCount: 0
+              </text>
+            </g>
+
+            <!-- Transition: PENDING -> PROCESSING -->
+            <path
+              d="M 300 170 L 360 170"
+              stroke="#4f46e5"
+              stroke-width="2"
+              marker-end="url(#arrow-indigo)"
+            />
+            <text
+              x="330"
+              y="160"
+              font-size="10"
+              font-weight="600"
+              fill="#4f46e5"
+              text-anchor="middle"
+            >
+              claim
+            </text>
+
+            <!-- State: PROCESSING -->
+            <g transform="translate(360, 120)">
+              <rect
+                x="0"
+                y="0"
+                width="200"
+                height="96"
+                rx="8"
+                fill="#f8fafc"
+                stroke="#4f46e5"
+                stroke-width="2"
+                filter="url(#focus-shadow)"
+              />
+              <rect x="0" y="0" width="200" height="24" rx="8" fill="#e0e7ff" />
+              <rect x="0" y="16" width="200" height="8" fill="#e0e7ff" />
+              <text
+                x="12"
+                y="17"
+                font-size="11"
+                font-weight="700"
+                fill="#3730a3"
+              >
+                PROCESSING
+              </text>
+              <text x="12" y="44" font-size="10.5" fill="#475569">
+                Run scraper provider
+              </text>
+              <text x="12" y="60" font-size="10.5" fill="#64748b">
+                Extract direct streams
+              </text>
+              <text
+                x="12"
+                y="76"
+                font-size="10"
+                font-weight="600"
+                fill="#4f46e5"
+              >
+                @repo/media-scraper
+              </text>
+            </g>
+
+            <!-- Transition: PROCESSING -> ARCHIVING_S3 -->
+            <path
+              d="M 560 170 L 620 170"
+              stroke="#4f46e5"
+              stroke-width="2"
+              marker-end="url(#arrow-indigo)"
+            />
+            <text
+              x="590"
+              y="160"
+              font-size="10"
+              font-weight="600"
+              fill="#4f46e5"
+              text-anchor="middle"
+            >
+              resolved
+            </text>
+
+            <!-- State: ARCHIVING_S3 -->
+            <g transform="translate(620, 120)">
+              <rect
+                x="0"
+                y="0"
+                width="200"
+                height="96"
+                rx="8"
+                fill="#f8fafc"
+                stroke="#4f46e5"
+                stroke-width="1.5"
+              />
+              <rect x="0" y="0" width="200" height="24" rx="8" fill="#e0e7ff" />
+              <rect x="0" y="16" width="200" height="8" fill="#e0e7ff" />
+              <text
+                x="12"
+                y="17"
+                font-size="11"
+                font-weight="700"
+                fill="#3730a3"
+              >
+                ARCHIVING_S3
+              </text>
+              <text x="12" y="44" font-size="10.5" fill="#475569">
+                Upload stream to S3
+              </text>
+              <text x="12" y="60" font-size="10.5" fill="#64748b">
+                Verify key &amp; format
+              </text>
+              <text
+                x="12"
+                y="76"
+                font-size="10"
+                font-weight="600"
+                fill="#4f46e5"
+              >
+                @repo/media-service
+              </text>
+            </g>
+
+            <!-- Transition: ARCHIVING -> COMPLETED -->
+            <path
+              d="M 820 170 L 880 170"
+              stroke="#059669"
+              stroke-width="2"
+              marker-end="url(#arrow-green)"
+            />
+            <text
+              x="850"
+              y="160"
+              font-size="10"
+              font-weight="600"
+              fill="#059669"
+              text-anchor="middle"
+            >
+              success
+            </text>
+
+            <!-- State: COMPLETED -->
+            <g transform="translate(880, 110)">
+              <rect
+                x="0"
+                y="0"
+                width="210"
+                height="114"
+                rx="8"
+                fill="#f0fdf4"
+                stroke="#16a34a"
+                stroke-width="2"
+              />
+              <rect x="0" y="0" width="210" height="24" rx="8" fill="#dcfce7" />
+              <rect x="0" y="16" width="210" height="8" fill="#dcfce7" />
+              <text
+                x="12"
+                y="17"
+                font-size="11"
+                font-weight="700"
+                fill="#15803d"
+              >
+                COMPLETED (Terminal)
+              </text>
+              <text x="12" y="44" font-size="10.5" fill="#166534">
+                • VideoSource created
+              </text>
+              <text x="12" y="60" font-size="10.5" fill="#166534">
+                • Target item linked
+              </text>
+              <text x="12" y="76" font-size="10.5" fill="#166534">
+                • S3 object key saved
+              </text>
+              <text
+                x="12"
+                y="94"
+                font-size="10"
+                font-weight="600"
+                fill="#15803d"
+              >
+                Status: READY
+              </text>
+            </g>
+
+            <!-- Error Evaluation Node -->
+            <g transform="translate(420, 310)">
+              <rect
+                x="0"
+                y="0"
+                width="360"
+                height="100"
+                rx="8"
+                fill="#fef2f2"
+                stroke="#ef4444"
+                stroke-width="1.5"
+              />
+              <rect x="0" y="0" width="360" height="24" rx="8" fill="#fee2e2" />
+              <rect x="0" y="16" width="360" height="8" fill="#fee2e2" />
+              <text
+                x="12"
+                y="17"
+                font-size="11"
+                font-weight="700"
+                fill="#b91c1c"
+              >
+                ERROR EVALUATION &amp; RETRY GUARD
+              </text>
+              <text x="12" y="44" font-size="10.5" fill="#7f1d1d">
+                • If attemptCount &lt; 3: increment count &amp; re-queue
+              </text>
+              <text x="12" y="62" font-size="10.5" fill="#7f1d1d">
+                • Exponential backoff: 30s, 120s, 300s
+              </text>
+              <text x="12" y="80" font-size="10.5" fill="#7f1d1d">
+                • If attemptCount &gt;= 3: mark FAILED, log error
+              </text>
+            </g>
+
+            <!-- Error Down Paths with Right Angles -->
+            <path
+              d="M 460 216 L 460 310"
+              stroke="#dc2626"
+              stroke-width="1.5"
+              stroke-dasharray="3,3"
+              marker-end="url(#arrow-red)"
+            />
+            <path
+              d="M 720 216 L 720 310"
+              stroke="#dc2626"
+              stroke-width="1.5"
+              stroke-dasharray="3,3"
+              marker-end="url(#arrow-red)"
+            />
+            <text
+              x="470"
+              y="260"
+              font-size="9.5"
+              font-weight="600"
+              fill="#dc2626"
+            >
+              Scrape Fail
+            </text>
+            <text
+              x="730"
+              y="260"
+              font-size="9.5"
+              font-weight="600"
+              fill="#dc2626"
+            >
+              S3 Abort
+            </text>
+
+            <!-- Loop Back to Pending (Right Angle) -->
+            <path
+              d="M 420 360 L 210 360 L 210 216"
+              fill="none"
+              stroke="#d97706"
+              stroke-width="1.5"
+              stroke-dasharray="3,3"
+              marker-end="url(#arrow)"
+            />
+            <rect
+              x="230"
+              y="348"
+              width="160"
+              height="20"
+              rx="3"
+              fill="#fef3c7"
+              stroke="#fde68a"
+            />
+            <text
+              x="240"
+              y="362"
+              font-size="9.5"
+              font-weight="600"
+              fill="#92400e"
+            >
+              retry (attemptCount &lt; 3)
+            </text>
+
+            <!-- Fail Forward to FAILED Terminal -->
+            <path
+              d="M 780 360 L 880 360"
+              stroke="#dc2626"
+              stroke-width="2"
+              marker-end="url(#arrow-red)"
+            />
+            <text
+              x="830"
+              y="352"
+              font-size="10"
+              font-weight="600"
+              fill="#dc2626"
+              text-anchor="middle"
+            >
+              max retries
+            </text>
+
+            <!-- State: FAILED -->
+            <g transform="translate(880, 310)">
+              <rect
+                x="0"
+                y="0"
+                width="210"
+                height="100"
+                rx="8"
+                fill="#fff1f2"
+                stroke="#e11d48"
+                stroke-width="1.5"
+              />
+              <rect x="0" y="0" width="210" height="24" rx="8" fill="#ffe4e6" />
+              <rect x="0" y="16" width="210" height="8" fill="#ffe4e6" />
+              <text
+                x="12"
+                y="17"
+                font-size="11"
+                font-weight="700"
+                fill="#be123c"
+              >
+                FAILED (Terminal)
+              </text>
+              <text x="12" y="44" font-size="10.5" fill="#9f1239">
+                Job logged with error
+              </text>
+              <text x="12" y="60" font-size="10.5" fill="#9f1239">
+                No VideoSource saved
+              </text>
+              <text
+                x="12"
+                y="78"
+                font-size="10"
+                font-weight="600"
+                fill="#e11d48"
+              >
+                Requires manual retry
+              </text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg role="img" aria-labelledby="pm-arch-title pm-arch-desc" viewBox="0 0 1200 780" width="1200" height="780" xmlns="http://www.w3.org/2000/svg" id="architecture-codemap-root">
+        <title id="pm-arch-title">Private Movie Architecture Codemap</title>
+        <desc id="pm-arch-desc">Layered diagram of client applications, canonical contracts, Elysia backend, shared packages, and external services.</desc>
+        <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');
+      #architecture-codemap-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; }
+      #architecture-codemap-root .wrapper { max-width: 1280px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+      #architecture-codemap-root .content { padding: 24px 32px; }</style>
+          <filter id="architecture-codemap-card-shadow" x="-4%" y="-4%" width="108%" height="112%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.05"/>
+          </filter>
+          <marker id="architecture-codemap-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b"/>
+          </marker>
+          <marker id="architecture-codemap-arrow-indigo" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#4f46e5"/>
+          </marker>
+          <marker id="architecture-codemap-arrow-purple" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#a855f7"/>
+          </marker>
+        </defs>
+
+        <!-- Tier 1: Applications (Web & Android TV) -->
+        <g transform="translate(40, 20)">
+          <rect x="0" y="0" width="1120" height="120" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#architecture-codemap-card-shadow)"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#64748b" letter-spacing="0.05em">CLIENT APPLICATIONS (`apps/*`)</text>
+          
+          <!-- Web App -->
+          <g transform="translate(20, 36)">
+            <rect x="0" y="0" width="520" height="68" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+            <rect x="0" y="0" width="4" height="68" rx="1" fill="#0284c7"/>
+            <text x="16" y="22" font-size="13" font-weight="700" fill="#0f172a">apps/web</text>
+            <rect x="95" y="10" width="140" height="16" rx="3" fill="#e0f2fe"/>
+            <text x="102" y="22" font-size="9.5" font-weight="600" fill="#0369a1">React 19 + TanStack</text>
+            <text x="16" y="42" font-size="11" fill="#475569">Single-page web administration dashboard and desktop video browser</text>
+            <text x="16" y="58" font-size="10" font-weight="500" fill="#64748b">TanStack Router &amp; Query • Tailwind CSS • Video.js / HLS.js</text>
+          </g>
+
+          <!-- Android TV App -->
+          <g transform="translate(580, 36)">
+            <rect x="0" y="0" width="520" height="68" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+            <rect x="0" y="0" width="4" height="68" rx="1" fill="#10b981"/>
+            <text x="16" y="22" font-size="13" font-weight="700" fill="#0f172a">apps/android-tv</text>
+            <rect x="140" y="10" width="145" height="16" rx="3" fill="#d1fae5"/>
+            <text x="147" y="22" font-size="9.5" font-weight="600" fill="#047857">Kotlin + TV Compose</text>
+            <text x="16" y="42" font-size="11" fill="#475569">Android TV Leanback client optimized for directional D-pad remote controls</text>
+            <text x="16" y="58" font-size="10" font-weight="500" fill="#64748b">AndroidX Media3 ExoPlayer • Safe Focus Engine • Drawer Navigation</text>
+          </g>
+        </g>
+
+        <!-- Tier 2: Contracts Seam -->
+        <g transform="translate(40, 165)">
+          <rect x="0" y="0" width="1120" height="60" rx="8" fill="#ffffff" stroke="#4f46e5" stroke-width="1.5" stroke-dasharray="5,4" filter="url(#architecture-codemap-card-shadow)"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#4338ca" letter-spacing="0.05em">CANONICAL CONTRACTS (`packages/contracts`)</text>
+          <text x="20" y="44" font-size="11" fill="#64748b">Pure TypeScript DTOs, OpenAPI schemas &amp; response envelopes — single source of truth</text>
+
+          <g transform="translate(680, 16)">
+            <rect x="0" y="0" width="100" height="26" rx="4" fill="#e0e7ff"/>
+            <text x="10" y="17" font-size="10" font-weight="600" fill="#3730a3">media-contract</text>
+            <rect x="110" y="0" width="90" height="26" rx="4" fill="#e0e7ff"/>
+            <text x="120" y="17" font-size="10" font-weight="600" fill="#3730a3">archive-job</text>
+            <rect x="210" y="0" width="80" height="26" rx="4" fill="#e0e7ff"/>
+            <text x="220" y="17" font-size="10" font-weight="600" fill="#3730a3">auth-types</text>
+            <rect x="300" y="0" width="120" height="26" rx="4" fill="#f1f5f9"/>
+            <text x="308" y="17" font-size="10" font-weight="600" fill="#475569">Strict Interface</text>
+          </g>
+        </g>
+
+        <!-- Tier 3: Core Elysia Backend -->
+        <g transform="translate(40, 250)">
+          <rect x="0" y="0" width="1120" height="200" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#architecture-codemap-card-shadow)"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#334155" letter-spacing="0.05em">CORE BACKEND ENGINE (`apps/backend` - Elysia on Bun)</text>
+          
+          <g transform="translate(20, 36)">
+            <!-- Auth -->
+            <g transform="translate(0, 0)">
+              <rect x="0" y="0" width="200" height="74" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+              <text x="12" y="22" font-size="12" font-weight="700" fill="#0f172a">authentication /</text>
+              <text x="12" y="40" font-size="10.5" fill="#64748b">Session, cookie &amp; token auth</text>
+              <text x="12" y="58" font-size="10" font-weight="600" fill="#4f46e5">/api/auth/*</text>
+            </g>
+
+            <!-- Catalog (Connected to TMDB API) -->
+            <g transform="translate(220, 0)">
+              <rect x="0" y="0" width="200" height="74" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+              <text x="12" y="22" font-size="12" font-weight="700" fill="#0f172a">series, seasons &amp; episodes</text>
+              <text x="12" y="40" font-size="10.5" fill="#64748b">Catalog metadata management</text>
+              <text x="12" y="58" font-size="10" font-weight="600" fill="#4f46e5">/api/series, /api/episodes</text>
+            </g>
+
+            <!-- Media Streams -->
+            <g transform="translate(440, 0)">
+              <rect x="0" y="0" width="200" height="74" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+              <text x="12" y="22" font-size="12" font-weight="700" fill="#0f172a">media (video stream) /</text>
+              <text x="12" y="40" font-size="10.5" fill="#64748b">Source selection &amp; URL signer</text>
+              <text x="12" y="58" font-size="10" font-weight="600" fill="#4f46e5">/api/media/:id/stream</text>
+            </g>
+
+            <!-- Storage -->
+            <g transform="translate(660, 0)">
+              <rect x="0" y="0" width="200" height="74" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+              <text x="12" y="22" font-size="12" font-weight="700" fill="#0f172a">storage /</text>
+              <text x="12" y="40" font-size="10.5" fill="#64748b">S3 buckets &amp; upload targets</text>
+              <text x="12" y="58" font-size="10" font-weight="600" fill="#4f46e5">/api/storage/*</text>
+            </g>
+
+            <!-- Dashboard -->
+            <g transform="translate(880, 0)">
+              <rect x="0" y="0" width="200" height="74" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+              <text x="12" y="22" font-size="12" font-weight="700" fill="#0f172a">dashboard &amp; genres /</text>
+              <text x="12" y="40" font-size="10.5" fill="#64748b">Metrics, stats &amp; tags</text>
+              <text x="12" y="58" font-size="10" font-weight="600" fill="#4f46e5">/api/dashboard, /api/genres</text>
+            </g>
+          </g>
+
+          <!-- Seam Rules Banner -->
+          <g transform="translate(20, 126)">
+            <rect x="0" y="0" width="1080" height="56" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+            <text x="16" y="22" font-size="11.5" font-weight="700" fill="#334155">Deep Modules Seam Rule:</text>
+            <text x="16" y="40" font-size="11" fill="#475569">Public export strictly via `src/modules/&lt;feature&gt;/index.ts`. Routes mounted via `http.ts`. Internals isolated in `internal/`.</text>
+            <rect x="860" y="14" width="200" height="28" rx="4" fill="#ffffff" stroke="#94a3b8"/>
+            <text x="874" y="32" font-size="10.5" font-weight="600" fill="#0f172a">Root: src/app.ts (createApp)</text>
+          </g>
+        </g>
+
+        <!-- Tier 4: Shared Domain Packages -->
+        <g transform="translate(40, 475)">
+          <rect x="0" y="0" width="1120" height="120" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#architecture-codemap-card-shadow)"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#334155" letter-spacing="0.05em">DOMAIN &amp; PERSISTENCE PACKAGES (`packages/*`)</text>
+
+          <g transform="translate(20, 36)">
+            <!-- Scraper -->
+            <g transform="translate(0, 0)">
+              <rect x="0" y="0" width="340" height="68" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+              <rect x="0" y="0" width="4" height="68" rx="1" fill="#d97706"/>
+              <text x="14" y="22" font-size="13" font-weight="700" fill="#0f172a">@repo/media-scraper</text>
+              <text x="14" y="42" font-size="11" fill="#475569">Headless browser &amp; HTTP streaming link extraction</text>
+              <text x="14" y="58" font-size="10" font-weight="500" fill="#64748b">Playwright • Puppeteer • Extractor Registry</text>
+            </g>
+
+            <!-- Media Service -->
+            <g transform="translate(370, 0)">
+              <rect x="0" y="0" width="340" height="68" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+              <rect x="0" y="0" width="4" height="68" rx="1" fill="#e11d48"/>
+              <text x="14" y="22" font-size="13" font-weight="700" fill="#0f172a">@repo/media-service</text>
+              <text x="14" y="42" font-size="10.5" fill="#475569">S3 storage adapter, stream signer &amp; ingest jobs</text>
+              <text x="14" y="58" font-size="10" font-weight="500" fill="#64748b">AWS S3 SDK • Presigned URLs • Multiplexer</text>
+            </g>
+
+            <!-- DB -->
+            <g transform="translate(740, 0)">
+              <rect x="0" y="0" width="340" height="68" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+              <rect x="0" y="0" width="4" height="68" rx="1" fill="#3b82f6"/>
+              <text x="14" y="22" font-size="13" font-weight="700" fill="#0f172a">@repo/db</text>
+              <text x="14" y="42" font-size="10.5" fill="#475569">PostgreSQL schema, Drizzle models &amp; migrations</text>
+              <text x="14" y="58" font-size="10" font-weight="500" fill="#64748b">Drizzle ORM • Postgres Driver • Safe Migrations</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- Tier 5: External Systems (Reordered to align vertically under Tier 4 packages) -->
+        <g transform="translate(40, 620)">
+          <rect x="0" y="0" width="1120" height="100" rx="8" fill="#0f172a"/>
+          <text x="20" y="24" font-size="11" font-weight="700" fill="#94a3b8" letter-spacing="0.05em">INFRASTRUCTURE &amp; EXTERNAL SERVICES</text>
+
+          <g transform="translate(20, 36)">
+            <!-- Remote Hosts (Under Scraper) -->
+            <g transform="translate(0, 0)">
+              <rect x="0" y="0" width="250" height="48" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+              <circle cx="20" cy="24" r="6" fill="#f59e0b"/>
+              <text x="36" y="22" font-size="12" font-weight="700" fill="#f8fafc">Remote Media Hosts</text>
+              <text x="36" y="38" font-size="10" fill="#94a3b8">Scraper targets &amp; mirrors</text>
+            </g>
+
+            <!-- S3 / MinIO (Under Media Service) -->
+            <g transform="translate(275, 0)">
+              <rect x="0" y="0" width="250" height="48" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+              <circle cx="20" cy="24" r="6" fill="#fb7185"/>
+              <text x="36" y="22" font-size="12" font-weight="700" fill="#f8fafc">S3 / MinIO Storage</text>
+              <text x="36" y="38" font-size="10" fill="#94a3b8">Media files &amp; HLS segments</text>
+            </g>
+
+            <!-- Postgres (Under DB) -->
+            <g transform="translate(550, 0)">
+              <rect x="0" y="0" width="250" height="48" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+              <circle cx="20" cy="24" r="6" fill="#38bdf8"/>
+              <text x="36" y="22" font-size="12" font-weight="700" fill="#f8fafc">PostgreSQL 16</text>
+              <text x="36" y="38" font-size="10" fill="#94a3b8">Catalog metadata &amp; jobs</text>
+            </g>
+
+            <!-- TMDB API (Under Right Margin, connected to Backend Series module) -->
+            <g transform="translate(825, 0)">
+              <rect x="0" y="0" width="255" height="48" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+              <circle cx="20" cy="24" r="6" fill="#a855f7"/>
+              <text x="36" y="22" font-size="12" font-weight="700" fill="#f8fafc">TMDB API (v3)</text>
+              <text x="36" y="38" font-size="10" fill="#94a3b8">Show &amp; episode metadata</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- Connectors (Right-angled / straight) -->
+        <path d="M 300 140 L 300 165" stroke="#64748b" stroke-width="1.5" marker-end="url(#architecture-codemap-arrow)"/>
+        <path d="M 840 140 L 840 165" stroke="#64748b" stroke-width="1.5" marker-end="url(#architecture-codemap-arrow)"/>
+        <path d="M 600 225 L 600 250" stroke="#4f46e5" stroke-width="2" marker-end="url(#architecture-codemap-arrow-indigo)"/>
+        
+        <path d="M 230 450 L 230 475" stroke="#64748b" stroke-width="1.5" marker-end="url(#architecture-codemap-arrow)"/>
+        <path d="M 590 450 L 590 475" stroke="#64748b" stroke-width="1.5" marker-end="url(#architecture-codemap-arrow)"/>
+        <path d="M 950 450 L 950 475" stroke="#64748b" stroke-width="1.5" marker-end="url(#architecture-codemap-arrow)"/>
+
+        <!-- Package to Infra Clean Vertical Drops (No crossing wires) -->
+        <path d="M 185 595 L 185 655" fill="none" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#architecture-codemap-arrow)"/>
+        <path d="M 540 595 L 540 655" fill="none" stroke="#e11d48" stroke-width="1.5" marker-end="url(#architecture-codemap-arrow)"/>
+        <path d="M 890 595 L 890 610 L 735 610 L 735 655" fill="none" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#architecture-codemap-arrow)"/>
+
+        <!-- Backend Series Module to TMDB API Connector (Outer right channel) -->
+        <path d="M 380 360 L 380 460 L 1175 460 L 1175 680 L 1120 680" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#architecture-codemap-arrow-purple)"/>
+        <rect x="1005" y="448" width="155" height="20" rx="3" fill="#faf5ff" stroke="#e9d5ff"/>
+        <text x="1015" y="462" font-size="9" font-weight="600" fill="#7e22ce">TMDB Metadata Sync</text>
+      </svg>
