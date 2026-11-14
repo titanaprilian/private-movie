@@ -12,6 +12,14 @@ export default mergeConfig(
     },
     test: {
       css: true,
+      coverage: {
+        thresholds: {
+          lines: 82,
+          statements: 80,
+          functions: 81,
+          branches: 73,
+        },
+      },
     },
   })
 );
