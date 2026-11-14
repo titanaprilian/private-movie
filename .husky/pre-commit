@@ -1,0 +1,9 @@
+command -v bunx >/dev/null 2>&1 || {
+  echo "pre-commit: 'bunx' not found. Install Bun (https://bun.sh) or use --no-verify for WIP commits." >&2
+  exit 1
+}
+
+# Scope gate first: a blocked commit costs ~20ms instead of a full lint pass.
+bash scripts/check-commit-scope.sh || exit 1
+
+bunx lint-staged

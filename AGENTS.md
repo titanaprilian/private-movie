@@ -19,7 +19,9 @@ When implementing a feature or fixing a bug, follow this strict execution sequen
    **Escalation guard**: if `/to-tickets` (step 3) ends up producing 3 or more tickets after a direct-to-ticket path was chosen, the agent must pause before any implementation begins and ask the user whether to back up and write a spec, or continue as-is.
 
 3. **to-tickets** → Break into tickets (test-writing tickets are priority #1, unblocked first)
+
 - 4. **implement** → Agents pick up tickets, write tests first (TDD), then implement in an isolated git worktree (`../wt/ticket-<id>`). Editing in the main checkout is strictly forbidden.
+
 5. **code-review** → Orchestrator reviews each completed ticket
 6. **push-to-github** → Orchestrator pushes when all tickets are complete
 7. **deploy** → Deploy services to VPS, manage Caddy domains, or sync database
@@ -32,6 +34,66 @@ When implementing a feature or fixing a bug, follow this strict execution sequen
 - **Strict Isolation**: You are explicitly forbidden from reading or modifying the internal implementation details (`/internal/` directories) of any module unrelated to your current target feature.
 - **Import Restrictions**: ESLint/tooling enforces strict boundaries. You must never import from a module's `/internal/` folder from outside that module.
 - **Entry Points**: The only allowed export point for a module is `[app_root]/src/modules/<feature>/index.ts`. It must export a concrete implementation adhering to a strict interface.
+- **Commits must pass local hooks**: never bypass `pre-commit`/`commit-msg`/`pre-push` on the final commits of a ticket (see Local Git Hooks).
+- **One app per commit**: a commit touches at most one of `apps/web`, `apps/backend`, `apps/android-tv`; shared packages and root/tooling files may ride along. Crossing that boundary requires an explicit human grant (see Commit Scope).
+
+---
+
+## Local Git Hooks (pre-commit / commit-msg / pre-push)
+
+Husky + `lint-staged` gate every commit locally so scope creep, formatting, lint and type errors never reach remote CI.
+
+| Hook         | Command                                                   | Scope                                                                                                                                        |
+| ------------ | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre-commit` | `bash scripts/check-commit-scope.sh` → `bunx lint-staged` | One-app commit gate, then `prettier --write` on everything Prettier understands and `eslint --fix` on `apps/web` / `apps/backend` TypeScript |
+| `commit-msg` | trailer check                                             | Requires a `Multi-App:` trailer on any commit that spans apps                                                                                |
+| `pre-push`   | `bun run verify`                                          | `turbo run typecheck lint --filter=!@repo/android-tv --continue`                                                                             |
+
+- **Auto-install**: the root `prepare` script runs `husky` on every `bun install`, so a fresh clone or a new worktree (`scripts/wt-init.sh` runs `bun install`) gets hooks automatically.
+- **Formatting is auto-fixed, not rejected**: an unformatted staged file is rewritten and re-staged, and the commit proceeds. Only a scope violation, ESLint error, missing trailer, or pre-push type error aborts.
+- **Formatting is a ratchet**: only staged files are formatted; hundreds of pre-existing files are still unformatted. Never run a repo-wide `prettier --write` sweep inside a feature ticket — it collides with in-flight worktrees.
+- Android TV is **not** hook-wired: Gradle `compileDebugKotlin`/`lint` cost tens of seconds to minutes, `apps/android-tv/local.properties` is gitignored and machine-specific (not provisioned by `scripts/wt-init.sh`), and `~/.gradle` is cold on a fresh machine. Run the equivalent checks explicitly when you touch Kotlin: `bun run verify:android` (`turbo run typecheck lint --filter=@repo/android-tv`). CI's `android` job is the automatic gate.
+- **Not all packages are linted**: `packages/contracts`, `packages/db`, `packages/media-service`, `packages/media-scraper` and `packages/config-vitest` have `typecheck` only. Never assume `lint` covered them.
+- **CI stays authoritative**: hooks are a fast local pre-filter; `turbo run typecheck lint test test:integration build --filter=!@repo/android-tv` remains the source of truth.
+
+**Escape hatch (WIP only):** `git commit --no-verify` and `git push --no-verify` are allowed only for work-in-progress commits that will be rewritten. The final commit(s) of a ticket — anything handed to `code-review` — must pass both hooks. History showing `--no-verify` on a ticket's final commits is grounds for rejection. `--no-verify` never authorizes a multi-app commit; it only hides that the check was skipped.
+
+**Troubleshooting:**
+
+- Hooks silently not running → run `bun install` (re-runs `prepare`), then confirm `git config core.hooksPath` prints `.husky/_`.
+- `'bunx' not found` → Bun is not on `PATH` for your git client (common with GUI clients launched from a desktop launcher). Add Bun's install directory to that `PATH`.
+- Docker and CI installs have no `.git` directory; Husky prints `.git can't be found` and exits 0, so image builds are unaffected.
+
+---
+
+## Commit Scope (one app per commit)
+
+A commit may touch **at most one** of `apps/web`, `apps/backend`, `apps/android-tv`.
+
+Shared packages (`packages/**`) and root/tooling files (`package.json`, `turbo.json`, `AGENTS.md`, `docs/**`, `.github/**`, `scripts/**`, `README.md`) never count toward that limit and may ride along with the single app commit — that is what makes contract-first work possible: `packages/contracts` + `apps/backend` in one commit is correct.
+
+- **Why**: scoped review diffs, one type-aware ESLint invocation per commit (~2–6s instead of ~10s), meaningful `git bisect`/revert, and no silent scope creep.
+- **How to split**: producer first, consumer second. Example for a full-stack feature: commit 1 = `packages/contracts` + `apps/backend`; commit 2 = `apps/web`. Intermediate commits may be temporarily red — the **pushed tip must be green** (`bun run verify`).
+- **Ticket planning**: one app per ticket is the default. A feature that genuinely needs producer + consumer declares _both_ apps in the ticket up front and uses the producer-first commit ordering. Never widen scope mid-implementation.
+- **Enforcement**: `scripts/check-commit-scope.sh` runs first in `pre-commit` (also runnable via `bun run scope:check`). `.husky/commit-msg` additionally requires the trailer below.
+- **History rewrites are exempt**: rebase, cherry-pick, revert and merge conflict commits skip both checks so existing cross-app history replays cleanly.
+
+**Granting an exception (human only)**
+
+1. The human authorizes multi-app scope explicitly — in chat or in the approved plan/ticket (e.g. "this change may span web + backend in one commit").
+2. The agent then commits with the env var **and** the trailer:
+
+   ```bash
+   ALLOW_MULTI_APP=1 git commit -m "feat(web,backend): ..." \
+     -m "Multi-App: #748 — contract, endpoint and UI must land atomically"
+   ```
+
+3. `git log --grep='^Multi-App:'` lists every authorized cross-app commit.
+
+Rules for agents:
+
+- **Never** set `ALLOW_MULTI_APP=1` or write a `Multi-App:` trailer on your own initiative. If a task requires crossing the app boundary, stop and ask the human.
+- A `Multi-App:` trailer without a grant is a review failure and grounds for rejecting the ticket.
 
 ---
 
@@ -128,6 +190,7 @@ The Deep Modules architecture maps onto each framework in the monorepo as follow
 - **Warn the user:** If the user asks you to modify schema, generate the SQL, leave the files uncommitted, and instruct the user to manually review the SQL for structural data loss (e.g., `DROP TABLE`) before they apply it themselves. If the user explicitly mentions or requests `db:push`, WARN them that it can result in immediate data loss without SQL file generation.
 
 <!-- CODEGRAPH_START -->
+
 ## CodeGraph
 
 In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:

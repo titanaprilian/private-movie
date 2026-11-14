@@ -1,0 +1,28 @@
+# Multi-app commits must carry an authorization trailer, so `git log` proves the human
+# allowed it: git log --grep='^Multi-App:'
+msg_file="$1"
+
+git_path() { git rev-parse --git-path "$1"; }
+if [ -d "$(git_path rebase-merge)" ] \
+  || [ -d "$(git_path rebase-apply)" ] \
+  || [ -f "$(git_path CHERRY_PICK_HEAD)" ] \
+  || [ -f "$(git_path REVERT_HEAD)" ]; then
+  exit 0
+fi
+
+count=$(git diff --cached --name-only \
+  | sed -nE 's#^apps/(web|backend|android-tv)/.*#\1#p' | sort -u | grep -c . || true)
+[ "$count" -le 1 ] && exit 0
+
+grep -qE '^Multi-App: .+' "$msg_file" && exit 0
+
+cat >&2 <<EOF
+✖ Commit blocked: this commit touches multiple apps but has no authorization trailer.
+
+Add a trailer naming the grant you were given, e.g.:
+
+  Multi-App: #748 — contract, endpoint and UI must land atomically
+
+Never write this trailer without an explicit go-ahead from the human owning the work.
+EOF
+exit 1
