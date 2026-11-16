@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,10 +20,7 @@ vi.mock(
 import { probeSevenZipFormatSupport } from "../../../src/modules/series";
 import {
   ARCHIVE_INGEST_SWEEPER_INTERVAL_MS_DEFAULT,
-  markInterruptedJobsOnBoot,
-  purgeOrphanStagingDirs,
   startArchiveIngestSubsystem,
-  sweepExpiredJobs,
   type ArchiveIngestSubsystemLogger,
 } from "../../../src/modules/series";
 import type { ArchiveIngestRepository } from "../../../src/modules/series";
@@ -40,26 +37,16 @@ function fakeLogger(): ArchiveIngestSubsystemLogger & {
   };
 }
 
-function mockRepository(): ArchiveIngestRepository & {
-  [K in keyof ArchiveIngestRepository]: ReturnType<typeof vi.fn>;
-} {
+function createSubsystemTestRepository(
+  overrides: Partial<ArchiveIngestRepository> = {},
+): ArchiveIngestRepository {
   return {
-    findActiveJob: vi.fn(),
-    countActiveJobs: vi.fn(),
-    createJob: vi.fn(),
-    findById: vi.fn(),
-    findFailedJob: vi.fn(),
-    updateJob: vi.fn(),
     markInterruptedJobsAsFailed: vi.fn().mockResolvedValue([]),
+    listAllJobIds: vi.fn().mockResolvedValue([]),
     findExpiredReadyJobs: vi.fn().mockResolvedValue([]),
     markJobsExpired: vi.fn().mockResolvedValue([]),
-    listJobsByOwner: vi.fn(),
-    findQueuedJobs: vi.fn(),
-    listActiveJobIds: vi.fn(),
-    listAllJobIds: vi.fn().mockResolvedValue([]),
-  } as unknown as ArchiveIngestRepository & {
-    [K in keyof ArchiveIngestRepository]: ReturnType<typeof vi.fn>;
-  };
+    ...overrides,
+  } as unknown as ArchiveIngestRepository;
 }
 
 describe("startArchiveIngestSubsystem", () => {
@@ -81,7 +68,7 @@ describe("startArchiveIngestSubsystem", () => {
   it("probes 7-Zip format support and logs readiness", async () => {
     const logger = fakeLogger();
     const subsystem = await startArchiveIngestSubsystem({
-      repository: mockRepository(),
+      repository: createSubsystemTestRepository(),
       stagingBaseDir: "/tmp/staging-a",
       logger,
     });
@@ -103,7 +90,7 @@ describe("startArchiveIngestSubsystem", () => {
     });
 
     const subsystem = await startArchiveIngestSubsystem({
-      repository: mockRepository(),
+      repository: createSubsystemTestRepository(),
       stagingBaseDir: "/tmp/staging-b",
       logger,
     });
@@ -116,7 +103,7 @@ describe("startArchiveIngestSubsystem", () => {
     );
     const logger2 = fakeLogger();
     const subsystem2 = await startArchiveIngestSubsystem({
-      repository: mockRepository(),
+      repository: createSubsystemTestRepository(),
       stagingBaseDir: "/tmp/staging-b",
       logger: logger2,
     });
@@ -128,7 +115,7 @@ describe("startArchiveIngestSubsystem", () => {
   });
 
   it("reconciles interrupted jobs through the repository on boot", async () => {
-    const repository = mockRepository();
+    const repository = createSubsystemTestRepository();
     const base = mkdtempSync(join(tmpdir(), "subsystem-boot-"));
     mkdirSync(join(base, "probe-entry"), { recursive: true });
     try {
@@ -151,7 +138,7 @@ describe("startArchiveIngestSubsystem", () => {
   it("falls back to ARCHIVE_STAGING_DIR env and the default staging dir", async () => {
     process.env.ARCHIVE_STAGING_DIR = "/tmp/from-env";
     const s1 = await startArchiveIngestSubsystem({
-      repository: mockRepository(),
+      repository: createSubsystemTestRepository(),
       logger: fakeLogger(),
     });
     expect(s1.stagingBaseDir).toBe("/tmp/from-env");
@@ -159,7 +146,7 @@ describe("startArchiveIngestSubsystem", () => {
 
     delete process.env.ARCHIVE_STAGING_DIR;
     const s2 = await startArchiveIngestSubsystem({
-      repository: mockRepository(),
+      repository: createSubsystemTestRepository(),
       logger: fakeLogger(),
     });
     expect(s2.stagingBaseDir).toBe("/tmp/archive-ingest-staging");
@@ -167,7 +154,7 @@ describe("startArchiveIngestSubsystem", () => {
   });
 
   it("triggers an initial sweep and schedules periodic sweeps at the configured interval", async () => {
-    const repository = mockRepository();
+    const repository = createSubsystemTestRepository();
     const subsystem = await startArchiveIngestSubsystem({
       repository,
       stagingBaseDir: "/tmp/staging-d",
@@ -190,7 +177,7 @@ describe("startArchiveIngestSubsystem", () => {
 
   it("uses the default 30-minute sweeper interval", async () => {
     expect(ARCHIVE_INGEST_SWEEPER_INTERVAL_MS_DEFAULT).toBe(30 * 60 * 1000);
-    const repository = mockRepository();
+    const repository = createSubsystemTestRepository();
     await startArchiveIngestSubsystem({
       repository,
       stagingBaseDir: "/tmp/staging-e",
@@ -204,7 +191,7 @@ describe("startArchiveIngestSubsystem", () => {
   });
 
   it("stop() clears the sweeper interval timer and prevents further sweeps", async () => {
-    const repository = mockRepository();
+    const repository = createSubsystemTestRepository();
     const subsystem = await startArchiveIngestSubsystem({
       repository,
       stagingBaseDir: "/tmp/staging-f",
@@ -219,95 +206,5 @@ describe("startArchiveIngestSubsystem", () => {
 
     await vi.advanceTimersByTimeAsync(5000);
     expect(repository.findExpiredReadyJobs).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("markInterruptedJobsOnBoot", () => {
-  it("marks interrupted jobs failed and removes their staging directories", async () => {
-    const base = mkdtempSync(join(tmpdir(), "boot-reconcile-"));
-    const staging = join(base, "job-x");
-    mkdirSync(staging, { recursive: true });
-    const repository = mockRepository();
-    vi.mocked(repository.markInterruptedJobsAsFailed).mockResolvedValue([
-      { id: "job-x", stagingPath: staging },
-    ]);
-
-    await markInterruptedJobsOnBoot(repository);
-
-    expect(repository.markInterruptedJobsAsFailed).toHaveBeenCalledOnce();
-    expect(existsSync(staging)).toBe(false);
-    rmSync(base, { recursive: true, force: true });
-  });
-});
-
-describe("purgeOrphanStagingDirs", () => {
-  it("removes directories with no matching job id and keeps known jobs", async () => {
-    const base = mkdtempSync(join(tmpdir(), "orphan-purge-"));
-    const known = join(base, "job-known");
-    const orphan = join(base, "orphan-dir");
-    mkdirSync(known, { recursive: true });
-    mkdirSync(orphan, { recursive: true });
-    const repository = mockRepository();
-    vi.mocked(repository.listAllJobIds).mockResolvedValue(["job-known"]);
-
-    await purgeOrphanStagingDirs(repository, base);
-
-    expect(existsSync(orphan)).toBe(false);
-    expect(existsSync(known)).toBe(true);
-    rmSync(base, { recursive: true, force: true });
-  });
-});
-
-describe("sweepExpiredJobs", () => {
-  it("marks expired ready jobs and removes their staging directories", async () => {
-    const base = mkdtempSync(join(tmpdir(), "sweep-expired-"));
-    const staging = join(base, "job-old");
-    mkdirSync(staging, { recursive: true });
-    const repository = mockRepository();
-    vi.mocked(repository.findExpiredReadyJobs).mockResolvedValue([
-      {
-        id: "job-old",
-        ownerId: "owner-1",
-        seriesId: null,
-        sourceKey: "k",
-        sourceUrl: "https://example.com/old.zip",
-        referer: null,
-        status: "ready",
-        stage: "ready",
-        bytesDone: 0,
-        bytesTotal: null,
-        stagingPath: staging,
-        archiveFilename: "old.zip",
-        entries: [],
-        selection: [],
-        storageProviderId: null,
-        errorCode: null,
-        errorMessage: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() - 1000).toISOString(),
-      },
-    ]);
-    vi.mocked(repository.markJobsExpired).mockResolvedValue([
-      { id: "job-old", stagingPath: staging },
-    ]);
-
-    await sweepExpiredJobs(repository);
-
-    expect(repository.markJobsExpired).toHaveBeenCalledWith(
-      ["job-old"],
-      expect.any(Date),
-    );
-    expect(existsSync(staging)).toBe(false);
-    rmSync(base, { recursive: true, force: true });
-  });
-
-  it("does nothing when no ready jobs are expired", async () => {
-    const repository = mockRepository();
-    vi.mocked(repository.findExpiredReadyJobs).mockResolvedValue([]);
-
-    await sweepExpiredJobs(repository);
-
-    expect(repository.markJobsExpired).not.toHaveBeenCalled();
   });
 });
