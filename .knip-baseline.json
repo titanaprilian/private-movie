@@ -4988,16 +4988,16 @@
         {
           "namespace": "apiModule",
           "name": "PreviewScrapeEpisodeData",
-          "line": 74,
+          "line": 68,
           "col": 13,
-          "pos": 2284
+          "pos": 2103
         },
         {
           "namespace": "apiModule",
           "name": "PreviewScrapeSeriesData",
-          "line": 75,
+          "line": 69,
           "col": 13,
-          "pos": 2354
+          "pos": 2173
         }
       ],
       "unlisted": [],
