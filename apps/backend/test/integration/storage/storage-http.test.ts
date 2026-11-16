@@ -28,7 +28,7 @@ type ErrorResponse = { error: { code: string; message: string } };
 
 function createMockS3(
   objects: S3ObjectSummary[] = [],
-  overrides?: Partial<S3StorageService>
+  overrides?: Partial<S3StorageService>,
 ): S3StorageService & {
   deleteObject: ReturnType<typeof vi.fn>;
   deleteObjects: ReturnType<typeof vi.fn>;
@@ -131,7 +131,7 @@ async function insertVideoSource(
     url: string;
     label: string;
     quality: string | null;
-  }>
+  }>,
 ) {
   const now = new Date();
   const [sourceRow] = await db
@@ -162,9 +162,21 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { method: "GET", path: "/api/storage/series" },
         { method: "POST", path: "/api/storage/scan" },
         { method: "PUT", path: "/api/storage/limit", body: { limitGb: 50 } },
-        { method: "PATCH", path: "/api/storage/resources/some-id", body: { label: "New" } },
-        { method: "POST", path: "/api/storage/resources/attach", body: { key: "k", episodeId: "e" } },
-        { method: "POST", path: "/api/storage/resources/delete", body: { keys: ["k"] } },
+        {
+          method: "PATCH",
+          path: "/api/storage/resources/some-id",
+          body: { label: "New" },
+        },
+        {
+          method: "POST",
+          path: "/api/storage/resources/attach",
+          body: { key: "k", episodeId: "e" },
+        },
+        {
+          method: "POST",
+          path: "/api/storage/resources/delete",
+          body: { keys: ["k"] },
+        },
         { method: "POST", path: "/api/storage/resources/purge-orphans" },
         { method: "GET", path: "/api/storage/resources/preview-url?key=k" },
       ];
@@ -175,7 +187,10 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
           path: ep.path,
           body: ep.body,
         });
-        expect(res.status, `Endpoint ${ep.method} ${ep.path} should require auth`).toBe(401);
+        expect(
+          res.status,
+          `Endpoint ${ep.method} ${ep.path} should require auth`,
+        ).toBe(401);
       }
     });
 
@@ -234,18 +249,34 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
     it("returns 503 when S3 storage service is not configured", async () => {
       const unconfiguredS3: S3StorageService = {
         isConfigured: () => false,
-        getPresignedUploadUrl: async () => { throw new Error("not configured"); },
-        getPresignedPlaybackUrl: async () => { throw new Error("not configured"); },
+        getPresignedUploadUrl: async () => {
+          throw new Error("not configured");
+        },
+        getPresignedPlaybackUrl: async () => {
+          throw new Error("not configured");
+        },
         uploadObject: async () => {},
         uploadStream: async () => {},
         deleteObject: async () => {},
         deleteObjects: async () => {},
-        listObjects: async () => { throw new Error("not configured"); },
-        listAllObjects: async () => { throw new Error("not configured"); },
-        getBucketStorageUsage: async () => { throw new Error("not configured"); },
-        purgeDanglingVersions: async () => { throw new Error("not configured"); },
-        abortStaleMultipartUploads: async () => { throw new Error("not configured"); },
-        testConnection: async () => { throw new Error("not configured"); },
+        listObjects: async () => {
+          throw new Error("not configured");
+        },
+        listAllObjects: async () => {
+          throw new Error("not configured");
+        },
+        getBucketStorageUsage: async () => {
+          throw new Error("not configured");
+        },
+        purgeDanglingVersions: async () => {
+          throw new Error("not configured");
+        },
+        abortStaleMultipartUploads: async () => {
+          throw new Error("not configured");
+        },
+        testConnection: async () => {
+          throw new Error("not configured");
+        },
         getPublicBaseUrl: () => null,
       };
 
@@ -293,7 +324,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       const res = await request(app, {
@@ -303,10 +336,13 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(res.status).toBe(200);
-      const data = (res.body as DataResponse<StorageResourcesResponseData>).data;
+      const data = (res.body as DataResponse<StorageResourcesResponseData>)
+        .data;
       expect(data.total).toBe(2);
 
-      const linkedItem = data.items.find((i: StorageResourceItem) => i.key === linkedKey);
+      const linkedItem = data.items.find(
+        (i: StorageResourceItem) => i.key === linkedKey,
+      );
       expect(linkedItem).toBeDefined();
       expect(linkedItem).toMatchObject({
         key: linkedKey,
@@ -324,7 +360,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         isLoneSource: true, // Only 1 source exists for this episode
       });
 
-      const orphanItem = data.items.find((i: StorageResourceItem) => i.key === orphanKey);
+      const orphanItem = data.items.find(
+        (i: StorageResourceItem) => i.key === orphanKey,
+      );
       expect(orphanItem).toBeDefined();
       expect(orphanItem).toMatchObject({
         key: orphanKey,
@@ -348,7 +386,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { key: s3Key2, size: 100, lastModified: new Date() },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       const res = await request(app, {
@@ -358,7 +398,8 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(res.status).toBe(200);
-      const data = (res.body as DataResponse<StorageResourcesResponseData>).data;
+      const data = (res.body as DataResponse<StorageResourcesResponseData>)
+        .data;
       expect(data.items[0].isLoneSource).toBe(false);
       expect(data.items[1].isLoneSource).toBe(false);
     });
@@ -373,7 +414,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { key: "orphan.mp4", size: 100, lastModified: new Date() },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       // Filter linked
@@ -382,8 +425,14 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: "/api/storage/resources?status=linked",
         headers: authHeaders(accessToken),
       });
-      expect((linkedRes.body as DataResponse<StorageResourcesResponseData>).data.items).toHaveLength(1);
-      expect((linkedRes.body as DataResponse<StorageResourcesResponseData>).data.items[0].status).toBe("linked");
+      expect(
+        (linkedRes.body as DataResponse<StorageResourcesResponseData>).data
+          .items,
+      ).toHaveLength(1);
+      expect(
+        (linkedRes.body as DataResponse<StorageResourcesResponseData>).data
+          .items[0].status,
+      ).toBe("linked");
 
       // Filter orphaned
       const orphanRes = await request(app, {
@@ -391,8 +440,14 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: "/api/storage/resources?status=orphaned",
         headers: authHeaders(accessToken),
       });
-      expect((orphanRes.body as DataResponse<StorageResourcesResponseData>).data.items).toHaveLength(1);
-      expect((orphanRes.body as DataResponse<StorageResourcesResponseData>).data.items[0].status).toBe("orphaned");
+      expect(
+        (orphanRes.body as DataResponse<StorageResourcesResponseData>).data
+          .items,
+      ).toHaveLength(1);
+      expect(
+        (orphanRes.body as DataResponse<StorageResourcesResponseData>).data
+          .items[0].status,
+      ).toBe("orphaned");
     });
 
     it("supports search query matching filename, series title, and episode title", async () => {
@@ -408,7 +463,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { key: "other-video.mp4", size: 100, lastModified: new Date() },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       const res = await request(app, {
@@ -417,7 +474,8 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         headers: authHeaders(accessToken),
       });
 
-      const data = (res.body as DataResponse<StorageResourcesResponseData>).data;
+      const data = (res.body as DataResponse<StorageResourcesResponseData>)
+        .data;
       expect(data.items).toHaveLength(1);
       expect(data.items[0].key).toBe(key);
     });
@@ -429,7 +487,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { key: "c.mp4", size: 200, lastModified: new Date("2026-02-01") },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       // Sort by size ascending
@@ -438,7 +498,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: "/api/storage/resources?sortBy=size&sortOrder=asc",
         headers: authHeaders(accessToken),
       });
-      const sizeKeys = (sizeAsc.body as DataResponse<StorageResourcesResponseData>).data.items.map((i: StorageResourceItem) => i.key);
+      const sizeKeys = (
+        sizeAsc.body as DataResponse<StorageResourcesResponseData>
+      ).data.items.map((i: StorageResourceItem) => i.key);
       expect(sizeKeys).toEqual(["b.mp4", "c.mp4", "a.mp4"]);
 
       // Sort by size descending
@@ -447,7 +509,11 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: "/api/storage/resources?sortBy=size&sortOrder=desc",
         headers: authHeaders(accessToken),
       });
-      expect((sizeDesc.body as DataResponse<StorageResourcesResponseData>).data.items.map((i: StorageResourceItem) => i.key)).toEqual(["a.mp4", "c.mp4", "b.mp4"]);
+      expect(
+        (
+          sizeDesc.body as DataResponse<StorageResourcesResponseData>
+        ).data.items.map((i: StorageResourceItem) => i.key),
+      ).toEqual(["a.mp4", "c.mp4", "b.mp4"]);
 
       // Sort by name ascending
       const nameAsc = await request(app, {
@@ -455,7 +521,11 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: "/api/storage/resources?sortBy=name&sortOrder=asc",
         headers: authHeaders(accessToken),
       });
-      expect((nameAsc.body as DataResponse<StorageResourcesResponseData>).data.items.map((i: StorageResourceItem) => i.key)).toEqual(["a.mp4", "b.mp4", "c.mp4"]);
+      expect(
+        (
+          nameAsc.body as DataResponse<StorageResourcesResponseData>
+        ).data.items.map((i: StorageResourceItem) => i.key),
+      ).toEqual(["a.mp4", "b.mp4", "c.mp4"]);
     });
 
     it("supports pagination with page and limit", async () => {
@@ -465,7 +535,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { key: "3.mp4", size: 100, lastModified: new Date("2026-01-01") },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       const res = await request(app, {
@@ -474,7 +546,8 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         headers: authHeaders(accessToken),
       });
 
-      const data = (res.body as DataResponse<StorageResourcesResponseData>).data;
+      const data = (res.body as DataResponse<StorageResourcesResponseData>)
+        .data;
       expect(data.page).toBe(2);
       expect(data.limit).toBe(2);
       expect(data.total).toBe(3);
@@ -500,7 +573,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { key: secondKey, size: 300, lastModified: new Date("2026-01-02") },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       const bySeries = await request(app, {
@@ -508,7 +583,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: `/api/storage/resources?seriesId=${first.series.id}`,
         headers: authHeaders(accessToken),
       });
-      const seriesData = (bySeries.body as DataResponse<StorageResourcesResponseData>).data;
+      const seriesData = (
+        bySeries.body as DataResponse<StorageResourcesResponseData>
+      ).data;
       expect(seriesData.total).toBe(1);
       expect(seriesData.items[0]?.seriesId).toBe(first.series.id);
 
@@ -517,7 +594,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: `/api/storage/resources?seriesId=${first.series.id}&seasonId=${first.season.id}`,
         headers: authHeaders(accessToken),
       });
-      const seasonData = (bySeason.body as DataResponse<StorageResourcesResponseData>).data;
+      const seasonData = (
+        bySeason.body as DataResponse<StorageResourcesResponseData>
+      ).data;
       expect(seasonData.total).toBe(1);
       expect(seasonData.items[0]?.seasonId).toBe(first.season.id);
     });
@@ -544,13 +623,31 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       await insertVideoSource(second.episode.id, { url: keyC });
 
       const mockObjects: S3ObjectSummary[] = [
-        { key: keyA, size: 500_000_000, lastModified: new Date("2026-03-01T12:00:00Z") },
-        { key: keyB, size: 300_000_000, lastModified: new Date("2026-03-01T13:00:00Z") },
-        { key: keyC, size: 700_000_000, lastModified: new Date("2026-03-02T12:00:00Z") },
-        { key: "uploads/temp-orphan.mp4", size: 100_000_000, lastModified: new Date("2026-03-03T12:00:00Z") },
+        {
+          key: keyA,
+          size: 500_000_000,
+          lastModified: new Date("2026-03-01T12:00:00Z"),
+        },
+        {
+          key: keyB,
+          size: 300_000_000,
+          lastModified: new Date("2026-03-01T13:00:00Z"),
+        },
+        {
+          key: keyC,
+          size: 700_000_000,
+          lastModified: new Date("2026-03-02T12:00:00Z"),
+        },
+        {
+          key: "uploads/temp-orphan.mp4",
+          size: 100_000_000,
+          lastModified: new Date("2026-03-03T12:00:00Z"),
+        },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       const res = await request(app, {
@@ -599,7 +696,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { key: "uploads/orphan.mp4", size: 100, lastModified: new Date() },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       const res = await request(app, {
@@ -611,6 +710,159 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       expect(res.status).toBe(200);
       const data = (res.body as DataResponse<StorageSeriesResponseData>).data;
       expect(data).toEqual({ items: [], total: 0 });
+    });
+
+    it("aggregates linked sources across multiple seasons for a series and ignores non-S3 sources and orphans", async () => {
+      const now = new Date();
+      // Primary series with 2 seasons
+      const {
+        series: series1,
+        season: season1,
+        episode: ep1,
+      } = await createSeriesWithEpisode({
+        seriesTitle: "Multi-Season Anime",
+        seasonNumber: 1,
+        episodeTitle: "S1E1",
+      });
+
+      const [ep2] = await db
+        .insert(episodesTable)
+        .values({
+          id: crypto.randomUUID(),
+          seasonId: season1.id,
+          title: "S1E2",
+          order: 2,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      const [season2] = await db
+        .insert(seasonsTable)
+        .values({
+          id: crypto.randomUUID(),
+          seriesId: series1.id,
+          title: "Season 2",
+          seasonNumber: 2,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      const [ep3] = await db
+        .insert(episodesTable)
+        .values({
+          id: crypto.randomUUID(),
+          seasonId: season2.id,
+          title: "S2E1",
+          order: 1,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      // Second series with 1 season to verify series isolation
+      const { series: series2, episode: ep4 } = await createSeriesWithEpisode({
+        seriesTitle: "Single-Season Anime",
+        seasonNumber: 1,
+        episodeTitle: "Pilot",
+      });
+
+      const keyS1E1 = `episodes/${ep1.id}/s1e1.mp4`;
+      const keyS1E2 = `episodes/${ep2.id}/s1e2.mp4`;
+      const keyS2E1 = `episodes/${ep3.id}/s2e1.mp4`;
+      const keySeries2 = `episodes/${ep4.id}/s2pilot.mp4`;
+
+      await insertVideoSource(ep1.id, { url: keyS1E1 });
+      await insertVideoSource(ep2.id, { url: keyS1E2 });
+      await insertVideoSource(ep3.id, { url: keyS2E1 });
+      // Non-S3 source on ep3 (must NOT be counted in S3 metrics)
+      await insertVideoSource(ep3.id, {
+        type: "stream",
+        url: "https://external.example.com/stream.m3u8",
+        label: "External Stream",
+      });
+      await insertVideoSource(ep4.id, { url: keySeries2 });
+
+      const mockObjects: S3ObjectSummary[] = [
+        {
+          key: keyS1E1,
+          size: 500_000_000,
+          lastModified: new Date("2026-03-01T12:00:00Z"),
+        },
+        {
+          key: keyS1E2,
+          size: 300_000_000,
+          lastModified: new Date("2026-03-01T13:00:00Z"),
+        },
+        {
+          key: keyS2E1,
+          size: 400_000_000,
+          lastModified: new Date("2026-03-02T12:00:00Z"),
+        },
+        {
+          key: keySeries2,
+          size: 250_000_000,
+          lastModified: new Date("2026-03-02T14:00:00Z"),
+        },
+        {
+          key: "uploads/unlinked-orphan.mp4",
+          size: 100_000_000,
+          lastModified: new Date("2026-03-03T12:00:00Z"),
+        },
+      ];
+
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
+      const { accessToken } = await registerUser(app);
+
+      const res = await request(app, {
+        method: "GET",
+        path: "/api/storage/series",
+        headers: authHeaders(accessToken),
+      });
+
+      expect(res.status).toBe(200);
+      const data = (res.body as DataResponse<StorageSeriesResponseData>).data;
+      expect(data.total).toBe(2);
+      expect(data.items).toHaveLength(2);
+
+      const multi = data.items.find((i) => i.id === series1.id);
+      expect(multi).toBeDefined();
+      expect(multi).toMatchObject({
+        id: series1.id,
+        title: "Multi-Season Anime",
+        s3SourceCount: 3, // 2 from season 1, 1 from season 2 (non-s3 stream ignored)
+        s3SizeBytes: 1_200_000_000, // 500M + 300M + 400M
+      });
+      expect(multi?.seasons).toHaveLength(2);
+
+      const s1 = multi?.seasons.find((s) => s.id === season1.id);
+      expect(s1).toMatchObject({
+        id: season1.id,
+        seasonNumber: 1,
+        title: "Season 1",
+        s3SourceCount: 2,
+        s3SizeBytes: 800_000_000,
+      });
+
+      const s2 = multi?.seasons.find((s) => s.id === season2.id);
+      expect(s2).toMatchObject({
+        id: season2.id,
+        seasonNumber: 2,
+        title: "Season 2",
+        s3SourceCount: 1,
+        s3SizeBytes: 400_000_000,
+      });
+
+      const single = data.items.find((i) => i.id === series2.id);
+      expect(single).toMatchObject({
+        id: series2.id,
+        title: "Single-Season Anime",
+        s3SourceCount: 1,
+        s3SizeBytes: 250_000_000,
+      });
     });
   });
 
@@ -631,7 +883,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(res.status).toBe(200);
-      expect((res.body as DataResponse<{ count: number; totalBytes: number }>).data).toEqual({
+      expect(
+        (res.body as DataResponse<{ count: number; totalBytes: number }>).data,
+      ).toEqual({
         count: 2,
         totalBytes: 3000,
       });
@@ -654,7 +908,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(updateRes.status).toBe(200);
-      expect((updateRes.body as DataResponse<StorageLimitUpdateResponseData>).data).toEqual({
+      expect(
+        (updateRes.body as DataResponse<StorageLimitUpdateResponseData>).data,
+      ).toEqual({
         limitGb: 200,
         limitBytes: 200 * 1024 * 1024 * 1024,
       });
@@ -672,7 +928,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: "/api/storage/metrics",
         headers: authHeaders(accessToken),
       });
-      expect((metricsRes.body as DataResponse<StorageMetrics>).data.limitBytes).toBe(200 * 1024 * 1024 * 1024);
+      expect(
+        (metricsRes.body as DataResponse<StorageMetrics>).data.limitBytes,
+      ).toBe(200 * 1024 * 1024 * 1024);
     });
 
     it("rejects invalid or non-positive storage limits with 400", async () => {
@@ -737,7 +995,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(res.status).toBe(404);
-      expect((res.body as ErrorResponse).error.code).toBe("VIDEO_SOURCE_NOT_FOUND");
+      expect((res.body as ErrorResponse).error.code).toBe(
+        "VIDEO_SOURCE_NOT_FOUND",
+      );
     });
   });
 
@@ -750,7 +1010,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         { key: orphanKey, size: 500, lastModified: new Date() },
       ];
 
-      const app = await buildApp({ s3StorageService: createMockS3(mockObjects) });
+      const app = await buildApp({
+        s3StorageService: createMockS3(mockObjects),
+      });
       const { accessToken } = await registerUser(app);
 
       const res = await request(app, {
@@ -781,7 +1043,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
         path: "/api/storage/resources",
         headers: authHeaders(accessToken),
       });
-      const item = (resourcesRes.body as DataResponse<StorageResourcesResponseData>).data.items.find((i: StorageResourceItem) => i.key === orphanKey);
+      const item = (
+        resourcesRes.body as DataResponse<StorageResourcesResponseData>
+      ).data.items.find((i: StorageResourceItem) => i.key === orphanKey);
       expect(item?.status).toBe("linked");
       expect(item?.episodeId).toBe(episode.id);
     });
@@ -832,7 +1096,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(res.status).toBe(200);
-      expect((res.body as DataResponse<StorageDeleteResponseData>).data).toEqual({
+      expect(
+        (res.body as DataResponse<StorageDeleteResponseData>).data,
+      ).toEqual({
         deletedKeys: [linkedKey, orphanKey],
         reclaimedBytes: 1500,
         deletedSourcesCount: 1,
@@ -896,7 +1162,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(res.status).toBe(200);
-      expect((res.body as DataResponse<StoragePurgeOrphansResponseData>).data).toEqual({
+      expect(
+        (res.body as DataResponse<StoragePurgeOrphansResponseData>).data,
+      ).toEqual({
         deletedKeys: [orphan1, orphan2],
         reclaimedBytes: 3000,
       });
@@ -926,7 +1194,9 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(res.status).toBe(200);
-      expect((res.body as DataResponse<StoragePurgeOrphansResponseData>).data).toEqual({
+      expect(
+        (res.body as DataResponse<StoragePurgeOrphansResponseData>).data,
+      ).toEqual({
         deletedKeys: [],
         reclaimedBytes: 0,
       });
@@ -946,8 +1216,11 @@ describe("Storage Management HTTP API (/api/storage/*)", () => {
       });
 
       expect(res.status).toBe(200);
-      expect((res.body as DataResponse<StoragePreviewUrlResponseData>).data).toEqual({
-        previewUrl: "https://s3.signed.com/episodes/123/video.mp4?expires=21600",
+      expect(
+        (res.body as DataResponse<StoragePreviewUrlResponseData>).data,
+      ).toEqual({
+        previewUrl:
+          "https://s3.signed.com/episodes/123/video.mp4?expires=21600",
       });
     });
 
