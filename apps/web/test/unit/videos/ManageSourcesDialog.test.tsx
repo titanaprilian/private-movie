@@ -1,7 +1,10 @@
 import { renderWithProviders, screen, waitFor, fireEvent } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ManageSourcesDialog } from '@/modules/videos/internal/sources';
-import * as apiModule from '@/modules/videos/internal/api';
+import type {
+  Episode,
+  PreviewScrapeResult,
+} from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
 
 vi.mock('sonner', () => ({
@@ -12,25 +15,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
-vi.mock('@/modules/videos/internal/api', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/videos/internal/api')>(
-    '@/modules/videos/internal/api'
-  );
-  return {
-    ...actual,
-    previewScrape: vi.fn(),
-    addVideoSources: vi.fn(),
-    updateVideoSource: vi.fn(),
-    deleteVideoSource: vi.fn(),
-    presignUploadSource: vi.fn(),
-    uploadBinaryToS3: vi.fn(),
-    uploadEpisodeVideoSource: vi.fn(),
-    getUploadProgress: vi.fn(),
-    remoteIngestEpisodeVideoSource: vi.fn(),
-  };
-});
-
-const mockEpisode: apiModule.Episode = {
+const mockEpisode: Episode = {
   id: 'ep-123',
   sourceUrl: 'https://otakudesu.cloud/ep1',
   source: 'otakudesu',
@@ -48,20 +33,167 @@ const mockEpisode: apiModule.Episode = {
   updatedAt: '2026-01-01',
 };
 
+const mockProviders = [
+  {
+    id: 'prov-b2',
+    name: 'Backblaze B2 Main',
+    providerType: 'backblaze' as const,
+    endpoint: 'https://s3.us-west-002.backblazeb2.com',
+    region: 'us-west-002',
+    bucket: 'b2-bucket',
+    accessKeyIdMasked: '••••1234',
+    publicBaseUrl: null,
+    forcePathStyle: false,
+    storageLimitGb: 50,
+    isDefault: true,
+    isEnabled: true,
+    linkedSourcesCount: 2,
+    createdAt: '2026-09-01T00:00:00.000Z',
+    updatedAt: '2026-09-01T00:00:00.000Z',
+  },
+  {
+    id: 'prov-r2',
+    name: 'Cloudflare R2 Primary',
+    providerType: 'cloudflare_r2' as const,
+    endpoint: 'https://account.r2.cloudflarestorage.com',
+    region: 'auto',
+    bucket: 'r2-bucket',
+    accessKeyIdMasked: '••••5678',
+    publicBaseUrl: 'https://cdn.example.com',
+    forcePathStyle: false,
+    storageLimitGb: 100,
+    isDefault: false,
+    isEnabled: true,
+    linkedSourcesCount: 1,
+    createdAt: '2026-09-02T00:00:00.000Z',
+    updatedAt: '2026-09-02T00:00:00.000Z',
+  },
+];
+
+interface FetchRoute {
+  match: (url: string, method: string) => boolean;
+  handler: (url: string, init?: RequestInit) => Response | Promise<Response>;
+}
+
+let fetchRoutes: FetchRoute[] = [];
+let fetchCalls: Array<{ url: string; method: string; init?: RequestInit }> = [];
+
+function registerFetchRoute(
+  match: (url: string, method: string) => boolean,
+  handler: (url: string, init?: RequestInit) => Response | Promise<Response>
+) {
+  fetchRoutes.unshift({ match, handler });
+}
+
+interface MockXhrInstance {
+  open: ReturnType<typeof vi.fn>;
+  setRequestHeader: ReturnType<typeof vi.fn>;
+  abort: ReturnType<typeof vi.fn>;
+  upload: {
+    onprogress:
+      | ((event: {
+          lengthComputable: boolean;
+          loaded: number;
+          total: number;
+        }) => void)
+      | null;
+  };
+  status: number;
+  responseText: string;
+  withCredentials: boolean;
+  onload: (() => void) | null;
+  onerror: (() => void) | null;
+  onabort: (() => void) | null;
+  send: ReturnType<typeof vi.fn>;
+}
+
+function createMockXhr() {
+  const mockXhr: MockXhrInstance = {
+    open: vi.fn(),
+    setRequestHeader: vi.fn(),
+    abort: vi.fn(() => {
+      mockXhr.onabort?.();
+    }),
+    upload: {
+      onprogress: null,
+    },
+    status: 0,
+    responseText: '',
+    withCredentials: false,
+    onload: null,
+    onerror: null,
+    onabort: null,
+    send: vi.fn(),
+  };
+
+  const xhrSpy = vi
+    .spyOn(window, 'XMLHttpRequest')
+    .mockImplementation(function () {
+      return mockXhr as unknown as XMLHttpRequest;
+    } as unknown as () => XMLHttpRequest);
+
+  return { mockXhr, xhrSpy };
+}
+
 describe('ManageSourcesDialog component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fetchCalls = [];
+    fetchRoutes = [
+      {
+        match: (url) => url.includes('/api/storage/providers'),
+        handler: () =>
+          new Response(JSON.stringify({ data: mockProviders }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+      },
+    ];
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        const method = init?.method?.toUpperCase() ?? 'GET';
+        fetchCalls.push({ url, method, init });
+
+        for (const route of fetchRoutes) {
+          if (route.match(url, method)) {
+            return route.handler(url, init);
+          }
+        }
+
+        return new Response(
+          JSON.stringify({
+            error: { message: `Unhandled route: ${method} ${url}` },
+          }),
+          {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    );
   });
 
   it('renders nothing when closed or episode is null', () => {
     const { container } = renderWithProviders(
-      <ManageSourcesDialog open={false} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={false}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
     expect(container).toBeEmptyDOMElement();
   });
 
   it('previews scrape result and saves sources successfully', async () => {
-    const mockPreviewResult: apiModule.PreviewScrapeResult = {
+    const mockPreviewResult: PreviewScrapeResult = {
       episode: {
         sourceUrl: 'https://otakudesu.cloud/ep1',
         source: 'otakudesu',
@@ -86,32 +218,66 @@ describe('ManageSourcesDialog component', () => {
       warnings: [],
     };
 
-    vi.mocked(apiModule.previewScrape).mockResolvedValueOnce(mockPreviewResult);
-    vi.mocked(apiModule.addVideoSources).mockResolvedValueOnce(mockEpisode);
+    let previewScrapePayload: unknown = null;
+    let addSourcesPayload: unknown = null;
+
+    registerFetchRoute(
+      (url, method) => url.includes('/api/preview-scrape') && method === 'POST',
+      (_url, init) => {
+        previewScrapePayload = JSON.parse(init?.body as string);
+        return new Response(JSON.stringify({ data: mockPreviewResult }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
+
+    registerFetchRoute(
+      (url, method) =>
+        url.includes('/api/episodes/ep-123/sources') && method === 'POST',
+      (_url, init) => {
+        addSourcesPayload = JSON.parse(init?.body as string);
+        return new Response(JSON.stringify({ data: mockEpisode }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
 
     const onOpenChange = vi.fn();
     const { user, queryClient } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={onOpenChange} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={onOpenChange}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     // Input URL
-    const urlInput = screen.getByPlaceholderText(/https:\/\/otakudesu\.cloud\/episode/i);
+    const urlInput = screen.getByPlaceholderText(
+      /https:\/\/otakudesu\.cloud\/episode/i
+    );
     await user.type(urlInput, 'https://otakudesu.cloud/ep1');
 
     // Click Preview
     const previewBtn = screen.getByRole('button', { name: /^Preview$/i });
     await user.click(previewBtn);
 
-    // Verify previewScrape called
-    expect(apiModule.previewScrape).toHaveBeenCalledWith({
-      sourceUrl: 'https://otakudesu.cloud/ep1',
-      source: 'otakudesu',
+    // Verify previewScrape called with request payload
+    await waitFor(() => {
+      expect(previewScrapePayload).toEqual({
+        sourceUrl: 'https://otakudesu.cloud/ep1',
+        source: 'otakudesu',
+      });
     });
 
     // Verify preview extracted sources displayed
-    expect(await screen.findByText('Extracted Sources (2)')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Extracted Sources (2)')
+    ).toBeInTheDocument();
     expect(screen.getByText('Scraped Server 1')).toBeInTheDocument();
     expect(screen.getByText('Scraped Embed')).toBeInTheDocument();
 
@@ -119,17 +285,18 @@ describe('ManageSourcesDialog component', () => {
     const saveBtn = screen.getByRole('button', { name: /Save Sources/i });
     await user.click(saveBtn);
 
-    // Verify addVideoSources API called
+    // Verify addVideoSources API called with correct payload
     await waitFor(() => {
-      expect(apiModule.addVideoSources).toHaveBeenCalledWith(
-        'ep-123',
-        mockPreviewResult.episode.videoSources
-      );
+      expect(addSourcesPayload).toEqual({
+        videoSources: mockPreviewResult.episode.videoSources,
+      });
     });
 
     // Verify cache invalidation, toast notification, and tab switch
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['series', 'series-1'],
+      });
       expect(toast.success).toHaveBeenCalledWith('video.source_add', {
         description: 'Successfully saved video sources',
       });
@@ -140,7 +307,12 @@ describe('ManageSourcesDialog component', () => {
 
   it('renders the "Upload Video" tab in the tabs list', async () => {
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     const uploadTab = screen.getByRole('tab', { name: /upload video/i });
@@ -148,21 +320,32 @@ describe('ManageSourcesDialog component', () => {
 
     await user.click(uploadTab);
     expect(screen.getByText('Upload Video to S3')).toBeInTheDocument();
-    expect(screen.getByText(/click to select or drag video here/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/click to select or drag video here/i)
+    ).toBeInTheDocument();
   });
 
   it('selecting a video file auto-fills the label without extension', async () => {
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     await user.click(screen.getByRole('tab', { name: /upload video/i }));
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     expect(fileInput).not.toBeNull();
     expect(fileInput.getAttribute('accept')).toContain('.mp4');
 
-    const file = new File(['fake video'], 'my-episode-video.mp4', { type: 'video/mp4' });
+    const file = new File(['fake video'], 'my-episode-video.mp4', {
+      type: 'video/mp4',
+    });
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     expect(await screen.findByText('my-episode-video.mp4')).toBeInTheDocument();
@@ -170,23 +353,44 @@ describe('ManageSourcesDialog component', () => {
   });
 
   it('uploads via the backend proxy endpoint with progress and switches to edit tab', async () => {
-    vi.mocked(apiModule.uploadEpisodeVideoSource).mockImplementation(
-      async (_episodeId, { onProgress }) => {
-        onProgress?.({ percent: 50, loaded: 50 * 1024 * 1024, total: 100 * 1024 * 1024 });
-        onProgress?.({ percent: 100, loaded: 100 * 1024 * 1024, total: 100 * 1024 * 1024 });
-        return mockEpisode;
-      }
-    );
+    const { mockXhr } = createMockXhr();
+    let sentFormData: FormData | null = null;
+
+    mockXhr.send = vi.fn((body) => {
+      sentFormData = body as FormData;
+      mockXhr.upload.onprogress?.({
+        lengthComputable: true,
+        loaded: 50 * 1024 * 1024,
+        total: 100 * 1024 * 1024,
+      });
+      mockXhr.upload.onprogress?.({
+        lengthComputable: true,
+        loaded: 100 * 1024 * 1024,
+        total: 100 * 1024 * 1024,
+      });
+      mockXhr.status = 200;
+      mockXhr.responseText = JSON.stringify({ data: mockEpisode });
+      mockXhr.onload?.();
+    });
 
     const { user, queryClient } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await user.click(screen.getByRole('tab', { name: /upload video/i }));
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = new File(['fake video'], 'my-video.mp4', { type: 'video/mp4' });
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    const file = new File(['fake video'], 'my-video.mp4', {
+      type: 'video/mp4',
+    });
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     // Quality field
@@ -197,26 +401,23 @@ describe('ManageSourcesDialog component', () => {
     expect(uploadBtn).toBeEnabled();
     await user.click(uploadBtn);
 
-    // File uploaded through the backend proxy endpoint (no B2 CORS):
-    // POST /api/media/episodes/:id/sources/upload via multipart XHR
+    // Verify XHR endpoint and multipart fields
     await waitFor(() => {
-      expect(apiModule.uploadEpisodeVideoSource).toHaveBeenCalledOnce();
+      expect(mockXhr.open).toHaveBeenCalledWith(
+        'POST',
+        expect.stringContaining('/api/episodes/ep-123/sources/upload')
+      );
+      expect(sentFormData).not.toBeNull();
+      expect((sentFormData!.get('file') as File).name).toBe(file.name);
+      expect(sentFormData!.get('label')).toBe('my-video');
+      expect(sentFormData!.get('quality')).toBe('1080p');
     });
-    const [episodeId, uploadArgs] = vi.mocked(apiModule.uploadEpisodeVideoSource).mock.calls[0];
-    expect(episodeId).toBe('ep-123');
-    expect(uploadArgs.file).toBe(file);
-    expect(uploadArgs.label).toBe('my-video');
-    expect(uploadArgs.quality).toBe('1080p');
-    expect(uploadArgs.signal).toBeInstanceOf(AbortSignal);
-    expect(typeof uploadArgs.onProgress).toBe('function');
-
-    // Successful upload automatically registers the S3 source server-side:
-    // no separate client-side source registration call is needed
-    expect(apiModule.addVideoSources).not.toHaveBeenCalled();
 
     // Cache invalidated, toast shown, tab switched to Edit Existing
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['series', 'series-1'],
+      });
       expect(toast.success).toHaveBeenCalledWith('video.source_add', {
         description: 'Successfully uploaded and registered video source',
       });
@@ -225,86 +426,130 @@ describe('ManageSourcesDialog component', () => {
   });
 
   it('cancel aborts the active upload and resets the upload UI', async () => {
-    // Never-resolving proxy upload that emits progress then rejects on abort,
-    // simulating mid-flight cancellation
-    vi.mocked(apiModule.uploadEpisodeVideoSource).mockImplementation(
-      (_episodeId, { onProgress, signal }) =>
-        new Promise<apiModule.Episode>((_resolve, reject) => {
-          onProgress?.({ percent: 17, loaded: 142 * 1024 * 1024, total: 850 * 1024 * 1024 });
-          signal?.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
-          });
-        })
-    );
+    const { mockXhr } = createMockXhr();
+
+    mockXhr.send = vi.fn(() => {
+      mockXhr.upload.onprogress?.({
+        lengthComputable: true,
+        loaded: 142 * 1024 * 1024,
+        total: 850 * 1024 * 1024,
+      });
+      // Keep request pending mid-flight
+    });
 
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     await user.click(screen.getByRole('tab', { name: /upload video/i }));
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     fireEvent.change(fileInput, {
-      target: { files: [new File(['fake video'], 'big-video.mp4', { type: 'video/mp4' })] },
+      target: {
+        files: [
+          new File(['fake video'], 'big-video.mp4', { type: 'video/mp4' }),
+        ],
+      },
     });
 
     await user.click(screen.getByRole('button', { name: /^upload$/i }));
 
     // Live percentage + MB progress feedback while uploading
     expect(await screen.findByText('Uploading...')).toBeInTheDocument();
-    expect(screen.getByText(/142\.0 MB \/ 850\.0 MB \(17%\)/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/142\.0 MB \/ 850\.0 MB \(17%\)/)
+    ).toBeInTheDocument();
 
     // Cancel mid-flight
     await user.click(screen.getByRole('button', { name: /^cancel$/i }));
 
     // Upload UI reset: no progress, dropzone placeholder back, Upload button back disabled
     await waitFor(() => {
+      expect(mockXhr.abort).toHaveBeenCalled();
       expect(screen.queryByText('Uploading...')).not.toBeInTheDocument();
-      expect(screen.getByText(/click to select or drag video here/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/click to select or drag video here/i)
+      ).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /^upload$/i })).toBeDisabled();
     });
-    expect(apiModule.addVideoSources).not.toHaveBeenCalled();
   });
 
   it('shows a warning banner when S3 storage is unconfigured', async () => {
-    const err = new Error('S3 storage service is not configured') as Error & { code: string };
-    err.code = 'S3_NOT_CONFIGURED';
-    vi.mocked(apiModule.uploadEpisodeVideoSource).mockRejectedValueOnce(err);
+    const { mockXhr } = createMockXhr();
+    mockXhr.send = vi.fn(() => {
+      mockXhr.status = 503;
+      mockXhr.responseText = JSON.stringify({
+        error: {
+          code: 'S3_NOT_CONFIGURED',
+          message: 'S3 storage service is not configured',
+        },
+      });
+      mockXhr.onload?.();
+    });
 
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     await user.click(screen.getByRole('tab', { name: /upload video/i }));
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     fireEvent.change(fileInput, {
-      target: { files: [new File(['fake video'], 'clip.mp4', { type: 'video/mp4' })] },
+      target: {
+        files: [new File(['fake video'], 'clip.mp4', { type: 'video/mp4' })],
+      },
     });
 
     await user.click(screen.getByRole('button', { name: /^upload$/i }));
 
-    expect(await screen.findByText('S3 Storage Unconfigured')).toBeInTheDocument();
+    expect(
+      await screen.findByText('S3 Storage Unconfigured')
+    ).toBeInTheDocument();
     expect(toast.error).toHaveBeenCalledWith('video.s3_upload', {
       description: 'S3 storage service is not configured',
     });
-    expect(apiModule.uploadEpisodeVideoSource).toHaveBeenCalledOnce();
-    expect(apiModule.addVideoSources).not.toHaveBeenCalled();
+    expect(mockXhr.open).toHaveBeenCalledWith(
+      'POST',
+      expect.stringContaining('/api/episodes/ep-123/sources/upload')
+    );
   });
 
   it('rejects oversized file selection with toast warning and prevents upload', async () => {
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     await user.click(screen.getByRole('tab', { name: /upload video/i }));
 
-    const oversizedFile = new File(['x'.repeat(100)], 'huge-video.mp4', { type: 'video/mp4' });
+    const oversizedFile = new File(['x'.repeat(100)], 'huge-video.mp4', {
+      type: 'video/mp4',
+    });
     Object.defineProperty(oversizedFile, 'size', {
       value: 1024 * 1024 * 1024 + 1024, // > 1GB
     });
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     fireEvent.change(fileInput, {
       target: { files: [oversizedFile] },
     });
@@ -313,35 +558,55 @@ describe('ManageSourcesDialog component', () => {
       description: 'File size exceeds the maximum limit of 1 GB',
     });
     expect(screen.getByRole('button', { name: /^upload$/i })).toBeDisabled();
-    expect(apiModule.uploadEpisodeVideoSource).not.toHaveBeenCalled();
   });
 
   it('surfaces descriptive error message when upload fails with HTTP 413 FILE_TOO_LARGE', async () => {
-    const err = new Error('File size exceeds the maximum allowed limit of 1GB') as Error & { code: string };
-    err.code = 'FILE_TOO_LARGE';
-    vi.mocked(apiModule.uploadEpisodeVideoSource).mockRejectedValueOnce(err);
+    const { mockXhr } = createMockXhr();
+    mockXhr.send = vi.fn(() => {
+      mockXhr.status = 413;
+      mockXhr.responseText = JSON.stringify({
+        error: {
+          code: 'FILE_TOO_LARGE',
+          message: 'File size exceeds the maximum allowed limit of 1GB',
+        },
+      });
+      mockXhr.onload?.();
+    });
 
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     await user.click(screen.getByRole('tab', { name: /upload video/i }));
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     fireEvent.change(fileInput, {
-      target: { files: [new File(['fake video'], 'clip.mp4', { type: 'video/mp4' })] },
+      target: {
+        files: [new File(['fake video'], 'clip.mp4', { type: 'video/mp4' })],
+      },
     });
 
     await user.click(screen.getByRole('button', { name: /^upload$/i }));
 
     expect(toast.error).toHaveBeenCalledWith('video.s3_upload', {
-      description: 'Failed to upload video: File size exceeds the maximum allowed limit of 1GB',
+      description:
+        'Failed to upload video: File size exceeds the maximum allowed limit of 1GB',
     });
-    expect(apiModule.uploadEpisodeVideoSource).toHaveBeenCalledOnce();
+    expect(mockXhr.open).toHaveBeenCalledWith(
+      'POST',
+      expect.stringContaining('/api/episodes/ep-123/sources/upload')
+    );
   });
 
   it('renders s3 badge with purple styling and allows editing s3 sources', async () => {
-    const s3Episode: apiModule.Episode = {
+    const s3Episode: Episode = {
       ...mockEpisode,
       videoSources: [
         {
@@ -354,7 +619,7 @@ describe('ManageSourcesDialog component', () => {
       ],
     };
 
-    const updatedEpisode: apiModule.Episode = {
+    const updatedEpisode: Episode = {
       ...s3Episode,
       videoSources: [
         {
@@ -365,10 +630,27 @@ describe('ManageSourcesDialog component', () => {
       ],
     };
 
-    vi.mocked(apiModule.updateVideoSource).mockResolvedValueOnce(updatedEpisode);
+    let updatePayload: unknown = null;
+    registerFetchRoute(
+      (url, method) =>
+        url.includes('/api/episodes/ep-123/sources/src-s3-1') &&
+        method === 'PATCH',
+      (_url, init) => {
+        updatePayload = JSON.parse(init?.body as string);
+        return new Response(JSON.stringify({ data: updatedEpisode }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
 
     const { user, queryClient } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={s3Episode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={s3Episode}
+        seriesId="series-1"
+      />
     );
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -382,7 +664,7 @@ describe('ManageSourcesDialog component', () => {
     expect(s3Badge.className).toContain('text-purple-700');
 
     // Verify S3 option in Type selector
-    const typeSelect = screen.getByRole('combobox');
+    const typeSelect = screen.getByRole('combobox', { name: /type/i });
     expect(typeSelect).toHaveTextContent(/s3 storage/i);
 
     // Edit fields
@@ -399,7 +681,7 @@ describe('ManageSourcesDialog component', () => {
     await user.click(updateBtn);
 
     await waitFor(() => {
-      expect(apiModule.updateVideoSource).toHaveBeenCalledWith('ep-123', 'src-s3-1', {
+      expect(updatePayload).toEqual({
         type: 's3',
         label: 'Updated B2 Mirror',
         url: 'episodes/ep-123/video.mp4',
@@ -408,7 +690,9 @@ describe('ManageSourcesDialog component', () => {
     });
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['series', 'series-1'],
+      });
       expect(toast.success).toHaveBeenCalledWith('video.source_update', {
         description: 'Successfully updated video source',
       });
@@ -416,7 +700,7 @@ describe('ManageSourcesDialog component', () => {
   });
 
   it('deletes an S3 source and triggers query invalidation', async () => {
-    const s3Episode: apiModule.Episode = {
+    const s3Episode: Episode = {
       ...mockEpisode,
       videoSources: [
         {
@@ -429,15 +713,32 @@ describe('ManageSourcesDialog component', () => {
       ],
     };
 
-    const emptyEpisode: apiModule.Episode = {
+    const emptyEpisode: Episode = {
       ...s3Episode,
       videoSources: [],
     };
 
-    vi.mocked(apiModule.deleteVideoSource).mockResolvedValueOnce(emptyEpisode);
+    let deleteRequested = false;
+    registerFetchRoute(
+      (url, method) =>
+        url.includes('/api/episodes/ep-123/sources/src-s3-del') &&
+        method === 'DELETE',
+      () => {
+        deleteRequested = true;
+        return new Response(JSON.stringify({ data: emptyEpisode }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    );
 
     const { user, queryClient } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={s3Episode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={s3Episode}
+        seriesId="series-1"
+      />
     );
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -448,11 +749,13 @@ describe('ManageSourcesDialog component', () => {
     await user.click(removeBtn);
 
     await waitFor(() => {
-      expect(apiModule.deleteVideoSource).toHaveBeenCalledWith('ep-123', 'src-s3-del');
+      expect(deleteRequested).toBe(true);
     });
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['series', 'series-1'],
+      });
       expect(toast.success).toHaveBeenCalledWith('video.source_delete', {
         description: 'Successfully removed video source',
       });
@@ -461,17 +764,29 @@ describe('ManageSourcesDialog component', () => {
 
   it('renders Remote Ingest tab and auto-parses URL to prefill label and quality', async () => {
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     const remoteTab = screen.getByRole('tab', { name: /remote ingest/i });
     expect(remoteTab).toBeInTheDocument();
 
     await user.click(remoteTab);
-    expect(screen.getByText('Ingest Remote Video URL to S3')).toBeInTheDocument();
+    expect(
+      screen.getByText('Ingest Remote Video URL to S3')
+    ).toBeInTheDocument();
 
-    const urlInput = screen.getByPlaceholderText('https://example.com/video.mp4');
-    await user.type(urlInput, 'https://cdn.example.com/shows/Movie.2026.1080p.mp4');
+    const urlInput = screen.getByPlaceholderText(
+      'https://example.com/video.mp4'
+    );
+    await user.type(
+      urlInput,
+      'https://cdn.example.com/shows/Movie.2026.1080p.mp4'
+    );
 
     expect(screen.getByDisplayValue('S3 1080p')).toBeInTheDocument();
     expect(screen.getByDisplayValue('1080p')).toBeInTheDocument();
@@ -479,26 +794,37 @@ describe('ManageSourcesDialog component', () => {
 
   it('1-click "Ingest to S3" shortcut button on direct source populates form and switches tab', async () => {
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     // Switch to edit existing tab
     await user.click(screen.getByRole('tab', { name: /edit existing/i }));
 
-    const ingestShortcutBtn = screen.getByRole('button', { name: /ingest to s3/i });
+    const ingestShortcutBtn = screen.getByRole('button', {
+      name: /ingest to s3/i,
+    });
     expect(ingestShortcutBtn).toBeInTheDocument();
 
     await user.click(ingestShortcutBtn);
 
     // Should switch to remote ingest tab with pre-filled fields from direct source
-    expect(screen.getByText('Ingest Remote Video URL to S3')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('https://stream.com/video1.mp4')).toBeInTheDocument();
+    expect(
+      screen.getByText('Ingest Remote Video URL to S3')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue('https://stream.com/video1.mp4')
+    ).toBeInTheDocument();
     expect(screen.getByDisplayValue('S3 1080p')).toBeInTheDocument();
     expect(screen.getByDisplayValue('1080p')).toBeInTheDocument();
   });
 
   it('remotes ingest with SSE progress updates and completes successfully', async () => {
-    const updatedEpisode: apiModule.Episode = {
+    const updatedEpisode: Episode = {
       ...mockEpisode,
       videoSources: [
         ...mockEpisode.videoSources!,
@@ -512,45 +838,75 @@ describe('ManageSourcesDialog component', () => {
       ],
     };
 
-    vi.mocked(apiModule.remoteIngestEpisodeVideoSource).mockImplementation(
-      async (_episodeId, { onProgress }) => {
-        onProgress?.({ percent: 45, loaded: 45 * 1024 * 1024, total: 100 * 1024 * 1024 });
-        onProgress?.({ percent: 100, loaded: 100 * 1024 * 1024, total: 100 * 1024 * 1024 });
-        return updatedEpisode;
+    let remoteIngestPayload: unknown = null;
+    registerFetchRoute(
+      (url, method) =>
+        url.includes('/api/episodes/ep-123/sources/remote-ingest') &&
+        method === 'POST',
+      (_url, init) => {
+        remoteIngestPayload = JSON.parse(init?.body as string);
+        const sseChunks = [
+          'event: progress\ndata: {"percent":45,"loaded":47185920,"total":104857600}\n\n',
+          'event: progress\ndata: {"percent":100,"loaded":104857600,"total":104857600}\n\n',
+          `event: complete\ndata: ${JSON.stringify({ episode: updatedEpisode })}\n\n`,
+        ];
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          start(controller) {
+            for (const chunk of sseChunks) {
+              controller.enqueue(encoder.encode(chunk));
+            }
+            controller.close();
+          },
+        });
+        return new Response(stream, {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        });
       }
     );
 
     const { user, queryClient } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await user.click(screen.getByRole('tab', { name: /remote ingest/i }));
 
-    const urlInput = screen.getByPlaceholderText('https://example.com/video.mp4');
+    const urlInput = screen.getByPlaceholderText(
+      'https://example.com/video.mp4'
+    );
     await user.type(urlInput, 'https://remote.com/my-video.1080p.mp4');
 
     // Open advanced headers section
     await user.click(screen.getByText(/advanced headers/i));
-    const refererInput = screen.getByPlaceholderText('e.g. https://remotehost.com');
+    const refererInput = screen.getByPlaceholderText(
+      'e.g. https://remotehost.com'
+    );
     await user.type(refererInput, 'https://remote.com');
 
     const startBtn = screen.getByRole('button', { name: /^ingest to s3$/i });
     await user.click(startBtn);
 
     await waitFor(() => {
-      expect(apiModule.remoteIngestEpisodeVideoSource).toHaveBeenCalledWith('ep-123', {
+      expect(remoteIngestPayload).toEqual({
         url: 'https://remote.com/my-video.1080p.mp4',
         label: 'S3 1080p',
         quality: '1080p',
         referer: 'https://remote.com',
-        signal: expect.any(AbortSignal),
-        onProgress: expect.any(Function),
+        storageProviderId: 'prov-b2',
       });
     });
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['series', 'series-1'],
+      });
       expect(toast.success).toHaveBeenCalledWith('video.remote_ingest', {
         description: 'Successfully ingested remote video to S3',
       });
@@ -560,86 +916,170 @@ describe('ManageSourcesDialog component', () => {
   });
 
   it('cancel remote ingest aborts transfer and resets state', async () => {
-    vi.mocked(apiModule.remoteIngestEpisodeVideoSource).mockImplementation(
-      (_episodeId, { onProgress, signal }) =>
-        new Promise<apiModule.Episode>((_resolve, reject) => {
-          onProgress?.({ percent: 30, loaded: 30 * 1024 * 1024, total: 100 * 1024 * 1024 });
-          signal?.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
-          });
-        })
+    registerFetchRoute(
+      (url, method) =>
+        url.includes('/api/episodes/ep-123/sources/remote-ingest') &&
+        method === 'POST',
+      (_url, init) => {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              encoder.encode(
+                'event: progress\ndata: {"percent":30,"loaded":31457280,"total":104857600}\n\n'
+              )
+            );
+            init?.signal?.addEventListener('abort', () => {
+              controller.error(new DOMException('Aborted', 'AbortError'));
+            });
+          },
+        });
+        return new Response(stream, {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        });
+      }
     );
 
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     await user.click(screen.getByRole('tab', { name: /remote ingest/i }));
 
-    const urlInput = screen.getByPlaceholderText('https://example.com/video.mp4');
+    const urlInput = screen.getByPlaceholderText(
+      'https://example.com/video.mp4'
+    );
     await user.type(urlInput, 'https://remote.com/huge-video.mp4');
 
     await user.click(screen.getByRole('button', { name: /^ingest to s3$/i }));
 
     expect(await screen.findByText('Ingesting...')).toBeInTheDocument();
-    expect(screen.getByText(/30\.0 MB \/ 100\.0 MB \(30%\)/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/30\.0 MB \/ 100\.0 MB \(30%\)/)
+    ).toBeInTheDocument();
 
     // Click Cancel Ingest
     await user.click(screen.getByRole('button', { name: /^cancel ingest$/i }));
 
     await waitFor(() => {
       expect(screen.queryByText('Ingesting...')).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /^ingest to s3$/i })).toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: /^ingest to s3$/i })
+      ).toBeDisabled();
     });
   });
 
   it('displays S3NotConfiguredError banner on S3 unconfigured error', async () => {
-    const err = new Error('S3 storage service is not configured') as Error & { code: string };
-    err.code = 'S3_NOT_CONFIGURED';
-    vi.mocked(apiModule.remoteIngestEpisodeVideoSource).mockRejectedValueOnce(err);
+    registerFetchRoute(
+      (url, method) =>
+        url.includes('/api/episodes/ep-123/sources/remote-ingest') &&
+        method === 'POST',
+      () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 'S3_NOT_CONFIGURED',
+              message: 'S3 storage service is not configured',
+            },
+          }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+    );
 
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     await user.click(screen.getByRole('tab', { name: /remote ingest/i }));
 
-    const urlInput = screen.getByPlaceholderText('https://example.com/video.mp4');
+    const urlInput = screen.getByPlaceholderText(
+      'https://example.com/video.mp4'
+    );
     await user.type(urlInput, 'https://remote.com/clip.mp4');
 
     await user.click(screen.getByRole('button', { name: /^ingest to s3$/i }));
 
-    expect(await screen.findByText('S3 Storage Unconfigured')).toBeInTheDocument();
+    expect(
+      await screen.findByText('S3 Storage Unconfigured')
+    ).toBeInTheDocument();
     expect(toast.error).toHaveBeenCalledWith('video.remote_ingest', {
       description: 'S3 storage service is not configured',
     });
   });
 
   it('displays "Uploading to cloud storage..." indicator and polls getUploadProgress when client upload reaches 100%', async () => {
-    let triggerProgress: ((progress: { percent: number; loaded: number; total: number }) => void) | undefined;
-    vi.mocked(apiModule.uploadEpisodeVideoSource).mockImplementation(
-      (_episodeId, { onProgress }) =>
-        new Promise<apiModule.Episode>(() => {
-          triggerProgress = onProgress;
-          // Keep promise pending so dialog stays in uploading state
-        })
-    );
+    let triggerProgress:
+      | ((progress: { percent: number; loaded: number; total: number }) => void)
+      | undefined;
+    const { mockXhr } = createMockXhr();
 
-    vi.mocked(apiModule.getUploadProgress).mockResolvedValue({
-      percent: 45,
-      loaded: 45 * 1024 * 1024,
-      total: 100 * 1024 * 1024,
+    mockXhr.send = vi.fn(() => {
+      triggerProgress = (progress) => {
+        mockXhr.upload.onprogress?.({
+          lengthComputable: true,
+          loaded: progress.loaded,
+          total: progress.total,
+        });
+      };
+      // Keep promise pending so dialog stays in uploading state
     });
 
+    let polledProgressUrl = '';
+    registerFetchRoute(
+      (url, method) =>
+        url.includes('/api/episodes/upload-progress/') && method === 'GET',
+      (url) => {
+        polledProgressUrl = url;
+        return new Response(
+          JSON.stringify({
+            data: {
+              percent: 45,
+              loaded: 45 * 1024 * 1024,
+              total: 100 * 1024 * 1024,
+            },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    );
+
     const { user } = renderWithProviders(
-      <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+      <ManageSourcesDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        episode={mockEpisode}
+        seriesId="series-1"
+      />
     );
 
     await user.click(screen.getByRole('tab', { name: /upload video/i }));
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     fireEvent.change(fileInput, {
-      target: { files: [new File(['fake video'], 'my-video.mp4', { type: 'video/mp4' })] },
+      target: {
+        files: [
+          new File(['fake video'], 'my-video.mp4', { type: 'video/mp4' }),
+        ],
+      },
     });
 
     await user.click(screen.getByRole('button', { name: /^upload$/i }));
@@ -647,75 +1087,35 @@ describe('ManageSourcesDialog component', () => {
     expect(await screen.findByText('Uploading...')).toBeInTheDocument();
 
     // Trigger 100% phase 1 client-side progress
-    triggerProgress?.({ percent: 100, loaded: 100 * 1024 * 1024, total: 100 * 1024 * 1024 });
+    triggerProgress?.({
+      percent: 100,
+      loaded: 100 * 1024 * 1024,
+      total: 100 * 1024 * 1024,
+    });
 
-    expect(await screen.findByText(/uploading to cloud storage\.\.\./i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/uploading to cloud storage\.\.\./i)
+    ).toBeInTheDocument();
 
     // Verify polling getUploadProgress
     await waitFor(() => {
-      expect(apiModule.getUploadProgress).toHaveBeenCalled();
+      expect(polledProgressUrl).toContain('/api/episodes/upload-progress/');
     });
 
-    expect(await screen.findByText(/45\.0 MB \/ 100\.0 MB \(45%\)/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/45\.0 MB \/ 100\.0 MB \(45%\)/)
+    ).toBeInTheDocument();
   });
 
   describe('Multi-Provider selection & Badges in ManageSourcesDialog', () => {
-    const mockProviders = [
-      {
-        id: 'prov-b2',
-        name: 'Backblaze B2 Main',
-        providerType: 'backblaze' as const,
-        endpoint: 'https://s3.us-west-002.backblazeb2.com',
-        region: 'us-west-002',
-        bucket: 'b2-bucket',
-        accessKeyIdMasked: '••••1234',
-        publicBaseUrl: null,
-        forcePathStyle: false,
-        storageLimitGb: 50,
-        isDefault: true,
-        isEnabled: true,
-        linkedSourcesCount: 2,
-        createdAt: '2026-09-01T00:00:00.000Z',
-        updatedAt: '2026-09-01T00:00:00.000Z',
-      },
-      {
-        id: 'prov-r2',
-        name: 'Cloudflare R2 Primary',
-        providerType: 'cloudflare_r2' as const,
-        endpoint: 'https://account.r2.cloudflarestorage.com',
-        region: 'auto',
-        bucket: 'r2-bucket',
-        accessKeyIdMasked: '••••5678',
-        publicBaseUrl: 'https://cdn.example.com',
-        forcePathStyle: false,
-        storageLimitGb: 100,
-        isDefault: false,
-        isEnabled: true,
-        linkedSourcesCount: 1,
-        createdAt: '2026-09-02T00:00:00.000Z',
-        updatedAt: '2026-09-02T00:00:00.000Z',
-      },
-    ];
-
-    beforeEach(() => {
-      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-        if (url.includes('/api/storage/providers')) {
-          return new Response(JSON.stringify({ data: mockProviders }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-        return new Response(JSON.stringify({ data: { success: true } }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      });
-    });
-
     it('renders provider selector dropdown pre-selected to default provider in Upload Video tab', async () => {
       const { user } = renderWithProviders(
-        <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+        <ManageSourcesDialog
+          open={true}
+          onOpenChange={vi.fn()}
+          episode={mockEpisode}
+          seriesId="series-1"
+        />
       );
 
       await user.click(screen.getByRole('tab', { name: /upload video/i }));
@@ -726,13 +1126,20 @@ describe('ManageSourcesDialog component', () => {
 
       // Change provider to R2
       await user.click(select);
-      await user.click(await screen.findByRole('option', { name: /cloudflare r2 primary/i }));
+      await user.click(
+        await screen.findByRole('option', { name: /cloudflare r2 primary/i })
+      );
       expect(select).toHaveTextContent(/cloudflare r2 primary/i);
     });
 
     it('renders provider selector dropdown pre-selected to default provider in Remote Ingest tab', async () => {
       const { user } = renderWithProviders(
-        <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={mockEpisode} seriesId="series-1" />
+        <ManageSourcesDialog
+          open={true}
+          onOpenChange={vi.fn()}
+          episode={mockEpisode}
+          seriesId="series-1"
+        />
       );
 
       await user.click(screen.getByRole('tab', { name: /remote ingest/i }));
@@ -743,12 +1150,14 @@ describe('ManageSourcesDialog component', () => {
 
       // Change provider to R2
       await user.click(select);
-      await user.click(await screen.findByRole('option', { name: /cloudflare r2 primary/i }));
+      await user.click(
+        await screen.findByRole('option', { name: /cloudflare r2 primary/i })
+      );
       expect(select).toHaveTextContent(/cloudflare r2 primary/i);
     });
 
     it('renders provider badge with friendly provider name on S3 sources in Existing Sources tab', async () => {
-      const s3MultiEpisode: apiModule.Episode = {
+      const s3MultiEpisode: Episode = {
         ...mockEpisode,
         videoSources: [
           {
@@ -771,12 +1180,19 @@ describe('ManageSourcesDialog component', () => {
       };
 
       const { user } = renderWithProviders(
-        <ManageSourcesDialog open={true} onOpenChange={vi.fn()} episode={s3MultiEpisode} seriesId="series-1" />
+        <ManageSourcesDialog
+          open={true}
+          onOpenChange={vi.fn()}
+          episode={s3MultiEpisode}
+          seriesId="series-1"
+        />
       );
 
       await user.click(screen.getByRole('tab', { name: /edit existing/i }));
 
-      expect(await screen.findByText('S3: Backblaze B2 Main')).toBeInTheDocument();
+      expect(
+        await screen.findByText('S3: Backblaze B2 Main')
+      ).toBeInTheDocument();
       expect(screen.getByText('S3: Cloudflare R2 Primary')).toBeInTheDocument();
     });
   });
