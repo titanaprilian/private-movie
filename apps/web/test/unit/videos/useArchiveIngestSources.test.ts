@@ -9,7 +9,6 @@ import {
   ARCHIVE_POLL_DELAY_MS,
   ARCHIVE_SESSION_EXPIRED_MESSAGE,
 } from '@/modules/videos/internal/ingestion';
-import * as api from '@/modules/videos/internal/api';
 import type { ArchiveIngestJob, StorageProviderItem } from '@repo/contracts';
 
 vi.mock('sonner', () => ({
@@ -20,21 +19,9 @@ vi.mock('sonner', () => ({
   },
 }));
 
-vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@/modules/videos/internal/api')>();
-  return {
-    ...actual,
-    createArchiveIngestJob: vi.fn(),
-    getArchiveIngestJob: vi.fn(),
-    getArchiveIngestJobProgress: vi.fn(),
-    confirmArchiveIngestJob: vi.fn(),
-    cancelArchiveIngestJob: vi.fn(),
-    retryArchiveIngestJob: vi.fn(),
-  };
-});
-
-const providersFixture = vi.hoisted(() => ({ current: [] as StorageProviderItem[] }));
+const providersFixture = vi.hoisted(() => ({
+  current: [] as StorageProviderItem[],
+}));
 
 vi.mock('@/modules/storage', () => ({
   storageProvidersQueryOptions: () => ({
@@ -48,6 +35,73 @@ const createWrapper = () => {
   return ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 };
+
+function jsonOk(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify({ data }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function jsonErr(status: number, message: string, code?: string): Response {
+  return new Response(JSON.stringify({ error: { message, code } }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+interface RecordedFetchCall {
+  url: string;
+  method: string;
+  body: unknown;
+  headers: HeadersInit | undefined;
+}
+
+let fetchCalls: RecordedFetchCall[] = [];
+let fetchHandler: (
+  url: string,
+  init?: RequestInit
+) => Promise<Response> | Response;
+
+const getCreateJobCalls = () =>
+  fetchCalls.filter(
+    (c) => c.method === 'POST' && c.url.endsWith('/archive-ingest/jobs')
+  );
+
+const getJobPollCalls = () =>
+  fetchCalls.filter(
+    (c) =>
+      c.method === 'GET' &&
+      c.url.includes('/archive-ingest/jobs/job-1') &&
+      !c.url.includes('summary=true')
+  );
+
+const getProgressPollCalls = () =>
+  fetchCalls.filter(
+    (c) =>
+      c.method === 'GET' &&
+      c.url.includes('/archive-ingest/jobs/job-1') &&
+      c.url.includes('summary=true')
+  );
+
+const getConfirmJobCalls = () =>
+  fetchCalls.filter(
+    (c) =>
+      c.method === 'POST' &&
+      c.url.includes('/archive-ingest/jobs/job-1/confirm')
+  );
+
+const getCancelJobCalls = () =>
+  fetchCalls.filter(
+    (c) =>
+      c.method === 'POST' && c.url.includes('/archive-ingest/jobs/job-1/cancel')
+  );
+
+const getRetryJobCalls = () =>
+  fetchCalls.filter(
+    (c) =>
+      c.method === 'POST' && c.url.includes('/archive-ingest/jobs/job-1/retry')
+  );
 
 function makeJob(overrides: Partial<ArchiveIngestJob> = {}): ArchiveIngestJob {
   return {
@@ -86,6 +140,28 @@ describe('useArchiveIngestSources polling hook', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     providersFixture.current = [];
+    fetchCalls = [];
+    fetchHandler = async () => jsonOk({});
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      const method = init?.method ?? 'GET';
+      let body: unknown;
+      if (typeof init?.body === 'string') {
+        try {
+          body = JSON.parse(init.body);
+        } catch {
+          body = init.body;
+        }
+      }
+      fetchCalls.push({ url, method, body, headers: init?.headers });
+      return fetchHandler(url, init);
+    });
   });
 
   afterEach(() => {
@@ -93,9 +169,12 @@ describe('useArchiveIngestSources polling hook', () => {
   });
 
   it('starts idle with no job', () => {
-    const { result } = renderHook(() => useArchiveIngestSources({ seriesId: 'series-1' }), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(
+      () => useArchiveIngestSources({ seriesId: 'series-1' }),
+      {
+        wrapper: createWrapper(),
+      }
+    );
     expect(result.current.job).toBeNull();
     expect(result.current.jobStatus).toBe('idle');
     expect(result.current.isPolling).toBe(false);
@@ -103,14 +182,31 @@ describe('useArchiveIngestSources polling hook', () => {
   });
 
   it('transitions downloading -> listing -> ready -> uploading -> done across polling updates', async () => {
-    const downloading = makeJob({ status: 'downloading', stage: 'downloading', bytesDone: 100, bytesTotal: 1000 });
+    const downloading = makeJob({
+      status: 'downloading',
+      stage: 'downloading',
+      bytesDone: 100,
+      bytesTotal: 1000,
+    });
     const listing = makeJob({ status: 'listing', stage: 'listing' });
     const ready = makeJob({
       status: 'ready',
       stage: 'ready',
       entries: [
-        { filename: 'ep01.mp4', sizeBytes: 1000, detectedEpisodeNumber: 1, quality: '1080p', needsReview: false },
-        { filename: 'ep02.mp4', sizeBytes: 1000, detectedEpisodeNumber: 2, quality: '1080p', needsReview: false },
+        {
+          filename: 'ep01.mp4',
+          sizeBytes: 1000,
+          detectedEpisodeNumber: 1,
+          quality: '1080p',
+          needsReview: false,
+        },
+        {
+          filename: 'ep02.mp4',
+          sizeBytes: 1000,
+          detectedEpisodeNumber: 2,
+          quality: '1080p',
+          needsReview: false,
+        },
       ],
     });
     const uploading = makeJob({
@@ -120,18 +216,59 @@ describe('useArchiveIngestSources polling hook', () => {
       bytesTotal: 2000,
       entries: ready.entries,
       selection: [
-        { filename: 'ep01.mp4', episodeId: 'ep-1', label: 'S3 Video', quality: '1080p', isIgnored: false },
-        { filename: 'ep02.mp4', episodeId: 'ep-2', label: 'S3 Video', quality: '1080p', isIgnored: false },
+        {
+          filename: 'ep01.mp4',
+          episodeId: 'ep-1',
+          label: 'S3 Video',
+          quality: '1080p',
+          isIgnored: false,
+        },
+        {
+          filename: 'ep02.mp4',
+          episodeId: 'ep-2',
+          label: 'S3 Video',
+          quality: '1080p',
+          isIgnored: false,
+        },
       ],
     });
-    const done = makeJob({ ...uploading, status: 'done', stage: 'done', bytesDone: 2000, bytesTotal: 2000 });
+    const done = makeJob({
+      ...uploading,
+      status: 'done',
+      stage: 'done',
+      bytesDone: 2000,
+      bytesTotal: 2000,
+    });
 
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
-    vi.mocked(api.getArchiveIngestJob)
-      .mockResolvedValueOnce(listing)
-      .mockResolvedValueOnce(ready)
-      .mockResolvedValue(uploading);
-    vi.mocked(api.confirmArchiveIngestJob).mockResolvedValue(uploading);
+    let jobPollCount = 0;
+    fetchHandler = async (url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/archive-ingest/jobs')) {
+        return jsonOk(downloading);
+      }
+      if (init?.method === 'POST' && url.includes('/jobs/job-1/confirm')) {
+        return jsonOk(uploading);
+      }
+      if (url.includes('summary=true')) {
+        return jsonOk({
+          id: 'job-1',
+          status: 'done',
+          stage: 'done',
+          bytesDone: 2000,
+          bytesTotal: 2000,
+          completedFilenames: ['ep01.mp4', 'ep02.mp4'],
+          activeFilename: null,
+          errorCode: null,
+          errorMessage: null,
+        });
+      }
+      if (url.includes('/archive-ingest/jobs/job-1')) {
+        jobPollCount++;
+        if (jobPollCount === 1) return jsonOk(listing);
+        if (jobPollCount === 2) return jsonOk(ready);
+        return jsonOk(done);
+      }
+      return jsonOk({});
+    };
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1', localEpisodes }),
@@ -142,7 +279,7 @@ describe('useArchiveIngestSources polling hook', () => {
       await result.current.startJob();
     });
     // URL is empty so startJob toasts and returns; set URL first
-    expect(api.createArchiveIngestJob).not.toHaveBeenCalled();
+    expect(getCreateJobCalls()).toHaveLength(0);
 
     act(() => {
       result.current.setArchiveUrl('https://example.com/season1.zip');
@@ -151,7 +288,11 @@ describe('useArchiveIngestSources polling hook', () => {
       await result.current.startJob();
     });
     expect(result.current.jobStatus).toBe('downloading');
-    expect(result.current.downloadProgress).toMatchObject({ loaded: 100, total: 1000, percent: 10 });
+    expect(result.current.downloadProgress).toMatchObject({
+      loaded: 100,
+      total: 1000,
+      percent: 10,
+    });
 
     // Poll -> listing
     await act(async () => {
@@ -173,11 +314,14 @@ describe('useArchiveIngestSources polling hook', () => {
     await act(async () => {
       await result.current.confirmSelection();
     });
-    expect(api.confirmArchiveIngestJob).toHaveBeenCalledWith(
-      'series-1',
-      'job-1',
-      expect.objectContaining({ selection: expect.any(Array) })
+    expect(getConfirmJobCalls()).toHaveLength(1);
+    expect(getConfirmJobCalls()[0].url).toContain(
+      '/api/series/series-1/archive-ingest/jobs/job-1/confirm'
     );
+    expect(getConfirmJobCalls()[0].body).toMatchObject({
+      selection: expect.any(Array),
+    });
+
     expect(result.current.jobStatus).toBe('uploading');
     expect(result.current.step).toBe(3);
     expect(result.current.uploadView).toMatchObject({
@@ -187,18 +331,6 @@ describe('useArchiveIngestSources polling hook', () => {
     });
 
     // Poll while uploading resolves done (lightweight progress + terminal full fetch)
-    vi.mocked(api.getArchiveIngestJobProgress).mockResolvedValue({
-      id: 'job-1',
-      status: 'done',
-      stage: 'done',
-      bytesDone: 2000,
-      bytesTotal: 2000,
-      completedFilenames: ['ep01.mp4', 'ep02.mp4'],
-      activeFilename: null,
-      errorCode: null,
-      errorMessage: null,
-    });
-    vi.mocked(api.getArchiveIngestJob).mockResolvedValue(done);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
     });
@@ -207,11 +339,18 @@ describe('useArchiveIngestSources polling hook', () => {
   });
 
   it('cancel calls the cancel endpoint and stops polling', async () => {
-    const downloading = makeJob({ status: 'downloading', bytesDone: 10, bytesTotal: 100 });
+    const downloading = makeJob({
+      status: 'downloading',
+      bytesDone: 10,
+      bytesTotal: 100,
+    });
     const cancelled = makeJob({ status: 'cancelled', stage: 'cancelled' });
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
-    vi.mocked(api.cancelArchiveIngestJob).mockResolvedValue(cancelled);
-    vi.mocked(api.getArchiveIngestJob).mockResolvedValue(downloading);
+    fetchHandler = async (url, init) => {
+      if (init?.method === 'POST' && url.includes('/jobs/job-1/cancel')) {
+        return jsonOk(cancelled);
+      }
+      return jsonOk(downloading);
+    };
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1' }),
@@ -228,16 +367,19 @@ describe('useArchiveIngestSources polling hook', () => {
     await act(async () => {
       await result.current.cancelJob();
     });
-    expect(api.cancelArchiveIngestJob).toHaveBeenCalledWith('series-1', 'job-1');
+    expect(getCancelJobCalls()).toHaveLength(1);
+    expect(getCancelJobCalls()[0].url).toContain(
+      '/api/series/series-1/archive-ingest/jobs/job-1/cancel'
+    );
     expect(result.current.jobStatus).toBe('cancelled');
     expect(result.current.isPolling).toBe(false);
 
     // Advancing timers must not trigger further polls
-    const calls = vi.mocked(api.getArchiveIngestJob).mock.calls.length;
+    const calls = getJobPollCalls().length;
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS * 3);
     });
-    expect(vi.mocked(api.getArchiveIngestJob).mock.calls.length).toBe(calls);
+    expect(getJobPollCalls().length).toBe(calls);
   });
 
   it('password retry submits the password to the retry endpoint and resumes polling', async () => {
@@ -248,15 +390,18 @@ describe('useArchiveIngestSources polling hook', () => {
       errorMessage: 'Archive is password protected',
     });
     const resumed = makeJob({ status: 'downloading', stage: 'downloading' });
-    vi.mocked(api.retryArchiveIngestJob).mockResolvedValue(resumed);
+    fetchHandler = async (url, init) => {
+      if (init?.method === 'POST' && url.includes('/jobs/job-1/retry')) {
+        return jsonOk(resumed);
+      }
+      return jsonOk(failed);
+    };
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1' }),
       { wrapper: createWrapper() }
     );
 
-    // Seed failed job via create mock
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(failed);
     act(() => {
       result.current.setArchiveUrl('https://example.com/locked.zip');
     });
@@ -271,15 +416,21 @@ describe('useArchiveIngestSources polling hook', () => {
     await act(async () => {
       await result.current.retryWithPassword();
     });
-    expect(api.retryArchiveIngestJob).toHaveBeenCalledWith('series-1', 'job-1', 's3cret');
+    expect(getRetryJobCalls()).toHaveLength(1);
+    expect(getRetryJobCalls()[0].url).toContain(
+      '/api/series/series-1/archive-ingest/jobs/job-1/retry'
+    );
+    expect(getRetryJobCalls()[0].body).toEqual({ password: 's3cret' });
     expect(result.current.jobStatus).toBe('downloading');
     expect(result.current.isPolling).toBe(true);
   });
 
   it('startJob sends the referer field when filled', async () => {
-    const downloading = makeJob({ status: 'downloading', stage: 'downloading' });
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
-    vi.mocked(api.getArchiveIngestJob).mockResolvedValue(downloading);
+    const downloading = makeJob({
+      status: 'downloading',
+      stage: 'downloading',
+    });
+    fetchHandler = async () => jsonOk(downloading);
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1' }),
@@ -292,19 +443,22 @@ describe('useArchiveIngestSources polling hook', () => {
     await act(async () => {
       await result.current.startJob();
     });
-    expect(api.createArchiveIngestJob).toHaveBeenCalledWith(
-      'series-1',
-      expect.objectContaining({
-        sourceUrl: 'https://example.com/pack.zip',
-        referer: 'https://example.com/page',
-      })
+    expect(getCreateJobCalls()).toHaveLength(1);
+    expect(getCreateJobCalls()[0].url).toContain(
+      '/api/series/series-1/archive-ingest/jobs'
     );
+    expect(getCreateJobCalls()[0].body).toMatchObject({
+      sourceUrl: 'https://example.com/pack.zip',
+      referer: 'https://example.com/page',
+    });
   });
 
   it('polls sequentially with a delay after each response resolves', async () => {
-    const downloading = makeJob({ status: 'downloading', stage: 'downloading' });
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
-    vi.mocked(api.getArchiveIngestJob).mockResolvedValue(downloading);
+    const downloading = makeJob({
+      status: 'downloading',
+      stage: 'downloading',
+    });
+    fetchHandler = async () => jsonOk(downloading);
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1' }),
@@ -321,28 +475,30 @@ describe('useArchiveIngestSources polling hook', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS - 1);
     });
-    expect(vi.mocked(api.getArchiveIngestJob)).not.toHaveBeenCalled();
+    expect(getJobPollCalls()).toHaveLength(0);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
-    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+    expect(getJobPollCalls()).toHaveLength(1);
 
     // The second poll waits for another full delay after the first resolved.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS - 1);
     });
-    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+    expect(getJobPollCalls()).toHaveLength(1);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
-    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(2);
+    expect(getJobPollCalls()).toHaveLength(2);
   });
 
   it('pauses polling while the tab is hidden and polls promptly when visible', async () => {
-    const downloading = makeJob({ status: 'downloading', stage: 'downloading' });
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
-    vi.mocked(api.getArchiveIngestJob).mockResolvedValue(downloading);
+    const downloading = makeJob({
+      status: 'downloading',
+      stage: 'downloading',
+    });
+    fetchHandler = async () => jsonOk(downloading);
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1' }),
@@ -355,7 +511,10 @@ describe('useArchiveIngestSources polling hook', () => {
       await result.current.startJob();
     });
 
-    const descriptor = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+    const descriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'visibilityState'
+    );
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
       get: () => 'hidden',
@@ -364,7 +523,7 @@ describe('useArchiveIngestSources polling hook', () => {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS * 3);
       });
-      expect(vi.mocked(api.getArchiveIngestJob)).not.toHaveBeenCalled();
+      expect(getJobPollCalls()).toHaveLength(0);
 
       Object.defineProperty(document, 'visibilityState', {
         configurable: true,
@@ -373,18 +532,24 @@ describe('useArchiveIngestSources polling hook', () => {
       await act(async () => {
         document.dispatchEvent(new Event('visibilitychange'));
       });
-      expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+      expect(getJobPollCalls()).toHaveLength(1);
     } finally {
-      if (descriptor) Object.defineProperty(document, 'visibilityState', descriptor);
+      if (descriptor)
+        Object.defineProperty(document, 'visibilityState', descriptor);
     }
   });
 
   it('halts polling and surfaces session expiry on terminal 401', async () => {
-    const downloading = makeJob({ status: 'downloading', stage: 'downloading' });
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(downloading);
-    vi.mocked(api.getArchiveIngestJob).mockRejectedValue(
-      Object.assign(new Error('Unauthorized'), { status: 401 })
-    );
+    const downloading = makeJob({
+      status: 'downloading',
+      stage: 'downloading',
+    });
+    fetchHandler = async (url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/archive-ingest/jobs')) {
+        return jsonOk(downloading);
+      }
+      return jsonErr(401, 'Unauthorized');
+    };
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1' }),
@@ -401,15 +566,16 @@ describe('useArchiveIngestSources polling hook', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
     });
-    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+    expect(getJobPollCalls().length).toBeGreaterThanOrEqual(1);
     expect(result.current.jobError).toBe(ARCHIVE_SESSION_EXPIRED_MESSAGE);
     expect(result.current.isPolling).toBe(false);
 
     // No further polls after the halt.
+    const pollCountAfterHalt = getJobPollCalls().length;
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS * 3);
     });
-    expect(vi.mocked(api.getArchiveIngestJob)).toHaveBeenCalledTimes(1);
+    expect(getJobPollCalls().length).toBe(pollCountAfterHalt);
   });
 
   it('polls lightweight progress during uploading and renders per-episode statuses', async () => {
@@ -417,9 +583,27 @@ describe('useArchiveIngestSources polling hook', () => {
       status: 'ready',
       stage: 'ready',
       entries: [
-        { filename: 'ep01.mp4', sizeBytes: 1000, detectedEpisodeNumber: 1, quality: '1080p', needsReview: false },
-        { filename: 'ep02.mp4', sizeBytes: 1000, detectedEpisodeNumber: 2, quality: null, needsReview: true },
-        { filename: 'extra.mp4', sizeBytes: 1000, detectedEpisodeNumber: null, quality: null, needsReview: true },
+        {
+          filename: 'ep01.mp4',
+          sizeBytes: 1000,
+          detectedEpisodeNumber: 1,
+          quality: '1080p',
+          needsReview: false,
+        },
+        {
+          filename: 'ep02.mp4',
+          sizeBytes: 1000,
+          detectedEpisodeNumber: 2,
+          quality: null,
+          needsReview: true,
+        },
+        {
+          filename: 'extra.mp4',
+          sizeBytes: 1000,
+          detectedEpisodeNumber: null,
+          quality: null,
+          needsReview: true,
+        },
       ],
     });
     const uploading = makeJob({
@@ -429,24 +613,52 @@ describe('useArchiveIngestSources polling hook', () => {
       bytesTotal: 2000,
       entries: ready.entries,
       selection: [
-        { filename: 'ep01.mp4', episodeId: 'ep-1', label: 'S3 Video', quality: '1080p', isIgnored: false },
-        { filename: 'ep02.mp4', episodeId: 'ep-2', label: 'Custom', quality: '720p', isIgnored: false },
-        { filename: 'extra.mp4', episodeId: null, label: 'S3 Video', quality: null, isIgnored: true },
+        {
+          filename: 'ep01.mp4',
+          episodeId: 'ep-1',
+          label: 'S3 Video',
+          quality: '1080p',
+          isIgnored: false,
+        },
+        {
+          filename: 'ep02.mp4',
+          episodeId: 'ep-2',
+          label: 'Custom',
+          quality: '720p',
+          isIgnored: false,
+        },
+        {
+          filename: 'extra.mp4',
+          episodeId: null,
+          label: 'S3 Video',
+          quality: null,
+          isIgnored: true,
+        },
       ],
     });
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(ready);
-    vi.mocked(api.confirmArchiveIngestJob).mockResolvedValue(uploading);
-    vi.mocked(api.getArchiveIngestJobProgress).mockResolvedValue({
-      id: 'job-1',
-      status: 'uploading',
-      stage: 'uploading 2/2: ep02.mp4',
-      bytesDone: 1500,
-      bytesTotal: 2000,
-      completedFilenames: ['ep01.mp4'],
-      activeFilename: 'ep02.mp4',
-      errorCode: null,
-      errorMessage: null,
-    });
+
+    fetchHandler = async (url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/archive-ingest/jobs')) {
+        return jsonOk(ready);
+      }
+      if (init?.method === 'POST' && url.includes('/jobs/job-1/confirm')) {
+        return jsonOk(uploading);
+      }
+      if (url.includes('summary=true')) {
+        return jsonOk({
+          id: 'job-1',
+          status: 'uploading',
+          stage: 'uploading 2/2: ep02.mp4',
+          bytesDone: 1500,
+          bytesTotal: 2000,
+          completedFilenames: ['ep01.mp4'],
+          activeFilename: 'ep02.mp4',
+          errorCode: null,
+          errorMessage: null,
+        });
+      }
+      return jsonOk(ready);
+    };
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1', localEpisodes }),
@@ -466,11 +678,16 @@ describe('useArchiveIngestSources polling hook', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ARCHIVE_POLL_DELAY_MS);
     });
-    expect(vi.mocked(api.getArchiveIngestJobProgress)).toHaveBeenCalledWith('series-1', 'job-1');
+    expect(getProgressPollCalls()).toHaveLength(1);
+    expect(getProgressPollCalls()[0].url).toContain(
+      '/api/series/series-1/archive-ingest/jobs/job-1?summary=true'
+    );
     // Full job endpoint must not be used while uploading stays active.
-    expect(vi.mocked(api.getArchiveIngestJob)).not.toHaveBeenCalled();
+    expect(getJobPollCalls()).toHaveLength(0);
 
-    const byName = Object.fromEntries(result.current.reviewItems.map((i) => [i.filename, i]));
+    const byName = Object.fromEntries(
+      result.current.reviewItems.map((i) => [i.filename, i])
+    );
     expect(byName['ep01.mp4'].commitStatus).toBe('completed');
     expect(byName['ep02.mp4'].commitStatus).toBe('uploading');
     expect(byName['extra.mp4'].commitStatus).toBe('skipped');
@@ -495,11 +712,21 @@ describe('useArchiveIngestSources polling hook', () => {
         { filename: 'ep02.mp4', sizeBytes: 1000, detectedEpisodeNumber: 2 },
       ],
       selection: [
-        { filename: 'ep01.mp4', episodeId: 'ep-1', isIgnored: false, completed: true },
-        { filename: 'ep02.mp4', episodeId: 'ep-2', isIgnored: false, completed: false },
+        {
+          filename: 'ep01.mp4',
+          episodeId: 'ep-1',
+          isIgnored: false,
+          completed: true,
+        },
+        {
+          filename: 'ep02.mp4',
+          episodeId: 'ep-2',
+          isIgnored: false,
+          completed: false,
+        },
       ],
     });
-    vi.mocked(api.createArchiveIngestJob).mockResolvedValue(failed);
+    fetchHandler = async () => jsonOk(failed);
 
     const { result } = renderHook(
       () => useArchiveIngestSources({ seriesId: 'series-1', localEpisodes }),
@@ -511,13 +738,16 @@ describe('useArchiveIngestSources polling hook', () => {
     await act(async () => {
       await result.current.startJob();
     });
-    const byName = Object.fromEntries(result.current.reviewItems.map((i) => [i.filename, i]));
+    const byName = Object.fromEntries(
+      result.current.reviewItems.map((i) => [i.filename, i])
+    );
     expect(byName['ep01.mp4'].commitStatus).toBe('completed');
     expect(byName['ep02.mp4'].commitStatus).toBe('failed');
     expect(result.current.commitCompletedCount).toBe(1);
   });
 
-  it('flags sibling size disparities', () => {    const anomalies = computeSizeAnomalyFilenames([
+  it('flags sibling size disparities', () => {
+    const anomalies = computeSizeAnomalyFilenames([
       { filename: 'ep01.mp4', sizeBytes: 1000 },
       { filename: 'ep02.mp4', sizeBytes: 1020 },
       { filename: 'ep03.mp4', sizeBytes: 90 },
@@ -529,23 +759,42 @@ describe('useArchiveIngestSources polling hook', () => {
   it('defaults selectedStorageProviderId to the active default provider', async () => {
     vi.useRealTimers();
     providersFixture.current = [
-      makeStorageProvider({ id: 'prov-plain', isDefault: false, isEnabled: true }),
-      makeStorageProvider({ id: 'prov-disabled-default', isDefault: true, isEnabled: false }),
-      makeStorageProvider({ id: 'prov-active-default', isDefault: true, isEnabled: true }),
+      makeStorageProvider({
+        id: 'prov-plain',
+        isDefault: false,
+        isEnabled: true,
+      }),
+      makeStorageProvider({
+        id: 'prov-disabled-default',
+        isDefault: true,
+        isEnabled: false,
+      }),
+      makeStorageProvider({
+        id: 'prov-active-default',
+        isDefault: true,
+        isEnabled: true,
+      }),
     ];
 
-    const { result } = renderHook(() => useArchiveIngestSources({ seriesId: 'series-1' }), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(
+      () => useArchiveIngestSources({ seriesId: 'series-1' }),
+      {
+        wrapper: createWrapper(),
+      }
+    );
 
     await waitFor(() => {
-      expect(result.current.selectedStorageProviderId).toBe('prov-active-default');
+      expect(result.current.selectedStorageProviderId).toBe(
+        'prov-active-default'
+      );
     });
     expect(result.current.storageProviders).toHaveLength(3);
   });
 });
 
-function makeStorageProvider(overrides: Partial<StorageProviderItem> & { id: string }): StorageProviderItem {
+function makeStorageProvider(
+  overrides: Partial<StorageProviderItem> & { id: string }
+): StorageProviderItem {
   return {
     name: `Provider ${overrides.id}`,
     providerType: 'custom',
