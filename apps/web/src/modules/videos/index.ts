@@ -12,7 +12,10 @@ export type { GenreFilterProps } from './internal/catalog';
 export { RecentEpisodeCard } from './internal/catalog';
 export type { RecentEpisodeCardProps } from './internal/catalog';
 export { SeriesDetailDialog } from './internal/catalog';
-export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from './internal/catalog';
+export type {
+  SeriesDetailDialogProps,
+  SeriesDetailDialogSeries,
+} from './internal/catalog';
 export { SeriesDetailView } from './internal/catalog';
 export { AddMediaDialog } from './internal/catalog';
 export {
@@ -48,7 +51,6 @@ export {
   previewScrape,
   saveMedia,
   addVideoSource,
-  addVideoSources,
   updateVideoSource,
   deleteVideoSource,
   scrapeEpisodeSources,
@@ -70,7 +72,10 @@ export { EditSeasonDialog } from './internal/seasons';
 export type { EditSeasonDialogProps } from './internal/seasons';
 export { MoveEpisodesDialog } from './internal/seasons';
 export type { MoveEpisodesDialogProps } from './internal/seasons';
-export { buildCrossSeasonMove, buildBulkCrossSeasonMove } from './internal/seasons';
+export {
+  buildCrossSeasonMove,
+  buildBulkCrossSeasonMove,
+} from './internal/seasons';
 export { getSeasonNumber, getNextSeasonNumber } from './internal/seasons';
 export type {
   Episode,
@@ -144,4 +149,3 @@ export type {
   AdminPresignUploadResponseData,
   AdminUploadProgressResponseData,
 } from './internal/api';
-

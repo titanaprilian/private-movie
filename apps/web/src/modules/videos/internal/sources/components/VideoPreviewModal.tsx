@@ -9,8 +9,6 @@ import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { formatEmbedUrl, getEmbedIframeSandbox } from '@/lib/media';
 import type { VideoPreviewModalProps } from '../types';
 
-export type { VideoPreviewModalProps } from '../types';
-
 export function VideoPreviewModal({
   open,
   onOpenChange,
@@ -24,10 +22,7 @@ export function VideoPreviewModal({
 
   return (
     <ChunkyDialog open={open} onOpenChange={onOpenChange}>
-      <ChunkyDialogContent
-        className="max-w-3xl"
-        aria-describedby={undefined}
-      >
+      <ChunkyDialogContent className="max-w-3xl" aria-describedby={undefined}>
         <ChunkyDialogHeader className="space-y-1 pb-2">
           <div className="flex items-center gap-2">
             <span
@@ -35,8 +30,8 @@ export function VideoPreviewModal({
                 source.type === 's3'
                   ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-300 dark:border-purple-800'
                   : source.type === 'direct'
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
-                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
               }`}
             >
               {source.type}
@@ -50,24 +45,24 @@ export function VideoPreviewModal({
         </ChunkyDialogHeader>
 
         <ChunkyDialogBody>
-        <div className="relative aspect-video w-full overflow-hidden rounded-2xl border-2 border-[var(--border)] bg-black mt-2">
-          {isEmbed && embedUrl ? (
-            <iframe
-              src={embedUrl}
-              title={source.label || 'Video Source Preview'}
-              className="w-full h-full border-0"
-              sandbox={getEmbedIframeSandbox(source.url)}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-              allowFullScreen
-            />
-          ) : (
-            <VideoPlayer
-              src={source.url}
-              title={`${source.label || 'Direct Video'} (${source.quality || 'Auto'})`}
-              autoPlay={false}
-            />
-          )}
-        </div>
+          <div className="relative aspect-video w-full overflow-hidden rounded-2xl border-2 border-[var(--border)] bg-black mt-2">
+            {isEmbed && embedUrl ? (
+              <iframe
+                src={embedUrl}
+                title={source.label || 'Video Source Preview'}
+                className="w-full h-full border-0"
+                sandbox={getEmbedIframeSandbox(source.url)}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                allowFullScreen
+              />
+            ) : (
+              <VideoPlayer
+                src={source.url}
+                title={`${source.label || 'Direct Video'} (${source.quality || 'Auto'})`}
+                autoPlay={false}
+              />
+            )}
+          </div>
         </ChunkyDialogBody>
       </ChunkyDialogContent>
     </ChunkyDialog>

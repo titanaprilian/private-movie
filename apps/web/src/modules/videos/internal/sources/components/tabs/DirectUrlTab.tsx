@@ -3,20 +3,27 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
-import { addVideoSources, type VideoSourceInput } from '../../../api';
+import { addVideoSource, type VideoSourceInput } from '../../../api';
 import type { DirectUrlTabProps } from '../../types';
 
-export type { DirectUrlTabProps } from '../../types';
-
-export function DirectUrlTab({ episodeId, seriesId, onSuccess }: DirectUrlTabProps) {
+export function DirectUrlTab({
+  episodeId,
+  seriesId,
+  onSuccess,
+}: DirectUrlTabProps) {
   const queryClient = useQueryClient();
   const [directUrl, setDirectUrl] = useState('');
   const [directLabel, setDirectLabel] = useState('');
   const [directQuality, setDirectQuality] = useState('');
 
   const saveSourcesMutation = useMutation({
-    mutationFn: ({ episodeId, sources }: { episodeId: string; sources: VideoSourceInput[] }) =>
-      addVideoSources(episodeId, sources),
+    mutationFn: ({
+      episodeId,
+      sources,
+    }: {
+      episodeId: string;
+      sources: VideoSourceInput[];
+    }) => addVideoSource(episodeId, sources),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
       toast.success('video.source_add', {
@@ -36,7 +43,9 @@ export function DirectUrlTab({ episodeId, seriesId, onSuccess }: DirectUrlTabPro
 
   return (
     <div className="p-3 border border-c rounded bg-card space-y-3">
-      <div className="text-xs font-medium mono text-muted uppercase">Add Direct Video Source</div>
+      <div className="text-xs font-medium mono text-muted uppercase">
+        Add Direct Video Source
+      </div>
 
       <div>
         <label
@@ -89,7 +98,11 @@ export function DirectUrlTab({ episodeId, seriesId, onSuccess }: DirectUrlTabPro
         size="sm"
         variant="primary"
         className="w-full"
-        disabled={saveSourcesMutation.isPending || !directUrl.trim() || !directLabel.trim()}
+        disabled={
+          saveSourcesMutation.isPending ||
+          !directUrl.trim() ||
+          !directLabel.trim()
+        }
         onClick={() => {
           saveSourcesMutation.mutate({
             episodeId,

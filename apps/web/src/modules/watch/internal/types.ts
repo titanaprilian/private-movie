@@ -10,13 +10,6 @@ export type WatchSeason = MediaSeasonWithEpisodes;
 export type WatchEpisode = MediaEpisodeWithSources;
 export type WatchVideoSource = MediaVideoSource;
 
-export type {
-  MediaEpisodeWithSources,
-  MediaSeasonWithEpisodes,
-  MediaSeriesDetails,
-  MediaVideoSource,
-};
-
 export interface SeriesWatchViewProps {
   seriesId?: string;
   series?: WatchSeriesDetails;

@@ -1,2 +1,2 @@
 export { AddMediaDialog } from './AddMediaDialog';
-export { useAddMediaStore, useScrapeWorkerStore } from './hooks';
+export { useAddMediaStore } from './hooks';

@@ -22,18 +22,28 @@ export type {
   UseBulkScrapeSourcesOptions,
 } from '../../types';
 
-export function checkEpisodeHasSources(ep?: { hasSources?: boolean; videoSources?: unknown[] } | null): boolean {
+function checkEpisodeHasSources(
+  ep?: { hasSources?: boolean; videoSources?: unknown[] } | null
+): boolean {
   if (!ep) return false;
-  return ep.hasSources ?? (Array.isArray(ep.videoSources) && ep.videoSources.length > 0);
+  return (
+    ep.hasSources ??
+    (Array.isArray(ep.videoSources) && ep.videoSources.length > 0)
+  );
 }
 
-export function getSeasonOptions(  seasons?: SeasonGroupOption[],
+export function getSeasonOptions(
+  seasons?: SeasonGroupOption[],
   localEpisodes?: LocalEpisodeItem[]
 ): Array<{ id: string; label: string }> {
   if (seasons && seasons.length > 0) {
     return seasons.map((s) => ({
       id: s.id,
-      label: s.title || (typeof s.tmdbSeason === 'number' ? `Season ${s.tmdbSeason}` : 'Season'),
+      label:
+        s.title ||
+        (typeof s.tmdbSeason === 'number'
+          ? `Season ${s.tmdbSeason}`
+          : 'Season'),
     }));
   }
 
@@ -43,11 +53,16 @@ export function getSeasonOptions(  seasons?: SeasonGroupOption[],
       if (ep.seasonId && !seasonMap.has(ep.seasonId)) {
         const label =
           ep.seasonTitle ||
-          (typeof ep.seasonNumber === 'number' ? `Season ${ep.seasonNumber}` : 'Season');
+          (typeof ep.seasonNumber === 'number'
+            ? `Season ${ep.seasonNumber}`
+            : 'Season');
         seasonMap.set(ep.seasonId, label);
       }
     }
-    return Array.from(seasonMap.entries()).map(([id, label]) => ({ id, label }));
+    return Array.from(seasonMap.entries()).map(([id, label]) => ({
+      id,
+      label,
+    }));
   }
 
   return [];
@@ -66,7 +81,7 @@ export function getTargetSeasonEpisodes(
     const season = seasons.find((s) => s.id === seasonId);
     if (season?.episodes) {
       return [...season.episodes]
-        .map((ep) => ({ ...ep, seasonId } as LocalEpisodeItem))
+        .map((ep) => ({ ...ep, seasonId }) as LocalEpisodeItem)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
   }
@@ -96,7 +111,8 @@ export function applyPreviewSequentialFallback(
   let cursor = 0;
   return items.map((item) => {
     const num =
-      typeof item.calculatedOrder === 'number' && Number.isInteger(item.calculatedOrder)
+      typeof item.calculatedOrder === 'number' &&
+      Number.isInteger(item.calculatedOrder)
         ? item.calculatedOrder
         : null;
     if (item.matchedLocalEpisodeId || num === null) return item;
@@ -122,7 +138,9 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   });
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [sourceUrl, setSourceUrlState] = useState('');
-  const [sourceType, setSourceType] = useState(options?.initialSourceType ?? 'otakudesu');
+  const [sourceType, setSourceType] = useState(
+    options?.initialSourceType ?? 'otakudesu'
+  );
 
   /**
    * Setting the URL auto-selects otakudesu/dramula when the URL identifies
@@ -154,13 +172,20 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
 
   useEffect(() => {
     if (seasonOptions.length > 0) {
-      if (!selectedSeasonId || !seasonOptions.some((s) => s.id === selectedSeasonId)) {
+      if (
+        !selectedSeasonId ||
+        !seasonOptions.some((s) => s.id === selectedSeasonId)
+      ) {
         setSelectedSeasonId(seasonOptions[0].id);
       }
     }
   }, [seasonOptions, selectedSeasonId]);
-  const [previewItems, setPreviewItems] = useState<ScrapedEpisodePreviewItem[]>([]);
-  const [fetchedLocalEpisodes, setFetchedLocalEpisodes] = useState<LocalEpisodeItem[]>([]);
+  const [previewItems, setPreviewItems] = useState<ScrapedEpisodePreviewItem[]>(
+    []
+  );
+  const [fetchedLocalEpisodes, setFetchedLocalEpisodes] = useState<
+    LocalEpisodeItem[]
+  >([]);
   const fetchedLocalEpisodesRef = useRef<LocalEpisodeItem[]>([]);
   useEffect(() => {
     fetchedLocalEpisodesRef.current = fetchedLocalEpisodes;
@@ -180,69 +205,111 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
       const targetSeriesId = params?.seriesId ?? options?.seriesId;
 
       if (!targetSeriesId || params?.customItems) {
-        const rawMockItems: Partial<ScrapedEpisodePreviewItem>[] = params?.customItems ?? [
-          {
-            rawEpisodeNumber: 1,
-            scrapedTitle: 'Episode 1',
-            videoSources: [{ type: sourceType, url: `${sourceUrl}/ep-1`, label: 'Server 1', quality: '720p' }],
-          },
-          {
-            rawEpisodeNumber: 2,
-            scrapedTitle: 'Episode 2',
-            videoSources: [{ type: sourceType, url: `${sourceUrl}/ep-2`, label: 'Server 1', quality: '720p' }],
-          },
-          {
-            rawEpisodeNumber: 7.5,
-            scrapedTitle: 'Episode 7.5 (Recap OVA)',
-            videoSources: [{ type: sourceType, url: `${sourceUrl}/ep-7.5`, label: 'Server 1', quality: '720p' }],
-          },
-          {
-            rawEpisodeNumber: 3,
-            scrapedTitle: 'Episode 3',
-            videoSources: [{ type: sourceType, url: `${sourceUrl}/ep-3`, label: 'Server 1', quality: '720p' }],
-          },
-        ];
+        const rawMockItems: Partial<ScrapedEpisodePreviewItem>[] =
+          params?.customItems ?? [
+            {
+              rawEpisodeNumber: 1,
+              scrapedTitle: 'Episode 1',
+              videoSources: [
+                {
+                  type: sourceType,
+                  url: `${sourceUrl}/ep-1`,
+                  label: 'Server 1',
+                  quality: '720p',
+                },
+              ],
+            },
+            {
+              rawEpisodeNumber: 2,
+              scrapedTitle: 'Episode 2',
+              videoSources: [
+                {
+                  type: sourceType,
+                  url: `${sourceUrl}/ep-2`,
+                  label: 'Server 1',
+                  quality: '720p',
+                },
+              ],
+            },
+            {
+              rawEpisodeNumber: 7.5,
+              scrapedTitle: 'Episode 7.5 (Recap OVA)',
+              videoSources: [
+                {
+                  type: sourceType,
+                  url: `${sourceUrl}/ep-7.5`,
+                  label: 'Server 1',
+                  quality: '720p',
+                },
+              ],
+            },
+            {
+              rawEpisodeNumber: 3,
+              scrapedTitle: 'Episode 3',
+              videoSources: [
+                {
+                  type: sourceType,
+                  url: `${sourceUrl}/ep-3`,
+                  label: 'Server 1',
+                  quality: '720p',
+                },
+              ],
+            },
+          ];
 
         const localEpisodes = params?.localEpisodes ?? [];
         const activeSeasonId = selectedSeasonIdRef.current;
         const scopedLocalEpisodes =
-          activeSeasonId && localEpisodes.length > 0 && localEpisodes.some((ep) => ep.seasonId)
+          activeSeasonId &&
+          localEpisodes.length > 0 &&
+          localEpisodes.some((ep) => ep.seasonId)
             ? localEpisodes.filter((ep) => ep.seasonId === activeSeasonId)
             : localEpisodes;
-        const initial: ScrapedEpisodePreviewItem[] = rawMockItems.map((item, idx) => {
-          const rawNum = item.rawEpisodeNumber ?? idx + 1;
-          const isNumInteger = typeof rawNum === 'number' ? Number.isInteger(rawNum) : /^\d+$/.test(String(rawNum).trim());
-          const parsedInt = typeof rawNum === 'number' ? Math.floor(rawNum) : parseInt(String(rawNum), 10);
+        const initial: ScrapedEpisodePreviewItem[] = rawMockItems.map(
+          (item, idx) => {
+            const rawNum = item.rawEpisodeNumber ?? idx + 1;
+            const isNumInteger =
+              typeof rawNum === 'number'
+                ? Number.isInteger(rawNum)
+                : /^\d+$/.test(String(rawNum).trim());
+            const parsedInt =
+              typeof rawNum === 'number'
+                ? Math.floor(rawNum)
+                : parseInt(String(rawNum), 10);
 
-          let calculatedOrder: number | null = null;
-          let matchedLocalEpisodeId: string | null = null;
-          let needsReview = false;
+            let calculatedOrder: number | null = null;
+            let matchedLocalEpisodeId: string | null = null;
+            let needsReview = false;
 
-          if (isNumInteger && !isNaN(parsedInt)) {
-            calculatedOrder = parsedInt;
-            const match = scopedLocalEpisodes.find((ep) => ep.order === calculatedOrder);
-            if (match) {
-              matchedLocalEpisodeId = match.id;
+            if (isNumInteger && !isNaN(parsedInt)) {
+              calculatedOrder = parsedInt;
+              const match = scopedLocalEpisodes.find(
+                (ep) => ep.order === calculatedOrder
+              );
+              if (match) {
+                matchedLocalEpisodeId = match.id;
+              } else {
+                needsReview = true;
+              }
             } else {
+              calculatedOrder = null;
+              matchedLocalEpisodeId = null;
               needsReview = true;
             }
-          } else {
-            calculatedOrder = null;
-            matchedLocalEpisodeId = null;
-            needsReview = true;
-          }
 
-          return {
-            id: item.id ?? `scraped-${idx}-${Date.now()}`,
-            scrapedTitle: item.scrapedTitle ?? `Episode ${rawNum}`,
-            rawEpisodeNumber: rawNum,
-            calculatedOrder,
-            matchedLocalEpisodeId: item.matchedLocalEpisodeId ?? matchedLocalEpisodeId,
-            isIgnored: item.isIgnored ?? false,
-            needsReview: item.needsReview ?? needsReview,
-            videoSources: item.videoSources ?? [],
-          };
-        });
+            return {
+              id: item.id ?? `scraped-${idx}-${Date.now()}`,
+              scrapedTitle: item.scrapedTitle ?? `Episode ${rawNum}`,
+              rawEpisodeNumber: rawNum,
+              calculatedOrder,
+              matchedLocalEpisodeId:
+                item.matchedLocalEpisodeId ?? matchedLocalEpisodeId,
+              isIgnored: item.isIgnored ?? false,
+              needsReview: item.needsReview ?? needsReview,
+              videoSources: item.videoSources ?? [],
+            };
+          }
+        );
 
         const seasonTargets = getTargetSeasonEpisodes(
           options?.seasons,
@@ -251,7 +318,10 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
         );
         const fallbackTargets =
           seasonTargets.length > 0 ? seasonTargets : scopedLocalEpisodes;
-        const processed = applyPreviewSequentialFallback(initial, fallbackTargets);
+        const processed = applyPreviewSequentialFallback(
+          initial,
+          fallbackTargets
+        );
 
         return {
           scrapedItems: processed,
@@ -267,26 +337,29 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
         seasonId: selectedSeasonId || undefined,
       });
 
-      const processed: ScrapedEpisodePreviewItem[] = res.scrapedEpisodes.map((ep, idx) => {
-        const rawNum = ep.episodeNumber ?? idx + 1;
-        const needsReview = ep.matchStatus === 'unmatched' || ep.matchedLocalEpisodeId === null;
-        return {
-          id: ep.scrapedUrl || `scraped-${idx}`,
-          scrapedTitle: ep.scrapedTitle,
-          rawEpisodeNumber: rawNum,
-          calculatedOrder: ep.calculatedOrder,
-          matchedLocalEpisodeId: ep.matchedLocalEpisodeId,
-          isIgnored: false,
-          needsReview,
-          videoSources: [
-            {
-              type: sourceType === 'direct' ? 'direct' : 'embed',
-              url: ep.scrapedUrl,
-              label: sourceType === 'dramula' ? 'Dramula' : 'Otakudesu',
-            },
-          ],
-        };
-      });
+      const processed: ScrapedEpisodePreviewItem[] = res.scrapedEpisodes.map(
+        (ep, idx) => {
+          const rawNum = ep.episodeNumber ?? idx + 1;
+          const needsReview =
+            ep.matchStatus === 'unmatched' || ep.matchedLocalEpisodeId === null;
+          return {
+            id: ep.scrapedUrl || `scraped-${idx}`,
+            scrapedTitle: ep.scrapedTitle,
+            rawEpisodeNumber: rawNum,
+            calculatedOrder: ep.calculatedOrder,
+            matchedLocalEpisodeId: ep.matchedLocalEpisodeId,
+            isIgnored: false,
+            needsReview,
+            videoSources: [
+              {
+                type: sourceType === 'direct' ? 'direct' : 'embed',
+                url: ep.scrapedUrl,
+                label: sourceType === 'dramula' ? 'Dramula' : 'Otakudesu',
+              },
+            ],
+          };
+        }
+      );
 
       return {
         scrapedItems: processed,
@@ -310,7 +383,8 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     },
     onError: (error: Error) => {
       toast.error('Bulk Scrape Preview Error', {
-        description: error.message || 'Failed to fetch bulk scrape preview from server.',
+        description:
+          error.message || 'Failed to fetch bulk scrape preview from server.',
       });
     },
   });
@@ -360,7 +434,9 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
 
       setProcessingLogs(initialLogs);
 
-      const initialCompleted = initialLogs.filter((l) => l.status === 'skipped').length;
+      const initialCompleted = initialLogs.filter(
+        (l) => l.status === 'skipped'
+      ).length;
       setCompletedCount(initialCompleted);
       let currentCompleted = initialCompleted;
 
@@ -404,7 +480,9 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
             successCount += 1;
           } catch (err: unknown) {
             const errorMessage =
-              err instanceof Error ? err.message : 'Failed to scrape episode sources';
+              err instanceof Error
+                ? err.message
+                : 'Failed to scrape episode sources';
             setProcessingLogs((prev) =>
               prev.map((log, idx) =>
                 idx === i
@@ -425,7 +503,9 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
 
         const targetSeriesId = seriesIdParam ?? options?.seriesId;
         if (targetSeriesId) {
-          queryClient.invalidateQueries({ queryKey: ['series', targetSeriesId] });
+          queryClient.invalidateQueries({
+            queryKey: ['series', targetSeriesId],
+          });
           queryClient.invalidateQueries({ queryKey: ['series'] });
           queryClient.invalidateQueries({ queryKey: ['episodes'] });
         }
@@ -441,10 +521,17 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
         }
 
         options?.onSuccess?.();
-        return { success: true, savedCount: successCount, skippedCount, errorCount };
+        return {
+          success: true,
+          savedCount: successCount,
+          skippedCount,
+          errorCount,
+        };
       } catch (error: unknown) {
         const errorMessage =
-          error instanceof Error ? error.message : 'Failed to save bulk sources.';
+          error instanceof Error
+            ? error.message
+            : 'Failed to save bulk sources.';
         toast.error('Save Bulk Sources Error', {
           description: errorMessage,
         });
@@ -456,19 +543,22 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     [previewItems, options, queryClient]
   );
 
-  const updateMapping = useCallback((index: number, localEpisodeId: string | null) => {
-    setPreviewItems((prev) =>
-      prev.map((item, i) => {
-        if (i !== index) return item;
-        const needsReview = localEpisodeId === null;
-        return {
-          ...item,
-          matchedLocalEpisodeId: localEpisodeId,
-          needsReview,
-        };
-      })
-    );
-  }, []);
+  const updateMapping = useCallback(
+    (index: number, localEpisodeId: string | null) => {
+      setPreviewItems((prev) =>
+        prev.map((item, i) => {
+          if (i !== index) return item;
+          const needsReview = localEpisodeId === null;
+          return {
+            ...item,
+            matchedLocalEpisodeId: localEpisodeId,
+            needsReview,
+          };
+        })
+      );
+    },
+    []
+  );
 
   const toggleIgnore = useCallback((index: number) => {
     setPreviewItems((prev) =>
@@ -492,7 +582,10 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
     setSourceUrl('');
     const currentSeasons = optionsRef.current?.seasons;
     const currentLocalEps = optionsRef.current?.localEpisodes;
-    const currentSeasonOptions = getSeasonOptions(currentSeasons, currentLocalEps);
+    const currentSeasonOptions = getSeasonOptions(
+      currentSeasons,
+      currentLocalEps
+    );
     const defaultSeasonId = currentSeasonOptions[0]?.id ?? '';
     setSelectedSeasonId(defaultSeasonId);
     setPreviewItems([]);
@@ -504,10 +597,20 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
   }, [setSourceUrl]);
 
   const totalCount = previewItems.length;
-  const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const progress =
+    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const localEpisodesMap = useMemo(() => {
-    const map = new Map<string, { id: string; title: string; order?: number; hasSources?: boolean; videoSources?: unknown[] }>();
+    const map = new Map<
+      string,
+      {
+        id: string;
+        title: string;
+        order?: number;
+        hasSources?: boolean;
+        videoSources?: unknown[];
+      }
+    >();
 
     if (options?.localEpisodes) {
       for (const ep of options.localEpisodes) {
@@ -554,7 +657,12 @@ export function useBulkScrapeSources(options?: UseBulkScrapeSourcesOptions) {
         [...(options?.localEpisodes ?? []), ...fetchedLocalEpisodes],
         selectedSeasonId
       ),
-    [options?.seasons, options?.localEpisodes, fetchedLocalEpisodes, selectedSeasonId]
+    [
+      options?.seasons,
+      options?.localEpisodes,
+      fetchedLocalEpisodes,
+      selectedSeasonId,
+    ]
   );
 
   /**

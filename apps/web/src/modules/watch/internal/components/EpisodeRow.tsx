@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { Check, Play } from 'lucide-react';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import { formatDuration } from '../utils';
+import { useEpisodeItem } from './useEpisodeItem';
 import type { EpisodeRowProps } from '../types';
 
 export function EpisodeRow({
@@ -12,38 +11,18 @@ export function EpisodeRow({
   isNowPlaying,
   isFocused,
 }: EpisodeRowProps) {
-  const [imgErrorLevel, setImgErrorLevel] = useState(0);
-
-  // Fallback hierarchy: episode.thumbnailUrl -> series.backdropUrl -> series.posterUrl -> placeholder
-  const candidateImages = [
-    episode.thumbnailUrl,
-    series?.backdropUrl,
-    series?.posterUrl,
-  ].filter((url): url is string => Boolean(url && url.trim().length > 0));
-
-  const activeImage = candidateImages[imgErrorLevel] ?? null;
-
-  const handleImageError = () => {
-    setImgErrorLevel((prev) => prev + 1);
-  };
-
-  const formattedDuration = formatDuration(episode.duration);
+  const {
+    activeImage,
+    handleImageError,
+    formattedDuration,
+    handleActivate,
+    handleKeyDown,
+  } = useEpisodeItem({ episode, series, onSelect });
   const displayIndex = String(
     episode.order !== undefined && episode.order !== null
       ? episode.order
       : index + 1
   ).padStart(2, '0');
-
-  const handleActivate = () => {
-    onSelect(episode.id);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onSelect(episode.id);
-    }
-  };
 
   return (
     <ChunkyCard

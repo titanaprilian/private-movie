@@ -8,7 +8,7 @@ import type {
   UseSeriesGridSearchResult,
 } from '../../types';
 
-export const SERIES_GRID_SEARCH_DEBOUNCE_MS = 250;
+const SERIES_GRID_SEARCH_DEBOUNCE_MS = 250;
 
 function toCurrentPage(search: SeriesSearch): number {
   return Number.isInteger(search.page) && (search.page as number) > 0
@@ -16,9 +16,9 @@ function toCurrentPage(search: SeriesSearch): number {
     : 1;
 }
 
-export function buildSeriesGridQueryParams(
+function buildSeriesGridQueryParams(
   search: SeriesSearch,
-  currentPage: number,
+  currentPage: number
 ): SeriesGridQueryParams {
   return {
     page: currentPage,
@@ -58,10 +58,13 @@ export function useSeriesGridSearch(): UseSeriesGridSearchResult {
   const [inputValue, setInputValue] = useState(searchQ);
   const lastSyncedQRef = useRef(searchQ);
 
-  const [pageBounds, setPageBounds] = useState({ total: 0, limit: SERIES_PAGE_LIMIT });
+  const [pageBounds, setPageBounds] = useState({
+    total: 0,
+    limit: SERIES_PAGE_LIMIT,
+  });
   const syncPageBounds = (total: number, limit: number) => {
     setPageBounds((prev) =>
-      prev.total === total && prev.limit === limit ? prev : { total, limit },
+      prev.total === total && prev.limit === limit ? prev : { total, limit }
     );
   };
 
@@ -82,7 +85,8 @@ export function useSeriesGridSearch(): UseSeriesGridSearchResult {
     navigate({
       search: (old: Record<string, unknown>) => ({
         ...old,
-        tab: nextTab === 'all' ? undefined : (nextTab as 'featured' | 'ongoing'),
+        tab:
+          nextTab === 'all' ? undefined : (nextTab as 'featured' | 'ongoing'),
         page: 1,
       }),
     });
@@ -154,7 +158,10 @@ export function useSeriesGridSearch(): UseSeriesGridSearchResult {
     navigate({
       search: (old: Record<string, unknown>) => ({ ...old, page }),
     });
-    gridTopRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    gridTopRef.current?.scrollIntoView?.({
+      behavior: 'smooth',
+      block: 'start',
+    });
   };
 
   return {

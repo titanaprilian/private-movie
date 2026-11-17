@@ -4,7 +4,53 @@ import type {
   VerifyCredentialsInput,
   RegisterInput,
 } from '@repo/contracts';
-import { api, setAccessToken } from '@/lib/api';
+import { api, extractErrorMessage, setAccessToken } from '@/lib/api';
+
+interface AuthResponseData {
+  user?: User;
+  tokens?: {
+    accessToken?: string;
+  };
+  [key: string]: unknown;
+}
+
+function handleAuthSuccess(
+  set: (state: Partial<AuthState>) => void,
+  responseData: AuthResponseData
+): boolean {
+  const rawUser = (responseData.user || responseData) as User;
+  const user: User = {
+    ...rawUser,
+    createdAt: new Date(rawUser.createdAt),
+  };
+  const accessToken = responseData.tokens?.accessToken;
+
+  if (accessToken) {
+    setAccessToken(accessToken);
+  }
+
+  set({
+    user,
+    isAuthenticated: true,
+    isLoading: false,
+    error: null,
+  });
+  return true;
+}
+
+function handleAuthFailure(
+  set: (state: Partial<AuthState>) => void,
+  errorMessage: string
+): boolean {
+  setAccessToken(null);
+  set({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: errorMessage,
+  });
+  return false;
+}
 
 export interface AuthState {
   user: User | null;
@@ -67,74 +113,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await api.auth.login.post(credentials);
-
       if (res.data && 'data' in res.data && res.data.data) {
-        const responseData = res.data.data;
-        const rawUser = responseData.user as User;
-        const user: User = {
-          ...rawUser,
-          createdAt: new Date(rawUser.createdAt),
-        };
-        const accessToken = responseData.tokens?.accessToken;
-
-        if (accessToken) {
-          setAccessToken(accessToken);
-        }
-
-        set({
-          user,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
-        return true;
-      } else {
-        let errorMessage = 'Login failed';
-        if (res.error) {
-          const errValue = res.error.value;
-          if (typeof errValue === 'string') {
-            errorMessage = errValue;
-          } else if (typeof errValue === 'object' && errValue !== null) {
-            const errObj = errValue as Record<string, unknown>;
-            if (
-              errObj.error &&
-              typeof errObj.error === 'object' &&
-              errObj.error !== null &&
-              'message' in errObj.error &&
-              typeof (errObj.error as Record<string, unknown>).message ===
-                'string'
-            ) {
-              errorMessage = (errObj.error as Record<string, unknown>)
-                .message as string;
-            } else if (
-              'message' in errObj &&
-              typeof errObj.message === 'string'
-            ) {
-              errorMessage = errObj.message;
-            }
-          }
-        }
-
-        setAccessToken(null);
-        set({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: errorMessage,
-        });
-        return false;
+        return handleAuthSuccess(set, res.data.data as AuthResponseData);
       }
+      return handleAuthFailure(
+        set,
+        extractErrorMessage(res.error, 'Login failed')
+      );
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'An unexpected error occurred';
-      setAccessToken(null);
-      set({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: errorMessage,
-      });
-      return false;
+      return handleAuthFailure(set, errorMessage);
     }
   },
 
@@ -142,74 +131,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await api.auth.register.post(credentials);
-
       if (res.data && 'data' in res.data && res.data.data) {
-        const responseData = res.data.data;
-        const rawUser = (responseData.user || responseData) as User;
-        const user: User = {
-          ...rawUser,
-          createdAt: new Date(rawUser.createdAt),
-        };
-        const accessToken = responseData.tokens?.accessToken;
-
-        if (accessToken) {
-          setAccessToken(accessToken);
-        }
-
-        set({
-          user,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
-        return true;
-      } else {
-        let errorMessage = 'Registration failed';
-        if (res.error) {
-          const errValue = res.error.value;
-          if (typeof errValue === 'string') {
-            errorMessage = errValue;
-          } else if (typeof errValue === 'object' && errValue !== null) {
-            const errObj = errValue as Record<string, unknown>;
-            if (
-              errObj.error &&
-              typeof errObj.error === 'object' &&
-              errObj.error !== null &&
-              'message' in errObj.error &&
-              typeof (errObj.error as Record<string, unknown>).message ===
-                'string'
-            ) {
-              errorMessage = (errObj.error as Record<string, unknown>)
-                .message as string;
-            } else if (
-              'message' in errObj &&
-              typeof errObj.message === 'string'
-            ) {
-              errorMessage = errObj.message;
-            }
-          }
-        }
-
-        setAccessToken(null);
-        set({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: errorMessage,
-        });
-        return false;
+        return handleAuthSuccess(set, res.data.data as AuthResponseData);
       }
+      return handleAuthFailure(
+        set,
+        extractErrorMessage(res.error, 'Registration failed')
+      );
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'An unexpected error occurred';
-      setAccessToken(null);
-      set({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: errorMessage,
-      });
-      return false;
+      return handleAuthFailure(set, errorMessage);
     }
   },
 

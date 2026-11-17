@@ -11,10 +11,14 @@ import {
 } from '../../../api';
 
 import type { UseSeriesDetailOptions } from '../../types';
-export type { SeriesDetailEpisode, UseSeriesDetailOptions } from '../../types';
 
-export function useSeriesDetail({ seriesId, initialSeasonId }: UseSeriesDetailOptions) {
-  const { data: series, isLoading } = useQuery(seriesDetailQueryOptions(seriesId));
+export function useSeriesDetail({
+  seriesId,
+  initialSeasonId,
+}: UseSeriesDetailOptions) {
+  const { data: series, isLoading } = useQuery(
+    seriesDetailQueryOptions(seriesId)
+  );
 
   const queryClient = useQueryClient();
 
@@ -27,15 +31,23 @@ export function useSeriesDetail({ seriesId, initialSeasonId }: UseSeriesDetailOp
 
   useEffect(() => {
     if (series?.seasons && series.seasons.length > 0) {
-      if (!selectedSeasonId || !series.seasons.some((s) => s.id === selectedSeasonId)) {
+      if (
+        !selectedSeasonId ||
+        !series.seasons.some((s) => s.id === selectedSeasonId)
+      ) {
         setSelectedSeasonId(series.seasons[0].id);
       }
     }
   }, [series?.seasons, selectedSeasonId]);
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateEpisode>[1] }) =>
-      updateEpisode(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof updateEpisode>[1];
+    }) => updateEpisode(id, data),
     onSuccess: (updatedEpisode) => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
       toast.success('video.edit', {
@@ -46,7 +58,7 @@ export function useSeriesDetail({ seriesId, initialSeasonId }: UseSeriesDetailOp
       toast.error('video.edit', {
         description: `Failed to update: ${error.message}`,
       });
-    }
+    },
   });
 
   const deleteMutation = useMutation({
@@ -62,7 +74,7 @@ export function useSeriesDetail({ seriesId, initialSeasonId }: UseSeriesDetailOp
       toast.error('video.delete', {
         description: `Failed to delete: ${error.message}`,
       });
-    }
+    },
   });
 
   const deleteSeasonMutation = useMutation({
@@ -110,7 +122,9 @@ export function useSeriesDetail({ seriesId, initialSeasonId }: UseSeriesDetailOp
 
   const activeSeason: SeasonDetails | null =
     series?.seasons && series.seasons.length > 0
-      ? (selectedSeasonId ? series.seasons.find((s) => s.id === selectedSeasonId) : series.seasons[0]) ?? series.seasons[0]
+      ? ((selectedSeasonId
+          ? series.seasons.find((s) => s.id === selectedSeasonId)
+          : series.seasons[0]) ?? series.seasons[0])
       : null;
 
   const invalidateDetail = () =>

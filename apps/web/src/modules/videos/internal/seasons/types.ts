@@ -5,12 +5,7 @@ import type {
   UpdateEpisodeData,
 } from '../api';
 
-export type {
-  ReorderEpisodeItem,
-  SeasonDetails,
-  SeriesDetails,
-  UpdateEpisodeData,
-};
+export type { ReorderEpisodeItem };
 
 export type EpisodeTableEpisode = SeriesDetails['episodes'][number];
 
@@ -20,15 +15,8 @@ export type EpisodeDrawerEpisode = SeriesDetails['episodes'][number];
 export type Episode = EpisodeTableEpisode;
 
 export type EpisodeTableSortField =
-  | 'order'
-  | 'title'
-  | 'duration'
-  | 'releaseDate';
+  'order' | 'title' | 'duration' | 'releaseDate';
 export type EpisodeTableSortDirection = 'asc' | 'desc';
-
-/** Aliases kept next to the table component's historic exports. */
-export type SortField = EpisodeTableSortField;
-export type SortDirection = EpisodeTableSortDirection;
 
 export type SeasonStatus = 'completed' | 'ongoing' | 'pending';
 

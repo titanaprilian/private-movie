@@ -1,12 +1,6 @@
 export { SeriesDetailView } from './SeriesDetailView';
+export { SeriesDetailDialog } from './components';
 export {
-  SeriesDetailHero,
-  SeriesDetailSeasonBar,
-  SeriesDetailDialog,
-  SeriesDetailDialogs,
-} from './components';
-export {
-  useSeriesDetail,
   useSeriesDetailDnd,
   useSeriesDetailModals,
   useEpisodeBatchOperations,

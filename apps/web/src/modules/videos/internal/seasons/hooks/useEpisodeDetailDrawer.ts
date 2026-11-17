@@ -7,7 +7,7 @@ import type {
   UseEpisodeDetailDrawerOptions,
 } from '../types';
 
-export function getEpisodeDrawerInitialState(
+function getEpisodeDrawerInitialState(
   episode: EpisodeDrawerEpisode | null
 ): EpisodeDrawerFormState {
   return {

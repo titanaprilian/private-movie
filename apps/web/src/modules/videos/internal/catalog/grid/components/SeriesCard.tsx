@@ -4,17 +4,15 @@ import { cn } from '@/lib/utils';
 import { FeaturedStar } from './FeaturedStar';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import type { SeriesCardProps } from '../../types';
-import { getSeriesCardEpisodeCount, useSeriesCard } from '../hooks/useSeriesCard';
-export type { SeriesCardProps } from '../../types';
+import { useSeriesCard } from '../hooks/useSeriesCard';
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function getEpisodeCount(
-  item: SeriesCardProps['item']
-): number {
-  return getSeriesCardEpisodeCount(item);
-}
-
-export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleHighlight }: SeriesCardProps) {
+export function SeriesCard({
+  item,
+  onToggleFeatured,
+  onEdit,
+  onDelete,
+  onToggleHighlight,
+}: SeriesCardProps) {
   const {
     isFeatured,
     isHighlighted,
@@ -127,36 +125,36 @@ export function SeriesCard({ item, onToggleFeatured, onEdit, onDelete, onToggleH
                 : 'Highlight in ongoing feed'
             }
           >
-          <button
-            type="button"
-            aria-label={`${isHighlighted ? 'Unhighlight' : 'Highlight'} ${item.title}`}
-            aria-pressed={isHighlighted}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onToggleHighlight(item, e);
-            }}
-            className={cn(
-              'absolute bottom-2 right-2 z-10',
-              'w-9 h-9 rounded-[10px]',
-              'inline-flex items-center justify-center',
-              'border-2 border-b-[3px]',
-              'font-extrabold transition-all cursor-pointer',
-              'active:translate-y-[2px] active:border-b-2',
-              'backdrop-blur-xs shadow-xs',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]',
-              isHighlighted
-                ? 'border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] opacity-100 hover:bg-[var(--gold-tint-hover)]'
-                : 'border-c bg-card/90 text-muted hover:text-[var(--gold)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
-            )}
-          >
-            <Star
-              size={14}
-              strokeWidth={2}
-              fill={isHighlighted ? 'currentColor' : 'none'}
-              aria-hidden="true"
-            />
-          </button>
+            <button
+              type="button"
+              aria-label={`${isHighlighted ? 'Unhighlight' : 'Highlight'} ${item.title}`}
+              aria-pressed={isHighlighted}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleHighlight(item, e);
+              }}
+              className={cn(
+                'absolute bottom-2 right-2 z-10',
+                'w-9 h-9 rounded-[10px]',
+                'inline-flex items-center justify-center',
+                'border-2 border-b-[3px]',
+                'font-extrabold transition-all cursor-pointer',
+                'active:translate-y-[2px] active:border-b-2',
+                'backdrop-blur-xs shadow-xs',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)]',
+                isHighlighted
+                  ? 'border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] opacity-100 hover:bg-[var(--gold-tint-hover)]'
+                  : 'border-c bg-card/90 text-muted hover:text-[var(--gold)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+              )}
+            >
+              <Star
+                size={14}
+                strokeWidth={2}
+                fill={isHighlighted ? 'currentColor' : 'none'}
+                aria-hidden="true"
+              />
+            </button>
           </ChunkyTooltip>
         )}
       </div>

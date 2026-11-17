@@ -6,15 +6,13 @@ import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ErrorState } from '@/components/ui/error-state';
 import { StorageSeriesDrilldown } from './StorageSeriesDrilldown';
 import { StorageResourceTable } from './StorageResourceTable';
+import { StorageResourceModals } from './StorageResourceModals';
+import { getStorageTableCallbacks } from './getStorageTableCallbacks';
 import { useStorageModals } from '../hooks/useStorageModals';
 import {
   storageResourcesQueryOptions,
   storageSeriesQueryOptions,
 } from '../api';
-import { EditSourceModal } from './dialogs/EditSourceModal';
-import { AttachOrphanDialog } from './dialogs/AttachOrphanDialog';
-import { DeleteConfirmDialog } from './dialogs/DeleteConfirmDialog';
-import { VideoPreviewModal } from './dialogs/VideoPreviewModal';
 
 export interface StorageSeriesDetailViewProps {
   seriesId: string;
@@ -56,9 +54,7 @@ export function StorageSeriesDetailView({
     isLoading: isLoadingSeries,
     error: seriesError,
     refetch: refetchSeries,
-  } = useQuery(
-    storageSeriesQueryOptions(providerId ? { providerId } : {})
-  );
+  } = useQuery(storageSeriesQueryOptions(providerId ? { providerId } : {}));
   const series = useMemo(
     () => seriesData?.items.find((s) => s.id === seriesId) ?? null,
     [seriesData, seriesId]
@@ -172,69 +168,15 @@ export function StorageSeriesDetailView({
             resources={scoped}
             isLoading={isLoadingResources}
             hideToolbar
-            onRefreshScan={() => modals.refreshScanMutation.mutate()}
-            isRefreshing={modals.refreshScanMutation.isPending}
-            onPreview={(res) => modals.setPreviewResource(res)}
-            onEditSource={(res) => {
-              if (res.videoSource) {
-                modals.setEditingSource({ ...res.videoSource, key: res.key });
-              }
-            }}
-            onAttachOrphan={(res) => modals.setAttachingResource(res)}
-            onDeleteSingle={(res) => {
-              modals.setDeleteSingleResource(res);
-              modals.setDeleteTargetType('single');
-            }}
-            onDeleteBatch={(selected) => {
-              modals.setDeleteBatchResources(selected);
-              modals.setDeleteTargetType('batch');
-            }}
-            onPurgeOrphans={() => {
-              modals.setDeleteTargetType('purge');
-            }}
+            {...getStorageTableCallbacks(modals)}
           />
         )}
       />
 
-      <EditSourceModal
-        open={Boolean(modals.editingSource)}
-        onOpenChange={(open) => {
-          if (!open) modals.setEditingSource(null);
-        }}
-        videoSource={modals.editingSource}
-        onSave={modals.handleSaveSourceMetadata}
-      />
-
-      <AttachOrphanDialog
-        open={Boolean(modals.attachingResource)}
-        onOpenChange={(open) => {
-          if (!open) modals.setAttachingResource(null);
-        }}
-        fileKey={modals.attachingResource?.key ?? null}
-        filename={modals.attachingResource?.filename}
-        onAttach={modals.handleAttachOrphan}
-      />
-
-      <DeleteConfirmDialog
-        open={Boolean(modals.deleteTargetType)}
-        onOpenChange={(open) => {
-          if (!open) modals.closeDeleteDialog();
-        }}
-        targetType={modals.deleteTargetType}
-        targetResource={modals.deleteSingleResource}
-        selectedResources={modals.deleteBatchResources}
+      <StorageResourceModals
+        modals={modals}
         allOrphansCount={0}
         allOrphansSizeBytes={0}
-        onConfirm={modals.handleConfirmDelete}
-      />
-
-      <VideoPreviewModal
-        open={Boolean(modals.previewResource)}
-        onOpenChange={(open) => {
-          if (!open) modals.setPreviewResource(null);
-        }}
-        fileKey={modals.previewResource?.key ?? null}
-        filename={modals.previewResource?.filename}
       />
     </div>
   );

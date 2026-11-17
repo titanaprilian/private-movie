@@ -3,7 +3,7 @@ import { useCallback, useRef, useState, type MouseEvent } from 'react';
 /** Pointer travel (px) beyond which a press counts as a drag, not a click. */
 const DRAG_THRESHOLD_PX = 6;
 
-export interface DragScrollHandlers<T extends HTMLElement> {
+interface DragScrollHandlers<T extends HTMLElement> {
   onMouseDown: (e: MouseEvent<T>) => void;
   onMouseMove: (e: MouseEvent<T>) => void;
   onMouseUp: (e: MouseEvent<T>) => void;

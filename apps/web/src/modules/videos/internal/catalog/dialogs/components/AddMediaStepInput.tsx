@@ -8,9 +8,7 @@ import {
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ErrorBanner } from '../../components/ErrorBanner';
-export { ErrorBanner } from '../../components/ErrorBanner';
 import type { AddMediaStepInputProps } from '../../types';
-export type { AddMediaStepInputProps } from '../../types';
 
 export function AddMediaStepInput({
   tmdbType,

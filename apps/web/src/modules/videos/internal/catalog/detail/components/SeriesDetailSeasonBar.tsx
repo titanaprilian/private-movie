@@ -1,14 +1,7 @@
 import { toast } from 'sonner';
-import {
-  Edit2,
-  RefreshCw,
-  Plus,
-  Trash2,
-  Copy,
-} from 'lucide-react';
+import { Edit2, RefreshCw, Plus, Trash2, Copy } from 'lucide-react';
 import { Droppable } from '@hello-pangea/dnd';
 import type { SeriesDetailSeasonBarProps } from '../../types';
-export type { SeriesDetailSeasonBarProps } from '../../types';
 import { getSeasonNumber } from '../../../seasons';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
@@ -31,8 +24,10 @@ export function SeriesDetailSeasonBar({
       <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
         {seasons && seasons.length > 0 ? (
           seasons.map((season, index) => {
-            const isActive = season.id === (activeSeason?.id ?? selectedSeasonId);
-            const title = season.title || `Season ${getSeasonNumber(season, index)}`;
+            const isActive =
+              season.id === (activeSeason?.id ?? selectedSeasonId);
+            const title =
+              season.title || `Season ${getSeasonNumber(season, index)}`;
             return (
               <Droppable
                 key={season.id}

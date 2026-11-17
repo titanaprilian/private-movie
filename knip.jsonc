@@ -18,9 +18,14 @@
         "src/main.tsx",
         "src/routes/**",
         "src/modules/*/index.ts",
+        "src/components/ui/**/*.{ts,tsx}",
         "vite.config.ts",
       ],
       "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": [
+        "@testing-library/jest-dom",
+        "@testing-library/user-event",
+      ],
     },
     "apps/backend": {
       "entry": [

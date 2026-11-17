@@ -81,7 +81,6 @@ export function useSeriesWatchView({
       : (series.episodes ?? []).filter(isPlayableEpisode);
     const match = allPlayableEpisodes.find((ep) => ep.id === initialEpisodeId);
     return match ? match.id : null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [series, initialEpisodeId]);
 
   // Track whether we are in overview mode or player mode

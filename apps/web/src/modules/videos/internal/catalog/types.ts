@@ -7,14 +7,6 @@ import type {
   UpdateEpisodeData,
 } from '../api';
 
-export type {
-  SeasonDetails,
-  SeriesDetails,
-  SeriesItem,
-  TmdbPreviewResult,
-  UpdateEpisodeData,
-};
-
 export type SeriesDetailEpisode = SeriesDetails['episodes'][number];
 
 export type SeriesCardItem = SeriesItem & {
@@ -43,18 +35,14 @@ export interface SeriesDetailViewProps {
 }
 
 export type ManageSourcesInitialTab =
-  | 'add-url'
-  | 'add-direct'
-  | 'remote-ingest'
-  | 'upload-s3'
-  | 'edit-existing';
+  'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing';
 
 export interface UpdateEpisodeMutation {
   isPending: boolean;
   mutate: (variables: { id: string; data: UpdateEpisodeData }) => void;
 }
 
-export interface SeriesDetailModalsState {
+interface SeriesDetailModalsState {
   isMoveEpisodesOpen: boolean;
   onMoveEpisodesOpenChange: (open: boolean) => void;
   isBatchDeleteOpen: boolean;
@@ -81,7 +69,7 @@ export interface SeriesDetailModalsState {
   onManageSourcesOpenChange: (open: boolean) => void;
   manageSourcesInitialTab: ManageSourcesInitialTab | undefined;
   onManageSourcesInitialTabChange: (
-    tab: ManageSourcesInitialTab | undefined,
+    tab: ManageSourcesInitialTab | undefined
   ) => void;
   isDeleteDialogOpen: boolean;
   onDeleteDialogOpenChange: (open: boolean) => void;
@@ -160,21 +148,19 @@ export interface EditSeriesDialogProps {
   seriesList?: SeriesItem[];
 }
 
-export interface FeaturedStarProps
-  extends Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    'onClick' | 'onToggle'
-  > {
+export interface FeaturedStarProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onClick' | 'onToggle'
+> {
   featured: boolean;
   title?: string;
   onToggle: (e: React.MouseEvent) => void;
 }
 
-export interface StarToggleButtonProps
-  extends Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    'onClick' | 'onToggle'
-  > {
+export interface StarToggleButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onClick' | 'onToggle'
+> {
   active: boolean;
   onToggle: (e: React.MouseEvent) => void;
   /** Accessible label when active. Defaults to `activeTooltip` text. */
@@ -289,7 +275,11 @@ export interface UseAddMediaDialogReturn {
   importTmdbMutation: {
     isPending: boolean;
     error: Error | null;
-    mutate: (variables: { type: 'tv' | 'movie'; tmdbId: number; includeSpecials: boolean }) => void;
+    mutate: (variables: {
+      type: 'tv' | 'movie';
+      tmdbId: number;
+      includeSpecials: boolean;
+    }) => void;
   };
 }
 
@@ -314,8 +304,6 @@ export interface AddMediaStoreState {
   backToStep1: () => void;
   submitPreview: () => Promise<boolean>;
 }
-
-export type ScrapeWorkerState = AddMediaStoreState;
 
 export interface UseGenreFilterOptions {
   selectedSlugs: string[];
@@ -357,7 +345,7 @@ export interface UseSeriesCardReturn {
   handleImageError: () => void;
   stop: <T extends SeriesCardItem>(
     fn: (item: T, e: React.MouseEvent) => void,
-    item: T,
+    item: T
   ) => (e: React.MouseEvent) => void;
 }
 
@@ -428,16 +416,4 @@ export interface UseSeriesGridResult extends UseSeriesGridSearchResult {
   handleToggleHighlight: UseSeriesGridMutationsResult['handleToggleHighlight'];
   handleOpenEdit: (item: SeriesItem, e: React.MouseEvent) => void;
   handleOpenDelete: (item: SeriesItem, e: React.MouseEvent) => void;
-}
-
-export interface UseEditEpisodeFormOptions {
-  open: boolean;
-  episode: SeriesDetailEpisode | null;
-  updateMutation: UpdateEpisodeMutation;
-  onOpenChange: (open: boolean) => void;
-}
-
-export interface UseEpisodeBatchOperationsOptions {
-  onInvalidateDetail: () => Promise<unknown> | void;
-  onCloseBatchDeleteDialog?: () => void;
 }

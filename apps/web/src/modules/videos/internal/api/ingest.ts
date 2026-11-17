@@ -214,7 +214,7 @@ export interface PreviewBulkSourcesParams {
   seasonId?: string;
 }
 
-export interface ScrapedBulkEpisodeItem {
+interface ScrapedBulkEpisodeItem {
   scrapedTitle: string;
   scrapedUrl: string;
   episodeNumber: number | null;
@@ -223,7 +223,7 @@ export interface ScrapedBulkEpisodeItem {
   matchStatus: 'matched' | 'unmatched';
 }
 
-export interface BulkPreviewLocalEpisodeItem {
+interface BulkPreviewLocalEpisodeItem {
   id: string;
   title: string;
   order: number;
@@ -260,7 +260,7 @@ export async function previewBulkSources(
   return res.data.data as PreviewBulkSourcesResult;
 }
 
-export interface SaveBulkSourcesMappingItem {
+interface SaveBulkSourcesMappingItem {
   episodeId: string | null;
   videoSources: {
     type: 'embed' | 'direct';

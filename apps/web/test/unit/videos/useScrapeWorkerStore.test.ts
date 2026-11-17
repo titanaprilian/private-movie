@@ -1,11 +1,13 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { useAddMediaStore, useScrapeWorkerStore } from '@/modules/videos/internal/catalog';
+import { useAddMediaStore } from '@/modules/videos/internal/catalog';
 import * as apiModule from '@/modules/videos/internal/api';
 
+const useScrapeWorkerStore = useAddMediaStore;
+
 vi.mock('@/modules/videos/internal/api', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/videos/internal/api')>(
-    '@/modules/videos/internal/api'
-  );
+  const actual = await vi.importActual<
+    typeof import('@/modules/videos/internal/api')
+  >('@/modules/videos/internal/api');
   return {
     ...actual,
     fetchSeriesTmdbPreview: vi.fn(),
@@ -19,8 +21,7 @@ describe('useScrapeWorkerStore', () => {
     vi.clearAllMocks();
   });
 
-  it('has correct initial state and is aliased to useAddMediaStore', () => {
-    expect(useAddMediaStore).toBe(useScrapeWorkerStore);
+  it('has correct initial state', () => {
     const state = useScrapeWorkerStore.getState();
     expect(state.step).toBe(1);
     expect(state.tmdbType).toBe('tv');
@@ -56,7 +57,9 @@ describe('useScrapeWorkerStore', () => {
       posterUrl: 'https://image.tmdb.org/t/p/w500/fc.jpg',
     };
 
-    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(mockTmdbPreview);
+    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
+      mockTmdbPreview
+    );
 
     useScrapeWorkerStore.getState().setTmdbType('movie');
     useScrapeWorkerStore.getState().setTmdbId('550');
@@ -65,10 +68,16 @@ describe('useScrapeWorkerStore', () => {
     const success = await useScrapeWorkerStore.getState().submitPreview();
 
     expect(success).toBe(true);
-    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('movie', 550, true);
+    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith(
+      'movie',
+      550,
+      true
+    );
     expect(useScrapeWorkerStore.getState().isLoading).toBe(false);
     expect(useScrapeWorkerStore.getState().step).toBe(2);
-    expect(useScrapeWorkerStore.getState().tmdbPreviewData).toEqual(mockTmdbPreview);
+    expect(useScrapeWorkerStore.getState().tmdbPreviewData).toEqual(
+      mockTmdbPreview
+    );
     expect(useScrapeWorkerStore.getState().error).toBeNull();
   });
 
@@ -83,13 +92,17 @@ describe('useScrapeWorkerStore', () => {
     useScrapeWorkerStore.getState().setTmdbId('abc');
     success = await useScrapeWorkerStore.getState().submitPreview();
     expect(success).toBe(false);
-    expect(useScrapeWorkerStore.getState().error).toBe('TMDB ID must be a valid positive number.');
+    expect(useScrapeWorkerStore.getState().error).toBe(
+      'TMDB ID must be a valid positive number.'
+    );
     expect(useScrapeWorkerStore.getState().step).toBe(1);
 
     useScrapeWorkerStore.getState().setTmdbId('-5');
     success = await useScrapeWorkerStore.getState().submitPreview();
     expect(success).toBe(false);
-    expect(useScrapeWorkerStore.getState().error).toBe('TMDB ID must be a valid positive number.');
+    expect(useScrapeWorkerStore.getState().error).toBe(
+      'TMDB ID must be a valid positive number.'
+    );
     expect(useScrapeWorkerStore.getState().step).toBe(1);
   });
 

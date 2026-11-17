@@ -1,4 +1,4 @@
-export const GB_IN_BYTES = 1024 * 1024 * 1024;
+const GB_IN_BYTES = 1024 * 1024 * 1024;
 
 export function formatGb(bytes: number): string {
   return `${(bytes / GB_IN_BYTES).toFixed(1)} GB`;
@@ -37,7 +37,9 @@ export function formatCountdown(targetIso: string | null): string {
 }
 
 /** Minutes until the target ISO time, rounded down. Null when unscheduled/invalid. */
-export function formatCountdownMinutes(targetIso: string | null): number | null {
+export function formatCountdownMinutes(
+  targetIso: string | null
+): number | null {
   if (!targetIso) return null;
   const diffMs = new Date(targetIso).getTime() - Date.now();
   if (Number.isNaN(diffMs) || diffMs <= 0) return null;
@@ -59,7 +61,9 @@ export interface StorageStatsLike {
 }
 
 /** Storage is only "tracked" when usage is a positive finite number. */
-export function isStorageTracked(storage: StorageStatsLike | null | undefined): boolean {
+export function isStorageTracked(
+  storage: StorageStatsLike | null | undefined
+): boolean {
   if (!storage) return false;
   return (
     Number.isFinite(storage.totalUsedBytes) &&
@@ -70,7 +74,9 @@ export function isStorageTracked(storage: StorageStatsLike | null | undefined): 
 }
 
 /** Display text for the storage stat card: "Not tracked" fallback or "{used} GB". */
-export function formatStorageValue(storage: StorageStatsLike | null | undefined): string {
+export function formatStorageValue(
+  storage: StorageStatsLike | null | undefined
+): string {
   if (!storage) return 'Not tracked';
   if (!isStorageTracked(storage)) return 'Not tracked';
   return formatGb(storage.totalUsedBytes);
@@ -114,7 +120,9 @@ export interface OngoingSeasonLike {
 }
 
 /** Failed-first sort: seasons with a scrape error come first, stable otherwise. */
-export function sortOngoingFailedFirst<T extends OngoingSeasonLike>(seasons: T[]): T[] {
+export function sortOngoingFailedFirst<T extends OngoingSeasonLike>(
+  seasons: T[]
+): T[] {
   return [...seasons].sort((a, b) => {
     const aFailed = a.lastScrapeError ? 1 : 0;
     const bFailed = b.lastScrapeError ? 1 : 0;
@@ -123,9 +131,16 @@ export function sortOngoingFailedFirst<T extends OngoingSeasonLike>(seasons: T[]
 }
 
 /** Meta line: "Season X · N eps" (falls back to just "N eps" when unknown). */
-export function formatSeasonMeta(seasonNumber: number | null, episodeCount: number): string {
+export function formatSeasonMeta(
+  seasonNumber: number | null,
+  episodeCount: number
+): string {
   const eps = `${episodeCount} eps`;
-  if (seasonNumber === null || seasonNumber === undefined || Number.isNaN(seasonNumber)) {
+  if (
+    seasonNumber === null ||
+    seasonNumber === undefined ||
+    Number.isNaN(seasonNumber)
+  ) {
     return eps;
   }
   return `Season ${seasonNumber} · ${eps}`;
@@ -151,7 +166,9 @@ export function truncateErrorMessage(raw: string, maxLength = 160): string {
  * Parse a raw scrape error into a friendly message plus a raw snippet.
  * "Season <id> not found" style errors map to "Season not found on the source site".
  */
-export function parseScrapeError(raw: string | null | undefined): ParsedScrapeError {
+export function parseScrapeError(
+  raw: string | null | undefined
+): ParsedScrapeError {
   if (!raw || !raw.trim()) {
     return { friendly: 'Scrape failed', snippet: '' };
   }
@@ -163,10 +180,13 @@ export function parseScrapeError(raw: string | null | undefined): ParsedScrapeEr
       snippet: truncateErrorMessage(`ID: ${match[1]} · ${trimmed}`),
     };
   }
-  return { friendly: truncateErrorMessage(trimmed, 140), snippet: truncateErrorMessage(trimmed) };
+  return {
+    friendly: truncateErrorMessage(trimmed, 140),
+    snippet: truncateErrorMessage(trimmed),
+  };
 }
 
-export type ActivityEventKind = 'failed' | 'updated';
+type ActivityEventKind = 'failed' | 'updated';
 
 export interface ActivityEvent {
   kind: ActivityEventKind;
@@ -214,7 +234,10 @@ export function deriveActivityEvents(
       seasonId: s.seasonId,
     }));
   const updated: ActivityEvent[] = [...recentSeries]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
     .slice(0, 5)
     .map((s) => ({
       kind: 'updated' as const,

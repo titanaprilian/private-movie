@@ -116,11 +116,7 @@ export type ArchiveJobPhase = ArchiveIngestJobStatus | 'idle';
 
 /** Legacy alias kept for modal compat during migration. */
 export type ArchivePreviewPhase =
-  | 'idle'
-  | 'downloading'
-  | 'extracting'
-  | 'done'
-  | 'error';
+  'idle' | 'downloading' | 'extracting' | 'done' | 'error';
 
 export interface ArchiveDownloadProgress {
   loaded: number;
@@ -244,7 +240,7 @@ export interface TargetEpisodeComboboxProps {
   targetSeasonId?: string;
 }
 
-export interface StorageProviderOption {
+interface StorageProviderOption {
   id: string;
   name: string;
   isDefault: boolean;

@@ -21,20 +21,19 @@ export function useStorageQueries() {
   } = useQuery(storageProvidersQueryOptions());
   const providers = useMemo<StorageProviderItem[]>(
     () => (Array.isArray(rawProviders) ? rawProviders : []),
-    [rawProviders],
+    [rawProviders]
   );
 
-  const [selectedProviderIdOverride, setSelectedProviderId] =
-    useState<string | null>(null);
+  const [selectedProviderIdOverride, setSelectedProviderId] = useState<
+    string | null
+  >(null);
 
   // Derive the default provider synchronously so the selected provider id is
   // defined on the very first render that contains providers — no null →
   // string transition across renders (avoids uncontrolled → controlled flip).
   const defaultProviderId = useMemo<string | null>(() => {
     if (providers.length === 0) return null;
-    return (
-      (providers.find((p) => p.isDefault) ?? providers[0])?.id ?? null
-    );
+    return (providers.find((p) => p.isDefault) ?? providers[0])?.id ?? null;
   }, [providers]);
 
   const selectedProviderId = useMemo<string | null>(() => {
@@ -64,8 +63,8 @@ export function useStorageQueries() {
     refetch: refetchResources,
   } = useQuery(
     storageResourcesQueryOptions(
-      selectedProviderId ? { providerId: selectedProviderId } : {},
-    ),
+      selectedProviderId ? { providerId: selectedProviderId } : {}
+    )
   );
 
   const resources = resourcesData?.data ?? [];
@@ -77,12 +76,13 @@ export function useStorageQueries() {
     refetch: refetchSeries,
   } = useQuery(
     storageSeriesQueryOptions(
-      selectedProviderId ? { providerId: selectedProviderId } : {},
-    ),
+      selectedProviderId ? { providerId: selectedProviderId } : {}
+    )
   );
 
   const series = seriesData?.items ?? [];
-  const activeError = providersError || metricsError || resourcesError || seriesError;
+  const activeError =
+    providersError || metricsError || resourcesError || seriesError;
   const handleRetryStorage = () => {
     void refetchProviders();
     void refetchMetrics();
@@ -92,7 +92,7 @@ export function useStorageQueries() {
 
   const { data: minioStatus } = useQuery(minioStatusQueryOptions());
   const isMinioActive = Boolean(
-    minioStatus?.isRunning && minioStatus?.consoleUrl,
+    minioStatus?.isRunning && minioStatus?.consoleUrl
   );
 
   return {
@@ -113,5 +113,3 @@ export function useStorageQueries() {
     isMinioActive,
   };
 }
-
-export type StorageQueries = ReturnType<typeof useStorageQueries>;

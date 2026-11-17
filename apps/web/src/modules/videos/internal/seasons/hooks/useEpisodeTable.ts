@@ -6,7 +6,7 @@ import type {
   UseEpisodeTableOptions,
 } from '../types';
 
-export function parseEpisodeDurationToSeconds(
+function parseEpisodeDurationToSeconds(
   duration?: number | string | null
 ): number {
   if (duration === null || duration === undefined) return 0;
@@ -28,8 +28,8 @@ export function parseEpisodeDurationToSeconds(
 export function getEpisodeReleaseDate(episode: EpisodeTableEpisode): string {
   if (!episode.createdAt) return '';
   return typeof episode.createdAt === 'string'
-    ? episode.createdAt.split('T')[0] ?? ''
-    : new Date(episode.createdAt).toISOString().split('T')[0] ?? '';
+    ? (episode.createdAt.split('T')[0] ?? '')
+    : (new Date(episode.createdAt).toISOString().split('T')[0] ?? '');
 }
 
 export function useEpisodeTable({
@@ -51,8 +51,7 @@ export function useEpisodeTable({
   };
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] =
-    useState<EpisodeTableSortField>('order');
+  const [sortField, setSortField] = useState<EpisodeTableSortField>('order');
   const [sortDirection, setSortDirection] =
     useState<EpisodeTableSortDirection>('asc');
 
@@ -168,7 +167,9 @@ export function useEpisodeTable({
         const rangeSet = new Set(rangeIds);
         updateSelectedIds(activeSelectedIds.filter((id) => !rangeSet.has(id)));
       } else {
-        updateSelectedIds(Array.from(new Set([...activeSelectedIds, ...rangeIds])));
+        updateSelectedIds(
+          Array.from(new Set([...activeSelectedIds, ...rangeIds]))
+        );
       }
     } else {
       handleToggleEpisode(episodeId);

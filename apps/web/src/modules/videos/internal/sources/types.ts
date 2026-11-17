@@ -1,25 +1,10 @@
 import type { RefObject } from 'react';
-import type {
-  CheckVideoSourceResult,
-  Episode,
-  VideoSource,
-  VideoSourceInput,
-} from '../api';
+import type { CheckVideoSourceResult, Episode, VideoSource } from '../api';
 import type { StorageProviderItem } from '@/modules/storage';
-
-export type { CheckVideoSourceResult, Episode, VideoSource, VideoSourceInput };
-export type { StorageProviderItem };
 
 export type SourceType = VideoSource['type'];
 
-export type SourceHealthStatus = 'working' | 'broken' | 'testing' | 'unknown';
-
-export interface SourceFormValues {
-  type: SourceType;
-  label: string;
-  url: string;
-  quality: string;
-}
+type SourceHealthStatus = 'working' | 'broken' | 'testing' | 'unknown';
 
 export interface SourceMutationValues {
   type: SourceType;
@@ -98,14 +83,14 @@ export interface UseSourceMutationsReturn {
     isPending: boolean;
     mutate: (
       values: SourceMutationValues,
-      options?: { onSuccess?: () => void },
+      options?: { onSuccess?: () => void }
     ) => void;
   };
   editMutation: {
     isPending: boolean;
     mutate: (
       variables: { sourceId: string; updates: SourceMutationValues },
-      options?: { onSuccess?: () => void },
+      options?: { onSuccess?: () => void }
     ) => void;
   };
   deleteMutation: {
@@ -115,11 +100,7 @@ export interface UseSourceMutationsReturn {
 }
 
 export type ManageSourcesTab =
-  | 'add-url'
-  | 'add-direct'
-  | 'remote-ingest'
-  | 'upload-s3'
-  | 'edit-existing';
+  'add-url' | 'add-direct' | 'remote-ingest' | 'upload-s3' | 'edit-existing';
 
 export interface ManageSourcesDialogProps {
   open: boolean;

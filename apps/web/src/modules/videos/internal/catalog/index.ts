@@ -7,11 +7,7 @@ export {
   GenreFilter,
   RecentEpisodeCard,
 } from './grid';
-export {
-  AddMediaDialog,
-  useAddMediaStore,
-  useScrapeWorkerStore,
-} from './dialogs';
+export { AddMediaDialog, useAddMediaStore } from './dialogs';
 export {
   SeriesDetailView,
   SeriesDetailDialog,

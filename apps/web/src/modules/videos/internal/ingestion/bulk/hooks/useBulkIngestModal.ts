@@ -1,10 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useArchiveIngestSources } from './useArchiveIngestSources';
 import { useBulkIngestSources } from './useBulkIngestSources';
-import type {
-  LocalEpisodeItem,
-  SeasonGroupOption,
-} from '../../types';
+import type { LocalEpisodeItem, SeasonGroupOption } from '../../types';
 
 export type IngestTab = 'archive' | 'url';
 
@@ -16,9 +13,11 @@ export interface UseBulkIngestModalOptions {
 }
 
 const STEP_DESCRIPTIONS = {
-  archive1: 'Enter a ZIP or RAR archive URL to preview, review, and ingest episode files.',
+  archive1:
+    'Enter a ZIP or RAR archive URL to preview, review, and ingest episode files.',
   url1: 'Paste multi-line video stream URLs for season ingestion to Backblaze B2/S3 storage.',
-  review: 'Review matched episodes, manually assign unmatched files, and adjust labels/qualities.',
+  review:
+    'Review matched episodes, manually assign unmatched files, and adjust labels/qualities.',
   progress: 'Sequential ingestion progress and transfer status log.',
 } as const;
 
@@ -28,8 +27,18 @@ export function useBulkIngestModal({
   localEpisodes = [],
   onSuccess,
 }: UseBulkIngestModalOptions) {
-  const url = useBulkIngestSources({ seriesId, seasons, localEpisodes, onSuccess });
-  const archive = useArchiveIngestSources({ seriesId, seasons, localEpisodes, onSuccess });
+  const url = useBulkIngestSources({
+    seriesId,
+    seasons,
+    localEpisodes,
+    onSuccess,
+  });
+  const archive = useArchiveIngestSources({
+    seriesId,
+    seasons,
+    localEpisodes,
+    onSuccess,
+  });
   const [activeTab, setActiveTab] = useState<IngestTab>('archive');
 
   const isProcessingAny =
@@ -50,7 +59,7 @@ export function useBulkIngestModal({
         setActiveTab('archive');
       }
     },
-    [urlReset, archiveReset],
+    [urlReset, archiveReset]
   );
 
   const effectiveStep = activeTab === 'archive' ? archive.step : url.step;
@@ -69,11 +78,12 @@ export function useBulkIngestModal({
       e.preventDefault();
       parseUrls();
     },
-    [parseUrls],
+    [parseUrls]
   );
 
   const urlSelectedProviderName =
-    url.storageProviders.find((p) => p.id === url.selectedStorageProviderId)?.name ?? null;
+    url.storageProviders.find((p) => p.id === url.selectedStorageProviderId)
+      ?.name ?? null;
 
   return {
     url,
@@ -88,5 +98,3 @@ export function useBulkIngestModal({
     urlSelectedProviderName,
   };
 }
-
-export type UseBulkIngestModalReturn = ReturnType<typeof useBulkIngestModal>;

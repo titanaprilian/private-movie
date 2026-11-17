@@ -9,12 +9,14 @@ import {
 } from './components';
 
 export type { SeriesWatchViewProps };
-export { WatchViewSkeleton, WatchViewErrorState };
 
 /** Thin composition root: consumes the coordinator hook, renders modes. */
 export function SeriesWatchView(props: SeriesWatchViewProps) {
   const view = useSeriesWatchView(props);
-  const { series, seriesId } = { series: view.series, seriesId: props.seriesId };
+  const { series, seriesId } = {
+    series: view.series,
+    seriesId: props.seriesId,
+  };
   const { isLoading, isError, error, refetch, selectedEpisodeId } = view;
 
   if (isLoading && !series) return <WatchViewSkeleton />;

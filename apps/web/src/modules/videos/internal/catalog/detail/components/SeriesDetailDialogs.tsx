@@ -1,10 +1,13 @@
 import type { SeriesDetailDialogsProps } from '../../types';
-export type { ManageSourcesInitialTab, SeriesDetailDialogsProps, UpdateEpisodeMutation } from '../../types';
 import { EditSeasonDialog } from '../../../seasons';
 import { AddSeasonDialog } from '../../../seasons';
 import { EditSeriesDialog } from '../../dialogs/EditSeriesDialog';
 import { EditEpisodeDialog } from '../../dialogs/EditEpisodeDialog';
-import { SyncTmdbModal, BulkScrapeModal, BulkIngestModal } from '../../../ingestion';
+import {
+  SyncTmdbModal,
+  BulkScrapeModal,
+  BulkIngestModal,
+} from '../../../ingestion';
 import { ManageSourcesDialog } from '../../../sources';
 import { MoveEpisodesDialog } from '../../../seasons';
 import { BatchDeleteDialog } from '../../../seasons';
@@ -67,7 +70,9 @@ export function SeriesDetailDialogs({
         seriesId={seriesId}
         localEpisodes={
           modals.bulkScrapeEpisodeIds
-            ? localEpisodes.filter((ep) => modals.bulkScrapeEpisodeIds!.includes(ep.id))
+            ? localEpisodes.filter((ep) =>
+                modals.bulkScrapeEpisodeIds!.includes(ep.id)
+              )
             : localEpisodes
         }
         seasons={seasons ?? []}

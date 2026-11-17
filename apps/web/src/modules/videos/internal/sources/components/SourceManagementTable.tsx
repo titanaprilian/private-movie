@@ -7,9 +7,10 @@ import { SourceTableRow } from './table/SourceTableRow';
 import type { SourceManagementTableProps } from '../types';
 import { VideoPreviewModal } from './VideoPreviewModal';
 
-export type { SourceManagementTableProps } from '../types';
-
-export function SourceManagementTable({ episode, onOpenAdvancedIngest }: SourceManagementTableProps) {
+export function SourceManagementTable({
+  episode,
+  onOpenAdvancedIngest,
+}: SourceManagementTableProps) {
   const {
     addMutation,
     editMutation,
@@ -43,18 +44,34 @@ export function SourceManagementTable({ episode, onOpenAdvancedIngest }: SourceM
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {onOpenAdvancedIngest && (
             <>
-              <ChunkyButton type="button" variant="outline" size="sm" onClick={() => onOpenAdvancedIngest('remote-ingest')} title="Remote Ingest to S3">
+              <ChunkyButton
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenAdvancedIngest('remote-ingest')}
+                title="Remote Ingest to S3"
+              >
                 <Layers aria-hidden="true" />
                 Ingest
               </ChunkyButton>
-              <ChunkyButton type="button" variant="outline" size="sm" onClick={() => onOpenAdvancedIngest('upload-s3')} title="Upload Video File to S3">
+              <ChunkyButton
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenAdvancedIngest('upload-s3')}
+                title="Upload Video File to S3"
+              >
                 <UploadCloud aria-hidden="true" />
                 Upload
               </ChunkyButton>
             </>
           )}
           {!isAddingSource && (
-            <ChunkyButton type="button" size="sm" onClick={() => setIsAddingSource(true)}>
+            <ChunkyButton
+              type="button"
+              size="sm"
+              onClick={() => setIsAddingSource(true)}
+            >
               <Plus aria-hidden="true" />
               Add Source
             </ChunkyButton>
@@ -72,8 +89,15 @@ export function SourceManagementTable({ episode, onOpenAdvancedIngest }: SourceM
 
       {sources.length === 0 && !isAddingSource ? (
         <ChunkyCard className="p-4 text-center space-y-2 border-dashed">
-          <p className="text-xs font-bold text-[var(--muted)]">No video sources configured for this episode.</p>
-          <ChunkyButton type="button" variant="outline" size="sm" onClick={() => setIsAddingSource(true)}>
+          <p className="text-xs font-bold text-[var(--muted)]">
+            No video sources configured for this episode.
+          </p>
+          <ChunkyButton
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAddingSource(true)}
+          >
             <Plus aria-hidden="true" />
             Add First Source
           </ChunkyButton>
@@ -92,9 +116,12 @@ export function SourceManagementTable({ episode, onOpenAdvancedIngest }: SourceM
               onStartEdit={() => setEditingSourceId(source.id)}
               onCancelEdit={() => setEditingSourceId(null)}
               onSaveEdit={(values) =>
-                editMutation.mutate({ sourceId: source.id, updates: values }, {
-                  onSuccess: () => setEditingSourceId(null),
-                })
+                editMutation.mutate(
+                  { sourceId: source.id, updates: values },
+                  {
+                    onSuccess: () => setEditingSourceId(null),
+                  }
+                )
               }
               onRequestDelete={() => setDeletingSourceId(source.id)}
               onConfirmDelete={() =>

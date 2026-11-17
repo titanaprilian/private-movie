@@ -5,7 +5,11 @@ import { AlertTriangle, Check, ChevronDown } from 'lucide-react';
 import { SCRAPER_PROVIDERS, type ScraperProvider } from '@repo/contracts';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyInput } from '@/components/ui/chunky-input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -14,27 +18,46 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { previewScrape, addVideoSources, type VideoSourceInput } from '../../../api';
+import {
+  previewScrape,
+  addVideoSource,
+  type VideoSourceInput,
+} from '../../../api';
 
 const PROVIDER_META: Record<string, { label: string; placeholder: string }> = {
-  otakudesu: { label: 'Otakudesu', placeholder: 'https://otakudesu.cloud/episode/...' },
+  otakudesu: {
+    label: 'Otakudesu',
+    placeholder: 'https://otakudesu.cloud/episode/...',
+  },
   dramula: { label: 'Dramula', placeholder: 'https://dramula.com/watch/...' },
 };
 
-function getProviderMeta(provider: string): { label: string; placeholder: string } {
-  return PROVIDER_META[provider] ?? { label: provider, placeholder: 'https://...' };
+function getProviderMeta(provider: string): {
+  label: string;
+  placeholder: string;
+} {
+  return (
+    PROVIDER_META[provider] ?? { label: provider, placeholder: 'https://...' }
+  );
 }
 
 import type { ScraperPreviewTabProps } from '../../types';
 
 export type { ScraperPreviewTabProps } from '../../types';
 
-export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPreviewTabProps) {
+export function ScraperPreviewTab({
+  episodeId,
+  seriesId,
+  onSuccess,
+}: ScraperPreviewTabProps) {
   const queryClient = useQueryClient();
   const [scrapeUrl, setScrapeUrl] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState<ScraperProvider>('otakudesu');
+  const [selectedProvider, setSelectedProvider] =
+    useState<ScraperProvider>('otakudesu');
   const [providerPopoverOpen, setProviderPopoverOpen] = useState(false);
-  const [extractedSources, setExtractedSources] = useState<VideoSourceInput[] | null>(null);
+  const [extractedSources, setExtractedSources] = useState<
+    VideoSourceInput[] | null
+  >(null);
   const [previewWarnings, setPreviewWarnings] = useState<string[]>([]);
 
   const providerMeta = getProviderMeta(selectedProvider);
@@ -61,8 +84,13 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
   });
 
   const saveSourcesMutation = useMutation({
-    mutationFn: ({ episodeId, sources }: { episodeId: string; sources: VideoSourceInput[] }) =>
-      addVideoSources(episodeId, sources),
+    mutationFn: ({
+      episodeId,
+      sources,
+    }: {
+      episodeId: string;
+      sources: VideoSourceInput[];
+    }) => addVideoSource(episodeId, sources),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
       toast.success('video.source_add', {
@@ -94,7 +122,10 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
           >
             Provider
           </span>
-          <Popover open={providerPopoverOpen} onOpenChange={setProviderPopoverOpen}>
+          <Popover
+            open={providerPopoverOpen}
+            onOpenChange={setProviderPopoverOpen}
+          >
             <PopoverTrigger asChild>
               <button
                 type="button"
@@ -181,7 +212,9 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
       {extractedSources !== null && (
         <div className="p-3 border border-c rounded bg-card space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold">Extracted Sources ({extractedSources.length})</span>
+            <span className="text-xs font-semibold">
+              Extracted Sources ({extractedSources.length})
+            </span>
           </div>
 
           {previewWarnings.length > 0 && (
@@ -214,18 +247,22 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
                         src.type === 's3'
                           ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-300 dark:border-purple-800'
                           : src.type === 'direct'
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-800'
-                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-800'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
                       }`}
                     >
                       {src.type}
                     </span>
                     <span className="font-semibold">{src.label}</span>
                     {src.quality && (
-                      <span className="text-muted text-[10px]">({src.quality})</span>
+                      <span className="text-muted text-[10px]">
+                        ({src.quality})
+                      </span>
                     )}
                   </div>
-                  <span className="text-muted truncate max-w-[150px]">{src.url}</span>
+                  <span className="text-muted truncate max-w-[150px]">
+                    {src.url}
+                  </span>
                 </div>
               ))}
             </div>
@@ -240,7 +277,9 @@ export function ScraperPreviewTab({ episodeId, seriesId, onSuccess }: ScraperPre
             size="sm"
             variant="primary"
             className="w-full"
-            disabled={saveSourcesMutation.isPending || extractedSources.length === 0}
+            disabled={
+              saveSourcesMutation.isPending || extractedSources.length === 0
+            }
             onClick={() => {
               saveSourcesMutation.mutate({
                 episodeId,

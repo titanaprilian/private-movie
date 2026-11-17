@@ -10,15 +10,10 @@ import {
   ChunkySelectTrigger,
   ChunkySelectValue,
 } from '@/components/ui/chunky-select';
-import {
-  updateVideoSource,
-  deleteVideoSource,
-} from '../../../api';
+import { updateVideoSource, deleteVideoSource } from '../../../api';
 import type { EditSourceRowProps } from '../../types';
 
-export type { EditSourceRowProps } from '../../types';
-
-export function EditSourceRow({
+function EditSourceRow({
   source,
   providers,
   onUpdate,
@@ -30,9 +25,9 @@ export function EditSourceRow({
   const [url, setUrl] = useState(source.url);
   const [type, setType] = useState<'direct' | 'embed' | 's3'>(source.type);
   const [quality, setQuality] = useState(source.quality ?? '');
-  const [storageProviderId, setStorageProviderId] = useState<string | null | undefined>(
-    source.storageProviderId
-  );
+  const [storageProviderId, setStorageProviderId] = useState<
+    string | null | undefined
+  >(source.storageProviderId);
 
   useEffect(() => {
     setLabel(source.label);
@@ -42,8 +37,12 @@ export function EditSourceRow({
     setStorageProviderId(source.storageProviderId);
   }, [source]);
 
-  const linkedProvider = providers?.find((p) => p.id === source.storageProviderId);
-  const providerBadgeText = linkedProvider ? `S3: ${linkedProvider.name}` : source.type;
+  const linkedProvider = providers?.find(
+    (p) => p.id === source.storageProviderId
+  );
+  const providerBadgeText = linkedProvider
+    ? `S3: ${linkedProvider.name}`
+    : source.type;
 
   return (
     <div
@@ -57,8 +56,8 @@ export function EditSourceRow({
             source.type === 's3'
               ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-300 dark:border-purple-800'
               : source.type === 'direct'
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-800'
-              : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-800'
+                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-800'
           }`}
         >
           {providerBadgeText}
@@ -124,13 +123,17 @@ export function EditSourceRow({
           </span>
           <ChunkySelect
             value={storageProviderId || 'default'}
-            onValueChange={(val) => setStorageProviderId(val === 'default' ? null : val)}
+            onValueChange={(val) =>
+              setStorageProviderId(val === 'default' ? null : val)
+            }
           >
             <ChunkySelectTrigger aria-label="S3 Storage Provider">
               <ChunkySelectValue placeholder="Default Provider" />
             </ChunkySelectTrigger>
             <ChunkySelectContent>
-              <ChunkySelectItem value="default">Default Provider</ChunkySelectItem>
+              <ChunkySelectItem value="default">
+                Default Provider
+              </ChunkySelectItem>
               {providers.map((p) => (
                 <ChunkySelectItem key={p.id} value={p.id}>
                   {p.name} {p.isDefault ? '(Default)' : ''}
@@ -196,8 +199,6 @@ export function EditSourceRow({
 
 import type { EditExistingSourcesTabProps } from '../../types';
 
-export type { EditExistingSourcesTabProps } from '../../types';
-
 export function EditExistingSourcesTab({
   episode,
   seriesId,
@@ -230,8 +231,13 @@ export function EditExistingSourcesTab({
   });
 
   const deleteSourceMutation = useMutation({
-    mutationFn: ({ episodeId, sourceId }: { episodeId: string; sourceId: string }) =>
-      deleteVideoSource(episodeId, sourceId),
+    mutationFn: ({
+      episodeId,
+      sourceId,
+    }: {
+      episodeId: string;
+      sourceId: string;
+    }) => deleteVideoSource(episodeId, sourceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
       toast.success('video.source_delete', {
@@ -274,7 +280,9 @@ export function EditExistingSourcesTab({
             });
           }}
           onIngestToS3={() => onIngestShortcut(source)}
-          isPending={updateSourceMutation.isPending || deleteSourceMutation.isPending}
+          isPending={
+            updateSourceMutation.isPending || deleteSourceMutation.isPending
+          }
         />
       ))}
     </div>
