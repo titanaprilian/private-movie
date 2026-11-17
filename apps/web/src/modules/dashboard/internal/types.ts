@@ -12,20 +12,6 @@ import type {
   SchedulerRunResult,
 } from './api';
 
-export type {
-  AdminDashboardCatalogStats,
-  AdminDashboardDto,
-  AdminDashboardOngoingSeason,
-  AdminDashboardRecentSeries,
-  AdminDashboardSchedulerTelemetry,
-  AdminDashboardStorageStats,
-  ScrapeOngoingSeasonResult,
-  SchedulerConfigResult,
-  SchedulerRunResult,
-};
-
-export type { ActivityEvent, ActivityEventKind } from './formatters';
-
 export interface StatsRowProps {
   catalog?: AdminDashboardCatalogStats | null;
   storage?: AdminDashboardStorageStats | null;
@@ -98,7 +84,12 @@ export interface UseDashboardReturn {
     string,
     unknown
   >;
-  scrapeAllMutation: UseMutationResult<SchedulerRunResult, Error, void, unknown>;
+  scrapeAllMutation: UseMutationResult<
+    SchedulerRunResult,
+    Error,
+    void,
+    unknown
+  >;
   configMutation: UseMutationResult<
     SchedulerConfigResult,
     Error,

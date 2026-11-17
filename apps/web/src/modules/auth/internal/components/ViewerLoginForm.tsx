@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyButton } from '@/components/ui/chunky-button';
@@ -17,13 +17,13 @@ import {
   ChunkyDialogFooter,
 } from '@/components/ui/chunky-dialog';
 import { loginSchema, type LoginSchema } from '../schema';
+import { PasswordField } from './PasswordField';
 
 export interface ViewerLoginFormProps {
   onSuccess?: (values: LoginSchema) => void;
 }
 
 export function ViewerLoginForm({ onSuccess }: ViewerLoginFormProps) {
-  const [showPassword, setShowPassword] = React.useState(false);
   const [forgotOpen, setForgotOpen] = React.useState(false);
   const [inviteOpen, setInviteOpen] = React.useState(false);
 
@@ -86,14 +86,10 @@ export function ViewerLoginForm({ onSuccess }: ViewerLoginFormProps) {
           )}
         </div>
 
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label
-              htmlFor="viewer-password"
-              className="block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
-            >
-              Password
-            </label>
+        <PasswordField
+          id="viewer-password"
+          label="Password"
+          labelExtra={
             <button
               type="button"
               onClick={() => setForgotOpen(true)}
@@ -101,39 +97,11 @@ export function ViewerLoginForm({ onSuccess }: ViewerLoginFormProps) {
             >
               Forgot password?
             </button>
-          </div>
-          <div className="relative">
-            <ChunkyInput
-              id="viewer-password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              aria-invalid={Boolean(errors.password)}
-              disabled={isSubmitting}
-              className="pr-12"
-              {...register('password')}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              aria-pressed={showPassword}
-              disabled={isSubmitting}
-              className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xl text-[var(--muted)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" aria-hidden="true" />
-              ) : (
-                <Eye className="h-5 w-5" aria-hidden="true" />
-              )}
-            </button>
-          </div>
-          {errors.password && (
-            <p className="mt-1 font-sans text-xs font-bold text-[var(--red)]">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
+          }
+          error={errors.password?.message}
+          disabled={isSubmitting}
+          registration={register('password')}
+        />
 
         <Controller
           control={control}
@@ -193,9 +161,9 @@ export function ViewerLoginForm({ onSuccess }: ViewerLoginFormProps) {
           </ChunkyDialogHeader>
           <ChunkyDialogBody>
             <p className="font-sans text-sm font-semibold text-[var(--ink)]">
-              Please contact your administrator or the person who invited you
-              to request access. Share the email address you&apos;d like to
-              sign in with so they can set up your account.
+              Please contact your administrator or the person who invited you to
+              request access. Share the email address you&apos;d like to sign in
+              with so they can set up your account.
             </p>
           </ChunkyDialogBody>
           <ChunkyDialogFooter>
@@ -220,9 +188,9 @@ export function ViewerLoginForm({ onSuccess }: ViewerLoginFormProps) {
           </ChunkyDialogHeader>
           <ChunkyDialogBody>
             <p className="font-sans text-sm font-semibold text-[var(--ink)]">
-              Please contact your administrator or the person who invited you
-              to reset your password. Include the email address you signed up
-              with so they can find your account quickly.
+              Please contact your administrator or the person who invited you to
+              reset your password. Include the email address you signed up with
+              so they can find your account quickly.
             </p>
           </ChunkyDialogBody>
           <ChunkyDialogFooter>
