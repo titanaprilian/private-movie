@@ -15,20 +15,3 @@ export type {
   ArchiveIngestSubsystemLogger,
   ArchiveIngestSubsystemOptions,
 } from "./archive-ingest/services/subsystem";
-
-export type {
-  SeriesListParams,
-  SeriesListResult,
-  SeriesRepository,
-  SeriesRepositoryOptions,
-  SeriesUpsertInput,
-  SeriesWithEpisodes,
-  SeriesWithMetadata,
-  SeriesWithSeasons,
-  HomeFeedHero,
-  HomeFeedPayload,
-  HomeFeedRow,
-  RecentlyAddedEpisode,
-  SeasonWithEpisodes,
-  UpdateSeriesInput,
-} from "./catalog/types";

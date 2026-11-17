@@ -1,5 +1,5 @@
-# Multi-app commits must carry an authorization trailer, so `git log` proves the human
-# allowed it: git log --grep='^Multi-App:'
+#!/usr/bin/env bash
+# Commits modifying baselines or spanning multiple apps must carry authorization trailers.
 msg_file="$1"
 
 git_path() { git rev-parse --git-path "$1"; }
@@ -10,13 +10,31 @@ if [ -d "$(git_path rebase-merge)" ] \
   exit 0
 fi
 
+# 1. Baseline modifications must carry an authorization trailer
+has_baseline=$(git diff --cached --name-only \
+  | grep -E '^\.(knip|jscpd)-baseline\.json$' || true)
+if [ -n "$has_baseline" ]; then
+  if ! grep -qE '^Baseline-Rationale: .+' "$msg_file"; then
+    cat >&2 <<EOF
+✖ Commit blocked: this commit modifies quality gate baselines (.knip-baseline.json or .jscpd-baseline.json)
+without an explicit rationale trailer.
+
+Add a trailer describing why the baseline is updated, e.g.:
+
+  Baseline-Rationale: Pruned resolved structural debt after refactoring catalog repository (#954)
+
+Baseline updates may only tighten the ratchet (prune resolved findings) and require human review.
+EOF
+    exit 1
+  fi
+fi
+
+# 2. Multi-app commit check
 count=$(git diff --cached --name-only \
   | sed -nE 's#^apps/(web|backend|android-tv)/.*#\1#p' | sort -u | grep -c . || true)
-[ "$count" -le 1 ] && exit 0
-
-grep -qE '^Multi-App: .+' "$msg_file" && exit 0
-
-cat >&2 <<EOF
+if [ "$count" -gt 1 ]; then
+  if ! grep -qE '^Multi-App: .+' "$msg_file"; then
+    cat >&2 <<EOF
 ✖ Commit blocked: this commit touches multiple apps but has no authorization trailer.
 
 Add a trailer naming the grant you were given, e.g.:
@@ -25,4 +43,8 @@ Add a trailer naming the grant you were given, e.g.:
 
 Never write this trailer without an explicit go-ahead from the human owning the work.
 EOF
-exit 1
+    exit 1
+  fi
+fi
+
+exit 0

@@ -6,7 +6,9 @@ export interface SseProgressSample {
   percent: number | null;
 }
 
-export function createProgressThrottle(windowMs: number = SSE_PROGRESS_THROTTLE_MS) {
+export function createProgressThrottle(
+  windowMs: number = SSE_PROGRESS_THROTTLE_MS,
+) {
   let lastEmitTime = -Infinity;
   let lastPercent: number | null | undefined;
 
@@ -22,13 +24,3 @@ export function createProgressThrottle(windowMs: number = SSE_PROGRESS_THROTTLE_
     },
   };
 }
-
-export const SSE_HEARTBEAT_MS = 15_000;
-
-export const SSE_HEARTBEAT_COMMENT = ": ping\n\n";
-
-export function shouldSendHeartbeat(lastActivityMs: number, nowMs: number, intervalMs: number = SSE_HEARTBEAT_MS): boolean {
-  return nowMs - lastActivityMs >= intervalMs;
-}
-
-export type ProgressThrottle = ReturnType<typeof createProgressThrottle>;

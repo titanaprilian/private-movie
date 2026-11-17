@@ -1,5 +1,9 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { MediaScraper, type FetchFn as ScraperFetchFn, type BrowserFn } from "@repo/media-scraper";
+import {
+  MediaScraper,
+  type FetchFn as ScraperFetchFn,
+  type BrowserFn,
+} from "@repo/media-scraper";
 import {
   createSeasonsRepositoryInternal,
   SeasonNotFoundError,
@@ -40,7 +44,7 @@ export interface BatchOngoingScrapeResult {
   results: OngoingScrapeResult[];
 }
 
-export interface TmdbOrchestrator {
+interface TmdbOrchestrator {
   syncTmdb(seriesId: string, input: TmdbSyncInput): Promise<SeriesWithEpisodes>;
 }
 
@@ -66,12 +70,16 @@ export function createOngoingScraperService<
   TSchema extends Record<string, unknown> = Record<string, unknown>,
 >(
   db: PgDatabase<THKT, TSchema>,
-  deps?: OngoingScraperServiceDependencies
+  deps?: OngoingScraperServiceDependencies,
 ): OngoingScraperService {
-  const seasonsRepository = deps?.seasonsRepository ?? createSeasonsRepositoryInternal(db);
-  const seriesRepository = deps?.seriesRepository ?? createSeriesRepositoryInternal(db);
-  const episodeRepository = deps?.episodeRepository ?? createEpisodeRepositoryInternal(db);
-  const videoSourceRepository = deps?.videoSourceRepository ?? createVideoSourceRepositoryInternal(db);
+  const seasonsRepository =
+    deps?.seasonsRepository ?? createSeasonsRepositoryInternal(db);
+  const seriesRepository =
+    deps?.seriesRepository ?? createSeriesRepositoryInternal(db);
+  const episodeRepository =
+    deps?.episodeRepository ?? createEpisodeRepositoryInternal(db);
+  const videoSourceRepository =
+    deps?.videoSourceRepository ?? createVideoSourceRepositoryInternal(db);
   const mediaScraper = deps?.mediaScraper ?? MediaScraper;
   const fetchHtml = deps?.fetchHtml ?? {
     get: async (url: string) => {
@@ -92,7 +100,9 @@ export function createOngoingScraperService<
   const browserFn = deps?.browserFn;
 
   const service: OngoingScraperService = {
-    async syncAndScrapeOngoingSeason(seasonId: string): Promise<OngoingScrapeResult> {
+    async syncAndScrapeOngoingSeason(
+      seasonId: string,
+    ): Promise<OngoingScrapeResult> {
       const targetSeason = await seasonsRepository.findById(seasonId);
       if (!targetSeason) {
         throw new SeasonNotFoundError(`Season with id ${seasonId} not found`);
@@ -136,7 +146,9 @@ export function createOngoingScraperService<
 
       try {
         let tmdbSynced = false;
-        const targetSeries = await seriesRepository.findById(targetSeason.seriesId);
+        const targetSeries = await seriesRepository.findById(
+          targetSeason.seriesId,
+        );
         if (targetSeries?.tmdbId && deps?.tmdbOrchestrator) {
           try {
             await deps.tmdbOrchestrator.syncTmdb(targetSeries.id, {
@@ -148,20 +160,31 @@ export function createOngoingScraperService<
           } catch (tmdbErr) {
             console.warn(
               `[media-service] TMDB sync failed for series ${targetSeries.id} during ongoing scrape:`,
-              tmdbErr instanceof Error ? tmdbErr.message : tmdbErr
+              tmdbErr instanceof Error ? tmdbErr.message : tmdbErr,
             );
           }
         }
 
-        const provider = mediaScraper.getProviderForUrl(targetSeason.scraperUrl);
+        const provider = mediaScraper.getProviderForUrl(
+          targetSeason.scraperUrl,
+        );
         if (!provider) {
-          throw new SeriesFetchError(`No provider found for ${targetSeason.scraperUrl}`);
+          throw new SeriesFetchError(
+            `No provider found for ${targetSeason.scraperUrl}`,
+          );
         }
 
-        const parsedSeries = await provider.parseSeries(targetSeason.scraperUrl, fetchHtml);
+        const parsedSeries = await provider.parseSeries(
+          targetSeason.scraperUrl,
+          fetchHtml,
+        );
 
-        const seriesWithEpisodes = await seriesRepository.findByIdWithEpisodes(targetSeason.seriesId);
-        const seasonEpisodes = seriesWithEpisodes?.seasons?.find((s) => s.id === seasonId)?.episodes ?? [];
+        const seriesWithEpisodes = await seriesRepository.findByIdWithEpisodes(
+          targetSeason.seriesId,
+        );
+        const seasonEpisodes =
+          seriesWithEpisodes?.seasons?.find((s) => s.id === seasonId)
+            ?.episodes ?? [];
 
         const offset = targetSeason.episodeOffset ?? 0;
         let episodesScraped = 0;
@@ -174,7 +197,9 @@ export function createOngoingScraperService<
           }
 
           const targetOrder = epNum + offset;
-          let matchedEpisode = seasonEpisodes.find((e) => e.order === targetOrder);
+          let matchedEpisode = seasonEpisodes.find(
+            (e) => e.order === targetOrder,
+          );
           if (!matchedEpisode) {
             // Scraper-first ingestion: the provider released an episode TMDB
             // hasn't indexed yet. Create a placeholder so sources attach
@@ -184,12 +209,18 @@ export function createOngoingScraperService<
               title: `Episode ${targetOrder}`,
               order: targetOrder,
             });
-            matchedEpisode = { ...created, videoSources: [] } as typeof seasonEpisodes[number];
+            matchedEpisode = {
+              ...created,
+              videoSources: [],
+            } as (typeof seasonEpisodes)[number];
             seasonEpisodes.push(matchedEpisode);
           }
 
           // Only scrape if the matched episode currently has ZERO video sources
-          if (matchedEpisode.videoSources && matchedEpisode.videoSources.length > 0) {
+          if (
+            matchedEpisode.videoSources &&
+            matchedEpisode.videoSources.length > 0
+          ) {
             continue;
           }
 
@@ -197,11 +228,13 @@ export function createOngoingScraperService<
             scrapedEp.url,
             fetchHtml,
             undefined,
-            browserFn
+            browserFn,
           );
 
           // Exclude S3 storage, only direct and embed
-          const filteredSources = rawSources.filter((s) => s.type === "embed" || s.type === "direct");
+          const filteredSources = rawSources.filter(
+            (s) => s.type === "embed" || s.type === "direct",
+          );
 
           if (filteredSources.length > 0) {
             for (const vs of filteredSources) {
@@ -219,13 +252,19 @@ export function createOngoingScraperService<
         }
 
         // Re-fetch season episodes to check auto-completion
-        const refreshedSeries = await seriesRepository.findByIdWithEpisodes(targetSeason.seriesId);
-        const refreshedSeasonEpisodes = refreshedSeries?.seasons?.find((s) => s.id === seasonId)?.episodes ?? [];
+        const refreshedSeries = await seriesRepository.findByIdWithEpisodes(
+          targetSeason.seriesId,
+        );
+        const refreshedSeasonEpisodes =
+          refreshedSeries?.seasons?.find((s) => s.id === seasonId)?.episodes ??
+          [];
 
         let seasonCompleted = false;
         if (
           refreshedSeasonEpisodes.length > 0 &&
-          refreshedSeasonEpisodes.every((e) => e.videoSources && e.videoSources.length > 0)
+          refreshedSeasonEpisodes.every(
+            (e) => e.videoSources && e.videoSources.length > 0,
+          )
         ) {
           seasonCompleted = true;
           await seasonsRepository.updateSeason(seasonId, {
@@ -269,10 +308,13 @@ export function createOngoingScraperService<
     },
 
     async scrapeAllOngoingSeasons(): Promise<BatchOngoingScrapeResult> {
-      const ongoingSeasons = await seasonsRepository.findOngoingWithScraperUrl();
+      const ongoingSeasons =
+        await seasonsRepository.findOngoingWithScraperUrl();
       const results: OngoingScrapeResult[] = [];
       const scrapeSingle = deps?.ongoingScraper?.syncAndScrapeOngoingSeason
-        ? deps.ongoingScraper.syncAndScrapeOngoingSeason.bind(deps.ongoingScraper)
+        ? deps.ongoingScraper.syncAndScrapeOngoingSeason.bind(
+            deps.ongoingScraper,
+          )
         : service.syncAndScrapeOngoingSeason;
 
       for (const season of ongoingSeasons) {

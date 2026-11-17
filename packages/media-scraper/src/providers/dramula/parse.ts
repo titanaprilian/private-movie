@@ -45,6 +45,37 @@ export function formatDramulaUrl(
   return `https://dramula.com/watch/${trimmed}`;
 }
 
+function extractRawEpisodesFromPayload(payload: any): any[] {
+  if (!payload || typeof payload !== "object") return [];
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (Array.isArray(payload.data)) {
+    return payload.data;
+  }
+  if (Array.isArray(payload.episodes)) {
+    return payload.episodes;
+  }
+  if (Array.isArray(payload.data?.episodes)) {
+    return payload.data.episodes;
+  }
+  const rawEpisodes: any[] = [];
+  if (Array.isArray(payload.data?.seasons)) {
+    for (const season of payload.data.seasons) {
+      if (Array.isArray(season?.episodes)) {
+        rawEpisodes.push(...season.episodes);
+      }
+    }
+  } else if (Array.isArray(payload.seasons)) {
+    for (const season of payload.seasons) {
+      if (Array.isArray(season?.episodes)) {
+        rawEpisodes.push(...season.episodes);
+      }
+    }
+  }
+  return rawEpisodes;
+}
+
 export function extractEpisodesFromPayload(
   payload: any,
   showSlugFromUrl?: string,
@@ -61,29 +92,7 @@ export function extractEpisodesFromPayload(
     showSlugFromUrl ||
     "";
 
-  let rawEpisodes: any[] = [];
-
-  if (Array.isArray(payload)) {
-    rawEpisodes = payload;
-  } else if (Array.isArray(payload.data)) {
-    rawEpisodes = payload.data;
-  } else if (Array.isArray(payload.episodes)) {
-    rawEpisodes = payload.episodes;
-  } else if (Array.isArray(payload.data?.episodes)) {
-    rawEpisodes = payload.data.episodes;
-  } else if (Array.isArray(payload.data?.seasons)) {
-    for (const season of payload.data.seasons) {
-      if (Array.isArray(season?.episodes)) {
-        rawEpisodes.push(...season.episodes);
-      }
-    }
-  } else if (Array.isArray(payload.seasons)) {
-    for (const season of payload.seasons) {
-      if (Array.isArray(season?.episodes)) {
-        rawEpisodes.push(...season.episodes);
-      }
-    }
-  }
+  const rawEpisodes = extractRawEpisodesFromPayload(payload);
 
   for (const ep of rawEpisodes) {
     if (!ep || typeof ep !== "object") continue;
@@ -325,28 +334,7 @@ function findMatchingEpisodeInPayload(
     return payload.data.episode;
   }
 
-  let rawEpisodes: any[] = [];
-  if (Array.isArray(payload)) {
-    rawEpisodes = payload;
-  } else if (Array.isArray(payload.data)) {
-    rawEpisodes = payload.data;
-  } else if (Array.isArray(payload.episodes)) {
-    rawEpisodes = payload.episodes;
-  } else if (Array.isArray(payload.data?.episodes)) {
-    rawEpisodes = payload.data.episodes;
-  } else if (Array.isArray(payload.data?.seasons)) {
-    for (const season of payload.data.seasons) {
-      if (Array.isArray(season?.episodes)) {
-        rawEpisodes.push(...season.episodes);
-      }
-    }
-  } else if (Array.isArray(payload.seasons)) {
-    for (const season of payload.seasons) {
-      if (Array.isArray(season?.episodes)) {
-        rawEpisodes.push(...season.episodes);
-      }
-    }
-  }
+  const rawEpisodes = extractRawEpisodesFromPayload(payload);
 
   for (const ep of rawEpisodes) {
     if (matches(ep) && (ep?.id != null || ep?.episode_id != null)) {

@@ -17,7 +17,9 @@ export function normalizePlaybackUrl(url: string): string {
     if (hashMatch && hashMatch[1]) {
       const hash = hashMatch[1];
       try {
-        const parsedUrl = new URL(url.startsWith("http") ? url : `https://${url}`);
+        const parsedUrl = new URL(
+          url.startsWith("http") ? url : `https://${url}`,
+        );
         return `/embed/${hash}${parsedUrl.search}`;
       } catch {
         return `/embed/${hash}`;
@@ -28,12 +30,9 @@ export function normalizePlaybackUrl(url: string): string {
   return url;
 }
 
-export async function normalizeVideoSourceAsync<
+export async function normalizeVideoSource<
   T extends { url: string; type?: string; storageProviderId?: string | null },
->(
-  source: T,
-  options?: NormalizationOptions
-): Promise<T> {
+>(source: T, options?: NormalizationOptions): Promise<T> {
   let url = source.url;
 
   if (source.type === "s3") {
@@ -41,9 +40,10 @@ export async function normalizeVideoSourceAsync<
     let service: S3StorageService | undefined = options?.s3StorageService;
     if (options?.storageProviderRegistry) {
       try {
-        const registryService = await options.storageProviderRegistry.getService(
-          source.storageProviderId
-        );
+        const registryService =
+          await options.storageProviderRegistry.getService(
+            source.storageProviderId,
+          );
         if (registryService) {
           service = registryService;
         }
@@ -53,7 +53,10 @@ export async function normalizeVideoSourceAsync<
     }
 
     if (service && service.isConfigured()) {
-      const publicBase = typeof service.getPublicBaseUrl === "function" ? service.getPublicBaseUrl() : null;
+      const publicBase =
+        typeof service.getPublicBaseUrl === "function"
+          ? service.getPublicBaseUrl()
+          : null;
       const isFullUrl = url.startsWith("http://") || url.startsWith("https://");
 
       if (publicBase) {
@@ -65,7 +68,7 @@ export async function normalizeVideoSourceAsync<
         try {
           const signedUrl = await service.getPresignedPlaybackUrl(
             url,
-            options?.expiresInSeconds ?? 21600
+            options?.expiresInSeconds ?? 21600,
           );
           url = signedUrl;
         } catch {
@@ -86,10 +89,9 @@ export async function normalizeVideoSourceAsync<
   };
 }
 
-export function normalizeVideoSourceSync<T extends { url: string; type?: string }>(
-  source: T,
-  options?: NormalizationOptions
-): T {
+export function normalizeVideoSourceSync<
+  T extends { url: string; type?: string },
+>(source: T, options?: NormalizationOptions): T {
   const normalizedUrl = normalizePlaybackUrl(source.url);
   if (normalizedUrl === source.url) {
     return source;
@@ -100,23 +102,17 @@ export function normalizeVideoSourceSync<T extends { url: string; type?: string 
   };
 }
 
-export function normalizeVideoSourcesSync<T extends { url: string; type?: string }>(
-  sources: T[],
-  options?: NormalizationOptions
-): T[] {
+export function normalizeVideoSourcesSync<
+  T extends { url: string; type?: string },
+>(sources: T[], options?: NormalizationOptions): T[] {
   return sources.map((s) => normalizeVideoSourceSync(s, options));
 }
 
-export const normalizeVideoSource = normalizeVideoSourceAsync;
-
 export async function normalizeVideoSources<
   T extends { url: string; type?: string; storageProviderId?: string | null },
->(
-  sources: T[],
-  options?: NormalizationOptions
-): Promise<T[]> {
+>(sources: T[], options?: NormalizationOptions): Promise<T[]> {
   if (options?.s3StorageService || options?.storageProviderRegistry) {
-    return Promise.all(sources.map((s) => normalizeVideoSourceAsync(s, options)));
+    return Promise.all(sources.map((s) => normalizeVideoSource(s, options)));
   }
   return sources.map((s) => normalizeVideoSourceSync(s, options));
 }
@@ -143,8 +139,10 @@ export function sortVideoSources<
   },
 >(sources: T[]): T[] {
   return [...sources].sort((a, b) => {
-    const tierA = a.type && a.type in TIER_PRIORITY ? TIER_PRIORITY[a.type] : 99;
-    const tierB = b.type && b.type in TIER_PRIORITY ? TIER_PRIORITY[b.type] : 99;
+    const tierA =
+      a.type && a.type in TIER_PRIORITY ? TIER_PRIORITY[a.type] : 99;
+    const tierB =
+      b.type && b.type in TIER_PRIORITY ? TIER_PRIORITY[b.type] : 99;
 
     if (tierA !== tierB) {
       return tierA - tierB;
@@ -163,7 +161,3 @@ export function sortVideoSources<
     return timeA - timeB;
   });
 }
-
-
-
-

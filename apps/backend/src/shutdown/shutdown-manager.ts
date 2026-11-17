@@ -2,7 +2,7 @@
  * A single named cleanup phase executed during graceful shutdown
  * (e.g. draining the HTTP listener, stopping schedulers, closing browsers).
  */
-export interface ShutdownStep {
+interface ShutdownStep {
   name: string;
   run: () => void | Promise<void>;
 }
@@ -19,7 +19,7 @@ export interface ShutdownTimers {
   clearTimeout(id: unknown): void;
 }
 
-export interface ShutdownLogger {
+interface ShutdownLogger {
   error(...args: unknown[]): void;
 }
 
@@ -45,7 +45,11 @@ export interface ShutdownManager {
    * Registers cleanup for an already-acquired resource via prepend step
    * and returns the resource, coupling acquisition with LIFO teardown.
    */
-  track<T>(name: string, resource: T, cleanup: (res: T) => void | Promise<void>): T;
+  track<T>(
+    name: string,
+    resource: T,
+    cleanup: (res: T) => void | Promise<void>,
+  ): T;
   /**
    * Executes the factory; on success registers cleanup via prepend step and
    * returns the resource. On factory failure no step is registered and the
@@ -54,7 +58,7 @@ export interface ShutdownManager {
   manage<T>(
     name: string,
     factory: () => Promise<T> | T,
-    cleanup: (res: T) => void | Promise<void>
+    cleanup: (res: T) => void | Promise<void>,
   ): Promise<T>;
 }
 
@@ -66,7 +70,7 @@ export const SHUTDOWN_TIMEOUT_MS = 10_000;
  * duplicate-signal protection, and timeout enforcement.
  */
 export function createShutdownManager(
-  options: ShutdownManagerOptions = {}
+  options: ShutdownManagerOptions = {},
 ): ShutdownManager {
   const steps: ShutdownStep[] = [...(options.steps ?? [])];
   const timeoutMs = options.timeoutMs ?? SHUTDOWN_TIMEOUT_MS;
@@ -132,7 +136,7 @@ export function createShutdownManager(
   const track = <T>(
     name: string,
     resource: T,
-    cleanup: (res: T) => void | Promise<void>
+    cleanup: (res: T) => void | Promise<void>,
   ): T => {
     prependStep({ name, run: () => cleanup(resource) });
     return resource;
@@ -141,12 +145,19 @@ export function createShutdownManager(
   const manage = async <T>(
     name: string,
     factory: () => Promise<T> | T,
-    cleanup: (res: T) => void | Promise<void>
+    cleanup: (res: T) => void | Promise<void>,
   ): Promise<T> => {
     const resource = await factory();
     prependStep({ name, run: () => cleanup(resource) });
     return resource;
   };
 
-  return { shutdown, registerShutdownHandlers, addStep, prependStep, track, manage };
+  return {
+    shutdown,
+    registerShutdownHandlers,
+    addStep,
+    prependStep,
+    track,
+    manage,
+  };
 }

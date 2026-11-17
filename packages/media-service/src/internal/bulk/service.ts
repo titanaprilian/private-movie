@@ -1,12 +1,15 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { createSeriesRepositoryInternal, SeriesNotFoundError } from "../series/repository";
+import {
+  createSeriesRepositoryInternal,
+  SeriesNotFoundError,
+} from "../series/repository";
 import {
   createVideoSourceRepositoryInternal,
   type VideoSourceRepositoryOptions,
 } from "../video-sources/repository";
 import { parseBulkScrapedEpisodeNumber } from "./episode-number";
 
-export type VideoSource = "otakudesu" | "dramula";
+type VideoSource = "otakudesu" | "dramula";
 
 export interface PreviewBulkSourcesInput {
   seriesId: string;
@@ -64,13 +67,13 @@ export interface SaveBulkSourcesResult {
   skippedCount: number;
 }
 
-export interface BulkPreviewScrapeSeriesResult {
+interface BulkPreviewScrapeSeriesResult {
   episodes: Array<{ title: string; url: string; date?: string | null }>;
 }
 
 export interface BulkServiceOptions extends VideoSourceRepositoryOptions {}
 
-export type PreviewScrapeSeriesFn = (input: {
+type PreviewScrapeSeriesFn = (input: {
   sourceUrl: string;
   source: VideoSource;
   html?: string;
@@ -82,7 +85,7 @@ export function createBulkServiceInternal<
 >(
   db: PgDatabase<THKT, TSchema>,
   deps: { previewScrapeSeries: PreviewScrapeSeriesFn },
-  options?: BulkServiceOptions
+  options?: BulkServiceOptions,
 ) {
   const seriesRepository = createSeriesRepositoryInternal(db, {
     s3StorageService: options?.s3StorageService,
@@ -93,10 +96,14 @@ export function createBulkServiceInternal<
   });
 
   return {
-    async previewBulkSources(input: PreviewBulkSourcesInput): Promise<PreviewBulkSourcesResult> {
+    async previewBulkSources(
+      input: PreviewBulkSourcesInput,
+    ): Promise<PreviewBulkSourcesResult> {
       const targetSeries = await seriesRepository.findById(input.seriesId);
       if (!targetSeries) {
-        throw new SeriesNotFoundError(`Series with id ${input.seriesId} not found`);
+        throw new SeriesNotFoundError(
+          `Series with id ${input.seriesId} not found`,
+        );
       }
 
       const parsedSeries = await deps.previewScrapeSeries({
@@ -105,7 +112,9 @@ export function createBulkServiceInternal<
         html: input.html,
       });
 
-      const fullSeries = await seriesRepository.findByIdWithEpisodes(input.seriesId);
+      const fullSeries = await seriesRepository.findByIdWithEpisodes(
+        input.seriesId,
+      );
       const localEpisodes: BulkPreviewLocalEpisodeItem[] = [];
       const localEpisodesMapByOrder = new Map<number, string>();
 
@@ -122,7 +131,8 @@ export function createBulkServiceInternal<
               seasonId: s.id,
               seasonNumber: s.seasonNumber ?? null,
               seasonTitle: s.title,
-              hasSources: Array.isArray(ep.videoSources) && ep.videoSources.length > 0,
+              hasSources:
+                Array.isArray(ep.videoSources) && ep.videoSources.length > 0,
             });
             if (!localEpisodesMapByOrder.has(ep.order)) {
               localEpisodesMapByOrder.set(ep.order, ep.id);
@@ -132,36 +142,39 @@ export function createBulkServiceInternal<
       }
 
       const offset = input.episodeOffset ?? 0;
-      const scrapedEpisodes: ScrapedBulkEpisodeItem[] = parsedSeries.episodes.map((scrapedEp) => {
-        const epNum = parseBulkScrapedEpisodeNumber(scrapedEp.title);
-        let calculatedOrder: number | null = null;
-        let matchedLocalEpisodeId: string | null = null;
-        let matchStatus: "matched" | "unmatched" = "unmatched";
+      const scrapedEpisodes: ScrapedBulkEpisodeItem[] =
+        parsedSeries.episodes.map((scrapedEp) => {
+          const epNum = parseBulkScrapedEpisodeNumber(scrapedEp.title);
+          let calculatedOrder: number | null = null;
+          let matchedLocalEpisodeId: string | null = null;
+          let matchStatus: "matched" | "unmatched" = "unmatched";
 
-        if (epNum !== null && Number.isInteger(epNum)) {
-          const targetOrder = epNum + offset;
-          calculatedOrder = targetOrder;
-          const matchedId = localEpisodesMapByOrder.get(targetOrder);
-          if (matchedId) {
-            matchedLocalEpisodeId = matchedId;
-            matchStatus = "matched";
+          if (epNum !== null && Number.isInteger(epNum)) {
+            const targetOrder = epNum + offset;
+            calculatedOrder = targetOrder;
+            const matchedId = localEpisodesMapByOrder.get(targetOrder);
+            if (matchedId) {
+              matchedLocalEpisodeId = matchedId;
+              matchStatus = "matched";
+            }
           }
-        }
 
-        return {
-          scrapedTitle: scrapedEp.title,
-          scrapedUrl: scrapedEp.url,
-          episodeNumber: epNum,
-          calculatedOrder,
-          matchedLocalEpisodeId,
-          matchStatus,
-        };
-      });
+          return {
+            scrapedTitle: scrapedEp.title,
+            scrapedUrl: scrapedEp.url,
+            episodeNumber: epNum,
+            calculatedOrder,
+            matchedLocalEpisodeId,
+            matchStatus,
+          };
+        });
 
       return { scrapedEpisodes, localEpisodes };
     },
 
-    async saveBulkSources(input: SaveBulkSourcesInput): Promise<SaveBulkSourcesResult> {
+    async saveBulkSources(
+      input: SaveBulkSourcesInput,
+    ): Promise<SaveBulkSourcesResult> {
       let savedCount = 0;
       let skippedCount = 0;
 
@@ -186,5 +199,3 @@ export function createBulkServiceInternal<
     },
   };
 }
-
-export type BulkServiceInternal = ReturnType<typeof createBulkServiceInternal>;

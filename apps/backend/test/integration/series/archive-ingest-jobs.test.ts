@@ -106,7 +106,12 @@ async function createSeriesAndEpisodes() {
 
 function makeFakeFetchFn() {
   return async (_url: string, _init?: RequestInit): Promise<Response> => {
-    const data = new TextEncoder().encode("fake-archive-data");
+    // Valid 22-byte empty zip archive (PK\x05\x06 End of Central Directory)
+    // so 7zz can list/inspect the archive successfully without failing extraction
+    const data = Buffer.from([
+      0x50, 0x4b, 0x05, 0x06, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0,
+    ]);
     return new Response(data, {
       status: 200,
       headers: { "Content-Length": String(data.byteLength) },

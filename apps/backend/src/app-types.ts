@@ -9,7 +9,7 @@ import type {
 import type { AuthRateLimitOptions } from "./modules/authentication/schemas";
 import type { OngoingSeasonScheduler } from "./modules/media";
 import type { RateLimitPluginOptions } from "./plugins";
-import type { ArchiveFetchFn, ArchiveIngestJobService } from "./modules/series";
+import type { ArchiveFetchFn, ArchiveIngestJobManager } from "./modules/series";
 import type { StorageOverrides, StorageService } from "./modules/storage";
 
 export type SchedulerDeps = Pick<
@@ -44,7 +44,7 @@ export interface CreateAppDeps {
   browserFn: BrowserFn;
   s3StorageService?: S3StorageService;
   scheduler?: SchedulerDeps;
-  archiveJobService?: ArchiveIngestJobService;
+  archiveJobService?: ArchiveIngestJobManager;
   archiveStagingBaseDir?: string;
   overrides?: CreateAppOverrides;
 }

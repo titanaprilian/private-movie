@@ -847,8 +847,3 @@ export function createArchiveIngestJobManager(
     retryJob,
   };
 }
-
-/** Back-compat alias: pre-refactor service name. */
-export type ArchiveIngestJobService = ArchiveIngestJobManager;
-export type ArchiveIngestJobServiceOptions = ArchiveIngestJobManagerOptions;
-export const createArchiveIngestJobService = createArchiveIngestJobManager;

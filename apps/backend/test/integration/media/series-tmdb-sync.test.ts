@@ -2,7 +2,11 @@ import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
 import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import crypto from "node:crypto";
-import { createSaveEpisodeService, type SeriesWithEpisodes, type TmdbSyncPreviewResult } from "@repo/media-service";
+import {
+  createMediaService,
+  type SeriesWithEpisodes,
+  type TmdbSyncPreviewResult,
+} from "@repo/media-service";
 import { createDbClient } from "@repo/db";
 
 interface ErrorResponseBody {
@@ -90,7 +94,7 @@ describe("POST /series/:id/tmdb-sync", () => {
   });
 
   it("returns 404 Not Found when TMDB returns 404 for tmdbId", async () => {
-    const mediaService = createSaveEpisodeService(db);
+    const mediaService = createMediaService(db);
     const initial = await mediaService.saveMedia({
       episode: {
         sourceUrl: "https://example.com/ep1",
@@ -107,9 +111,11 @@ describe("POST /series/:id/tmdb-sync", () => {
 
     vi.spyOn(global, "fetch").mockResolvedValueOnce(
       new Response(
-        JSON.stringify({ status_message: "The resource you requested could not be found." }),
-        { status: 404 }
-      )
+        JSON.stringify({
+          status_message: "The resource you requested could not be found.",
+        }),
+        { status: 404 },
+      ),
     );
 
     const res = await request(app, {
@@ -125,7 +131,7 @@ describe("POST /series/:id/tmdb-sync", () => {
   });
 
   it("updates series metadata, inserts new episodes, and preserves existing episode IDs and video sources", async () => {
-    const mediaService = createSaveEpisodeService(db);
+    const mediaService = createMediaService(db);
     const initial = await mediaService.saveMedia({
       episode: {
         sourceUrl: "https://example.com/anime/ep1",
@@ -180,7 +186,7 @@ describe("POST /series/:id/tmdb-sync", () => {
               },
             ],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       if (url.includes("/tv/200")) {
@@ -202,7 +208,7 @@ describe("POST /series/:id/tmdb-sync", () => {
               },
             ],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -292,7 +298,7 @@ describe("GET /series/:id/tmdb-sync-preview", () => {
   });
 
   it("returns 404 Not Found when TMDB returns 404 for tmdbId", async () => {
-    const mediaService = createSaveEpisodeService(db);
+    const mediaService = createMediaService(db);
     const initial = await mediaService.saveMedia({
       episode: {
         sourceUrl: "https://example.com/ep1",
@@ -314,9 +320,14 @@ describe("GET /series/:id/tmdb-sync-preview", () => {
     vi.spyOn(global, "fetch").mockImplementation(async (input) => {
       const url = input.toString();
       if (url.includes("/tv/999999")) {
-        return new Response(JSON.stringify({ status_message: "The resource you requested could not be found." }), {
-          status: 404,
-        });
+        return new Response(
+          JSON.stringify({
+            status_message: "The resource you requested could not be found.",
+          }),
+          {
+            status: 404,
+          },
+        );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
     });
@@ -331,7 +342,7 @@ describe("GET /series/:id/tmdb-sync-preview", () => {
   });
 
   it("returns detailed diff including episodeChanges, seasonDiffs, and seriesUpdated=true", async () => {
-    const mediaService = createSaveEpisodeService(db);
+    const mediaService = createMediaService(db);
     const initial = await mediaService.saveMedia({
       episode: {
         sourceUrl: "https://example.com/ep1",
@@ -376,7 +387,7 @@ describe("GET /series/:id/tmdb-sync-preview", () => {
               },
             ],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       if (url.includes("/tv/500")) {
@@ -399,7 +410,7 @@ describe("GET /series/:id/tmdb-sync-preview", () => {
               },
             ],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -433,7 +444,7 @@ describe("GET /series/:id/tmdb-sync-preview", () => {
         titleChanged: true,
         overviewChanged: true,
         thumbnailChanged: true,
-      })
+      }),
     );
   });
 });

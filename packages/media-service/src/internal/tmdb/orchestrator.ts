@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, genres, series, seriesToGenres, slugifyGenre } from "@repo/db";
+import {
+  episodes,
+  genres,
+  series,
+  seriesToGenres,
+  slugifyGenre,
+} from "@repo/db";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
 import { createSeasonsRepositoryInternal } from "../seasons/repository";
 import {
@@ -14,14 +20,12 @@ import {
 import {
   fetchTmdbSeriesData,
   saveTmdbSeries,
-  getTmdbPreview as getTmdbPreviewBase,
   type TmdbImportInput,
   type TmdbSyncInput,
   type TmdbSyncPreviewInput,
   type TmdbSyncPreviewResult,
   type SeasonSyncDiffItem,
   type EpisodeChangeItem,
-  type TmdbPreviewResult,
 } from "./service";
 
 // Episode with optional mutable claim flag used during passport matching.
@@ -37,7 +41,7 @@ export async function importTmdb<
   TSchema extends Record<string, unknown>,
 >(
   db: PgDatabase<THKT, TSchema>,
-  input: TmdbImportInput
+  input: TmdbImportInput,
 ): Promise<SeriesWithSeasons> {
   const data = await fetchTmdbSeriesData(input.tmdbId, {
     type: input.type,
@@ -56,7 +60,7 @@ export async function getTmdbSyncPreview<
 >(
   db: PgDatabase<THKT, TSchema>,
   seriesId: string,
-  input: TmdbSyncPreviewInput
+  input: TmdbSyncPreviewInput,
 ): Promise<TmdbSyncPreviewResult> {
   const seriesRepository = createSeriesRepositoryInternal(db);
   const existingSeries = await seriesRepository.findByIdWithEpisodes(seriesId);
@@ -82,10 +86,13 @@ export async function getTmdbSyncPreview<
   const episodeChanges: EpisodeChangeItem[] = [];
 
   const localSeasons: SeasonWithEpisodes[] = existingSeries.seasons ?? [];
-  const localAllEpisodes: EpisodeWithVideoSources[] = existingSeries.episodes ?? [];
+  const localAllEpisodes: EpisodeWithVideoSources[] =
+    existingSeries.episodes ?? [];
 
   for (const sMeta of data.seasons) {
-    const localSeason = localSeasons.find((s) => s.seasonNumber === sMeta.seasonNumber);
+    const localSeason = localSeasons.find(
+      (s) => s.seasonNumber === sMeta.seasonNumber,
+    );
 
     let isNewSeason = false;
     let localEpisodes: EpisodeWithVideoSources[] = [];
@@ -137,7 +144,9 @@ export async function getTmdbSyncPreview<
 
     if (!isNewSeason && localEpisodes.length > 0) {
       for (const ep of sMeta.episodes) {
-        const localEp = localEpisodes.find((e) => e.order === ep.episode_number);
+        const localEp = localEpisodes.find(
+          (e) => e.order === ep.episode_number,
+        );
         if (localEp) {
           const incomingTitle = ep.name || `Episode ${ep.episode_number}`;
           const incomingOverview = ep.overview ?? null;
@@ -156,11 +165,18 @@ export async function getTmdbSyncPreview<
             : null;
 
           const titleChanged = (localEp.title ?? "") !== incomingTitle;
-          const overviewChanged = (localEp.description ?? null) !== incomingOverview;
-          const thumbnailChanged = (localEp.thumbnailUrl ?? null) !== incomingThumbnail;
+          const overviewChanged =
+            (localEp.description ?? null) !== incomingOverview;
+          const thumbnailChanged =
+            (localEp.thumbnailUrl ?? null) !== incomingThumbnail;
           const airDateChanged = (oldAirDate ?? null) !== incomingAirDate;
 
-          if (titleChanged || overviewChanged || thumbnailChanged || airDateChanged) {
+          if (
+            titleChanged ||
+            overviewChanged ||
+            thumbnailChanged ||
+            airDateChanged
+          ) {
             episodeChanges.push({
               seasonNumber: sMeta.seasonNumber,
               episodeNumber: ep.episode_number,
@@ -183,7 +199,10 @@ export async function getTmdbSyncPreview<
     }
   }
 
-  const totalNewEpisodes = seasonDiffs.reduce((acc, item) => acc + item.diff, 0);
+  const totalNewEpisodes = seasonDiffs.reduce(
+    (acc, item) => acc + item.diff,
+    0,
+  );
   const totalNewSeasons = seasonDiffs.filter((item) => item.isNewSeason).length;
   const totalUpdatedEpisodes = episodeChanges.length;
 
@@ -218,7 +237,7 @@ export async function syncTmdb<
 >(
   db: PgDatabase<THKT, TSchema>,
   seriesId: string,
-  input: TmdbSyncInput
+  input: TmdbSyncInput,
 ): Promise<SeriesWithEpisodes> {
   const seriesRepository = createSeriesRepositoryInternal(db);
 
@@ -235,12 +254,15 @@ export async function syncTmdb<
   // Snapshot local layout before the transaction so passport matching and
   // incoming-episode routing can be computed without extra in-tx queries
   // (keeps the logic testable with mocked tx objects).
-  const localSnapshot = await seriesRepository.findByIdWithEpisodes(seriesId).catch(() => null);
+  const localSnapshot = await seriesRepository
+    .findByIdWithEpisodes(seriesId)
+    .catch(() => null);
   const localSeasons: SeasonWithEpisodes[] = localSnapshot?.seasons ?? [];
   // Cast to ClaimableEpisode to allow the mutable __claimed flag — the flag
   // is an in-process sentinel only and is never written to the database.
   const localEpisodes = (localSnapshot?.episodes ?? []) as ClaimableEpisode[];
-  const ongoingSeason = localSeasons.find((s) => s.status === "ongoing") ?? null;
+  const ongoingSeason =
+    localSeasons.find((s) => s.status === "ongoing") ?? null;
 
   // Track running max order per season for sequential appends of new eps.
   const maxOrderBySeasonId = new Map<string, number>();
@@ -264,7 +286,7 @@ export async function syncTmdb<
   // stamp the passport in-place.
   const fallbackIndex = new Map<string, ClaimableEpisode>();
   const seasonNumberById = new Map<string, number | null>(
-    localSeasons.map((s) => [s.id, s.seasonNumber ?? null])
+    localSeasons.map((s) => [s.id, s.seasonNumber ?? null]),
   );
   for (const e of localEpisodes) {
     if (e.tmdbSeasonNumber == null || e.tmdbEpisodeNumber == null) {
@@ -281,7 +303,7 @@ export async function syncTmdb<
       e.tmdbSeasonNumber == null &&
       e.tmdbEpisodeNumber == null &&
       !e.__claimed &&
-      (!ongoingSeason || e.seasonId === ongoingSeason.id)
+      (!ongoingSeason || e.seasonId === ongoingSeason.id),
   );
 
   await db.transaction(async (tx) => {
@@ -307,10 +329,14 @@ export async function syncTmdb<
 
     // 2. Genre sync (raw upsert required; no genre repository exists).
     if (!input.skipGenres) {
-      await tx.delete(seriesToGenres).where(eq(seriesToGenres.seriesId, seriesId));
+      await tx
+        .delete(seriesToGenres)
+        .where(eq(seriesToGenres.seriesId, seriesId));
 
       const rawGenres = data.genres ?? [];
-      const genreNames = Array.from(new Set(rawGenres.map((g) => g.trim()).filter(Boolean)));
+      const genreNames = Array.from(
+        new Set(rawGenres.map((g) => g.trim()).filter(Boolean)),
+      );
 
       if (genreNames.length > 0) {
         const genreValues = genreNames.map((name) => ({
@@ -336,7 +362,10 @@ export async function syncTmdb<
         }));
 
         if (seriesToGenreRows.length > 0) {
-          await tx.insert(seriesToGenres).values(seriesToGenreRows).onConflictDoNothing();
+          await tx
+            .insert(seriesToGenres)
+            .values(seriesToGenreRows)
+            .onConflictDoNothing();
         }
       }
     }
@@ -378,7 +407,9 @@ export async function syncTmdb<
 
         const passportKey = `${season.seasonNumber}:${episode.episode_number}`;
         let matched =
-          passportIndex.get(passportKey) ?? fallbackIndex.get(passportKey) ?? null;
+          passportIndex.get(passportKey) ??
+          fallbackIndex.get(passportKey) ??
+          null;
         // Avoid double-matching the same local row for two TMDB eps.
         if (matched?.__claimed) matched = null;
 
@@ -399,7 +430,9 @@ export async function syncTmdb<
 
         // Newly discovered TMDB episode: prefer enriching a scraper-first
         // placeholder in place so attached video sources survive.
-        const placeholderIdx = unclaimedPlaceholders.findIndex((p) => !p.__claimed);
+        const placeholderIdx = unclaimedPlaceholders.findIndex(
+          (p) => !p.__claimed,
+        );
         if (ongoingSeason && placeholderIdx >= 0) {
           const placeholder = unclaimedPlaceholders[placeholderIdx];
           placeholder.__claimed = true;
@@ -432,7 +465,10 @@ export async function syncTmdb<
           if (targetOrder > next && canonicalSeasonId) {
             maxOrderBySeasonId.set(targetSeasonId ?? "", targetOrder);
           } else if (targetOrder <= next && canonicalSeasonId) {
-            maxOrderBySeasonId.set(targetSeasonId ?? "", Math.max(next, targetOrder));
+            maxOrderBySeasonId.set(
+              targetSeasonId ?? "",
+              Math.max(next, targetOrder),
+            );
           }
           isUnassigned = true;
         }
@@ -470,6 +506,3 @@ export async function syncTmdb<
   const updated = await seriesRepository.findByIdWithEpisodes(seriesId);
   return updated!;
 }
-
-export { getTmdbPreviewBase as getTmdbPreview };
-export type { TmdbPreviewResult };

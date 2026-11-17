@@ -3,7 +3,7 @@ import {
   stripKnownAdScripts,
 } from "../embed/utils/ad-suppression";
 
-export function buildProxyShim(domain: string): string {
+function buildProxyShim(domain: string): string {
   return `<script>
   (function() {
     var mockWindow = {
@@ -279,7 +279,10 @@ export function buildProxyShim(domain: string): string {
   })();
 </script>`;
 }
-export function buildProxyBaseHref(domain: string, targetPath?: string): string {
+export function buildProxyBaseHref(
+  domain: string,
+  targetPath?: string,
+): string {
   const root = `/api/media/proxy/${domain}/`;
   if (!targetPath) return root;
   let pathname = targetPath;
@@ -299,63 +302,71 @@ export function buildProxyBaseHref(domain: string, targetPath?: string): string 
     return `/api/media/proxy/${domain}${pathname}`;
   }
   const lastSlash = pathname.lastIndexOf("/");
-  const directory = lastSlash <= 0 ? "/" : `${pathname.slice(0, lastSlash + 1)}`;
+  const directory =
+    lastSlash <= 0 ? "/" : `${pathname.slice(0, lastSlash + 1)}`;
   return `/api/media/proxy/${domain}${directory}`;
 }
 
-export function sanitizeHtmlContent(html: string, domain: string, targetUrlOrPath?: string): string {
+export function sanitizeHtmlContent(
+  html: string,
+  domain: string,
+  targetUrlOrPath?: string,
+): string {
   let processed = stripKnownAdScripts(html);
 
   // 2. Filedon embed sanitization: sanitize data-page attribute
-  processed = processed.replace(/data-page=(['"])([\s\S]*?)\1/gi, (match, quote, jsonStr) => {
-    try {
-      const decoded = jsonStr
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&amp;/g, "&");
-      const parsed = JSON.parse(decoded);
-      if (typeof parsed === "object" && parsed !== null) {
-        if (parsed.props) {
-          parsed.props.ads_enabled = false;
-          parsed.props.ad_slots = {};
-          parsed.props.footer_script = "";
-          parsed.props.ads_on_embed = false;
-          if (parsed.props.files && parsed.props.files.user) {
-            parsed.props.files.user.ads_on_embed = false;
-            parsed.props.files.user.ads_on_download = false;
-            if (parsed.props.files.user.player_setting) {
-              parsed.props.files.user.player_setting.remove_ads_enabled = true;
+  processed = processed.replace(
+    /data-page=(['"])([\s\S]*?)\1/gi,
+    (match, quote, jsonStr) => {
+      try {
+        const decoded = jsonStr
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&amp;/g, "&");
+        const parsed = JSON.parse(decoded);
+        if (typeof parsed === "object" && parsed !== null) {
+          if (parsed.props) {
+            parsed.props.ads_enabled = false;
+            parsed.props.ad_slots = {};
+            parsed.props.footer_script = "";
+            parsed.props.ads_on_embed = false;
+            if (parsed.props.files && parsed.props.files.user) {
+              parsed.props.files.user.ads_on_embed = false;
+              parsed.props.files.user.ads_on_download = false;
+              if (parsed.props.files.user.player_setting) {
+                parsed.props.files.user.player_setting.remove_ads_enabled = true;
+              }
             }
           }
+          parsed.ads_enabled = false;
+          parsed.ad_slots = {};
+          parsed.footer_script = "";
+          parsed.ads_on_embed = false;
+          const newJson = JSON.stringify(parsed);
+          if (quote === "'") {
+            return `data-page='${newJson}'`;
+          } else {
+            return `data-page="${newJson.replace(/"/g, "&quot;")}"`;
+          }
         }
-        parsed.ads_enabled = false;
-        parsed.ad_slots = {};
-        parsed.footer_script = "";
-        parsed.ads_on_embed = false;
-        const newJson = JSON.stringify(parsed);
-        if (quote === "'") {
-          return `data-page='${newJson}'`;
-        } else {
-          return `data-page="${newJson.replace(/"/g, '&quot;')}"`;
-        }
+      } catch {
+        const fallback = jsonStr
+          .replace(/"ads_enabled"\s*:\s*true/g, '"ads_enabled":false')
+          .replace(/"ads_on_embed"\s*:\s*true/g, '"ads_on_embed":false')
+          .replace(/"ad_slots"\s*:\s*\{[^}]*\}/g, '"ad_slots":{}')
+          .replace(/"footer_script"\s*:\s*"[^"]*"/g, '"footer_script":""');
+        return `data-page=${quote}${fallback}${quote}`;
       }
-    } catch {
-      const fallback = jsonStr
-        .replace(/"ads_enabled"\s*:\s*true/g, '"ads_enabled":false')
-        .replace(/"ads_on_embed"\s*:\s*true/g, '"ads_on_embed":false')
-        .replace(/"ad_slots"\s*:\s*\{[^}]*\}/g, '"ad_slots":{}')
-        .replace(/"footer_script"\s*:\s*"[^"]*"/g, '"footer_script":""');
-      return `data-page=${quote}${fallback}${quote}`;
-    }
-    return match;
-  });
+      return match;
+    },
+  );
 
   // 3. Rewrite root-relative src and href attributes to go through reverse proxy
   processed = processed.replace(
     /(src|href)=(["'])\/(?!\/|api\/media\/proxy\/)/gi,
-    `$1=$2/api/media/proxy/${domain}/`
+    `$1=$2/api/media/proxy/${domain}/`,
   );
 
   // 4. Rewrite absolute links matching target domain
@@ -364,8 +375,14 @@ export function sanitizeHtmlContent(html: string, domain: string, targetUrlOrPat
   processed = processed.replace(domainRegex, `/api/media/proxy/${domain}/`);
 
   // 5. Rewrite Vidhide stream links in inline scripts
-  processed = processed.replace(/(["'])\/stream\//g, `$1/api/media/proxy/${domain}/stream/`);
-  processed = processed.replace(/(["'])\/dl\?/g, `$1/api/media/proxy/${domain}/dl?`);
+  processed = processed.replace(
+    /(["'])\/stream\//g,
+    `$1/api/media/proxy/${domain}/stream/`,
+  );
+  processed = processed.replace(
+    /(["'])\/dl\?/g,
+    `$1/api/media/proxy/${domain}/dl?`,
+  );
 
   // 6. Inject base tag, hardened shim, and anti-clickjack CSS into <head>
   // Path-aware base: preserves the proxied resource's directory so relative
@@ -377,7 +394,10 @@ export function sanitizeHtmlContent(html: string, domain: string, targetUrlOrPat
   if (/(<head[^>]*>)/i.test(processed)) {
     processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);
   } else if (/(<html[^>]*>)/i.test(processed)) {
-    processed = processed.replace(/(<html[^>]*>)/i, `$1\n<head>\n  ${injections}\n</head>`);
+    processed = processed.replace(
+      /(<html[^>]*>)/i,
+      `$1\n<head>\n  ${injections}\n</head>`,
+    );
   } else {
     processed = `<head>\n  ${injections}\n</head>\n${processed}`;
   }

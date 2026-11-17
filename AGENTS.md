@@ -195,14 +195,21 @@ Tests use a conventional folder-based structure with Vitest as the test runner v
 
 ## Structural Quality Gates (`gate:check`)
 
-The repository enforces **Level L3 Quality Gate maturity**: existing technical debt is baselined, but new or worsening structural debt (unused exports, unused dependencies, or copy-paste code duplication) will immediately fail CI.
+The repository enforces **Level L4 Quality Gate maturity**: existing technical debt is baselined, new or worsening structural debt (unused exports, unused dependencies, or copy-paste code duplication) will immediately fail CI, gate evaluation is rigorously covered by automated unit tests, and baselines are protected by governance rules.
 
 ### Running Quality Gates Locally
 
-- `bun run gate:check` — Runs both structural duplication (`jscpd`) and unused code/dependency audits (`knip`) against checked-in baselines (`.jscpd-baseline.json` and `.knip-baseline.json`).
+- `bun run gate:check` — Runs both structural duplication (`jscpd`) and unused code/dependency audits (`knip`) against checked-in baselines (`.jscpd-baseline.json` and `.knip-baseline.json`). Aligned with CI.
+- `bun run test:gate` — Runs the fast (<1s) unit test suite for gate checking, comparison, and ratchet logic (`test/unit/scripts/gate-check.test.ts`).
 - `bun run gate:knip` — Direct Knip check (identifies specific unused exports, types, or dependencies).
 - `bun run gate:jscpd` — Direct JSCPD check (identifies duplicated source blocks across packages and apps).
-- `bun run gate:update-baseline` — Updates the baselines to lock in structural debt reduction.
+- `bun run gate:update-baseline` — Safely tightens the ratchet by pruning resolved findings from `.knip-baseline.json` and updating `.jscpd-baseline.json`.
+
+### Ratchet Rules & Governance
+
+- **Strict Ratchet Enforcement**: `bun run gate:update-baseline` will fail and abort if any new violations are present. It only permits tightening (pruning resolved debt), never loosening or suppressing new debt.
+- **Protected Gate Files**: Gate scripts (`scripts/gate-check.ts`, `scripts/internal/gate-checker.ts`) and baselines (`.knip-baseline.json`, `.jscpd-baseline.json`, `.jscpd.json`, `knip.jsonc`) are governed via `.github/CODEOWNERS` and require human sign-off.
+- **Commit Trailer Requirement**: Any commit modifying `.knip-baseline.json` or `.jscpd-baseline.json` must include a `Baseline-Rationale: <reason>` trailer in its commit message, explaining the justification for updating the baseline. Commits lacking this trailer are blocked by `.husky/commit-msg`.
 
 ### When Quality Gate Blocks CI or Local Check
 
