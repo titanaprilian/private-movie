@@ -1,7 +1,5 @@
-# Quality gates, baseline ratchet files, and gate check scripts
+# Quality gates, thresholds, and gate check scripts
 scripts/gate-check.ts @titanaprilian
 scripts/internal/gate-checker.ts @titanaprilian
-.knip-baseline.json @titanaprilian
-.jscpd-baseline.json @titanaprilian
 .jscpd.json @titanaprilian
 knip.jsonc @titanaprilian

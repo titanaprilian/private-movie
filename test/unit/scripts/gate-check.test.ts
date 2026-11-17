@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  compareKnipFindings,
   computeEntryFingerprint,
+  evaluateKnipFindings,
   extractKnipFingerprints,
-  pruneKnipBaseline,
   type KnipReport,
 } from "../../../scripts/internal/gate-checker";
 
-describe("gate-checker", () => {
+describe("gate-checker (Level L5 Zero-Tolerance)", () => {
   describe("computeEntryFingerprint", () => {
     it("formats named entry object", () => {
       const fp = computeEntryFingerprint("src/app.ts", "exports", {
@@ -71,200 +70,89 @@ describe("gate-checker", () => {
     });
   });
 
-  describe("compareKnipFindings", () => {
-    it("passes when debt is unchanged (exact match with baseline)", () => {
-      const baseline: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacyUnused" }],
-          },
-        ],
+  describe("evaluateKnipFindings (L5 Zero-Tolerance)", () => {
+    it("passes when knip report has no issues (empty issues array)", () => {
+      const report: KnipReport = {
+        issues: [],
       };
-      const current: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacyUnused" }],
-          },
-        ],
-      };
-
-      const result = compareKnipFindings(current, baseline);
+      const result = evaluateKnipFindings(report);
       expect(result.passed).toBe(true);
-      expect(result.newViolations).toEqual([]);
-      expect(result.resolvedCount).toBe(0);
-      expect(result.resolvedFingerprints).toEqual([]);
+      expect(result.violations).toEqual([]);
     });
 
-    it("fails when newly introduced debt is detected", () => {
-      const baseline: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacyUnused" }],
-          },
-        ],
-      };
-      const current: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacyUnused" }, { name: "brandNewUnused" }],
-          },
-        ],
-      };
-
-      const result = compareKnipFindings(current, baseline);
-      expect(result.passed).toBe(false);
-      expect(result.newViolations).toEqual([
-        "apps/backend/src/index.ts:exports:brandNewUnused",
-      ]);
-      expect(result.resolvedCount).toBe(0);
-    });
-
-    it("detects resolved debt and reports progress", () => {
-      const baseline: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacyUnused" }, { name: "cleanedUpExport" }],
-          },
-        ],
-      };
-      const current: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacyUnused" }],
-          },
-        ],
-      };
-
-      const result = compareKnipFindings(current, baseline);
+    it("passes when knip report has no issues property", () => {
+      const report: KnipReport = {};
+      const result = evaluateKnipFindings(report);
       expect(result.passed).toBe(true);
-      expect(result.newViolations).toEqual([]);
-      expect(result.resolvedCount).toBe(1);
-      expect(result.resolvedFingerprints).toEqual([
-        "apps/backend/src/index.ts:exports:cleanedUpExport",
-      ]);
+      expect(result.violations).toEqual([]);
     });
 
-    it("fails when both resolved debt and new debt are present", () => {
-      const baseline: KnipReport = {
+    it("fails when any unused export or dependency is detected", () => {
+      const report: KnipReport = {
         issues: [
           {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "cleanedUpExport" }],
+            file: "apps/backend/src/routes.ts",
+            exports: [{ name: "unusedRoute" }],
           },
-        ],
-      };
-      const current: KnipReport = {
-        issues: [
           {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "newUnused" }],
+            file: "apps/web/package.json",
+            dependencies: [{ name: "unused-pkg" }],
           },
         ],
       };
 
-      const result = compareKnipFindings(current, baseline);
+      const result = evaluateKnipFindings(report);
       expect(result.passed).toBe(false);
-      expect(result.newViolations).toEqual([
-        "apps/backend/src/index.ts:exports:newUnused",
-      ]);
-      expect(result.resolvedCount).toBe(1);
-    });
-  });
-
-  describe("pruneKnipBaseline (Ratchet Enforcement)", () => {
-    it("prunes resolved findings and removes empty file entries", () => {
-      const baseline: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacy1" }, { name: "cleanedUp" }],
-            types: [{ name: "typeCleanedUp" }],
-          },
-          {
-            file: "apps/web/src/obsolete.ts",
-            files: [{ name: "apps/web/src/obsolete.ts" }],
-          },
-        ],
-      };
-
-      // In current: "cleanedUp", "typeCleanedUp", and "apps/web/src/obsolete.ts" are resolved
-      const current: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacy1" }],
-          },
-        ],
-      };
-
-      const result = pruneKnipBaseline(current, baseline);
-      expect(result.success).toBe(true);
-      expect(result.prunedCount).toBe(3);
-      expect(result.prunedReport).toBeDefined();
-
-      const prunedIssues = result.prunedReport!.issues!;
-      expect(prunedIssues.length).toBe(1);
-      expect(prunedIssues[0].file).toBe("apps/backend/src/index.ts");
-      expect(prunedIssues[0].exports).toEqual([{ name: "legacy1" }]);
-      expect(prunedIssues[0].types).toEqual([]);
+      expect(result.violations).toHaveLength(2);
+      expect(result.violations).toContain(
+        "apps/backend/src/routes.ts:exports:unusedRoute",
+      );
+      expect(result.violations).toContain(
+        "apps/web/package.json:dependencies:unused-pkg",
+      );
     });
 
-    it("refuses to prune or update baseline when new violations exist (ratchet guard)", () => {
-      const baseline: KnipReport = {
+    it("detects violations across all knip categories", () => {
+      const report: KnipReport = {
         issues: [
           {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacy1" }],
+            file: "apps/backend/src/dead.ts",
+            files: [{ name: "apps/backend/src/dead.ts" }],
+            types: [{ name: "DeadType" }],
+            enumMembers: [{ name: "DeadEnumMember" }],
+            duplicates: [{ name: "duplicateExport" }],
+          },
+          {
+            file: "package.json",
+            devDependencies: [{ name: "unused-dev-dep" }],
+            unlisted: [{ name: "unlisted-dep" }],
+            unresolved: [{ name: "unresolved-import" }],
           },
         ],
       };
 
-      // Current introduces a new violation "newViolatingFunc"
-      const current: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacy1" }, { name: "newViolatingFunc" }],
-          },
-        ],
-      };
-
-      const result = pruneKnipBaseline(current, baseline);
-      expect(result.success).toBe(false);
-      expect(result.prunedReport).toBeNull();
-      expect(result.newViolations).toEqual([
-        "apps/backend/src/index.ts:exports:newViolatingFunc",
-      ]);
-    });
-
-    it("returns unmodified baseline if no findings were resolved", () => {
-      const baseline: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacy1" }],
-          },
-        ],
-      };
-      const current: KnipReport = {
-        issues: [
-          {
-            file: "apps/backend/src/index.ts",
-            exports: [{ name: "legacy1" }],
-          },
-        ],
-      };
-
-      const result = pruneKnipBaseline(current, baseline);
-      expect(result.success).toBe(true);
-      expect(result.prunedCount).toBe(0);
-      expect(result.prunedReport!.issues!.length).toBe(1);
+      const result = evaluateKnipFindings(report);
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(7);
+      expect(result.violations).toContain(
+        "apps/backend/src/dead.ts:files:apps/backend/src/dead.ts",
+      );
+      expect(result.violations).toContain(
+        "apps/backend/src/dead.ts:types:DeadType",
+      );
+      expect(result.violations).toContain(
+        "apps/backend/src/dead.ts:enumMembers:DeadEnumMember",
+      );
+      expect(result.violations).toContain(
+        "apps/backend/src/dead.ts:duplicates:duplicateExport",
+      );
+      expect(result.violations).toContain(
+        "package.json:devDependencies:unused-dev-dep",
+      );
+      expect(result.violations).toContain("package.json:unlisted:unlisted-dep");
+      expect(result.violations).toContain(
+        "package.json:unresolved:unresolved-import",
+      );
     });
   });
 });
