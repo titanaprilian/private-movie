@@ -1,52 +1,31 @@
 import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
+import { ShieldCheck } from 'lucide-react';
 import { ChunkyInput } from '@/components/ui/chunky-input';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyCard } from '@/components/ui/chunky-card';
-import { useAuthStore } from '../store';
-import { loginSchema, type LoginSchema } from '../schema';
+import type { LoginSchema } from '../schema';
+import { PasswordField } from './PasswordField';
+import { useLoginFormState } from './useLoginFormState';
 
 export interface AdminLoginFormProps {
   onSuccess?: () => void;
 }
 
 export function AdminLoginForm({ onSuccess }: AdminLoginFormProps) {
-  const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login);
-  const authError = useAuthStore((state) => state.error);
-  const isLoadingState = useAuthStore((state) => state.isLoading);
-  const [showPassword, setShowPassword] = React.useState(false);
   const [attempts, setAttempts] = React.useState(0);
-
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginSchema>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-      rememberThisDevice: false,
-    },
-  });
+    formState: { errors },
+    authError,
+    isPending,
+    onSubmit,
+  } = useLoginFormState({ onSuccess, defaultRedirect: '/admin' });
 
-  const onSubmit = async (values: LoginSchema) => {
+  const handleFormSubmit = async (values: LoginSchema) => {
     setAttempts((n) => n + 1);
-    const success = await login(values);
-    if (success) {
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        navigate({ to: '/admin' });
-      }
-    }
+    await onSubmit(values);
   };
-
-  const isPending = isSubmitting || isLoadingState;
 
   return (
     <ChunkyCard data-testid="admin-login-card" className="w-full p-6 sm:p-8">
@@ -75,7 +54,7 @@ export function AdminLoginForm({ onSuccess }: AdminLoginFormProps) {
       )}
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(handleFormSubmit)}
         className="flex flex-col gap-4"
         noValidate
       >
@@ -102,45 +81,13 @@ export function AdminLoginForm({ onSuccess }: AdminLoginFormProps) {
           )}
         </div>
 
-        <div>
-          <label
-            htmlFor="admin-password"
-            className="mb-1.5 block font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]"
-          >
-            Password
-          </label>
-          <div className="relative">
-            <ChunkyInput
-              id="admin-password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              aria-invalid={Boolean(errors.password)}
-              disabled={isPending}
-              className="pr-12"
-              {...register('password')}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              aria-pressed={showPassword}
-              disabled={isPending}
-              className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xl text-[var(--muted)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" aria-hidden="true" />
-              ) : (
-                <Eye className="h-5 w-5" aria-hidden="true" />
-              )}
-            </button>
-          </div>
-          {errors.password && (
-            <p className="mt-1 font-sans text-xs font-bold text-[var(--red)]">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
+        <PasswordField
+          id="admin-password"
+          label="Password"
+          error={errors.password?.message}
+          disabled={isPending}
+          registration={register('password')}
+        />
 
         <ChunkyButton
           type="submit"
