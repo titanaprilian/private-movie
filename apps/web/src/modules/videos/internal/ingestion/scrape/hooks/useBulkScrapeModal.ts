@@ -1,10 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { useBulkScrapeSources } from './useBulkScrapeSources';
-import type {
-  LocalEpisodeItem,
-  SeasonGroupOption,
-} from '../../types';
+import type { LocalEpisodeItem, SeasonGroupOption } from '../../types';
 
 export interface UseBulkScrapeModalOptions {
   seriesId: string;
@@ -19,10 +16,16 @@ export function useBulkScrapeModal({
   localEpisodes = [],
   onSuccess,
 }: UseBulkScrapeModalOptions) {
-  const sources = useBulkScrapeSources({ seriesId, seasons, localEpisodes, onSuccess });
+  const sources = useBulkScrapeSources({
+    seriesId,
+    seasons,
+    localEpisodes,
+    onSuccess,
+  });
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
 
-  const { reset, autoAlignSequentially, previewItems, targetSeasonEpisodes } = sources;
+  const { reset, autoAlignSequentially, previewItems, targetSeasonEpisodes } =
+    sources;
 
   const resetOnClose = useCallback(
     (isOpen: boolean) => {
@@ -31,7 +34,7 @@ export function useBulkScrapeModal({
         setShowOverwriteConfirm(false);
       }
     },
-    [reset],
+    [reset]
   );
 
   const handlePreviewSubmit = useCallback(
@@ -45,7 +48,7 @@ export function useBulkScrapeModal({
       }
       sources.fetchPreview(localEpisodes);
     },
-    [sources, localEpisodes],
+    [sources, localEpisodes]
   );
 
   const handleSaveConfirm = useCallback(async () => {
@@ -67,7 +70,10 @@ export function useBulkScrapeModal({
 
   const handleAutoAlign = useCallback(() => {
     autoAlignSequentially();
-    const mappedCount = Math.min(previewItems.length, targetSeasonEpisodes.length);
+    const mappedCount = Math.min(
+      previewItems.length,
+      targetSeasonEpisodes.length
+    );
     toast.success('Auto-aligned sequentially', {
       description: `Mapped ${mappedCount} scraped episode${mappedCount === 1 ? '' : 's'} 1:1 down the target season.`,
     });
@@ -84,5 +90,3 @@ export function useBulkScrapeModal({
     handleAutoAlign,
   };
 }
-
-export type UseBulkScrapeModalReturn = ReturnType<typeof useBulkScrapeModal>;

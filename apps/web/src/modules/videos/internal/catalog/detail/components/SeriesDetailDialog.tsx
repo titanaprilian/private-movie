@@ -7,7 +7,6 @@ import {
 import { ChunkyButton } from '@/components/ui/chunky-button';
 
 import type { SeriesDetailDialogProps } from '../../types';
-export type { SeriesDetailDialogProps, SeriesDetailDialogSeries } from '../../types';
 
 function formatTypeLabel(type: string): string {
   const normalized = (type || 'tv').toLowerCase();
@@ -97,17 +96,17 @@ export function SeriesDetailDialog({
               data-testid="series-detail-footer"
               className="flex shrink-0 items-center gap-3 px-6 pb-6 pt-2"
             >
-                <ChunkyButton
-                  type="button"
-                  data-testid="series-detail-play"
-                  onClick={() => {
-                    onPlay?.(series.id);
-                    onOpenChange(false);
-                  }}
-                >
-                  <Play className="w-5 h-5 fill-white text-white" />
-                  <span>Play Now</span>
-                </ChunkyButton>
+              <ChunkyButton
+                type="button"
+                data-testid="series-detail-play"
+                onClick={() => {
+                  onPlay?.(series.id);
+                  onOpenChange(false);
+                }}
+              >
+                <Play className="w-5 h-5 fill-white text-white" />
+                <span>Play Now</span>
+              </ChunkyButton>
             </div>
           </div>
         ) : null}

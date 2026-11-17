@@ -25,8 +25,6 @@ export async function addVideoSource(
   return res.data.data as Episode;
 }
 
-export const addVideoSources = addVideoSource;
-
 export async function updateVideoSource(
   episodeId: string,
   sourceId: string,

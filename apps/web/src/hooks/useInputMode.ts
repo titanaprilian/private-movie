@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
-import { useInputModeStore, type InputModeState } from '@/store/inputModeStore';
+import { useInputModeStore } from '@/store/inputModeStore';
 
-export type { InputModeState };
 export { useInputModeStore };
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);

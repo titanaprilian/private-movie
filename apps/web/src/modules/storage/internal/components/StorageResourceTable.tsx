@@ -30,7 +30,7 @@ import { Link } from '@tanstack/react-router';
 export type SortByField = 'size' | 'date' | 'name' | 'episode';
 export type SortOrder = 'asc' | 'desc';
 
-export const STORAGE_RESOURCE_PAGE_SIZE = 20;
+const STORAGE_RESOURCE_PAGE_SIZE = 20;
 
 export interface StorageResourceTableProps {
   resources: StorageResource[];
@@ -88,30 +88,30 @@ export function StorageResourceTable({
     // Copy before sorting: sort() mutates in place, and the memoised
     // paginated slice below relies on a fresh array reference per sort.
     return [...resources].sort((a, b) => {
-        let cmp = 0;
-        if (sortBy === 'size') {
-          cmp = (a.sizeBytes || 0) - (b.sizeBytes || 0);
-        } else if (sortBy === 'date') {
-          const dateA = new Date(a.lastModified || 0).getTime();
-          const dateB = new Date(b.lastModified || 0).getTime();
-          cmp = dateA - dateB;
-        } else if (sortBy === 'name') {
-          cmp = a.filename.localeCompare(b.filename);
-        } else if (sortBy === 'episode') {
-          const seasonA = a.episode?.seasonNumber ?? Number.MAX_SAFE_INTEGER;
-          const seasonB = b.episode?.seasonNumber ?? Number.MAX_SAFE_INTEGER;
-          cmp = seasonA - seasonB;
-          if (cmp === 0) {
-            const epA = a.episode?.episodeNumber ?? Number.MAX_SAFE_INTEGER;
-            const epB = b.episode?.episodeNumber ?? Number.MAX_SAFE_INTEGER;
-            cmp = epA - epB;
-          }
-          if (cmp === 0) {
-            cmp = a.filename.localeCompare(b.filename);
-          }
+      let cmp = 0;
+      if (sortBy === 'size') {
+        cmp = (a.sizeBytes || 0) - (b.sizeBytes || 0);
+      } else if (sortBy === 'date') {
+        const dateA = new Date(a.lastModified || 0).getTime();
+        const dateB = new Date(b.lastModified || 0).getTime();
+        cmp = dateA - dateB;
+      } else if (sortBy === 'name') {
+        cmp = a.filename.localeCompare(b.filename);
+      } else if (sortBy === 'episode') {
+        const seasonA = a.episode?.seasonNumber ?? Number.MAX_SAFE_INTEGER;
+        const seasonB = b.episode?.seasonNumber ?? Number.MAX_SAFE_INTEGER;
+        cmp = seasonA - seasonB;
+        if (cmp === 0) {
+          const epA = a.episode?.episodeNumber ?? Number.MAX_SAFE_INTEGER;
+          const epB = b.episode?.episodeNumber ?? Number.MAX_SAFE_INTEGER;
+          cmp = epA - epB;
         }
-        return sortOrder === 'asc' ? cmp : -cmp;
-      });
+        if (cmp === 0) {
+          cmp = a.filename.localeCompare(b.filename);
+        }
+      }
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
   }, [resources, sortBy, sortOrder]);
 
   const totalPages = Math.max(
@@ -134,8 +134,7 @@ export function StorageResourceTable({
   // Checkbox handlers (scoped to the current page)
   const pageKeys = paginatedResources.map((r) => r.key);
   const isAllSelected =
-    pageKeys.length > 0 &&
-    pageKeys.every((key) => selectedKeys.includes(key));
+    pageKeys.length > 0 && pageKeys.every((key) => selectedKeys.includes(key));
   const isSomeSelected = selectedKeys.length > 0 && !isAllSelected;
 
   const toggleSelectAll = () => {
@@ -166,21 +165,21 @@ export function StorageResourceTable({
     <ChunkyTable data-testid="storage-table-container">
       {/* Top action bar: purge orphans only */}
       {!hideToolbar && (
-      <ChunkyTableToolbar
-        className="flex justify-end"
-        data-testid="storage-toolbar"
-      >
-        <ChunkyButton
-          variant="gold"
-          size="sm"
-          onClick={onPurgeOrphans}
-          disabled={isLoading || orphanedCount === 0}
-          data-testid="purge-orphans-btn"
+        <ChunkyTableToolbar
+          className="flex justify-end"
+          data-testid="storage-toolbar"
         >
-          <Trash2 className="w-4 h-4" />
-          Purge All Orphans
-        </ChunkyButton>
-      </ChunkyTableToolbar>
+          <ChunkyButton
+            variant="gold"
+            size="sm"
+            onClick={onPurgeOrphans}
+            disabled={isLoading || orphanedCount === 0}
+            data-testid="purge-orphans-btn"
+          >
+            <Trash2 className="w-4 h-4" />
+            Purge All Orphans
+          </ChunkyButton>
+        </ChunkyTableToolbar>
       )}
 
       {/* Sticky 3D batch selection toolbar */}
@@ -261,7 +260,10 @@ export function StorageResourceTable({
           data-testid="sort-header-name-mobile"
           className="flex items-center gap-1 font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
         >
-          Sort by name <span aria-hidden="true">{sortBy === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}</span>
+          Sort by name{' '}
+          <span aria-hidden="true">
+            {sortBy === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕'}
+          </span>
         </button>
       </div>
 

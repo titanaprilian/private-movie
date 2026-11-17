@@ -15,13 +15,6 @@ import type {
   UseS3UploadReturn,
 } from '../types';
 
-export type {
-  S3UploadStatus,
-  S3UploadPhase,
-  S3UploadProgress,
-  UseS3UploadOptions,
-  UseS3UploadReturn,
-} from '../types';
 export function useS3Upload({
   episodeId,
   seriesId,
@@ -75,7 +68,9 @@ export function useS3Upload({
       if (file.size > maxBytes) {
         const maxMb = getMaxUploadSizeMb();
         const maxGb =
-          maxMb >= 1024 && maxMb % 1024 === 0 ? `${maxMb / 1024} GB` : `${maxMb} MB`;
+          maxMb >= 1024 && maxMb % 1024 === 0
+            ? `${maxMb / 1024} GB`
+            : `${maxMb} MB`;
         toast.error('video.file_size_exceeded', {
           description: `File size exceeds the maximum limit of ${maxGb}`,
         });
@@ -135,7 +130,11 @@ export function useS3Upload({
           if (progress.percent >= 100 && !isPollingRef.current) {
             isPollingRef.current = true;
             setUploadPhase('cloud');
-            setUploadProgress({ percent: 0, loaded: 0, total: selectedFile.size });
+            setUploadProgress({
+              percent: 0,
+              loaded: 0,
+              total: selectedFile.size,
+            });
 
             pollingIntervalRef.current = setInterval(async () => {
               try {
@@ -143,7 +142,8 @@ export function useS3Upload({
                 setUploadProgress({
                   percent: cloudProg.percent,
                   loaded: cloudProg.loaded,
-                  total: cloudProg.total > 0 ? cloudProg.total : selectedFile.size,
+                  total:
+                    cloudProg.total > 0 ? cloudProg.total : selectedFile.size,
                 });
               } catch {
                 // Ignore error if session expired or finished

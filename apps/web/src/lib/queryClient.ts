@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 const GATEWAY_STATUS_CODES = new Set([502, 503, 504]);
 
 /** How long to suppress duplicate backend-unreachable toasts after one is shown. */
-export const OUTAGE_TOAST_DEBOUNCE_MS = 30_000;
+const OUTAGE_TOAST_DEBOUNCE_MS = 30_000;
 
 function readStatus(error: unknown): number | null {
   if (!error || typeof error !== 'object') return null;

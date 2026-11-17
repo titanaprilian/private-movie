@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { fetchSeriesTmdbPreview } from '../../../api';
-import type { AddMediaStoreState, ScrapeWorkerState } from '../../types';
+import type { AddMediaStoreState } from '../../types';
 
-export type { AddMediaStoreState, ScrapeWorkerState };
+export type { AddMediaStoreState };
 
 const initialState = {
   isOpen: false,
@@ -36,7 +36,11 @@ export const useAddMediaStore = create<AddMediaStoreState>((set, get) => ({
     }
 
     const parsedId = parseInt(tmdbId.trim(), 10);
-    if (Number.isNaN(parsedId) || parsedId <= 0 || !/^\d+$/.test(tmdbId.trim())) {
+    if (
+      Number.isNaN(parsedId) ||
+      parsedId <= 0 ||
+      !/^\d+$/.test(tmdbId.trim())
+    ) {
       set({ error: 'TMDB ID must be a valid positive number.' });
       return false;
     }
@@ -44,7 +48,11 @@ export const useAddMediaStore = create<AddMediaStoreState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const data = await fetchSeriesTmdbPreview(tmdbType, parsedId, includeSpecials);
+      const data = await fetchSeriesTmdbPreview(
+        tmdbType,
+        parsedId,
+        includeSpecials
+      );
       set({
         isLoading: false,
         tmdbPreviewData: data,
@@ -65,6 +73,3 @@ export const useAddMediaStore = create<AddMediaStoreState>((set, get) => ({
     }
   },
 }));
-
-/** Backward-compatibility alias for the catalog add media dialog store. */
-export const useScrapeWorkerStore = useAddMediaStore;

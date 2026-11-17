@@ -13,10 +13,7 @@ import {
   ChunkyTabsContent,
 } from '@/components/ui/chunky-tabs';
 import { useManageSourcesDialog } from '../hooks/useManageSourcesDialog';
-import type {
-  ManageSourcesDialogProps,
-  ManageSourcesTab,
-} from '../types';
+import type { ManageSourcesDialogProps, ManageSourcesTab } from '../types';
 import {
   DirectUrlTab,
   ScraperPreviewTab,
@@ -24,8 +21,6 @@ import {
   RemoteIngestTab,
   EditExistingSourcesTab,
 } from './tabs';
-
-export type { ManageSourcesDialogProps } from '../types';
 
 export function ManageSourcesDialog({
   open,
@@ -56,77 +51,92 @@ export function ManageSourcesDialog({
         </ChunkyDialogHeader>
 
         <ChunkyDialogBody>
-        <ChunkyTabs
-          value={activeTab}
-          onValueChange={(val) => setActiveTab(val as ManageSourcesTab)}
-          className="w-full"
-        >
-          <ChunkyTabsList className="flex w-full flex-wrap gap-2">
-            <ChunkyTabsTrigger value="add-url" className="flex-1 px-2 text-[11px]">
-              Add from URL
-            </ChunkyTabsTrigger>
-            <ChunkyTabsTrigger value="add-direct" className="flex-1 px-2 text-[11px]">
-              Add Direct
-            </ChunkyTabsTrigger>
-            <ChunkyTabsTrigger value="remote-ingest" className="flex-1 px-2 text-[11px]">
-              Remote Ingest
-            </ChunkyTabsTrigger>
-            <ChunkyTabsTrigger value="upload-s3" className="flex-1 px-2 text-[11px]">
-              Upload Video
-            </ChunkyTabsTrigger>
-            <ChunkyTabsTrigger value="edit-existing" className="flex-1 px-2 text-[11px]">
-              Edit Existing
-            </ChunkyTabsTrigger>
-          </ChunkyTabsList>
+          <ChunkyTabs
+            value={activeTab}
+            onValueChange={(val) => setActiveTab(val as ManageSourcesTab)}
+            className="w-full"
+          >
+            <ChunkyTabsList className="flex w-full flex-wrap gap-2">
+              <ChunkyTabsTrigger
+                value="add-url"
+                className="flex-1 px-2 text-[11px]"
+              >
+                Add from URL
+              </ChunkyTabsTrigger>
+              <ChunkyTabsTrigger
+                value="add-direct"
+                className="flex-1 px-2 text-[11px]"
+              >
+                Add Direct
+              </ChunkyTabsTrigger>
+              <ChunkyTabsTrigger
+                value="remote-ingest"
+                className="flex-1 px-2 text-[11px]"
+              >
+                Remote Ingest
+              </ChunkyTabsTrigger>
+              <ChunkyTabsTrigger
+                value="upload-s3"
+                className="flex-1 px-2 text-[11px]"
+              >
+                Upload Video
+              </ChunkyTabsTrigger>
+              <ChunkyTabsTrigger
+                value="edit-existing"
+                className="flex-1 px-2 text-[11px]"
+              >
+                Edit Existing
+              </ChunkyTabsTrigger>
+            </ChunkyTabsList>
 
-          <ChunkyTabsContent value="add-url" className="mt-4 space-y-3">
-            <ScraperPreviewTab
-              episodeId={episode.id}
-              seriesId={seriesId}
-              onSuccess={() => setActiveTab('edit-existing')}
-            />
-          </ChunkyTabsContent>
+            <ChunkyTabsContent value="add-url" className="mt-4 space-y-3">
+              <ScraperPreviewTab
+                episodeId={episode.id}
+                seriesId={seriesId}
+                onSuccess={() => setActiveTab('edit-existing')}
+              />
+            </ChunkyTabsContent>
 
-          <ChunkyTabsContent value="add-direct" className="mt-4 space-y-3">
-            <DirectUrlTab
-              episodeId={episode.id}
-              seriesId={seriesId}
-              onSuccess={() => setActiveTab('edit-existing')}
-            />
-          </ChunkyTabsContent>
+            <ChunkyTabsContent value="add-direct" className="mt-4 space-y-3">
+              <DirectUrlTab
+                episodeId={episode.id}
+                seriesId={seriesId}
+                onSuccess={() => setActiveTab('edit-existing')}
+              />
+            </ChunkyTabsContent>
 
-          <ChunkyTabsContent value="remote-ingest" className="mt-4 space-y-3">
-            <RemoteIngestTab
-              episodeId={episode.id}
-              seriesId={seriesId}
-              providers={providers}
-              defaultProvider={defaultProvider}
-              initialUrl={remotePrefill.url}
-              initialLabel={remotePrefill.label}
-              initialQuality={remotePrefill.quality}
-              onSuccess={() => setActiveTab('edit-existing')}
-            />
-          </ChunkyTabsContent>
+            <ChunkyTabsContent value="remote-ingest" className="mt-4 space-y-3">
+              <RemoteIngestTab
+                episodeId={episode.id}
+                seriesId={seriesId}
+                providers={providers}
+                defaultProvider={defaultProvider}
+                initialUrl={remotePrefill.url}
+                initialLabel={remotePrefill.label}
+                initialQuality={remotePrefill.quality}
+                onSuccess={() => setActiveTab('edit-existing')}
+              />
+            </ChunkyTabsContent>
 
-          <ChunkyTabsContent value="upload-s3" className="mt-4 space-y-3">
-            <S3UploadTab
-              episodeId={episode.id}
-              seriesId={seriesId}
-              providers={providers}
-              defaultProvider={defaultProvider}
-              onSuccess={() => setActiveTab('edit-existing')}
-            />
-          </ChunkyTabsContent>
+            <ChunkyTabsContent value="upload-s3" className="mt-4 space-y-3">
+              <S3UploadTab
+                episodeId={episode.id}
+                seriesId={seriesId}
+                providers={providers}
+                defaultProvider={defaultProvider}
+                onSuccess={() => setActiveTab('edit-existing')}
+              />
+            </ChunkyTabsContent>
 
-          <ChunkyTabsContent value="edit-existing" className="mt-4 space-y-3">
-            <EditExistingSourcesTab
-              episode={episode}
-              seriesId={seriesId}
-              providers={providers}
-              onIngestShortcut={handleIngestShortcut}
-            />
-          </ChunkyTabsContent>
-        </ChunkyTabs>
+            <ChunkyTabsContent value="edit-existing" className="mt-4 space-y-3">
+              <EditExistingSourcesTab
+                episode={episode}
+                seriesId={seriesId}
+                providers={providers}
+                onIngestShortcut={handleIngestShortcut}
+              />
+            </ChunkyTabsContent>
+          </ChunkyTabs>
         </ChunkyDialogBody>
       </ChunkyDialogContent>
     </ChunkyDialog>

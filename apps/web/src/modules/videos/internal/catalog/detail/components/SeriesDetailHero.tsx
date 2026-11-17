@@ -7,7 +7,6 @@ import {
   ArrowDownToLine,
 } from 'lucide-react';
 import type { SeriesDetailHeroProps } from '../../types';
-export type { SeriesDetailHeroProps } from '../../types';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import { ChunkyChip } from '@/components/ui/chunky-chip';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
@@ -22,7 +21,8 @@ export function SeriesDetailHero({
   onBulkScrape,
   onBulkIngest,
 }: SeriesDetailHeroProps) {
-  const currentDescription = activeSeason?.description || series?.description || '';
+  const currentDescription =
+    activeSeason?.description || series?.description || '';
   const currentPosterUrl = activeSeason?.posterUrl || series?.posterUrl || null;
 
   const isDescriptionEmpty = !currentDescription || !currentDescription.trim();
@@ -61,7 +61,9 @@ export function SeriesDetailHero({
                 : 'pill ok bg-[var(--green-tint)] text-[var(--green)]'
             }`}
           >
-            {activeSeason?.status !== 'ongoing' && <Check className="size-3.5 stroke-[3]" />}
+            {activeSeason?.status !== 'ongoing' && (
+              <Check className="size-3.5 stroke-[3]" />
+            )}
             {activeSeason?.status || 'completed'}
           </span>
           {series.isFeatured && (
@@ -73,14 +75,14 @@ export function SeriesDetailHero({
 
         <div className="hero-desc-wrap">
           {isDescriptionEmpty ? (
-            <div className="hero-desc empty">
-              No description available.
-            </div>
+            <div className="hero-desc empty">No description available.</div>
           ) : (
             <>
               <p
                 id="series-hero-description"
-                ref={clampedText.contentRef as React.RefObject<HTMLParagraphElement>}
+                ref={
+                  clampedText.contentRef as React.RefObject<HTMLParagraphElement>
+                }
                 className={`hero-desc${clampedText.isExpanded ? ' expanded' : ''}`}
               >
                 {currentDescription}
@@ -100,11 +102,7 @@ export function SeriesDetailHero({
         </div>
 
         <div className="hero-actions">
-          <ChunkyChip
-            variant="blue"
-            onClick={onEditSeries}
-            type="button"
-          >
+          <ChunkyChip variant="blue" onClick={onEditSeries} type="button">
             <Edit2 className="size-4" />
             Edit Series
           </ChunkyChip>
@@ -124,30 +122,18 @@ export function SeriesDetailHero({
               </span>
             </ChunkyTooltip>
           ) : (
-            <ChunkyChip
-              variant="blue"
-              onClick={onSyncTmdb}
-              type="button"
-            >
+            <ChunkyChip variant="blue" onClick={onSyncTmdb} type="button">
               <RefreshCw className="size-4" />
               Sync with TMDB
             </ChunkyChip>
           )}
 
-          <ChunkyChip
-            variant="blue"
-            onClick={onBulkScrape}
-            type="button"
-          >
+          <ChunkyChip variant="blue" onClick={onBulkScrape} type="button">
             <Plus className="size-4" />
             Bulk Add Sources
           </ChunkyChip>
 
-          <ChunkyButton
-            variant="green"
-            onClick={onBulkIngest}
-            type="button"
-          >
+          <ChunkyButton variant="green" onClick={onBulkIngest} type="button">
             <ArrowDownToLine className="size-5" />
             Bulk Ingest Sources
           </ChunkyButton>

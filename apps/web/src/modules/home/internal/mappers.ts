@@ -2,15 +2,15 @@ import type {
   MediaHomeFeedHero,
   MediaRecentlyAddedEpisode,
   MediaSeriesMetadata,
-} from './api';
+} from '@repo/contracts';
 import type { SeriesItem } from './types';
 
-export const EPISODE_THUMBNAIL_PLACEHOLDER =
+const EPISODE_THUMBNAIL_PLACEHOLDER =
   'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop';
 
 export function episodeBadge(
   seasonNumber: number | null,
-  order: number,
+  order: number
 ): string {
   if (seasonNumber !== null && seasonNumber !== undefined) {
     return `S${seasonNumber} E${order}`;
@@ -18,9 +18,7 @@ export function episodeBadge(
   return `EP ${order}`;
 }
 
-export function resolveEpisodeThumbnail(
-  ep: MediaRecentlyAddedEpisode,
-): string {
+export function resolveEpisodeThumbnail(ep: MediaRecentlyAddedEpisode): string {
   return (
     ep.thumbnailUrl ||
     ep.series.backdropUrl ||

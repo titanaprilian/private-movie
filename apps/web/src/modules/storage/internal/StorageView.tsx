@@ -25,10 +25,8 @@ import { StorageResourceTable } from './components/StorageResourceTable';
 import { StorageSeriesTable } from './components/StorageSeriesTable';
 import type { StorageSeriesItem } from './api';
 import { StorageLimitDialog } from './components/dialogs/StorageLimitDialog';
-import { EditSourceModal } from './components/dialogs/EditSourceModal';
-import { AttachOrphanDialog } from './components/dialogs/AttachOrphanDialog';
-import { DeleteConfirmDialog } from './components/dialogs/DeleteConfirmDialog';
-import { VideoPreviewModal } from './components/dialogs/VideoPreviewModal';
+import { StorageResourceModals } from './components/StorageResourceModals';
+import { getStorageTableCallbacks } from './components/getStorageTableCallbacks';
 import { ManageProvidersDrawer } from './components/providers/ManageProvidersDrawer';
 import { MinioSpinUpModal } from './components/dialogs/MinioSpinUpModal';
 
@@ -110,8 +108,8 @@ export function StorageView() {
             Storage Management
           </h1>
           <p className="font-sans text-sm font-semibold text-[var(--muted)] mt-1">
-            Monitor S3 capacity, inspect bucket object inventory, link
-            orphans, and manage video files.
+            Monitor S3 capacity, inspect bucket object inventory, link orphans,
+            and manage video files.
           </p>
         </div>
 
@@ -155,11 +153,7 @@ export function StorageView() {
               asChild
               data-testid="minio-console-link-btn"
             >
-              <a
-                href={minioStatus.consoleUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href={minioStatus.consoleUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="w-4 h-4" />
                 MinIO Console
               </a>
@@ -264,26 +258,7 @@ export function StorageView() {
             resources={orphanedResources}
             isLoading={isLoadingResources}
             orphanedCount={metrics?.orphanCount ?? 0}
-            onRefreshScan={() => modals.refreshScanMutation.mutate()}
-            isRefreshing={modals.refreshScanMutation.isPending}
-            onPreview={(res) => modals.setPreviewResource(res)}
-            onEditSource={(res) => {
-              if (res.videoSource) {
-                modals.setEditingSource({ ...res.videoSource, key: res.key });
-              }
-            }}
-            onAttachOrphan={(res) => modals.setAttachingResource(res)}
-            onDeleteSingle={(res) => {
-              modals.setDeleteSingleResource(res);
-              modals.setDeleteTargetType('single');
-            }}
-            onDeleteBatch={(selected) => {
-              modals.setDeleteBatchResources(selected);
-              modals.setDeleteTargetType('batch');
-            }}
-            onPurgeOrphans={() => {
-              modals.setDeleteTargetType('purge');
-            }}
+            {...getStorageTableCallbacks(modals)}
           />
         </ChunkyTabsContent>
       </ChunkyTabs>
@@ -325,47 +300,12 @@ export function StorageView() {
         onSave={modals.handleSaveLimit}
       />
 
-      <EditSourceModal
-        open={Boolean(modals.editingSource)}
-        onOpenChange={(open) => {
-          if (!open) modals.setEditingSource(null);
-        }}
-        videoSource={modals.editingSource}
-        onSave={modals.handleSaveSourceMetadata}
-      />
-
-      <AttachOrphanDialog
-        open={Boolean(modals.attachingResource)}
-        onOpenChange={(open) => {
-          if (!open) modals.setAttachingResource(null);
-        }}
-        fileKey={modals.attachingResource?.key ?? null}
-        filename={modals.attachingResource?.filename}
-        onAttach={modals.handleAttachOrphan}
-      />
-
-      <DeleteConfirmDialog
-        open={Boolean(modals.deleteTargetType)}
-        onOpenChange={(open) => {
-          if (!open) modals.closeDeleteDialog();
-        }}
-        targetType={modals.deleteTargetType}
-        targetResource={modals.deleteSingleResource}
-        selectedResources={modals.deleteBatchResources}
+      <StorageResourceModals
+        modals={modals}
         allOrphansCount={metrics?.orphanCount ?? 0}
         allOrphansSizeBytes={resources
           .filter((r) => r.status === 'orphaned')
           .reduce((acc, r) => acc + (r.sizeBytes || 0), 0)}
-        onConfirm={modals.handleConfirmDelete}
-      />
-
-      <VideoPreviewModal
-        open={Boolean(modals.previewResource)}
-        onOpenChange={(open) => {
-          if (!open) modals.setPreviewResource(null);
-        }}
-        fileKey={modals.previewResource?.key ?? null}
-        filename={modals.previewResource?.filename}
       />
     </div>
   );

@@ -65,8 +65,6 @@ export type FetchEpisodesParams = AdminEpisodesListQuery & {
   source?: 'otakudesu' | 'dramula';
 };
 export type PreviewScrapeParams = AdminPreviewScrapeRequest;
-export type PreviewScrapeEpisodeData = AdminPreviewScrapeEpisodeData;
-export type PreviewScrapeSeriesData = AdminPreviewScrapeSeriesData;
 export type SaveMediaParams = AdminSaveMediaRequest;
 export type AddVideoSourceInput = AdminVideoSourceInput;
 export type UpdateVideoSourceInput = AdminUpdateVideoSourceRequest;

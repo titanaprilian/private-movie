@@ -15,14 +15,14 @@ export type GenreSortField = 'name' | 'slug' | 'displayOrder' | 'isBigGenre';
 
 export type SortDirection = 'asc' | 'desc';
 
-export interface CreateGenrePayload {
+interface CreateGenrePayload {
   name: string;
   slug: string;
   isBigGenre?: boolean;
   displayOrder?: number;
 }
 
-export interface UpdateGenrePayload extends CreateGenrePayload {
+interface UpdateGenrePayload extends CreateGenrePayload {
   id: string;
 }
 

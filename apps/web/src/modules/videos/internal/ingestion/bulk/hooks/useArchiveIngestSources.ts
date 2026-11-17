@@ -24,24 +24,17 @@ import type {
   LocalEpisodeItem,
   UseArchiveIngestSourcesOptions,
 } from '../../types';
-
-export type {
-  ArchiveDownloadProgress,
-  ArchiveExtractProgress,
-  ArchiveJobPhase,
-  ArchivePreviewPhase,
-  ArchiveReviewItem,
-  ArchiveUploadView,
-  UseArchiveIngestSourcesOptions,
-} from '../../types';
 import { getSeasonOptions } from '../../scrape/hooks/useBulkScrapeSources';
 import { useQuery } from '@tanstack/react-query';
-import { storageProvidersQueryOptions, type StorageProviderItem } from '@/modules/storage';
+import {
+  storageProvidersQueryOptions,
+  type StorageProviderItem,
+} from '@/modules/storage';
 
 // ─── Preview download/extract progress ───────────────────────────────────────
 
 /** Statuses that keep the 1s polling loop alive. */
-export const ARCHIVE_POLL_STATUSES: ReadonlySet<string> = new Set([
+const ARCHIVE_POLL_STATUSES: ReadonlySet<string> = new Set([
   'queued',
   'downloading',
   'listing',
@@ -79,7 +72,7 @@ export const ARCHIVE_POLL_DELAY_MS = 3000;
 export const ARCHIVE_SESSION_EXPIRED_MESSAGE =
   'Session expired. Please sign in again to continue.';
 
-export function isPasswordErrorCode(code: string | null | undefined): boolean {
+function isPasswordErrorCode(code: string | null | undefined): boolean {
   return code === 'PASSWORD_REQUIRED' || code === 'PASSWORD_INCORRECT';
 }
 
@@ -100,9 +93,7 @@ export function computeSizeAnomalyFilenames(
   const sorted = [...sized].map((e) => e.sizeBytes).sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   const median =
-    sorted.length % 2 === 1
-      ? sorted[mid]
-      : (sorted[mid - 1] + sorted[mid]) / 2;
+    sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
   if (!median || median <= 0) return new Set();
 
   const flagged = new Set<string>();
@@ -119,9 +110,12 @@ function parseUploadStage(stage: string | null | undefined): {
   totalFiles: number | null;
   activeFilename: string | null;
 } {
-  if (!stage) return { currentIndex: null, totalFiles: null, activeFilename: null };
+  if (!stage)
+    return { currentIndex: null, totalFiles: null, activeFilename: null };
   const fraction = stage.match(/(\d+)\s*\/\s*(\d+)/);
-  const afterColon = stage.includes(':') ? stage.slice(stage.lastIndexOf(':') + 1).trim() : null;
+  const afterColon = stage.includes(':')
+    ? stage.slice(stage.lastIndexOf(':') + 1).trim()
+    : null;
   return {
     currentIndex: fraction ? Number(fraction[1]) : null,
     totalFiles: fraction ? Number(fraction[2]) : null,
@@ -131,7 +125,9 @@ function parseUploadStage(stage: string | null | undefined): {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions) {
+export function useArchiveIngestSources(
+  options?: UseArchiveIngestSourcesOptions
+) {
   const queryClient = useQueryClient();
   const optionsRef = useRef(options);
   useEffect(() => {
@@ -141,16 +137,18 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   // ─── Storage Providers ──────────────────────────────────────────────────────
   const { data: rawProviders } = useQuery(storageProvidersQueryOptions());
   const storageProviders = useMemo(
-    () => (Array.isArray(rawProviders) ? (rawProviders as StorageProviderItem[]) : []),
+    () =>
+      Array.isArray(rawProviders)
+        ? (rawProviders as StorageProviderItem[])
+        : [],
     [rawProviders]
   );
   const defaultProvider = useMemo(
     () => pickDefaultStorageProvider(storageProviders),
     [storageProviders]
   );
-  const [selectedStorageProviderId, setSelectedStorageProviderId] = useState<string>(
-    () => defaultProvider?.id ?? ''
-  );
+  const [selectedStorageProviderId, setSelectedStorageProviderId] =
+    useState<string>(() => defaultProvider?.id ?? '');
   useEffect(() => {
     if (defaultProvider && !selectedStorageProviderId) {
       setSelectedStorageProviderId(defaultProvider.id);
@@ -167,7 +165,10 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   );
   useEffect(() => {
     if (seasonOptions.length > 0) {
-      if (!selectedSeasonId || !seasonOptions.some((s) => s.id === selectedSeasonId)) {
+      if (
+        !selectedSeasonId ||
+        !seasonOptions.some((s) => s.id === selectedSeasonId)
+      ) {
         setSelectedSeasonId(seasonOptions[0].id);
       }
     }
@@ -178,7 +179,8 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
 
     if (options?.seasons && options.seasons.length > 0) {
       const targetSeason =
-        options.seasons.find((s) => s.id === selectedSeasonId) ?? options.seasons[0];
+        options.seasons.find((s) => s.id === selectedSeasonId) ??
+        options.seasons[0];
       if (targetSeason?.episodes) {
         result = targetSeason.episodes.map((ep) => ({
           id: ep.id,
@@ -191,9 +193,15 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
       }
     }
 
-    if (result.length === 0 && options?.localEpisodes && options.localEpisodes.length > 0) {
+    if (
+      result.length === 0 &&
+      options?.localEpisodes &&
+      options.localEpisodes.length > 0
+    ) {
       if (selectedSeasonId) {
-        result = options.localEpisodes.filter((ep) => ep.seasonId === selectedSeasonId);
+        result = options.localEpisodes.filter(
+          (ep) => ep.seasonId === selectedSeasonId
+        );
       }
       if (result.length === 0) {
         result = options.localEpisodes;
@@ -223,7 +231,11 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   const jobStatus: ArchiveJobPhase = job?.status ?? 'idle';
   const jobErrorCode = job?.errorCode ?? null;
   const isJobActive = job ? ARCHIVE_POLL_STATUSES.has(job.status) : false;
-  const isPolling = !!jobId && !!options?.seriesId && !pollHalted && ARCHIVE_POLL_STATUSES.has(job?.status ?? '');
+  const isPolling =
+    !!jobId &&
+    !!options?.seriesId &&
+    !pollHalted &&
+    ARCHIVE_POLL_STATUSES.has(job?.status ?? '');
 
   // ─── Step 2 — Review items (derived from job entries) ───────────────────────
   const reviewItems = useMemo((): ArchiveReviewItem[] => {
@@ -237,7 +249,10 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
       let matchedEpisodeId: string | null = null;
       let needsReview = entry.needsReview ?? true;
 
-      if (entry.detectedEpisodeNumber !== null && entry.detectedEpisodeNumber !== undefined) {
+      if (
+        entry.detectedEpisodeNumber !== null &&
+        entry.detectedEpisodeNumber !== undefined
+      ) {
         const match = availableLocalEpisodes.find(
           (ep) => ep.order === entry.detectedEpisodeNumber
         );
@@ -248,7 +263,9 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
       }
 
       // Preserve user edits held in the confirmed selection, if any
-      const selected = job.selection?.find((s) => s.filename === entry.filename);
+      const selected = job.selection?.find(
+        (s) => s.filename === entry.filename
+      );
       if (selected) {
         if (selected.episodeId) {
           matchedEpisodeId = selected.episodeId;
@@ -302,14 +319,23 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
                 total: job.bytesTotal,
               }
             : undefined,
-        commitError: status === 'failed' ? (job.errorMessage ?? undefined) : undefined,
+        commitError:
+          status === 'failed' ? (job.errorMessage ?? undefined) : undefined,
         hasSizeAnomaly: anomalies.has(entry.filename),
       };
     });
   }, [job, availableLocalEpisodes, defaultLabel]);
 
   const [reviewOverrides, setReviewOverrides] = useState<
-    Record<string, { episodeId: string | null; label?: string; quality?: string | null; isIgnored?: boolean }>
+    Record<
+      string,
+      {
+        episodeId: string | null;
+        label?: string;
+        quality?: string | null;
+        isIgnored?: boolean;
+      }
+    >
   >({});
 
   const effectiveReviewItems = useMemo((): ArchiveReviewItem[] => {
@@ -318,7 +344,9 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
       const override = reviewOverrides[item.filename];
       if (!override) return item;
       const matchedEpisodeId =
-        override.episodeId !== undefined ? override.episodeId : item.matchedEpisodeId;
+        override.episodeId !== undefined
+          ? override.episodeId
+          : item.matchedEpisodeId;
       const isIgnored = override.isIgnored ?? item.isIgnored;
       return {
         ...item,
@@ -326,7 +354,8 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
         isIgnored,
         needsReview: isIgnored ? false : matchedEpisodeId === null,
         label: override.label ?? item.label,
-        quality: override.quality !== undefined ? override.quality : item.quality,
+        quality:
+          override.quality !== undefined ? override.quality : item.quality,
       };
     });
   }, [reviewItems, reviewOverrides]);
@@ -334,7 +363,11 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   // ─── Overall modal step (driven by job status) ──────────────────────────────
   const [stepOverride, setStepOverride] = useState<1 | 2 | 3 | null>(null);
   const derivedStep: 1 | 2 | 3 =
-    jobStatus === 'ready' ? 2 : jobStatus === 'uploading' || jobStatus === 'done' ? 3 : 1;
+    jobStatus === 'ready'
+      ? 2
+      : jobStatus === 'uploading' || jobStatus === 'done'
+        ? 3
+        : 1;
   const step = stepOverride ?? derivedStep;
   const setStep = useCallback((s: 1 | 2 | 3) => setStepOverride(s), []);
 
@@ -364,7 +397,13 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
 
   useEffect(() => {
     const sid = options?.seriesId;
-    if (!sid || !jobId || pollHalted || !ARCHIVE_POLL_STATUSES.has(job?.status ?? '')) return;
+    if (
+      !sid ||
+      !jobId ||
+      pollHalted ||
+      !ARCHIVE_POLL_STATUSES.has(job?.status ?? '')
+    )
+      return;
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -380,7 +419,10 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
     const runPoll = async () => {
       if (cancelled) return;
       // Pause on background tabs: defer until the tab is visible again.
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      if (
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'hidden'
+      ) {
         scheduleNext();
         return;
       }
@@ -393,7 +435,10 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
           // Lightweight progress poll: patch counters/stage/completion flags
           // into local state, preserving user episode mapping & quality
           // overrides held in selection.
-          const progress = await getArchiveIngestJobProgress(currentSid, currentJobId);
+          const progress = await getArchiveIngestJobProgress(
+            currentSid,
+            currentJobId
+          );
           if (cancelled) return;
           if (progress.status === 'done' || progress.status === 'failed') {
             // Terminal state: fetch the full job once for final entries/selection.
@@ -467,7 +512,9 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
           setJobError(ARCHIVE_SESSION_EXPIRED_MESSAGE);
           return;
         }
-        setJobError(err instanceof Error ? err.message : 'Failed to poll job status');
+        setJobError(
+          err instanceof Error ? err.message : 'Failed to poll job status'
+        );
         scheduleNext();
       }
     };
@@ -519,7 +566,10 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
         setJobError(created.errorMessage);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to start archive ingest job';
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to start archive ingest job';
       setJobError(message);
       toast.error('Failed to start archive ingest', { description: message });
     } finally {
@@ -530,7 +580,9 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   const confirmSelection = useCallback(async () => {
     const seriesId = optionsRef.current?.seriesId ?? '';
     if (!job) {
-      toast.error('No active job', { description: 'Submit an archive URL first.' });
+      toast.error('No active job', {
+        description: 'Submit an archive URL first.',
+      });
       return;
     }
     setIsSubmitting(true);
@@ -549,7 +601,8 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
       setJob(confirmed);
       setStepOverride(3);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to confirm selection';
+      const message =
+        err instanceof Error ? err.message : 'Failed to confirm selection';
       setJobError(message);
       toast.error('Failed to start upload', { description: message });
     } finally {
@@ -571,7 +624,13 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
     } catch {
       // Even if the cancel endpoint fails, stop polling locally.
       setJob((prev) =>
-        prev ? { ...prev, status: 'cancelled' as ArchiveIngestJobStatus, stage: 'cancelled' } : prev
+        prev
+          ? {
+              ...prev,
+              status: 'cancelled' as ArchiveIngestJobStatus,
+              stage: 'cancelled',
+            }
+          : prev
       );
     }
   }, []);
@@ -590,7 +649,8 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
       setJob(retried);
       setJobError(null);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to retry job';
+      const message =
+        err instanceof Error ? err.message : 'Failed to retry job';
       setJobError(message);
       toast.error('Retry failed', { description: message });
     } finally {
@@ -599,68 +659,93 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   }, [archivePassword]);
 
   // ─── Review item mutation helpers (local overrides) ─────────────────────────
-  const updateReviewMapping = useCallback((index: number, episodeId: string | null) => {
-    const filename = effectiveReviewItems[index]?.filename;
-    if (!filename) return;
-    setReviewOverrides((prev) => ({
-      ...prev,
-      [filename]: {
-        episodeId,
-        label: prev[filename]?.label ?? effectiveReviewItems[index]?.label,
-        quality: prev[filename]?.quality ?? effectiveReviewItems[index]?.quality,
-        isIgnored: prev[filename]?.isIgnored ?? effectiveReviewItems[index]?.isIgnored,
-      },
-    }));
-  }, [effectiveReviewItems]);
+  const updateReviewMapping = useCallback(
+    (index: number, episodeId: string | null) => {
+      const filename = effectiveReviewItems[index]?.filename;
+      if (!filename) return;
+      setReviewOverrides((prev) => ({
+        ...prev,
+        [filename]: {
+          episodeId,
+          label: prev[filename]?.label ?? effectiveReviewItems[index]?.label,
+          quality:
+            prev[filename]?.quality ?? effectiveReviewItems[index]?.quality,
+          isIgnored:
+            prev[filename]?.isIgnored ?? effectiveReviewItems[index]?.isIgnored,
+        },
+      }));
+    },
+    [effectiveReviewItems]
+  );
 
-  const updateReviewLabel = useCallback((index: number, label: string) => {
-    const filename = effectiveReviewItems[index]?.filename;
-    if (!filename) return;
-    setReviewOverrides((prev) => ({
-      ...prev,
-      [filename]: {
-        episodeId: prev[filename]?.episodeId ?? effectiveReviewItems[index]?.matchedEpisodeId ?? null,
-        label,
-        quality: prev[filename]?.quality ?? effectiveReviewItems[index]?.quality,
-        isIgnored: prev[filename]?.isIgnored ?? effectiveReviewItems[index]?.isIgnored,
-      },
-    }));
-  }, [effectiveReviewItems]);
+  const updateReviewLabel = useCallback(
+    (index: number, label: string) => {
+      const filename = effectiveReviewItems[index]?.filename;
+      if (!filename) return;
+      setReviewOverrides((prev) => ({
+        ...prev,
+        [filename]: {
+          episodeId:
+            prev[filename]?.episodeId ??
+            effectiveReviewItems[index]?.matchedEpisodeId ??
+            null,
+          label,
+          quality:
+            prev[filename]?.quality ?? effectiveReviewItems[index]?.quality,
+          isIgnored:
+            prev[filename]?.isIgnored ?? effectiveReviewItems[index]?.isIgnored,
+        },
+      }));
+    },
+    [effectiveReviewItems]
+  );
 
-  const updateReviewQuality = useCallback((index: number, quality: string) => {
-    const filename = effectiveReviewItems[index]?.filename;
-    if (!filename) return;
-    setReviewOverrides((prev) => ({
-      ...prev,
-      [filename]: {
-        episodeId: prev[filename]?.episodeId ?? effectiveReviewItems[index]?.matchedEpisodeId ?? null,
-        label: prev[filename]?.label ?? effectiveReviewItems[index]?.label,
-        quality: quality || null,
-        isIgnored: prev[filename]?.isIgnored ?? effectiveReviewItems[index]?.isIgnored,
-      },
-    }));
-  }, [effectiveReviewItems]);
+  const updateReviewQuality = useCallback(
+    (index: number, quality: string) => {
+      const filename = effectiveReviewItems[index]?.filename;
+      if (!filename) return;
+      setReviewOverrides((prev) => ({
+        ...prev,
+        [filename]: {
+          episodeId:
+            prev[filename]?.episodeId ??
+            effectiveReviewItems[index]?.matchedEpisodeId ??
+            null,
+          label: prev[filename]?.label ?? effectiveReviewItems[index]?.label,
+          quality: quality || null,
+          isIgnored:
+            prev[filename]?.isIgnored ?? effectiveReviewItems[index]?.isIgnored,
+        },
+      }));
+    },
+    [effectiveReviewItems]
+  );
 
-  const toggleReviewIgnore = useCallback((index: number) => {
-    const item = effectiveReviewItems[index];
-    if (!item) return;
-    const filename = item.filename;
-    setReviewOverrides((prev) => ({
-      ...prev,
-      [filename]: {
-        episodeId: prev[filename]?.episodeId ?? item.matchedEpisodeId,
-        label: prev[filename]?.label ?? item.label,
-        quality: prev[filename]?.quality ?? item.quality,
-        isIgnored: !(prev[filename]?.isIgnored ?? item.isIgnored),
-      },
-    }));
-  }, [effectiveReviewItems]);
+  const toggleReviewIgnore = useCallback(
+    (index: number) => {
+      const item = effectiveReviewItems[index];
+      if (!item) return;
+      const filename = item.filename;
+      setReviewOverrides((prev) => ({
+        ...prev,
+        [filename]: {
+          episodeId: prev[filename]?.episodeId ?? item.matchedEpisodeId,
+          label: prev[filename]?.label ?? item.label,
+          quality: prev[filename]?.quality ?? item.quality,
+          isIgnored: !(prev[filename]?.isIgnored ?? item.isIgnored),
+        },
+      }));
+    },
+    [effectiveReviewItems]
+  );
 
   // ─── Review summary counts ──────────────────────────────────────────────────
   const totalCount = effectiveReviewItems.length;
   const matchedCount = useMemo(
     () =>
-      effectiveReviewItems.filter((i) => !i.isIgnored && i.matchedEpisodeId !== null).length,
+      effectiveReviewItems.filter(
+        (i) => !i.isIgnored && i.matchedEpisodeId !== null
+      ).length,
     [effectiveReviewItems]
   );
   const needsReviewCount = useMemo(
@@ -671,13 +756,17 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
     [effectiveReviewItems]
   );
   const sizeAnomalyFilenames = useMemo(
-    () => effectiveReviewItems.filter((i) => i.hasSizeAnomaly).map((i) => i.filename),
+    () =>
+      effectiveReviewItems
+        .filter((i) => i.hasSizeAnomaly)
+        .map((i) => i.filename),
     [effectiveReviewItems]
   );
 
   // ─── Derived progress ───────────────────────────────────────────────────────
   const downloadProgress: ArchiveDownloadProgress | null = useMemo(() => {
-    if (!job || (job.status !== 'downloading' && job.status !== 'queued')) return null;
+    if (!job || (job.status !== 'downloading' && job.status !== 'queued'))
+      return null;
     const percent =
       job.bytesTotal && job.bytesTotal > 0
         ? Math.round((job.bytesDone / job.bytesTotal) * 100)
@@ -687,22 +776,36 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
 
   const extractProgress: ArchiveExtractProgress | null = useMemo(() => {
     if (!job || job.status !== 'listing') return null;
-    return { currentFile: job.stage || 'Listing archive contents…', totalFiles: job.entries.length || null };
+    return {
+      currentFile: job.stage || 'Listing archive contents…',
+      totalFiles: job.entries.length || null,
+    };
   }, [job]);
 
   const uploadView: ArchiveUploadView | null = useMemo(() => {
-    if (!job || (job.status !== 'uploading' && job.status !== 'done')) return null;
-    const activeSelection = job.selection.filter((s) => !s.isIgnored && s.episodeId);
+    if (!job || (job.status !== 'uploading' && job.status !== 'done'))
+      return null;
+    const activeSelection = job.selection.filter(
+      (s) => !s.isIgnored && s.episodeId
+    );
     const totalFiles = activeSelection.length || job.entries.length;
     const parsed = parseUploadStage(job.stage);
     const percent =
       job.bytesTotal && job.bytesTotal > 0
         ? Math.round((job.bytesDone / job.bytesTotal) * 100)
-        : job.status === 'done' ? 100 : 0;
+        : job.status === 'done'
+          ? 100
+          : 0;
     return {
-      currentIndex: parsed.currentIndex ?? (job.status === 'done' ? totalFiles : Math.min(1, totalFiles)),
+      currentIndex:
+        parsed.currentIndex ??
+        (job.status === 'done' ? totalFiles : Math.min(1, totalFiles)),
       totalFiles,
-      activeFilename: parsed.activeFilename ?? activeSelection[0]?.filename ?? job.entries[0]?.filename ?? null,
+      activeFilename:
+        parsed.activeFilename ??
+        activeSelection[0]?.filename ??
+        job.entries[0]?.filename ??
+        null,
       percent,
       loaded: job.bytesDone,
       total: job.bytesTotal,
@@ -728,12 +831,14 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
   }, [job]);
 
   const activeCommitItem = useMemo(
-    () => effectiveReviewItems.find((i) => i.commitStatus === 'uploading') ?? null,
+    () =>
+      effectiveReviewItems.find((i) => i.commitStatus === 'uploading') ?? null,
     [effectiveReviewItems]
   );
 
   const selectedProviderName =
-    storageProviders.find((p) => p.id === selectedStorageProviderId)?.name ?? null;
+    storageProviders.find((p) => p.id === selectedStorageProviderId)?.name ??
+    null;
 
   // ─── Cancel & reset ─────────────────────────────────────────────────────────
   const cancelAndCleanup = useCallback(async () => {
@@ -775,7 +880,9 @@ export function useArchiveIngestSources(options?: UseArchiveIngestSourcesOptions
         ? 'extracting'
         : jobStatus === 'ready'
           ? 'done'
-          : jobStatus === 'failed' || jobStatus === 'cancelled' || jobStatus === 'expired'
+          : jobStatus === 'failed' ||
+              jobStatus === 'cancelled' ||
+              jobStatus === 'expired'
             ? 'error'
             : 'idle';
   const previewError = jobError ?? job?.errorMessage ?? null;

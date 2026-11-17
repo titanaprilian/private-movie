@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Settings, Check, Keyboard } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   ChunkyDialog,
   ChunkyDialogContent,
@@ -9,7 +13,7 @@ import {
   ChunkyDialogBody,
 } from '@/components/ui/chunky-dialog';
 
-export const PLAYBACK_SPEEDS = [0.5, 1, 1.25, 1.5, 2];
+const PLAYBACK_SPEEDS = [0.5, 1, 1.25, 1.5, 2];
 
 export interface QualityOption {
   id: string;
@@ -129,7 +133,9 @@ export function VideoSettingsPopover({
               </p>
               {qualities!.map((q) => {
                 const isSelected =
-                  selectedQualityId !== undefined ? selectedQualityId === q.id : false;
+                  selectedQualityId !== undefined
+                    ? selectedQualityId === q.id
+                    : false;
                 return (
                   <button
                     key={q.id}
@@ -203,7 +209,10 @@ export function VideoSettingsPopover({
         </PopoverContent>
       </Popover>
 
-      <ChunkyDialog open={shortcutsOpen} onOpenChange={handleShortcutsOpenChange}>
+      <ChunkyDialog
+        open={shortcutsOpen}
+        onOpenChange={handleShortcutsOpenChange}
+      >
         <ChunkyDialogContent
           container={container}
           aria-label="Shortcuts and gestures"
@@ -216,41 +225,48 @@ export function VideoSettingsPopover({
             </ChunkyDialogTitle>
           </ChunkyDialogHeader>
           <ChunkyDialogBody>
-          <div className="space-y-4">
-            <div>
-              <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider pb-2">
-                Keyboard Shortcuts
-              </p>
-              <dl className="space-y-1.5">
-                {KEYBOARD_SHORTCUTS.map((row) => (
-                  <div key={row.keys} className="flex items-center justify-between gap-3 text-xs">
-                    <dt className="px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 font-mono font-bold text-zinc-100 whitespace-nowrap">
-                      {row.keys}
-                    </dt>
-                    <dd className="text-zinc-300 font-semibold text-right">{row.action}</dd>
-                  </div>
-                ))}
-              </dl>
+            <div className="space-y-4">
+              <div>
+                <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider pb-2">
+                  Keyboard Shortcuts
+                </p>
+                <dl className="space-y-1.5">
+                  {KEYBOARD_SHORTCUTS.map((row) => (
+                    <div
+                      key={row.keys}
+                      className="flex items-center justify-between gap-3 text-xs"
+                    >
+                      <dt className="px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 font-mono font-bold text-zinc-100 whitespace-nowrap">
+                        {row.keys}
+                      </dt>
+                      <dd className="text-zinc-300 font-semibold text-right">
+                        {row.action}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+              <div>
+                <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider pb-2">
+                  Mobile Touch Gestures
+                </p>
+                <dl className="space-y-1.5">
+                  {TOUCH_GESTURES.map((row) => (
+                    <div
+                      key={row.gesture}
+                      className="flex items-center justify-between gap-3 text-xs"
+                    >
+                      <dt className="px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 font-bold text-zinc-100 whitespace-nowrap">
+                        {row.gesture}
+                      </dt>
+                      <dd className="text-zinc-300 font-semibold text-right">
+                        {row.action}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider pb-2">
-                Mobile Touch Gestures
-              </p>
-              <dl className="space-y-1.5">
-                {TOUCH_GESTURES.map((row) => (
-                  <div
-                    key={row.gesture}
-                    className="flex items-center justify-between gap-3 text-xs"
-                  >
-                    <dt className="px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 font-bold text-zinc-100 whitespace-nowrap">
-                      {row.gesture}
-                    </dt>
-                    <dd className="text-zinc-300 font-semibold text-right">{row.action}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
           </ChunkyDialogBody>
         </ChunkyDialogContent>
       </ChunkyDialog>
