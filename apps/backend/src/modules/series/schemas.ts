@@ -26,7 +26,7 @@ export interface SeriesRoutesOptions {
   archiveJobService?: ArchiveIngestJobManager;
 }
 
-export const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
+const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
 
 export const seriesListQuerySchema = t.Object({
   page: t.Optional(t.Number({ default: 1, minimum: 1 })),

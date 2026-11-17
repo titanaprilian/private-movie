@@ -30,7 +30,7 @@ export interface DashboardRoutesOptions {
   storageService?: StorageUsageProvider;
 }
 
-export const updateSchedulerConfigBody = t.Object({
+const updateSchedulerConfigBody = t.Object({
   intervalMinutes: t.Optional(t.Number()),
   isEnabled: t.Optional(t.Boolean()),
 });

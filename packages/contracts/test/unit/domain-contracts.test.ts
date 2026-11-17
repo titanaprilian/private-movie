@@ -10,7 +10,7 @@ import type {
   AdminSeriesItem,
   AdminSeriesDetails,
   AdminPresignUploadRequest,
-} from "../src";
+} from "../../src";
 
 describe("domain contracts", () => {
   it("exports genre contract types correctly", () => {

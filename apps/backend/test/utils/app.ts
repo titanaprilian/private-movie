@@ -1,5 +1,5 @@
 import type { createApp } from "@/app";
-import type { SchedulerDeps, StorageUsageProvider } from "@/app-types";
+import type { CreateAppDeps, CreateAppOverrides } from "@/app-types";
 import type {
   FetchFn,
   BrowserFn,
@@ -36,9 +36,9 @@ export interface BuildAppOptions {
   archiveFetchFn?: ArchiveFetchFn;
   archiveStagingBaseDir?: string;
   archiveJobService?: ArchiveIngestJobManager;
-  scheduler?: SchedulerDeps;
+  scheduler?: CreateAppDeps["scheduler"];
   storage?: StorageOverrides;
-  storageUsageProvider?: StorageUsageProvider;
+  storageUsageProvider?: CreateAppOverrides["storageUsageProvider"];
   rateLimit?: RateLimitPluginOptions;
   authRateLimit?: AuthRateLimitOptions;
 }

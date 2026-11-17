@@ -35,10 +35,6 @@ export const updateSeasonBody = t.Object({
   episodeOffset: t.Optional(t.Integer()),
 });
 
-export const seasonTagsDetail = {
-  tags: ["Seasons"],
-} as const;
-
 export const getSeasonDetail = {
   summary: "Get season",
   description: "Returns a single season by id.",

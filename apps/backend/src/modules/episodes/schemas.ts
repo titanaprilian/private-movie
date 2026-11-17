@@ -12,7 +12,7 @@ import type { IngestService } from "./internal/ingest/service";
 
 export const UNTHROTTLED_EPISODE_ROUTE_SUFFIXES = ["/remote-ingest"];
 
-export const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
+const scraperSourceSchema = t.UnionEnum(SCRAPER_PROVIDERS);
 
 export interface EpisodeRoutesOptions {
   db: DbClient;

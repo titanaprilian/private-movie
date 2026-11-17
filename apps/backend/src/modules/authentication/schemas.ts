@@ -19,24 +19,24 @@ export interface AuthResultPayload {
   tokens: { accessToken: string; refreshToken: string };
 }
 
-export const registerBodySchema = t.Object({
+const registerBodySchema = t.Object({
   name: t.String(),
   email: t.String(),
   password: t.String(),
 });
 
-export const loginBodySchema = t.Object({
+const loginBodySchema = t.Object({
   email: t.String(),
   password: t.String(),
 });
 
-export const logoutBodySchema = t.Optional(
+const logoutBodySchema = t.Optional(
   t.Object({
     refreshToken: t.Optional(t.String()),
   }),
 );
 
-export const refreshBodySchema = t.Optional(
+const refreshBodySchema = t.Optional(
   t.Object({
     refreshToken: t.Optional(t.String()),
   }),
