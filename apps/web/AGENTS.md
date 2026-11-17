@@ -1,62 +1,28 @@
-# Agent Context Protocol (React App)
+# AGENTS.md (apps/web)
 
-This document defines the framework-specific rules for the Vite + React frontend (`apps/web`). It extends the root monorepo `AGENTS.md`. In case of conflict, this file takes precedence within `apps/web`.
+Vite + React + TanStack Router + Zustand. Extends the root `AGENTS.md`; on conflict, this file wins within `apps/web`.
 
-## Deep Modules Implementation
+## Internal module organization
 
-This application strictly follows the Deep Modules architecture, mapped to React and Vite.
+The public seam (`index.ts`) and `internal/` privacy are fixed by the root rules. Inside `internal/`, scale structure with size:
 
-### Module Boundaries
+- **Flat (≤5 files):** everything directly in `internal/`, no subdirectories.
+- **Role-based (6–12 files):** group by technical role — `internal/components/`, `internal/hooks/`.
+- **Sub-feature clusters (≥15 files):** group by domain sub-feature — `internal/sources/`, `internal/catalog/`. A cluster that itself grows past ~10–12 files gets role-based grouping inside it, with an optional cluster-local `index.ts` barrel (internal plumbing only, never imported from outside the module).
+- **Colocation:** a hook or helper used by one sub-feature lives in that sub-feature's folder, never a shared top-level folder. Between tiers (13–14 files), pick either; don't churn layout over one file.
 
-- **Public Interface:** A module's only allowed export point is `src/modules/<feature>/index.ts`.
-- **Internal Logic:** All UI components, state, hooks, mappers, and internal tests specific to a feature must reside in `src/modules/<feature>/internal/`.
-- **Strict Isolation:** A module (e.g., Module `A`) must **never** import from the `internal/` directory of another module (e.g., Module `B`). It can only import what Module `B` explicitly exposes through its `index.ts`.
+## State (Zustand)
 
-### Internal Organization: Consistent on the Outside, Freedom on the Inside
+- Feature stores live in the module's `internal/` and are never exported raw. Expose components or scoped hooks via `index.ts` instead.
+- Truly global state (theme, routing) is rare and lives in `src/lib/` or `src/store/`, decoupled from feature modules.
 
-The public seam is fixed (`index.ts` is the single export point, `internal/` stays private), but how files are arranged *inside* `internal/` scales with module complexity. Organize internals proportionally — small modules stay flat, larger ones earn structure:
+## Routes
 
-- **Tier 1 — Flat (5 or fewer files):** Keep everything directly in `src/modules/<feature>/internal/`. No subdirectories.
-- **Tier 2 — Role-based grouping (6 to 12 files):** Group by technical role, e.g. `internal/components/`, `internal/hooks/`. Use only when the flat layout becomes hard to scan.
-- **Tier 3 — Sub-feature clustering (15 or more files):** Group by domain sub-feature, e.g. `internal/sources/`, `internal/catalog/` (as in the `videos` module). Each cluster holds the files for one sub-feature.
-- **Recursive Tier 2 inside Tier 3:** When a single Tier 3 sub-feature cluster itself exceeds ~10–12 files or accumulates mixed responsibilities (components alongside hooks, helpers, or views), apply the Tier 2 role-based layout *inside* that cluster, e.g. `internal/<sub-feature>/components/`, `internal/<sub-feature>/hooks/`, with an optional sub-feature `index.ts` barrel seam re-exporting the cluster so module consumers avoid deep imports (as in the `videos` module's `internal/catalog/`). The module-level public seam stays fixed at `src/modules/<feature>/index.ts`; the sub-feature barrel is internal plumbing, never imported from outside the module.
+Files in `src/routes/` are thin composition roots: path definitions, loaders, and wiring of module `index.ts` exports. No business logic, complex local state, or styling beyond layout scaffolding.
 
-**Colocation principle:** A dedicated custom hook or helper utility used by only one sub-feature lives inside that sub-feature's folder — never in a shared top-level folder. Only genuinely shared code earns a shared location.
+## Design system
 
-Modules between Tier 2 and Tier 3 size (13–14 files) use whichever adjacent tier fits best; do not churn the layout for a one-file difference.
+Read `apps/web/DESIGN.md` ("Structured Console") before touching UI. Tailwind utilities + CSS custom properties from `src/index.css`; headless shadcn/ui-pattern components in `src/components/ui/`.
 
-### State Management (Zustand)
-
-State is managed via `zustand` and must be kept encapsulated within modules.
-
-- **Module-Specific State:** Stores that handle feature-specific logic (e.g., `useAuthStore`) must reside within the module's `internal/` directory. Do not export the raw store globally. Instead, expose UI components or tailored, scoped hooks through the module's `index.ts` if other parts of the app need to interact with that state.
-- **Global State:** True global state (e.g., theme, global routing state) is rare and should reside in `src/lib/` or a dedicated `src/store/` directory, completely decoupled from specific feature modules.
-
-### Routing & Composition Roots (TanStack Router)
-
-This app uses Vite and `@tanstack/react-router`.
-
-- **Role of Routes:** Files located in `src/routes/` act as thin composition roots.
-- **Responsibilities:** They define the route paths, handle loader data, and wire together the public components imported from various feature modules (`src/modules/<feature>/index.ts`).
-- **Restrictions:** Route files must not contain complex business logic, complex local state, or direct styling beyond basic layout scaffolding. They are just the glue.
-
-## Testing
-
-Tests live in `test/` at the app root:
-
-- `test/unit/<feature>/<name>.test.ts` — Unit tests for React components, hooks, and stores
-- `test/utils/` — Shared test helpers
-
-Use Vitest with the React preset (jsdom) via `packages/config-vitest`. Run `bun --filter=@repo/web run test` (or `bun run test:web`) for fast feedback on this package, or `bunx turbo run test` from the monorepo root to run unit tests.
-
-**⚠️ Warning:** NEVER run bare `bun --filter=@repo/web test` without `run`. In Bun, `test` invokes the global test runner which ignores filters and runs the backend tests too. Always use `bun --filter=@repo/web run test`.
-
-## Design System
-
-All UI work must adhere strictly to the "Structured Console" design direction detailed in `apps/web/DESIGN.md`.
-
-- Read `DESIGN.md` before generating or modifying UI components.
-- Rely on Tailwind utility classes and CSS custom properties defined in `src/index.css`.
-- Utilize the unstyled, copy-paste headless architecture (shadcn/ui pattern) located in `src/components/ui/`.
-- **Form Selects**: Always use Radix UI Select (`@/components/ui/select`). Never use native HTML `<select>` elements. Use explicit non-empty sentinel values (e.g. `"all"`, `"none"`, `"default"`) and `SelectValue` `placeholder` for unselected/optional states.
-- **Row & Contextual Actions**: Always use portaled Popovers (`@/components/ui/popover`) for table row actions (`⋯`) and contextual action menus. Do not use inline `absolute` positioning or manual `fixed inset-0` dismissal overlays.
+- **Selects:** always Radix UI Select (`@/components/ui/select`), never native `<select>`. Use explicit non-empty sentinel values (`"all"`, `"none"`) and `SelectValue` placeholder for optional states.
+- **Row/contextual actions:** always portaled Popovers (`@/components/ui/popover`). No inline `absolute` positioning or manual `fixed inset-0` dismissal overlays.
