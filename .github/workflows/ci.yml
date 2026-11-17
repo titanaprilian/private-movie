@@ -47,7 +47,7 @@ jobs:
           bun x turbo run db:migrate --env-mode=loose
           bun x turbo run typecheck lint test test:integration build --continue --filter=!@repo/android-tv --env-mode=loose
 
-      - name: Run Quality Gate Check & Tests (L4)
+      - name: Run Structural Quality Gates (L5)
         run: |
           bun run test:gate
           bun run gate:check

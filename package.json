@@ -39,7 +39,6 @@
     "scope:check": "bash scripts/check-commit-scope.sh",
     "test:gate": "vitest run test/unit/scripts/gate-check.test.ts",
     "gate:check": "bun scripts/gate-check.ts",
-    "gate:update-baseline": "bun scripts/gate-check.ts --update-baseline",
     "gate:knip": "knip",
     "gate:jscpd": "jscpd --config .jscpd.json",
     "format": "prettier . --check",

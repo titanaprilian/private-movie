@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Commits modifying baselines or spanning multiple apps must carry authorization trailers.
+# Blocks multi-app commits without authorization trailers, and forbids quality gate baselines (L5).
 msg_file="$1"
 
 git_path() { git rev-parse --git-path "$1"; }
@@ -10,23 +10,15 @@ if [ -d "$(git_path rebase-merge)" ] \
   exit 0
 fi
 
-# 1. Baseline modifications must carry an authorization trailer
-has_baseline=$(git diff --cached --name-only \
+# 1. Baseline files are retired in Level L5 (reject any attempt to add or reintroduce them)
+has_baseline=$(git diff --cached --name-only --diff-filter=AM \
   | grep -E '^\.(knip|jscpd)-baseline\.json$' || true)
 if [ -n "$has_baseline" ]; then
-  if ! grep -qE '^Baseline-Rationale: .+' "$msg_file"; then
-    cat >&2 <<EOF
-✖ Commit blocked: this commit modifies quality gate baselines (.knip-baseline.json or .jscpd-baseline.json)
-without an explicit rationale trailer.
-
-Add a trailer describing why the baseline is updated, e.g.:
-
-  Baseline-Rationale: Pruned resolved structural debt after refactoring catalog repository (#954)
-
-Baseline updates may only tighten the ratchet (prune resolved findings) and require human review.
+  cat >&2 <<EOF
+✖ Commit blocked: quality gate baselines (.knip-baseline.json or .jscpd-baseline.json) are retired in Level L5 Zero-Tolerance mode.
+Baselines are no longer permitted in this repository.
 EOF
-    exit 1
-  fi
+  exit 1
 fi
 
 # 2. Multi-app commit check

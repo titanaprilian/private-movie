@@ -17,7 +17,8 @@
     "**/__tests__/**",
     "**/routeTree.gen.ts"
   ],
-  "baseline": ".jscpd-baseline.json",
-  "failOnNewClones": 0,
+  "minTokens": 75,
+  "minLines": 10,
+  "threshold": 1.5,
   "reporters": ["console"]
 }
