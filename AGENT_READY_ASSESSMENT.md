@@ -2,67 +2,71 @@
 
 ## Codebase Snapshot: private-movie
 
-- **Primary language/framework**: TypeScript (Bun, Elysia, React/Next.js) & Kotlin (Android TV)
+- **Primary language/framework**: TypeScript (Bun, Elysia backend, Vite+React web) & Kotlin (Android TV)
 - **Language tier**: statically-typed
   - Statically-typed: TypeScript, Go, Java, Scala, Rust, C#, Kotlin
   - Dynamically-typed: Ruby, Python (unannotated), JavaScript/Node.js, PHP
   - Gradually-typed: Python with mypy/Pydantic, TypeScript with strict:false
-- **Commit count**: 768
-- **Contributors**: 2
-- **Source files**: 464
-- **Test files**: 288 (ratio: 62.1%)
-- **CI/CD**: GitHub Actions (ci.yml, docker-publish.yml)
-- **Agent instructions**: AGENTS.md present (root canonical: 139 lines; scoped: apps/backend 112 lines, apps/web 62 lines, apps/android-tv 45 lines)
-- **Domain context**: docs/decision-log/ (3 ADRs: 01-bun-and-elysia.md, 02-drizzle-and-postgresql.md, 03-media-ingestion-and-s3-storage.md), docs/specs/ (1 spec); CONTEXT.md absent
-- **Linting config**: ESLint (apps/backend, apps/web), Prettier (root prettier.config.js), ./gradlew lint (apps/android-tv)
-- **Quality gates**: Suggested Gate Maturity Level: L0 -- no complexity, duplication, or dead-code tooling detected
-- **README**: present, 223 lines
+- **Commit count**: 825
+- **Contributors**: 3
+- **Source files**: 469
+- **Test files**: 296 (ratio: 63.1%)
+- **CI/CD**: GitHub Actions (`ci.yml`, `docker-publish.yml`)
+- **Agent instructions**: AGENTS.md root canonical (47 lines) + scoped: apps/backend (112 lines), apps/web (28 lines), apps/android-tv (45 lines)
+- **Domain context**: `docs/DOMAIN.md` present; ADRs in `docs/decision-log/` (3 ADRs: 01-bun-and-elysia, 02-drizzle-and-postgresql, 03-media-ingestion-and-s3-storage)
+- **Linting config**: ESLint flat configs (apps/backend, apps/web), Prettier (root `prettier.config.js`), `./gradlew lint` (apps/android-tv); Husky hooks: pre-commit (commit-scope check + lint-staged), commit-msg (trailer check), pre-push (`bun run verify`)
+- **Quality gates**: L3 — jscpd duplication (1.5% threshold) and knip dead-code/unused-exports (zero tolerance) both hard-fail in CI (`ci.yml` runs `bun run test:gate` + `bun run gate:check`); gate logic has unit tests (`test/unit/scripts/gate-check.test.ts`); identical local commands (`bun run gate:check`); gate scripts protected by CODEOWNERS; no baseline file by zero-tolerance design; cyclomatic/cognitive complexity NOT covered. (Recon heuristic suggested L1; overridden on evidence: the heuristic missed the hard-fail CI gate steps and gate tests.)
+- **README**: present, 228 lines
 
 ---
 
-## Overall Agent-Ready Score: 79/100
+## Overall Agent-Ready Score: 84/100
+
 **Rating: Agent-Assisted**
 
-This codebase provides exceptional architectural isolation through Deep Modules and a robust contract-first type system that prevents cross-boundary drift. Agents can operate with high autonomy on well-tested features, but the absence of pre-commit hooks, automated coverage reporting, and regression-aware quality gates requires human vigilance around structural code bloat and test mocking density.
+This codebase is one point from Agent-Ready: machine-enforced module boundaries, a zero-tolerance structural debt gate, strict types, and enforced coverage thresholds mean agent output is cheap to verify. The remaining gaps — no e2e layer, mock-heavy unit tests, no complexity gate, and irreversible DB migrations — are the difference between "agents work well with oversight" and "agents work autonomously."
 
 ### Score Breakdown
 
-| Dimension | Weight | Score | Weighted |
-|---|---|---|---|
-| Type Safety | 20% | 95/100 | 19.0 |
-| Test Foundation | 15% | 80/100 | 12.0 |
-| Documentation & Context | 15% | 75/100 | 11.3 |
-| Code Clarity | 15% | 70/100 | 10.5 |
-| Architecture Clarity | 15% | 90/100 | 13.5 |
-| Feedback Loops | 10% | 58/100 | 5.8 |
-| Consistency & Conventions | 5% | 65/100 | 3.3 |
-| Change Safety | 5% | 68/100 | 3.4 |
-| **TOTAL** | **100%** | | **78.8 → 79/100** |
+| Dimension                 | Weight | Score  | Weighted          |
+| ------------------------- | ------ | ------ | ----------------- |
+| Type Safety               | 20%    | 88/100 | 17.6              |
+| Test Foundation           | 15%    | 74/100 | 11.1              |
+| Documentation & Context   | 15%    | 90/100 | 13.5              |
+| Code Clarity              | 15%    | 80/100 | 12.0              |
+| Architecture Clarity      | 15%    | 90/100 | 13.5              |
+| Feedback Loops            | 10%    | 79/100 | 7.9               |
+| Consistency & Conventions | 5%     | 92/100 | 4.6               |
+| Change Safety             | 5%     | 77/100 | 3.9               |
+| **TOTAL**                 | 100%   |        | **84.0 → 84/100** |
+
+Delta vs. previous assessment (79/100): +5. Driven by Husky hooks, enforced coverage thresholds, the knip/jscpd gate, Trivy/Dependabot, and the new ARCHITECTURE.md / docs/DOMAIN.md.
 
 ---
 
 ## The Stripe Benchmark
 
-Stripe's engineering team merged 1,000+ AI-generated pull requests in a single week. This is possible because Stripe's codebase satisfies what researchers call the **asymmetry of verification**: generating a PR is hard, but *verifying* one — with fast CI, strict types, and comprehensive tests — takes minutes. Every dimension in this assessment measures how well your codebase satisfies that asymmetry.
+Stripe's engineering team merged 1,000+ AI-generated pull requests in a single week. This is possible because Stripe's codebase satisfies what researchers call the **asymmetry of verification**: generating a PR is hard, but _verifying_ one — with fast CI, strict types, and comprehensive tests — takes minutes. Every dimension in this assessment measures how well your codebase satisfies that asymmetry.
 
 The goal is to make agent output cheaply verifiable: the cost of a wrong answer is low, the feedback loop is fast, and the automated verification layer catches mistakes before humans need to. A score of 70+ means that condition is largely met. Below 50 means the verification infrastructure needs to be built before agents can work reliably.
 
 ---
 
-## Quality Gate Maturity: L0
+## Quality Gate Maturity: L3
 
-**Quality gates:** Suggested Gate Maturity Level: L0 -- no complexity, duplication, or dead-code tooling detected
+**Quality gates:** L3 — jscpd duplication (1.5% threshold) and knip dead-code/unused-exports (zero tolerance) both hard-fail in CI (`ci.yml` runs `bun run test:gate` + `bun run gate:check`); gate logic has unit tests (`test/unit/scripts/gate-check.test.ts`); identical local commands (`bun run gate:check`); gate scripts protected by CODEOWNERS; no baseline file by zero-tolerance design; cyclomatic/cognitive complexity NOT covered.
 
-Currently, there are no automated gates blocking cyclomatic/cognitive complexity, code duplication (`jscpd`), or dead code / unused exports (`knip`). Without regression-aware quality gates (L3+), agents can introduce bloated helper functions, duplicated logic across slices, or dead dependencies without CI objection.
+CI blocks all new duplication and dead code outright — with zero existing findings, the zero-tolerance stance is strictly stronger than a fingerprint baseline, and the commit-msg hook actively rejects baseline reintroduction. The uncovered property is cyclomatic/cognitive complexity, which no tool currently gates.
 
 ---
 
 ## Critical Findings
 
-No individual dimension scored below 40. However, the weakest areas requiring attention are:
-1. **Feedback Loops (58/100)**: Absence of pre-commit hooks (Husky / lint-staged) and security scanning in CI means agent syntax or type issues only surface after pushing to remote CI.
-2. **Quality Gates (L0)**: No structural gate enforcement exists to stop accumulation of complexity or unused exports.
-3. **High Mock Density in Tests (1,377 mock/spy instances)**: An average of 4.78 mocks per test file increases oracle risk where mock-heavy unit tests pass despite broken integration contracts.
+No dimension scored below 40. The weakest areas:
+
+1. **Test Foundation (74/100)**: no e2e layer and 1,245 mock occurrences across 296 test files (~4.2 per file) — a meaningful fraction of coverage verifies mocked behavior, not real interactions.
+2. **Change Safety (77/100)**: destructive irreversible migrations (`DROP TABLE ... CASCADE` in `0007`/`0013`, multiple `DROP COLUMN`) and zero feature flags — a bad agent change can only be reverted, and schema rollback means restore-from-backup.
+3. **Complexity gate absent**: jscpd and knip are blocked at L3, but nothing prevents deeply nested logic from growing inside the 14 files already in the 500–1000 line range.
 
 ---
 
@@ -70,34 +74,46 @@ No individual dimension scored below 40. However, the weakest areas requiring at
 
 > How expensive is it to confirm an agent's change is correct in this codebase?
 
-| Signal | Status | What it means |
-|---|---|---|
-| Tests run in < 10 min | ✓ | Fast verification via Turborepo caching + parallel CI jobs (~3-5 min) |
-| Security scanning automated | ✗ | Non-functional vulnerabilities require manual review |
-| Property-based tests present | ✗ | Edge-case verification relies on manually authored assertions |
-| Reproducible dev state (seeds/factories) | ✓ | Docker Compose (`postgres:16`) and `bun run db:seed` enable verifiable local state |
-| Coverage reported on PRs | ✗ | Test regression signal is absent from GitHub PR summaries |
-| Structural debt gate blocks new/worsened findings (L3+) | ✗ | Complexity, duplication, and dead code can silently grow under agent PRs |
+| Signal                                                  | Status | What it means                                                                                |
+| ------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------- |
+| Tests run in < 10 min                                   | ✗      | ~10–15 min CI; tests run twice (`test` then `test:coverage`) with no fast lane               |
+| Security scanning automated                             | ✓      | Trivy fs scan blocks CI on CRITICAL; Dependabot configured                                   |
+| Property-based tests present                            | ✗      | Edge-case verification relies on manually authored assertions                                |
+| Reproducible dev state (seeds/factories)                | ✓      | Docker Compose Postgres 16 + `bun run db:seed`; isolated CI service container per run        |
+| Coverage reported on PRs                                | ✗      | Thresholds enforced and artifacts uploaded, but no PR comment/delta report                   |
+| Structural debt gate blocks new/worsened findings (L3+) | ✓      | Zero-tolerance knip + jscpd hard-fail every PR; gate is unit-tested and CODEOWNERS-protected |
 
-**Verification bottleneck:** The lack of automated PR coverage reporting and lack of structural quality gates (complexity / dead-code checking) means human reviewers must manually audit PR diffs for structural bloat and test coverage gaps.
+**Verification bottleneck:** CI pipeline time (~10–15 min, tests executed twice) caps agent iteration cycles, and the mock-heavy unit suite weakens the oracle that would otherwise let agents self-verify without human review.
 
 ---
 
 ## Improvement Roadmap
 
 ### Quick Wins (1-2 days each)
-- **Install Husky & lint-staged**: Run `turbo run typecheck lint` and `prettier --check` on git pre-commit to catch issues locally before remote CI.
-- **Enable Vitest Coverage**: Add `@vitest/coverage-v8` in `packages/config-vitest/vitest.base.ts` with baseline thresholds (e.g., 70% lines/branches) in CI.
-- **Decompose the 2 God Files**: Split `apps/web/src/modules/videos/internal/api.ts` (1,750 lines) and `apps/backend/src/modules/storage/internal/services/service.ts` (1,068 lines) into smaller single-responsibility services.
+
+- **Merge coverage into the test pass**: run vitest with `--coverage` in the main `test` turbo task to eliminate the duplicate test execution in CI.
+- **Add a complexity rule**: ESLint `complexity` or `sonarjs/cognitive-complexity` in `apps/backend`/`apps/web` configs, wired into the existing zero-tolerance `gate:check`.
+- **Add `prettier --check` to CI**: closes the `--no-verify` formatting gap (hooks auto-format, but CI never verifies).
+- **Add a docs-link check to CI** (e.g., `lychee` over `*.md`) — the doc graph is small, near-free.
+- **Wire `openapi:check` into CI** so the committed spec can never drift from the Elysia schemas.
+- **Split the two near-god files**: `useArchiveIngestSources.ts` (969) and `series/repository.ts` (948).
+- **Document a migration-safety rule** in `packages/db`/backend AGENTS.md: additive-only columns; drops require a two-phase (deprecate → drop) pair.
 
 ### High-Value Investments (1-4 weeks each)
-- **Add Structural Quality Gates (L3)**: Configure `knip` (dead code / unused exports) and `jscpd` or ESLint `complexity` / `sonarjs/cognitive-complexity` with a baseline file so new complexity is blocked in CI.
-- **Add Automated Dependency & Security Audits**: Add `dependabot.yml` and a Trivy or npm audit step in `ci.yml`.
-- **Formalize `docs/DOMAIN.md` / `CONTEXT-MAP.md`**: Create a canonical business domain glossary and context map defining the boundaries between Series, Ingestion, Transcoding, Storage Providers, and Streaming playback.
+
+- **Add a minimal e2e smoke suite** (Playwright web + one happy-path API flow against the CI Postgres service) as `test:e2e` in turbo.
+- **Split CI into fast/slow lanes**: typecheck + lint + unit (<5 min, required check) vs. integration + build + gate + Trivy.
+- **Backfill 2–3 ADRs** for already-made consequential decisions (Deep Modules adoption, zero-tolerance gate policy) so future agents see rejected alternatives.
+- **Introduce branded ID types** (`MediaId`, `SeriesId`, `EpisodeId`) in `packages/contracts`.
+- **Add `docs/CONTEXT-MAP.md`** mapping each module's public seam to its consumers.
+- **Introduce fast-check property tests** for media-scraper parsers and contracts.
+- **Adopt reversible migration discipline** (or a drizzle-kit snapshot rollback runbook).
 
 ### Long-Term Architecture (Ongoing)
-- **Reduce Mock Density**: Transition mock-heavy unit tests toward contract-based verification against containerized dependencies or in-memory fixtures.
-- **Introduce Property-Based Testing**: Incorporate `fast-check` for media parsing, URL extraction, and archive decompression routines.
+
+- **Reduce mock density**: convert the highest-value mock-heavy unit tests to integration tests against the real DB; consider Stryker on `packages/media-service` to measure oracle strength.
+- **Introduce minimal env-based feature flags** for high-churn areas (media ingestion, videos UI).
+- **Decompose the large Android Compose screens** (`PlayerScreen.kt` 818, `DetailScreen.kt` 634) and split the `apps/web` videos module before its seam erodes.
 
 ---
 
@@ -105,9 +121,9 @@ No individual dimension scored below 40. However, the weakest areas requiring at
 
 If Documentation & Context or Architecture Clarity scored below 60, the **agent-ready** companion plugin can close those gaps now. It scaffolds AGENTS.md, ARCHITECTURE.md, a progressive-disclosure `docs/` structure, supported domain workflows in `docs/DOMAIN.md`, and documentation link/topology checks. It creates `CONTEXT.md` and ADRs only when terms or decisions are actually resolved. Use its **migrate** mode to upgrade an older agent-ready scaffold.
 
-Get it: https://www.damiangalarza.com/agent-ready/
+It reads this assessment report and suggests which mode to run first based on your weakest dimensions.
 
-Since the Gate Maturity Level is **L0**, running `agent-ready` in **quality-gates** mode will install a regression-aware gate (`report` / `check` / `baseline` commands on native tools, merge-base-aware CI, a human-reviewed baseline, and gate tests) so existing code remains untouched while newly introduced complexity and dead code are blocked.
+Get it, with both install methods and how to run it: https://www.damiangalarza.com/agent-ready/
 
 ---
 
@@ -128,232 +144,290 @@ If the score surfaced gaps to fix with a team, start with a [Foundation Sprint](
 ### Test Foundation & Feedback Loops
 
 #### Test Foundation Assessment
-**Score: 80/100**
+
+**Score: 74/100**
 
 ##### Evidence
-- **Test-to-source file ratio**: 288 test files / 464 source files = 62.1% (Score band 81-100 baseline: 85).
-- **Coverage configuration**: Absent. Neither Vitest base config nor package configs enforce a coverage threshold.
-- **CI coverage enforcement**: No.
-- **Test pyramid**: Unit + Integration layers. Real PostgreSQL 16 container runs in CI for backend integration tests (`apps/backend/test/integration/`).
-- **Flaky test signals**: 0 commits in git history mentioning flakiness or skipped tests.
-- **Skipped tests**: 0 tests skipped.
-- **Mock/stub density**: 1,377 instances (`vi.fn` + `vi.mock`) across 288 test files (4.78x test file count). Exceeds 3x test file count (-5 modifier).
-- **Property-based testing**: None found (+0).
-- **Mutation testing**: None found (+0).
+
+- Test-to-source file ratio: 296 test files / 469 source files = **63.1%**. Distribution: `apps/web/test/unit` (145), `apps/backend/test` (42 unit + 72 integration), `apps/android-tv/app/src/test` (52 Kotlin), `packages/media-service` (20), `packages/media-scraper` (9), `packages/contracts` (5), `packages/db` (2), root `test/unit` (1, gate test).
+- Coverage configuration: **present** — Vitest + `@vitest/coverage-v8`; thresholds enforced: backend `lines 52 / functions 51 / branches 75`; web `lines 82 / functions 81 / branches 73` (`vitest.config.ts` per app).
+- CI coverage enforcement: **yes** — `ci.yml` runs `turbo run test:coverage --continue` and `scripts/coverage-summary.ts`; failing thresholds fail the run. Reports uploaded as artifacts (14-day retention).
+- Test pyramid: **unit + integration** (72 backend integration tests against a real Postgres 16 service container) + Android unit tests. **No e2e layer**.
+- Flaky test signals: **0** commits mentioning flakiness/skipping; no retry plugins (backend uses `fileParallelism: false` to serialize DB tests deliberately).
+- Mock/stub density: **high** — 1,245 `jest.mock|vi.mock|vi.fn|mock(` occurrences across 296 test files (≈4.2 per file).
+- Property-based testing: **absent**. Mutation testing: **absent**.
+- Skipped tests: 3 `.skip(`/`xit(` occurrences (~1%).
 
 ##### Strengths
-- High test file coverage across both backend and web workspaces.
-- Real integration test suite executed against live PostgreSQL in CI.
-- Clean test run history with zero flaky test suppressions.
+
+- 63% test-to-source ratio with a real integration layer hitting Postgres service containers.
+- Coverage thresholds enforced in CI per-app at meaningful levels.
+- No flaky-test smell: zero flaky commits, no retry plugins, deterministic DB test serialization.
+- Gate logic itself is tested and runs in CI.
 
 ##### Gaps
-- No coverage tracking or minimum coverage threshold in CI.
-- Heavy reliance on mocking external dependencies in unit tests.
+
+- No end-to-end layer: nothing exercises web → backend → DB as a user flow.
+- Mock density (4.2x test files) means a substantial fraction of "coverage" verifies mocked behavior.
+- No property-based or mutation testing.
+- `packages/db` has only 2 unit tests despite owning schema/migrations.
 
 ##### Recommendations
-- **Quick Wins**: Configure `@vitest/coverage-v8` in `packages/config-vitest/vitest.base.ts`.
-- **High-Value Investments**: Introduce property testing (`fast-check`) for archive decompression and URL extraction algorithms.
+
+- **Quick Wins**: Add a minimal e2e smoke suite (Playwright + one happy-path API flow); raise `packages/db` coverage.
+- **High-Value Investments**: fast-check property tests for media-scraper parsers and contracts; audit top mock-heavy files and convert to integration tests; Stryker on `packages/media-service`.
 
 ---
 
 #### Feedback Loops Assessment
-**Score: 58/100**
+
+**Score: 79/100**
 
 ##### Evidence
-- **CI platform**: GitHub Actions (`.github/workflows/ci.yml`).
-- **Estimated pipeline time**: ~3–5 minutes due to Turborepo remote caching and parallelized execution.
-- **Caching**: Yes (`setup-bun`, `setup-gradle@v4`, Turbo remote cache tokens).
-- **Parallelization**: Yes. `ci` job and `android` job execute concurrently.
-- **Fail-fast**: Yes (`--continue` used for step aggregation, but overall job status fails fast on error).
-- **Pre-commit hooks**: Absent (no Husky or Lefthook).
-- **Non-functional verification**: No automated SAST/security scanning or coverage reports.
-- **Ephemeral environments**: Docker Compose present (`docker-compose.yml`, `.env.docker`) for reproducible local state (+3 modifier).
-- **Quality gate ergonomics**: L0 (no structural tooling).
+
+- CI platform: **GitHub Actions** (`ci.yml` 124 lines, `docker-publish.yml` 192 lines).
+- Estimated pipeline time: **~10–15 min** — two parallel jobs (`ci`, `android`); the `ci` job serially runs `db:migrate`, `typecheck lint test test:integration build`, gate check, Trivy, and a separate full `test:coverage` pass — tests effectively run twice. No test sharding.
+- Caching: **yes** — Turbo remote cache (`TURBO_TOKEN`/`TURBO_TEAM`), Gradle caching, Docker `type=gha` cache.
+- Parallelization: **partial** — two CI jobs in parallel; turbo parallelizes within; no matrix/sharding.
+- Fail-fast: **no** — turbo `--continue` collects all failures in one run (deliberate, agent-friendly trade-off).
+- Pre-commit hooks: **present** — Husky pre-commit (scope check + lint-staged), commit-msg (trailer check), pre-push (`bun run verify`).
+- Coverage reporting: **in CI** — summary script + artifact upload; **no PR-comment/delta reporting**.
+- Security scanning: **present** — Trivy fs scan, `exit-code: 1`, CRITICAL, blocks CI. Dependabot configured.
+- Ephemeral environments: **partial** — isolated Postgres 16 service container per CI run; no per-PR preview environments. (+3)
+- Gate actionability: full-repo console dump; no inline PR annotations or merge-base scoping (zero-tolerance full-repo gate by design).
+- Gate reproducibility: **identical local/CI command** (`bun run gate:check`, documented in AGENTS.md). (+3)
+- Gate tests: **present** — `test/unit/scripts/gate-check.test.ts`, run in CI before the gate; gate scripts CODEOWNERS-protected. (+3)
 
 ##### Strengths
-- Fast CI pipeline leveraging Bun, Turbo cache, and Gradle caching.
-- Isolated containerized PostgreSQL service container in CI.
+
+- Turbo remote caching across CI runs — the biggest monorepo speed lever already pulled.
+- Pre-push `bun run verify` catches almost all CI failures locally.
+- `--continue` returns all failures in one iteration — better agent ergonomics than fail-fast.
+- Security (blocking Trivy) + Dependabot + coverage + structural gate = broad signal set per push.
 
 ##### Gaps
-- Lack of pre-commit hooks allows broken formatting/types to be pushed to remote.
-- No automated dependency or vulnerability auditing.
+
+- Tests run twice per CI run (`test` then `test:coverage`) — clearest pipeline-time waste.
+- No coverage delta/summary comment on PRs; agents must download artifacts.
+- No per-PR ephemeral environment for live behavior validation.
+- No sub-5-minute fast lane.
 
 ##### Recommendations
-- **Quick Wins**: Setup Husky with `bun run format` and `bun run typecheck` on pre-commit.
-- **High-Value Investments**: Add GitHub Dependabot or Renovate for automated vulnerability scanning.
+
+- **Quick Wins**: Merge coverage into the main test pass; post `coverage-summary.ts` output as a sticky PR comment.
+- **High-Value Investments**: Split CI into a fast lane (<5 min required check) and slow lane; per-PR preview deployments via the existing Docker pipeline.
 
 ---
 
 ### Documentation & Context
 
 #### Documentation Assessment
-**Score: 75/100**
+
+**Score: 90/100**
 
 ##### Evidence
-- **Agent instructions**: Canonical root `AGENTS.md` (139 lines), plus 3 app-scoped instruction files:
-  - `apps/backend/AGENTS.md` (112 lines)
-  - `apps/web/AGENTS.md` (62 lines)
-  - `apps/android-tv/AGENTS.md` (45 lines)
-- **Agent-instruction content profile**: High directive density (18 keywords: "must", "never", "always"), 0% code blocks in root instruction file, strict worktree isolation protocol.
-- **ARCHITECTURE.md**: Absent. Architectural concepts are documented inside `AGENTS.md` and ADRs.
-- **Domain context**: `docs/decision-log/` contains 3 recent, highly consequential ADRs (`01-bun-and-elysia.md`, `02-drizzle-and-postgresql.md`, `03-media-ingestion-and-s3-storage.md`). `CONTEXT.md` and `DOMAIN.md` are absent.
-- **ADRs**: 3 ADRs (+5 modifier).
-- **Topic docs**: `docs/specs/2026-10-06-archive-ingest-agnostic-downloads.md`.
-- **README**: Present and informative (223 lines) with monorepo setup guides.
+
+- **Agent instructions**: Canonical root `AGENTS.md` (47 lines), no competing `CLAUDE.md`. Explicitly scoped: "this file holds only repo rules agents cannot discover from the code," process delegated to pstack skills. Links to `ARCHITECTURE.md` and `docs/DOMAIN.md` both resolve. Three scoped files with genuine local rules: `apps/backend` (112), `apps/web` (28), `apps/android-tv` (45). Root declares precedence ("on conflict, the app file wins"), echoed per app.
+- **Agent-instruction content profile**: Root — 0% code-example lines, 8 sections, strong imperative voice ("**Never** run `db:push`", "never `--no-verify`"). Scoped files: 0 code lines; directives 20/5/2. No bloat, no tutorial drift.
+- **ARCHITECTURE.md**: Present (95 lines) — monorepo topology with responsibility matrix, component/package inventories, three documented flows (contract-first API, media ingestion, playback), governance section, codemap diagrams in PNG/SVG/HTML.
+- **Domain context**: `docs/DOMAIN.md` (89 lines) — canonical terminology, domain models, entity invariants, job lifecycle; single glossary authority. Supporting diagrams: `domain-context-map.*`, `ingest-lifecycle.*`.
+- **ADRs**: 3 in `docs/decision-log/` — substantive (157–160 lines each), trade-off-focused with alternatives and consequences; all added 2026-11-14.
+- **Topic docs**: None separate; testing/convention rules folded into AGENTS.md files (appropriate at this size). Rich diagram set under `docs/diagrams/`.
+- **README**: 228 lines — stack, architecture link, project structure, full getting-started, testing, build/quality commands.
 - **Documentation CI**: None.
 
 ##### Coherence
-- **Topic overlap**: None. Scoped AGENTS.md files contain strictly app-specific nuances.
-- **Cross-document conflicts**: None detected.
-- **Source of truth clarity**: Clear hierarchy defined in root `AGENTS.md`.
-- **Agent-instruction role**: Disciplined directive index.
+
+- **Topic overlap**: None of consequence. Root holds only non-discoverable rules and delegates via links; scoped files add platform-specific rules without restating root content.
+- **Cross-document conflicts**: 0 detected. The module-seam rule is stated once at root and _mapped_, not redefined, per app.
+- **Source of truth clarity**: `@repo/contracts` canonical for API shapes; DOMAIN.md single glossary; ADR 02 names Drizzle schema as DB source of truth.
+- **Broken references**: 0.
+- **Agent-instruction role**: Directive index.
 
 ##### Strengths
-- Exceptional AGENTS.md discipline with mandatory worktree isolation and explicit TDD loop instructions.
-- Well-written ADRs capturing core architectural decisions.
+
+- Exemplary entrypoint discipline: 47-line canonical root of non-discoverable rules with explicit precedence across 4 files.
+- Complete artifact coverage: codemap with flows and governance, single-authority glossary, substantive fresh ADRs, multi-format diagrams.
+- High-value agent gotchas documented (Bun runner filter trap, `db:push` data-loss warning, never `--no-verify`).
 
 ##### Gaps
-- Lack of standalone `ARCHITECTURE.md` codemap and `docs/DOMAIN.md` glossary.
+
+- No documentation verification in CI (link checking / markdown lint).
+- ADR coverage thin (3 records for an 825-commit, 3-app monorepo); Deep Modules adoption and gate policy documented descriptively, not as decision records.
 
 ##### Recommendations
-- **Quick Wins**: Create `ARCHITECTURE.md` with a high-level codemap linking apps and packages.
-- **High-Value Investments**: Document domain entity relationships in `docs/DOMAIN.md`.
+
+- **Quick Wins**: Add a docs-link check (`lychee`) to CI alongside the gate job.
+- **High-Value Investments**: Backfill 2–3 ADRs for already-made decisions; split AGENTS.md sections into `docs/TESTING.md`/`docs/DEPLOYMENT.md` if any section approaches ~30 lines.
 
 ---
 
 ### Code Clarity & Consistency
 
 #### Code Clarity Assessment
-**Score: 70/100**
+
+**Score: 80/100**
 
 ##### Evidence
-- **Average file size**: ~238 lines across all files (~140 lines when excluding dist).
-- **Files over 500 lines**: ~13 files.
-- **Files over 1000 lines (god files)**: 2 source files:
-  - `apps/web/src/modules/videos/internal/api.ts` (1,750 lines)
-  - `apps/backend/src/modules/storage/internal/services/service.ts` (1,068 lines)
-- **Catch-all directories**: `utils/` across packages contains 57 files (-5 modifier).
-- **Naming quality**: Strong. Clear domain-oriented names in accordance with Deep Modules conventions.
-- **Structural gate coverage**: Complexity: none, Duplication: none, Dead code: none (Level L0).
+
+- Average file size: 166 lines (947 source files incl. tests).
+- Files over 500 lines (non-test): 14 — largest: `useArchiveIngestSources.ts` (969), `packages/media-service/src/internal/series/repository.ts` (948), `archive-ingest/services/job.ts` (849), `PlayerScreen.kt` (818), `VideoPlayer.tsx` (759).
+- Files over 1000 lines (god files): **0 in production source** (only test files, e.g. `api.test.ts` 1931 — acceptable).
+- Catch-all directories: `utils/` in 14 module-scoped locations (39 files, spread thin); `apps/backend/src/lib/` (7 files, all named); no catch-all exceeds 20 files.
+- Directory depth: 4–6 levels encoding domain + visibility (`modules/<domain>/internal/<subdomain>/<layer>/`).
+- Naming quality: excellent — paths reveal domain concepts and role; no vague `helpers.ts`/`misc.ts` hotspots.
+- Structural gate coverage: complexity: **none** · duplication: **blocked** (jscpd 1.5%, hard-fails CI) · dead code: **blocked** (knip zero-tolerance, hard-fails CI) — Gate Level **L3**.
 
 ##### Strengths
-- Deep Modules architecture enforces clean separation between module public entry points and internal implementation details.
-- Most modules are compact and well below 300 lines.
+
+- Modular architecture makes file purpose inferable from path; enforced by custom ESLint boundary rules.
+- Zero god files in production source; typical file well under 200 lines.
+- Duplication and dead code both blocked at L3 with identical local command.
 
 ##### Gaps
-- Two oversized files exceed 1,000 lines.
-- Catch-all `utils/` directory usage in several packages.
-- Zero automated structural gates in CI.
+
+- No complexity check at all — nothing prevents the 969-line hook from growing further.
+- 14 non-test files in the 500–1000 range, concentrated in exactly the files agents edit most.
+- `utils/` directories are the natural accumulation point as the codebase grows.
 
 ##### Recommendations
-- **Quick Wins**: Refactor `apps/web/src/modules/videos/internal/api.ts` into individual endpoint client files.
-- **High-Value Investments**: Implement `knip` in CI to detect unused exports and dependencies.
+
+- **Quick Wins**: Add ESLint `complexity`/`sonarjs/cognitive-complexity` wired into `gate:check`; split the two 900+ line files.
+- **High-Value Investments**: Decompose large Android Compose screens; establish a convention for when `internal/utils/` content graduates to a named sibling directory.
 
 ---
 
 #### Consistency & Conventions Assessment
-**Score: 65/100**
+
+**Score: 92/100**
 
 ##### Evidence
-- **Linter**: ESLint in `apps/backend` and `apps/web`, `./gradlew lint` in `apps/android-tv`. Enforced in CI via `turbo run lint`.
-- **Formatter**: Prettier configured at monorepo root (`prettier.config.js`).
-- **Pre-commit hooks**: Absent.
-- **CI enforcement**: Linting and formatting checked in CI.
-- **Custom/architectural linters**: Deep module boundaries enforced via project convention and directory structure.
-- **Lint legacy-debt treatment**: 86 inline suppressions across the repository, no baseline file.
+
+- Linter: ESLint flat configs (typescript-eslint type-aware) in backend/web — CI-enforced (`ci.yml:48`); Android via `./gradlew lint` (`ci.yml:114`).
+- Formatter: Prettier (root config) auto-applied on commit via lint-staged; no `prettier --check` in CI.
+- Pre-commit hooks: Husky — pre-commit (commit-scope gate + lint-staged ESLint `--fix`/Prettier `--write`), commit-msg (trailer gate, rejects baseline reintroduction), pre-push (`bun run verify`).
+- Custom/architectural linters: **present** — `deep-modules/no-cross-module-internal-imports` (backend) and `no-restricted-imports` blocking `*/internal/**` (web), with teaching error messages; plus commit-scope gate script.
+- Lint legacy-debt treatment: **cleared / zero-tolerance** — no baselines; commit-msg hook rejects `.knip-baseline.json`/`.jscpd-baseline.json` reintroduction; 75 `eslint-disable` in source + 6 in tests, 3 `@ts-expect-error` — under the 100-suppression threshold.
 
 ##### Strengths
-- Unified formatting and linting scripts run across the monorepo via Turborepo.
-- Clean ESLint configuration without massive override lists.
+
+- Lint and format fully automated with pre-commit auto-fix — agent code is normalized before commit.
+- Custom architectural rules encode Deep Modules boundaries with error messages that teach the correct import.
+- Zero-tolerance stance hardened at tooling level, not just convention.
 
 ##### Gaps
-- Formatting and linting checks only execute in CI, not on commit.
-- 86 inline suppressions scattered across the codebase.
+
+- Prettier not checked in CI — a `--no-verify` commit can land unformatted code.
+- 75 inline `eslint-disable` sites function as scattered mini-baselines.
+- Backend ESLint thin on style strictness (`no-unused-vars` warn, `no-console` off); Android lint posture not explicit in build config.
 
 ##### Recommendations
-- **Quick Wins**: Add `format` check to CI and pre-commit hooks.
-- **High-Value Investments**: Implement ESLint boundary rules to programmatically enforce Deep Modules restrictions (preventing imports from `/internal/`).
+
+- **Quick Wins**: Add `prettier --check` to CI; audit the 75 disable sites and require reason comments.
+- **High-Value Investments**: Promote `no-unused-vars` to error, consider typescript-eslint strict/stylistic presets; explicit `lint {}` block in `apps/android-tv/app/build.gradle.kts`.
 
 ---
 
 ### Type Safety, Architecture & Change Safety
 
 #### Type Safety Assessment
-**Score: 95/100**
+
+**Score: 88/100**
 
 ##### Evidence
-- **Language**: TypeScript & Kotlin.
-- **Language tier**: Statically-typed.
-- **Strict mode**: `"strict": true` enabled in all tsconfigs across backend, web, and packages.
-- **`any` usage**: 266 occurrences across 464 source files (< 0.6 per file, < 2% of annotations).
-- **Escape hatches**: Only 3 `@ts-ignore` / `@ts-expect-error` comments in the entire repository.
-- **Runtime validation**: TypeBox schemas on Elysia route boundaries (`apps/backend/src/modules/*/schemas.ts`) and Zod schemas in `apps/web`.
-- **Database invariants**: Drizzle ORM schema with 83 explicit constraints (`notNull`, `unique`, `references`, `check`) in `packages/db/src/schema/` (+5 modifier).
-- **Contract-first API**: Canonical TypeScript contracts and OpenAPI schemas in `packages/contracts/src/` (+5 modifier).
-- **CI enforcement**: Yes, `turbo run typecheck` runs on every PR.
+
+- Language: TypeScript 5 (Bun/Elysia, Vite+React) + Kotlin; TS majority (1,014 `.ts/.tsx` files).
+- Strict mode: `"strict": true` in all workspace tsconfigs; web adds `noUnusedLocals` + `noUnusedParameters`.
+- `any` usage: 99 matches across 1,014 TS files (~0.1 per file); only 3 `@ts-ignore`/`@ts-expect-error` repo-wide.
+- Runtime validation: Elysia `t.Object` schemas colocated per module validating every HTTP boundary; Zod v4 in apps/web (16 usages).
+- API contract types: `packages/contracts` shared typed package with generated OpenAPI artifact + `openapi:generate`/`openapi:check` (git-diff enforcement) scripts; no generated typed client for external consumers.
+- Database invariants: 86 `notNull`/`unique`/`references`/`check` occurrences across 6 Drizzle schema files; 30 forward migrations. (+5)
+- CI enforcement: `turbo run typecheck` required in CI; pre-push hook runs `bun run verify`.
 
 ##### Strengths
-- Canonical contracts package (`@repo/contracts`) serves as the single source of truth across frontend, backend, and clients.
-- Pervasive strict mode with minimal `any` escape hatches.
-- Strong runtime boundary verification.
+
+- Strict everywhere with near-zero escape hatches.
+- Runtime validation at the HTTP boundary — the exact gap TS's erased types leave.
+- Typecheck is a hard CI gate and pre-push hook, not advisory.
+- DB constraints extend invariants below the application layer.
 
 ##### Gaps
-- None significant; type safety is one of the strongest pillars of this repository.
+
+- No generated typed client from the OpenAPI spec; spec is an artifact, not a consumed contract.
+- Few branded/semantic domain types; IDs flow as primitives.
+- Zod usage on web is thin (16 sites) relative to surface area.
 
 ##### Recommendations
-- **Quick Wins**: Add branded types for IDs (e.g., `SeriesId`, `EpisodeId`) to prevent parameter transposition.
+
+- **Quick Wins**: Wire `openapi:check` into CI.
+- **High-Value Investments**: Branded ID types (`MediaId`, `SeriesId`, `EpisodeId`) in `packages/contracts`; openapi-fetch client for non-monorepo consumers.
 
 ---
 
 #### Architecture Clarity Assessment
+
 **Score: 90/100**
 
 ##### Evidence
-- **Directory structure**: Deep Modules monorepo with distinct separation between apps and packages.
-- **Domain boundaries in filesystem**: Yes. Vertical feature slices located in `src/modules/<feature>/` with explicit public `index.ts`.
-- **Domain grouping consistency**: High consistency across backend and frontend workspaces.
-- **Service/domain layer**: Clear isolation of HTTP routing (`http.ts`), schemas (`schemas.ts`), and service repositories (`internal/`).
-- **God objects in shared dirs**: None.
-- **Scoped agent instructions**: 3 app-scoped `AGENTS.md` files (+5 modifier).
-- **Cross-domain dependency explicitness**: Strict contract-first rule preventing cross-module internal imports.
+
+- Directory structure: domain-organized monorepo — `apps/{backend,web,android-tv}` + `packages/{contracts,db,media-service,media-scraper,config-vitest}` (Turborepo).
+- Domain boundaries in filesystem: backend 9 feature modules, web 12, each with strict `index.ts` seam / `http.ts` adapter / `internal/` implementation.
+- Domain grouping consistency: **0% root-level leakage** (backend modules: 91 files, 0 at root; web: 232, 0 at root).
+- Service/domain layer: thin HTTP adapters, logic in `internal/.../services/` and `repository.ts`.
+- God objects: none ≥1000 lines of business logic.
+- Scoped agent instructions: 4 files, each with genuine local rules. (+5)
+- Domain context: `docs/DOMAIN.md` + `ARCHITECTURE.md` + 3 ADRs; no CONTEXT-MAP.md.
+- Cross-domain dependency explicitness: **enforced, not conventional** — ESLint `no-restricted-imports` in both apps forbids cross-module `internal/` imports.
 
 ##### Strengths
-- Exceptional adherence to Deep Modules philosophy.
-- Clean monorepo structure with clear boundaries between shared libraries and application runtimes.
+
+- Filesystem-faithful Deep Modules with 0% leakage and lint-enforced public seams — agents physically cannot cross boundaries without CI failing.
+- Scoped AGENTS.md files give local rules where agents work.
+- Contracts extracted to `packages/contracts`; dependencies explicit via package.json.
 
 ##### Gaps
-- Missing domain context map (`CONTEXT-MAP.md`).
+
+- No CONTEXT-MAP.md mapping the ~21 modules' relationships.
+- Web `videos` module becoming a hotspot (top churn, largest module tree).
 
 ##### Recommendations
-- **Quick Wins**: Add `CONTEXT-MAP.md` illustrating module dependency graphs.
+
+- **Quick Wins**: Add `docs/CONTEXT-MAP.md` (one table: module → public seam → consumers).
+- **High-Value Investments**: Split `apps/web/src/modules/videos` before the seam erodes.
 
 ---
 
 #### Change Safety Assessment
-**Score: 68/100**
+
+**Score: 77/100**
 
 ##### Evidence
-- **Co-change coupling**: Low. Changes are neatly confined within individual apps and packages.
-- **Highest-churn files**:
-  - `apps/backend/src/modules/media/http.ts` (101 commits)
-  - `apps/web/src/modules/videos/internal/api.ts` (75 commits)
-  - `packages/media-service/src/index.ts` (61 commits)
-- **Feature flags**: Absent (0 occurrences).
-- **Migration safety**: Safe migration patterns enforced via policy: Drizzle migrations generate versioned SQL in `packages/db/drizzle/`, with direct `db:push` strictly forbidden in `AGENTS.md` (+3 modifier).
-- **Module boundaries**: Enforced by convention and entry-point contracts.
-- **Debt guard**: Level L0 (no automated baseline guard blocking structural debt in CI).
+
+- Co-change coupling: low-moderate. Top pairs are bootstrap files (`app.ts ↔ index.ts`, 287) and within-module seams (`videos/index.ts ↔ internal/api.ts`, 182; `media/http.ts ↔ media/index.ts`, 180) — expected seam co-change, not cross-domain coupling.
+- Highest-churn files: `media/http.ts` (102), `videos/internal/api.ts` (76), `packages/media-service/src/index.ts` (62). Churn concentrates in module seams, not shared dirs.
+- Feature flags: **absent** (0 usages).
+- Migration safety: mixed-to-weak. 30 forward-only Drizzle migrations with destructive operations (`0007` `DROP TABLE "videos" CASCADE`, `0013` `DROP TABLE series_relations CASCADE`, multiple `DROP COLUMN`); no down-path; rollback = restore from `private_movie_backup.sql`.
+- Module boundaries: **enforced** via ESLint + contracts package; violations fail lint in CI.
+- Rollback capability: manual (git revert + Docker republish); no blue/green or flag kill switch.
+- Debt guard: **zero-tolerance blocking (L3-equivalent semantics)** — knip findings and jscpd >1.5% hard-fail CI; identical local command; gate unit-tested; no `continue-on-error` anywhere; no regenerable baseline exists to silence it. (+5)
+- Baseline governance: N/A by design (zero tolerance; nothing to regenerate).
 
 ##### Strengths
-- Strict policy guarding against destructive database migrations.
-- Independent deployability of backend and frontend containers.
+
+- Zero-tolerance structural gate blocks every PR — stricter than most L3 fingerprint setups.
+- Machine-enforced module boundaries; co-change confirms changes stay inside seams.
+- Gate logic is unit-tested — the safety net can't silently rot.
 
 ##### Gaps
-- Lack of feature flag toggles for gradual rollouts.
-- Absence of regression-aware quality gate to block newly introduced structural debt.
+
+- No feature flags — every change ships on merge; bad changes can only be reverted.
+- Destructive irreversible migrations; DB rollback is restore-from-backup.
+- Gate evaluates the whole tree (green main is a hard invariant — acceptable at zero tolerance).
 
 ##### Recommendations
-- **Quick Wins**: Integrate an environment-based or configuration-based feature flag helper.
-- **High-Value Investments**: Adopt an L3 regression-aware debt guard for complexity and dead code.
+
+- **Quick Wins**: Document a migration-safety rule: additive-only columns; drops require two-phase (deprecate → drop) pairs.
+- **High-Value Investments**: Minimal env-based feature flags for high-churn areas; reversible migration discipline or a drizzle-kit snapshot rollback runbook.
 
 ---
 
@@ -373,4 +447,5 @@ An agent-ready codebase maximizes automated verification and minimizes the cost 
 Each point in the Improvement Roadmap raises the verification limit — reducing manual review burden while increasing confidence in every agent-produced change.
 
 ---
-*Generated by codebase-readiness skill — agent-skills*
+
+_Generated by codebase-readiness skill — agent-skills_
