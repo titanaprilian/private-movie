@@ -64,7 +64,7 @@ export function createDefaultMinioInspector(): MinioContainerInspector {
     inspectViaDockerSocket(containerName);
 }
 
-export function resolveMinioConsoleUrl(): string {
+function resolveMinioConsoleUrl(): string {
   const explicit = process.env.MINIO_CONSOLE_URL;
   if (explicit && explicit.trim()) return explicit.trim();
   const port = process.env.MINIO_CONSOLE_PORT ?? "9001";

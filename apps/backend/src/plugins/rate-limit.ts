@@ -4,8 +4,8 @@ import { getClientIp } from "../lib/ip";
 import { UNTHROTTLED_MEDIA_ROUTE_PREFIXES } from "../modules/media/http";
 import { UNTHROTTLED_EPISODE_ROUTE_SUFFIXES } from "../modules/episodes/http";
 
-export const GLOBAL_RATE_LIMIT_DURATION_MS = 60000;
-export const GLOBAL_RATE_LIMIT_MAX = 100;
+const GLOBAL_RATE_LIMIT_DURATION_MS = 60000;
+const GLOBAL_RATE_LIMIT_MAX = 100;
 
 export interface RateLimitPluginOptions {
   duration?: number;
@@ -24,10 +24,10 @@ export interface RateLimitPluginOptions {
 export function isUnthrottledRoute(request: Request): boolean {
   const url = new URL(request.url);
   const isMediaUnthrottled = UNTHROTTLED_MEDIA_ROUTE_PREFIXES.some((prefix) =>
-    url.pathname.startsWith(prefix)
+    url.pathname.startsWith(prefix),
   );
-  const isEpisodeUnthrottled = UNTHROTTLED_EPISODE_ROUTE_SUFFIXES.some((suffix) =>
-    url.pathname.endsWith(suffix)
+  const isEpisodeUnthrottled = UNTHROTTLED_EPISODE_ROUTE_SUFFIXES.some(
+    (suffix) => url.pathname.endsWith(suffix),
   );
   return isMediaUnthrottled || isEpisodeUnthrottled;
 }
@@ -58,9 +58,9 @@ export const rateLimitPlugin = (options: RateLimitPluginOptions = {}) => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       ),
       skip: options.skip ?? isUnthrottledRoute,
-    })
+    }),
   );
 };

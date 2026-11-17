@@ -1,8 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, count, eq, inArray, isNull, max } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, videoSources, type EpisodeRow, type VideoSourceRow } from "@repo/db";
-import { normalizeVideoSourceSync, normalizeVideoSources, sortVideoSources } from "../playback/normalization";
+import {
+  episodes,
+  videoSources,
+  type EpisodeRow,
+  type VideoSourceRow,
+} from "@repo/db";
+import {
+  normalizeVideoSourceSync,
+  normalizeVideoSources,
+  sortVideoSources,
+} from "../playback/normalization";
 import type { ParsedMetadata } from "@repo/media-scraper";
 import { extractS3Key, type S3StorageService } from "../s3/s3-storage-service";
 import type { StorageProviderRegistry } from "../s3/registry";
@@ -12,7 +21,6 @@ export interface EpisodeRepositoryOptions {
   storageProviderRegistry?: StorageProviderRegistry;
 }
 
-
 export class EpisodeNotFoundError extends Error {
   constructor(message = "Episode not found") {
     super(message);
@@ -20,8 +28,8 @@ export class EpisodeNotFoundError extends Error {
   }
 }
 
-export const DEFAULT_LIST_LIMIT = 20;
-export const MAX_LIST_LIMIT = 100;
+const DEFAULT_LIST_LIMIT = 20;
+const MAX_LIST_LIMIT = 100;
 
 export type EpisodeWithVideoSources = EpisodeRow & {
   videoSources: VideoSourceRow[];
@@ -67,11 +75,17 @@ export interface EpisodeListResult {
 
 export interface EpisodeRepository {
   upsert(input: EpisodeUpsertInput): Promise<EpisodeRow>;
-  findBySeasonIdAndOrder(seasonId: string, order: number): Promise<EpisodeRow | null>;
+  findBySeasonIdAndOrder(
+    seasonId: string,
+    order: number,
+  ): Promise<EpisodeRow | null>;
   findById(id: string): Promise<EpisodeWithVideoSources | null>;
   getMaxOrder(seasonId: string | null): Promise<number>;
   list(params: EpisodeListParams): Promise<EpisodeListResult>;
-  updateEpisode(id: string, input: Partial<UpdateEpisodeInput>): Promise<EpisodeWithVideoSources>;
+  updateEpisode(
+    id: string,
+    input: Partial<UpdateEpisodeInput>,
+  ): Promise<EpisodeWithVideoSources>;
   updateOrders(items: EpisodeOrderUpdateInput[]): Promise<void>;
   deleteEpisode(id: string): Promise<EpisodeRow>;
 }
@@ -117,9 +131,15 @@ export function createEpisodeRepositoryInternal<
           target: [episodes.seasonId, episodes.order],
           set: {
             title: input.title,
-            ...(input.description !== undefined ? { description: input.description } : {}),
-            ...(input.duration !== undefined ? { duration: input.duration } : {}),
-            ...(input.thumbnailUrl !== undefined ? { thumbnailUrl: input.thumbnailUrl } : {}),
+            ...(input.description !== undefined
+              ? { description: input.description }
+              : {}),
+            ...(input.duration !== undefined
+              ? { duration: input.duration }
+              : {}),
+            ...(input.thumbnailUrl !== undefined
+              ? { thumbnailUrl: input.thumbnailUrl }
+              : {}),
             ...(input.rating !== undefined ? { rating: input.rating } : {}),
             ...(input.airDate !== undefined ? { airDate: input.airDate } : {}),
             updatedAt: now,
@@ -129,7 +149,10 @@ export function createEpisodeRepositoryInternal<
       return row;
     },
 
-    async findBySeasonIdAndOrder(seasonId: string, order: number): Promise<EpisodeRow | null> {
+    async findBySeasonIdAndOrder(
+      seasonId: string,
+      order: number,
+    ): Promise<EpisodeRow | null> {
       const [row] = await db
         .select()
         .from(episodes)
@@ -138,10 +161,7 @@ export function createEpisodeRepositoryInternal<
     },
 
     async findById(id: string): Promise<EpisodeWithVideoSources | null> {
-      const [row] = await db
-        .select()
-        .from(episodes)
-        .where(eq(episodes.id, id));
+      const [row] = await db.select().from(episodes).where(eq(episodes.id, id));
       if (!row) return null;
 
       const sources = await db
@@ -174,7 +194,7 @@ export function createEpisodeRepositoryInternal<
     async list(params: EpisodeListParams): Promise<EpisodeListResult> {
       const limit = Math.max(
         1,
-        Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT)
+        Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT),
       );
       const page = Math.max(1, params.page);
       const offset = (page - 1) * limit;
@@ -204,10 +224,10 @@ export function createEpisodeRepositoryInternal<
           .where(inArray(videoSources.episodeId, episodeIds))
           .orderBy(asc(videoSources.createdAt));
 
-      const normalizedSources = await normalizeVideoSources(sources, {
-        s3StorageService: options?.s3StorageService,
-        storageProviderRegistry: options?.storageProviderRegistry,
-      });
+        const normalizedSources = await normalizeVideoSources(sources, {
+          s3StorageService: options?.s3StorageService,
+          storageProviderRegistry: options?.storageProviderRegistry,
+        });
 
         for (const s of normalizedSources) {
           const list = sourcesMap.get(s.episodeId) ?? [];
@@ -229,7 +249,7 @@ export function createEpisodeRepositoryInternal<
 
     async updateEpisode(
       id: string,
-      input: Partial<UpdateEpisodeInput>
+      input: Partial<UpdateEpisodeInput>,
     ): Promise<EpisodeWithVideoSources> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
@@ -237,7 +257,8 @@ export function createEpisodeRepositoryInternal<
       };
 
       if (input.title !== undefined) updateData.title = input.title;
-      if (input.description !== undefined) updateData.description = input.description;
+      if (input.description !== undefined)
+        updateData.description = input.description;
 
       const [row] = await db
         .update(episodes)
@@ -284,7 +305,9 @@ export function createEpisodeRepositoryInternal<
             .returning({ id: episodes.id });
 
           if (!updated) {
-            throw new EpisodeNotFoundError(`Episode with id ${item.id} not found`);
+            throw new EpisodeNotFoundError(
+              `Episode with id ${item.id} not found`,
+            );
           }
         }
 
@@ -360,7 +383,8 @@ export function createEpisodeRepositoryInternal<
         for (const [providerId, keys] of targetsByProvider) {
           let s3 = options?.s3StorageService;
           if (options?.storageProviderRegistry) {
-            const regS3 = await options.storageProviderRegistry.getService(providerId);
+            const regS3 =
+              await options.storageProviderRegistry.getService(providerId);
             if (regS3) s3 = regS3;
           }
 
@@ -370,7 +394,7 @@ export function createEpisodeRepositoryInternal<
             } catch (err) {
               console.warn(
                 `[media-service] Failed to delete ${keys.length} S3 object(s) for episode ${id} (provider: ${providerId}):`,
-                err instanceof Error ? err.message : err
+                err instanceof Error ? err.message : err,
               );
             }
           }

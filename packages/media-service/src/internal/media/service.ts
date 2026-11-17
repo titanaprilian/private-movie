@@ -43,7 +43,9 @@ export const defaultFetchFn: FetchFn = {
   async get(url: string) {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to fetch HTML from ${url}: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch HTML from ${url}: ${response.statusText}`,
+      );
     }
     return response.text();
   },
@@ -165,10 +167,7 @@ export interface MediaServiceOptions {
 export function createMediaServiceInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown> = Record<string, unknown>,
->(
-  db: PgDatabase<THKT, TSchema>,
-  options?: MediaServiceOptions,
-) {
+>(db: PgDatabase<THKT, TSchema>, options?: MediaServiceOptions) {
   const episodeRepository = createEpisodeRepositoryInternal(db, {
     s3StorageService: options?.s3StorageService,
   });
@@ -180,7 +179,9 @@ export function createMediaServiceInternal<
   });
   const fetchHtml = options?.fetchHtml ?? defaultFetchFn;
 
-  async function previewScrape(input: SaveEpisodeInput): Promise<PreviewScrapeResult> {
+  async function previewScrape(
+    input: SaveEpisodeInput,
+  ): Promise<PreviewScrapeResult> {
     const provider = MediaScraper.getProviderForUrl(input.sourceUrl);
     if (!provider) {
       throw new EpisodeFetchError(`No provider found for ${input.sourceUrl}`);
@@ -192,7 +193,7 @@ export function createMediaServiceInternal<
         html = await fetchHtml.get(input.sourceUrl);
       } catch (error) {
         throw new EpisodeFetchError(
-          `Failed to fetch HTML from ${input.sourceUrl}: ${error instanceof Error ? error.message : String(error)}`
+          `Failed to fetch HTML from ${input.sourceUrl}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
@@ -207,7 +208,10 @@ export function createMediaServiceInternal<
       post: (url: string, body: string) => fetchHtml.post(url, body),
     };
 
-    const scraped = await provider.parseEpisode(input.sourceUrl, effectiveFetch);
+    const scraped = await provider.parseEpisode(
+      input.sourceUrl,
+      effectiveFetch,
+    );
     const warnings: string[] = [];
 
     if (scraped.videoSources.some((vs) => vs.url.includes(".00000000"))) {
@@ -216,13 +220,13 @@ export function createMediaServiceInternal<
           input.sourceUrl,
           effectiveFetch,
           undefined,
-          options?.browserFn
+          options?.browserFn,
         );
         scraped.videoSources = resolved;
       } catch (error) {
         if (error instanceof EpisodeParseError) {
           warnings.push(
-            "Failed to resolve videobello embed hash; sources may not play correctly"
+            "Failed to resolve videobello embed hash; sources may not play correctly",
           );
         } else {
           throw error;
@@ -233,9 +237,7 @@ export function createMediaServiceInternal<
     let series: PreviewScrapeResult["series"] = null;
 
     let directSources: ParsedVideoSource[] = [];
-    const embedSource = scraped.videoSources.find(
-      (vs) => vs.type === "embed"
-    );
+    const embedSource = scraped.videoSources.find((vs) => vs.type === "embed");
     if (embedSource?.url) {
       try {
         const iframeHtml = await fetchHtml.get(embedSource.url);
@@ -247,7 +249,10 @@ export function createMediaServiceInternal<
 
     if (scraped.animePageUrl) {
       try {
-        const seriesResult = await provider.parseSeries(scraped.animePageUrl, fetchHtml);
+        const seriesResult = await provider.parseSeries(
+          scraped.animePageUrl,
+          fetchHtml,
+        );
         series = {
           sourceUrl: scraped.animePageUrl,
           source: input.source,
@@ -260,20 +265,24 @@ export function createMediaServiceInternal<
       }
     }
 
-    let videoSources: PreviewScrapeVideoSource[] = scraped.videoSources.map((vs) => ({
-      type: vs.type,
-      url: vs.url,
-      label: vs.label,
-      ...(vs.quality !== undefined ? { quality: vs.quality } : {}),
-    }));
+    let videoSources: PreviewScrapeVideoSource[] = scraped.videoSources.map(
+      (vs) => ({
+        type: vs.type,
+        url: vs.url,
+        label: vs.label,
+        ...(vs.quality !== undefined ? { quality: vs.quality } : {}),
+      }),
+    );
 
-    const mirrorPayloads = (scraped.providerData?.mirrorPayloads ?? []) as ParsedMirrorPayload[];
-    const ajaxActions = (scraped.providerData?.ajaxActions ?? null) as ParsedAjaxActions | null;
+    const mirrorPayloads = (scraped.providerData?.mirrorPayloads ??
+      []) as ParsedMirrorPayload[];
+    const ajaxActions = (scraped.providerData?.ajaxActions ??
+      null) as ParsedAjaxActions | null;
 
     if (mirrorPayloads.length > 0) {
       if (!ajaxActions) {
         warnings.push(
-          "Failed to extract AJAX actions; mirror resolution skipped"
+          "Failed to extract AJAX actions; mirror resolution skipped",
         );
       } else {
         const resolved = await resolveMirrors({
@@ -291,7 +300,9 @@ export function createMediaServiceInternal<
 
         if (directSources.length === 0 && resolved.length > 0) {
           const desuMirror = resolved.find(
-            (m) => m.url.includes("desustream.net") || m.label.toLowerCase().includes("odstream")
+            (m) =>
+              m.url.includes("desustream.net") ||
+              m.label.toLowerCase().includes("odstream"),
           );
           if (desuMirror?.url) {
             try {
@@ -313,7 +324,7 @@ export function createMediaServiceInternal<
             url: ds.url,
             label: ds.label,
             quality: ds.quality ?? null,
-          }) as PreviewScrapeVideoSource
+          }) as PreviewScrapeVideoSource,
       );
       videoSources.push(...directPreview);
     }
@@ -323,7 +334,8 @@ export function createMediaServiceInternal<
     if (scraped.duration) metadata.duration = scraped.duration;
     if (scraped.posterUrl) metadata.posterUrl = scraped.posterUrl;
     if (scraped.animePageUrl) metadata.animePageUrl = scraped.animePageUrl;
-    if (scraped.downloadLinks) metadata.downloadLinks = scraped.downloadLinks as ParsedDownloadLink[];
+    if (scraped.downloadLinks)
+      metadata.downloadLinks = scraped.downloadLinks as ParsedDownloadLink[];
     if (scraped.episodes) {
       metadata.episodes = scraped.episodes.map((ep) => ({
         label: ep.title,
@@ -346,7 +358,7 @@ export function createMediaServiceInternal<
   }
 
   async function previewScrapeSeries(
-    input: SaveEpisodeInput
+    input: SaveEpisodeInput,
   ): Promise<PreviewScrapeSeriesResult> {
     const provider = MediaScraper.getProviderForUrl(input.sourceUrl);
     if (!provider) {
@@ -361,7 +373,7 @@ export function createMediaServiceInternal<
         throw new SeriesFetchError(
           `Failed to fetch HTML from ${input.sourceUrl}: ${
             error instanceof Error ? error.message : String(error)
-          }`
+          }`,
         );
       }
     }
@@ -395,7 +407,7 @@ export function createMediaServiceInternal<
 
   async function scrapeAndSaveSources(
     episodeId: string,
-    sourceUrl: string
+    sourceUrl: string,
   ): Promise<EpisodeWithVideoSources> {
     const episode = await episodeRepository.findById(episodeId);
     if (!episode) {
@@ -411,7 +423,7 @@ export function createMediaServiceInternal<
       sourceUrl,
       fetchHtml,
       undefined,
-      options?.browserFn
+      options?.browserFn,
     );
 
     await videoSourceRepository.deleteByEpisodeId(episodeId);
@@ -458,7 +470,9 @@ export function createMediaServiceInternal<
       let existingSeries: SeriesRow | null = null;
 
       if (seriesInput.tmdbId) {
-        existingSeries = await seriesRepositoryTx.findByTmdbId(seriesInput.tmdbId);
+        existingSeries = await seriesRepositoryTx.findByTmdbId(
+          seriesInput.tmdbId,
+        );
       }
       if (!existingSeries && seriesInput.title) {
         const [byTitle] = await tx
@@ -523,7 +537,9 @@ export function createMediaServiceInternal<
         }
       }
 
-      const episodeWithSources = await episodeRepositoryTx.findById(episodeRow.id);
+      const episodeWithSources = await episodeRepositoryTx.findById(
+        episodeRow.id,
+      );
 
       const childSeasons = seriesRow
         ? await tx
@@ -547,5 +563,3 @@ export function createMediaServiceInternal<
     saveMedia,
   };
 }
-
-export type MediaServiceInternal = ReturnType<typeof createMediaServiceInternal>;

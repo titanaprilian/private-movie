@@ -6,13 +6,6 @@ import {
 } from "../errors";
 import { MINIO_CONTAINER_NAME, MINIO_SOCKET_PATH } from "./minio-status";
 
-export { MinioDockerUnavailableError };
-
-export {
-  MinioHealthTimeoutError,
-  MinioCredentialsRejectedError,
-} from "../errors";
-
 const S3_AUTH_ERROR_NAMES = new Set([
   "SignatureDoesNotMatch",
   "InvalidAccessKeyId",
@@ -40,11 +33,11 @@ export function isS3AuthError(error: unknown): boolean {
 
 export type { MinioContainerStarter, MinioHealthChecker } from "../types";
 
-export const MINIO_IMAGE = "cgr.dev/chainguard/minio";
-export const MINIO_IMAGE_TAG = "latest";
-export const MINIO_DATA_VOLUME = "minio_data";
-export const MINIO_API_PORT = 9000;
-export const MINIO_CONSOLE_PORT = 9001;
+const MINIO_IMAGE = "cgr.dev/chainguard/minio";
+const MINIO_IMAGE_TAG = "latest";
+const MINIO_DATA_VOLUME = "minio_data";
+const MINIO_API_PORT = 9000;
+const MINIO_CONSOLE_PORT = 9001;
 
 interface DockerRequestOptions {
   method: string;

@@ -4,7 +4,6 @@ export {
   EpisodeFetchError,
   SeriesFetchError,
   type FetchFn,
-  type MediaServiceInternal,
   type MediaServiceOptions,
   type PreviewScrapeResult,
   type PreviewScrapeSeriesResult,

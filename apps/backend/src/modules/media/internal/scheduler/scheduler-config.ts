@@ -2,26 +2,39 @@ import { eq } from "drizzle-orm";
 import { system } from "@repo/db";
 import type { SchedulerConfig, SchedulerConfigDb } from "../types";
 
-export const SCHEDULER_INTERVAL_KEY = "scheduler_interval_minutes";
-export const SCHEDULER_ENABLED_KEY = "scheduler_enabled";
+const SCHEDULER_INTERVAL_KEY = "scheduler_interval_minutes";
+const SCHEDULER_ENABLED_KEY = "scheduler_enabled";
 
-export const ALLOWED_SCHEDULER_INTERVALS = [15, 30, 60, 180, 360, 720, 1440] as const;
+export const ALLOWED_SCHEDULER_INTERVALS = [
+  15, 30, 60, 180, 360, 720, 1440,
+] as const;
 export const DEFAULT_SCHEDULER_INTERVAL_MINUTES = 30;
 export const DEFAULT_SCHEDULER_ENABLED = true;
 
-async function readKey(db: SchedulerConfigDb, key: string): Promise<string | null> {
-  const rows = await db.select({ value: system.value }).from(system).where(eq(system.key, key));
+async function readKey(
+  db: SchedulerConfigDb,
+  key: string,
+): Promise<string | null> {
+  const rows = await db
+    .select({ value: system.value })
+    .from(system)
+    .where(eq(system.key, key));
   return rows[0]?.value ?? null;
 }
 
-export async function loadSchedulerConfig(db: SchedulerConfigDb): Promise<SchedulerConfig> {
+export async function loadSchedulerConfig(
+  db: SchedulerConfigDb,
+): Promise<SchedulerConfig> {
   let intervalMinutes = DEFAULT_SCHEDULER_INTERVAL_MINUTES;
   let isEnabled = DEFAULT_SCHEDULER_ENABLED;
   try {
     const rawInterval = await readKey(db, SCHEDULER_INTERVAL_KEY);
     if (rawInterval !== null) {
       const parsed = Number.parseInt(rawInterval, 10);
-      if (Number.isFinite(parsed) && (ALLOWED_SCHEDULER_INTERVALS as readonly number[]).includes(parsed)) {
+      if (
+        Number.isFinite(parsed) &&
+        (ALLOWED_SCHEDULER_INTERVALS as readonly number[]).includes(parsed)
+      ) {
         intervalMinutes = parsed;
       }
     }
@@ -65,7 +78,9 @@ export function validateSchedulerConfigInput(input: {
     if (
       typeof input.intervalMinutes !== "number" ||
       !Number.isInteger(input.intervalMinutes) ||
-      !(ALLOWED_SCHEDULER_INTERVALS as readonly number[]).includes(input.intervalMinutes)
+      !(ALLOWED_SCHEDULER_INTERVALS as readonly number[]).includes(
+        input.intervalMinutes,
+      )
     ) {
       return {
         valid: false,

@@ -6,7 +6,7 @@ import type {
   S3StorageService,
   StorageProviderRegistry,
 } from "@repo/media-service";
-import type { ArchiveFetchFn, ArchiveIngestJobService } from "@/modules/series";
+import type { ArchiveFetchFn, ArchiveIngestJobManager } from "@/modules/series";
 import type { AuthRateLimitOptions } from "@/modules/authentication/schemas";
 import type { RateLimitPluginOptions } from "@/plugins";
 import type { StorageOverrides } from "@/modules/storage";
@@ -35,7 +35,7 @@ export interface BuildAppOptions {
   storageProviderRegistry?: StorageProviderRegistry;
   archiveFetchFn?: ArchiveFetchFn;
   archiveStagingBaseDir?: string;
-  archiveJobService?: ArchiveIngestJobService;
+  archiveJobService?: ArchiveIngestJobManager;
   scheduler?: SchedulerDeps;
   storage?: StorageOverrides;
   storageUsageProvider?: StorageUsageProvider;

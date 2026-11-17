@@ -1,11 +1,17 @@
 #!/usr/bin/env bun
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import {
+  compareKnipFindings,
+  extractKnipFingerprints,
+  pruneKnipBaseline,
+  type KnipReport,
+} from "./internal/gate-checker";
 
 const BASELINE_FILE = ".knip-baseline.json";
 const isUpdateMode = process.argv.includes("--update-baseline");
 
-console.log("🔍 Running Structural Quality Gates (Level L3)...");
+console.log("🔍 Running Structural Quality Gates (Level L4)...");
 
 // 1. Run JSCPD Check
 console.log("\n📦 [1/2] Checking Code Duplication (jscpd)...");
@@ -47,7 +53,7 @@ const knipProc = spawnSync("bunx", ["knip", "--reporter", "json"], {
   maxBuffer: 50 * 1024 * 1024,
 });
 
-let knipReport: { issues: Array<Record<string, unknown>> };
+let knipReport: KnipReport;
 try {
   knipReport = JSON.parse(knipProc.stdout || "{}");
 } catch (e) {
@@ -56,53 +62,50 @@ try {
   process.exit(1);
 }
 
-interface IssueItem {
-  name: string;
-}
-
-function extractFingerprints(report: {
-  issues: Array<Record<string, unknown>>;
-}): Set<string> {
-  const set = new Set<string>();
-  const categories = [
-    "files",
-    "dependencies",
-    "devDependencies",
-    "unlisted",
-    "unresolved",
-    "exports",
-    "types",
-    "enumMembers",
-    "duplicates",
-  ];
-
-  for (const item of report.issues || []) {
-    const file = String(item.file || "");
-    for (const cat of categories) {
-      const arr = item[cat];
-      if (Array.isArray(arr)) {
-        for (const entry of arr) {
-          if (Array.isArray(entry)) {
-            const names = entry.map((x: IssueItem) => x?.name).join("|");
-            set.add(`${file}:${cat}:${names}`);
-          } else if (entry && typeof entry === "object" && "name" in entry) {
-            set.add(`${file}:${cat}:${(entry as IssueItem).name}`);
-          } else {
-            set.add(`${file}:${cat}:${JSON.stringify(entry)}`);
-          }
-        }
-      }
-    }
-  }
-  return set;
-}
-
-const currentFingerprints = extractFingerprints(knipReport);
+const currentFingerprints = extractKnipFingerprints(knipReport);
 
 if (isUpdateMode) {
-  writeFileSync(BASELINE_FILE, JSON.stringify(knipReport, null, 2), "utf-8");
+  if (!existsSync(BASELINE_FILE)) {
+    // Initial baseline creation
+    writeFileSync(BASELINE_FILE, JSON.stringify(knipReport, null, 2), "utf-8");
+    console.log(
+      `\n✅ Initialized ${BASELINE_FILE} with ${currentFingerprints.size} items.`,
+    );
+    process.exit(0);
+  }
+
+  let baselineReport: KnipReport;
+  try {
+    baselineReport = JSON.parse(readFileSync(BASELINE_FILE, "utf-8"));
+  } catch (e) {
+    console.error(`Failed to read baseline file ${BASELINE_FILE}:`, e);
+    process.exit(1);
+  }
+
+  const pruneResult = pruneKnipBaseline(knipReport, baselineReport);
+  if (!pruneResult.success || !pruneResult.prunedReport) {
+    console.error(
+      `\n❌ Ratchet violation: Cannot update baseline while ${pruneResult.newViolations.length} new structural violation(s) exist:\n`,
+    );
+    for (const v of pruneResult.newViolations.slice(0, 25)) {
+      console.error(`  • ${v}`);
+    }
+    if (pruneResult.newViolations.length > 25) {
+      console.error(`  ...and ${pruneResult.newViolations.length - 25} more.`);
+    }
+    console.error(
+      "\nBaseline updates may ONLY tighten the ratchet by pruning resolved findings. Fix new violations first.",
+    );
+    process.exit(1);
+  }
+
+  writeFileSync(
+    BASELINE_FILE,
+    JSON.stringify(pruneResult.prunedReport, null, 2),
+    "utf-8",
+  );
   console.log(
-    `\n✅ Updated ${BASELINE_FILE} with ${currentFingerprints.size} items.`,
+    `\n✅ Updated ${BASELINE_FILE}: pruned ${pruneResult.prunedCount} resolved items (total remaining: ${currentFingerprints.size}).`,
   );
   process.exit(0);
 }
@@ -113,7 +116,7 @@ if (!existsSync(BASELINE_FILE)) {
   process.exit(1);
 }
 
-let baselineReport: { issues: Array<Record<string, unknown>> };
+let baselineReport: KnipReport;
 try {
   baselineReport = JSON.parse(readFileSync(BASELINE_FILE, "utf-8"));
 } catch (e) {
@@ -121,40 +124,26 @@ try {
   process.exit(1);
 }
 
-const baselineFingerprints = extractFingerprints(baselineReport);
-const newViolations: string[] = [];
+const comparison = compareKnipFindings(knipReport, baselineReport);
 
-for (const fp of currentFingerprints) {
-  if (!baselineFingerprints.has(fp)) {
-    newViolations.push(fp);
-  }
-}
-
-let resolvedCount = 0;
-for (const fp of baselineFingerprints) {
-  if (!currentFingerprints.has(fp)) {
-    resolvedCount++;
-  }
-}
-
-if (resolvedCount > 0) {
+if (comparison.resolvedCount > 0) {
   console.log(
-    `\n🎉 Outstanding progress: ${resolvedCount} baseline structural issues have been resolved!`,
+    `\n🎉 Outstanding progress: ${comparison.resolvedCount} baseline structural issues have been resolved!`,
   );
   console.log(
     "Run `bun run gate:update-baseline` when ready to tighten the ratchet.",
   );
 }
 
-if (newViolations.length > 0) {
+if (!comparison.passed) {
   console.error(
-    `\n❌ Knip gate failed: ${newViolations.length} new structural violation(s) introduced:\n`,
+    `\n❌ Knip gate failed: ${comparison.newViolations.length} new structural violation(s) introduced:\n`,
   );
-  for (const v of newViolations.slice(0, 25)) {
+  for (const v of comparison.newViolations.slice(0, 25)) {
     console.error(`  • ${v}`);
   }
-  if (newViolations.length > 25) {
-    console.error(`  ...and ${newViolations.length - 25} more.`);
+  if (comparison.newViolations.length > 25) {
+    console.error(`  ...and ${comparison.newViolations.length - 25} more.`);
   }
   console.error(
     "\nPlease eliminate unused exports/dependencies before pushing, or report if legitimate public API.",

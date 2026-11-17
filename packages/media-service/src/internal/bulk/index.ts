@@ -7,8 +7,6 @@ export {
 } from "./sequential-fallback";
 export {
   createBulkServiceInternal,
-  type BulkServiceInternal,
-  type BulkServiceOptions,
   type PreviewBulkSourcesInput,
   type PreviewBulkSourcesResult,
   type ScrapedBulkEpisodeItem,
@@ -17,6 +15,4 @@ export {
   type BulkSourceItemVideoSource,
   type SaveBulkSourcesInput,
   type SaveBulkSourcesResult,
-  type PreviewScrapeSeriesFn,
-  type VideoSource as BulkVideoSource,
 } from "./service";

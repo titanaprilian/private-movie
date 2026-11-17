@@ -1,8 +1,33 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  ilike,
+  inArray,
+  or,
+  sql,
+} from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { episodes, genres, seasons, series, seriesToGenres, videoSources, type EpisodeRow, type SeasonRow, type SeriesRow, type VideoSourceRow } from "@repo/db";
-import { normalizeVideoSources, sortVideoSources } from "../playback/normalization";
+import {
+  episodes,
+  genres,
+  seasons,
+  series,
+  seriesToGenres,
+  videoSources,
+  type EpisodeRow,
+  type SeasonRow,
+  type SeriesRow,
+  type VideoSourceRow,
+} from "@repo/db";
+import {
+  normalizeVideoSources,
+  sortVideoSources,
+} from "../playback/normalization";
 import type { EpisodeWithVideoSources } from "../episodes/repository";
 import type { S3StorageService } from "../s3/s3-storage-service";
 import type { StorageProviderRegistry } from "../s3/registry";
@@ -12,7 +37,6 @@ export interface SeriesRepositoryOptions {
   storageProviderRegistry?: StorageProviderRegistry;
 }
 
-
 export class SeriesNotFoundError extends Error {
   constructor(message = "Series not found") {
     super(message);
@@ -21,16 +45,14 @@ export class SeriesNotFoundError extends Error {
 }
 
 export class SeriesHighlightWithoutOngoingError extends Error {
-  constructor(
-    message = "Cannot highlight a series with no ongoing seasons",
-  ) {
+  constructor(message = "Cannot highlight a series with no ongoing seasons") {
     super(message);
     this.name = "SeriesHighlightWithoutOngoingError";
   }
 }
 
 export function compareSeasons<
-  T extends { seasonNumber?: number | null; createdAt?: Date | string | null }
+  T extends { seasonNumber?: number | null; createdAt?: Date | string | null },
 >(a: T, b: T): number {
   const getGroup = (season: T) => {
     const s = season.seasonNumber;
@@ -59,8 +81,8 @@ export function compareSeasons<
   return timeA - timeB;
 }
 
-export const DEFAULT_LIST_LIMIT = 20;
-export const MAX_LIST_LIMIT = 100;
+const DEFAULT_LIST_LIMIT = 20;
+const MAX_LIST_LIMIT = 100;
 
 export interface SeriesUpsertInput {
   id?: string;
@@ -172,10 +194,13 @@ export interface SeriesRepository {
   findByTmdbId(tmdbId: number): Promise<SeriesRow | null>;
   findByIdWithEpisodes(
     id: string,
-    sourceTypes?: string[]
+    sourceTypes?: string[],
   ): Promise<SeriesWithEpisodes | null>;
   list(params: SeriesListParams): Promise<SeriesListResult>;
-  updateSeries(id: string, input: UpdateSeriesInput): Promise<SeriesWithSeasons>;
+  updateSeries(
+    id: string,
+    input: UpdateSeriesInput,
+  ): Promise<SeriesWithSeasons>;
   deleteSeries(id: string): Promise<SeriesRow>;
   getHomeFeed(sourceTypes?: string[]): Promise<HomeFeedPayload>;
 }
@@ -251,7 +276,9 @@ export function createSeriesRepositoryInternal<
         seasonNumber: row.season.seasonNumber,
         title: row.season.title,
       },
-      videoSources: sortVideoSources(sourcesByEpisode.get(row.episode.id) ?? []),
+      videoSources: sortVideoSources(
+        sourcesByEpisode.get(row.episode.id) ?? [],
+      ),
     }));
   }
 
@@ -280,11 +307,17 @@ export function createSeriesRepositoryInternal<
             title: input.title,
             description: input.description ?? null,
             ...(input.type ? { type: input.type } : {}),
-            ...(input.posterUrl !== undefined ? { posterUrl: input.posterUrl } : {}),
-            ...(input.backdropUrl !== undefined ? { backdropUrl: input.backdropUrl } : {}),
+            ...(input.posterUrl !== undefined
+              ? { posterUrl: input.posterUrl }
+              : {}),
+            ...(input.backdropUrl !== undefined
+              ? { backdropUrl: input.backdropUrl }
+              : {}),
             ...(input.rating !== undefined ? { rating: input.rating } : {}),
             ...(input.tmdbId !== undefined ? { tmdbId: input.tmdbId } : {}),
-            ...(input.tmdbSyncStatus !== undefined ? { tmdbSyncStatus: input.tmdbSyncStatus } : {}),
+            ...(input.tmdbSyncStatus !== undefined
+              ? { tmdbSyncStatus: input.tmdbSyncStatus }
+              : {}),
             updatedAt: now,
           },
         })
@@ -293,10 +326,7 @@ export function createSeriesRepositoryInternal<
     },
 
     async findById(id: string): Promise<SeriesRow | null> {
-      const [row] = await db
-        .select()
-        .from(series)
-        .where(eq(series.id, id));
+      const [row] = await db.select().from(series).where(eq(series.id, id));
       return row ?? null;
     },
 
@@ -310,7 +340,7 @@ export function createSeriesRepositoryInternal<
 
     async findByIdWithEpisodes(
       id: string,
-      sourceTypes?: string[]
+      sourceTypes?: string[],
     ): Promise<SeriesWithEpisodes | null> {
       const [seriesRow] = await db
         .select()
@@ -332,7 +362,7 @@ export function createSeriesRepositoryInternal<
             ELSE 3 
           END ASC`,
           asc(seasons.seasonNumber),
-          asc(seasons.createdAt)
+          asc(seasons.createdAt),
         );
 
       childSeasons.sort(compareSeasons);
@@ -366,7 +396,7 @@ export function createSeriesRepositoryInternal<
         const filterSet =
           sourceTypes && sourceTypes.length > 0
             ? new Set(
-                sourceTypes.map((t) => t.trim()).filter((t) => t.length > 0)
+                sourceTypes.map((t) => t.trim()).filter((t) => t.length > 0),
               )
             : null;
         const hasFilter = filterSet !== null && filterSet.size > 0;
@@ -395,10 +425,12 @@ export function createSeriesRepositoryInternal<
         }
       }
 
-      const seasonsWithEpisodes: SeasonWithEpisodes[] = childSeasons.map((s) => ({
-        ...s,
-        episodes: episodesBySeasonMap.get(s.id) ?? [],
-      }));
+      const seasonsWithEpisodes: SeasonWithEpisodes[] = childSeasons.map(
+        (s) => ({
+          ...s,
+          episodes: episodesBySeasonMap.get(s.id) ?? [],
+        }),
+      );
 
       const seriesGenres = await db
         .select({
@@ -422,7 +454,7 @@ export function createSeriesRepositoryInternal<
     async list(params: SeriesListParams): Promise<SeriesListResult> {
       const limit = Math.max(
         1,
-        Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT)
+        Math.min(params.limit ?? DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT),
       );
       const page = Math.max(1, params.page);
       const offset = (page - 1) * limit;
@@ -432,10 +464,7 @@ export function createSeriesRepositoryInternal<
       if (params.q && params.q.trim() !== "") {
         const pattern = `%${params.q.trim()}%`;
         conditions.push(
-          or(
-            ilike(series.title, pattern),
-            ilike(series.description, pattern)
-          )
+          or(ilike(series.title, pattern), ilike(series.description, pattern)),
         );
       }
 
@@ -450,10 +479,10 @@ export function createSeriesRepositoryInternal<
               .where(
                 and(
                   eq(seasons.seriesId, series.id),
-                  eq(seasons.status, "ongoing")
-                )
-              )
-          )
+                  eq(seasons.status, "ongoing"),
+                ),
+              ),
+          ),
         );
       }
 
@@ -495,7 +524,7 @@ export function createSeriesRepositoryInternal<
           .orderBy(
             ...(params.filter === "ongoing"
               ? [desc(series.isOngoingHighlighted), desc(series.updatedAt)]
-              : [desc(series.createdAt)])
+              : [desc(series.createdAt)]),
           )
           .limit(limit)
           .offset(offset),
@@ -504,7 +533,10 @@ export function createSeriesRepositoryInternal<
 
       const seriesIds = rows.map((s) => s.id);
       const seasonsMap = new Map<string, SeasonRow[]>();
-      const genresMap = new Map<string, Array<{ id: string; name: string; slug: string }>>();
+      const genresMap = new Map<
+        string,
+        Array<{ id: string; name: string; slug: string }>
+      >();
 
       if (seriesIds.length > 0) {
         const childSeasons = await db
@@ -518,7 +550,7 @@ export function createSeriesRepositoryInternal<
               ELSE 3 
             END ASC`,
             asc(seasons.seasonNumber),
-            asc(seasons.createdAt)
+            asc(seasons.createdAt),
           );
 
         childSeasons.sort(compareSeasons);
@@ -562,7 +594,7 @@ export function createSeriesRepositoryInternal<
 
     async updateSeries(
       id: string,
-      input: UpdateSeriesInput
+      input: UpdateSeriesInput,
     ): Promise<SeriesWithSeasons> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
@@ -570,15 +602,19 @@ export function createSeriesRepositoryInternal<
       };
 
       if (input.title !== undefined) updateData.title = input.title;
-      if (input.description !== undefined) updateData.description = input.description;
+      if (input.description !== undefined)
+        updateData.description = input.description;
       if (input.type !== undefined) updateData.type = input.type;
       if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
       if (input.logoUrl !== undefined) updateData.logoUrl = input.logoUrl;
-      if (input.backdropUrl !== undefined) updateData.backdropUrl = input.backdropUrl;
+      if (input.backdropUrl !== undefined)
+        updateData.backdropUrl = input.backdropUrl;
       if (input.rating !== undefined) updateData.rating = input.rating;
       if (input.tmdbId !== undefined) updateData.tmdbId = input.tmdbId;
-      if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
-      if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
+      if (input.tmdbSyncStatus !== undefined)
+        updateData.tmdbSyncStatus = input.tmdbSyncStatus;
+      if (input.isFeatured !== undefined)
+        updateData.isFeatured = input.isFeatured;
       if (input.isOngoingHighlighted !== undefined)
         updateData.isOngoingHighlighted = input.isOngoingHighlighted;
 
@@ -610,19 +646,15 @@ export function createSeriesRepositoryInternal<
       }
 
       if (input.genreIds !== undefined) {
-        await db
-          .delete(seriesToGenres)
-          .where(eq(seriesToGenres.seriesId, id));
+        await db.delete(seriesToGenres).where(eq(seriesToGenres.seriesId, id));
 
         if (input.genreIds.length > 0) {
-          await db
-            .insert(seriesToGenres)
-            .values(
-              input.genreIds.map((genreId) => ({
-                seriesId: id,
-                genreId,
-              }))
-            );
+          await db.insert(seriesToGenres).values(
+            input.genreIds.map((genreId) => ({
+              seriesId: id,
+              genreId,
+            })),
+          );
         }
       }
 
@@ -637,7 +669,7 @@ export function createSeriesRepositoryInternal<
             ELSE 3 
           END ASC`,
           asc(seasons.seasonNumber),
-          asc(seasons.createdAt)
+          asc(seasons.createdAt),
         );
 
       childSeasons.sort(compareSeasons);
@@ -656,9 +688,7 @@ export function createSeriesRepositoryInternal<
       const seasonIds = childSeasons.map((s) => s.id);
 
       if (seasonIds.length > 0) {
-        await db
-          .delete(episodes)
-          .where(inArray(episodes.seasonId, seasonIds));
+        await db.delete(episodes).where(inArray(episodes.seasonId, seasonIds));
       }
 
       const [row] = await db
@@ -681,7 +711,7 @@ export function createSeriesRepositoryInternal<
       const typeList = hasTypeFilter
         ? sql.join(
             normalizedTypes.map((t) => sql`${t}`),
-            sql`, `
+            sql`, `,
           )
         : null;
       const hasVideoSources = hasTypeFilter
@@ -738,12 +768,7 @@ export function createSeriesRepositoryInternal<
         const highlighted = await db
           .select()
           .from(series)
-          .where(
-            and(
-              extraConditions,
-              eq(series.isOngoingHighlighted, true),
-            ),
-          )
+          .where(and(extraConditions, eq(series.isOngoingHighlighted, true)))
           .orderBy(desc(series.updatedAt))
           .limit(ONGOING_HARD_CAP);
         if (highlighted.length >= ONGOING_SOFT_CAP) {
@@ -752,12 +777,7 @@ export function createSeriesRepositoryInternal<
         const backfill = await db
           .select()
           .from(series)
-          .where(
-            and(
-              extraConditions,
-              eq(series.isOngoingHighlighted, false),
-            ),
-          )
+          .where(and(extraConditions, eq(series.isOngoingHighlighted, false)))
           .orderBy(desc(series.updatedAt))
           .limit(ONGOING_SOFT_CAP - highlighted.length);
         return [...highlighted, ...backfill];
@@ -769,7 +789,9 @@ export function createSeriesRepositoryInternal<
           FROM ${seriesToGenres}
           WHERE ${seriesToGenres.seriesId} = ${series.id} AND ${seriesToGenres.genreId} = ${bigGenre.id}
         )`;
-        return fetchOngoingRow(and(hasOngoingSeason, hasGenre, hasVideoSources));
+        return fetchOngoingRow(
+          and(hasOngoingSeason, hasGenre, hasVideoSources),
+        );
       });
 
       const bigGenreRowsPromises = activeBigGenres.map((bigGenre) => {
@@ -793,29 +815,41 @@ export function createSeriesRepositoryInternal<
         .orderBy(desc(series.createdAt))
         .limit(10);
 
-      const [ongoingPerGenreList, bigGenreRowsList, recentlyAddedRows] = await Promise.all([
-        Promise.all(ongoingPerGenrePromises),
-        Promise.all(bigGenreRowsPromises),
-        recentlyAddedRowsPromise,
-      ]);
+      const [ongoingPerGenreList, bigGenreRowsList, recentlyAddedRows] =
+        await Promise.all([
+          Promise.all(ongoingPerGenrePromises),
+          Promise.all(bigGenreRowsPromises),
+          recentlyAddedRowsPromise,
+        ]);
 
       let fallbackOngoingRows: SeriesRow[] = [];
       const hasAnyPerGenreOngoing = ongoingPerGenreList.some(
-        (rows) => rows.length > 0
+        (rows) => rows.length > 0,
       );
       if (!hasAnyPerGenreOngoing) {
-        fallbackOngoingRows = await fetchOngoingRow(and(hasOngoingSeason, hasVideoSources));
+        fallbackOngoingRows = await fetchOngoingRow(
+          and(hasOngoingSeason, hasVideoSources),
+        );
       }
 
       const allSeriesMap = new Map<string, SeriesRow>();
-      for (const s of [...heroSeriesList, ...fallbackOngoingRows, ...recentlyAddedRows, ...ongoingPerGenreList.flat(), ...bigGenreRowsList.flat()]) {
+      for (const s of [
+        ...heroSeriesList,
+        ...fallbackOngoingRows,
+        ...recentlyAddedRows,
+        ...ongoingPerGenreList.flat(),
+        ...bigGenreRowsList.flat(),
+      ]) {
         allSeriesMap.set(s.id, s);
       }
 
       const allSeriesList = Array.from(allSeriesMap.values());
       const allSeriesIds = allSeriesList.map((s) => s.id);
 
-      const genresMap = new Map<string, Array<{ id: string; name: string; slug: string }>>();
+      const genresMap = new Map<
+        string,
+        Array<{ id: string; name: string; slug: string }>
+      >();
       const seasonsCountMap = new Map<string, number>();
       const episodesCountMap = new Map<string, number>();
 
@@ -891,7 +925,9 @@ export function createSeriesRepositoryInternal<
       const rows: HomeFeedRow[] = [
         ...activeBigGenres.map((bigGenre, index) => ({
           title: `Ongoing ${bigGenre.name}`,
-          items: (ongoingPerGenreList[index] ?? []).map((s) => enrichedMap.get(s.id)!),
+          items: (ongoingPerGenreList[index] ?? []).map((s) =>
+            enrichedMap.get(s.id)!,
+          ),
         })),
         ...(hasAnyPerGenreOngoing
           ? []
@@ -903,7 +939,9 @@ export function createSeriesRepositoryInternal<
             ]),
         ...activeBigGenres.map((bigGenre, index) => ({
           title: bigGenre.name,
-          items: (bigGenreRowsList[index] ?? []).map((s) => enrichedMap.get(s.id)!),
+          items: (bigGenreRowsList[index] ?? []).map((s) =>
+            enrichedMap.get(s.id)!,
+          ),
         })),
         {
           title: "Recently Added",

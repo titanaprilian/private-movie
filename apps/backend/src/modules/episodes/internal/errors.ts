@@ -1,16 +1,7 @@
-export class EpisodeNotFoundError extends Error {
-  constructor(message = "Episode not found") {
-    super(message);
-    this.name = "EpisodeNotFoundError";
-  }
-}
-
-export class VideoSourceNotFoundError extends Error {
-  constructor(message = "Video source not found") {
-    super(message);
-    this.name = "VideoSourceNotFoundError";
-  }
-}
+export {
+  EpisodeNotFoundError,
+  VideoSourceNotFoundError,
+} from "@repo/media-service";
 
 export class ArchivePasswordRequiredError extends Error {
   constructor(

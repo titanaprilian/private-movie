@@ -77,8 +77,8 @@ export function genreRepository<
         .where(
           and(
             ne(genres.id, id),
-            or(eq(genres.name, input.name), eq(genres.slug, input.slug))
-          )
+            or(eq(genres.name, input.name), eq(genres.slug, input.slug)),
+          ),
         );
 
       if (conflict.length > 0) {
@@ -126,5 +126,3 @@ export function genreRepository<
     },
   };
 }
-
-export const createGenreRepositoryInternal = genreRepository;

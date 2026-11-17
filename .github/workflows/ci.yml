@@ -47,8 +47,10 @@ jobs:
           bun x turbo run db:migrate --env-mode=loose
           bun x turbo run typecheck lint test test:integration build --continue --filter=!@repo/android-tv --env-mode=loose
 
-      - name: Run Quality Gate Check (L3)
-        run: bun run gate:check
+      - name: Run Quality Gate Check & Tests (L4)
+        run: |
+          bun run test:gate
+          bun run gate:check
 
       - name: Run Trivy vulnerability scanner (dependency audit)
         uses: aquasecurity/trivy-action@v0.36.0
