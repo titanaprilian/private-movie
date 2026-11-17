@@ -4,9 +4,6 @@
   "workspaces": {
     "": {
       "name": "monorepo-starter",
-      "dependencies": {
-        "drizzle-orm": "^0.45.2",
-      },
       "devDependencies": {
         "husky": "^9.1.7",
         "jscpd": "^5.4.3",

@@ -45,7 +45,7 @@ export interface UploadPipelineDeps {
  * provider can be resolved at all does the environment-based S3 fallback
  * apply (and it must be configured, otherwise `S3NotConfiguredError`).
  */
-export async function resolveUploadStorage(
+async function resolveUploadStorage(
   deps: UploadPipelineDeps,
   jobId: string,
 ): Promise<{ s3: S3StorageService; providerId: string | null }> {
@@ -75,7 +75,7 @@ export async function resolveUploadStorage(
   return { s3: fallback, providerId: null };
 }
 
-export async function finalizeUploadJob(
+async function finalizeUploadJob(
   deps: UploadPipelineDeps,
   jobId: string,
 ): Promise<void> {

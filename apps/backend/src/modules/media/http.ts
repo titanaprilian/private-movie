@@ -8,14 +8,7 @@ import type { MediaRoutesOptions } from "./schemas";
 
 export type { MediaRoutesOptions } from "./schemas";
 export { embedRoutes } from "./internal/embed/routes";
-export {
-  AD_BLOCK_NOOP_RESPONSE,
-  UNTHROTTLED_MEDIA_ROUTE_PREFIXES,
-  embedHashParamsSchema,
-  proxyEmbedQuerySchema,
-  relayQuerySchema,
-  sourceCheckBodySchema,
-} from "./schemas";
+export { UNTHROTTLED_MEDIA_ROUTE_PREFIXES } from "./schemas";
 
 export const mediaRoutes = (options: MediaRoutesOptions) =>
   new Elysia({ name: "media-routes" })

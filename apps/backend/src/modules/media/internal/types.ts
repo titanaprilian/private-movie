@@ -1,7 +1,10 @@
-import type { BatchOngoingScrapeResult, MediaService } from "@repo/media-service";
+import type {
+  BatchOngoingScrapeResult,
+  MediaService,
+} from "@repo/media-service";
 import type { DbClient } from "@repo/db";
 
-export interface SchedulerLogger {
+interface SchedulerLogger {
   info(message: string, ...args: unknown[]): void;
   error(message: string, ...args: unknown[]): void;
   warn(message: string, ...args: unknown[]): void;
@@ -61,8 +64,6 @@ export interface CryptoSubtleRequestPayload {
   data: string;
   signature?: string;
 }
-
-export type SourceCheckType = "direct" | "embed" | "s3";
 
 export interface SourceProbeResult {
   status: "working" | "broken";

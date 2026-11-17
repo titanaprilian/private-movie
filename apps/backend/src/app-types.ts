@@ -12,7 +12,7 @@ import type { RateLimitPluginOptions } from "./plugins";
 import type { ArchiveFetchFn, ArchiveIngestJobManager } from "./modules/series";
 import type { StorageOverrides, StorageService } from "./modules/storage";
 
-export type SchedulerDeps = Pick<
+type SchedulerDeps = Pick<
   OngoingSeasonScheduler,
   | "runNow"
   | "isEnabled"
@@ -25,7 +25,7 @@ export type SchedulerDeps = Pick<
   | "updateInterval"
 >;
 
-export type StorageUsageProvider = Pick<StorageService, "getTotalUsedBytes">;
+type StorageUsageProvider = Pick<StorageService, "getTotalUsedBytes">;
 
 export interface CreateAppOverrides {
   fetchHtml?: FetchFn;
