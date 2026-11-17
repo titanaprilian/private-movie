@@ -50,7 +50,7 @@ type ParsedPage = ReturnType<ReturnType<typeof cheerio.load>>;
 const readInfoRow = (
   box: ParsedPage,
   load: CheerioAPI,
-  label: string
+  label: string,
 ): string | null => {
   const row = box
     .find(".infozingle b")
@@ -58,11 +58,7 @@ const readInfoRow = (
     .first()
     .parent();
   if (row.length === 0) return null;
-  const text = row
-    .text()
-    .replace(label, "")
-    .replace(":", "")
-    .trim();
+  const text = row.text().replace(label, "").replace(":", "").trim();
   return text || null;
 };
 
@@ -83,7 +79,7 @@ export function parseEpisodeOrder(title: string): number | null {
 }
 
 const decodeMirrorContent = (
-  encoded: string
+  encoded: string,
 ): Omit<ParsedMirrorPayload, "label"> => {
   const json = Buffer.from(encoded, "base64").toString("utf8");
   const parsed = JSON.parse(json) as { id: number; i: number; q: string };
@@ -92,7 +88,7 @@ const decodeMirrorContent = (
 
 const extractMirrorPayloads = (
   box: ParsedPage,
-  load: CheerioAPI
+  load: CheerioAPI,
 ): ParsedMirrorPayload[] =>
   box
     .find(".mirrorstream .m720p li a[data-content]")
@@ -103,11 +99,14 @@ const extractMirrorPayloads = (
     })
     .get();
 
-const QUALITY_PATTERN = /(?:^|[^a-zA-Z])(\d{3,4}p)(?:$|[^a-zA-Z])/i;
+export const QUALITY_PATTERN = /(?:^|[^a-zA-Z])(\d{3,4}p)(?:$|[^a-zA-Z])/i;
 
-export function extractDirectVideoSources(
-  html: string
-): ParsedVideoSource[] {
+export function extractQualityFromLabel(label: string): string | null {
+  const match = label.match(QUALITY_PATTERN);
+  return match ? match[1].toLowerCase() : null;
+}
+
+export function extractDirectVideoSources(html: string): ParsedVideoSource[] {
   const load = cheerio.load(html, null, false);
   const sources: ParsedVideoSource[] = [];
 
@@ -126,7 +125,10 @@ export function extractDirectVideoSources(
         const pathname = urlObj.pathname;
         const extIndex = pathname.lastIndexOf(".mp4");
         if (extIndex !== -1) {
-          const label = pathname.substring(pathname.lastIndexOf("/") + 1, extIndex);
+          const label = pathname.substring(
+            pathname.lastIndexOf("/") + 1,
+            extIndex,
+          );
           const qualityMatch = label.match(QUALITY_PATTERN);
           const quality = qualityMatch ? qualityMatch[1].toLowerCase() : null;
 
@@ -144,9 +146,9 @@ export function extractDirectVideoSources(
   load("video[src]").each((_, el) => {
     const src = load(el).attr("src");
     if (!src || !src.endsWith(".mp4")) return;
-    
+
     // Avoid adding duplicates if we already found the same URL in JS
-    if (sources.some(s => s.url === src)) return;
+    if (sources.some((s) => s.url === src)) return;
 
     try {
       const urlObj = new URL(src);
@@ -177,10 +179,10 @@ export const extractAjaxActions = (html: string): ParsedAjaxActions | null => {
   if (!scriptContent) return null;
 
   const nonceAction = scriptContent.match(
-    /\{\s*action\s*:\s*["']([a-f0-9]{32})["']\s*\}/
+    /\{\s*action\s*:\s*["']([a-f0-9]{32})["']\s*\}/,
   )?.[1];
   const mirrorAction = scriptContent.match(
-    /\{[^}]*nonce\s*:[^}]*action\s*:\s*["']([a-f0-9]{32})["']/
+    /\{[^}]*nonce\s*:[^}]*action\s*:\s*["']([a-f0-9]{32})["']/,
   )?.[1];
   if (!nonceAction || !mirrorAction) return null;
 
@@ -248,9 +250,8 @@ export const parseEpisodePage = (html: string): ParsedEpisodePage => {
   if (episodes.length > 0) metadata.episodes = episodes;
 
   const animePageUrl =
-    box
-      .find(".prevnext .flir a:contains('See All Episodes')")
-      .attr("href") ?? undefined;
+    box.find(".prevnext .flir a:contains('See All Episodes')").attr("href") ??
+    undefined;
   if (animePageUrl) metadata.animePageUrl = animePageUrl;
 
   const downloadLinks = box
@@ -276,18 +277,24 @@ export const parseEpisodePage = (html: string): ParsedEpisodePage => {
   const mirrorPayloads = extractMirrorPayloads(box, load);
   const ajaxActions = extractAjaxActions(html);
 
-  return { title, videoSources, videoType, metadata, mirrorPayloads, ajaxActions };
+  return {
+    title,
+    videoSources,
+    videoType,
+    metadata,
+    mirrorPayloads,
+    ajaxActions,
+  };
 };
 
 export function mappedEpisodePageToScrapedEpisode(
-  parsed: ParsedEpisodePage
+  parsed: ParsedEpisodePage,
 ): ScrapedEpisode {
-  const episodes: ScrapedEpisodeRef[] | undefined = parsed.metadata.episodes?.map(
-    (ep) => ({
+  const episodes: ScrapedEpisodeRef[] | undefined =
+    parsed.metadata.episodes?.map((ep) => ({
       title: ep.label,
       url: ep.url,
-    })
-  );
+    }));
 
   return {
     title: parsed.title,
@@ -312,7 +319,7 @@ export function parseFullListHtml(html: string): ScrapedFullListItem[] {
   const seenUrls = new Set<string>();
 
   const anchors = load(
-    ".daftarkartun .jdlbar ul li a, .bariskelom .penzbar .jdlbar ul li a, a.hodebgst"
+    ".daftarkartun .jdlbar ul li a, .bariskelom .penzbar .jdlbar ul li a, a.hodebgst",
   );
 
   anchors.each((_, el) => {
