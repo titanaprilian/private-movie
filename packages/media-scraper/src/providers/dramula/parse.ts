@@ -8,7 +8,7 @@ import type {
 
 export function formatDramulaUrl(
   rawUrlOrPath: string,
-  showSlug?: string
+  showSlug?: string,
 ): string {
   const trimmed = rawUrlOrPath.trim();
   if (!trimmed) return "";
@@ -45,9 +45,9 @@ export function formatDramulaUrl(
   return `https://dramula.com/watch/${trimmed}`;
 }
 
-function extractEpisodesFromPayload(
+export function extractEpisodesFromPayload(
   payload: any,
-  showSlugFromUrl?: string
+  showSlugFromUrl?: string,
 ): ScrapedEpisodeRef[] {
   const result: ScrapedEpisodeRef[] = [];
   if (!payload || typeof payload !== "object") return result;
@@ -122,7 +122,7 @@ function extractEpisodesFromPayload(
 export async function parseDramulaEpisodeHtml(
   html: string,
   url?: string,
-  fetchFn?: FetchFn
+  fetchFn?: FetchFn,
 ): Promise<ScrapedEpisode> {
   const $ = cheerio.load(html);
 
@@ -240,7 +240,7 @@ export async function parseDramulaEpisodeHtml(
         if (episodes.length === 0) {
           const extractedList = extractEpisodesFromPayload(
             bodyObj,
-            showSlugFromDataUrl
+            showSlugFromDataUrl,
           );
           for (const item of extractedList) {
             if (!episodes.some((e) => e.url === item.url)) {
@@ -252,7 +252,7 @@ export async function parseDramulaEpisodeHtml(
         if (videoSources.length === 0 && targetEpisodeSlug) {
           const matchingEp = findMatchingEpisodeInPayload(
             bodyObj,
-            targetEpisodeSlug
+            targetEpisodeSlug,
           );
           if (matchingEp) {
             const epId = matchingEp.id ?? matchingEp.episode_id;
@@ -283,7 +283,7 @@ export async function parseDramulaEpisodeHtml(
 
 function findMatchingEpisodeInPayload(
   payload: any,
-  targetSlug: string
+  targetSlug: string,
 ): any | null {
   if (!payload || typeof payload !== "object" || !targetSlug) return null;
 
@@ -300,10 +300,7 @@ function findMatchingEpisodeInPayload(
     return false;
   }
 
-  if (
-    matches(payload) &&
-    (payload.id != null || payload.episode_id != null)
-  ) {
+  if (matches(payload) && (payload.id != null || payload.episode_id != null)) {
     return payload;
   }
   if (
@@ -352,10 +349,7 @@ function findMatchingEpisodeInPayload(
   }
 
   for (const ep of rawEpisodes) {
-    if (
-      matches(ep) &&
-      (ep?.id != null || ep?.episode_id != null)
-    ) {
+    if (matches(ep) && (ep?.id != null || ep?.episode_id != null)) {
       return ep;
     }
   }
