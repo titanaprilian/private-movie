@@ -30,6 +30,7 @@ jobs:
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       TURBO_DAEMON: "false"
       DATABASE_URL: postgres://postgres:root_password@localhost:5432/private_movie_test
+      LOG_LEVEL: warn
 
     steps:
       - name: Checkout
