@@ -808,19 +808,10 @@ export function createSeriesRepositoryInternal<
           .limit(10);
       });
 
-      const recentlyAddedRowsPromise = db
-        .select()
-        .from(series)
-        .where(hasVideoSources)
-        .orderBy(desc(series.createdAt))
-        .limit(10);
-
-      const [ongoingPerGenreList, bigGenreRowsList, recentlyAddedRows] =
-        await Promise.all([
-          Promise.all(ongoingPerGenrePromises),
-          Promise.all(bigGenreRowsPromises),
-          recentlyAddedRowsPromise,
-        ]);
+      const [ongoingPerGenreList, bigGenreRowsList] = await Promise.all([
+        Promise.all(ongoingPerGenrePromises),
+        Promise.all(bigGenreRowsPromises),
+      ]);
 
       let fallbackOngoingRows: SeriesRow[] = [];
       const hasAnyPerGenreOngoing = ongoingPerGenreList.some(
@@ -836,7 +827,6 @@ export function createSeriesRepositoryInternal<
       for (const s of [
         ...heroSeriesList,
         ...fallbackOngoingRows,
-        ...recentlyAddedRows,
         ...ongoingPerGenreList.flat(),
         ...bigGenreRowsList.flat(),
       ]) {
@@ -943,10 +933,6 @@ export function createSeriesRepositoryInternal<
             enrichedMap.get(s.id)!,
           ),
         })),
-        {
-          title: "Recently Added",
-          items: recentlyAddedRows.map((s) => enrichedMap.get(s.id)!),
-        },
       ].filter((row) => row.items.length > 0);
 
       const recentlyAddedEpisodes = await fetchRecentlyAddedEpisodes();
