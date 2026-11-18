@@ -196,6 +196,7 @@ async function buildJobApp() {
   return buildApp({
     archiveStagingBaseDir: testTmpBase,
     archiveFetchFn: makeFakeFetchFn(),
+    archiveExtractor: makeFakeExtractor() as never,
     s3StorageService: makeFakeS3() as never,
   });
 }

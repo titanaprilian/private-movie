@@ -9,7 +9,11 @@ import type {
 import type { AuthRateLimitOptions } from "./modules/authentication/schemas";
 import type { OngoingSeasonScheduler } from "./modules/media";
 import type { RateLimitPluginOptions } from "./plugins";
-import type { ArchiveFetchFn, ArchiveIngestJobManager } from "./modules/series";
+import type {
+  ArchiveExtractor,
+  ArchiveFetchFn,
+  ArchiveIngestJobManager,
+} from "./modules/series";
 import type { StorageOverrides, StorageService } from "./modules/storage";
 
 type SchedulerDeps = Pick<
@@ -29,6 +33,7 @@ type StorageUsageProvider = Pick<StorageService, "getTotalUsedBytes">;
 
 export interface CreateAppOverrides {
   fetchHtml?: FetchFn;
+  archiveExtractor?: ArchiveExtractor;
   archiveFetchFn?: ArchiveFetchFn;
   storageUsageProvider?: StorageUsageProvider;
   storage?: StorageOverrides;

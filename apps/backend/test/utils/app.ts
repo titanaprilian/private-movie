@@ -6,7 +6,11 @@ import type {
   S3StorageService,
   StorageProviderRegistry,
 } from "@repo/media-service";
-import type { ArchiveFetchFn, ArchiveIngestJobManager } from "@/modules/series";
+import type {
+  ArchiveExtractor,
+  ArchiveFetchFn,
+  ArchiveIngestJobManager,
+} from "@/modules/series";
 import type { AuthRateLimitOptions } from "@/modules/authentication/schemas";
 import type { RateLimitPluginOptions } from "@/plugins";
 import type { StorageOverrides } from "@/modules/storage";
@@ -33,6 +37,7 @@ export interface BuildAppOptions {
   browserFn?: BrowserFn;
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
+  archiveExtractor?: ArchiveExtractor;
   archiveFetchFn?: ArchiveFetchFn;
   archiveStagingBaseDir?: string;
   archiveJobService?: ArchiveIngestJobManager;
@@ -105,6 +110,7 @@ export async function buildApp(options?: BuildAppOptions): Promise<App> {
     archiveJobService: options?.archiveJobService,
     overrides: {
       fetchHtml: options?.fetchHtml ?? defaultFetchHtml,
+      archiveExtractor: options?.archiveExtractor,
       archiveFetchFn: options?.archiveFetchFn,
       storageUsageProvider:
         options?.storageUsageProvider ??
