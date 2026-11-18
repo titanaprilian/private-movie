@@ -31,6 +31,7 @@ Read before non-trivial features or bug fixes:
 ## Testing
 
 - Tests live in `test/unit/<feature>/` and `test/integration/<feature>/`, mirroring module structure; Vitest via `packages/config-vitest`.
+- E2E smoke tests: `bun run test:e2e` (runs Playwright web + API suite against seeded Postgres).
 - **Never** run bare `bun test` or `bun --filter=<pkg> test` — Bun's built-in runner ignores filters and runs the whole monorepo. Use `bun run test:<pkg> -- -- <file>` for targeted runs.
 - TDD: tests first; targeted runs only during red→green. The full suite (`bun run test`) is a reviewer/orchestrator action.
 
