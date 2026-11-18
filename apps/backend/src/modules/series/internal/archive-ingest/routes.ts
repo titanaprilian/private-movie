@@ -44,6 +44,9 @@ export const archiveIngestRoutes = (options: SeriesRoutesOptions) => {
       videoSourceRepository,
       s3StorageService: options.s3StorageService,
       storageProviderRegistry: storageRegistry,
+      ...(options.archiveExtractor
+        ? { extractor: options.archiveExtractor }
+        : {}),
       ...(options.archiveFetchFn ? { fetchFn: options.archiveFetchFn } : {}),
       ...(options.archiveStagingBaseDir
         ? { stagingBaseDir: options.archiveStagingBaseDir }

@@ -12,6 +12,7 @@ import type {
   ArchiveFetchFn,
   ArchiveIngestJobManager,
 } from "./internal/archive-ingest/services/job";
+import type { ArchiveExtractor } from "./internal/archive-ingest/services/extractor";
 
 export interface SeriesRoutesOptions {
   db: DbClient;
@@ -21,6 +22,7 @@ export interface SeriesRoutesOptions {
   s3StorageService?: S3StorageService;
   storageProviderRegistry?: StorageProviderRegistry;
   mediaService?: MediaService;
+  archiveExtractor?: ArchiveExtractor;
   archiveFetchFn?: ArchiveFetchFn;
   archiveStagingBaseDir?: string;
   archiveJobService?: ArchiveIngestJobManager;
