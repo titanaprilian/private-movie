@@ -4,6 +4,11 @@ test.describe("Web Playback Happy Path", () => {
   test("login -> series detail -> playback page loads and player mounts", async ({
     page,
   }) => {
+    // Pre-dismiss adblock advisory dialog to avoid asynchronous overlay race conditions
+    await page.addInitScript(() => {
+      window.localStorage.setItem("adblock_warning_dismissed", "true");
+    });
+
     // 1. Visit admin login page
     await page.goto("/admin/login");
     await expect(page.getByTestId("admin-login-card")).toBeVisible();
@@ -34,11 +39,11 @@ test.describe("Web Playback Happy Path", () => {
       timeout: 15000,
     });
 
-    // Dismiss adblock recommendation dialog if presented
+    // Ensure any modal overlay is dismissed if presented
     const adblockDismiss = page.getByRole("button", {
       name: /continue anyway/i,
     });
-    if (await adblockDismiss.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (await adblockDismiss.isVisible({ timeout: 1000 }).catch(() => false)) {
       await adblockDismiss.click();
     }
 
