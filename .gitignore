@@ -6,6 +6,11 @@ coverage/
 .env*
 *.sql
 !packages/db/drizzle/*.sql
+!test/e2e/fixtures/*.sql
+
+# Playwright artifacts
+test-results/
+playwright-report/
 *.dump
 
 # Prompt & shell scratch references

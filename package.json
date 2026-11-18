@@ -26,6 +26,8 @@
     "test:db": "turbo run test --filter=@repo/db",
     "test:contracts": "turbo run test --filter=@repo/contracts",
     "test:integration": "turbo run test:integration",
+    "test:e2e": "bun run test/e2e/fixtures/seed.ts && playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium",
     "db:generate": "cd packages/db && bun run db:generate",
     "db:push": "cd packages/db && bun run db:push",
     "db:migrate": "cd packages/db && bun run db:migrate",
@@ -47,10 +49,12 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "husky": "^9.1.7",
     "jscpd": "^5.4.3",
     "knip": "^6.45.1",
     "lint-staged": "^17.6.0",
+    "postgres": "^3.4.9",
     "prettier": "^3.6.2",
     "turbo": "^2.5",
     "vitest": "^3.1.0"

@@ -39,6 +39,11 @@
       "env": ["DATABASE_URL", "JWT_SECRET"],
       "cache": false
     },
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "env": ["DATABASE_URL", "JWT_SECRET", "VITE_API_URL", "PORT", "CI"]
+    },
     "lint": {},
     "typecheck": {
       "dependsOn": ["^build"]
