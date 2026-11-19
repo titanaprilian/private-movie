@@ -43,7 +43,7 @@
     "verify:android": "turbo run typecheck lint --filter=@repo/android-tv",
     "lint:staged": "lint-staged",
     "scope:check": "bash scripts/check-commit-scope.sh",
-    "test:gate": "vitest run test/unit/scripts/gate-check.test.ts",
+    "test:gate": "vitest run test/unit/scripts/",
     "gate:check": "bun scripts/gate-check.ts",
     "gate:knip": "knip",
     "gate:jscpd": "jscpd --config .jscpd.json",
