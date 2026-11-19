@@ -1,21 +1,6 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-
-function resolveTestDatabaseUrl(): string {
-  const envUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
-  if (!envUrl) {
-    throw new Error("DATABASE_URL or TEST_DATABASE_URL is not defined");
-  }
-  try {
-    const url = new URL(envUrl);
-    if (!url.pathname.endsWith("_test")) {
-      url.pathname = `${url.pathname}_test`;
-    }
-    return url.toString();
-  } catch {
-    return envUrl;
-  }
-}
+import { resolveTestDatabaseUrl } from "./env";
 
 export const databaseUrl = resolveTestDatabaseUrl();
 

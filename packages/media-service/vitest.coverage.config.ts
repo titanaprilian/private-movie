@@ -1,6 +1,7 @@
 import path from "node:path";
 import { defineConfig, mergeConfig } from "vitest/config";
 import nodeConfig from "@repo/config-vitest/vitest.node";
+import { resolveTestDatabaseUrl } from "./test/utils/env";
 
 export default mergeConfig(
   nodeConfig,
@@ -14,10 +15,7 @@ export default mergeConfig(
       setupFiles: [path.resolve(import.meta.dirname, "./test/setup.ts")],
       env: {
         NODE_ENV: "test",
-        DATABASE_URL:
-          process.env.TEST_DATABASE_URL ??
-          process.env.DATABASE_URL ??
-          "postgres://postgres:root_password@localhost:5432/private_movie_test",
+        DATABASE_URL: resolveTestDatabaseUrl(),
       },
       coverage: {
         thresholds: {

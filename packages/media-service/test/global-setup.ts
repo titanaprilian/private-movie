@@ -2,27 +2,11 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { MIGRATIONS_FOLDER } from "@repo/db";
-
-function resolveTestDatabaseUrl(): string {
-  const envUrl =
-    process.env.TEST_DATABASE_URL ??
-    process.env.DATABASE_URL ??
-    "postgres://postgres:root_password@localhost:5432/private_movie_test";
-  try {
-    const url = new URL(envUrl);
-    if (!url.pathname.endsWith("_test")) {
-      url.pathname = `${url.pathname}_test`;
-    }
-    return url.toString();
-  } catch {
-    return envUrl;
-  }
-}
-
-const TEST_DATABASE_URL = resolveTestDatabaseUrl();
+import { resolveTestDatabaseUrl } from "./utils/env";
 
 export async function setup() {
-  const url = new URL(TEST_DATABASE_URL);
+  const testDatabaseUrl = resolveTestDatabaseUrl();
+  const url = new URL(testDatabaseUrl);
   const dbName = url.pathname.slice(1);
   const adminUrl = `${url.protocol}//${url.username}:${url.password}@${url.hostname}:${url.port}/postgres`;
 
@@ -38,7 +22,7 @@ export async function setup() {
     await adminSql.end();
   }
 
-  const testSql = postgres(TEST_DATABASE_URL);
+  const testSql = postgres(testDatabaseUrl);
   const testDb = drizzle(testSql);
 
   try {
