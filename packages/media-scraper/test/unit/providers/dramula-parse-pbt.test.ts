@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
-import { extractEpisodesFromPayload, formatDramulaUrl } from "../../../src";
+import {
+  extractEpisodesFromPayload,
+  formatDramulaUrl,
+  parseDramulaEpisodeHtml,
+} from "../../../src";
 
 describe("Dramula property-based tests", () => {
   describe("formatDramulaUrl PBT", () => {
@@ -161,6 +165,128 @@ describe("Dramula property-based tests", () => {
           );
         }),
         { numRuns: 100 },
+      );
+    });
+  });
+
+  describe("parseDramulaEpisodeHtml PBT", () => {
+    it("never crashes and always returns valid ScrapedEpisode for arbitrary HTML", async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.string(), async (html) => {
+          const result = await parseDramulaEpisodeHtml(html);
+          const urls = result.episodes?.map((e) => e.url) ?? [];
+          const uniqueUrls = new Set(urls);
+
+          return (
+            typeof result.title === "string" &&
+            result.title.length > 0 &&
+            Array.isArray(result.videoSources) &&
+            Array.isArray(result.episodes) &&
+            urls.length === uniqueUrls.size
+          );
+        }),
+        { numRuns: 100 },
+      );
+    });
+
+    it("extracts title, embed video source, and episode tiles from synthetic HTML", async () => {
+      const titleArb = fc
+        .stringMatching(/^[a-zA-Z0-9 ]{1,30}$/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      const embedUrlArb = fc
+        .stringMatching(/^[a-z0-9_-]{3,15}$/)
+        .map((s) => `https://embed.example.com/${s}`);
+      const slugArb = fc
+        .stringMatching(/^[a-z0-9_-]{3,15}$/)
+        .filter((s) => s.length > 0);
+
+      await fc.assert(
+        fc.asyncProperty(
+          titleArb,
+          embedUrlArb,
+          fc.array(slugArb, { minLength: 1, maxLength: 5 }),
+          async (title, embedUrl, slugs) => {
+            const tiles = slugs
+              .map(
+                (slug, i) =>
+                  `<a class="episode-tile" href="/watch/drama/${slug}">Episode ${i + 1}</a>`,
+              )
+              .join("\n");
+
+            const html = `
+              <ol><span aria-current="page">${title}</span></ol>
+              <iframe src="${embedUrl}"></iframe>
+              <div class="episodes">${tiles}</div>
+            `;
+
+            const result = await parseDramulaEpisodeHtml(html);
+            const expectedCount = new Set(
+              slugs.map((s) => `https://dramula.com/watch/drama/${s}`),
+            ).size;
+
+            return (
+              result.title === title &&
+              result.videoSources.length === 1 &&
+              result.videoSources[0]?.url === embedUrl &&
+              result.episodes?.length === expectedCount
+            );
+          },
+        ),
+        { numRuns: 80 },
+      );
+    });
+
+    it("parses embedded SvelteKit fetched JSON data without throwing", async () => {
+      const showSlugArb = fc
+        .stringMatching(/^[a-z0-9_-]{3,15}$/)
+        .filter((s) => s.length > 0);
+      const epSlugArb = fc
+        .stringMatching(/^[a-z0-9_-]{3,15}$/)
+        .filter((s) => s.length > 0);
+
+      await fc.assert(
+        fc.asyncProperty(
+          showSlugArb,
+          fc.array(epSlugArb, { minLength: 1, maxLength: 5 }),
+          async (showSlug, epSlugs) => {
+            const episodesData = epSlugs.map((s, idx) => ({
+              title: `Ep ${idx + 1}`,
+              slug: s,
+              url: `/watch/${showSlug}/${s}`,
+            }));
+
+            const scriptPayload = {
+              body: JSON.stringify({
+                data: {
+                  slug: showSlug,
+                  episodes: episodesData,
+                },
+              }),
+            };
+
+            const html = `
+              <h1>Sample Show</h1>
+              <script data-sveltekit-fetched data-url="/api/shows/${showSlug}">
+                ${JSON.stringify(scriptPayload)}
+              </script>
+            `;
+
+            const result = await parseDramulaEpisodeHtml(html);
+            const uniqueExpected = new Set(
+              epSlugs.map((s) => `https://dramula.com/watch/${showSlug}/${s}`),
+            ).size;
+
+            return (
+              result.title === "Sample Show" &&
+              result.episodes?.length === uniqueExpected &&
+              result.episodes.every((ep) =>
+                ep.url.startsWith(`https://dramula.com/watch/${showSlug}/`),
+              )
+            );
+          },
+        ),
+        { numRuns: 80 },
       );
     });
   });
