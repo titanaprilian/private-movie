@@ -9,6 +9,9 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     services:
       postgres:
@@ -45,7 +48,7 @@ jobs:
       - name: Run CI pipeline
         run: |
           bun x turbo run db:migrate --env-mode=loose
-          bun x turbo run typecheck lint test test:integration build --continue --filter=!@repo/android-tv --env-mode=loose
+          bun x turbo run typecheck lint test:coverage test:integration build --continue --filter=!@repo/android-tv --env-mode=loose
 
       - name: Run Structural Quality Gates (L5)
         run: |
@@ -64,12 +67,17 @@ jobs:
           severity: "CRITICAL"
           skip-dirs: "node_modules,apps/android-tv/.gradle,apps/android-tv/build"
 
-      - name: Run coverage
-        run: bun x turbo run test:coverage --continue --filter=!@repo/android-tv --env-mode=loose
-
       - name: Coverage summary
         if: always()
         run: bun scripts/coverage-summary.ts
+
+      - name: Post coverage sticky comment
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        continue-on-error: true
+        with:
+          header: coverage-summary
+          path: coverage/summary.md
 
       - name: Upload coverage reports
         if: always()

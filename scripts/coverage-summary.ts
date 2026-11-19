@@ -1,5 +1,11 @@
 #!/usr/bin/env bun
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 
 type Metric = { pct: number };
@@ -39,5 +45,8 @@ const table = [
 ].join("\n");
 
 console.log(table);
+mkdirSync("coverage", { recursive: true });
+writeFileSync(path.join("coverage", "summary.md"), table);
+
 if (process.env.GITHUB_STEP_SUMMARY)
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, table);

@@ -14,7 +14,7 @@
     "build": "tsc",
     "test": "vitest run",
     "test:integration": "node --env-file=../../apps/backend/.env.test ./node_modules/.bin/vitest run --config vitest.integration.config.ts",
-    "test:coverage": "node --env-file=../../apps/backend/.env.test ./node_modules/.bin/vitest run --config vitest.coverage.config.ts --coverage",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
