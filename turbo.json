@@ -35,12 +35,12 @@
       "cache": false
     },
     "@repo/backend#test:integration": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "test:coverage"],
       "env": ["DATABASE_URL", "JWT_SECRET"],
       "cache": false
     },
     "@repo/media-service#test:integration": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "test:coverage"],
       "env": [
         "DATABASE_URL",
         "TEST_DATABASE_URL",
