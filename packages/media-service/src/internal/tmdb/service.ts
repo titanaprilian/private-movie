@@ -8,39 +8,19 @@ import {
   seriesToGenres,
   slugifyGenre,
 } from "@repo/db";
-import { createSeriesRepositoryInternal, type SeriesWithSeasons } from "../series/repository";
+import {
+  createSeriesRepositoryInternal,
+  type SeriesWithSeasons,
+} from "../series/repository";
 
 export class TmdbFetchError extends Error {
-  constructor(message: string, public readonly status?: number) {
+  constructor(
+    message: string,
+    public readonly status?: number,
+  ) {
     super(message);
     this.name = "TmdbFetchError";
   }
-}
-
-export async function fetchFromTmdb<T>(endpoint: string): Promise<T> {
-  const url = `https://api.themoviedb.org/3${endpoint}`;
-  const apiKey = process.env.TMDB_API_KEY || process.env.TMDB_TOKEN;
-
-  if (!apiKey) {
-    throw new TmdbFetchError("Missing TMDB_API_KEY environment variable", 400);
-  }
-
-  const headers: Record<string, string> = {
-    accept: "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  };
-
-  const response = await fetch(url, { headers });
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      return fetchFromTmdb<T>(endpoint);
-    }
-    throw new TmdbFetchError(`TMDB API Error: ${response.status} ${response.statusText}`, response.status);
-  }
-
-  return response.json() as Promise<T>;
 }
 
 export interface TmdbImageItem {
@@ -61,13 +41,13 @@ export function selectBestTmdbLogo(logos?: TmdbImageItem[]): string | null {
   }
 
   const englishLogos = logos.filter(
-    (img) => img.iso_639_1 === "en" || img.iso_639_1 === "en-US"
+    (img) => img.iso_639_1 === "en" || img.iso_639_1 === "en-US",
   );
 
   const candidatePool = englishLogos.length > 0 ? englishLogos : logos;
 
   const sorted = [...candidatePool].sort(
-    (a, b) => (b.vote_average ?? 0) - (a.vote_average ?? 0)
+    (a, b) => (b.vote_average ?? 0) - (a.vote_average ?? 0),
   );
 
   const bestLogo = sorted[0];
@@ -282,10 +262,11 @@ export interface GetTmdbPreviewOptions {
 
 export async function getTmdbPreview(
   tmdbId: number,
-  options: GetTmdbPreviewOptions = {}
+  options: GetTmdbPreviewOptions = {},
 ): Promise<TmdbPreviewResult> {
   const type = options.type ?? "tv";
-  const token = options.token ?? process.env.TMDB_TOKEN ?? process.env.TMDB_API_KEY;
+  const token =
+    options.token ?? process.env.TMDB_TOKEN ?? process.env.TMDB_API_KEY;
 
   const defaultFetchFn = async (url: string, init?: RequestInit) => {
     const res = await fetch(url, init);
@@ -294,7 +275,10 @@ export async function getTmdbPreview(
         await new Promise((resolve) => setTimeout(resolve, 2000));
         return defaultFetchFn(url, init);
       }
-      throw new TmdbFetchError(`TMDB API Error: ${res.status} ${res.statusText}`, res.status);
+      throw new TmdbFetchError(
+        `TMDB API Error: ${res.status} ${res.statusText}`,
+        res.status,
+      );
     }
     return res.json();
   };
@@ -309,16 +293,25 @@ export async function getTmdbPreview(
 
   if (type === "movie") {
     const movieUrl = `https://api.themoviedb.org/3/movie/${tmdbId}`;
-    const movieData: TmdbSeriesDetailsResponse = await fetchFn(movieUrl, { headers });
+    const movieData: TmdbSeriesDetailsResponse = await fetchFn(movieUrl, {
+      headers,
+    });
 
     const movieImagesUrl = `https://api.themoviedb.org/3/movie/${tmdbId}/images?include_image_language=en-US,en,null`;
-    const movieImagesData: TmdbImagesResponse = await fetchFn(movieImagesUrl, { headers }).catch(() => ({ logos: [] }));
+    const movieImagesData: TmdbImagesResponse = await fetchFn(movieImagesUrl, {
+      headers,
+    }).catch(() => ({ logos: [] }));
     const logoUrl = selectBestTmdbLogo(movieImagesData.logos);
 
     const title = movieData.title || movieData.name || `Movie ${tmdbId}`;
-    const posterUrl = movieData.poster_path ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null;
-    const backdropUrl = movieData.backdrop_path ? `https://image.tmdb.org/t/p/original${movieData.backdrop_path}` : null;
-    const releaseDate = movieData.release_date || movieData.first_air_date || null;
+    const posterUrl = movieData.poster_path
+      ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+      : null;
+    const backdropUrl = movieData.backdrop_path
+      ? `https://image.tmdb.org/t/p/original${movieData.backdrop_path}`
+      : null;
+    const releaseDate =
+      movieData.release_date || movieData.first_air_date || null;
 
     return {
       title,
@@ -332,30 +325,47 @@ export async function getTmdbPreview(
     };
   } else {
     const seriesUrl = `https://api.themoviedb.org/3/tv/${tmdbId}`;
-    const seriesData: TmdbSeriesDetailsResponse = await fetchFn(seriesUrl, { headers });
+    const seriesData: TmdbSeriesDetailsResponse = await fetchFn(seriesUrl, {
+      headers,
+    });
 
     const tvImagesUrl = `https://api.themoviedb.org/3/tv/${tmdbId}/images?include_image_language=en-US,en,null`;
-    const tvImagesData: TmdbImagesResponse = await fetchFn(tvImagesUrl, { headers }).catch(() => ({ logos: [] }));
+    const tvImagesData: TmdbImagesResponse = await fetchFn(tvImagesUrl, {
+      headers,
+    }).catch(() => ({ logos: [] }));
     const logoUrl = selectBestTmdbLogo(tvImagesData.logos);
 
     const includeSpecials = options.includeSpecials ?? false;
-    const rawSeasons = Array.isArray(seriesData.seasons) ? seriesData.seasons : [];
-    const targetSeasons = rawSeasons.filter((s) => (includeSpecials ? s.season_number >= 0 : s.season_number > 0));
+    const rawSeasons = Array.isArray(seriesData.seasons)
+      ? seriesData.seasons
+      : [];
+    const targetSeasons = rawSeasons.filter((s) =>
+      includeSpecials ? s.season_number >= 0 : s.season_number > 0,
+    );
 
     const seasonsPreview: TmdbPreviewSeason[] = targetSeasons.map((s) => ({
       seasonNumber: s.season_number,
       name: s.name || `Season ${s.season_number}`,
       episodeCount: s.episode_count ?? 0,
-      posterUrl: s.poster_path ? `https://image.tmdb.org/t/p/w500${s.poster_path}` : null,
+      posterUrl: s.poster_path
+        ? `https://image.tmdb.org/t/p/w500${s.poster_path}`
+        : null,
     }));
 
-    const totalEpisodes = seasonsPreview.reduce((sum, s) => sum + s.episodeCount, 0);
+    const totalEpisodes = seasonsPreview.reduce(
+      (sum, s) => sum + s.episodeCount,
+      0,
+    );
 
     return {
       title: seriesData.name || seriesData.title || `Series ${tmdbId}`,
       overview: seriesData.overview ?? "",
-      posterUrl: seriesData.poster_path ? `https://image.tmdb.org/t/p/w500${seriesData.poster_path}` : null,
-      backdropUrl: seriesData.backdrop_path ? `https://image.tmdb.org/t/p/original${seriesData.backdrop_path}` : null,
+      posterUrl: seriesData.poster_path
+        ? `https://image.tmdb.org/t/p/w500${seriesData.poster_path}`
+        : null,
+      backdropUrl: seriesData.backdrop_path
+        ? `https://image.tmdb.org/t/p/original${seriesData.backdrop_path}`
+        : null,
       logoUrl,
       releaseDate: seriesData.first_air_date ?? null,
       genres: (seriesData.genres || []).map((g) => g.name),
@@ -369,12 +379,15 @@ export async function getTmdbPreview(
 
 export async function fetchTmdbSeriesData(
   tmdbId: number,
-  options: FetchTmdbSeriesOptions = {}
+  options: FetchTmdbSeriesOptions = {},
 ): Promise<TmdbSeriesFullData> {
   const type = options.type ?? "tv";
   const log = options.logFn ?? console.log;
-  const sleepFn = options.sleepFn ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
-  const token = options.token ?? process.env.TMDB_TOKEN ?? process.env.TMDB_API_KEY;
+  const sleepFn =
+    options.sleepFn ??
+    ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const token =
+    options.token ?? process.env.TMDB_TOKEN ?? process.env.TMDB_API_KEY;
 
   const defaultFetchFn = async (url: string, init?: RequestInit) => {
     const res = await fetch(url, init);
@@ -384,7 +397,10 @@ export async function fetchTmdbSeriesData(
         await sleepFn(2000);
         return defaultFetchFn(url, init);
       }
-      throw new TmdbFetchError(`TMDB API Error: ${res.status} ${res.statusText}`, res.status);
+      throw new TmdbFetchError(
+        `TMDB API Error: ${res.status} ${res.statusText}`,
+        res.status,
+      );
     }
     return res.json();
   };
@@ -399,15 +415,24 @@ export async function fetchTmdbSeriesData(
 
   if (type === "movie") {
     const movieUrl = `https://api.themoviedb.org/3/movie/${tmdbId}`;
-    const movieData: TmdbSeriesDetailsResponse = await fetchFn(movieUrl, { headers });
+    const movieData: TmdbSeriesDetailsResponse = await fetchFn(movieUrl, {
+      headers,
+    });
 
     const title = movieData.title || movieData.name || `Movie ${tmdbId}`;
-    const posterPath = movieData.poster_path ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null;
-    const backdropPath = movieData.backdrop_path ? `https://image.tmdb.org/t/p/original${movieData.backdrop_path}` : null;
-    const releaseDate = movieData.release_date || movieData.first_air_date || null;
+    const posterPath = movieData.poster_path
+      ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+      : null;
+    const backdropPath = movieData.backdrop_path
+      ? `https://image.tmdb.org/t/p/original${movieData.backdrop_path}`
+      : null;
+    const releaseDate =
+      movieData.release_date || movieData.first_air_date || null;
     const overview = movieData.overview ?? null;
     const imagesUrl = `https://api.themoviedb.org/3/movie/${tmdbId}/images?include_image_language=en-US,en,null`;
-    const imagesData: TmdbImagesResponse = await fetchFn(imagesUrl, { headers }).catch(() => ({ logos: [] }));
+    const imagesData: TmdbImagesResponse = await fetchFn(imagesUrl, {
+      headers,
+    }).catch(() => ({ logos: [] }));
     const logoUrl = selectBestTmdbLogo(imagesData.logos);
 
     const artificialSeason: TmdbSeasonFullData = {
@@ -445,34 +470,47 @@ export async function fetchTmdbSeriesData(
     };
   } else {
     const seriesUrl = `https://api.themoviedb.org/3/tv/${tmdbId}`;
-    const seriesData: TmdbSeriesDetailsResponse = await fetchFn(seriesUrl, { headers });
+    const seriesData: TmdbSeriesDetailsResponse = await fetchFn(seriesUrl, {
+      headers,
+    });
 
     const tvImagesUrl = `https://api.themoviedb.org/3/tv/${tmdbId}/images?include_image_language=en-US,en,null`;
-    const tvImagesData: TmdbImagesResponse = await fetchFn(tvImagesUrl, { headers }).catch(() => ({ logos: [] }));
+    const tvImagesData: TmdbImagesResponse = await fetchFn(tvImagesUrl, {
+      headers,
+    }).catch(() => ({ logos: [] }));
     const logoUrl = selectBestTmdbLogo(tvImagesData.logos);
 
     const includeSpecials = options.includeSpecials ?? false;
-    const rawSeasons = Array.isArray(seriesData.seasons) ? seriesData.seasons : [];
-    const targetSeasons = rawSeasons.filter((s) => (includeSpecials ? s.season_number >= 0 : s.season_number > 0));
+    const rawSeasons = Array.isArray(seriesData.seasons)
+      ? seriesData.seasons
+      : [];
+    const targetSeasons = rawSeasons.filter((s) =>
+      includeSpecials ? s.season_number >= 0 : s.season_number > 0,
+    );
 
     const seasonsFullData: TmdbSeasonFullData[] = await Promise.all(
       targetSeasons.map(async (sMeta) => {
         const seasonUrl = `https://api.themoviedb.org/3/tv/${tmdbId}/season/${sMeta.season_number}`;
-        const seasonData: TmdbSeasonDetailsResponse = await fetchFn(seasonUrl, { headers });
+        const seasonData: TmdbSeasonDetailsResponse = await fetchFn(seasonUrl, {
+          headers,
+        });
 
         return {
           seasonNumber: sMeta.season_number,
-          name: seasonData.name ?? sMeta.name ?? `Season ${sMeta.season_number}`,
+          name:
+            seasonData.name ?? sMeta.name ?? `Season ${sMeta.season_number}`,
           overview: seasonData.overview ?? sMeta.overview ?? null,
           posterPath: seasonData.poster_path
             ? `https://image.tmdb.org/t/p/w500${seasonData.poster_path}`
             : sMeta.poster_path
-            ? `https://image.tmdb.org/t/p/w500${sMeta.poster_path}`
-            : null,
+              ? `https://image.tmdb.org/t/p/w500${sMeta.poster_path}`
+              : null,
           airDate: seasonData.air_date ?? sMeta.air_date ?? null,
-          episodes: Array.isArray(seasonData.episodes) ? seasonData.episodes : [],
+          episodes: Array.isArray(seasonData.episodes)
+            ? seasonData.episodes
+            : [],
         };
-      })
+      }),
     );
 
     return {
@@ -480,8 +518,12 @@ export async function fetchTmdbSeriesData(
       type: "tv",
       title: seriesData.name || seriesData.title || `Series ${tmdbId}`,
       description: seriesData.overview ?? null,
-      posterPath: seriesData.poster_path ? `https://image.tmdb.org/t/p/w500${seriesData.poster_path}` : null,
-      backdropPath: seriesData.backdrop_path ? `https://image.tmdb.org/t/p/original${seriesData.backdrop_path}` : null,
+      posterPath: seriesData.poster_path
+        ? `https://image.tmdb.org/t/p/w500${seriesData.poster_path}`
+        : null,
+      backdropPath: seriesData.backdrop_path
+        ? `https://image.tmdb.org/t/p/original${seriesData.backdrop_path}`
+        : null,
       logoUrl,
       firstAirDate: seriesData.first_air_date ?? null,
       voteAverage: seriesData.vote_average ?? null,
@@ -493,7 +535,7 @@ export async function fetchTmdbSeriesData(
 
 export async function saveTmdbSeries(
   db: any,
-  data: TmdbSeriesFullData
+  data: TmdbSeriesFullData,
 ): Promise<SeriesWithSeasons> {
   let createdSeriesRow: any = null;
 
@@ -541,7 +583,7 @@ export async function saveTmdbSeries(
     // 3. Upsert Genres and Create Series-to-Genre Relations
     const rawGenres = data.genres || [];
     const genreNames = Array.from(
-      new Set(rawGenres.map((g) => g.trim()).filter(Boolean))
+      new Set(rawGenres.map((g) => g.trim()).filter(Boolean)),
     );
 
     if (genreNames.length > 0) {
@@ -635,7 +677,9 @@ export async function saveTmdbSeries(
               title: episode.name || `Episode ${episode.episode_number}`,
               description: episode.overview,
               thumbnailUrl,
-              rating: episode.vote_average ? String(episode.vote_average) : null,
+              rating: episode.vote_average
+                ? String(episode.vote_average)
+                : null,
               airDate: episode.air_date ? new Date(episode.air_date) : null,
               duration: episode.runtime || null,
               tmdbSeasonNumber: season.seasonNumber,
@@ -648,24 +692,25 @@ export async function saveTmdbSeries(
   });
 
   const hasSelect = typeof db.select === "function";
-  const seriesRepository = hasSelect ? createSeriesRepositoryInternal(db) : null;
-  const foundSeries = seriesRepository && createdSeriesRow ? await seriesRepository.findById(createdSeriesRow.id).catch(() => null) : null;
-  const childSeasons = hasSelect && createdSeriesRow
-    ? await db
-        .select()
-        .from(seasons)
-        .where(eq(seasons.seriesId, createdSeriesRow.id))
-        .orderBy(asc(seasons.createdAt))
-        .catch(() => [])
-    : [];
+  const seriesRepository = hasSelect
+    ? createSeriesRepositoryInternal(db)
+    : null;
+  const foundSeries =
+    seriesRepository && createdSeriesRow
+      ? await seriesRepository.findById(createdSeriesRow.id).catch(() => null)
+      : null;
+  const childSeasons =
+    hasSelect && createdSeriesRow
+      ? await db
+          .select()
+          .from(seasons)
+          .where(eq(seasons.seriesId, createdSeriesRow.id))
+          .orderBy(asc(seasons.createdAt))
+          .catch(() => [])
+      : [];
 
   return {
     ...(foundSeries ?? createdSeriesRow ?? {}),
     seasons: childSeasons ?? [],
   };
 }
-
-export async function fetchTmdbSeasonDetails(tmdbId: number, seasonNumber: number): Promise<TmdbSeasonResponse> {
-  return fetchFromTmdb<TmdbSeasonResponse>(`/tv/${tmdbId}/season/${seasonNumber}?language=en-US`);
-}
-

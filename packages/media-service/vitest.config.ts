@@ -5,6 +5,7 @@ export default mergeConfig(
   nodeConfig,
   defineConfig({
     test: {
+      dir: "./test/unit",
       passWithNoTests: true,
       coverage: {
         thresholds: {
