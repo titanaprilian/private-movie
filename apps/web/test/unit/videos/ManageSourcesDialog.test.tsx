@@ -1,5 +1,12 @@
-import { renderWithProviders, screen, waitFor, fireEvent } from '../../utils';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import {
+  renderWithProviders,
+  screen,
+  waitFor,
+  fireEvent,
+  mockFetch,
+  noop,
+} from '../../utils';
+import { describe, expect, it, vi, beforeEach, afterAll } from 'vitest';
 import { ManageSourcesDialog } from '@/modules/videos/internal/sources';
 import type {
   Episode,
@@ -70,24 +77,22 @@ const mockProviders = [
   },
 ];
 
-interface FetchRoute {
-  match: (url: string, method: string) => boolean;
-  handler: (url: string, init?: RequestInit) => Response | Promise<Response>;
-}
-
-let fetchRoutes: FetchRoute[] = [];
-let fetchCalls: Array<{ url: string; method: string; init?: RequestInit }> = [];
-
 function registerFetchRoute(
   match: (url: string, method: string) => boolean,
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>
 ) {
-  fetchRoutes.unshift({ match, handler });
+  mockFetch.use(
+    '*',
+    (_path, url, method) => match(url.toString(), method),
+    (ctx) => {
+      return handler(ctx.url.toString(), ctx.init);
+    }
+  );
 }
 
 interface MockXhrInstance {
   open: ReturnType<typeof vi.fn>;
-  setRequestHeader: ReturnType<typeof vi.fn>;
+  setRequestHeader: (header: string, value: string) => void;
   abort: ReturnType<typeof vi.fn>;
   upload: {
     onprogress:
@@ -110,7 +115,7 @@ interface MockXhrInstance {
 function createMockXhr() {
   const mockXhr: MockXhrInstance = {
     open: vi.fn(),
-    setRequestHeader: vi.fn(),
+    setRequestHeader: () => {},
     abort: vi.fn(() => {
       mockXhr.onabort?.();
     }),
@@ -138,53 +143,19 @@ function createMockXhr() {
 describe('ManageSourcesDialog component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchCalls = [];
-    fetchRoutes = [
-      {
-        match: (url) => url.includes('/api/storage/providers'),
-        handler: () =>
-          new Response(JSON.stringify({ data: mockProviders }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }),
-      },
-    ];
+    mockFetch.reset();
+    mockFetch.get('/api/storage/providers', { data: mockProviders });
+  });
 
-    vi.spyOn(globalThis, 'fetch').mockImplementation(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url =
-          typeof input === 'string'
-            ? input
-            : input instanceof URL
-              ? input.toString()
-              : input.url;
-        const method = init?.method?.toUpperCase() ?? 'GET';
-        fetchCalls.push({ url, method, init });
-
-        for (const route of fetchRoutes) {
-          if (route.match(url, method)) {
-            return route.handler(url, init);
-          }
-        }
-
-        return new Response(
-          JSON.stringify({
-            error: { message: `Unhandled route: ${method} ${url}` },
-          }),
-          {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-    );
+  afterAll(() => {
+    mockFetch.restore();
   });
 
   it('renders nothing when closed or episode is null', () => {
     const { container } = renderWithProviders(
       <ManageSourcesDialog
         open={false}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -309,7 +280,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -329,7 +300,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -376,7 +347,7 @@ describe('ManageSourcesDialog component', () => {
     const { user, queryClient } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -440,7 +411,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -497,7 +468,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -532,7 +503,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -576,7 +547,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -647,7 +618,7 @@ describe('ManageSourcesDialog component', () => {
     const { user, queryClient } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={s3Episode}
         seriesId="series-1"
       />
@@ -735,7 +706,7 @@ describe('ManageSourcesDialog component', () => {
     const { user, queryClient } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={s3Episode}
         seriesId="series-1"
       />
@@ -766,7 +737,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -796,7 +767,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -869,7 +840,7 @@ describe('ManageSourcesDialog component', () => {
     const { user, queryClient } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -944,7 +915,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -998,7 +969,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -1063,7 +1034,7 @@ describe('ManageSourcesDialog component', () => {
     const { user } = renderWithProviders(
       <ManageSourcesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         episode={mockEpisode}
         seriesId="series-1"
       />
@@ -1112,7 +1083,7 @@ describe('ManageSourcesDialog component', () => {
       const { user } = renderWithProviders(
         <ManageSourcesDialog
           open={true}
-          onOpenChange={vi.fn()}
+          onOpenChange={noop}
           episode={mockEpisode}
           seriesId="series-1"
         />
@@ -1136,7 +1107,7 @@ describe('ManageSourcesDialog component', () => {
       const { user } = renderWithProviders(
         <ManageSourcesDialog
           open={true}
-          onOpenChange={vi.fn()}
+          onOpenChange={noop}
           episode={mockEpisode}
           seriesId="series-1"
         />
@@ -1182,7 +1153,7 @@ describe('ManageSourcesDialog component', () => {
       const { user } = renderWithProviders(
         <ManageSourcesDialog
           open={true}
-          onOpenChange={vi.fn()}
+          onOpenChange={noop}
           episode={s3MultiEpisode}
           seriesId="series-1"
         />
