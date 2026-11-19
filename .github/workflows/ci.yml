@@ -159,7 +159,21 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: bun run test:e2e:install
+        run: |
+          for attempt in 1 2 3; do
+            echo "Installing Playwright Chromium (attempt $attempt/3)..."
+            if bun run test:e2e:install; then
+              break
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Installation failed, running apt-get update --fix-missing before retry..."
+              sudo apt-get update --fix-missing || true
+              sleep 5
+            else
+              echo "Failed to install Playwright after 3 attempts."
+              exit 1
+            fi
+          done
 
       - name: Run DB Migrations
         run: bun x turbo run db:migrate --env-mode=loose
