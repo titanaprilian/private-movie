@@ -1,4 +1,12 @@
-import { renderWithProviders, screen, userEvent, fireEvent, act, within } from '../../../utils';
+import {
+  renderWithProviders,
+  screen,
+  userEvent,
+  fireEvent,
+  act,
+  within,
+  noop,
+} from '../../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 
@@ -11,15 +19,23 @@ describe('VideoPlayer component', () => {
       writable: true,
     });
     // Mock HTMLMediaElement prototype methods for JSDOM
-    window.HTMLMediaElement.prototype.play = vi.fn().mockImplementation(() => Promise.resolve());
-    window.HTMLMediaElement.prototype.pause = vi.fn().mockImplementation(() => {});
-    window.HTMLMediaElement.prototype.load = vi.fn().mockImplementation(() => {});
+    window.HTMLMediaElement.prototype.play = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve());
+    window.HTMLMediaElement.prototype.pause = vi
+      .fn()
+      .mockImplementation(() => {});
+    window.HTMLMediaElement.prototype.load = () => {};
   });
 
   it('renders native video element with correct src prop', () => {
-    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" title="Test Video" />);
+    renderWithProviders(
+      <VideoPlayer src="https://example.com/video.mp4" title="Test Video" />
+    );
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     expect(video).toBeInTheDocument();
     expect(video.src).toBe('https://example.com/video.mp4');
   });
@@ -29,7 +45,9 @@ describe('VideoPlayer component', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const controlBar = screen.getByTestId('video-control-bar');
-    const playButton = within(controlBar).getByRole('button', { name: /^play$/i });
+    const playButton = within(controlBar).getByRole('button', {
+      name: /^play$/i,
+    });
     expect(playButton).toBeInTheDocument();
     // Verify 3D tactile styling classes
     expect(playButton.className).toMatch(/rounded-full/);
@@ -43,7 +61,9 @@ describe('VideoPlayer component', () => {
     video.dispatchEvent(new Event('play'));
 
     // After play is called, button should show Pause label/aria-label
-    const pauseButton = await within(controlBar).findByRole('button', { name: /^pause$/i });
+    const pauseButton = await within(controlBar).findByRole('button', {
+      name: /^pause$/i,
+    });
     expect(pauseButton).toBeInTheDocument();
 
     await user.click(pauseButton);
@@ -56,7 +76,9 @@ describe('VideoPlayer component', () => {
 
     const controlBar = screen.getByTestId('video-control-bar');
     expect(controlBar).toBeInTheDocument();
-    expect(controlBar.className).toMatch(/rounded-full|rounded-3xl|rounded-2xl/);
+    expect(controlBar.className).toMatch(
+      /rounded-full|rounded-3xl|rounded-2xl/
+    );
 
     const video = screen.getByTestId('custom-video-element');
     // Simulate playing
@@ -82,13 +104,17 @@ describe('VideoPlayer component', () => {
   it('renders 8px progress scrubber with keyboard and touch seek support', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    const scrubbers = screen.getAllByLabelText(/progress/i) as HTMLInputElement[];
+    const scrubbers = screen.getAllByLabelText(
+      /progress/i
+    ) as HTMLInputElement[];
     expect(scrubbers.length).toBeGreaterThan(0);
     const scrubber = scrubbers[0];
     expect(scrubber).toBeInTheDocument();
     expect(scrubber).toHaveAttribute('type', 'range');
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     Object.defineProperty(video, 'duration', { value: 120, writable: true });
     fireEvent.loadedMetadata(video);
 
@@ -110,7 +136,9 @@ describe('VideoPlayer component', () => {
 
     // Change to low volume (<= 0.5)
     fireEvent.change(volumeSlider, { target: { value: '0.4' } });
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     expect(video.volume).toBe(0.4);
     expect(screen.getByTestId('volume-icon-low')).toBeInTheDocument();
 
@@ -145,7 +173,9 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+    const settingsButton = screen.getAllByRole('button', {
+      name: /video settings/i,
+    })[0];
     expect(settingsButton).toBeInTheDocument();
 
     await user.click(settingsButton);
@@ -160,14 +190,20 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
+    await user.click(
+      screen.getAllByRole('button', { name: /video settings/i })[0]
+    );
 
     const speed15Btn = screen.getByRole('button', { name: '1.5x' });
     await user.click(speed15Btn);
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     expect(video.playbackRate).toBe(1.5);
-    expect(screen.queryByRole('button', { name: '1.5x' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: '1.5x' })
+    ).not.toBeInTheDocument();
   });
 
   it('renders quality selection options when qualities prop is provided', async () => {
@@ -185,7 +221,9 @@ describe('VideoPlayer component', () => {
       />
     );
 
-    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
+    await user.click(
+      screen.getAllByRole('button', { name: /video settings/i })[0]
+    );
 
     expect(screen.getByRole('button', { name: '1080p' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '720p' })).toBeInTheDocument();
@@ -199,7 +237,9 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
+    await user.click(
+      screen.getAllByRole('button', { name: /video settings/i })[0]
+    );
 
     expect(screen.queryByText(/quality/i)).not.toBeInTheDocument();
   });
@@ -218,11 +258,17 @@ describe('VideoPlayer component', () => {
       />
     );
 
-    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
+    await user.click(
+      screen.getAllByRole('button', { name: /video settings/i })[0]
+    );
 
     expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Indonesian' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /subtitles off/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Indonesian' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /subtitles off/i })
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'English' }));
     expect(onSubtitleChange).toHaveBeenCalledWith('en');
@@ -232,7 +278,9 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
+    await user.click(
+      screen.getAllByRole('button', { name: /video settings/i })[0]
+    );
 
     expect(screen.queryByText(/subtitles/i)).not.toBeInTheDocument();
   });
@@ -241,8 +289,12 @@ describe('VideoPlayer component', () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-    await user.click(screen.getAllByRole('button', { name: /video settings/i })[0]);
-    await user.click(screen.getAllByRole('button', { name: /shortcuts & gestures/i })[0]);
+    await user.click(
+      screen.getAllByRole('button', { name: /video settings/i })[0]
+    );
+    await user.click(
+      screen.getAllByRole('button', { name: /shortcuts & gestures/i })[0]
+    );
 
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
@@ -266,8 +318,10 @@ describe('VideoPlayer component', () => {
 
     // "f" toggles fullscreen
     const container = screen.getByTestId('video-player-container');
-    container.requestFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
-    document.exitFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
+    container.requestFullscreen = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve());
+    document.exitFullscreen = () => Promise.resolve();
     fireEvent.keyDown(document, { key: 'f' });
     expect(container.requestFullscreen).toHaveBeenCalledTimes(1);
 
@@ -282,9 +336,12 @@ describe('VideoPlayer component', () => {
 
     const container = screen.getByTestId('video-player-container');
     // Simulate iOS Safari where requestFullscreen is missing or rejects
-    container.requestFullscreen = vi.fn().mockImplementation(() => Promise.reject(new Error('Not supported')));
+    container.requestFullscreen = () =>
+      Promise.reject(new Error('Not supported'));
 
-    const fsButton = screen.getAllByRole('button', { name: /^fullscreen$/i })[0];
+    const fsButton = screen.getAllByRole('button', {
+      name: /^fullscreen$/i,
+    })[0];
     await user.click(fsButton);
 
     expect(container.className).toContain('fixed');
@@ -296,7 +353,9 @@ describe('VideoPlayer component', () => {
     expect(screen.getByTestId('video-center-controls')).toBeInTheDocument();
 
     // Clicking exit fullscreen removes pseudo-fullscreen classes
-    const exitFsButton = screen.getAllByRole('button', { name: /exit fullscreen/i })[0];
+    const exitFsButton = screen.getAllByRole('button', {
+      name: /exit fullscreen/i,
+    })[0];
     await user.click(exitFsButton);
 
     expect(container.className).not.toContain('fixed');
@@ -307,9 +366,15 @@ describe('VideoPlayer component', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const centerControls = screen.getByTestId('video-center-controls');
-    const skipBack = within(centerControls).getByRole('button', { name: /skip back 10 seconds/i });
-    const playBtn = within(centerControls).getByRole('button', { name: /^play$/i });
-    const skipForward = within(centerControls).getByRole('button', { name: /skip forward 10 seconds/i });
+    const skipBack = within(centerControls).getByRole('button', {
+      name: /skip back 10 seconds/i,
+    });
+    const playBtn = within(centerControls).getByRole('button', {
+      name: /^play$/i,
+    });
+    const skipForward = within(centerControls).getByRole('button', {
+      name: /skip forward 10 seconds/i,
+    });
 
     expect(skipBack.className).toMatch(/w-9/);
     expect(skipBack.className).toMatch(/h-9/);
@@ -328,17 +393,21 @@ describe('VideoPlayer component', () => {
       <VideoPlayer
         src="https://example.com/video.mp4"
         hasNextEpisode
-        onNextEpisode={vi.fn()}
+        onNextEpisode={noop}
       />
     );
 
     // Episodic navigation lives in the watch toolbar + corner card only
-    expect(screen.queryByRole('button', { name: /next episode/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /next episode/i })
+    ).not.toBeInTheDocument();
   });
 
   it('does not render Next Episode button when hasNextEpisode is false', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
-    expect(screen.queryByRole('button', { name: /next episode/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /next episode/i })
+    ).not.toBeInTheDocument();
   });
 
   it('shows floating corner card when playback reaches the final 25 seconds', () => {
@@ -346,11 +415,13 @@ describe('VideoPlayer component', () => {
       <VideoPlayer
         src="https://example.com/video.mp4"
         hasNextEpisode
-        onNextEpisode={vi.fn()}
+        onNextEpisode={noop}
       />
     );
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     Object.defineProperty(video, 'duration', { value: 100, writable: true });
     fireEvent.loadedMetadata(video);
     expect(screen.queryByTestId('next-episode-card')).not.toBeInTheDocument();
@@ -370,7 +441,7 @@ describe('VideoPlayer component', () => {
       <VideoPlayer
         src="https://example.com/video.mp4"
         hasNextEpisode
-        onNextEpisode={vi.fn()}
+        onNextEpisode={noop}
       />
     );
     const video = screen.getByTestId('custom-video-element');
@@ -389,7 +460,9 @@ describe('VideoPlayer component', () => {
       />
     );
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     Object.defineProperty(video, 'duration', { value: 100, writable: true });
     fireEvent.loadedMetadata(video);
     Object.defineProperty(video, 'currentTime', { value: 80, writable: true });
@@ -419,7 +492,9 @@ describe('VideoPlayer component', () => {
       />
     );
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     Object.defineProperty(video, 'duration', { value: 100, writable: true });
     fireEvent.loadedMetadata(video);
     Object.defineProperty(video, 'currentTime', { value: 90, writable: true });
@@ -441,7 +516,9 @@ describe('VideoPlayer component', () => {
       />
     );
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     Object.defineProperty(video, 'duration', { value: 100, writable: true });
     fireEvent.loadedMetadata(video);
     Object.defineProperty(video, 'currentTime', { value: 90, writable: true });
@@ -492,13 +569,17 @@ describe('VideoPlayer component', () => {
     expect(controlBar.className).toContain('opacity-100');
 
     // First tap hides controls
-    fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 100, clientY: 100 }],
+    });
     expect(controlBar.className).toContain('opacity-0');
     expect(window.HTMLMediaElement.prototype.pause).not.toHaveBeenCalled();
     expect(window.HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
 
     // Second tap shows controls again, still without pausing
-    fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 100, clientY: 100 }],
+    });
     expect(controlBar.className).toContain('opacity-100');
     expect(window.HTMLMediaElement.prototype.pause).not.toHaveBeenCalled();
   });
@@ -513,10 +594,14 @@ describe('VideoPlayer component', () => {
     const controlBar = screen.getByTestId('video-control-bar');
 
     // Tap to show + reset timer
-    fireEvent.touchStart(container, { touches: [{ clientX: 50, clientY: 50 }] });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 50, clientY: 50 }],
+    });
     // Ensure visible state: tap twice if first tap hid controls
     if (controlBar.className.includes('opacity-0')) {
-      fireEvent.touchStart(container, { touches: [{ clientX: 50, clientY: 50 }] });
+      fireEvent.touchStart(container, {
+        touches: [{ clientX: 50, clientY: 50 }],
+      });
     }
     expect(controlBar.className).toContain('opacity-100');
 
@@ -563,8 +648,12 @@ describe('VideoPlayer component', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const controlBar = screen.getByTestId('video-control-bar');
-    const backButton = within(controlBar).getByRole('button', { name: /skip back 10 seconds/i });
-    const forwardButton = within(controlBar).getByRole('button', { name: /skip forward 10 seconds/i });
+    const backButton = within(controlBar).getByRole('button', {
+      name: /skip back 10 seconds/i,
+    });
+    const forwardButton = within(controlBar).getByRole('button', {
+      name: /skip forward 10 seconds/i,
+    });
     expect(backButton).toBeInTheDocument();
     expect(forwardButton).toBeInTheDocument();
     // Chunky 3D tactile styling adjacent to Play/Pause
@@ -574,7 +663,9 @@ describe('VideoPlayer component', () => {
     expect(forwardButton.className).toMatch(/rounded-full/);
     expect(forwardButton.className).toMatch(/shadow-\[0_3px_0/);
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     Object.defineProperty(video, 'duration', { value: 120, writable: true });
     video.currentTime = 50;
 
@@ -602,7 +693,9 @@ describe('VideoPlayer component', () => {
       toJSON: () => {},
     });
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     Object.defineProperty(video, 'duration', { value: 120, writable: true });
     video.currentTime = 50;
 
@@ -611,8 +704,12 @@ describe('VideoPlayer component', () => {
     expect(controlBar.className).toContain('opacity-100');
 
     // Double-tap left zone: seeks without toggling controls visibility
-    fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
-    fireEvent.touchStart(container, { touches: [{ clientX: 120, clientY: 100 }] });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 100, clientY: 100 }],
+    });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 120, clientY: 100 }],
+    });
 
     expect(video.currentTime).toBe(40);
     expect(controlBar.className).toContain('opacity-100');
@@ -638,12 +735,18 @@ describe('VideoPlayer component', () => {
       toJSON: () => {},
     });
 
-    const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+    const video = screen.getByTestId(
+      'custom-video-element'
+    ) as HTMLVideoElement;
     Object.defineProperty(video, 'duration', { value: 120, writable: true });
     video.currentTime = 50;
 
-    fireEvent.touchStart(container, { touches: [{ clientX: 900, clientY: 100 }] });
-    fireEvent.touchStart(container, { touches: [{ clientX: 880, clientY: 100 }] });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 900, clientY: 100 }],
+    });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 880, clientY: 100 }],
+    });
 
     expect(video.currentTime).toBe(60);
     const ripple = screen.getByTestId('gesture-ripple-forward');
@@ -656,7 +759,9 @@ describe('VideoPlayer component', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const container = screen.getByTestId('video-player-container');
-    container.requestFullscreen = vi.fn().mockImplementation(() => Promise.resolve());
+    container.requestFullscreen = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve());
 
     fireEvent.doubleClick(container);
     expect(container.requestFullscreen).toHaveBeenCalled();
@@ -668,13 +773,17 @@ describe('VideoPlayer component', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     expect(screen.getByTestId('gesture-hint')).toBeInTheDocument();
-    expect(screen.getByText(/double tap sides to skip 10s/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/double tap sides to skip 10s/i)
+    ).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(2500);
     });
     expect(screen.queryByTestId('gesture-hint')).not.toBeInTheDocument();
-    expect(window.localStorage.getItem('pm_player_gesture_hint_seen')).not.toBeNull();
+    expect(
+      window.localStorage.getItem('pm_player_gesture_hint_seen')
+    ).not.toBeNull();
 
     vi.useRealTimers();
   });
@@ -700,30 +809,52 @@ describe('VideoPlayer component', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const centerControls = screen.getByTestId('video-center-controls');
-    expect(within(centerControls).getByRole('button', { name: /skip back 10 seconds/i })).toBeInTheDocument();
-    expect(within(centerControls).getByRole('button', { name: /^play$/i })).toBeInTheDocument();
-    expect(within(centerControls).getByRole('button', { name: /skip forward 10 seconds/i })).toBeInTheDocument();
+    expect(
+      within(centerControls).getByRole('button', {
+        name: /skip back 10 seconds/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(centerControls).getByRole('button', { name: /^play$/i })
+    ).toBeInTheDocument();
+    expect(
+      within(centerControls).getByRole('button', {
+        name: /skip forward 10 seconds/i,
+      })
+    ).toBeInTheDocument();
     expect(centerControls.className).toContain('opacity-100');
 
     const video = screen.getByTestId('custom-video-element');
     fireEvent.play(video);
     const container = screen.getByTestId('video-player-container');
-    fireEvent.touchStart(container, { touches: [{ clientX: 500, clientY: 100 }] });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 500, clientY: 100 }],
+    });
     expect(centerControls.className).toContain('opacity-0');
 
-    fireEvent.touchStart(container, { touches: [{ clientX: 500, clientY: 100 }] });
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 500, clientY: 100 }],
+    });
     expect(centerControls.className).toContain('opacity-100');
   });
 
   it('mobile bottom bar shows seek bar, time, settings and fullscreen without volume slider or title', () => {
-    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" title="Episode 3" />);
+    renderWithProviders(
+      <VideoPlayer src="https://example.com/video.mp4" title="Episode 3" />
+    );
 
     const mobileBar = screen.getByTestId('video-mobile-bar');
     expect(mobileBar.className).toMatch(/bg-gradient-to-t/);
     expect(within(mobileBar).getByLabelText(/progress/i)).toBeInTheDocument();
-    expect(within(mobileBar).getByRole('button', { name: /video settings/i })).toBeInTheDocument();
-    expect(within(mobileBar).getByRole('button', { name: /fullscreen/i })).toBeInTheDocument();
-    expect(within(mobileBar).queryByLabelText(/volume/i)).not.toBeInTheDocument();
+    expect(
+      within(mobileBar).getByRole('button', { name: /video settings/i })
+    ).toBeInTheDocument();
+    expect(
+      within(mobileBar).getByRole('button', { name: /fullscreen/i })
+    ).toBeInTheDocument();
+    expect(
+      within(mobileBar).queryByLabelText(/volume/i)
+    ).not.toBeInTheDocument();
     expect(within(mobileBar).queryByText('Episode 3')).not.toBeInTheDocument();
   });
 
@@ -771,7 +902,9 @@ describe('VideoPlayer component', () => {
       renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
       const container = screen.getByTestId('video-player-container');
-      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      const settingsButton = screen.getAllByRole('button', {
+        name: /video settings/i,
+      })[0];
       await user.click(settingsButton);
 
       const popover = screen.getByTestId('video-settings-popover');
@@ -794,7 +927,9 @@ describe('VideoPlayer component', () => {
         document.dispatchEvent(new Event('fullscreenchange'));
       });
 
-      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      const settingsButton = screen.getAllByRole('button', {
+        name: /video settings/i,
+      })[0];
       await user.click(settingsButton);
 
       const popover = screen.getByTestId('video-settings-popover');
@@ -802,7 +937,9 @@ describe('VideoPlayer component', () => {
       expect(container.contains(popover)).toBe(true);
 
       // Open Shortcuts & Gestures modal
-      const shortcutsButton = screen.getByRole('button', { name: /shortcuts & gestures/i });
+      const shortcutsButton = screen.getByRole('button', {
+        name: /shortcuts & gestures/i,
+      });
       await user.click(shortcutsButton);
 
       const dialog = screen.getByRole('dialog');
@@ -825,13 +962,18 @@ describe('VideoPlayer component', () => {
       renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
       const container = screen.getByTestId('video-player-container');
-      container.requestFullscreen = vi.fn().mockImplementation(() => Promise.reject(new Error('Not supported')));
+      container.requestFullscreen = () =>
+        Promise.reject(new Error('Not supported'));
 
-      const fsButton = screen.getAllByRole('button', { name: /^fullscreen$/i })[0];
+      const fsButton = screen.getAllByRole('button', {
+        name: /^fullscreen$/i,
+      })[0];
       await user.click(fsButton);
       expect(container.className).toContain('fixed');
 
-      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      const settingsButton = screen.getAllByRole('button', {
+        name: /video settings/i,
+      })[0];
       await user.click(settingsButton);
 
       const popover = screen.getByTestId('video-settings-popover');
@@ -852,9 +994,7 @@ describe('VideoPlayer component', () => {
             { id: '720p', label: '720p' },
           ]}
           onQualityChange={onQualityChange}
-          subtitles={[
-            { id: 'en', label: 'English' },
-          ]}
+          subtitles={[{ id: 'en', label: 'English' }]}
           onSubtitleChange={onSubtitleChange}
         />
       );
@@ -869,11 +1009,15 @@ describe('VideoPlayer component', () => {
         document.dispatchEvent(new Event('fullscreenchange'));
       });
 
-      const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+      const video = screen.getByTestId(
+        'custom-video-element'
+      ) as HTMLVideoElement;
       const playSpy = vi.spyOn(video, 'play');
       const pauseSpy = vi.spyOn(video, 'pause');
 
-      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      const settingsButton = screen.getAllByRole('button', {
+        name: /video settings/i,
+      })[0];
       await user.click(settingsButton);
 
       // Select quality (popover remains open)
@@ -912,12 +1056,16 @@ describe('VideoPlayer component', () => {
       const user = userEvent.setup();
       renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-      const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+      const video = screen.getByTestId(
+        'custom-video-element'
+      ) as HTMLVideoElement;
       const playSpy = vi.spyOn(video, 'play');
       const pauseSpy = vi.spyOn(video, 'pause');
 
       // 1. Open settings popover
-      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      const settingsButton = screen.getAllByRole('button', {
+        name: /video settings/i,
+      })[0];
       await user.click(settingsButton);
       expect(screen.getByTestId('video-settings-popover')).toBeInTheDocument();
 
@@ -929,7 +1077,9 @@ describe('VideoPlayer component', () => {
       await user.click(video);
 
       // Popover should close
-      expect(screen.queryByTestId('video-settings-popover')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('video-settings-popover')
+      ).not.toBeInTheDocument();
       expect(playSpy).not.toHaveBeenCalled();
       expect(pauseSpy).not.toHaveBeenCalled();
     });
@@ -938,12 +1088,16 @@ describe('VideoPlayer component', () => {
       const user = userEvent.setup();
       renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
-      const video = screen.getByTestId('custom-video-element') as HTMLVideoElement;
+      const video = screen.getByTestId(
+        'custom-video-element'
+      ) as HTMLVideoElement;
       const playSpy = vi.spyOn(video, 'play');
       const pauseSpy = vi.spyOn(video, 'pause');
 
       // 1. Open settings popover
-      const settingsButton = screen.getAllByRole('button', { name: /video settings/i })[0];
+      const settingsButton = screen.getAllByRole('button', {
+        name: /video settings/i,
+      })[0];
       await user.click(settingsButton);
       expect(screen.getByTestId('video-settings-popover')).toBeInTheDocument();
 
@@ -952,9 +1106,13 @@ describe('VideoPlayer component', () => {
 
       // 2. Touch tap the player container outside the control bar
       const container = screen.getByTestId('video-player-container');
-      fireEvent.touchStart(container, { touches: [{ clientX: 300, clientY: 200 }] });
+      fireEvent.touchStart(container, {
+        touches: [{ clientX: 300, clientY: 200 }],
+      });
 
-      expect(screen.queryByTestId('video-settings-popover')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('video-settings-popover')
+      ).not.toBeInTheDocument();
       expect(playSpy).not.toHaveBeenCalled();
       expect(pauseSpy).not.toHaveBeenCalled();
     });

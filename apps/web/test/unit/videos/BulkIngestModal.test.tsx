@@ -1,6 +1,20 @@
-import { renderWithProviders, screen, waitFor } from '../../utils';
+import {
+  renderWithProviders,
+  screen,
+  waitFor,
+  mockFetch,
+  noop,
+} from '../../utils';
 import { cleanup, configure } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import {
+  describe,
+  expect,
+  it,
+  vi,
+  beforeEach,
+  afterEach,
+  afterAll,
+} from 'vitest';
 import { BulkIngestModal } from '@/modules/videos/internal/ingestion';
 import type {
   ArchiveIngestJob,
@@ -182,8 +196,13 @@ describe('BulkIngestModal component', () => {
     cleanup();
   });
 
+  afterAll(() => {
+    mockFetch.restore();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.reset();
     fetchCalls = [];
     customInitialJob = null;
     customReadyJob = null;
@@ -191,24 +210,21 @@ describe('BulkIngestModal component', () => {
     customProgress = null;
     customProviders = null;
 
-    vi.spyOn(globalThis, 'fetch').mockImplementation(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url =
-          typeof input === 'string'
-            ? input
-            : input instanceof URL
-              ? input.toString()
-              : input.url;
-        const method = init?.method ?? 'GET';
+    mockFetch.use(
+      '*',
+      () => true,
+      async (ctx) => {
+        const url = ctx.url.toString();
+        const method = ctx.method;
         let body: unknown;
-        if (typeof init?.body === 'string') {
+        if (typeof ctx.init?.body === 'string') {
           try {
-            body = JSON.parse(init.body);
+            body = JSON.parse(ctx.init.body);
           } catch {
-            body = init.body;
+            body = ctx.init.body;
           }
         }
-        fetchCalls.push({ url, method, body, headers: init?.headers });
+        fetchCalls.push({ url, method, body, headers: ctx.init?.headers });
 
         if (url.includes('/api/auth/refresh')) {
           return jsonOk({ accessToken: 'mock-token' });
@@ -306,7 +322,7 @@ describe('BulkIngestModal component', () => {
     const { container } = renderWithProviders(
       <BulkIngestModal
         open={false}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -319,7 +335,7 @@ describe('BulkIngestModal component', () => {
     renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -340,7 +356,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -365,7 +381,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -398,7 +414,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -483,7 +499,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -515,7 +531,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -580,7 +596,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -602,7 +618,7 @@ describe('BulkIngestModal component', () => {
     renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -619,7 +635,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -659,7 +675,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -686,7 +702,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -740,7 +756,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -765,7 +781,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -816,7 +832,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -870,7 +886,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -909,7 +925,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -942,7 +958,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}
@@ -1016,7 +1032,7 @@ describe('BulkIngestModal component', () => {
     const { user } = renderWithProviders(
       <BulkIngestModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         seriesId="series-100"
         localEpisodes={mockLocalEpisodes}
         seasons={mockSeasons}

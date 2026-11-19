@@ -1,11 +1,21 @@
-import { renderWithProviders, screen, waitFor } from '../../utils';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { SyncTmdbModal, computeSyncDiff } from '@/modules/videos/internal/ingestion';
+import {
+  renderWithProviders,
+  screen,
+  waitFor,
+  mockFetch,
+  errorResponse,
+  noop,
+} from '../../utils';
+import { describe, expect, it, vi, beforeEach, afterAll } from 'vitest';
+import {
+  SyncTmdbModal,
+  computeSyncDiff,
+} from '@/modules/videos/internal/ingestion';
 import type {
   SeriesDetails,
   TmdbPreviewResult,
+  TmdbSyncPreviewResult,
 } from '@/modules/videos/internal/api';
-import * as apiModule from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
 
 vi.mock('sonner', () => ({
@@ -16,18 +26,6 @@ vi.mock('sonner', () => ({
   },
 }));
 
-vi.mock('@/modules/videos/internal/api', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/videos/internal/api')>(
-    '@/modules/videos/internal/api'
-  );
-  return {
-    ...actual,
-    syncSeriesTmdb: vi.fn(),
-    fetchSeriesTmdbPreview: vi.fn(),
-    fetchSeriesTmdbSyncPreview: vi.fn(),
-  };
-});
-
 const mockSeriesTv: SeriesDetails = {
   id: 'series-tv-1',
   sourceUrl: 'https://themoviedb.org/tv/1399',
@@ -35,7 +33,8 @@ const mockSeriesTv: SeriesDetails = {
   title: 'Game of Thrones',
   type: 'tv',
   tmdbId: 1399,
-  description: 'Seven noble families fight for control of the mythical land of Westeros.',
+  description:
+    'Seven noble families fight for control of the mythical land of Westeros.',
   posterUrl: 'https://image.tmdb.org/t/p/w500/got.jpg',
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -122,7 +121,8 @@ const mockSeriesTv: SeriesDetails = {
 
 const mockTmdbPreview: TmdbPreviewResult = {
   title: 'Game of Thrones',
-  overview: 'Seven noble families fight for control of the mythical land of Westeros.',
+  overview:
+    'Seven noble families fight for control of the mythical land of Westeros.',
   posterUrl: 'https://image.tmdb.org/t/p/w500/got.jpg',
   releaseDate: '2011-04-17',
   genres: ['Sci-Fi & Fantasy', 'Drama'],
@@ -234,27 +234,31 @@ describe('computeSyncDiff', () => {
 describe('SyncTmdbModal component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(apiModule.fetchSeriesTmdbSyncPreview).mockRejectedValue(
-      new Error('Sync preview endpoint fallback')
+    mockFetch.reset();
+    mockFetch.get(
+      '/api/series/:id/tmdb-sync-preview',
+      errorResponse('Sync preview endpoint fallback', 404, {
+        code: 'NOT_FOUND',
+      })
     );
+  });
+
+  afterAll(() => {
+    mockFetch.restore();
   });
 
   it('renders nothing when closed', () => {
     renderWithProviders(
-      <SyncTmdbModal
-        open={false}
-        onOpenChange={vi.fn()}
-        series={mockSeriesTv}
-      />
+      <SyncTmdbModal open={false} onOpenChange={noop} series={mockSeriesTv} />
     );
 
     expect(screen.queryByText('Sync with TMDB')).not.toBeInTheDocument();
   });
 
   it('fetches TMDB snapshot on open and displays preview and diff summary', async () => {
-    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
-      mockTmdbPreview
-    );
+    mockFetch.get('/api/series/tmdb-preview', {
+      data: mockTmdbPreview,
+    });
 
     const onOpenChange = vi.fn();
     renderWithProviders(
@@ -268,17 +272,15 @@ describe('SyncTmdbModal component', () => {
     expect(screen.getByText('Sync with TMDB')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('tv', 1399, false);
-    });
-
-    await waitFor(() => {
       expect(screen.getByText('TMDB Snapshot Overview')).toBeInTheDocument();
     });
 
     // Overview details
     expect(screen.getByText('Game of Thrones')).toBeInTheDocument();
     expect(
-      screen.getByText('Seven noble families fight for control of the mythical land of Westeros.')
+      screen.getByText(
+        'Seven noble families fight for control of the mythical land of Westeros.'
+      )
     ).toBeInTheDocument();
     expect(screen.getByText('2011-04-17')).toBeInTheDocument();
     expect(screen.getByText('Sci-Fi & Fantasy')).toBeInTheDocument();
@@ -296,10 +298,6 @@ describe('SyncTmdbModal component', () => {
   });
 
   it('toggling "Include Specials" refetches TMDB preview with includeSpecials=true and updates diff', async () => {
-    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
-      mockTmdbPreview
-    );
-
     const previewWithSpecials: TmdbPreviewResult = {
       ...mockTmdbPreview,
       totalEpisodes: 17,
@@ -308,16 +306,16 @@ describe('SyncTmdbModal component', () => {
         ...mockTmdbPreview.seasons!,
       ],
     };
-    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
-      previewWithSpecials
-    );
+
+    mockFetch.get('/api/series/tmdb-preview', (ctx) => {
+      const includeSpecials = ctx.query.includeSpecials === 'true';
+      return {
+        data: includeSpecials ? previewWithSpecials : mockTmdbPreview,
+      };
+    });
 
     const { user } = renderWithProviders(
-      <SyncTmdbModal
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeriesTv}
-      />
+      <SyncTmdbModal open={true} onOpenChange={noop} series={mockSeriesTv} />
     );
 
     await waitFor(() => {
@@ -328,8 +326,6 @@ describe('SyncTmdbModal component', () => {
     expect(specialsCheckbox).not.toBeChecked();
 
     await user.click(specialsCheckbox);
-
-    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('tv', 1399, true);
 
     await waitFor(() => {
       expect(screen.getByText('Specials')).toBeInTheDocument();
@@ -347,7 +343,7 @@ describe('SyncTmdbModal component', () => {
     renderWithProviders(
       <SyncTmdbModal
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         series={seriesWithoutTmdb}
       />
     );
@@ -361,16 +357,13 @@ describe('SyncTmdbModal component', () => {
   });
 
   it('displays error message if fetching TMDB preview fails', async () => {
-    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockRejectedValueOnce(
-      new Error('TMDB service unavailable')
+    mockFetch.get(
+      '/api/series/tmdb-preview',
+      errorResponse('TMDB service unavailable', 503, { code: 'TMDB_ERROR' })
     );
 
     renderWithProviders(
-      <SyncTmdbModal
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeriesTv}
-      />
+      <SyncTmdbModal open={true} onOpenChange={noop} series={mockSeriesTv} />
     );
 
     await waitFor(() => {
@@ -382,15 +375,17 @@ describe('SyncTmdbModal component', () => {
   });
 
   it('invokes syncSeriesTmdb on "Confirm & Sync", invalidates cache, shows success toast, and closes modal', async () => {
-    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
-      mockTmdbPreview
-    );
+    mockFetch.get('/api/series/tmdb-preview', {
+      data: mockTmdbPreview,
+    });
 
     const syncedSeries: SeriesDetails = {
       ...mockSeriesTv,
       title: 'Game of Thrones (Synced)',
     };
-    vi.mocked(apiModule.syncSeriesTmdb).mockResolvedValueOnce(syncedSeries);
+    mockFetch.post('/api/series/:id/tmdb-sync', {
+      data: syncedSeries,
+    });
 
     const onOpenChange = vi.fn();
     const { user, queryClient } = renderWithProviders(
@@ -410,12 +405,19 @@ describe('SyncTmdbModal component', () => {
     await user.click(confirmBtn);
 
     await waitFor(() => {
-      expect(apiModule.syncSeriesTmdb).toHaveBeenCalledWith('series-tv-1', {
+      const syncReq = mockFetch.requests.find(
+        (r) => r.method === 'POST' && r.pathname.includes('/tmdb-sync')
+      );
+      expect(syncReq).toBeDefined();
+      expect(syncReq?.pathname).toContain('/series/series-tv-1/tmdb-sync');
+      expect(syncReq?.bodyJson).toEqual({
         type: 'tv',
         tmdbId: 1399,
         includeSpecials: false,
       });
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-tv-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['series', 'series-tv-1'],
+      });
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['episodes'] });
       expect(toast.success).toHaveBeenCalledWith(
@@ -426,19 +428,18 @@ describe('SyncTmdbModal component', () => {
   });
 
   it('displays error toast when syncSeriesTmdb fails', async () => {
-    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
-      mockTmdbPreview
-    );
-    vi.mocked(apiModule.syncSeriesTmdb).mockRejectedValueOnce(
-      new Error('Sync database transaction failed')
+    mockFetch.get('/api/series/tmdb-preview', {
+      data: mockTmdbPreview,
+    });
+    mockFetch.post(
+      '/api/series/:id/tmdb-sync',
+      errorResponse('Sync database transaction failed', 500, {
+        code: 'SYNC_ERROR',
+      })
     );
 
     const { user } = renderWithProviders(
-      <SyncTmdbModal
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeriesTv}
-      />
+      <SyncTmdbModal open={true} onOpenChange={noop} series={mockSeriesTv} />
     );
 
     await waitFor(() => {
@@ -456,9 +457,9 @@ describe('SyncTmdbModal component', () => {
   });
 
   it('closes modal when clicking Cancel', async () => {
-    vi.mocked(apiModule.fetchSeriesTmdbPreview).mockResolvedValueOnce(
-      mockTmdbPreview
-    );
+    mockFetch.get('/api/series/tmdb-preview', {
+      data: mockTmdbPreview,
+    });
 
     const onOpenChange = vi.fn();
     const { user } = renderWithProviders(
@@ -480,7 +481,7 @@ describe('SyncTmdbModal component', () => {
   });
 
   it('renders detailed episode changes when fetchSeriesTmdbSyncPreview returns metadata changes', async () => {
-    const mockSyncPreviewResult: apiModule.TmdbSyncPreviewResult = {
+    const mockSyncPreviewResult: TmdbSyncPreviewResult = {
       seriesId: mockSeriesTv.id,
       seriesUpdated: true,
       series: {
@@ -528,25 +529,25 @@ describe('SyncTmdbModal component', () => {
       ],
     };
 
-    vi.mocked(apiModule.fetchSeriesTmdbSyncPreview).mockResolvedValueOnce(
-      mockSyncPreviewResult
-    );
+    mockFetch.get('/api/series/:id/tmdb-sync-preview', {
+      data: mockSyncPreviewResult,
+    });
 
     renderWithProviders(
-      <SyncTmdbModal
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeriesTv}
-      />
+      <SyncTmdbModal open={true} onOpenChange={noop} series={mockSeriesTv} />
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Episode Metadata Updates \(1\)/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Episode Metadata Updates \(1\)/i)
+      ).toBeInTheDocument();
     });
 
     expect(screen.getByText('S1E1')).toBeInTheDocument();
     expect(screen.getByText('Winter Is Coming')).toBeInTheDocument();
-    expect(screen.getByText('Winter Is Coming (Remastered)')).toBeInTheDocument();
+    expect(
+      screen.getByText('Winter Is Coming (Remastered)')
+    ).toBeInTheDocument();
     expect(screen.getByText('Title')).toBeInTheDocument();
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Thumbnail')).toBeInTheDocument();

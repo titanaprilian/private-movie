@@ -1,5 +1,13 @@
-import { renderWithProviders, screen, waitFor, fireEvent } from '../../utils';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import {
+  renderWithProviders,
+  screen,
+  waitFor,
+  fireEvent,
+  mockFetch,
+  noop,
+  type MockResponseData,
+} from '../../utils';
+import { describe, expect, it, vi, beforeEach, afterAll } from 'vitest';
 import { EditSeriesDialog } from '@/modules/videos/internal/catalog/dialogs/EditSeriesDialog';
 import type { SeriesItem } from '@/modules/videos/internal/api';
 import { setAccessToken } from '@/lib/api';
@@ -28,71 +36,25 @@ const mockSeries: SeriesItem = {
 describe('EditSeriesDialog component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.reset();
     setAccessToken('test-token');
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : (input as Request).url;
-      const method = init?.method?.toUpperCase() ?? 'GET';
-
-      if (url.includes('/genres')) {
-        return new Response(JSON.stringify({ data: [] }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      if (url.includes('/series/series-1') && method === 'PATCH') {
-        const body = JSON.parse(init?.body as string);
-        return new Response(
-          JSON.stringify({ data: { ...mockSeries, ...body } }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
-        status: 404,
-      });
+    mockFetch.get('/api/genres', { data: [] });
+    mockFetch.patch('/api/series/:id', (ctx) => {
+      return {
+        data: { ...mockSeries, ...(ctx.bodyJson as Record<string, unknown>) },
+      };
     });
   });
 
+  afterAll(() => {
+    mockFetch.restore();
+  });
+
   it('opens, syncs form state without render looping, and saves via PATCH', async () => {
-    // NOTE: regression test — the sync effect used to depend on the
-    // `seriesList` array identity (fresh `[]` every render) while calling
-    // setState with fresh arrays, an infinite effect→render loop that hung
-    // any test opening this dialog forever. If the loop regresses, this test
-    // hits the 10s testTimeout instead of passing.
     let patchedBody: Record<string, unknown> | null = null;
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : (input as Request).url;
-      const method = init?.method?.toUpperCase() ?? 'GET';
-
-      if (url.includes('/genres')) {
-        return new Response(JSON.stringify({ data: [] }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      if (url.includes('/series/series-1') && method === 'PATCH') {
-        patchedBody = JSON.parse(init?.body as string);
-        return new Response(
-          JSON.stringify({ data: { ...mockSeries, ...patchedBody } }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
-        status: 404,
-      });
+    mockFetch.patch('/api/series/:id', (ctx) => {
+      patchedBody = ctx.bodyJson as Record<string, unknown>;
+      return { data: { ...mockSeries, ...patchedBody } };
     });
 
     const onOpenChange = vi.fn();
@@ -134,10 +96,11 @@ describe('EditSeriesDialog component', () => {
     });
   });
 
-  it('re-renders with an inline seriesList without re-syncing state in a loop', async () => {    const { rerender } = renderWithProviders(
+  it('re-renders with an inline seriesList without re-syncing state in a loop', async () => {
+    const { rerender } = renderWithProviders(
       <EditSeriesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         series={mockSeries}
         seriesList={[{ ...mockSeries }]}
       />
@@ -153,7 +116,7 @@ describe('EditSeriesDialog component', () => {
       rerender(
         <EditSeriesDialog
           open={true}
-          onOpenChange={vi.fn()}
+          onOpenChange={noop}
           series={mockSeries}
           seriesList={[{ ...mockSeries }]}
         />
@@ -163,78 +126,32 @@ describe('EditSeriesDialog component', () => {
     expect(
       screen.getByRole('heading', { name: 'Edit Series' })
     ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('Featured Series')
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Featured Series')).toBeInTheDocument();
   });
 });
 
 describe('EditSeriesDialog sizing, flags, and logo URL', () => {
+  let patchedBody: Record<string, unknown> | null = null;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.reset();
+    patchedBody = null;
     setAccessToken('test-token');
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : (input as Request).url;
-
-      if (url.includes('/genres')) {
-        return new Response(JSON.stringify({ data: [] }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
-        status: 404,
-      });
+    mockFetch.get('/api/genres', { data: [] });
+    mockFetch.patch('/api/series/:id', (ctx) => {
+      patchedBody = ctx.bodyJson as Record<string, unknown>;
+      return { data: { ...mockSeries, ...patchedBody } };
     });
   });
 
-  function mockPatchCapture(
-    onBody: (body: Record<string, unknown>) => void
-  ) {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : (input as Request).url;
-      const method = init?.method?.toUpperCase() ?? 'GET';
-
-      if (url.includes('/genres')) {
-        return new Response(JSON.stringify({ data: [] }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      if (url.includes('/series/series-1') && method === 'PATCH') {
-        const body = JSON.parse(init?.body as string);
-        onBody(body);
-        return new Response(
-          JSON.stringify({ data: { ...mockSeries, ...body } }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
-        status: 404,
-      });
-    });
-  }
+  afterAll(() => {
+    mockFetch.restore();
+  });
 
   it('constrains dialog height with a scrollable body', async () => {
     const { container } = renderWithProviders(
-      <EditSeriesDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeries}
-      />
+      <EditSeriesDialog open={true} onOpenChange={noop} series={mockSeries} />
     );
     void container;
 
@@ -246,26 +163,22 @@ describe('EditSeriesDialog sizing, flags, and logo URL', () => {
     const content = await screen.findByRole('dialog');
     expect(content.className).toContain('max-h-[90vh]');
 
-    const scrollBody = content.parentElement?.querySelector('.overflow-y-auto') ?? document.querySelector('.overflow-y-auto');
+    const scrollBody =
+      content.parentElement?.querySelector('.overflow-y-auto') ??
+      document.querySelector('.overflow-y-auto');
     expect(scrollBody).not.toBeNull();
     expect(scrollBody?.className).toContain('flex-1');
   });
 
   it('renders featured and highlight checkboxes on a single wrapped row and keeps them independent', async () => {
     const { user } = renderWithProviders(
-      <EditSeriesDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeries}
-      />
+      <EditSeriesDialog open={true} onOpenChange={noop} series={mockSeries} />
     );
 
     const featured = await screen.findByLabelText('Featured Series');
     const highlighted = screen.getByLabelText('Highlight in Ongoing Feed');
 
-    expect(featured.parentElement?.parentElement?.className).toContain(
-      'flex'
-    );
+    expect(featured.parentElement?.parentElement?.className).toContain('flex');
     expect(featured.parentElement?.parentElement?.className).toContain(
       'flex-wrap'
     );
@@ -286,11 +199,6 @@ describe('EditSeriesDialog sizing, flags, and logo URL', () => {
   });
 
   it('prefills logo URL, shows live preview, and submits the new URL', async () => {
-    let patchedBody: Record<string, unknown> | null = null;
-    mockPatchCapture((body) => {
-      patchedBody = body;
-    });
-
     const seriesWithLogo: SeriesItem = {
       ...mockSeries,
       logoUrl: 'https://example.com/existing-logo.png',
@@ -299,7 +207,7 @@ describe('EditSeriesDialog sizing, flags, and logo URL', () => {
     const { user } = renderWithProviders(
       <EditSeriesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         series={seriesWithLogo}
       />
     );
@@ -335,11 +243,13 @@ describe('EditSeriesDialog sizing, flags, and logo URL', () => {
     renderWithProviders(
       <EditSeriesDialog
         open={true}
-        onOpenChange={vi.fn()}
-        series={{
-          ...mockSeries,
-          logoUrl: 'https://example.com/broken-logo.png',
-        } as SeriesItem}
+        onOpenChange={noop}
+        series={
+          {
+            ...mockSeries,
+            logoUrl: 'https://example.com/broken-logo.png',
+          } as SeriesItem
+        }
       />
     );
 
@@ -354,19 +264,16 @@ describe('EditSeriesDialog sizing, flags, and logo URL', () => {
   });
 
   it('sends logoUrl null when the field is cleared', async () => {
-    let patchedBody: Record<string, unknown> | null = null;
-    mockPatchCapture((body) => {
-      patchedBody = body;
-    });
-
     const { user } = renderWithProviders(
       <EditSeriesDialog
         open={true}
-        onOpenChange={vi.fn()}
-        series={{
-          ...mockSeries,
-          logoUrl: 'https://example.com/existing-logo.png',
-        } as SeriesItem}
+        onOpenChange={noop}
+        series={
+          {
+            ...mockSeries,
+            logoUrl: 'https://example.com/existing-logo.png',
+          } as SeriesItem
+        }
       />
     );
 
@@ -397,35 +304,23 @@ describe('EditSeriesDialog chunky UI integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.reset();
     setAccessToken('test-token');
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : (input as Request).url;
-
-      if (url.includes('/genres')) {
-        return new Response(JSON.stringify(genresPayload), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
-        status: 404,
-      });
+    mockFetch.get('/api/genres', genresPayload);
+    mockFetch.patch('/api/series/:id', (ctx) => {
+      return {
+        data: { ...mockSeries, ...(ctx.bodyJson as Record<string, unknown>) },
+      };
     });
+  });
+
+  afterAll(() => {
+    mockFetch.restore();
   });
 
   it('renders inside the ChunkyDialog 3D card shell with docked header, body, and footer', async () => {
     renderWithProviders(
-      <EditSeriesDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeries}
-      />
+      <EditSeriesDialog open={true} onOpenChange={noop} series={mockSeries} />
     );
 
     expect(
@@ -438,18 +333,12 @@ describe('EditSeriesDialog chunky UI integration', () => {
     expect(screen.getByTestId('chunky-dialog-header')).toBeInTheDocument();
     expect(screen.getByTestId('chunky-dialog-body')).toBeInTheDocument();
     expect(screen.getByTestId('chunky-dialog-footer')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Close' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 
   it('uses ChunkyInput geometry for text fields and ChunkyTextarea for description', async () => {
     renderWithProviders(
-      <EditSeriesDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeries}
-      />
+      <EditSeriesDialog open={true} onOpenChange={noop} series={mockSeries} />
     );
 
     for (const name of ['Title', 'Poster URL', 'Logo URL']) {
@@ -467,11 +356,7 @@ describe('EditSeriesDialog chunky UI integration', () => {
 
   it('uses ChunkyCheckbox primitives with accessible label associations', async () => {
     renderWithProviders(
-      <EditSeriesDialog
-        open={true}
-        onOpenChange={vi.fn()}
-        series={mockSeries}
-      />
+      <EditSeriesDialog open={true} onOpenChange={noop} series={mockSeries} />
     );
 
     for (const name of ['Featured Series', 'Highlight in Ongoing Feed']) {
@@ -485,7 +370,7 @@ describe('EditSeriesDialog chunky UI integration', () => {
     const { user } = renderWithProviders(
       <EditSeriesDialog
         open={true}
-        onOpenChange={vi.fn()}
+        onOpenChange={noop}
         series={{ ...mockSeries, genreIds: ['g-1'] } as SeriesItem}
       />
     );
@@ -504,31 +389,10 @@ describe('EditSeriesDialog chunky UI integration', () => {
   });
 
   it('uses 3D pressable ChunkyButtons with a loading spinner on save', async () => {
-    let resolvePatch!: (value: Response) => void;
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : (input as Request).url;
-      const method = init?.method?.toUpperCase() ?? 'GET';
-
-      if (url.includes('/genres')) {
-        return new Response(JSON.stringify(genresPayload), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      if (url.includes('/series/series-1') && method === 'PATCH') {
-        return new Promise<Response>((resolve) => {
-          resolvePatch = resolve;
-        });
-      }
-
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
-        status: 404,
+    let resolvePatch!: (value: MockResponseData) => void;
+    mockFetch.patch('/api/series/:id', () => {
+      return new Promise((resolve) => {
+        resolvePatch = resolve;
       });
     });
 
@@ -555,12 +419,7 @@ describe('EditSeriesDialog chunky UI integration', () => {
     expect(savingBtn).toBeDisabled();
     expect(savingBtn.querySelector('.animate-spin')).not.toBeNull();
 
-    resolvePatch(
-      new Response(JSON.stringify({ data: mockSeries }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
+    resolvePatch({ data: mockSeries });
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
 });
