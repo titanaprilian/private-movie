@@ -27,6 +27,7 @@ Read before non-trivial features or bug fixes:
 - **Never** run `db:push` or `db:migrate`, or apply generated SQL yourself.
 - Schema changes: edit the schema, run `bun run db:generate`, leave the `.sql` for the human to review and apply.
 - If asked for `db:push`, warn that it can cause immediate data loss without generating reviewable SQL.
+- Follow the safe migration lifecycle and Expand-and-Contract protocol documented in [`packages/db/AGENTS.md`](packages/db/AGENTS.md); destructive changes (`DROP TABLE`, `DROP COLUMN`, unhedged `ADD COLUMN ... NOT NULL`) require `-- allow-destructive: <rationale>`.
 
 ## Testing
 
