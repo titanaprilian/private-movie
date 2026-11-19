@@ -58,5 +58,11 @@ test.describe("Web Playback Happy Path", () => {
 
     const playerFrame = page.getByTestId("watch-player");
     await expect(playerFrame).toBeVisible({ timeout: 15000 });
+
+    // 9. Capture verification proof
+    await page.screenshot({
+      path: "artifacts/verify/playback/player-mounted.png",
+      fullPage: true,
+    });
   });
 });

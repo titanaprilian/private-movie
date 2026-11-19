@@ -12,6 +12,7 @@ coverage/
 test-results/
 playwright-report/
 *.dump
+artifacts/
 
 # Prompt & shell scratch references
 private-movie-shell/
