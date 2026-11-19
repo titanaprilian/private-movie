@@ -1,11 +1,15 @@
 #!/usr/bin/env bun
 import { spawnSync } from "node:child_process";
 import { evaluateKnipFindings, type KnipReport } from "./internal/gate-checker";
+import {
+  evaluateMigrations,
+  resolveMigrationFilesToCheck,
+} from "./internal/migration-checker";
 
 console.log("🔍 Running Structural Quality Gates (Level L5 Zero-Tolerance)...");
 
 // 1. Run JSCPD Check
-console.log("\n📦 [1/2] Checking Code Duplication (jscpd)...");
+console.log("\n📦 [1/3] Checking Code Duplication (jscpd)...");
 const jscpdResult = spawnSync("bunx", ["jscpd", "--config", ".jscpd.json"], {
   encoding: "utf-8",
   env: process.env,
@@ -31,7 +35,7 @@ if (jscpdResult.status !== 0) {
 }
 
 // 2. Run Knip Check
-console.log("\n🧹 [2/2] Checking Unused Dependencies & Exports (knip)...");
+console.log("\n🧹 [2/3] Checking Unused Dependencies & Exports (knip)...");
 
 const knipProc = spawnSync("bunx", ["knip", "--reporter", "json"], {
   encoding: "utf-8",
@@ -66,7 +70,35 @@ if (!evaluation.passed) {
   process.exit(1);
 }
 
+// 3. Run Migration Safety Check
+console.log("\n🛡️ [3/3] Checking Migration Safety (drizzle)...");
+const migrationFiles = resolveMigrationFilesToCheck();
+const migrationResult = evaluateMigrations(migrationFiles);
+
+if (!migrationResult.passed) {
+  console.error(
+    `\n❌ Migration safety gate failed: ${migrationResult.violations.length} destructive violation(s) detected:\n`,
+  );
+  for (const v of migrationResult.violations) {
+    console.error(`  • ${v.file}:${v.line} [${v.rule}]`);
+    console.error(`    Statement: ${v.statement}`);
+    console.error(`    Remediation: ${v.remediation}\n`);
+  }
+  console.error(
+    "Please follow the Expand-and-Contract protocol (packages/db/AGENTS.md) or use '-- allow-destructive: <rationale>' if authorized.\n",
+  );
+  process.exit(1);
+} else {
+  if (migrationResult.scannedFiles.length === 0) {
+    console.log("✅ No new/modified migrations to check.");
+  } else {
+    console.log(
+      `✅ ${migrationResult.scannedFiles.length} migration file(s) checked. No destructive operations detected.`,
+    );
+  }
+}
+
 console.log(
-  `\n✨ Quality Gate Check Passed! (Level L5 Zero-Tolerance: 0 unused items, duplication within threshold)`,
+  `\n✨ Quality Gate Check Passed! (Level L5 Zero-Tolerance: 0 unused items, duplication within threshold, migrations safe)`,
 );
 process.exit(0);
