@@ -15,6 +15,8 @@
     "test": "vitest run",
     "test:integration": "node --env-file=../../apps/backend/.env.test ./node_modules/.bin/vitest run --config vitest.integration.config.ts",
     "test:coverage": "vitest run --coverage",
+    "test:mutation": "stryker run",
+    "test:mutation:all": "stryker run --mutate 'src/**/*.ts'",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -28,6 +30,8 @@
   },
   "devDependencies": {
     "@repo/config-vitest": "workspace:*",
+    "@stryker-mutator/core": "^10.1.1",
+    "@stryker-mutator/vitest-runner": "^10.1.1",
     "@vitest/coverage-v8": "3.2.7",
     "bun-types": "^1.4.2",
     "fast-check": "^4.10.2",

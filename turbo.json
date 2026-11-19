@@ -34,6 +34,14 @@
       "dependsOn": ["^build"],
       "cache": false
     },
+    "test:mutation": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test:mutation:all": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
     "@repo/backend#test:integration": {
       "dependsOn": ["^build", "test:coverage"],
       "env": ["DATABASE_URL", "JWT_SECRET"],
