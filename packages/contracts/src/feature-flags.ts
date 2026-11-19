@@ -42,7 +42,7 @@ export function isFeatureEnabled(
   const envSource =
     env !== undefined
       ? env
-      : typeof process !== "undefined" && process?.env
+      : typeof process !== "undefined"
         ? process.env
         : undefined;
 

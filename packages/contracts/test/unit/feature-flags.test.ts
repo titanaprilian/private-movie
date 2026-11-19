@@ -293,6 +293,19 @@ describe("Feature flags registry and resolver", () => {
         }),
       ).toBe(false);
     });
+
+    it("safely falls back to default when global process is undefined (browser simulation)", () => {
+      const originalGlobalProcess = globalThis.process;
+      try {
+        // @ts-expect-error simulating non-Node browser runtime
+        delete globalThis.process;
+        expect(
+          isFeatureEnabled(FEATURE_FLAGS.USE_STREAMING_ARCHIVE_EXTRACTOR),
+        ).toBe(false);
+      } finally {
+        globalThis.process = originalGlobalProcess;
+      }
+    });
   });
 
   describe("Property-based tests", () => {
