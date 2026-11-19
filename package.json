@@ -22,6 +22,7 @@
     "test:backend": "turbo run test --filter=@repo/backend",
     "test:android-tv": "turbo run test --filter=@repo/android-tv",
     "test:media-service": "turbo run test --filter=@repo/media-service",
+    "test:media-service:integration": "turbo run test:integration --filter=@repo/media-service",
     "test:media-scraper": "turbo run test --filter=@repo/media-scraper",
     "test:db": "turbo run test --filter=@repo/db",
     "test:contracts": "turbo run test --filter=@repo/contracts",
