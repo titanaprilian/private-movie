@@ -581,6 +581,11 @@ export function createArchiveIngestJobManager(
 
       if (finalRes.body) {
         const fileStream = createWriteStream(archivePath);
+        let streamError: Error | null = null;
+        fileStream.on("error", (err) => {
+          streamError = err;
+        });
+
         let bytesDone = 0;
         const reader = (
           finalRes.body as ReadableStream<Uint8Array>
@@ -592,11 +597,20 @@ export function createArchiveIngestJobManager(
             if (signal.aborted) {
               throw new DOMException("Aborted", "AbortError");
             }
+            if (streamError) {
+              throw streamError;
+            }
             const { done, value } = await reader.read();
             if (done) break;
 
+            if (streamError) {
+              throw streamError;
+            }
             bytesDone += value.byteLength;
             await new Promise<void>((resolve, reject) => {
+              if (streamError) {
+                return reject(streamError);
+              }
               fileStream.write(value, (err) => (err ? reject(err) : resolve()));
             });
 
@@ -606,6 +620,9 @@ export function createArchiveIngestJobManager(
               lastDbUpdate = nowTime;
             }
           }
+          if (streamError) {
+            throw streamError;
+          }
           await repository.updateJob(jobId, { bytesDone });
         } finally {
           try {
@@ -613,7 +630,13 @@ export function createArchiveIngestJobManager(
           } catch {
             // ignore
           }
-          await new Promise<void>((resolve) => fileStream.end(() => resolve()));
+          await new Promise<void>((resolve) => {
+            if (fileStream.destroyed || streamError) {
+              resolve();
+            } else {
+              fileStream.end(() => resolve());
+            }
+          });
         }
       } else {
         const arrayBuf = await finalRes.arrayBuffer();

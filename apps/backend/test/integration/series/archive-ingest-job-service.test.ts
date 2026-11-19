@@ -80,6 +80,9 @@ describe("ArchiveIngestJobService Integration Tests", () => {
       .where(eq(archiveIngestJobs.ownerId, testUserId));
     expect(rows.length).toBe(1);
     expect(rows[0]?.id).toBe(job1.id);
+
+    // Cancel job so background download doesn't leak into subsequent tests/teardown
+    await service.cancelJob(job1.id);
   });
 
   it("disk space preflight rejects downloads when available space is less than 2.5x content length", async () => {
