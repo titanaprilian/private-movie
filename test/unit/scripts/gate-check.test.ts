@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   computeEntryFingerprint,
   evaluateKnipFindings,
+  evaluateKnipProcess,
+  extractKnipFindings,
   extractKnipFingerprints,
+  formatGitHubAnnotation,
+  formatKnipFinding,
+  type KnipFinding,
   type KnipReport,
 } from "../../../scripts/internal/gate-checker";
 
@@ -70,6 +75,172 @@ describe("gate-checker (Level L5 Zero-Tolerance)", () => {
     });
   });
 
+  describe("extractKnipFindings", () => {
+    it("extracts findings preserving line and col locations", () => {
+      const report: KnipReport = {
+        issues: [
+          {
+            file: "apps/backend/src/routes.ts",
+            exports: [{ name: "unusedRoute", line: 42, col: 14 }],
+          },
+          {
+            file: "package.json",
+            dependencies: [{ name: "unused-dep" }],
+          },
+        ],
+      };
+
+      const findings = extractKnipFindings(report);
+      expect(findings).toHaveLength(2);
+      expect(findings[0]).toEqual({
+        file: "apps/backend/src/routes.ts",
+        category: "exports",
+        name: "unusedRoute",
+        line: 42,
+        col: 14,
+        fingerprint: "apps/backend/src/routes.ts:exports:unusedRoute",
+      });
+      expect(findings[1]).toEqual({
+        file: "package.json",
+        category: "dependencies",
+        name: "unused-dep",
+        line: undefined,
+        col: undefined,
+        fingerprint: "package.json:dependencies:unused-dep",
+      });
+    });
+
+    it("extracts nested findings such as duplicates", () => {
+      const report: KnipReport = {
+        issues: [
+          {
+            file: "src/types.ts",
+            duplicates: [
+              [
+                { name: "dupA", line: 10, col: 5 },
+                { name: "dupB", line: 20, col: 5 },
+              ],
+            ],
+          },
+        ],
+      };
+
+      const findings = extractKnipFindings(report);
+      expect(findings).toHaveLength(2);
+      expect(findings[0]?.name).toBe("dupA");
+      expect(findings[0]?.line).toBe(10);
+      expect(findings[1]?.name).toBe("dupB");
+      expect(findings[1]?.line).toBe(20);
+    });
+  });
+
+  describe("formatKnipFinding", () => {
+    it("formats finding with file, line, col, category, and name", () => {
+      const finding: KnipFinding = {
+        file: "apps/backend/src/routes.ts",
+        category: "exports",
+        name: "unusedHandler",
+        line: 45,
+        col: 10,
+        fingerprint: "apps/backend/src/routes.ts:exports:unusedHandler",
+      };
+
+      expect(formatKnipFinding(finding)).toBe(
+        "apps/backend/src/routes.ts:45:10 [exports] unusedHandler",
+      );
+    });
+
+    it("formats finding with file and line when col is absent", () => {
+      const finding: KnipFinding = {
+        file: "apps/web/src/view.tsx",
+        category: "types",
+        name: "ViewProps",
+        line: 12,
+        fingerprint: "apps/web/src/view.tsx:types:ViewProps",
+      };
+
+      expect(formatKnipFinding(finding)).toBe(
+        "apps/web/src/view.tsx:12 [types] ViewProps",
+      );
+    });
+
+    it("formats finding without line numbers cleanly", () => {
+      const finding: KnipFinding = {
+        file: "package.json",
+        category: "dependencies",
+        name: "lodash",
+        fingerprint: "package.json:dependencies:lodash",
+      };
+
+      expect(formatKnipFinding(finding)).toBe(
+        "package.json [dependencies] lodash",
+      );
+    });
+  });
+
+  describe("formatGitHubAnnotation", () => {
+    it("emits GitHub Actions annotation when file and line are present", () => {
+      const finding: KnipFinding = {
+        file: "apps/backend/src/routes.ts",
+        category: "exports",
+        name: "unusedHandler",
+        line: 45,
+        col: 10,
+        fingerprint: "apps/backend/src/routes.ts:exports:unusedHandler",
+      };
+
+      const annotation = formatGitHubAnnotation(finding);
+      expect(annotation).toBe(
+        "::error file=apps/backend/src/routes.ts,line=45,col=10,title=Knip [exports]::Unused export: unusedHandler",
+      );
+    });
+
+    it("omits col when not present", () => {
+      const finding: KnipFinding = {
+        file: "apps/web/src/view.tsx",
+        category: "types",
+        name: "ViewProps",
+        line: 12,
+        fingerprint: "apps/web/src/view.tsx:types:ViewProps",
+      };
+
+      const annotation = formatGitHubAnnotation(finding);
+      expect(annotation).toBe(
+        "::error file=apps/web/src/view.tsx,line=12,title=Knip [types]::Unused type: ViewProps",
+      );
+    });
+
+    it("returns null when line is missing or invalid", () => {
+      const findingWithoutLine: KnipFinding = {
+        file: "package.json",
+        category: "dependencies",
+        name: "lodash",
+        fingerprint: "package.json:dependencies:lodash",
+      };
+      expect(formatGitHubAnnotation(findingWithoutLine)).toBeNull();
+
+      const findingWithZeroLine: KnipFinding = {
+        file: "package.json",
+        category: "dependencies",
+        name: "lodash",
+        line: 0,
+        fingerprint: "package.json:dependencies:lodash",
+      };
+      expect(formatGitHubAnnotation(findingWithZeroLine)).toBeNull();
+    });
+
+    it("returns null when file is missing", () => {
+      const finding: KnipFinding = {
+        file: "",
+        category: "exports",
+        name: "foo",
+        line: 10,
+        fingerprint: ":exports:foo",
+      };
+      expect(formatGitHubAnnotation(finding)).toBeNull();
+    });
+  });
+
   describe("evaluateKnipFindings (L5 Zero-Tolerance)", () => {
     it("passes when knip report has no issues (empty issues array)", () => {
       const report: KnipReport = {
@@ -78,6 +249,7 @@ describe("gate-checker (Level L5 Zero-Tolerance)", () => {
       const result = evaluateKnipFindings(report);
       expect(result.passed).toBe(true);
       expect(result.violations).toEqual([]);
+      expect(result.findings).toEqual([]);
     });
 
     it("passes when knip report has no issues property", () => {
@@ -85,6 +257,7 @@ describe("gate-checker (Level L5 Zero-Tolerance)", () => {
       const result = evaluateKnipFindings(report);
       expect(result.passed).toBe(true);
       expect(result.violations).toEqual([]);
+      expect(result.findings).toEqual([]);
     });
 
     it("fails when any unused export or dependency is detected", () => {
@@ -152,6 +325,122 @@ describe("gate-checker (Level L5 Zero-Tolerance)", () => {
       expect(result.violations).toContain("package.json:unlisted:unlisted-dep");
       expect(result.violations).toContain(
         "package.json:unresolved:unresolved-import",
+      );
+    });
+  });
+
+  describe("evaluateKnipProcess (Fail-Closed & Process Execution Separation)", () => {
+    it("passes when knip exits with status 0 and clean empty report", () => {
+      const result = evaluateKnipProcess({
+        status: 0,
+        stdout: JSON.stringify({ issues: [] }),
+        stderr: "",
+      });
+      expect(result.passed).toBe(true);
+      expect(result.processError).toBeNull();
+      expect(result.violations).toEqual([]);
+      expect(result.findings).toEqual([]);
+    });
+
+    it("fails closed when nonzero knip status occurs even with parseable empty JSON", () => {
+      // Simulates exit code 1 with empty JSON
+      const resultEmpty = evaluateKnipProcess({
+        status: 1,
+        stdout: JSON.stringify({ issues: [] }),
+        stderr: "Unexpected error during analysis",
+      });
+      expect(resultEmpty.passed).toBe(false);
+      expect(resultEmpty.processError).toContain(
+        "Knip process failed with exit code 1",
+      );
+      expect(resultEmpty.processError).toContain(
+        "Unexpected error during analysis",
+      );
+      expect(resultEmpty.findings).toEqual([]);
+
+      // Simulates exit code 2 with empty object JSON
+      const resultExit2 = evaluateKnipProcess({
+        status: 2,
+        stdout: "{}",
+        stderr: "Configuration load failure",
+      });
+      expect(resultExit2.passed).toBe(false);
+      expect(resultExit2.processError).toContain(
+        "Knip process failed with exit code 2",
+      );
+      expect(resultExit2.processError).toContain("Configuration load failure");
+    });
+
+    it("identifies standard finding failure without false process error when status is 1 with findings", () => {
+      const result = evaluateKnipProcess({
+        status: 1,
+        stdout: JSON.stringify({
+          issues: [
+            {
+              file: "apps/backend/src/index.ts",
+              exports: [{ name: "deadHandler", line: 15, col: 3 }],
+            },
+          ],
+        }),
+        stderr: "",
+      });
+      expect(result.passed).toBe(false);
+      expect(result.processError).toBeNull();
+      expect(result.violations).toHaveLength(1);
+      expect(result.findings).toHaveLength(1);
+      expect(result.findings[0]?.line).toBe(15);
+    });
+
+    it("reports both process error and findings when exit status indicates tool failure (e.g. status 2)", () => {
+      const result = evaluateKnipProcess({
+        status: 2,
+        stdout: JSON.stringify({
+          issues: [
+            {
+              file: "apps/web/src/App.tsx",
+              types: [{ name: "DeadProp", line: 5 }],
+            },
+          ],
+        }),
+        stderr: "Unhandled rejection in plugin",
+      });
+      expect(result.passed).toBe(false);
+      expect(result.processError).toContain(
+        "Knip process exited with error status 2",
+      );
+      expect(result.processError).toContain("Unhandled rejection in plugin");
+      expect(result.findings).toHaveLength(1);
+      expect(result.violations).toHaveLength(1);
+    });
+
+    it("fails when execution error occurred during spawn", () => {
+      const result = evaluateKnipProcess({
+        status: null,
+        error: new Error("spawn bunx ENOENT"),
+      });
+      expect(result.passed).toBe(false);
+      expect(result.processError).toContain("spawn bunx ENOENT");
+      expect(result.findings).toEqual([]);
+    });
+
+    it("fails when stdout contains malformed JSON", () => {
+      const result = evaluateKnipProcess({
+        status: 1,
+        stdout: "Not JSON output",
+        stderr: "Fatal error",
+      });
+      expect(result.passed).toBe(false);
+      expect(result.processError).toContain("Failed to parse knip JSON output");
+    });
+
+    it("fails when process terminated abnormally (killed by signal)", () => {
+      const result = evaluateKnipProcess({
+        status: null,
+        stdout: JSON.stringify({ issues: [] }),
+      });
+      expect(result.passed).toBe(false);
+      expect(result.processError).toContain(
+        "Knip process terminated abnormally",
       );
     });
   });

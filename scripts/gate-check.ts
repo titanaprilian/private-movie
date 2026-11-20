@@ -1,6 +1,10 @@
 #!/usr/bin/env bun
 import { spawnSync } from "node:child_process";
-import { evaluateKnipFindings, type KnipReport } from "./internal/gate-checker";
+import {
+  evaluateKnipProcess,
+  formatGitHubAnnotation,
+  formatKnipFinding,
+} from "./internal/gate-checker";
 import {
   evaluateMigrations,
   resolveMigrationFilesToCheck,
@@ -43,31 +47,48 @@ const knipProc = spawnSync("bunx", ["knip", "--reporter", "json"], {
   maxBuffer: 50 * 1024 * 1024,
 });
 
-let knipReport: KnipReport;
-try {
-  knipReport = JSON.parse(knipProc.stdout || "{}");
-} catch (e) {
-  console.error("Failed to parse knip JSON output:", e);
-  console.error(knipProc.stdout || knipProc.stderr);
-  process.exit(1);
-}
+const knipResult = evaluateKnipProcess({
+  status: knipProc.status,
+  stdout: knipProc.stdout,
+  stderr: knipProc.stderr,
+  error: knipProc.error,
+});
 
-const evaluation = evaluateKnipFindings(knipReport);
+if (!knipResult.passed) {
+  if (knipResult.processError) {
+    console.error(
+      `\n❌ Knip process execution error: ${knipResult.processError}`,
+    );
+  }
 
-if (!evaluation.passed) {
-  console.error(
-    `\n❌ Knip gate failed: ${evaluation.violations.length} structural violation(s) detected:\n`,
-  );
-  for (const v of evaluation.violations.slice(0, 25)) {
-    console.error(`  • ${v}`);
+  if (knipResult.findings.length > 0) {
+    console.error(
+      `\n❌ Knip gate failed: ${knipResult.findings.length} structural violation(s) detected:\n`,
+    );
+    for (const f of knipResult.findings.slice(0, 25)) {
+      console.error(`  • ${formatKnipFinding(f)}`);
+    }
+    if (knipResult.findings.length > 25) {
+      console.error(`  ...and ${knipResult.findings.length - 25} more.`);
+    }
+
+    if (process.env.GITHUB_ACTIONS === "true") {
+      for (const f of knipResult.findings) {
+        const annotation = formatGitHubAnnotation(f);
+        if (annotation) {
+          console.error(annotation);
+        }
+      }
+    }
+
+    console.error(
+      "\nPlease eliminate unused exports/dependencies before pushing, or report if legitimate public API.",
+    );
   }
-  if (evaluation.violations.length > 25) {
-    console.error(`  ...and ${evaluation.violations.length - 25} more.`);
-  }
-  console.error(
-    "\nPlease eliminate unused exports/dependencies before pushing, or report if legitimate public API.",
-  );
-  process.exit(1);
+
+  process.exit(knipProc.status && knipProc.status !== 0 ? knipProc.status : 1);
+} else {
+  console.log("✅ No unused exports or dependencies detected.");
 }
 
 // 3. Run Migration Safety Check
