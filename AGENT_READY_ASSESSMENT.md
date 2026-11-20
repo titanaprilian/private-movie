@@ -74,16 +74,16 @@ No dimension scored below 40. The weakest areas:
 
 > How expensive is it to confirm an agent's change is correct in this codebase?
 
-| Signal                                                  | Status | What it means                                                                                |
-| ------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------- |
-| Tests run in < 10 min                                   | ✗      | ~10–15 min CI; tests run twice (`test` then `test:coverage`) with no fast lane               |
-| Security scanning automated                             | ✓      | Trivy fs scan blocks CI on CRITICAL; Dependabot configured                                   |
-| Property-based tests present                            | ✗      | Edge-case verification relies on manually authored assertions                                |
-| Reproducible dev state (seeds/factories)                | ✓      | Docker Compose Postgres 16 + `bun run db:seed`; isolated CI service container per run        |
-| Coverage reported on PRs                                | ✗      | Thresholds enforced and artifacts uploaded, but no PR comment/delta report                   |
-| Structural debt gate blocks new/worsened findings (L3+) | ✓      | Zero-tolerance knip + jscpd hard-fail every PR; gate is unit-tested and CODEOWNERS-protected |
+| Signal                                                  | Status | What it means                                                                                                                                |
+| ------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tests run in < 10 min                                   | ✓      | Measured median 6m 32s on PRs (push to main is 12m 9s with deploy); see [`docs/ci-performance-baseline.md`](docs/ci-performance-baseline.md) |
+| Security scanning automated                             | ✓      | Trivy fs scan blocks CI on CRITICAL; Dependabot configured                                                                                   |
+| Property-based tests present                            | ✗      | Edge-case verification relies on manually authored assertions                                                                                |
+| Reproducible dev state (seeds/factories)                | ✓      | Docker Compose Postgres 16 + `bun run db:seed`; isolated CI service container per run                                                        |
+| Coverage reported on PRs                                | ✓      | Enforced in CI and posted as sticky PR coverage comment via `scripts/coverage-summary.ts` (#981)                                             |
+| Structural debt gate blocks new/worsened findings (L3+) | ✓      | Zero-tolerance knip + jscpd hard-fail every PR; gate is unit-tested and CODEOWNERS-protected                                                 |
 
-**Verification bottleneck:** CI pipeline time (~10–15 min, tests executed twice) caps agent iteration cycles, and the mock-heavy unit suite weakens the oracle that would otherwise let agents self-verify without human review.
+**Verification bottleneck:** CI PR pipeline time (measured median 6m 32s, dominated by the `ci` job at 5m 47s with cold cache; see [`docs/ci-performance-baseline.md`](docs/ci-performance-baseline.md)) caps agent iteration cycles, making a fast-lane split (<2.5 min) the top candidate for developer velocity.
 
 ---
 
