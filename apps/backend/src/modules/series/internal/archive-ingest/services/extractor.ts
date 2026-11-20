@@ -10,6 +10,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { delimiter, join, relative, sep } from "node:path";
+import { Readable } from "node:stream";
 
 export const SEVEN_ZIP_BIN_ENV = "ARCHIVE_7Z_BIN";
 export const SEVEN_ZIP_BINARY_CANDIDATES = ["7zz", "7z"] as const;
@@ -313,12 +314,27 @@ export interface ExtractArchiveFilesResult {
   extractedFiles: ExtractedFile[];
 }
 
+export interface ExtractArchiveStreamOptions {
+  archivePath: string;
+  target: string;
+  password?: string | null;
+  signal?: AbortSignal;
+}
+
+export interface ExtractArchiveStreamResult {
+  stream: ReadableStream<Uint8Array>;
+  sizeBytes?: number;
+}
+
 export interface ArchiveExtractor {
   readonly binaryPath: string;
   list(options: ListArchiveOptions): Promise<ArchiveEntry[]>;
   extract(
     options: ExtractArchiveFilesOptions,
   ): Promise<ExtractArchiveFilesResult>;
+  extractStream?(
+    options: ExtractArchiveStreamOptions,
+  ): Promise<ExtractArchiveStreamResult>;
   run(
     args: string[],
     options?: ArchiveProcessOptions,
@@ -363,22 +379,31 @@ async function listExtractedFiles(root: string): Promise<ExtractedFile[]> {
   return out.sort((a, b) => a.path.localeCompare(b.path));
 }
 
+export type ArchiveSpawnStreamFn = (
+  command: string,
+  args: string[],
+  options: ArchiveProcessOptions,
+) => Promise<ExtractArchiveStreamResult>;
+
 export interface SevenZipExtractorOptions {
   /** Absolute path to the 7-Zip executable. Defaults to `7zz` and is resolved
    *  asynchronously by {@link createSevenZipExtractor}. */
   binaryPath?: string;
   spawnFn?: ArchiveSpawnFn;
+  spawnStreamFn?: ArchiveSpawnStreamFn;
   cwd?: string;
 }
 
 export class SevenZipExtractor implements ArchiveExtractor {
   readonly binaryPath: string;
   private readonly spawnFn: ArchiveSpawnFn;
+  private readonly spawnStreamFn?: ArchiveSpawnStreamFn;
   private readonly cwd: string | undefined;
 
   constructor(options: SevenZipExtractorOptions = {}) {
     this.binaryPath = options.binaryPath ?? SEVEN_ZIP_BINARY_CANDIDATES[0];
     this.spawnFn = options.spawnFn ?? defaultSpawnFn;
+    this.spawnStreamFn = options.spawnStreamFn;
     this.cwd = options.cwd;
   }
 
@@ -451,6 +476,98 @@ export class SevenZipExtractor implements ArchiveExtractor {
     } finally {
       await rm(listFile, { force: true }).catch(() => {});
     }
+  }
+
+  async extractStream(
+    options: ExtractArchiveStreamOptions,
+  ): Promise<ExtractArchiveStreamResult> {
+    assertSafeArchivePath(options.target);
+
+    if (options.signal?.aborted) {
+      throw new ArchiveEngineError("CANCELLED", "Archive operation cancelled");
+    }
+
+    const password = options.password ?? null;
+    const args = ["e", "-so", "-y", "-bd"];
+    if (password) args.push(`-p${password}`);
+    args.push(options.archivePath, options.target);
+
+    if (this.spawnStreamFn) {
+      return this.spawnStreamFn(this.binaryPath, args, {
+        cwd: this.cwd,
+        signal: options.signal,
+      });
+    }
+
+    const child = spawn(this.binaryPath, args, {
+      cwd: this.cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stderr = "";
+    let aborted = false;
+    let forceKillTimer: NodeJS.Timeout | undefined;
+
+    const kill = (sig: NodeJS.Signals) => {
+      try {
+        child.kill(sig);
+      } catch {
+        /* already gone */
+      }
+    };
+
+    const onAbort = () => {
+      aborted = true;
+      kill("SIGTERM");
+      forceKillTimer = setTimeout(() => kill("SIGKILL"), FORCE_KILL_GRACE_MS);
+      forceKillTimer.unref?.();
+      child.stdout.destroy(
+        new ArchiveEngineError("CANCELLED", "Archive operation cancelled"),
+      );
+    };
+
+    if (options.signal) {
+      options.signal.addEventListener("abort", onAbort, { once: true });
+    }
+
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString("utf8");
+    });
+
+    child.on("close", (code) => {
+      if (forceKillTimer) clearTimeout(forceKillTimer);
+      if (options.signal) {
+        options.signal.removeEventListener("abort", onAbort);
+      }
+      if (code !== 0 && !aborted) {
+        const classified = classifyFailure(
+          { exitCode: code, stdout: "", stderr },
+          Boolean(password),
+        );
+        child.stdout.destroy(
+          new ArchiveEngineError(
+            classified ?? "EXTRACT_FAILED",
+            classified
+              ? failureDetail({ exitCode: code, stdout: "", stderr })
+              : `Failed to extract archive stream: ${failureDetail({ exitCode: code, stdout: "", stderr })}`,
+            code,
+          ),
+        );
+      }
+    });
+
+    child.on("error", (err) => {
+      if (forceKillTimer) clearTimeout(forceKillTimer);
+      if (options.signal) {
+        options.signal.removeEventListener("abort", onAbort);
+      }
+      child.stdout.destroy(err);
+    });
+
+    const webStream = Readable.toWeb(
+      child.stdout,
+    ) as unknown as ReadableStream<Uint8Array>;
+    return { stream: webStream };
   }
 }
 

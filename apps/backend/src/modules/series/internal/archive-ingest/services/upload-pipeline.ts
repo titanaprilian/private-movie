@@ -16,7 +16,11 @@ import type {
   ArchiveIngestRepository,
   ArchiveIngestVideoSourceWriter,
 } from "../types";
-import type { ArchiveIngestJob } from "@repo/contracts";
+import {
+  type ArchiveIngestJob,
+  FEATURE_FLAGS,
+  isFeatureEnabled,
+} from "@repo/contracts";
 
 function sanitizeS3Filename(raw: string): string {
   const base = raw.split(/[\\/]/).pop() ?? raw;
@@ -158,45 +162,68 @@ export async function executeUploadPhase(
       const listDir = join(job.stagingPath, "lists");
       await mkdir(listDir, { recursive: true });
 
+      const useStreaming =
+        isFeatureEnabled(FEATURE_FLAGS.USE_STREAMING_ARCHIVE_EXTRACTOR) &&
+        typeof deps.extractor.extractStream === "function";
+
       let extractedAbsPath: string | null = null;
       let extractedSize = 0;
       try {
-        const result = await deps.extractor.extract({
-          archivePath,
-          destDir: filesDir,
-          targets: [item.filename],
-          listFileDir: listDir,
-          password: password ?? undefined,
-          signal,
-        });
-        const match =
-          result.extractedFiles.find((f) => f.path === item.filename) ??
-          result.extractedFiles.find(
-            (f) => basename(f.path) === basename(item.filename),
-          ) ??
-          result.extractedFiles[0];
-        if (!match) {
-          throw new Error(
-            `Extraction produced no files for target ${item.filename}`,
+        let uploadWebStream: ReadableStream<Uint8Array>;
+
+        if (useStreaming) {
+          const streamResult = await deps.extractor.extractStream!({
+            archivePath,
+            target: item.filename,
+            password: password ?? undefined,
+            signal,
+          });
+          uploadWebStream = streamResult.stream;
+          const entry = (job.entries ?? []).find(
+            (e) => e.filename === item.filename,
           );
-        }
-        extractedAbsPath = join(filesDir, match.path);
-        try {
-          extractedSize = (await stat(extractedAbsPath)).size;
-        } catch {
-          extractedSize = match.sizeBytes ?? 0;
+          extractedSize = streamResult.sizeBytes ?? entry?.sizeBytes ?? 0;
+        } else {
+          const result = await deps.extractor.extract({
+            archivePath,
+            destDir: filesDir,
+            targets: [item.filename],
+            listFileDir: listDir,
+            password: password ?? undefined,
+            signal,
+          });
+          const match =
+            result.extractedFiles.find((f) => f.path === item.filename) ??
+            result.extractedFiles.find(
+              (f) => basename(f.path) === basename(item.filename),
+            ) ??
+            result.extractedFiles[0];
+          if (!match) {
+            throw new Error(
+              `Extraction produced no files for target ${item.filename}`,
+            );
+          }
+          extractedAbsPath = join(filesDir, match.path);
+          try {
+            extractedSize = (await stat(extractedAbsPath)).size;
+          } catch {
+            extractedSize = match.sizeBytes ?? 0;
+          }
+
+          if (signal.aborted) return;
+
+          // Upload uncompressed file to S3 via multipart streaming upload.
+          const nodeStream = createReadStream(extractedAbsPath);
+          uploadWebStream = Readable.toWeb(
+            nodeStream,
+          ) as unknown as ReadableStream<Uint8Array>;
         }
 
         if (signal.aborted) return;
 
-        // Upload uncompressed file to S3 via multipart streaming upload.
-        const nodeStream = createReadStream(extractedAbsPath);
-        const webStream = Readable.toWeb(
-          nodeStream,
-        ) as unknown as ReadableStream<Uint8Array>;
         const filename = sanitizeS3Filename(basename(item.filename));
         const key = `episodes/${item.episodeId}/${randomUUID()}-${filename}`;
-        await s3.uploadStream(key, webStream, {
+        await s3.uploadStream(key, uploadWebStream, {
           contentType: "video/mp4",
           signal,
         });
