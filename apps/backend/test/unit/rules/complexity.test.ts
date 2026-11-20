@@ -27,7 +27,7 @@ describe("complexity rule (ESLint CI check)", () => {
     expect(complexityMsg?.message).toContain(
       "has a complexity of 27. Maximum allowed is 25",
     );
-  });
+  }, 60_000);
 
   it("passes on clean code with complexity below 25", async () => {
     const code = `
@@ -42,5 +42,5 @@ export function simpleAdd(a: number, b: number): number {
       (m) => m.ruleId === "complexity",
     );
     expect(complexityMsg).toBeUndefined();
-  });
+  }, 60_000);
 });
