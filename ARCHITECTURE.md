@@ -33,6 +33,7 @@ private-movie/
 │   └── config-vitest/   # Shared Vitest test configuration & environment stubs
 └── docs/
     ├── DOMAIN.md        # Canonical terminology, context maps & invariants
+    ├── decision-log/    # Architecture Decision Records (ADRs)
     └── diagrams/        # Vector diagrams & state machines
 ```
 
@@ -92,4 +93,4 @@ When a video is requested by a client:
 - **Deep Modules**: All features in `apps/backend` must expose only an `index.ts` entry point and an `http.ts` route plugin. Never import from another module's `internal/` folder.
 - **Contract Boundary**: Changes to API payloads must be committed to `packages/contracts` first.
 - **Database Safety**: Direct schema pushing (`db:push`) is strictly prohibited. Schema modifications require migration file generation (`db:generate`) and manual review.
-- **Cross-Reference**: For full domain models, entity invariants, and ubiquitous language, see [docs/DOMAIN.md](docs/DOMAIN.md).
+- **Cross-Reference**: For full domain models, entity invariants, and ubiquitous language, see [docs/DOMAIN.md](docs/DOMAIN.md). For recorded architectural tradeoffs and technology decisions, see [docs/decision-log/](docs/decision-log/README.md).
