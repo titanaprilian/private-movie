@@ -3,6 +3,13 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import prettier from 'eslint-config-prettier';
+import { noCrossModuleInternalImportsRule } from './eslint-rules/no-cross-module-internal-imports.js';
+
+const deepModulesPlugin = {
+  rules: {
+    'no-cross-module-internal-imports': noCrossModuleInternalImportsRule,
+  },
+};
 
 export default tseslint.config(
   {
@@ -21,6 +28,7 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      'deep-modules': deepModulesPlugin,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -28,26 +36,13 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['@/modules/*/internal/**', '**/modules/*/internal/**'],
-              message:
-                'Do not import from internal directories of other modules. Import from the public module entry point (@/modules/<feature>) instead.',
-            },
-          ],
-        },
-      ],
     },
   },
   {
-    files: ['src/modules/*/**/*.{ts,tsx}', 'test/unit/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': 'off',
+      'deep-modules/no-cross-module-internal-imports': 'error',
     },
   },
   prettier
 );
-
