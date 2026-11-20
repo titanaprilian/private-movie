@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import { RuleTester } from 'eslint';
 import * as tseslint from 'typescript-eslint';
+// @ts-expect-error - local ESLint rule definition in plain JavaScript
 import { noCrossModuleInternalImportsRule } from '../../../eslint-rules/no-cross-module-internal-imports.js';
 
 RuleTester.describe = describe;
@@ -55,7 +56,7 @@ ruleTester.run(
         ],
       },
       {
-        code: `import { api } from '../storage/internal/api';`,
+        code: `import { api } from '../../storage/internal/api';`,
         filename: '/workspace/apps/web/src/modules/videos/components/Card.tsx',
         errors: [
           {
