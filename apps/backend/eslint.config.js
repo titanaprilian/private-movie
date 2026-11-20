@@ -1,29 +1,30 @@
-import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import { defineConfig } from 'eslint/config';
-import path from 'node:path';
-import process from 'node:process';
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
+import { defineConfig } from "eslint/config";
+import path from "node:path";
+import process from "node:process";
 
 const deepModulesPlugin = {
   rules: {
-    'no-cross-module-internal-imports': {
+    "no-cross-module-internal-imports": {
       meta: {
-        type: 'problem',
+        type: "problem",
         docs: {
-          description: "Strictly forbid importing anything from a path matching */internal/* unless the importing file is located within that exact same module's directory structure.",
+          description:
+            "Strictly forbid importing anything from a path matching */internal/* unless the importing file is located within that exact same module's directory structure.",
         },
         schema: [],
       },
       create(context) {
         function checkImport(node, importPath) {
-          if (typeof importPath !== 'string') return;
-          const segments = importPath.replace(/\\/g, '/').split('/');
-          if (!segments.includes('internal')) {
+          if (typeof importPath !== "string") return;
+          const segments = importPath.replace(/\\/g, "/").split("/");
+          if (!segments.includes("internal")) {
             return;
           }
 
           const filename = context.filename ?? context.getFilename();
-          const normalizedFilename = filename.replace(/\\/g, '/');
+          const normalizedFilename = filename.replace(/\\/g, "/");
 
           // Helper to get module name from path
           const getModuleName = (p) => {
@@ -35,10 +36,10 @@ const deepModulesPlugin = {
 
           // Resolve target path
           let resolvedPath = importPath;
-          if (importPath.startsWith('.') || path.isAbsolute(importPath)) {
+          if (importPath.startsWith(".") || path.isAbsolute(importPath)) {
             resolvedPath = path.resolve(path.dirname(filename), importPath);
-          } else if (importPath.startsWith('src/')) {
-            const srcIndex = normalizedFilename.indexOf('/src/');
+          } else if (importPath.startsWith("src/")) {
+            const srcIndex = normalizedFilename.indexOf("/src/");
             if (srcIndex !== -1) {
               const rootPath = filename.substring(0, srcIndex);
               resolvedPath = path.resolve(rootPath, importPath);
@@ -47,12 +48,12 @@ const deepModulesPlugin = {
             }
           }
 
-          const targetModule = getModuleName(resolvedPath.replace(/\\/g, '/'));
+          const targetModule = getModuleName(resolvedPath.replace(/\\/g, "/"));
 
           if (targetModule && importerModule !== targetModule) {
             context.report({
               node,
-              message: `Importing from the internal folder of module "${targetModule}" is not allowed from ${importerModule ? `module "${importerModule}"` : 'outside the module'}.`,
+              message: `Importing from the internal folder of module "${targetModule}" is not allowed from ${importerModule ? `module "${importerModule}"` : "outside the module"}.`,
             });
           }
         }
@@ -72,10 +73,10 @@ const deepModulesPlugin = {
             }
           },
           ImportExpression(node) {
-            if (node.source && node.source.type === 'Literal') {
+            if (node.source && node.source.type === "Literal") {
               checkImport(node, node.source.value);
             }
-          }
+          },
         };
       },
     },
@@ -94,20 +95,41 @@ export default defineConfig(
     },
   },
   {
-    files: ['**/*.js'],
+    files: ["**/*.js"],
     ...tseslint.configs.disableTypeChecked,
   },
   {
     plugins: {
-      'deep-modules': deepModulesPlugin,
+      "deep-modules": deepModulesPlugin,
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      'no-console': 'off',
-      'deep-modules/no-cross-module-internal-imports': 'error',
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_" },
+      ],
+      "no-console": "off",
+      "deep-modules/no-cross-module-internal-imports": "error",
     },
   },
   {
-    ignores: ['node_modules/', 'dist/'],
-  }
+    files: ["src/**/*.{ts,tsx}", "test/fixtures/complexity/**/*.{ts,tsx}"],
+    rules: {
+      complexity: ["error", { max: 25 }],
+    },
+  },
+  {
+    // Calibrated complexity overrides for legacy hotspot functions documented in Issue #993
+    files: [
+      "src/modules/series/internal/archive-ingest/services/upload-pipeline.ts",
+      "src/modules/series/internal/archive-ingest/services/job.ts",
+      "src/lib/errors.ts",
+      "src/modules/storage/http.ts",
+    ],
+    rules: {
+      complexity: ["error", { max: 50 }],
+    },
+  },
+  {
+    ignores: ["node_modules/", "dist/", "test/fixtures/complexity/**"],
+  },
 );
