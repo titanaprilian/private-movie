@@ -44,6 +44,7 @@
     "lint:staged": "lint-staged",
     "scope:check": "bash scripts/check-commit-scope.sh",
     "check:docs": "bun scripts/doc-link-check.ts",
+    "measure:ci": "bun scripts/measure-ci.ts",
     "test:gate": "vitest run test/unit/scripts/",
     "gate:check": "bun scripts/gate-check.ts",
     "gate:knip": "knip",
