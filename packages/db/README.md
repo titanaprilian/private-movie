@@ -57,4 +57,8 @@ When evolving existing tables without downtime, follow the three-phase lifecycle
 2. **Phase 2 (Migrate)**: Backfill historical rows. Switch application reads and writes to the new column. Deploy code.
 3. **Phase 3 (Contract)**: After verifying zero traffic reaches the legacy column, remove it from the schema, generate the migration, annotate with `-- allow-destructive: <rationale>`, and apply.
 
+## Deployment Recovery
+
+For operational runbooks on recovering from schema migration failures before or after application rollout, see the [Database Migration Recovery Runbook](../../docs/runbooks/database-migration-recovery.md).
+
 For detailed guidelines and rules for AI agents, see [`AGENTS.md`](./AGENTS.md).

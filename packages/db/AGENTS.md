@@ -8,6 +8,7 @@ Database schema and migration rules for `@repo/db`. Agents working on database s
 - Schema changes: modify Drizzle schema in `src/schema/`, run `bun run db:generate`, and commit the generated SQL file under `drizzle/` for human review and deployment.
 - Destructive operations (`DROP TABLE`, `DROP COLUMN`, unhedged `ADD COLUMN ... NOT NULL` without `DEFAULT`) are blocked by quality gates (`bun run gate:check` and `bun run lint:migrations`).
 - Never bypass the migration linter without a valid rationale (`-- allow-destructive: <rationale>` with >= 3 non-whitespace characters) and an explicit human grant or verified contract phase.
+- In the event of a deployment or schema migration failure, follow the [Database Migration Recovery Runbook](../../docs/runbooks/database-migration-recovery.md). Recovery, restores, and production rollbacks are strictly human operator responsibilities; agents must never run migration or push commands.
 
 ## Expand-and-Contract Protocol
 
@@ -101,3 +102,11 @@ Rationale requirements:
 
 - Must contain at least 3 non-whitespace characters.
 - Must explain why the destructive change is safe. Empty or whitespace-only rationales will fail the quality gate.
+
+## Deployment Recovery & Operational Runbooks
+
+For end-to-end failure handling procedures covering both pre-rollout migration errors and post-rollout application regressions, see [`docs/runbooks/database-migration-recovery.md`](../../docs/runbooks/database-migration-recovery.md).
+
+- **Failure Before App Rollout**: Deploy script stops before container updates; prior app instances remain healthy; operator decides between roll-forward fix and deployment abort.
+- **Failure After App Rollout**: Additive changes (Phase 1 Expand) allow instant application container rollback without database rollback; destructive changes (Phase 3 Contract) require restoring from the pre-migration `pg_dump` snapshot.
+- **Human Approval Boundary**: All restore operations and production database commands are human-owned. Agents are prohibited from executing `db:migrate` or `db:push`.
