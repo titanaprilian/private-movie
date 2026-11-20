@@ -23,6 +23,7 @@ PROMPT.md
 .implement-report.md
 implement-report.md
 .jscpd/
+report/
 
 # Stryker mutation testing
 .stryker-tmp/
