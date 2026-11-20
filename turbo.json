@@ -83,10 +83,6 @@
       "env": ["DATABASE_URL"],
       "cache": false
     },
-    "db:sync-episodes": {
-      "env": ["DATABASE_URL", "TMDB_API_KEY"],
-      "cache": false
-    },
     "dev": {
       "persistent": true,
       "passThroughEnv": [

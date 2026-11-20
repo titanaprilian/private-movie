@@ -8,7 +8,7 @@ A self-hosted private media streaming platform and catalog with web and Android 
 - **Backend (`apps/backend`)**: [Elysia](https://elysiajs.com), [Drizzle ORM](https://orm.drizzle.team/), PostgreSQL, S3/B2 Object Storage
 - **Web Client (`apps/web`)**: React 19, [Vite](https://vite.dev), [TanStack Router](https://tanstack.com/router), [TanStack Query](https://tanstack.com/query), Tailwind CSS, Radix UI, Zustand
 - **TV Client (`apps/android-tv`)**: Kotlin, Jetpack Compose for TV, AndroidX Leanback (API 30–35)
-- **Scraping & Ingestion (`packages/media-scraper`, `packages/seed-cli`)**: Cheerio, Playwright, TMDB API
+- **Scraping & Storage (`packages/media-scraper`, `packages/media-service`)**: Cheerio, Playwright, TMDB API, S3/B2 Object Storage
 - **Testing**: Vitest, React Testing Library
 
 ## Architecture
@@ -19,7 +19,7 @@ This monorepo strictly follows the **Deep Modules** architecture to keep context
 - **React Frontend**: Feature modules expose UI components and custom hooks via public entrypoints (`src/modules/<feature>/index.ts`). Local state (Zustand stores) and UI subcomponents stay in `internal/`. Routes under `src/routes/` serve as thin composition roots.
 - **Android TV**: Features map to screen composables and view models in `src/main/java/com/privatemovie/tv/modules/<feature>/` with subcomponents in `internal/`, composed via `AppNavigation.kt`.
 
-See [`AGENTS.md`](./AGENTS.md) for the full architecture, constraints, and platform mappings.
+See [`AGENTS.md`](./AGENTS.md), [`ARCHITECTURE.md`](./ARCHITECTURE.md), and [`docs/decision-log/`](./docs/decision-log/README.md) for full architecture rules, monorepo codemaps, and architecture decisions.
 
 ```mermaid
 flowchart TD
@@ -106,8 +106,7 @@ node_mediaservice -.->|"fetches remote streams"| node_source
 │   ├── contracts/     # Shared DTOs, schemas, and OpenAPI contracts
 │   ├── db/            # Drizzle schema, migrations, and database client
 │   ├── media-scraper/ # Cheerio and Playwright scraper utilities
-│   ├── media-service/ # Media processing, S3/B2 storage, and stream resolution
-│   └── seed-cli/      # Data ingestion and TMDB enrichment CLI scripts
+│   └── media-service/ # Media processing, S3/B2 storage, and stream resolution
 ├── docker-compose.yml # Docker deployment configuration
 └── AGENTS.md          # Architecture and agent development protocol
 ```
@@ -153,13 +152,6 @@ bun run db:migrate
 bun run db:seed
 ```
 
-To sync episode data or enrich titles with TMDB metadata:
-
-```bash
-bun run db:fill-tmdb-ids
-bun run db:sync-episodes
-```
-
 ### 4. Run Development Servers
 
 Start all applications concurrently:
@@ -199,7 +191,6 @@ bun run test:media-service
 bun run test:media-scraper
 bun run test:db
 bun run test:contracts
-bun run test:seed-cli
 
 # Run backend integration tests (requires running PostgreSQL)
 bun run test:integration
@@ -225,4 +216,4 @@ bun run verify:android  # Typecheck + lint apps/android-tv via Gradle (manual; n
 bun run clean           # Clean build outputs
 ```
 
-Commits are gated by Husky + lint-staged — one app per commit, formatting/ESLint on staged files, typecheck on push (see [`AGENTS.md`](./AGENTS.md#local-git-hooks-pre-commit--commit-msg--pre-push)).
+Commits are gated by Husky + lint-staged — one app per commit, formatting/ESLint on staged files, typecheck on push (see [`AGENTS.md`](./AGENTS.md#commits)).

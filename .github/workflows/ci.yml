@@ -54,6 +54,7 @@ jobs:
         run: |
           bun run test:gate
           bun run gate:check
+          bun run check:docs
 
       - name: Run Trivy vulnerability scanner (dependency audit)
         uses: aquasecurity/trivy-action@v0.36.0
