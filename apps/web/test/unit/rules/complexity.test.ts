@@ -1,0 +1,46 @@
+import { describe, expect, it } from 'vitest';
+import { ESLint } from 'eslint';
+import path from 'node:path';
+
+describe('complexity rule in web (ESLint CI check)', () => {
+  const webDir = path.resolve(__dirname, '../../..');
+  const eslint = new ESLint({
+    cwd: webDir,
+    overrideConfigFile: path.join(webDir, 'eslint.config.js'),
+    ignore: false,
+  });
+
+  it('fails with location and threshold when a function exceeds max complexity of 25', async () => {
+    const fixturePath = path.join(
+      webDir,
+      'test/fixtures/complexity/high-complexity.ts'
+    );
+    const [result] = await eslint.lintFiles([fixturePath]);
+
+    expect(result.errorCount).toBeGreaterThanOrEqual(1);
+    const complexityMsg = result.messages.find(
+      (m) => m.ruleId === 'complexity'
+    );
+    expect(complexityMsg).toBeDefined();
+    expect(complexityMsg?.severity).toBe(2);
+    expect(complexityMsg?.line).toBe(1);
+    expect(complexityMsg?.message).toContain(
+      'has a complexity of 27. Maximum allowed is 25'
+    );
+  });
+
+  it('passes on clean code with complexity below 25', async () => {
+    const code = `
+export function simpleComponent(a: number, b: number): number {
+  return a + b;
+}
+`;
+    const [result] = await eslint.lintText(code, {
+      filePath: path.join(webDir, 'src/simple-test.ts'),
+    });
+    const complexityMsg = result.messages.find(
+      (m) => m.ruleId === 'complexity'
+    );
+    expect(complexityMsg).toBeUndefined();
+  });
+});
