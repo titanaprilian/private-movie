@@ -767,3 +767,274 @@ describe("ArchiveIngest idempotent re-confirm (ticket 695)", () => {
     expect(mine).toHaveLength(1);
   });
 });
+
+describe("USE_STREAMING_ARCHIVE_EXTRACTOR feature flag (Issue 1002)", () => {
+  let testTmpBase = "";
+
+  beforeEach(() => {
+    try {
+      rmSync(testTmpBase, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+    testTmpBase = mkdtempSync(join(tmpdir(), "upload-flag-"));
+    delete process.env.FEATURE_FLAG_USE_STREAMING_ARCHIVE_EXTRACTOR;
+  });
+
+  it("defaults to disk-staged extraction when feature flag is not set", async () => {
+    const { userId, seriesId, epIds } = await createShow();
+    const jobId = crypto.randomUUID();
+    const stagingPath = join(testTmpBase, jobId);
+    mkdirSync(stagingPath, { recursive: true });
+    writeFileSync(join(stagingPath, "pack.7z"), "fake-archive");
+
+    await db.insert(archiveIngestJobs).values({
+      id: jobId,
+      ownerId: userId,
+      seriesId,
+      sourceKey: `test-${jobId}`,
+      sourceUrl: "https://example.com/pack.7z",
+      status: "ready",
+      stage: "ready",
+      bytesDone: 0,
+      bytesTotal: null,
+      stagingPath,
+      archiveFilename: "pack.7z",
+      entries: [{ filename: "Show.S01E01.mp4", sizeBytes: 50 }],
+      selection: [],
+      storageProviderId: null,
+      errorCode: null,
+      errorMessage: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expiresAt: null,
+    });
+
+    let extractCalled = false;
+    let extractStreamCalled = false;
+    const uploads: string[] = [];
+
+    const service = createArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
+      stagingBaseDir: testTmpBase,
+      s3StorageService: makeFakeS3(uploads) as never,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: makeFakeS3(uploads) as never,
+      }),
+      extractor: {
+        binaryPath: "7zz",
+        list: async () => [],
+        extract: async (opts) => {
+          extractCalled = true;
+          await mkdir(opts.destDir, { recursive: true });
+          const abs = join(opts.destDir, basename(opts.targets[0]!));
+          await writeFile(abs, "disk-staged-content");
+          return {
+            extractedFiles: [
+              { path: basename(opts.targets[0]!), sizeBytes: 18 },
+            ],
+          };
+        },
+        extractStream: async () => {
+          extractStreamCalled = true;
+          return {
+            stream: new Response("streaming-content")
+              .body as unknown as ReadableStream<Uint8Array>,
+            sizeBytes: 17,
+          };
+        },
+        run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+    });
+
+    await service.confirmJob(jobId, [
+      {
+        filename: "Show.S01E01.mp4",
+        episodeId: epIds[0]!,
+        label: "E1",
+      },
+    ]);
+
+    const finalJob = await waitForJobStatus(
+      service.getJob.bind(service),
+      jobId,
+      "done",
+    );
+    expect(finalJob.status).toBe("done");
+    expect(extractCalled).toBe(true);
+    expect(extractStreamCalled).toBe(false);
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("switches to streaming extraction when FEATURE_FLAG_USE_STREAMING_ARCHIVE_EXTRACTOR=true", async () => {
+    process.env.FEATURE_FLAG_USE_STREAMING_ARCHIVE_EXTRACTOR = "true";
+    const { userId, seriesId, epIds } = await createShow();
+    const jobId = crypto.randomUUID();
+    const stagingPath = join(testTmpBase, jobId);
+    mkdirSync(stagingPath, { recursive: true });
+    writeFileSync(join(stagingPath, "pack.7z"), "fake-archive");
+
+    await db.insert(archiveIngestJobs).values({
+      id: jobId,
+      ownerId: userId,
+      seriesId,
+      sourceKey: `test-${jobId}`,
+      sourceUrl: "https://example.com/pack.7z",
+      status: "ready",
+      stage: "ready",
+      bytesDone: 0,
+      bytesTotal: null,
+      stagingPath,
+      archiveFilename: "pack.7z",
+      entries: [{ filename: "Show.S01E01.mp4", sizeBytes: 50 }],
+      selection: [],
+      storageProviderId: null,
+      errorCode: null,
+      errorMessage: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expiresAt: null,
+    });
+
+    let extractCalled = false;
+    let extractStreamCalled = false;
+    const uploads: string[] = [];
+
+    const service = createArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
+      stagingBaseDir: testTmpBase,
+      s3StorageService: makeFakeS3(uploads) as never,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: makeFakeS3(uploads) as never,
+      }),
+      extractor: {
+        binaryPath: "7zz",
+        list: async () => [],
+        extract: async (opts) => {
+          extractCalled = true;
+          await mkdir(opts.destDir, { recursive: true });
+          const abs = join(opts.destDir, basename(opts.targets[0]!));
+          await writeFile(abs, "disk-staged-content");
+          return {
+            extractedFiles: [
+              { path: basename(opts.targets[0]!), sizeBytes: 18 },
+            ],
+          };
+        },
+        extractStream: async () => {
+          extractStreamCalled = true;
+          return {
+            stream: new Response("streaming-content")
+              .body as unknown as ReadableStream<Uint8Array>,
+            sizeBytes: 17,
+          };
+        },
+        run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+    });
+
+    await service.confirmJob(jobId, [
+      {
+        filename: "Show.S01E01.mp4",
+        episodeId: epIds[0]!,
+        label: "E1",
+      },
+    ]);
+
+    const finalJob = await waitForJobStatus(
+      service.getJob.bind(service),
+      jobId,
+      "done",
+    );
+    expect(finalJob.status).toBe("done");
+    expect(extractCalled).toBe(false);
+    expect(extractStreamCalled).toBe(true);
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("rolls back to disk-staged extraction when FEATURE_FLAG_USE_STREAMING_ARCHIVE_EXTRACTOR=false", async () => {
+    process.env.FEATURE_FLAG_USE_STREAMING_ARCHIVE_EXTRACTOR = "false";
+    const { userId, seriesId, epIds } = await createShow();
+    const jobId = crypto.randomUUID();
+    const stagingPath = join(testTmpBase, jobId);
+    mkdirSync(stagingPath, { recursive: true });
+    writeFileSync(join(stagingPath, "pack.7z"), "fake-archive");
+
+    await db.insert(archiveIngestJobs).values({
+      id: jobId,
+      ownerId: userId,
+      seriesId,
+      sourceKey: `test-${jobId}`,
+      sourceUrl: "https://example.com/pack.7z",
+      status: "ready",
+      stage: "ready",
+      bytesDone: 0,
+      bytesTotal: null,
+      stagingPath,
+      archiveFilename: "pack.7z",
+      entries: [{ filename: "Show.S01E01.mp4", sizeBytes: 50 }],
+      selection: [],
+      storageProviderId: null,
+      errorCode: null,
+      errorMessage: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expiresAt: null,
+    });
+
+    let extractCalled = false;
+    let extractStreamCalled = false;
+    const uploads: string[] = [];
+
+    const service = createArchiveIngestJobManager({
+      repository: createArchiveIngestRepository(db),
+      stagingBaseDir: testTmpBase,
+      s3StorageService: makeFakeS3(uploads) as never,
+      videoSourceRepository: createVideoSourceRepositoryInternal(db, {
+        s3StorageService: makeFakeS3(uploads) as never,
+      }),
+      extractor: {
+        binaryPath: "7zz",
+        list: async () => [],
+        extract: async (opts) => {
+          extractCalled = true;
+          await mkdir(opts.destDir, { recursive: true });
+          const abs = join(opts.destDir, basename(opts.targets[0]!));
+          await writeFile(abs, "disk-staged-content");
+          return {
+            extractedFiles: [
+              { path: basename(opts.targets[0]!), sizeBytes: 18 },
+            ],
+          };
+        },
+        extractStream: async () => {
+          extractStreamCalled = true;
+          return {
+            stream: new Response("streaming-content")
+              .body as unknown as ReadableStream<Uint8Array>,
+            sizeBytes: 17,
+          };
+        },
+        run: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+    });
+
+    await service.confirmJob(jobId, [
+      {
+        filename: "Show.S01E01.mp4",
+        episodeId: epIds[0]!,
+        label: "E1",
+      },
+    ]);
+
+    const finalJob = await waitForJobStatus(
+      service.getJob.bind(service),
+      jobId,
+      "done",
+    );
+    expect(finalJob.status).toBe("done");
+    expect(extractCalled).toBe(true);
+    expect(extractStreamCalled).toBe(false);
+    expect(uploads).toHaveLength(1);
+  });
+});

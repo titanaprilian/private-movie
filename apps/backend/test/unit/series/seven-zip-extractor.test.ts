@@ -1,4 +1,14 @@
-import { chmod, copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -14,9 +24,17 @@ import {
 // Only RAR5 is covered by this committed fixture. RAR4 has no fixture because
 // the modern `rar` tool can no longer produce RAR4 archives, so a green test
 // here is NOT evidence that older RAR archives are handled.
-const RAR5_FIXTURE = join(import.meta.dirname, "../../fixtures/archives/sample-rar5.rar");
+const RAR5_FIXTURE = join(
+  import.meta.dirname,
+  "../../fixtures/archives/sample-rar5.rar",
+);
 
-const RAR5_CONTENTS = ["notes.txt", "season1", "season1/ep01.mkv", "season1/ep02.mkv"];
+const RAR5_CONTENTS = [
+  "notes.txt",
+  "season1",
+  "season1/ep01.mkv",
+  "season1/ep02.mkv",
+];
 
 const EPISODE_FILES = [
   { name: "notes.txt", body: "hello notes\n" },
@@ -38,7 +56,10 @@ async function stageSource(dir: string): Promise<void> {
  * Builds a real archive with the resolved 7-Zip binary. 7-Zip stores paths
  * relative to the process working directory, so the command runs from `srcDir`.
  */
-async function buildArchive(name: string, format: "zip" | "7z"): Promise<string> {
+async function buildArchive(
+  name: string,
+  format: "zip" | "7z",
+): Promise<string> {
   const srcDir = join(workDir, `src-${name}`);
   await mkdir(srcDir, { recursive: true });
   await stageSource(srcDir);
@@ -46,15 +67,18 @@ async function buildArchive(name: string, format: "zip" | "7z"): Promise<string>
   const extractor = await createSevenZipExtractor();
   const result = await extractor.run(
     ["a", "-y", "-bd", `-t${format}`, archivePath, "."],
-    { cwd: srcDir }
+    { cwd: srcDir },
   );
-  if (result.exitCode !== 0) throw new Error(`fixture build failed: ${result.stderr}`);
+  if (result.exitCode !== 0)
+    throw new Error(`fixture build failed: ${result.stderr}`);
   return archivePath;
 }
 
 async function binarySupportsRar(): Promise<boolean> {
   const support = await probeSevenZipFormatSupport();
-  return support.formats.some((format) => format.toLowerCase().startsWith("rar"));
+  return support.formats.some((format) =>
+    format.toLowerCase().startsWith("rar"),
+  );
 }
 
 function sortedPaths(entries: { path: string }[]): string[] {
@@ -121,7 +145,9 @@ describe("SevenZipExtractor.list", () => {
   it("flags directories and reports uncompressed sizes", async () => {
     const archivePath = await buildArchive("flags", "7z");
 
-    const entries = await (await createSevenZipExtractor()).list({ archivePath });
+    const entries = await (
+      await createSevenZipExtractor()
+    ).list({ archivePath });
 
     expect(entries.find((e) => e.path === "season1")?.isDirectory).toBe(true);
     const ep1 = entries.find((e) => e.path === "season1/ep01.mkv");
@@ -134,7 +160,7 @@ describe("SevenZipExtractor.list", () => {
     await writeFile(bogus, "this is not an archive");
 
     await expect(
-      (await createSevenZipExtractor()).list({ archivePath: bogus })
+      (await createSevenZipExtractor()).list({ archivePath: bogus }),
     ).rejects.toMatchObject({ code: "LIST_FAILED" });
   });
 
@@ -149,7 +175,7 @@ describe("SevenZipExtractor.list", () => {
     });
 
     await expect(
-      extractor.list({ archivePath: join(workDir, "pack.rar") })
+      extractor.list({ archivePath: join(workDir, "pack.rar") }),
     ).rejects.toMatchObject({ code: "UNSUPPORTED_FORMAT" });
   });
 });
@@ -182,7 +208,12 @@ describe("SevenZipExtractor path safety", () => {
       });
 
       await expect(
-        extractor.extract({ archivePath, destDir, targets: [target], listFileDir })
+        extractor.extract({
+          archivePath,
+          destDir,
+          targets: [target],
+          listFileDir,
+        }),
       ).rejects.toMatchObject({ code: "UNSAFE_ARCHIVE_PATH" });
 
       expect(spawnCount).toBe(0);
@@ -201,7 +232,7 @@ describe("SevenZipExtractor path safety", () => {
         destDir: join(workDir, "safety-batch-out"),
         targets: ["season1/ep01.mkv", "../escape.mkv"],
         listFileDir: workDir,
-      })
+      }),
     ).rejects.toMatchObject({ code: "UNSAFE_ARCHIVE_PATH" });
   });
 });
@@ -213,15 +244,21 @@ describe("SevenZipExtractor.extract", () => {
     const listFileDir = join(workDir, "targeted-lists");
     await mkdir(listFileDir, { recursive: true });
 
-    const result = await (await createSevenZipExtractor()).extract({
+    const result = await (
+      await createSevenZipExtractor()
+    ).extract({
       archivePath,
       destDir,
       targets: ["season1/ep02.mkv"],
       listFileDir,
     });
 
-    expect(result.extractedFiles.map((f) => f.path)).toEqual(["season1/ep02.mkv"]);
-    expect(result.extractedFiles[0].sizeBytes).toBe(Buffer.byteLength(EPISODE_FILES[2].body));
+    expect(result.extractedFiles.map((f) => f.path)).toEqual([
+      "season1/ep02.mkv",
+    ]);
+    expect(result.extractedFiles[0].sizeBytes).toBe(
+      Buffer.byteLength(EPISODE_FILES[2].body),
+    );
     expect(await readdir(listFileDir)).toEqual([]);
   });
 
@@ -229,7 +266,9 @@ describe("SevenZipExtractor.extract", () => {
     const archivePath = await buildArchive("progress", "7z");
     const seen: string[] = [];
 
-    await (await createSevenZipExtractor()).extract({
+    await (
+      await createSevenZipExtractor()
+    ).extract({
       archivePath,
       destDir: join(workDir, "progress-out"),
       targets: ["notes.txt", "season1/ep01.mkv"],
@@ -259,15 +298,77 @@ describe("SevenZipExtractor.extract", () => {
     await copyFile(RAR5_FIXTURE, archivePath);
     const destDir = join(workDir, "rar5-out");
 
-    const result = await (await createSevenZipExtractor()).extract({
+    const result = await (
+      await createSevenZipExtractor()
+    ).extract({
       archivePath,
       destDir,
       targets: ["season1/ep01.mkv"],
       listFileDir: workDir,
     });
 
-    expect(result.extractedFiles.map((f) => f.path)).toEqual(["season1/ep01.mkv"]);
-    expect(await readFile(join(destDir, "season1/ep01.mkv"), "utf8")).toBe("episode one\n");
+    expect(result.extractedFiles.map((f) => f.path)).toEqual([
+      "season1/ep01.mkv",
+    ]);
+    expect(await readFile(join(destDir, "season1/ep01.mkv"), "utf8")).toBe(
+      "episode one\n",
+    );
+  });
+});
+
+describe("SevenZipExtractor.extractStream", () => {
+  async function streamToString(
+    stream: ReadableStream<Uint8Array>,
+  ): Promise<string> {
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+    return Buffer.concat(chunks).toString("utf8");
+  }
+
+  it("streams the requested target directly to a ReadableStream without creating local files", async () => {
+    const archivePath = await buildArchive("targeted-stream", "7z");
+    const extractor = await createSevenZipExtractor();
+
+    const result = await extractor.extractStream({
+      archivePath,
+      target: "season1/ep02.mkv",
+    });
+
+    expect(result.stream).toBeDefined();
+    const body = await streamToString(result.stream);
+    expect(body).toBe(EPISODE_FILES[2].body);
+  });
+
+  it("rejects an unsafe target path before spawning 7-Zip", async () => {
+    const archivePath = await buildArchive("safety-stream", "7z");
+    const extractor = await createSevenZipExtractor();
+
+    await expect(
+      extractor.extractStream({
+        archivePath,
+        target: "../escape.mkv",
+      }),
+    ).rejects.toMatchObject({ code: "UNSAFE_ARCHIVE_PATH" });
+  });
+
+  it("rejects immediately when signal is already aborted", async () => {
+    const archivePath = await buildArchive("abort-stream", "7z");
+    const extractor = await createSevenZipExtractor();
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      extractor.extractStream({
+        archivePath,
+        target: "season1/ep01.mkv",
+        signal: controller.signal,
+      }),
+    ).rejects.toMatchObject({ code: "CANCELLED" });
   });
 });
 
@@ -275,7 +376,11 @@ describe("SevenZipExtractor cancellation", () => {
   it("terminates the running 7-Zip child process when the AbortSignal fires", async () => {
     const pidFile = join(workDir, "slow-7z.pid");
     const fakeBinary = join(workDir, "slow-7z.sh");
-    await writeFile(fakeBinary, `#!/bin/sh\necho $$ > "${pidFile}"\nexec sleep 30\n`, "utf8");
+    await writeFile(
+      fakeBinary,
+      `#!/bin/sh\necho $$ > "${pidFile}"\nexec sleep 30\n`,
+      "utf8",
+    );
     await chmod(fakeBinary, 0o755);
 
     const extractor = new SevenZipExtractor({ binaryPath: fakeBinary });
@@ -304,7 +409,7 @@ describe("SevenZipExtractor cancellation", () => {
       (await createSevenZipExtractor()).list({
         archivePath,
         signal: AbortSignal.abort(),
-      })
+      }),
     ).rejects.toMatchObject({ code: "CANCELLED" });
   });
 });
@@ -317,16 +422,19 @@ describe("SevenZipExtractor password handling", () => {
     const stage = join(workDir, "encrypted-stage");
     await mkdir(stage, { recursive: true });
     await stageSource(stage);
-    const result = await (await createSevenZipExtractor()).run(
+    const result = await (
+      await createSevenZipExtractor()
+    ).run(
       ["a", "-y", "-bd", "-t7z", "-pSECRET", "-mhe=on", encryptedArchive, "."],
-      { cwd: stage }
+      { cwd: stage },
     );
-    if (result.exitCode !== 0) throw new Error(`encrypted fixture build failed: ${result.stderr}`);
+    if (result.exitCode !== 0)
+      throw new Error(`encrypted fixture build failed: ${result.stderr}`);
   }, 60_000);
 
   it("maps a missing password to PASSWORD_REQUIRED", async () => {
     await expect(
-      (await createSevenZipExtractor()).list({ archivePath: encryptedArchive })
+      (await createSevenZipExtractor()).list({ archivePath: encryptedArchive }),
     ).rejects.toMatchObject({ code: "PASSWORD_REQUIRED" });
   });
 
@@ -335,17 +443,24 @@ describe("SevenZipExtractor password handling", () => {
       (await createSevenZipExtractor()).list({
         archivePath: encryptedArchive,
         password: "WRONG",
-      })
+      }),
     ).rejects.toMatchObject({ code: "PASSWORD_INCORRECT" });
   });
 
   it("lists entries when the correct password is supplied", async () => {
-    const entries = await (await createSevenZipExtractor()).list({
+    const entries = await (
+      await createSevenZipExtractor()
+    ).list({
       archivePath: encryptedArchive,
       password: "SECRET",
     });
 
-    expect(sortedPaths(entries)).toEqual(["notes.txt", "season1", "season1/ep01.mkv", "season1/ep02.mkv"]);
+    expect(sortedPaths(entries)).toEqual([
+      "notes.txt",
+      "season1",
+      "season1/ep01.mkv",
+      "season1/ep02.mkv",
+    ]);
   });
 });
 
@@ -367,7 +482,9 @@ describe("resolveSevenZipBinary", () => {
       await chmod(stub, 0o755);
     }
 
-    const resolved = await resolveSevenZipBinary({ env: { PATH: binDir } as NodeJS.ProcessEnv });
+    const resolved = await resolveSevenZipBinary({
+      env: { PATH: binDir } as NodeJS.ProcessEnv,
+    });
 
     expect(resolved).toBe(join(binDir, "7zz"));
   });
@@ -379,14 +496,18 @@ describe("resolveSevenZipBinary", () => {
     await writeFile(stub, "#!/bin/sh\nexit 0\n", "utf8");
     await chmod(stub, 0o755);
 
-    const resolved = await resolveSevenZipBinary({ env: { PATH: binDir } as NodeJS.ProcessEnv });
+    const resolved = await resolveSevenZipBinary({
+      env: { PATH: binDir } as NodeJS.ProcessEnv,
+    });
 
     expect(resolved).toBe(stub);
   });
 
   it("throws BINARY_NOT_FOUND when nothing is discoverable", async () => {
     await expect(
-      resolveSevenZipBinary({ env: { PATH: "/nonexistent" } as NodeJS.ProcessEnv })
+      resolveSevenZipBinary({
+        env: { PATH: "/nonexistent" } as NodeJS.ProcessEnv,
+      }),
     ).rejects.toMatchObject({ code: "BINARY_NOT_FOUND" });
   });
 });
