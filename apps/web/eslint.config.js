@@ -13,7 +13,12 @@ const deepModulesPlugin = {
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'node_modules', 'public/**'],
+    ignores: [
+      'dist',
+      'node_modules',
+      'public/**',
+      'test/fixtures/complexity/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -42,6 +47,31 @@ export default tseslint.config(
     files: ['src/**/*.{ts,tsx}'],
     rules: {
       'deep-modules/no-cross-module-internal-imports': 'error',
+    },
+  },
+  {
+    files: ['src/**/*.{ts,tsx}', 'test/fixtures/complexity/**/*.{ts,tsx}'],
+    rules: {
+      complexity: ['error', { max: 25 }],
+    },
+  },
+  {
+    // Calibrated complexity overrides for legacy hotspot functions documented in Issue #993
+    files: [
+      'src/components/media/VideoPlayer.tsx',
+      'src/modules/videos/internal/ingestion/bulk/hooks/useArchiveIngestSources.ts',
+      'src/modules/storage/internal/components/providers/ProviderForm.tsx',
+      'src/modules/videos/internal/ingestion/bulk/hooks/useBulkIngestSources.ts',
+      'src/modules/videos/internal/ingestion/bulk/components/archive/ArchiveStep1.tsx',
+      'src/modules/videos/internal/seasons/utils/formatEpisodeDuration.ts',
+      'src/modules/watch/internal/utils/formatDuration.ts',
+      'src/components/media/useVideoShortcuts.ts',
+      'src/modules/videos/internal/ingestion/bulk/components/archive/ArchiveStep3.tsx',
+      'src/modules/watch/internal/hooks/useSeriesWatchView.ts',
+      'src/modules/storage/internal/components/dialogs/DeleteConfirmDialog.tsx',
+    ],
+    rules: {
+      complexity: ['error', { max: 50 }],
     },
   },
   prettier
