@@ -11,7 +11,7 @@ This skill automates the transition from a completed feature or bugfix branch to
 2. Creates a pull request following the repository's standard PR template.
 3. Monitors CI workflows (`gh pr checks --watch`).
 4. If CI fails, automatically extracts failing logs to diagnose and fix in `poteto-mode`.
-5. If CI passes, squash-merges into `main`, deletes the feature branch, and syncs local `main`.
+5. If CI passes, squash-merges into `main`. In a linked worktree, it leaves that worktree and its local branch for orchestrator cleanup; in a standalone checkout, it retains the existing branch-delete and local-main-sync behavior.
 
 ## Prerequisites
 

@@ -4,6 +4,12 @@ Deep Modules monorepo. Before working inside `apps/<x>/`, also read `apps/<x>/AG
 
 Process (planning, tickets, review, verification) is owned by pstack skills — this file holds only repo rules agents cannot discover from the code.
 
+## Worker pane model configuration
+
+- `/setup-pstack` configures OMP's session hook only. In this repository, configure visible Herdr worker panes with `.agents/skills/herdr-orchestrator/scripts/configure-worker.sh`.
+- Run `.agents/skills/herdr-orchestrator/scripts/configure-worker.sh list` to inspect assignments.
+- Run `.agents/skills/herdr-orchestrator/scripts/configure-worker.sh set <role> <agy|omp> <model>` to validate and update one assignment. New workers read the updated assignment; the current orchestrator and existing workers do not change.
+
 ## Canonical docs
 
 Read before non-trivial features or bug fixes:

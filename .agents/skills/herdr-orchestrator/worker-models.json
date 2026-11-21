@@ -1,0 +1,14 @@
+{
+  "worker": {
+    "kind": "agy",
+    "model": "gemini-3.8-flash-medium"
+  },
+  "coding": {
+    "kind": "agy",
+    "model": "gemini-3.8-flash-medium"
+  },
+  "trivial": {
+    "kind": "agy",
+    "model": "gemini-3.8-flash-low"
+  }
+}

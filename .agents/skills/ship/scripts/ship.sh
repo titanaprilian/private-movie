@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
-cd "$REPO_ROOT"
+cd "$(git rev-parse --show-toplevel)"
 
 TITLE=""
 ISSUE=""
@@ -142,13 +141,17 @@ echo "✅ [CI PASSED] All checks passed for PR #$PR_NUM!"
 
 # 6. Auto-Merge if requested
 if [ "$AUTO_MERGE" = true ]; then
-  echo "==> Squash-merging PR #$PR_NUM into main and deleting branch..."
-  gh pr merge "$PR_NUM" --squash --delete-branch
-
-  echo "==> Updating local main branch..."
-  git checkout main 2>/dev/null || echo "[NOTE] Skipping local main checkout (in worktree or main checked out elsewhere)"
-  git pull origin main 2>/dev/null || true
-  echo "🚀 Successfully merged PR #$PR_NUM to main!"
+  if [ "$(git rev-parse --path-format=absolute --git-dir)" != "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then
+    echo "==> Squash-merging PR #$PR_NUM; keeping the linked worktree for orchestrator cleanup..."
+    gh pr merge "$PR_NUM" --squash
+  else
+    echo "==> Squash-merging PR #$PR_NUM into main and deleting branch..."
+    gh pr merge "$PR_NUM" --squash --delete-branch
+    echo "==> Updating local main branch..."
+    git checkout main 2>/dev/null || echo "[NOTE] Skipping local main checkout (in worktree or main checked out elsewhere)"
+    git pull origin main 2>/dev/null || true
+  fi
+  echo "🚀 Successfully merged PR #$PR_NUM!"
 else
   echo "==> PR #$PR_NUM is green and ready for review/merge (auto-merge skipped via --no-merge)."
 fi
