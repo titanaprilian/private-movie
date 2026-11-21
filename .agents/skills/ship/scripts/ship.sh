@@ -146,8 +146,8 @@ if [ "$AUTO_MERGE" = true ]; then
   gh pr merge "$PR_NUM" --squash --delete-branch
 
   echo "==> Updating local main branch..."
-  git checkout main
-  git pull origin main
+  git checkout main 2>/dev/null || echo "[NOTE] Skipping local main checkout (in worktree or main checked out elsewhere)"
+  git pull origin main 2>/dev/null || true
   echo "🚀 Successfully merged PR #$PR_NUM to main!"
 else
   echo "==> PR #$PR_NUM is green and ready for review/merge (auto-merge skipped via --no-merge)."

@@ -23,10 +23,10 @@ export default mergeConfig(
       setupFiles: ["./test/setup.ts"],
       coverage: {
         thresholds: {
-          lines: 52,
-          statements: 52,
-          functions: 51,
-          branches: 75,
+          lines: 56,
+          statements: 56,
+          functions: 53,
+          branches: 79,
         },
       },
     },
