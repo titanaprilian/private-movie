@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      actions: read
 
     services:
       postgres:
@@ -73,9 +74,27 @@ jobs:
           severity: "CRITICAL"
           skip-dirs: "node_modules,apps/android-tv/.gradle,apps/android-tv/build"
 
+      - name: Download base branch coverage
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p coverage/base
+          RUN_ID=$(gh run list --workflow ci.yml --branch "${{ github.base_ref }}" --status success --event push --limit 1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID=$(gh run list --workflow ci.yml --branch "${{ github.base_ref }}" --status success --limit 1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+          fi
+          if [ -n "$RUN_ID" ]; then
+            echo "Downloading base coverage artifact from run $RUN_ID..."
+            gh run download "$RUN_ID" -n coverage-reports -D coverage/base 2>/dev/null || echo "Base coverage artifact not found in run $RUN_ID"
+          else
+            echo "No successful base branch run found for ${{ github.base_ref }}"
+          fi
+
       - name: Coverage summary
         if: always()
-        run: bun scripts/coverage-summary.ts
+        run: bun scripts/coverage-summary.ts --base-dir coverage/base
 
       - name: Post coverage sticky comment
         if: always() && github.event_name == 'pull_request'
