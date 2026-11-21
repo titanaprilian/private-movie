@@ -10,7 +10,15 @@ import type {
   UpdateSchedulerConfigDto,
 } from '@repo/contracts';
 
-export type { AdminDashboardCatalogStats, AdminDashboardDto, AdminDashboardOngoingSeason, AdminDashboardRecentSeries, AdminDashboardSchedulerTelemetry, AdminDashboardStorageStats, UpdateSchedulerConfigDto };
+export type {
+  AdminDashboardCatalogStats,
+  AdminDashboardDto,
+  AdminDashboardOngoingSeason,
+  AdminDashboardRecentSeries,
+  AdminDashboardSchedulerTelemetry,
+  AdminDashboardStorageStats,
+  UpdateSchedulerConfigDto,
+};
 
 export const SCHEDULER_INTERVAL_PRESETS = [
   { minutes: 15, label: '15m' },
@@ -53,7 +61,9 @@ export function adminDashboardQueryOptions() {
     // placeholderData keeps the previous payload so background revalidation
     // updates values in place without unmounting or resetting scroll.
     refetchInterval: (query) =>
-      resolveDashboardRefetchInterval(query.state.data as AdminDashboardDto | undefined),
+      resolveDashboardRefetchInterval(
+        query.state.data as AdminDashboardDto | undefined
+      ),
     placeholderData: (previousData) => previousData,
   });
 }

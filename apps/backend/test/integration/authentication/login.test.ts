@@ -43,7 +43,7 @@ describe("POST /auth/login", () => {
 
     const setCookies = response.headers.getSetCookie?.() ?? [];
     const refreshCookie = setCookies.find((cookie) =>
-      cookie.startsWith("refreshToken=")
+      cookie.startsWith("refreshToken="),
     );
     expect(refreshCookie).toBeDefined();
     expect(refreshCookie).toMatch(/HttpOnly/i);
@@ -171,7 +171,9 @@ describe("POST /auth/login", () => {
 
       expect(response.status).toBe(500);
 
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("INTERNAL_SERVER");
     } finally {
       (globalThis as Record<string, unknown>).Bun = originalHash;

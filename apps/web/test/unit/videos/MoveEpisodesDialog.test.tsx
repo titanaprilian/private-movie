@@ -23,7 +23,10 @@ vi.mock('@hello-pangea/dnd', () => ({
     children: (p: unknown, s: unknown) => React.ReactNode;
   }) => (
     <div>
-      {children({ innerRef: () => {}, droppableProps: {} }, { isDraggingOver: false })}
+      {children(
+        { innerRef: () => {}, droppableProps: {} },
+        { isDraggingOver: false }
+      )}
     </div>
   ),
   Draggable: ({
@@ -98,8 +101,14 @@ describe('buildBulkCrossSeasonMove', () => {
     const move = buildBulkCrossSeasonMove(all, ['b', 'd'], 's2')!;
     expect(move).not.toBeNull();
     // moved appended at 3,4 preserving b-before-d order
-    expect(move.episodes.find((e) => e.id === 'b')).toMatchObject({ seasonId: 's2', order: 3 });
-    expect(move.episodes.find((e) => e.id === 'd')).toMatchObject({ seasonId: 's2', order: 4 });
+    expect(move.episodes.find((e) => e.id === 'b')).toMatchObject({
+      seasonId: 's2',
+      order: 3,
+    });
+    expect(move.episodes.find((e) => e.id === 'd')).toMatchObject({
+      seasonId: 's2',
+      order: 4,
+    });
     // source re-indexed a->1, c->2
     expect(move.episodes.find((e) => e.id === 'a')).toMatchObject({ order: 1 });
     expect(move.episodes.find((e) => e.id === 'c')).toMatchObject({ order: 2 });
@@ -115,7 +124,10 @@ describe('buildBulkCrossSeasonMove', () => {
   it('starts at 1 when target season is empty', () => {
     const all = [ep('a', 's1', 1), ep('b', 's1', 2)];
     const move = buildBulkCrossSeasonMove(all, ['a'], 's2')!;
-    expect(move.episodes.find((e) => e.id === 'a')).toMatchObject({ seasonId: 's2', order: 1 });
+    expect(move.episodes.find((e) => e.id === 'a')).toMatchObject({
+      seasonId: 's2',
+      order: 1,
+    });
     expect(move.episodes.find((e) => e.id === 'b')).toMatchObject({ order: 1 });
   });
 });
@@ -136,7 +148,9 @@ describe('MoveEpisodesDialog', () => {
     );
     expect(screen.getByText('Move Episodes to Season')).toBeInTheDocument();
     // current season excluded
-    expect(screen.queryByRole('radio', { name: /Season 1/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('radio', { name: /Season 1/ })
+    ).not.toBeInTheDocument();
     const target = screen.getByRole('radio', { name: 'Season 2 (2 episodes)' });
     expect(target).toBeInTheDocument();
     // confirm disabled until selection
@@ -176,14 +190,23 @@ describe('SeriesDetailView bulk move integration', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       const url = typeof input === 'string' ? input : (input as Request).url;
       const method = init?.method?.toUpperCase() ?? 'GET';
-      if (url.includes('/series/series-1/episodes/order') && method === 'PATCH') {
+      if (
+        url.includes('/series/series-1/episodes/order') &&
+        method === 'PATCH'
+      ) {
         patchPayload = JSON.parse(init?.body as string);
-        return new Response(JSON.stringify({ data: { success: true } }), { status: 200 });
+        return new Response(JSON.stringify({ data: { success: true } }), {
+          status: 200,
+        });
       }
       if (url.includes('/series/series-1')) {
-        return new Response(JSON.stringify({ data: mockSeries }), { status: 200 });
+        return new Response(JSON.stringify({ data: mockSeries }), {
+          status: 200,
+        });
       }
-      return new Response(JSON.stringify({ error: { message: 'nf' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { message: 'nf' } }), {
+        status: 404,
+      });
     });
 
     renderWithProviders(
@@ -195,7 +218,9 @@ describe('SeriesDetailView bulk move integration', () => {
     await screen.findByRole('heading', { level: 1, name: 'Bulk Move Anime' });
 
     // No bulk bar before selection
-    expect(screen.queryByRole('toolbar', { name: 'Bulk selection actions' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('toolbar', { name: 'Bulk selection actions' })
+    ).not.toBeInTheDocument();
 
     // Select episodes via checkboxes (select-all then dialog flow is enough:
     // click the first row checkbox directly)
@@ -203,7 +228,9 @@ describe('SeriesDetailView bulk move integration', () => {
     // first checkbox is select-all; click it to select visible episodes
     fireEvent.click(checkboxes[0]);
 
-    const toolbar = await screen.findByRole('toolbar', { name: 'Bulk selection actions' });
+    const toolbar = await screen.findByRole('toolbar', {
+      name: 'Bulk selection actions',
+    });
     expect(toolbar).toBeInTheDocument();
     const moveBtn = screen.getByRole('button', { name: /Move to Season/ });
     expect(moveBtn).toBeInTheDocument();
@@ -216,10 +243,16 @@ describe('SeriesDetailView bulk move integration', () => {
     fireEvent.click(confirm);
 
     await waitFor(() => expect(patchPayload).not.toBeNull());
-    const payload = patchPayload as Array<{ id: string; order: number; seasonId?: string }>;
+    const payload = patchPayload as Array<{
+      id: string;
+      order: number;
+      seasonId?: string;
+    }>;
     // moved rows carry seasonId s2
     expect(payload.some((p) => p.seasonId === 's2')).toBe(true);
 
-    (vi.mocked(globalThis.fetch) as unknown as { mockRestore: () => void }).mockRestore();
+    (
+      vi.mocked(globalThis.fetch) as unknown as { mockRestore: () => void }
+    ).mockRestore();
   });
 });

@@ -18,18 +18,22 @@ export function SyncSeasonDiffList({
         </span>
         <div className="flex items-center gap-2">
           <CountBadge tone="green">
-            +{totalNewEpisodes} new {totalNewEpisodes === 1 ? 'episode' : 'episodes'}
+            +{totalNewEpisodes} new{' '}
+            {totalNewEpisodes === 1 ? 'episode' : 'episodes'}
           </CountBadge>
           {seriesType === 'tv' && (
             <CountBadge tone="blue">
-              +{totalNewSeasons} new {totalNewSeasons === 1 ? 'season' : 'seasons'}
+              +{totalNewSeasons} new{' '}
+              {totalNewSeasons === 1 ? 'season' : 'seasons'}
             </CountBadge>
           )}
-          {typeof totalUpdatedEpisodes === 'number' && totalUpdatedEpisodes > 0 && (
-            <CountBadge tone="amber">
-              {totalUpdatedEpisodes} updated {totalUpdatedEpisodes === 1 ? 'episode' : 'episodes'}
-            </CountBadge>
-          )}
+          {typeof totalUpdatedEpisodes === 'number' &&
+            totalUpdatedEpisodes > 0 && (
+              <CountBadge tone="amber">
+                {totalUpdatedEpisodes} updated{' '}
+                {totalUpdatedEpisodes === 1 ? 'episode' : 'episodes'}
+              </CountBadge>
+            )}
         </div>
       </div>
 
@@ -44,7 +48,9 @@ export function SyncSeasonDiffList({
                 <span className="font-sans text-[13px] font-extrabold text-[var(--muted)]">
                   S{diffItem.seasonNumber}
                 </span>
-                <span className="font-bold text-[var(--ink)]">{diffItem.name}</span>
+                <span className="font-bold text-[var(--ink)]">
+                  {diffItem.name}
+                </span>
               </div>
               {diffItem.badgeType === 'existing' ? (
                 <MetaBadge>{diffItem.badgeText}</MetaBadge>

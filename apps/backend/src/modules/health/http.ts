@@ -7,16 +7,18 @@ export interface HealthRoutesOptions {
 }
 
 export const healthRoutes = (options: HealthRoutesOptions) => {
-  return new Elysia({ name: "health-routes" })
-    .decorate("db", options.db)
-    .get("/health", async ({ db }) => {
+  return new Elysia({ name: "health-routes" }).decorate("db", options.db).get(
+    "/health",
+    async ({ db }) => {
       const connected = await checkHealth(db);
       return { status: "ok", db: connected };
-    }, {
+    },
+    {
       detail: {
         tags: ["Health"],
         summary: "Health check",
         description: "Returns service and database connectivity status.",
       },
-    });
+    },
+  );
 };

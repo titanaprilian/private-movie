@@ -97,7 +97,11 @@ export function EditEpisodeDialog({
               >
                 Cancel
               </ChunkyButton>
-              <ChunkyButton type="submit" variant="primary" disabled={updateMutation.isPending}>
+              <ChunkyButton
+                type="submit"
+                variant="primary"
+                disabled={updateMutation.isPending}
+              >
                 Save Changes
               </ChunkyButton>
             </ChunkyDialogFooter>

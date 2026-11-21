@@ -3,7 +3,10 @@ import { Plus, RefreshCw } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
 import type { DashboardHeaderProps } from '../types';
 
-export function DashboardHeader({ isFetching, onRefresh }: DashboardHeaderProps) {
+export function DashboardHeader({
+  isFetching,
+  onRefresh,
+}: DashboardHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>

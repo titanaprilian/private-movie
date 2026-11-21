@@ -30,9 +30,16 @@ describe('ChunkySpinner primitive', () => {
   });
 
   it('merges custom class names', () => {
-    renderWithProviders(<ChunkySpinner size="sm" className="text-[var(--gold)]" />);
+    renderWithProviders(
+      <ChunkySpinner size="sm" className="text-[var(--gold)]" />
+    );
     const spinner = document.querySelector('svg');
-    expect(spinner).toHaveClass('animate-spin', 'h-4', 'w-4', 'text-[var(--gold)]');
+    expect(spinner).toHaveClass(
+      'animate-spin',
+      'h-4',
+      'w-4',
+      'text-[var(--gold)]'
+    );
   });
 
   it('is hidden from assistive technology', () => {
@@ -43,6 +50,9 @@ describe('ChunkySpinner primitive', () => {
       </div>
     );
     expect(screen.getByText('Loading series…')).toBeInTheDocument();
-    expect(document.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(document.querySelector('svg')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
   });
 });

@@ -60,19 +60,39 @@ describe('MinIO status API client', () => {
   describe('resolveMinioStatusState', () => {
     it('maps availability/running/configured flags to states', () => {
       expect(
-        resolveMinioStatusState({ isAvailable: false, isRunning: false, isConfigured: false })
+        resolveMinioStatusState({
+          isAvailable: false,
+          isRunning: false,
+          isConfigured: false,
+        })
       ).toBe('unavailable');
       expect(
-        resolveMinioStatusState({ isAvailable: true, isRunning: true, isConfigured: true })
+        resolveMinioStatusState({
+          isAvailable: true,
+          isRunning: true,
+          isConfigured: true,
+        })
       ).toBe('ready');
       expect(
-        resolveMinioStatusState({ isAvailable: true, isRunning: true, isConfigured: false })
+        resolveMinioStatusState({
+          isAvailable: true,
+          isRunning: true,
+          isConfigured: false,
+        })
       ).toBe('not-configured');
       expect(
-        resolveMinioStatusState({ isAvailable: true, isRunning: false, isConfigured: true })
+        resolveMinioStatusState({
+          isAvailable: true,
+          isRunning: false,
+          isConfigured: true,
+        })
       ).toBe('stopped');
       expect(
-        resolveMinioStatusState({ isAvailable: true, isRunning: false, isConfigured: false })
+        resolveMinioStatusState({
+          isAvailable: true,
+          isRunning: false,
+          isConfigured: false,
+        })
       ).toBe('not-configured');
     });
   });

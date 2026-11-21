@@ -34,7 +34,7 @@ describe("POST /auth/register", () => {
 
     const setCookies = response.headers.getSetCookie?.() ?? [];
     const refreshCookie = setCookies.find((cookie) =>
-      cookie.startsWith("refreshToken=")
+      cookie.startsWith("refreshToken="),
     );
     expect(refreshCookie).toBeDefined();
     expect(refreshCookie).toMatch(/HttpOnly/i);
@@ -96,11 +96,19 @@ describe("POST /auth/register", () => {
       },
       {
         name: "Bad Email",
-        body: { name: "Bad Email", email: "not-an-email", password: "password123" },
+        body: {
+          name: "Bad Email",
+          email: "not-an-email",
+          password: "password123",
+        },
       },
       {
         name: "Short Password",
-        body: { name: "Short Password", email: "short@example.com", password: "short" },
+        body: {
+          name: "Short Password",
+          email: "short@example.com",
+          password: "short",
+        },
       },
     ];
 
@@ -113,7 +121,9 @@ describe("POST /auth/register", () => {
 
       expect(response.status).toBe(400);
 
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("INVALID_REGISTRATION_INPUT");
     }
   });
@@ -144,7 +154,9 @@ describe("POST /auth/register", () => {
 
       expect(response.status).toBe(500);
 
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("INTERNAL_SERVER");
     } finally {
       (globalThis as Record<string, unknown>).Bun = originalHash;

@@ -1,6 +1,9 @@
 import { renderWithProviders, screen, waitFor } from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { AddMediaDialog, useAddMediaStore as useScrapeWorkerStore } from '@/modules/videos/internal/catalog';
+import {
+  AddMediaDialog,
+  useAddMediaStore as useScrapeWorkerStore,
+} from '@/modules/videos/internal/catalog';
 import * as apiModule from '@/modules/videos/internal/api';
 import { toast } from 'sonner';
 
@@ -13,9 +16,9 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('@/modules/videos/internal/api', async () => {
-  const actual = await vi.importActual<typeof import('@/modules/videos/internal/api')>(
-    '@/modules/videos/internal/api'
-  );
+  const actual = await vi.importActual<
+    typeof import('@/modules/videos/internal/api')
+  >('@/modules/videos/internal/api');
   return {
     ...actual,
     importTmdb: vi.fn(),
@@ -47,9 +50,7 @@ describe('AddMediaDialog component', () => {
     expect(screen.getByLabelText(/Media Type/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/TMDB ID/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Include Specials/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /^Next$/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Next$/i })).toBeInTheDocument();
 
     // Ensure legacy provider dropdown and source url inputs are absent
     expect(screen.queryByLabelText(/Source Provider/i)).not.toBeInTheDocument();
@@ -87,7 +88,12 @@ describe('AddMediaDialog component', () => {
       totalSeasons: 2,
       totalEpisodes: 18,
       seasons: [
-        { seasonNumber: 1, name: 'Season 1', episodeCount: 10, posterUrl: null },
+        {
+          seasonNumber: 1,
+          name: 'Season 1',
+          episodeCount: 10,
+          posterUrl: null,
+        },
         { seasonNumber: 2, name: 'Season 2', episodeCount: 8, posterUrl: null },
       ],
     };
@@ -107,7 +113,11 @@ describe('AddMediaDialog component', () => {
     const nextBtn = screen.getByRole('button', { name: /^Next$/i });
     await user.click(nextBtn);
 
-    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith('tv', 1399, true);
+    expect(apiModule.fetchSeriesTmdbPreview).toHaveBeenCalledWith(
+      'tv',
+      1399,
+      true
+    );
 
     await waitFor(() => {
       expect(screen.getByText('TMDB Snapshot Overview')).toBeInTheDocument();
@@ -120,10 +130,9 @@ describe('AddMediaDialog component', () => {
         'Seven noble families fight for control of the mythical land of Westeros.'
       )
     ).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Game of Thrones' })).toHaveAttribute(
-      'src',
-      'https://image.tmdb.org/t/p/w500/got.jpg'
-    );
+    expect(
+      screen.getByRole('img', { name: 'Game of Thrones' })
+    ).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w500/got.jpg');
     expect(screen.getByText('2011-04-17')).toBeInTheDocument();
     expect(screen.getByText('Sci-Fi & Fantasy')).toBeInTheDocument();
     expect(screen.getByText('Drama')).toBeInTheDocument();
@@ -252,7 +261,9 @@ describe('AddMediaDialog component', () => {
       });
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['episodes'] });
-      expect(toast.success).toHaveBeenCalledWith('Series imported successfully');
+      expect(toast.success).toHaveBeenCalledWith(
+        'Series imported successfully'
+      );
       expect(useScrapeWorkerStore.getState().isOpen).toBe(false);
     });
   });
@@ -315,7 +326,9 @@ describe('AddMediaDialog chunky integration', () => {
     useScrapeWorkerStore.getState().openDialog();
     renderWithProviders(<AddMediaDialog />);
 
-    expect(screen.getByRole('dialog', { name: /add series/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('dialog', { name: /add series/i })
+    ).toBeInTheDocument();
     expect(screen.getByTestId('chunky-drawer-overlay')).toBeInTheDocument();
     expect(screen.getByTestId('chunky-drawer-content')).toHaveClass('right-0');
     expect(screen.getByTestId('chunky-drawer-header')).toBeInTheDocument();
@@ -344,8 +357,12 @@ describe('AddMediaDialog chunky integration', () => {
     expect(specials).toHaveAttribute('aria-checked', 'true');
 
     // Chunky 3D pressable footer buttons
-    expect(screen.getByRole('button', { name: /Cancel/i })).toHaveClass('border-b-4');
-    expect(screen.getByRole('button', { name: /^Next$/i })).toHaveClass('border-b-4');
+    expect(screen.getByRole('button', { name: /Cancel/i })).toHaveClass(
+      'border-b-4'
+    );
+    expect(screen.getByRole('button', { name: /^Next$/i })).toHaveClass(
+      'border-b-4'
+    );
   });
 
   it('renders Step 2 preview inside chunky cards and transitions back to Step 1', async () => {
@@ -359,7 +376,12 @@ describe('AddMediaDialog chunky integration', () => {
       totalSeasons: 1,
       totalEpisodes: 10,
       seasons: [
-        { seasonNumber: 1, name: 'Season 1', episodeCount: 10, posterUrl: null },
+        {
+          seasonNumber: 1,
+          name: 'Season 1',
+          episodeCount: 10,
+          posterUrl: null,
+        },
       ],
     };
 

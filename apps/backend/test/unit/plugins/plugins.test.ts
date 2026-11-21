@@ -5,10 +5,7 @@ import { join } from "node:path";
 import { corsPlugin } from "@/plugins/cors";
 import { openapiPlugin } from "@/plugins/openapi";
 import { errorHandlerPlugin } from "@/plugins/error-handler";
-import {
-  rateLimitPlugin,
-  isUnthrottledRoute,
-} from "@/plugins/rate-limit";
+import { rateLimitPlugin, isUnthrottledRoute } from "@/plugins/rate-limit";
 import { FileTooLargeError } from "@/lib/errors";
 
 const testConfig = {
@@ -30,11 +27,11 @@ describe("corsPlugin", () => {
           Origin: "https://example.com",
           "Access-Control-Request-Method": "GET",
         },
-      })
+      }),
     );
 
     expect(response.headers.get("access-control-allow-origin")).toBe(
-      "https://example.com"
+      "https://example.com",
     );
   });
 
@@ -50,11 +47,11 @@ describe("corsPlugin", () => {
           Origin: "https://evil.example",
           "Access-Control-Request-Method": "GET",
         },
-      })
+      }),
     );
 
     expect(response.headers.get("access-control-allow-origin")).not.toBe(
-      "https://evil.example"
+      "https://evil.example",
     );
   });
 });
@@ -79,7 +76,7 @@ describe("openapiPlugin", () => {
       .get("/ping", () => "pong");
 
     const response = await app.handle(
-      new Request("http://localhost/docs/json")
+      new Request("http://localhost/docs/json"),
     );
     expect(response.status).toBe(200);
   });
@@ -98,7 +95,7 @@ describe("errorHandlerPlugin", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: 42 }),
-      })
+      }),
     );
 
     expect(response.status).toBe(400);
@@ -132,7 +129,7 @@ describe("errorHandlerPlugin", () => {
         errorHandlerPlugin({
           logger: testLogger,
           captureException: (error) => void captured.push(error),
-        })
+        }),
       )
       .get("/boom", () => {
         throw new Error("kaboom");
@@ -152,7 +149,7 @@ describe("errorHandlerPlugin", () => {
     const app = new Elysia().use(errorHandlerPlugin());
 
     const response = await app.handle(
-      new Request("http://localhost/nonexistent")
+      new Request("http://localhost/nonexistent"),
     );
     expect(response.status).toBe(404);
   });
@@ -161,18 +158,18 @@ describe("errorHandlerPlugin", () => {
 describe("rateLimitPlugin", () => {
   it("skips media proxy, embed, and streaming chunk routes", () => {
     expect(
-      isUnthrottledRoute(new Request("http://localhost/api/media/proxy/x"))
+      isUnthrottledRoute(new Request("http://localhost/api/media/proxy/x")),
     ).toBe(true);
     expect(isUnthrottledRoute(new Request("http://localhost/embed/abc"))).toBe(
-      true
+      true,
     );
     expect(
       isUnthrottledRoute(
-        new Request("http://localhost/api/episodes/123/sources/remote-ingest")
-      )
+        new Request("http://localhost/api/episodes/123/sources/remote-ingest"),
+      ),
     ).toBe(true);
     expect(isUnthrottledRoute(new Request("http://localhost/api/health"))).toBe(
-      false
+      false,
     );
   });
 
@@ -181,12 +178,12 @@ describe("rateLimitPlugin", () => {
       .use(rateLimitPlugin({ max: 2, duration: 60000 }))
       .get("/ping", () => "pong");
 
-    expect((await app.handle(new Request("http://localhost/ping"))).status).toBe(
-      200
-    );
-    expect((await app.handle(new Request("http://localhost/ping"))).status).toBe(
-      200
-    );
+    expect(
+      (await app.handle(new Request("http://localhost/ping"))).status,
+    ).toBe(200);
+    expect(
+      (await app.handle(new Request("http://localhost/ping"))).status,
+    ).toBe(200);
 
     const blocked = await app.handle(new Request("http://localhost/ping"));
     expect(blocked.status).toBe(429);
@@ -230,11 +227,11 @@ describe("plugin chain", () => {
     const response = await app.handle(
       new Request("http://localhost/ping", {
         headers: { Origin: "https://example.com" },
-      })
+      }),
     );
     expect(response.status).toBe(200);
     expect(response.headers.get("access-control-allow-origin")).toBe(
-      "https://example.com"
+      "https://example.com",
     );
   });
 });
@@ -243,7 +240,7 @@ describe("production code contains no test hooks", () => {
   const pluginsDir = join(import.meta.dirname, "../../../src/plugins");
   const authHttp = join(
     import.meta.dirname,
-    "../../../src/modules/authentication/http.ts"
+    "../../../src/modules/authentication/http.ts",
   );
 
   it("has no NODE_ENV test checks or x-test-rate-limit headers in plugins or auth routes", () => {

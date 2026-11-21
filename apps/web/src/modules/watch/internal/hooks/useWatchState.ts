@@ -28,7 +28,9 @@ export function useWatchState(
   series?: WatchSeriesDetails | null,
   options?: UseWatchStateOptions
 ): UseWatchStateReturn {
-  const [activeSeasonId, setActiveSeasonIdState] = useState<string | null>(null);
+  const [activeSeasonId, setActiveSeasonIdState] = useState<string | null>(
+    null
+  );
   const [activeEpisodeId, setActiveEpisodeIdState] = useState<string | null>(
     options?.initialEpisodeId ?? null
   );
@@ -47,7 +49,9 @@ export function useWatchState(
       return series.episodes.filter(isPlayableEpisode);
     }
     if (series.seasons) {
-      return series.seasons.flatMap((s) => (s.episodes ?? []).filter(isPlayableEpisode));
+      return series.seasons.flatMap((s) =>
+        (s.episodes ?? []).filter(isPlayableEpisode)
+      );
     }
     return [];
   }, [series]);
@@ -67,7 +71,9 @@ export function useWatchState(
     // Check if initialEpisodeId exists and matches a playable episode
     if (initialEpId && allEpisodes.some((ep) => ep.id === initialEpId)) {
       const targetSeason = series.seasons?.find((s) =>
-        (s.episodes ?? []).some((ep) => ep.id === initialEpId && isPlayableEpisode(ep))
+        (s.episodes ?? []).some(
+          (ep) => ep.id === initialEpId && isPlayableEpisode(ep)
+        )
       );
       setActiveSeasonIdState(targetSeason?.id ?? null);
       setActiveEpisodeIdState(initialEpId);
@@ -75,7 +81,9 @@ export function useWatchState(
         setActiveSourceIndexState(options.initialSourceIndex as number);
       } else {
         const targetEp = allEpisodes.find((ep) => ep.id === initialEpId);
-        setActiveSourceIndexState(resolveDefaultSourceIndex(targetEp?.videoSources));
+        setActiveSourceIndexState(
+          resolveDefaultSourceIndex(targetEp?.videoSources)
+        );
       }
       return;
     }
@@ -83,10 +91,13 @@ export function useWatchState(
     // Default to first season
     if (series.seasons && series.seasons.length > 0) {
       const firstSeasonWithPlayableEp =
-        series.seasons.find((s) => (s.episodes ?? []).some(isPlayableEpisode)) ??
-        series.seasons[0];
+        series.seasons.find((s) =>
+          (s.episodes ?? []).some(isPlayableEpisode)
+        ) ?? series.seasons[0];
       setActiveSeasonIdState(firstSeasonWithPlayableEp.id);
-      const firstPlayableEp = (firstSeasonWithPlayableEp.episodes ?? []).find(isPlayableEpisode);
+      const firstPlayableEp = (firstSeasonWithPlayableEp.episodes ?? []).find(
+        isPlayableEpisode
+      );
       setActiveEpisodeIdState(firstPlayableEp?.id ?? null);
       setActiveSourceIndexState(
         hasExplicitSourceIndex
@@ -112,7 +123,12 @@ export function useWatchState(
     setActiveSeasonIdState(null);
     setActiveEpisodeIdState(null);
     setActiveSourceIndexState(0);
-  }, [series, options?.initialEpisodeId, options?.initialSourceIndex, allEpisodes]);
+  }, [
+    series,
+    options?.initialEpisodeId,
+    options?.initialSourceIndex,
+    allEpisodes,
+  ]);
 
   const activeSeason = useMemo(() => {
     if (!series?.seasons || !activeSeasonId) return null;
@@ -143,9 +159,12 @@ export function useWatchState(
     (seasonId: string) => {
       setActiveSeasonIdState(seasonId);
       const targetSeason = series?.seasons?.find((s) => s.id === seasonId);
-      const firstEp = (targetSeason?.episodes ?? []).find(isPlayableEpisode) ?? null;
+      const firstEp =
+        (targetSeason?.episodes ?? []).find(isPlayableEpisode) ?? null;
       setActiveEpisodeIdState(firstEp?.id ?? null);
-      setActiveSourceIndexState(resolveDefaultSourceIndex(firstEp?.videoSources));
+      setActiveSourceIndexState(
+        resolveDefaultSourceIndex(firstEp?.videoSources)
+      );
     },
     [series?.seasons]
   );
@@ -160,11 +179,15 @@ export function useWatchState(
         series?.episodes?.find((ep) => ep.id === episodeId) ??
         null;
       setActiveEpisodeIdState(episodeId);
-      setActiveSourceIndexState(resolveDefaultSourceIndex(targetEp?.videoSources));
+      setActiveSourceIndexState(
+        resolveDefaultSourceIndex(targetEp?.videoSources)
+      );
 
       if (series?.seasons) {
         const targetSeason = series.seasons.find((s) =>
-          (s.episodes ?? []).some((ep) => ep.id === episodeId && isPlayableEpisode(ep))
+          (s.episodes ?? []).some(
+            (ep) => ep.id === episodeId && isPlayableEpisode(ep)
+          )
         );
         if (targetSeason) {
           setActiveSeasonIdState(targetSeason.id);
@@ -183,7 +206,8 @@ export function useWatchState(
     return availableEpisodes.findIndex((e) => e.id === activeEpisodeId);
   }, [availableEpisodes, activeEpisodeId]);
 
-  const hasNextEpisode = currentIndex >= 0 && currentIndex < availableEpisodes.length - 1;
+  const hasNextEpisode =
+    currentIndex >= 0 && currentIndex < availableEpisodes.length - 1;
   const hasPrevEpisode = currentIndex > 0;
 
   const goToNextEpisode = useCallback(() => {

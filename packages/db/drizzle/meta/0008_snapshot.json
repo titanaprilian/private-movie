@@ -64,12 +64,8 @@
           "name": "refresh_tokens_user_id_users_id_fk",
           "tableFrom": "refresh_tokens",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -79,9 +75,7 @@
         "refresh_tokens_token_unique": {
           "name": "refresh_tokens_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -149,9 +143,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -194,9 +186,7 @@
         "system_key_unique": {
           "name": "system_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -317,12 +307,8 @@
           "name": "episodes_series_id_series_id_fk",
           "tableFrom": "episodes",
           "tableTo": "series",
-          "columnsFrom": [
-            "series_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["series_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -332,9 +318,7 @@
         "episodes_source_url_unique": {
           "name": "episodes_source_url_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_url"
-          ]
+          "columns": ["source_url"]
         }
       },
       "policies": {},
@@ -401,9 +385,7 @@
         "series_source_url_unique": {
           "name": "series_source_url_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_url"
-          ]
+          "columns": ["source_url"]
         }
       },
       "policies": {},

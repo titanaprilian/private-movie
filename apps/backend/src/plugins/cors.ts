@@ -18,5 +18,5 @@ export const corsPlugin = (config: AppConfig) =>
       allowedHeaders: ["Content-Type", "Authorization"],
       credentials: true,
       maxAge: 86400,
-    })
+    }),
   );

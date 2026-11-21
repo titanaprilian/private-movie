@@ -29,12 +29,20 @@ describe('ChunkyPaginationBar component', () => {
 
   it('returns null when totalPages <= 1', () => {
     const { container: one } = renderWithProviders(
-      <ChunkyPaginationBar currentPage={1} totalPages={1} onPageChange={() => {}} />
+      <ChunkyPaginationBar
+        currentPage={1}
+        totalPages={1}
+        onPageChange={() => {}}
+      />
     );
     expect(one).toBeEmptyDOMElement();
 
     const { container: zero } = renderWithProviders(
-      <ChunkyPaginationBar currentPage={1} totalPages={0} onPageChange={() => {}} />
+      <ChunkyPaginationBar
+        currentPage={1}
+        totalPages={0}
+        onPageChange={() => {}}
+      />
     );
     expect(zero).toBeEmptyDOMElement();
   });
@@ -58,14 +66,26 @@ describe('ChunkyPaginationBar component', () => {
 
   it('disables Previous on first page and Next on last page', () => {
     const { unmount } = renderWithProviders(
-      <ChunkyPaginationBar currentPage={1} totalPages={4} onPageChange={() => {}} />
+      <ChunkyPaginationBar
+        currentPage={1}
+        totalPages={4}
+        onPageChange={() => {}}
+      />
     );
-    expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Next page' })).not.toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Previous page' })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Next page' })
+    ).not.toBeDisabled();
     unmount();
 
     renderWithProviders(
-      <ChunkyPaginationBar currentPage={4} totalPages={4} onPageChange={() => {}} />
+      <ChunkyPaginationBar
+        currentPage={4}
+        totalPages={4}
+        onPageChange={() => {}}
+      />
     );
     expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
     expect(
@@ -83,7 +103,9 @@ describe('ChunkyPaginationBar component', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Previous page' })
+    ).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
   });
 });

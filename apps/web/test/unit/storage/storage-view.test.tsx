@@ -323,10 +323,10 @@ describe('Storage Management Console UI', () => {
           );
         }
         if (url.includes('/api/storage/series')) {
-          return new Response(
-            JSON.stringify({ data: mockSeriesResponse }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-          );
+          return new Response(JSON.stringify({ data: mockSeriesResponse }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
         }
         if (url.includes('/api/storage/resources')) {
           return new Response(
@@ -498,7 +498,9 @@ describe('Storage Management Console UI', () => {
 
       const firstRow = await screen.findByTestId('series-row-series-1');
       expect(firstRow).toHaveTextContent('Cyberpunk Series');
-      expect(screen.getByTestId('series-row-files-series-1')).toHaveTextContent('2');
+      expect(screen.getByTestId('series-row-files-series-1')).toHaveTextContent(
+        '2'
+      );
       expect(screen.getByTestId('series-row-size-series-1')).toHaveTextContent(
         '6 GiB (6.44 GB)'
       );
@@ -508,7 +510,9 @@ describe('Storage Management Console UI', () => {
 
       const secondRow = screen.getByTestId('series-row-series-2');
       expect(secondRow).toHaveTextContent('Space Odyssey');
-      expect(screen.getByTestId('series-row-files-series-2')).toHaveTextContent('1');
+      expect(screen.getByTestId('series-row-files-series-2')).toHaveTextContent(
+        '1'
+      );
       expect(
         screen.getByTestId('series-row-seasons-series-2')
       ).toHaveTextContent('2');
@@ -626,7 +630,9 @@ describe('Storage Management Console UI', () => {
       });
 
       // Click Name sort header
-      await user.click(screen.getByRole('button', { name: /filename \/ key/i }));
+      await user.click(
+        screen.getByRole('button', { name: /filename \/ key/i })
+      );
 
       const rows = screen.getAllByTestId(/^row-/);
       // Descending alphabetically by default on click

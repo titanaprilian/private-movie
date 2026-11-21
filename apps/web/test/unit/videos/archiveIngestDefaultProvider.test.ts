@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { StorageProviderItem } from '@repo/contracts';
 import { pickDefaultStorageProvider } from '@/modules/videos/internal/ingestion';
 
-function makeProvider(overrides: Partial<StorageProviderItem> & { id: string }): StorageProviderItem {
+function makeProvider(
+  overrides: Partial<StorageProviderItem> & { id: string }
+): StorageProviderItem {
   return {
     name: `Provider ${overrides.id}`,
     providerType: 'custom',
@@ -37,7 +39,11 @@ describe('pickDefaultStorageProvider (ticket 693)', () => {
 
   it('skips a disabled default in favor of an enabled provider', () => {
     const providers = [
-      makeProvider({ id: 'disabled-default', isDefault: true, isEnabled: false }),
+      makeProvider({
+        id: 'disabled-default',
+        isDefault: true,
+        isEnabled: false,
+      }),
       makeProvider({ id: 'plain-enabled', isDefault: false, isEnabled: true }),
     ];
     expect(pickDefaultStorageProvider(providers)?.id).toBe('plain-enabled');

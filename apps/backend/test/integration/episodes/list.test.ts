@@ -94,7 +94,9 @@ describe("GET /episodes", () => {
     for (let i = 0; i < 25; i++) {
       await insertEpisode({
         title: makeTitle(i),
-        createdAt: new Date(`2026-07-${String((i % 28) + 1).padStart(2, "0")}T00:00:00.000Z`),
+        createdAt: new Date(
+          `2026-07-${String((i % 28) + 1).padStart(2, "0")}T00:00:00.000Z`,
+        ),
       });
     }
 

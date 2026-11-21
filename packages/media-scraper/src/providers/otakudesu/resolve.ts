@@ -38,7 +38,7 @@ export async function resolveMirrors({
   } catch (error) {
     throw new MirrorResolveError(
       "failed to fetch nonce",
-      error instanceof Error ? error : undefined
+      error instanceof Error ? error : undefined,
     );
   }
 
@@ -59,7 +59,9 @@ export async function resolveMirrors({
       const iframeUrl = extractIframeSrc(base64Html);
 
       if (!iframeUrl) {
-        console.error(`No iframe found in mirror response for ${payload.label}`);
+        console.error(
+          `No iframe found in mirror response for ${payload.label}`,
+        );
         continue;
       }
 
@@ -67,7 +69,7 @@ export async function resolveMirrors({
     } catch (error) {
       console.error(
         `Failed to resolve mirror ${payload.label}:`,
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? error.message : String(error),
       );
     }
   }

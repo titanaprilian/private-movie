@@ -86,9 +86,11 @@ describe("GET /series/tmdb-preview", () => {
   it("returns 404 when TMDB returns 404 Not Found", async () => {
     vi.spyOn(global, "fetch").mockResolvedValueOnce(
       new Response(
-        JSON.stringify({ status_message: "The resource you requested could not be found." }),
-        { status: 404 }
-      )
+        JSON.stringify({
+          status_message: "The resource you requested could not be found.",
+        }),
+        { status: 404 },
+      ),
     );
 
     const reqOptions = {
@@ -116,14 +118,32 @@ describe("GET /series/tmdb-preview", () => {
             backdrop_path: "/tv_backdrop.jpg",
             first_air_date: "2022-03-10",
             status: "Ended",
-            genres: [{ id: 1, name: "Drama" }, { id: 2, name: "Mystery" }],
+            genres: [
+              { id: 1, name: "Drama" },
+              { id: 2, name: "Mystery" },
+            ],
             seasons: [
-              { season_number: 0, name: "Specials", episode_count: 3, poster_path: "/s0.jpg" },
-              { season_number: 1, name: "Season 1", episode_count: 10, poster_path: "/s1.jpg" },
-              { season_number: 2, name: "Season 2", episode_count: 8, poster_path: "/s2.jpg" },
+              {
+                season_number: 0,
+                name: "Specials",
+                episode_count: 3,
+                poster_path: "/s0.jpg",
+              },
+              {
+                season_number: 1,
+                name: "Season 1",
+                episode_count: 10,
+                poster_path: "/s1.jpg",
+              },
+              {
+                season_number: 2,
+                name: "Season 2",
+                episode_count: 8,
+                poster_path: "/s2.jpg",
+              },
             ],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -182,11 +202,21 @@ describe("GET /series/tmdb-preview", () => {
             status: "Ended",
             genres: [{ id: 1, name: "Drama" }],
             seasons: [
-              { season_number: 0, name: "Specials", episode_count: 3, poster_path: "/s0.jpg" },
-              { season_number: 1, name: "Season 1", episode_count: 10, poster_path: "/s1.jpg" },
+              {
+                season_number: 0,
+                name: "Specials",
+                episode_count: 3,
+                poster_path: "/s0.jpg",
+              },
+              {
+                season_number: 1,
+                name: "Season 1",
+                episode_count: 10,
+                poster_path: "/s1.jpg",
+              },
             ],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -223,7 +253,7 @@ describe("GET /series/tmdb-preview", () => {
             runtime: 125,
             genres: [{ id: 10, name: "Sci-Fi" }],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);

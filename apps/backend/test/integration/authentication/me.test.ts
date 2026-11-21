@@ -23,7 +23,9 @@ describe("GET /auth/me", () => {
     });
 
     expect(response.status).toBe(200);
-    const body = response.body as { data: { id: string; email: string; name?: string } };
+    const body = response.body as {
+      data: { id: string; email: string; name?: string };
+    };
     expect(body.data.id).toBe(user.id);
     expect(body.data.email).toBe(user.email);
     expect(body.data.name).toBe("Test User");
@@ -68,7 +70,7 @@ describe("GET /auth/me", () => {
     const { user } = await registerUser(app);
     const expiredToken = signTestToken(
       { sub: user.id, email: user.email },
-      { expiresInSeconds: -3600 }
+      { expiresInSeconds: -3600 },
     );
 
     const response = await request(app, {
@@ -87,7 +89,7 @@ describe("GET /auth/me", () => {
     const validToken = signTestToken({ sub: user.id, email: user.email });
     const parts = validToken.split(".");
     const tamperedPayload = Buffer.from(
-      JSON.stringify({ sub: "different-user-id", exp: 9999999999 })
+      JSON.stringify({ sub: "different-user-id", exp: 9999999999 }),
     ).toString("base64url");
     const tamperedToken = `${parts[0]}.${tamperedPayload}.${parts[2]}`;
 

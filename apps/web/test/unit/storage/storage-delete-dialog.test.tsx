@@ -89,11 +89,12 @@ describe('DeleteConfirmDialog bounded scrolling', () => {
 
   it('shows loading state while deletion is in flight and closes on success', async () => {
     let resolveConfirm!: () => void;
-    const onConfirm = vi
-      .fn()
-      .mockImplementation(
-        () => new Promise<void>((resolve) => { resolveConfirm = resolve; })
-      );
+    const onConfirm = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveConfirm = resolve;
+        })
+    );
     const onOpenChange = vi.fn();
     const { user } = renderWithProviders(
       <DeleteConfirmDialog {...defaultProps({ onConfirm, onOpenChange })} />

@@ -27,7 +27,9 @@ describe('AdminLoginForm', () => {
 
     expect(screen.getByText('Admin console')).toBeInTheDocument();
     expect(screen.getByText('Gatekeeper sign in')).toBeInTheDocument();
-    expect(screen.getAllByText(/invite-only/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/invite-only/i).length).toBeGreaterThanOrEqual(
+      1
+    );
     expect(screen.getByLabelText('Admin identity')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(
@@ -36,9 +38,7 @@ describe('AdminLoginForm', () => {
     expect(
       screen.queryByRole('button', { name: /forgot password/i })
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(/forgot password/i)
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/forgot password/i)).not.toBeInTheDocument();
   });
 
   it('shows validation errors on empty submit without calling the backend', async () => {
@@ -117,9 +117,7 @@ describe('AdminLoginPage layout', () => {
     expect(screen.getByTestId('admin-login-page')).toBeInTheDocument();
     expect(screen.getByTestId('admin-login-showcase')).toBeInTheDocument();
     expect(screen.getByTestId('admin-login-mascot')).toBeInTheDocument();
-    expect(
-      screen.getByTestId('admin-login-mobile-header')
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('admin-login-mobile-header')).toBeInTheDocument();
     expect(screen.getByTestId('admin-login-card')).toBeInTheDocument();
   });
 

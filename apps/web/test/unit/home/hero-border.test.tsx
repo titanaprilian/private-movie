@@ -35,7 +35,7 @@ function mockFetch(data: unknown) {
     if (url.includes('/auth/refresh')) {
       return new Response(
         JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
-        { status: 200 },
+        { status: 200 }
       );
     }
     if (url.includes('/series/home-feed')) {
@@ -72,7 +72,9 @@ describe('CinematicHome hero border removal', () => {
   });
 
   it('loading hero skeleton omits bottom border styling', () => {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise(() => {}));
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      () => new Promise(() => {})
+    );
     renderWithProviders(<CinematicHome />);
 
     const skeleton = screen.getByTestId('hero-skeleton');

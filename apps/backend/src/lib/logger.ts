@@ -1,6 +1,9 @@
 import pino, { type LoggerOptions, type Logger as PinoLogger } from "pino";
 
-export type AppLogger = Pick<PinoLogger, "info" | "warn" | "error" | "debug" | "child">;
+export type AppLogger = Pick<
+  PinoLogger,
+  "info" | "warn" | "error" | "debug" | "child"
+>;
 
 export interface CreateLoggerOptions {
   level?: string;

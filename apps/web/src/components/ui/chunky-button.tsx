@@ -36,7 +36,8 @@ const chunkyButtonVariants = cva(
 );
 
 export interface ChunkyButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof chunkyButtonVariants> {
   asChild?: boolean;
 }

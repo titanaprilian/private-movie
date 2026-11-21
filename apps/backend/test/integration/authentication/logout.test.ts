@@ -29,12 +29,14 @@ describe("POST /auth/logout", () => {
 
     const setCookieHeaders = response.headers.getSetCookie();
     const refreshTokenCookieHeader = setCookieHeaders.find((h) =>
-      h.toLowerCase().includes("refreshtoken")
+      h.toLowerCase().includes("refreshtoken"),
     );
     expect(refreshTokenCookieHeader).toBeDefined();
     expect(refreshTokenCookieHeader?.toLowerCase()).toContain("path=/");
     expect(refreshTokenCookieHeader?.toLowerCase()).toContain("httponly");
-    expect(refreshTokenCookieHeader?.toLowerCase()).toMatch(/expires=|max-age=0/);
+    expect(refreshTokenCookieHeader?.toLowerCase()).toMatch(
+      /expires=|max-age=0/,
+    );
   });
 
   it("is idempotent when called with unknown, invalid, or already-revoked tokens", async () => {
@@ -44,7 +46,9 @@ describe("POST /auth/logout", () => {
       body: { refreshToken: "unknown-or-invalid-token" },
     });
     expect(unknownTokenResponse.status).toBe(200);
-    const unknownBody = unknownTokenResponse.body as { data: { success: boolean } };
+    const unknownBody = unknownTokenResponse.body as {
+      data: { success: boolean };
+    };
     expect(unknownBody.data.success).toBe(true);
 
     const user = await registerUser(app);
@@ -116,7 +120,7 @@ describe("POST /auth/logout", () => {
     const deviceB = await loginUser(
       app,
       { email: deviceA.user.email, password: "password123" },
-      "mobile"
+      "mobile",
     );
 
     const logoutResponse = await request(app, {

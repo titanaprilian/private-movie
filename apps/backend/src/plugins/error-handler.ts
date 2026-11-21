@@ -6,7 +6,10 @@ import { captureException as defaultCaptureException } from "../lib/sentry";
 
 export interface ErrorHandlerPluginOptions {
   logger?: Pick<AppLogger, "warn" | "error">;
-  captureException?: (error: unknown, context?: Record<string, unknown>) => void;
+  captureException?: (
+    error: unknown,
+    context?: Record<string, unknown>,
+  ) => void;
 }
 
 function getPath(request: Request | undefined): string {
@@ -92,7 +95,7 @@ export const errorHandlerPlugin = (options: ErrorHandlerPluginOptions = {}) =>
             validationIssues: summarizeValidationIssues(error),
             requestId: request?.headers.get("x-request-id") ?? undefined,
           },
-          "request validation failed"
+          "request validation failed",
         );
         return {
           error: {
@@ -110,7 +113,7 @@ export const errorHandlerPlugin = (options: ErrorHandlerPluginOptions = {}) =>
             code: error instanceof Error ? deriveErrorCode(error) : "UNKNOWN",
             requestId: request?.headers.get("x-request-id") ?? undefined,
           },
-          "domain error"
+          "domain error",
         );
         return errorResponse(set, domainStatus, error as Error);
       }
@@ -126,7 +129,7 @@ export const errorHandlerPlugin = (options: ErrorHandlerPluginOptions = {}) =>
           status: 500,
           err,
         },
-        "[Unhandled Server Error]"
+        "[Unhandled Server Error]",
       );
       return errorResponse(set, 500, new InternalServerError());
     })

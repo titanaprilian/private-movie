@@ -31,12 +31,12 @@ describe("loadAppConfig", () => {
   });
 
   it("derives the API docs flag purely from the provided dictionary", () => {
-    expect(
-      loadAppConfig({ NODE_ENV: "production" }).apiDocsEnabled
-    ).toBe(false);
+    expect(loadAppConfig({ NODE_ENV: "production" }).apiDocsEnabled).toBe(
+      false,
+    );
     expect(
       loadAppConfig({ NODE_ENV: "production", ENABLE_API_DOCS: "true" })
-        .apiDocsEnabled
+        .apiDocsEnabled,
     ).toBe(true);
     expect(loadAppConfig({ NODE_ENV: "test" }).apiDocsEnabled).toBe(true);
   });
@@ -66,7 +66,7 @@ describe("isApiDocsEnabled", () => {
   it("reflects the provided dictionary without touching process.env", () => {
     expect(isApiDocsEnabled({ NODE_ENV: "production" })).toBe(false);
     expect(
-      isApiDocsEnabled({ NODE_ENV: "production", ENABLE_API_DOCS: "true" })
+      isApiDocsEnabled({ NODE_ENV: "production", ENABLE_API_DOCS: "true" }),
     ).toBe(true);
     expect(isApiDocsEnabled({ NODE_ENV: "development" })).toBe(true);
   });

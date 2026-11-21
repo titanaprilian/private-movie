@@ -3,7 +3,10 @@ import type { FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { createSeason } from '../../api';
-import { getNextSeasonNumber, detectProviderFromUrl } from '../utils/seasonUtils';
+import {
+  getNextSeasonNumber,
+  detectProviderFromUrl,
+} from '../utils/seasonUtils';
 import type { SeasonStatus, UseAddSeasonFormOptions } from '../types';
 
 export function useAddSeasonForm({
@@ -67,7 +70,9 @@ export function useAddSeasonForm({
         status,
         scraperUrl: scraperUrl.trim() || null,
         source: source === 'none' ? null : source,
-        episodeOffset: Number.isFinite(Number(episodeOffset)) ? Number(episodeOffset) : 0,
+        episodeOffset: Number.isFinite(Number(episodeOffset))
+          ? Number(episodeOffset)
+          : 0,
       }),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['series', seriesId] });

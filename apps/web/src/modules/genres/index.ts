@@ -26,4 +26,3 @@ export type {
   CreateGenreRequest,
   UpdateGenreRequest,
 } from './internal/api';
-

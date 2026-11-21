@@ -32,13 +32,13 @@ ANDROID_TV_IP=<ip> scripts/deploy-tv.sh --backend-url https://api.example.com
 
 ## Handling failures
 
-| Exit code | Meaning               | What to do                                                                                                                                                         |
-| --------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0         | Installed             | Reply with one line: installed (debug/release). Stop.                                                                                                              |
-| 2         | Signature conflict    | Ask the user first: reinstalling wipes app data. If they agree, re-run with `--reinstall`.                                                                         |
-| 3         | No device             | `unauthorized`: tell the user to accept "Always allow" on the TV. `offline`: ask them to wake the TV and enable Developer Options → Network Debugging. Then retry. |
-| 4         | Build failed          | Report the error and stop.                                                                                                                                         |
-| 1         | Other install failure / missing backend URL | Missing URL: re-run with `--backend-url <url>` or `BACKEND_API_URL`. Otherwise report the adb error and stop. |
+| Exit code | Meaning                                     | What to do                                                                                                                                                         |
+| --------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0         | Installed                                   | Reply with one line: installed (debug/release). Stop.                                                                                                              |
+| 2         | Signature conflict                          | Ask the user first: reinstalling wipes app data. If they agree, re-run with `--reinstall`.                                                                         |
+| 3         | No device                                   | `unauthorized`: tell the user to accept "Always allow" on the TV. `offline`: ask them to wake the TV and enable Developer Options → Network Debugging. Then retry. |
+| 4         | Build failed                                | Report the error and stop.                                                                                                                                         |
+| 1         | Other install failure / missing backend URL | Missing URL: re-run with `--backend-url <url>` or `BACKEND_API_URL`. Otherwise report the adb error and stop.                                                      |
 
 ## Optional (only if the user asks)
 

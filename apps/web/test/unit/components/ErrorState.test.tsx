@@ -58,9 +58,7 @@ describe('ErrorState component', () => {
   });
 
   it('supports a custom test id', () => {
-    renderWithProviders(
-      <ErrorState title="Custom" testId="custom-error" />
-    );
+    renderWithProviders(<ErrorState title="Custom" testId="custom-error" />);
     expect(screen.getByTestId('custom-error')).toBeInTheDocument();
   });
 });

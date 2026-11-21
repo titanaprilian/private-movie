@@ -28,21 +28,39 @@ export function VideoScrubber({
   onKeyDown,
 }: VideoScrubberProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [hoverPosition, setHoverPosition] = useState<{ xPercent: number; time: number } | null>(null);
+  const [hoverPosition, setHoverPosition] = useState<{
+    xPercent: number;
+    time: number;
+  } | null>(null);
 
-  const validDuration = typeof duration === 'number' && !isNaN(duration) && duration > 0 ? duration : 0;
-  const validCurrentTime = typeof currentTime === 'number' && !isNaN(currentTime) && currentTime >= 0 ? currentTime : 0;
+  const validDuration =
+    typeof duration === 'number' && !isNaN(duration) && duration > 0
+      ? duration
+      : 0;
+  const validCurrentTime =
+    typeof currentTime === 'number' && !isNaN(currentTime) && currentTime >= 0
+      ? currentTime
+      : 0;
 
-  const playedPercent = validDuration > 0 ? Math.min(100, Math.max(0, (validCurrentTime / validDuration) * 100)) : 0;
+  const playedPercent =
+    validDuration > 0
+      ? Math.min(100, Math.max(0, (validCurrentTime / validDuration) * 100))
+      : 0;
 
   // Calculate highest buffered end range
-  const maxBufferedEnd = bufferedRanges.length > 0
-    ? Math.max(...bufferedRanges.map((r) => (typeof r.end === 'number' && !isNaN(r.end) ? r.end : 0)))
-    : 0;
+  const maxBufferedEnd =
+    bufferedRanges.length > 0
+      ? Math.max(
+          ...bufferedRanges.map((r) =>
+            typeof r.end === 'number' && !isNaN(r.end) ? r.end : 0
+          )
+        )
+      : 0;
 
-  const bufferedPercent = validDuration > 0
-    ? Math.min(100, Math.max(0, (maxBufferedEnd / validDuration) * 100))
-    : 0;
+  const bufferedPercent =
+    validDuration > 0
+      ? Math.min(100, Math.max(0, (maxBufferedEnd / validDuration) * 100))
+      : 0;
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {

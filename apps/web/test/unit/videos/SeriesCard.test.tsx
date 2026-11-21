@@ -1,4 +1,11 @@
-import { createTestQueryClient, renderWithProviders, screen, fireEvent, waitFor, cleanup } from '../../utils';
+import {
+  createTestQueryClient,
+  renderWithProviders,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   SeriesGrid,
@@ -13,7 +20,8 @@ import {
 import { genresQueryOptions, type Genre } from '@/modules/genres';
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('@/modules/videos/internal/api')>();
+  const mod =
+    await importOriginal<typeof import('@/modules/videos/internal/api')>();
   return {
     ...mod,
     updateSeries: vi.fn(),
@@ -48,7 +56,13 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const genresList: Genre[] = [
-  { id: 'g-1', name: 'Action', slug: 'action', isBigGenre: false, displayOrder: 0 },
+  {
+    id: 'g-1',
+    name: 'Action',
+    slug: 'action',
+    isBigGenre: false,
+    displayOrder: 0,
+  },
 ];
 
 function makeItem(overrides: Partial<SeriesItem> = {}): SeriesItem {
@@ -67,11 +81,16 @@ function makeItem(overrides: Partial<SeriesItem> = {}): SeriesItem {
   } as unknown as SeriesItem;
 }
 
-function renderGridWith(response: unknown, search: Record<string, unknown> = { page: 1 }) {
+function renderGridWith(
+  response: unknown,
+  search: Record<string, unknown> = { page: 1 }
+) {
   mockSearchState = search;
   mockNavigate.mockReset();
   const queryClient = createTestQueryClient();
-  queryClient.setDefaultOptions({ queries: { retry: false, staleTime: Infinity } });
+  queryClient.setDefaultOptions({
+    queries: { retry: false, staleTime: Infinity },
+  });
   queryClient.setQueryData(
     seriesListQueryOptions({ ...search, limit: SERIES_PAGE_LIMIT }).queryKey,
     response as SeriesListResponse
@@ -99,7 +118,10 @@ describe('SeriesCard grid rendering', () => {
   });
 
   it('renders poster with object-fit cover, rounded corners, alt title, and navigates to detail view', () => {
-    const response = { series: [makeItem()], meta: { total: 1, page: 1, limit: 20 } };
+    const response = {
+      series: [makeItem()],
+      meta: { total: 1, page: 1, limit: 20 },
+    };
     renderGridWith(response);
     const img = screen.getByAltText('Solo Leveling');
     expect(img).toHaveClass('object-cover');
@@ -109,21 +131,31 @@ describe('SeriesCard grid rendering', () => {
     expect(titleLink).toHaveAttribute('href', '/admin/videos/series-1');
     // 2-line clamped synopsis + blue episode pill
     expect(
-      screen.getByText('Sung Jinwoo ascends from E-rank hunter to shadow monarch.')
+      screen.getByText(
+        'Sung Jinwoo ascends from E-rank hunter to shadow monarch.'
+      )
     ).toHaveClass('line-clamp-2');
     expect(screen.getByText('0 episodes')).toBeInTheDocument();
   });
 
   it('renders fallback placeholder when poster is null or fails to load', () => {
     const noPoster = makeItem({ posterUrl: null as unknown as string });
-    const response = { series: [noPoster], meta: { total: 1, page: 1, limit: 20 } };
+    const response = {
+      series: [noPoster],
+      meta: { total: 1, page: 1, limit: 20 },
+    };
     renderGridWith(response);
     expect(screen.getByTestId('series-poster-fallback')).toHaveTextContent('S');
 
     // broken image -> error fallback
     cleanup();
-    const withBroken = makeItem({ posterUrl: 'https://example.com/broken.jpg' });
-    renderGridWith({ series: [withBroken], meta: { total: 1, page: 1, limit: 20 } });
+    const withBroken = makeItem({
+      posterUrl: 'https://example.com/broken.jpg',
+    });
+    renderGridWith({
+      series: [withBroken],
+      meta: { total: 1, page: 1, limit: 20 },
+    });
     const img = screen.getByAltText('Solo Leveling') as HTMLImageElement;
     fireEvent.error(img);
     expect(screen.getByTestId('series-poster-fallback')).toBeInTheDocument();
@@ -135,11 +167,18 @@ describe('SeriesCard grid rendering', () => {
     const parentClick = vi.fn();
     const { user } = renderWithProviders(
       <div onClick={parentClick}>
-        <SeriesCard item={makeItem()} onToggleFeatured={vi.fn()} onEdit={onEdit} onDelete={onDelete} />
+        <SeriesCard
+          item={makeItem()}
+          onToggleFeatured={vi.fn()}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       </div>
     );
     const editBtn = screen.getByRole('button', { name: 'Edit Solo Leveling' });
-    const deleteBtn = screen.getByRole('button', { name: 'Delete Solo Leveling' });
+    const deleteBtn = screen.getByRole('button', {
+      name: 'Delete Solo Leveling',
+    });
     // chunky: 44px height + bottom border physics
     expect(editBtn.className).toContain('h-11');
     expect(editBtn.className).toContain('border-b-4');
@@ -162,7 +201,9 @@ describe('FeaturedStar', () => {
     const { user } = renderWithProviders(
       <FeaturedStar featured={false} title="Solo Leveling" onToggle={vi.fn()} />
     );
-    const btn = screen.getByRole('button', { name: 'Mark Solo Leveling as featured' });
+    const btn = screen.getByRole('button', {
+      name: 'Mark Solo Leveling as featured',
+    });
     expect(btn).toHaveAttribute('aria-pressed', 'false');
     expect(btn).not.toHaveAttribute('title');
     // inactive: hidden until hover/focus
@@ -180,7 +221,9 @@ describe('FeaturedStar', () => {
     const { user } = renderWithProviders(
       <FeaturedStar featured title="Solo Leveling" onToggle={vi.fn()} />
     );
-    const active = screen.getByRole('button', { name: /Remove .* from featured/ });
+    const active = screen.getByRole('button', {
+      name: /Remove .* from featured/,
+    });
     expect(active).toHaveAttribute('aria-pressed', 'true');
     expect(active).not.toHaveAttribute('title');
     // 44px chunky + gold tint
@@ -217,7 +260,9 @@ describe('FeaturedStar', () => {
   });
 
   it('respects touch (hover:none always visible) and prefers-reduced-motion via CSS', async () => {
-    renderWithProviders(<FeaturedStar featured={false} title="X" onToggle={vi.fn()} />);
+    renderWithProviders(
+      <FeaturedStar featured={false} title="X" onToggle={vi.fn()} />
+    );
     const btn = screen.getByRole('button', { name: 'Mark X as featured' });
     expect(btn.className).toContain('focus-visible:opacity-100');
     expect(btn.className).toContain('active:translate-y-[2px]');
@@ -232,27 +277,43 @@ describe('FeaturedStar', () => {
 
   it('optimistically toggles featured state and calls updateSeries', async () => {
     vi.mocked(updateSeries).mockResolvedValue(makeItem({ isFeatured: true }));
-    const response = { series: [makeItem({ isFeatured: false })], meta: { total: 1, page: 1, limit: 20 } };
+    const response = {
+      series: [makeItem({ isFeatured: false })],
+      meta: { total: 1, page: 1, limit: 20 },
+    };
     renderGridWith(response);
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Solo Leveling as featured' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mark Solo Leveling as featured' })
+    );
     await waitFor(() => {
-      expect(vi.mocked(updateSeries)).toHaveBeenCalledWith('series-1', { isFeatured: true });
+      expect(vi.mocked(updateSeries)).toHaveBeenCalledWith('series-1', {
+        isFeatured: true,
+      });
     });
     // optimistic UI flips to featured immediately
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: 'Remove Solo Leveling from featured' })
+        screen.getByRole('button', {
+          name: 'Remove Solo Leveling from featured',
+        })
       ).toBeInTheDocument();
     });
   });
 
   it('rolls back on server error and shows an error toast', async () => {
     vi.mocked(updateSeries).mockRejectedValue(new Error('boom'));
-    const response = { series: [makeItem({ isFeatured: false })], meta: { total: 1, page: 1, limit: 20 } };
+    const response = {
+      series: [makeItem({ isFeatured: false })],
+      meta: { total: 1, page: 1, limit: 20 },
+    };
     renderGridWith(response);
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Solo Leveling as featured' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mark Solo Leveling as featured' })
+    );
     await waitFor(() => {
-      expect(vi.mocked(updateSeries)).toHaveBeenCalledWith('series-1', { isFeatured: true });
+      expect(vi.mocked(updateSeries)).toHaveBeenCalledWith('series-1', {
+        isFeatured: true,
+      });
     });
     // rollback: star returns to unfeatured state after error
     await waitFor(() => {

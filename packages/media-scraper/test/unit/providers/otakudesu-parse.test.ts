@@ -16,12 +16,12 @@ import {
 const fixtures = {
   minimal: resolve(
     import.meta.dirname,
-    "../../fixtures/episodes/sample-a.html"
+    "../../fixtures/episodes/sample-a.html",
   ),
   full: resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
   fullList: resolve(
     import.meta.dirname,
-    "../../fixtures/sample-full-list.html"
+    "../../fixtures/sample-full-list.html",
   ),
 };
 
@@ -30,7 +30,9 @@ const readFixture = (path: string): string => readFileSync(path, "utf8");
 describe("parseEpisodeOrder", () => {
   it("extracts integer from various title formats", () => {
     expect(parseEpisodeOrder("Episode 12")).toBe(12);
-    expect(parseEpisodeOrder("One Piece Episode 1080 Subtitle Indonesia")).toBe(1080);
+    expect(parseEpisodeOrder("One Piece Episode 1080 Subtitle Indonesia")).toBe(
+      1080,
+    );
     expect(parseEpisodeOrder("Eps 5 Sub Indo")).toBe(5);
     expect(parseEpisodeOrder("Ep. 03")).toBe(3);
     expect(parseEpisodeOrder("Ep 004")).toBe(4);
@@ -50,7 +52,7 @@ describe("parseEpisodePage", () => {
 
     it("extracts the title from the page heading", () => {
       expect(result.title).toBe(
-        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia",
       );
     });
 
@@ -71,13 +73,9 @@ describe("parseEpisodePage", () => {
     it("parses the episode list excluding the placeholder option", () => {
       const episodes = result.metadata.episodes;
       expect(episodes).toHaveLength(7);
+      expect(episodes?.some((episode) => episode.url === "0")).toBe(false);
       expect(
-        episodes?.some((episode) => episode.url === "0")
-      ).toBe(false);
-      expect(
-        episodes?.some(
-          (episode) => episode.label === "Pilih Episode Lainnya"
-        )
+        episodes?.some((episode) => episode.label === "Pilih Episode Lainnya"),
       ).toBe(false);
       expect(episodes?.[0]).toEqual({
         label: "Episode 7",
@@ -94,7 +92,7 @@ describe("parseEpisodePage", () => {
 
     it("keeps the anime page URL in metadata", () => {
       expect(result.metadata.animePageUrl).toBe(
-        "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+        "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/",
       );
     });
 
@@ -112,7 +110,7 @@ describe("parseEpisodePage", () => {
 
     it("extracts title and video sources containing only embed sources", () => {
       expect(result.title).toBe(
-        "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia"
+        "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia",
       );
 
       expect(result.videoSources).toEqual([
@@ -138,7 +136,7 @@ describe("parseEpisodePage", () => {
 
     it("extracts the poster image URL from .cukder", () => {
       expect(result.metadata.posterUrl).toBe(
-        "https://otakudesu.blog/wp-content/uploads/2026/07/157173.jpg"
+        "https://otakudesu.blog/wp-content/uploads/2026/07/157173.jpg",
       );
     });
 
@@ -147,7 +145,7 @@ describe("parseEpisodePage", () => {
       expect(downloadLinks).toHaveLength(6);
 
       const qualities = downloadLinks?.map(
-        (entry: ScrapedDownloadLink) => entry.quality
+        (entry: ScrapedDownloadLink) => entry.quality,
       );
       expect(qualities).toEqual([
         "Mp4 360p",
@@ -174,7 +172,10 @@ describe("parseEpisodePage", () => {
             host: "Acefile",
             url: "https://link.desustream.com/?id=Uk83OUt2T214S3VsSWx3R3pTYW5lYWNtWnBSZ3Z6NC9MQWpwdWh2d1ZPYU03NUZrL2FKUUducjRGUUI5enVaSU1GaU0vQldNaHFKZjBIQk05QXdT",
           },
-          { host: "GoFile", url: "https://link.desustream.com/?id=Uk83OUt2T214S3VqTGw4SnlDL3NQcXRtTGQwSisyZExaV21KN0E9PQ==" },
+          {
+            host: "GoFile",
+            url: "https://link.desustream.com/?id=Uk83OUt2T214S3VqTGw4SnlDL3NQcXRtTGQwSisyZExaV21KN0E9PQ==",
+          },
           {
             host: "Mega",
             url: "https://link.desustream.com/?id=Uk83OUt2T214S3VwSkY0QmlpUzRlS0lnSlpkZ3pHVkRjVWlHNUh2Z0grREwyOGg5eWFKZ1hpZjZTV2RTMU9aalJVRDluV25Ec1BjRmlFazd6QWtTL1BlM3F3YXJhamxCRHc9PQ==",
@@ -189,7 +190,7 @@ describe("parseEpisodePage", () => {
 
     it("extracts nothing from the mirror switcher section", () => {
       const urls = result.metadata.downloadLinks?.flatMap(
-        (entry: ScrapedDownloadLink) => entry.hosts.map((host) => host.url)
+        (entry: ScrapedDownloadLink) => entry.hosts.map((host) => host.url),
       );
       expect(urls?.every((url: string) => url.startsWith("http"))).toBe(true);
       expect(urls?.some((url: string) => url === "#")).toBe(false);
@@ -224,7 +225,9 @@ describe("parseEpisodePage", () => {
 
   describe("extractAjaxActions", () => {
     it("returns null when no script tags exist", () => {
-      expect(extractAjaxActions("<html><body><p>plain</p></body></html>")).toBeNull();
+      expect(
+        extractAjaxActions("<html><body><p>plain</p></body></html>"),
+      ).toBeNull();
     });
 
     it("returns null when the script lacks the expected action patterns", () => {
@@ -244,7 +247,7 @@ describe("parseEpisodePage", () => {
 
     it("handles single-quoted action strings and whitespace", () => {
       const html =
-        '<script>data:{ action : \'aa1208d27f29ca340c92c66d1926f13f\' },data:{ ...e, nonce: n, action : \'2a3505c93b0035d3f455df82bf976b84\' }</script>';
+        "<script>data:{ action : 'aa1208d27f29ca340c92c66d1926f13f' },data:{ ...e, nonce: n, action : '2a3505c93b0035d3f455df82bf976b84' }</script>";
       expect(extractAjaxActions(html)).toEqual({
         nonceAction: "aa1208d27f29ca340c92c66d1926f13f",
         mirrorAction: "2a3505c93b0035d3f455df82bf976b84",
@@ -255,7 +258,7 @@ describe("parseEpisodePage", () => {
   describe("validation errors", () => {
     it("throws when the #venkonten container is missing", () => {
       expect(() => parseEpisodePage("<div><p>no container</p></div>")).toThrow(
-        EpisodeParseError
+        EpisodeParseError,
       );
     });
 
@@ -290,7 +293,7 @@ describe("parseEpisodePage", () => {
 describe("extractDirectVideoSources", () => {
   const mp4FixturePath = resolve(
     import.meta.dirname,
-    "../../fixtures/episodes/sample-mp4-video.html"
+    "../../fixtures/episodes/sample-mp4-video.html",
   );
 
   it("extracts video sources from the MP4 fixture HTML", () => {
@@ -399,7 +402,9 @@ describe("extractDirectVideoSources", () => {
     `;
     const result = extractDirectVideoSources(html);
     expect(result).toHaveLength(1);
-    expect(result[0].url).toBe("https://archive.org/download/ealdream-pertamdaw/Otakudesu.io_MST.S3--04_1080p.mp4");
+    expect(result[0].url).toBe(
+      "https://archive.org/download/ealdream-pertamdaw/Otakudesu.io_MST.S3--04_1080p.mp4",
+    );
     expect(result[0].label).toBe("Otakudesu.io_MST.S3--04_1080p");
     expect(result[0].quality).toBe("1080p");
   });

@@ -24,7 +24,9 @@ describe("createLogger", () => {
     vi.stubEnv("NODE_ENV", "production");
     delete process.env.LOG_LEVEL;
     const { createLogger } = await import("@/lib/logger");
-    const log = createLogger({ isDevelopment: false }) as unknown as { level: string };
+    const log = createLogger({ isDevelopment: false }) as unknown as {
+      level: string;
+    };
     expect(log.level).toBe("info");
   });
 
@@ -32,24 +34,36 @@ describe("createLogger", () => {
     vi.stubEnv("NODE_ENV", "development");
     delete process.env.LOG_LEVEL;
     const { createLogger } = await import("@/lib/logger");
-    const log = createLogger({ isDevelopment: true, level: "debug" }) as unknown as { level: string };
+    const log = createLogger({
+      isDevelopment: true,
+      level: "debug",
+    }) as unknown as { level: string };
     expect(log.level).toBe("debug");
   });
 
   it("respects explicit level and LOG_LEVEL env override", async () => {
     const { createLogger } = await import("@/lib/logger");
-    const explicit = createLogger({ level: "warn", isDevelopment: false }) as unknown as { level: string };
+    const explicit = createLogger({
+      level: "warn",
+      isDevelopment: false,
+    }) as unknown as { level: string };
     expect(explicit.level).toBe("warn");
 
     vi.stubEnv("LOG_LEVEL", "error");
-    const fromEnv = createLogger({ isDevelopment: false }) as unknown as { level: string };
+    const fromEnv = createLogger({ isDevelopment: false }) as unknown as {
+      level: string;
+    };
     expect(fromEnv.level).toBe("error");
   });
 
   it("emits structured JSON in production mode", async () => {
     const { createLogger } = await import("@/lib/logger");
     const { stream, output } = captureStream();
-    const log = createLogger({ level: "info", isDevelopment: false, destination: stream });
+    const log = createLogger({
+      level: "info",
+      isDevelopment: false,
+      destination: stream,
+    });
     log.info({ requestId: "abc-123" }, "hello");
     await new Promise((r) => setTimeout(r, 50));
     const parsed = JSON.parse(output().trim().split("\n")[0]);
@@ -61,12 +75,17 @@ describe("createLogger", () => {
   it("is usable as shutdown manager and scheduler logger", async () => {
     const { createLogger } = await import("@/lib/logger");
     const { stream } = captureStream();
-    const log = createLogger({ level: "silent", isDevelopment: false, destination: stream });
+    const log = createLogger({
+      level: "silent",
+      isDevelopment: false,
+      destination: stream,
+    });
     expect(typeof log.info).toBe("function");
     expect(typeof log.warn).toBe("function");
     expect(typeof log.error).toBe("function");
 
-    const { createShutdownManager } = await import("@/shutdown/shutdown-manager");
+    const { createShutdownManager } =
+      await import("@/shutdown/shutdown-manager");
     const exits: number[] = [];
     const manager = createShutdownManager({
       proc: { on: () => {}, exit: (c: number) => void exits.push(c) },
@@ -78,7 +97,14 @@ describe("createLogger", () => {
 
     const { createOngoingSeasonScheduler } = await import("@/modules/media");
     const scheduler = createOngoingSeasonScheduler({
-      mediaService: { scrapeAllOngoingSeasons: async () => ({ totalProcessed: 0, successCount: 0, failureCount: 0, results: [] }) },
+      mediaService: {
+        scrapeAllOngoingSeasons: async () => ({
+          totalProcessed: 0,
+          successCount: 0,
+          failureCount: 0,
+          results: [],
+        }),
+      },
       runImmediately: false,
       enabled: false,
       logger: log,

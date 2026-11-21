@@ -43,7 +43,9 @@ describe('useHomeFeedNav', () => {
     );
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     expect(result.current.focusedRow).toBe(1);
@@ -59,7 +61,9 @@ describe('useHomeFeedNav', () => {
     );
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true })
+      );
     });
 
     expect(result.current.focusedRow).toBe(0);
@@ -76,12 +80,16 @@ describe('useHomeFeedNav', () => {
 
     // Move to row 1
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     // Move right on row 1
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+      );
     });
 
     expect(result.current.focusedRow).toBe(1);
@@ -98,13 +106,17 @@ describe('useHomeFeedNav', () => {
 
     // Move to row 1 (3 items: 0, 1, 2)
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     // Press right 5 times
     for (let i = 0; i < 5; i++) {
       act(() => {
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+        );
       });
     }
 
@@ -122,12 +134,16 @@ describe('useHomeFeedNav', () => {
 
     // Move to row 1
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     // Press left
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })
+      );
     });
 
     expect(result.current.focusedRow).toBe(1);
@@ -145,7 +161,9 @@ describe('useHomeFeedNav', () => {
     // Press down 5 times (only rows 0, 1, 2 exist)
     for (let i = 0; i < 5; i++) {
       act(() => {
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+        );
       });
     }
 
@@ -163,7 +181,9 @@ describe('useHomeFeedNav', () => {
     );
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+      );
     });
 
     expect(onSelectSeries).toHaveBeenCalledTimes(1);
@@ -182,15 +202,21 @@ describe('useHomeFeedNav', () => {
 
     // Move down to row 1, right to item 1
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+      );
     });
 
     // Press Enter
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+      );
     });
 
     expect(onSelectSeries).toHaveBeenCalledTimes(1);
@@ -213,7 +239,9 @@ describe('useHomeFeedNav', () => {
     );
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     expect(scrollIntoViewSpy).toHaveBeenCalledWith({
@@ -238,13 +266,17 @@ describe('useHomeFeedNav', () => {
     );
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     expect(result.current.focusedRow).toBe(0);
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+      );
     });
 
     expect(onSelectSeries).not.toHaveBeenCalled();
@@ -261,7 +293,9 @@ describe('useHomeFeedNav', () => {
     unmount();
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     expect(result.current.focusedRow).toBe(0);

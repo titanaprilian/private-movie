@@ -24,7 +24,7 @@ describe("ad suppression", () => {
 
   it("injects anti-clickjack CSS into server-rendered embed document", () => {
     const out = buildServerRenderedEmbedDocument(
-      `<html><head><title>t</title></head><body><div>hi</div></body></html>`
+      `<html><head><title>t</title></head><body><div>hi</div></body></html>`,
     );
     expect(out).toContain("pm-anti-clickjack");
     expect(out).toContain("2147483647");
@@ -33,7 +33,7 @@ describe("ad suppression", () => {
 
   it("strips runtime ad scripts from server-rendered embed document", () => {
     const out = buildServerRenderedEmbedDocument(
-      `<html><head><script src="/cdn/runtime.js"></script><script src="/_app/main.js"></script></head><body></body></html>`
+      `<html><head><script src="/cdn/runtime.js"></script><script src="/_app/main.js"></script></head><body></body></html>`,
     );
     expect(out).not.toContain("/cdn/runtime.js");
     expect(out).toContain("_app/main.js");
@@ -43,18 +43,24 @@ describe("ad suppression", () => {
     const out = sanitizeHtmlContent(
       `<html><head><script src="/cdn/runtime.js"></script></head><body><p>hi</p></body></html>`,
       "example.com",
-      "https://example.com/v/1"
+      "https://example.com/v/1",
     );
     expect(out).not.toContain("runtime.js");
     expect(out).toContain("pm-anti-clickjack");
   });
 
   it("identifies blocked ad assets for proxy no-op", () => {
-    expect(isBlockedAdAsset("https://videobello.net/cdn/runtime.js")).toBe(true);
+    expect(isBlockedAdAsset("https://videobello.net/cdn/runtime.js")).toBe(
+      true,
+    );
     expect(isBlockedAdAsset("/cdn/runtime.js?v=2")).toBe(true);
     expect(isBlockedAdAsset("https://daly2024.com/tracker.js")).toBe(true);
-    expect(isBlockedAdAsset("https://videobello.net/player/app.js")).toBe(false);
-    expect(isBlockedAdAsset("https://cdn.example.com/hls/master.m3u8")).toBe(false);
+    expect(isBlockedAdAsset("https://videobello.net/player/app.js")).toBe(
+      false,
+    );
+    expect(isBlockedAdAsset("https://cdn.example.com/hls/master.m3u8")).toBe(
+      false,
+    );
   });
 
   it("identifies blocked external app schemes", () => {
@@ -77,7 +83,9 @@ describe("ad suppression", () => {
     expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain("position: fixed");
     expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain('a[href^="shopee:"]');
     // Generic inline-zero-opacity player elements must not be targeted.
-    expect(VIDHIDE_ANTI_CLICKJACK_CSS).not.toContain('div[style*="opacity: 0"]');
+    expect(VIDHIDE_ANTI_CLICKJACK_CSS).not.toContain(
+      'div[style*="opacity: 0"]',
+    );
     expect(VIDHIDE_ANTI_CLICKJACK_CSS).not.toContain('div[style*="opacity:0"]');
     // Scoped to specific overlay IDs/classes and high z-index hijack divs.
     expect(VIDHIDE_ANTI_CLICKJACK_CSS).toContain("#adbd");
@@ -101,6 +109,8 @@ describe("ad suppression", () => {
 
   it("blocks whos.amung.us tracker assets for proxy no-op", () => {
     expect(isBlockedAdAsset("https://whos.amung.us/pingjs/?k=abc")).toBe(true);
-    expect(isBlockedAdAsset("https://videobello.net/player/app.js")).toBe(false);
+    expect(isBlockedAdAsset("https://videobello.net/player/app.js")).toBe(
+      false,
+    );
   });
 });

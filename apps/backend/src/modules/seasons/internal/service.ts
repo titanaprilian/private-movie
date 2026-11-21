@@ -11,12 +11,18 @@ import type {
   SeasonServiceDeps,
 } from "./types";
 
-export function createSeasonService(db: DbClient, deps?: SeasonServiceDeps): SeasonService {
-  const seasonsRepository = deps?.seasonsRepository ?? createSeasonRepository(db);
+export function createSeasonService(
+  db: DbClient,
+  deps?: SeasonServiceDeps,
+): SeasonService {
+  const seasonsRepository =
+    deps?.seasonsRepository ?? createSeasonRepository(db);
   const scrapeSeason = deps?.scrapeSeason;
 
   return {
-    async scrapeOngoingSeason(seasonId: string): Promise<ScrapeOngoingSeasonResult> {
+    async scrapeOngoingSeason(
+      seasonId: string,
+    ): Promise<ScrapeOngoingSeasonResult> {
       const season = await seasonsRepository.findById(seasonId);
       if (!season) {
         throw new SeasonNotFoundError(`Season with id ${seasonId} not found`);
@@ -35,9 +41,7 @@ export function createSeasonService(db: DbClient, deps?: SeasonServiceDeps): Sea
       }
 
       if (!scrapeSeason) {
-        throw new Error(
-          `No scrape delegate configured for season ${seasonId}`,
-        );
+        throw new Error(`No scrape delegate configured for season ${seasonId}`);
       }
 
       return scrapeSeason(season);

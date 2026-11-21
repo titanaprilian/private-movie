@@ -17,11 +17,23 @@ async function seedCatalog() {
   const now = new Date();
   const [g1] = await db
     .insert(genresTable)
-    .values({ id: crypto.randomUUID(), name: "Action", slug: `action-${crypto.randomUUID()}`, createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      name: "Action",
+      slug: `action-${crypto.randomUUID()}`,
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
   const [g2] = await db
     .insert(genresTable)
-    .values({ id: crypto.randomUUID(), name: "Drama", slug: `drama-${crypto.randomUUID()}`, createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      name: "Drama",
+      slug: `drama-${crypto.randomUUID()}`,
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
 
   const [s1] = await db
@@ -37,22 +49,62 @@ async function seedCatalog() {
     .returning();
   const [s2] = await db
     .insert(seriesTable)
-    .values({ id: crypto.randomUUID(), title: "Plain", createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      title: "Plain",
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
 
   const [season1] = await db
     .insert(seasonsTable)
-    .values({ id: crypto.randomUUID(), seriesId: s1.id, title: "Season 1", seasonNumber: 1, createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      seriesId: s1.id,
+      title: "Season 1",
+      seasonNumber: 1,
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
   const [season2] = await db
     .insert(seasonsTable)
-    .values({ id: crypto.randomUUID(), seriesId: s2.id, title: "Season 1", seasonNumber: 1, createdAt: now, updatedAt: now })
+    .values({
+      id: crypto.randomUUID(),
+      seriesId: s2.id,
+      title: "Season 1",
+      seasonNumber: 1,
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
 
   await db.insert(episodesTable).values([
-    { id: crypto.randomUUID(), seasonId: season1.id, title: "E1", order: 1, createdAt: now, updatedAt: now },
-    { id: crypto.randomUUID(), seasonId: season1.id, title: "E2", order: 2, createdAt: now, updatedAt: now },
-    { id: crypto.randomUUID(), seasonId: season2.id, title: "E1", order: 1, createdAt: now, updatedAt: now },
+    {
+      id: crypto.randomUUID(),
+      seasonId: season1.id,
+      title: "E1",
+      order: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: crypto.randomUUID(),
+      seasonId: season1.id,
+      title: "E2",
+      order: 2,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: crypto.randomUUID(),
+      seasonId: season2.id,
+      title: "E1",
+      order: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
   ]);
 
   return { g1, g2, s1, s2 };
@@ -250,8 +302,22 @@ describe("GET /api/admin/dashboard", () => {
       })
       .returning();
     await db.insert(episodesTable).values([
-      { id: crypto.randomUUID(), seasonId: ongoingSeason.id, title: "E1", order: 1, createdAt: now, updatedAt: now },
-      { id: crypto.randomUUID(), seasonId: ongoingSeason.id, title: "E2", order: 2, createdAt: now, updatedAt: now },
+      {
+        id: crypto.randomUUID(),
+        seasonId: ongoingSeason.id,
+        title: "E1",
+        order: 1,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: crypto.randomUUID(),
+        seasonId: ongoingSeason.id,
+        title: "E2",
+        order: 2,
+        createdAt: now,
+        updatedAt: now,
+      },
     ]);
     // Series WITH the highlight flag but only completed seasons — must NOT count.
     const [s2] = await db
@@ -277,7 +343,14 @@ describe("GET /api/admin/dashboard", () => {
       })
       .returning();
     await db.insert(episodesTable).values([
-      { id: crypto.randomUUID(), seasonId: doneSeason.id, title: "E1", order: 1, createdAt: now, updatedAt: now },
+      {
+        id: crypto.randomUUID(),
+        seasonId: doneSeason.id,
+        title: "E1",
+        order: 1,
+        createdAt: now,
+        updatedAt: now,
+      },
     ]);
 
     const res = await request(app, { path: "/api/admin/dashboard", headers });
@@ -295,14 +368,21 @@ describe("GET /api/admin/dashboard", () => {
       episodeCount: 2,
       lastScrapeError: "Failed to fetch provider HTML: timeout",
     });
-    expect(body.data.ongoingSeasons[0].lastScrapedAt).toBe(hourAgo.toISOString());
+    expect(body.data.ongoingSeasons[0].lastScrapedAt).toBe(
+      hourAgo.toISOString(),
+    );
   });
 
   it("returns an empty ongoing list with zero count when nothing is airing", async () => {
     const now = new Date();
     const [s] = await db
       .insert(seriesTable)
-      .values({ id: crypto.randomUUID(), title: "Done", createdAt: now, updatedAt: now })
+      .values({
+        id: crypto.randomUUID(),
+        title: "Done",
+        createdAt: now,
+        updatedAt: now,
+      })
       .returning();
     await db.insert(seasonsTable).values({
       id: crypto.randomUUID(),
@@ -365,7 +445,11 @@ describe("GET /api/admin/dashboard storage usage", () => {
   beforeAll(async () => {
     app = await buildApp({
       storage: {
-        usageProvider: { async getTotalUsedBytes() { return 5 * GB; } },
+        usageProvider: {
+          async getTotalUsedBytes() {
+            return 5 * GB;
+          },
+        },
       },
     });
     const auth = await registerUser(app);
@@ -396,7 +480,10 @@ describe("GET /api/admin/dashboard storage usage", () => {
     const auth = await registerUser(failingApp);
     const failingHeaders = authHeaders(auth.accessToken);
     await seedProviders();
-    const res = await request(failingApp, { path: "/api/admin/dashboard", headers: failingHeaders });
+    const res = await request(failingApp, {
+      path: "/api/admin/dashboard",
+      headers: failingHeaders,
+    });
     expect(res.status).toBe(200);
     const body = res.body as DataResponse<AdminDashboardDto>;
     expect(body.data.storage.totalLimitBytes).toBe(150 * GB);
@@ -419,7 +506,10 @@ describe("GET /api/admin/dashboard storage usage", () => {
     const slowHeaders = authHeaders(auth.accessToken);
     await seedProviders();
     const startedAt = Date.now();
-    const res = await request(slowApp, { path: "/api/admin/dashboard", headers: slowHeaders });
+    const res = await request(slowApp, {
+      path: "/api/admin/dashboard",
+      headers: slowHeaders,
+    });
     const elapsedMs = Date.now() - startedAt;
     expect(res.status).toBe(200);
     const body = res.body as DataResponse<AdminDashboardDto>;
@@ -433,7 +523,12 @@ describe("GET /api/admin/dashboard storage usage", () => {
     const now = new Date();
     const [s] = await db
       .insert(seriesTable)
-      .values({ id: crypto.randomUUID(), title: "Multi Season Show", createdAt: now, updatedAt: now })
+      .values({
+        id: crypto.randomUUID(),
+        title: "Multi Season Show",
+        createdAt: now,
+        updatedAt: now,
+      })
       .returning();
     const [seasonA] = await db
       .insert(seasonsTable)
@@ -460,15 +555,45 @@ describe("GET /api/admin/dashboard storage usage", () => {
       })
       .returning();
     await db.insert(episodesTable).values([
-      { id: crypto.randomUUID(), seasonId: seasonA.id, title: "E1", order: 1, createdAt: now, updatedAt: now },
-      { id: crypto.randomUUID(), seasonId: seasonA.id, title: "E2", order: 2, createdAt: now, updatedAt: now },
-      { id: crypto.randomUUID(), seasonId: seasonA.id, title: "E3", order: 3, createdAt: now, updatedAt: now },
-      { id: crypto.randomUUID(), seasonId: seasonB.id, title: "E1", order: 1, createdAt: now, updatedAt: now },
+      {
+        id: crypto.randomUUID(),
+        seasonId: seasonA.id,
+        title: "E1",
+        order: 1,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: crypto.randomUUID(),
+        seasonId: seasonA.id,
+        title: "E2",
+        order: 2,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: crypto.randomUUID(),
+        seasonId: seasonA.id,
+        title: "E3",
+        order: 3,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: crypto.randomUUID(),
+        seasonId: seasonB.id,
+        title: "E1",
+        order: 1,
+        createdAt: now,
+        updatedAt: now,
+      },
     ]);
     const res = await request(app, { path: "/api/admin/dashboard", headers });
     expect(res.status).toBe(200);
     const body = res.body as DataResponse<AdminDashboardDto>;
-    const counts = new Map(body.data.ongoingSeasons.map((o) => [o.seasonId, o.episodeCount]));
+    const counts = new Map(
+      body.data.ongoingSeasons.map((o) => [o.seasonId, o.episodeCount]),
+    );
     expect(counts.get(seasonA.id)).toBe(3);
     expect(counts.get(seasonB.id)).toBe(1);
   });

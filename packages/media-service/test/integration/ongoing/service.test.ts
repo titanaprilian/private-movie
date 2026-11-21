@@ -47,16 +47,14 @@ describe("createOngoingScraperService (integration)", () => {
           },
         ],
       }),
-      resolveVideoSources: vi
-        .fn()
-        .mockResolvedValue([
-          {
-            type: "direct",
-            quality: "720p",
-            label: "Direct 720p",
-            url: "https://storage.example.com/ep1.mp4",
-          },
-        ]),
+      resolveVideoSources: vi.fn().mockResolvedValue([
+        {
+          type: "direct",
+          quality: "720p",
+          label: "Direct 720p",
+          url: "https://storage.example.com/ep1.mp4",
+        },
+      ]),
     } as any);
 
     const mockTmdbOrchestrator = {
@@ -141,16 +139,14 @@ describe("createOngoingScraperService (integration)", () => {
               },
             ],
           }),
-          resolveVideoSources: vi
-            .fn()
-            .mockResolvedValue([
-              {
-                type: "direct",
-                quality: "720p",
-                label: "720p",
-                url: "https://storage.example.com/ok.mp4",
-              },
-            ]),
+          resolveVideoSources: vi.fn().mockResolvedValue([
+            {
+              type: "direct",
+              quality: "720p",
+              label: "720p",
+              url: "https://storage.example.com/ok.mp4",
+            },
+          ]),
         };
       }
       throw new Error("Provider fail");

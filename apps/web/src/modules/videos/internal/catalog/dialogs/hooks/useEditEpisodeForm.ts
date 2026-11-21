@@ -24,7 +24,8 @@ export function useEditEpisodeForm({
       setEditTitle(episode.title ?? '');
       setEditDescription(episode.description ?? '');
       // If the episode has videoSources, or any initial videoType, we can initialize it
-      const initialType = (episode as { videoType?: string | null }).videoType ?? '';
+      const initialType =
+        (episode as { videoType?: string | null }).videoType ?? '';
       setEditVideoType(initialType);
     }
   }, [open, episode]);

@@ -8,7 +8,10 @@ import type {
 const baseBadgeClassName =
   'rounded-full px-2.5 py-1 text-xs font-extrabold border-2';
 
-export function PillBadge({ children, ...props }: IngestionBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
+export function PillBadge({
+  children,
+  ...props
+}: IngestionBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       className={`${baseBadgeClassName} border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]`}
@@ -19,7 +22,10 @@ export function PillBadge({ children, ...props }: IngestionBadgeProps & React.HT
   );
 }
 
-export function WarningBadge({ children, ...props }: IngestionBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
+export function WarningBadge({
+  children,
+  ...props
+}: IngestionBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       className={`${baseBadgeClassName} border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)]`}
@@ -44,7 +50,10 @@ export function ProviderBadge({
   );
 }
 
-export function MetaBadge({ children, ...props }: IngestionBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
+export function MetaBadge({
+  children,
+  ...props
+}: IngestionBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       className={`${baseBadgeClassName} border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]`}
@@ -67,7 +76,10 @@ export function CountBadge({ children, tone = 'green' }: CountBadgeProps) {
   );
 }
 
-export function FieldBadge({ children, ...props }: IngestionBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
+export function FieldBadge({
+  children,
+  ...props
+}: IngestionBadgeProps & React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       className={`${baseBadgeClassName} border-[var(--blue)] bg-[var(--blue-soft)] text-[var(--blue)]`}
@@ -82,7 +94,11 @@ function statusTone(status: string): string {
   if (status === 'completed' || status === 'success') {
     return 'border-[var(--green)] bg-[var(--green-soft)] text-[var(--green)]';
   }
-  if (status === 'ingesting' || status === 'uploading' || status === 'processing') {
+  if (
+    status === 'ingesting' ||
+    status === 'uploading' ||
+    status === 'processing'
+  ) {
     return 'border-[var(--gold-dark)] bg-[var(--gold-tint)] text-[var(--gold)] animate-pulse';
   }
   if (status === 'failed' || status === 'error') {

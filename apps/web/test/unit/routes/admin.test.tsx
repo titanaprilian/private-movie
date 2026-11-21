@@ -4,15 +4,23 @@ import { Route, AdminPage } from '@/routes/admin';
 import { useAuthStore } from '@/modules/auth/internal/store';
 import { redirect } from '@tanstack/react-router';
 
-
 vi.mock('@tanstack/react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  const actual =
+    await importOriginal<typeof import('@tanstack/react-router')>();
   return {
     ...actual,
     createFileRoute: () => (config: unknown) => config,
     redirect: vi.fn((opts) => opts),
     Outlet: () => <div data-testid="admin-outlet">Admin Outlet Content</div>,
-    Link: ({ children, to, className }: { children: React.ReactNode; to: string; className?: string }) => (
+    Link: ({
+      children,
+      to,
+      className,
+    }: {
+      children: React.ReactNode;
+      to: string;
+      className?: string;
+    }) => (
       <a href={to} className={className}>
         {children}
       </a>
@@ -34,8 +42,12 @@ describe('/admin route', () => {
 
   const getBeforeLoad = () => {
     const routeObj = Route as unknown as Record<string, unknown>;
-    const options = routeObj.options as { beforeLoad?: (...args: unknown[]) => Promise<unknown> } | undefined;
-    return options?.beforeLoad ?? (routeObj.beforeLoad as (...args: unknown[]) => Promise<unknown>);
+    const options = routeObj.options as
+      { beforeLoad?: (...args: unknown[]) => Promise<unknown> } | undefined;
+    return (
+      options?.beforeLoad ??
+      (routeObj.beforeLoad as (...args: unknown[]) => Promise<unknown>)
+    );
   };
 
   it('exports Route configuration', () => {
@@ -50,13 +62,18 @@ describe('/admin route', () => {
     useAuthStore.setState({ checkAuth: checkAuthMock });
 
     const beforeLoad = getBeforeLoad();
-    await expect(beforeLoad({ location: { pathname: '/admin' } })).rejects.toEqual({
+    await expect(
+      beforeLoad({ location: { pathname: '/admin' } })
+    ).rejects.toEqual({
       to: '/admin/login',
       search: { redirect: undefined },
     });
 
     expect(checkAuthMock).toHaveBeenCalled();
-    expect(redirect).toHaveBeenCalledWith({ to: '/admin/login', search: { redirect: undefined } });
+    expect(redirect).toHaveBeenCalledWith({
+      to: '/admin/login',
+      search: { redirect: undefined },
+    });
   });
 
   it('does not redirect the /admin/login page itself (no guard loop)', async () => {
@@ -95,7 +112,8 @@ describe('/admin route', () => {
     renderWithProviders(<AdminPage />);
     expect(screen.getByTestId('admin-outlet')).toBeInTheDocument();
     expect(screen.getByText('Admin Outlet Content')).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /series/i }).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole('link', { name: /series/i }).length
+    ).toBeGreaterThan(0);
   });
 });
-

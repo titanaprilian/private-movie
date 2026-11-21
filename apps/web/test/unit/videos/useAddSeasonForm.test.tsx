@@ -91,7 +91,9 @@ describe('useAddSeasonForm', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
       postedBody = JSON.parse(init?.body as string);
       return new Response(
-        JSON.stringify({ data: { id: 's-9', title: 'Season 2', ...(postedBody as object) } }),
+        JSON.stringify({
+          data: { id: 's-9', title: 'Season 2', ...(postedBody as object) },
+        }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     });
@@ -102,7 +104,9 @@ describe('useAddSeasonForm', () => {
       result.current.handleScraperUrlChange('https://otakudesu.cloud/anime/x');
     });
     act(() => {
-      result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
+      result.current.handleSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent);
     });
     await waitFor(() => {
       expect(postedBody).toEqual(
@@ -114,7 +118,9 @@ describe('useAddSeasonForm', () => {
       );
     });
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['series', 'series-1'],
+      });
       expect(toast.success).toHaveBeenCalledWith(
         'Season created successfully',
         expect.objectContaining({ description: 'Season 2' })
@@ -124,19 +130,23 @@ describe('useAddSeasonForm', () => {
   });
 
   it('blocks submit when title is blank or season number invalid', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
-      return new Response(JSON.stringify({ data: {} }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => {
+        return new Response(JSON.stringify({ data: {} }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       });
-    });
     const { result } = setup();
     act(() => {
       result.current.handleTitleChange('   ');
     });
     expect(result.current.isValid).toBe(false);
     act(() => {
-      result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
+      result.current.handleSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent);
     });
     expect(fetchSpy).not.toHaveBeenCalled();
   });

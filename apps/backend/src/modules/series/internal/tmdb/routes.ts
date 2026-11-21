@@ -33,10 +33,11 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "Preview scrape series",
-          description: "Scrapes a source URL and returns a preview of the series without persisting it. Requires authentication.",
+          description:
+            "Scrapes a source URL and returns a preview of the series without persisting it. Requires authentication.",
         },
         body: previewScrapeSeriesBodySchema,
-      }
+      },
     )
     .get(
       "/series/tmdb-preview",
@@ -44,7 +45,7 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
         const result = await tmdb.getTmdbPreview(
           query.type,
           query.tmdbId,
-          query.includeSpecials
+          query.includeSpecials,
         );
         return successResponse(result);
       },
@@ -53,10 +54,11 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "TMDB preview",
-          description: "Returns a preview of TMDB metadata for a TV show or movie without importing it. Requires authentication.",
+          description:
+            "Returns a preview of TMDB metadata for a TV show or movie without importing it. Requires authentication.",
         },
         query: tmdbPreviewQuerySchema,
-      }
+      },
     )
     .post(
       "/series/tmdb-import",
@@ -73,10 +75,11 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "TMDB import",
-          description: "Imports a series from TMDB metadata into the library. Requires authentication.",
+          description:
+            "Imports a series from TMDB metadata into the library. Requires authentication.",
         },
         body: tmdbImportBodySchema,
-      }
+      },
     )
     .post(
       "/series/:id/tmdb-sync",
@@ -89,11 +92,12 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "TMDB sync",
-          description: "Syncs an existing series with TMDB metadata. Requires authentication.",
+          description:
+            "Syncs an existing series with TMDB metadata. Requires authentication.",
         },
         params: seriesUuidParamsSchema,
         body: tmdbSyncBodySchema,
-      }
+      },
     )
     .get(
       "/series/:id/tmdb-sync-preview",
@@ -110,11 +114,12 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "TMDB sync preview",
-          description: "Previews TMDB metadata changes for an existing series without applying them. Requires authentication.",
+          description:
+            "Previews TMDB metadata changes for an existing series without applying them. Requires authentication.",
         },
         params: seriesUuidParamsSchema,
         query: tmdbSyncPreviewQuerySchema,
-      }
+      },
     )
     .post(
       "/series/:id/preview-bulk-sources",
@@ -134,10 +139,11 @@ export const tmdbRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "Preview bulk sources",
-          description: "Previews bulk episode sources for a series from a scraper URL without persisting them. Requires authentication.",
+          description:
+            "Previews bulk episode sources for a series from a scraper URL without persisting them. Requires authentication.",
         },
         params: seriesIdParamsSchema,
         body: previewBulkSourcesBodySchema,
-      }
+      },
     );
 };

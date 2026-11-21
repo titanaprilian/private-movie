@@ -5,8 +5,11 @@ import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 
 const sampleOneSeasonHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
-  "utf8"
+  resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-one-season.html",
+  ),
+  "utf8",
 );
 
 const seriesUrl = "https://otakudesu.blog/anime/grand-blue-s3-sub-indo/";
@@ -63,9 +66,11 @@ describe("POST /preview-scrape-series", () => {
       expect(body.data).toBeDefined();
       expect(body.data.series.sourceUrl).toBe(seriesUrl);
       expect(body.data.series.source).toBe("otakudesu");
-      expect(body.data.series.title).toBe("Grand Blue Season 3 Subtitle Indonesia");
+      expect(body.data.series.title).toBe(
+        "Grand Blue Season 3 Subtitle Indonesia",
+      );
       expect(body.data.series.posterUrl).toBe(
-        "https://otakudesu.blog/wp-content/uploads/2026/07/158194.jpg"
+        "https://otakudesu.blog/wp-content/uploads/2026/07/158194.jpg",
       );
 
       expect(Array.isArray(body.data.episodes)).toBe(true);
@@ -99,7 +104,7 @@ describe("POST /preview-scrape-series", () => {
       };
       expect(body.data.episodes.length).toBe(7);
       expect(body.data.episodes[6].url).toBe(
-        "https://otakudesu.blog/episode/gb-s3-episode-1-sub-indo/"
+        "https://otakudesu.blog/episode/gb-s3-episode-1-sub-indo/",
       );
     });
   });

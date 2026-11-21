@@ -32,11 +32,17 @@ vi.mock('@tanstack/react-router', () => ({
       : mockCurrentPath === to || mockCurrentPath.startsWith(to + '/');
 
     const dynamicClass = isActive
-      ? activeProps?.className ?? className
-      : inactiveProps?.className ?? className;
+      ? (activeProps?.className ?? className)
+      : (inactiveProps?.className ?? className);
 
     return (
-      <a href={to} className={dynamicClass} onClick={onClick} title={title} {...rest}>
+      <a
+        href={to}
+        className={dynamicClass}
+        onClick={onClick}
+        title={title}
+        {...rest}
+      >
         {children}
       </a>
     );
@@ -78,14 +84,16 @@ describe('Shell layout component', () => {
     );
 
     const sidebar = screen.getByTestId('desktop-sidebar');
-    expect(sidebar.querySelector('img[alt="Private Movie"]')?.getAttribute('src')).toContain(
-      '/assets/logo-full-dark.png'
-    );
+    expect(
+      sidebar.querySelector('img[alt="Private Movie"]')?.getAttribute('src')
+    ).toContain('/assets/logo-full-dark.png');
 
     useUIStore.setState({ sidebarCollapsed: true });
     await waitFor(() => {
       expect(
-        sidebar.querySelector('img[alt="Private Movie collapsed logo"]')?.getAttribute('src')
+        sidebar
+          .querySelector('img[alt="Private Movie collapsed logo"]')
+          ?.getAttribute('src')
       ).toContain('/assets/logo-collapsed-dark.png');
     });
   });
@@ -170,21 +178,31 @@ describe('Shell layout component', () => {
     const toggleBtn = screen.getByRole('button', { name: /toggle sidebar/i });
     const sidebar = screen.getByTestId('desktop-sidebar');
     const desktopLogo = () =>
-      sidebar.querySelector('img[alt="Private Movie"], img[alt="Private Movie collapsed logo"]');
+      sidebar.querySelector(
+        'img[alt="Private Movie"], img[alt="Private Movie collapsed logo"]'
+      );
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
     expect(sidebar.className).toContain('w-[224px]');
-    expect(desktopLogo()?.getAttribute('src')).toContain('/assets/logo-full.png');
+    expect(desktopLogo()?.getAttribute('src')).toContain(
+      '/assets/logo-full.png'
+    );
     expect(desktopLogo()?.getAttribute('alt')).toBe('Private Movie');
 
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(true);
     expect(sidebar.className).toContain('w-[92px]');
     expect(sidebar.className).not.toContain('w-[224px]');
-    expect(desktopLogo()?.getAttribute('src')).toContain('/assets/logo-collapsed.png');
-    expect(desktopLogo()?.getAttribute('alt')).toBe('Private Movie collapsed logo');
+    expect(desktopLogo()?.getAttribute('src')).toContain(
+      '/assets/logo-collapsed.png'
+    );
+    expect(desktopLogo()?.getAttribute('alt')).toBe(
+      'Private Movie collapsed logo'
+    );
 
     // Collapsed nav items render icon-only with chunky tooltips (no native title)
-    const collapsedSeriesLink = screen.getAllByRole('link', { name: /series/i })[0];
+    const collapsedSeriesLink = screen.getAllByRole('link', {
+      name: /series/i,
+    })[0];
     expect(collapsedSeriesLink).not.toHaveAttribute('title');
 
     await user.hover(collapsedSeriesLink);
@@ -193,7 +211,9 @@ describe('Shell layout component', () => {
     await user.click(toggleBtn);
     expect(useUIStore.getState().sidebarCollapsed).toBe(false);
     expect(sidebar.className).toContain('w-[224px]');
-    expect(desktopLogo()?.getAttribute('src')).toContain('/assets/logo-full.png');
+    expect(desktopLogo()?.getAttribute('src')).toContain(
+      '/assets/logo-full.png'
+    );
   });
 
   it('renders anonymous user profile avatar in the sidebar and omits external pravatar placeholder', () => {
@@ -205,7 +225,9 @@ describe('Shell layout component', () => {
 
     const avatars = screen.getAllByLabelText('User avatar');
     expect(avatars.length).toBeGreaterThan(0);
-    expect(screen.queryByRole('img', { name: /user avatar/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('img', { name: /user avatar/i })
+    ).not.toBeInTheDocument();
     expect(
       screen.getAllByText(/user@email.com|User Name/).length
     ).toBeGreaterThan(0);
@@ -221,10 +243,14 @@ describe('Shell layout component', () => {
       </Shell>
     );
     // Desktop sidebar renders first; the mobile slide-over duplicates the card.
-    const inactiveProfileLink = screen.getAllByRole('link', { name: /user name/i })[0];
+    const inactiveProfileLink = screen.getAllByRole('link', {
+      name: /user name/i,
+    })[0];
     expect(inactiveProfileLink).toHaveAttribute('href', '/admin/profile');
     expect(inactiveProfileLink.className).toContain('border-[var(--border)]');
-    expect(inactiveProfileLink.className).not.toContain('border-[var(--green)]');
+    expect(inactiveProfileLink.className).not.toContain(
+      'border-[var(--green)]'
+    );
     unmount();
 
     mockCurrentPath = '/admin/profile';
@@ -252,11 +278,15 @@ describe('Shell layout component', () => {
     expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
 
-    const notificationsBtn = screen.getByRole('button', { name: 'Notifications' });
+    const notificationsBtn = screen.getByRole('button', {
+      name: 'Notifications',
+    });
     expect(notificationsBtn.className).toContain('border-b-4');
     expect(screen.getByLabelText('3 unread notifications')).toBeInTheDocument();
 
-    expect(screen.getByRole('button', { name: 'Toggle theme' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Toggle theme' })
+    ).toBeInTheDocument();
     const logoutBtn = screen.getByRole('button', { name: 'Logout' });
     expect(logoutBtn.className).toContain('border-b-4');
   });

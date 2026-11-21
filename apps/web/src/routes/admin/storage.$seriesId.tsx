@@ -7,7 +7,9 @@ type StorageSeriesDetailSearch = {
 };
 
 export const Route = createFileRoute('/admin/storage/$seriesId')({
-  validateSearch: (search: Record<string, unknown>): StorageSeriesDetailSearch => ({
+  validateSearch: (
+    search: Record<string, unknown>
+  ): StorageSeriesDetailSearch => ({
     seasonId:
       typeof search.seasonId === 'string' && search.seasonId.length > 0
         ? search.seasonId

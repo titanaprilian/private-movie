@@ -3,7 +3,9 @@ import { stripSeasonDescriptors } from "./title";
 export function parseBulkScrapedEpisodeNumber(title: string): number | null {
   const normalized = stripSeasonDescriptors(title);
 
-  const decimalEpMatch = normalized.match(/(?:episode|eps|ep|#)\.?\s*(\d+\.\d+)/i);
+  const decimalEpMatch = normalized.match(
+    /(?:episode|eps|ep|#)\.?\s*(\d+\.\d+)/i,
+  );
   if (decimalEpMatch) {
     const num = parseFloat(decimalEpMatch[1]);
     if (!Number.isNaN(num)) return num;
@@ -15,7 +17,9 @@ export function parseBulkScrapedEpisodeNumber(title: string): number | null {
     if (!Number.isNaN(num)) return num;
   }
 
-  const titleWithoutSeason = normalized.replace(/\bseason\s*\d+/gi, "").replace(/\bs\d+\b/gi, "");
+  const titleWithoutSeason = normalized
+    .replace(/\bseason\s*\d+/gi, "")
+    .replace(/\bs\d+\b/gi, "");
 
   const decimalMatch = titleWithoutSeason.match(/\b(\d+\.\d+)\b/);
   if (decimalMatch) {

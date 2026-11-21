@@ -28,10 +28,7 @@ export function ChunkyPaginationBar({
   return (
     <nav
       aria-label="Pagination"
-      className={cn(
-        'mt-7 flex items-center justify-center gap-4',
-        className
-      )}
+      className={cn('mt-7 flex items-center justify-center gap-4', className)}
     >
       <ChunkyChip
         type="button"

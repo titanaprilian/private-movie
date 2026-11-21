@@ -81,7 +81,7 @@ describe("DELETE /episodes/:id", () => {
 
       const expiredToken = signTestToken(
         { sub: "some-user-id" },
-        { expiresInSeconds: -3600 }
+        { expiresInSeconds: -3600 },
       );
       const expiredTokenResponse = await request(app, {
         method: "DELETE",
@@ -104,7 +104,9 @@ describe("DELETE /episodes/:id", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });

@@ -43,8 +43,12 @@ export function SourceInlineEditForm({
   return (
     <ChunkyCard className="p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-extrabold text-[var(--ink)]">Edit Source</span>
-        <span className="font-mono text-[10px] font-bold text-[var(--muted)]">{source.id}</span>
+        <span className="text-sm font-extrabold text-[var(--ink)]">
+          Edit Source
+        </span>
+        <span className="font-mono text-[10px] font-bold text-[var(--muted)]">
+          {source.id}
+        </span>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -55,8 +59,14 @@ export function SourceInlineEditForm({
           >
             Type
           </label>
-          <ChunkySelect value={type} onValueChange={(val) => setType(val as SourceType)}>
-            <ChunkySelectTrigger id={`edit-source-type-${source.id}`} aria-label="Type">
+          <ChunkySelect
+            value={type}
+            onValueChange={(val) => setType(val as SourceType)}
+          >
+            <ChunkySelectTrigger
+              id={`edit-source-type-${source.id}`}
+              aria-label="Type"
+            >
               <ChunkySelectValue placeholder="Select type" />
             </ChunkySelectTrigger>
             <ChunkySelectContent>
@@ -118,10 +128,20 @@ export function SourceInlineEditForm({
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-1">
-        <ChunkyButton type="button" variant="outline" size="sm" onClick={onCancel}>
+        <ChunkyButton
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onCancel}
+        >
           Cancel
         </ChunkyButton>
-        <ChunkyButton type="button" size="sm" onClick={handleSave} disabled={isPending}>
+        <ChunkyButton
+          type="button"
+          size="sm"
+          onClick={handleSave}
+          disabled={isPending}
+        >
           {isPending ? 'Saving...' : 'Save'}
         </ChunkyButton>
       </div>

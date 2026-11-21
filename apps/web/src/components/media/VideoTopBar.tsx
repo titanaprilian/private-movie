@@ -39,7 +39,9 @@ export function VideoTopBar({
       data-testid="video-top-bar"
       className={cn(
         'absolute top-0 inset-x-0 z-40 flex items-center justify-between p-4 md:p-6 transition-all duration-300',
-        showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none',
+        showControls
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 -translate-y-2 pointer-events-none',
         className
       )}
     >
@@ -51,7 +53,10 @@ export function VideoTopBar({
             aria-label="Back"
             className="inline-flex items-center gap-2 rounded-full bg-[var(--surface)]/90 backdrop-blur-md border-2 border-[#58cc02]/60 text-[var(--ink)] hover:border-[#58cc02] font-sans font-bold text-sm px-3.5 py-2 shadow-[0_3px_0_#46a302] border-b-4 border-b-[var(--green-dark)] active:translate-y-[2px] active:border-b-2 active:shadow-[0_1px_0_#46a302] transition-all cursor-pointer"
           >
-            <ChevronLeft className="h-4.5 w-4.5 stroke-[2.5]" aria-hidden="true" />
+            <ChevronLeft
+              className="h-4.5 w-4.5 stroke-[2.5]"
+              aria-hidden="true"
+            />
             <span>Back</span>
           </button>
         )}

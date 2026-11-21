@@ -1,13 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  OtakudesuProvider,
-} from "@repo/media-scraper";
+import { OtakudesuProvider } from "@repo/media-scraper";
 
 const sampleOneSeasonHtml = fs.readFileSync(
-  path.resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
-  "utf8"
+  path.resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-one-season.html",
+  ),
+  "utf8",
 );
 
 const provider = new OtakudesuProvider();
@@ -24,14 +25,22 @@ describe("parseSeriesPage - batch scraping", () => {
 
     // First episode (newest): Episode 7
     const firstEpisode = result.episodes[0];
-    expect(firstEpisode.title).toBe("Grand Blue Season 3 Episode 7 Subtitle Indonesia");
-    expect(firstEpisode.url).toBe("https://otakudesu.blog/episode/gb-s3-episode-7-sub-indo/");
+    expect(firstEpisode.title).toBe(
+      "Grand Blue Season 3 Episode 7 Subtitle Indonesia",
+    );
+    expect(firstEpisode.url).toBe(
+      "https://otakudesu.blog/episode/gb-s3-episode-7-sub-indo/",
+    );
     expect(firstEpisode.date).toBe("18 Agustus,2026");
 
     // Last episode (oldest): Episode 1
     const lastEpisode = result.episodes[6];
-    expect(lastEpisode.title).toBe("Grand Blue Season 3 Episode 1 Subtitle Indonesia");
-    expect(lastEpisode.url).toBe("https://otakudesu.blog/episode/gb-s3-episode-1-sub-indo/");
+    expect(lastEpisode.title).toBe(
+      "Grand Blue Season 3 Episode 1 Subtitle Indonesia",
+    );
+    expect(lastEpisode.url).toBe(
+      "https://otakudesu.blog/episode/gb-s3-episode-1-sub-indo/",
+    );
     expect(lastEpisode.date).toBe("7 Juli,2026");
   });
 
@@ -43,7 +52,7 @@ describe("parseSeriesPage - batch scraping", () => {
 
     // Episodes should be in reverse chronological order as they appear in the DOM
     expect(result.episodes.length).toBe(7);
-    
+
     // Verify each episode URL matches expected pattern and order
     const expectedUrls = [
       "gb-s3-episode-7-sub-indo",

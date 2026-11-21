@@ -1,16 +1,29 @@
 import { describe, expect, it, beforeAll, afterEach, vi } from "vitest";
-import { videoSources as videoSourcesTable, seasons, series, episodes } from "@repo/db";
+import {
+  videoSources as videoSourcesTable,
+  seasons,
+  series,
+  episodes,
+} from "@repo/db";
 import { buildApp, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import { createMockS3 } from "../../utils/s3";
 import { db } from "../../utils/db";
 import { eq } from "drizzle-orm";
-import type { StreamUploadOptions, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  StreamUploadOptions,
+  StorageProviderRegistry,
+} from "@repo/media-service";
 import type { Readable } from "node:stream";
 
 interface CompleteEventData {
   episode: { id: string };
-  videoSource: { id: string; type: string; label: string; quality: string | null };
+  videoSource: {
+    id: string;
+    type: string;
+    label: string;
+    quality: string | null;
+  };
 }
 
 interface ErrorEventData {
@@ -24,7 +37,9 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-function parseSSE(sseText: string): Array<{ event: string; data: Record<string, unknown> }> {
+function parseSSE(
+  sseText: string,
+): Array<{ event: string; data: Record<string, unknown> }> {
   const blocks = sseText.split("\n\n").filter((b) => b.trim().length > 0);
   const events: Array<{ event: string; data: Record<string, unknown> }> = [];
   for (const block of blocks) {
@@ -40,7 +55,10 @@ function parseSSE(sseText: string): Array<{ event: string; data: Record<string, 
     }
     if (event && dataStr) {
       try {
-        events.push({ event, data: JSON.parse(dataStr) as Record<string, unknown> });
+        events.push({
+          event,
+          data: JSON.parse(dataStr) as Record<string, unknown>,
+        });
       } catch {
         events.push({ event, data: { raw: dataStr } });
       }
@@ -78,10 +96,12 @@ async function ensureSeason(id: string): Promise<string> {
   return seasonRow.id;
 }
 
-async function insertTestEpisode(overrides?: Partial<{
-  id: string;
-  title: string;
-}>): Promise<{ id: string; title: string }> {
+async function insertTestEpisode(
+  overrides?: Partial<{
+    id: string;
+    title: string;
+  }>,
+): Promise<{ id: string; title: string }> {
   const id = overrides?.id ?? crypto.randomUUID();
   const title = overrides?.title ?? "Remote Ingest Test Episode";
   const seasonId = await ensureSeason(crypto.randomUUID());
@@ -109,14 +129,17 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     const episode = await insertTestEpisode();
 
     const response = await app.handle(
-      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: "https://example.com/video.mp4",
-          label: "S3 Video",
-        }),
-      })
+      new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: "https://example.com/video.mp4",
+            label: "S3 Video",
+          }),
+        },
+      ),
     );
 
     expect(response.status).toBe(401);
@@ -127,21 +150,26 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     const nonexistentId = crypto.randomUUID();
 
     const response = await app.handle(
-      new Request(`http://localhost/api/episodes/${nonexistentId}/sources/remote-ingest`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
-          "Content-Type": "application/json",
+      new Request(
+        `http://localhost/api/episodes/${nonexistentId}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: "https://example.com/video.mp4",
+            label: "S3 Video",
+          }),
         },
-        body: JSON.stringify({
-          url: "https://example.com/video.mp4",
-          label: "S3 Video",
-        }),
-      })
+      ),
     );
 
     expect(response.status).toBe(404);
-    const body = (await response.json()) as { error: { code: string; message: string } };
+    const body = (await response.json()) as {
+      error: { code: string; message: string };
+    };
     expect(body.error.code).toBe("EPISODE_NOT_FOUND");
   });
 
@@ -156,21 +184,26 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     const episode = await insertTestEpisode();
 
     const response = await unconfiguredApp.handle(
-      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
-          "Content-Type": "application/json",
+      new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: "https://example.com/video.mp4",
+            label: "S3 Video",
+          }),
         },
-        body: JSON.stringify({
-          url: "https://example.com/video.mp4",
-          label: "S3 Video",
-        }),
-      })
+      ),
     );
 
     expect(response.status).toBe(503);
-    const body = (await response.json()) as { error: { code: string; message: string } };
+    const body = (await response.json()) as {
+      error: { code: string; message: string };
+    };
     expect(body.error.code).toBe("S3_NOT_CONFIGURED");
   });
 
@@ -179,10 +212,18 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
 
     const mockS3Service = createMockS3({
       isConfigured: () => true,
-      getPresignedUploadUrl: async (key: string) => ({ uploadUrl: `https://s3.example.com/${key}`, key }),
-      getPresignedPlaybackUrl: async (key: string) => `https://s3.signed.com/${key}?signed=true`,
+      getPresignedUploadUrl: async (key: string) => ({
+        uploadUrl: `https://s3.example.com/${key}`,
+        key,
+      }),
+      getPresignedPlaybackUrl: async (key: string) =>
+        `https://s3.signed.com/${key}?signed=true`,
       uploadObject: async () => {},
-      uploadStream: async (key: string, bodyStream: ReadableStream<Uint8Array> | Readable, options?: StreamUploadOptions) => {
+      uploadStream: async (
+        key: string,
+        bodyStream: ReadableStream<Uint8Array> | Readable,
+        options?: StreamUploadOptions,
+      ) => {
         capturedUploadKey = key;
         const reader = (bodyStream as ReadableStream<Uint8Array>).getReader();
         let loadedBytes = 0;
@@ -213,10 +254,15 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     });
 
     let outboundHeaders: Record<string, string> = {};
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
       const url = input.toString();
       if (url.startsWith("https://remote-host.com/")) {
-        outboundHeaders = Object.fromEntries(new Headers(init?.headers).entries());
+        outboundHeaders = Object.fromEntries(
+          new Headers(init?.headers).entries(),
+        );
         const chunk1 = new TextEncoder().encode("A".repeat(100));
         const chunk2 = new TextEncoder().encode("B".repeat(100));
         const stream = new ReadableStream({
@@ -238,19 +284,22 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     }) as typeof fetch;
 
     const response = await customApp.handle(
-      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
-          "Content-Type": "application/json",
+      new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: "https://remote-host.com/files/action-movie-1080p.mp4",
+            label: "S3 1080p Ingested",
+            quality: "1080p",
+            referer: "https://custom-referer.org/watch",
+          }),
         },
-        body: JSON.stringify({
-          url: "https://remote-host.com/files/action-movie-1080p.mp4",
-          label: "S3 1080p Ingested",
-          quality: "1080p",
-          referer: "https://custom-referer.org/watch",
-        }),
-      })
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -283,7 +332,9 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     expect(outboundHeaders["referer"]).toBe("https://custom-referer.org/watch");
 
     // Verify S3 key format
-    expect(capturedUploadKey).toMatch(new RegExp(`^episodes/${episode.id}/.+-action-movie-1080p\\.mp4$`));
+    expect(capturedUploadKey).toMatch(
+      new RegExp(`^episodes/${episode.id}/.+-action-movie-1080p\\.mp4$`),
+    );
 
     // Verify DB persistence & non-destructive behavior
     const sourcesInDb = await db
@@ -297,7 +348,10 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
 
   it("defaults referer header to target URL origin when referer is omitted", async () => {
     const mockS3Service = createMockS3({
-      uploadStream: async (_key: string, bodyStream: ReadableStream<Uint8Array> | Readable) => {
+      uploadStream: async (
+        _key: string,
+        bodyStream: ReadableStream<Uint8Array> | Readable,
+      ) => {
         const reader = (bodyStream as ReadableStream<Uint8Array>).getReader();
         while (true) {
           const { done } = await reader.read();
@@ -311,10 +365,15 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     const episode = await insertTestEpisode();
 
     let outboundHeaders: Record<string, string> = {};
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
       const url = input.toString();
       if (url.startsWith("https://cdn.provider.com/")) {
-        outboundHeaders = Object.fromEntries(new Headers(init?.headers).entries());
+        outboundHeaders = Object.fromEntries(
+          new Headers(init?.headers).entries(),
+        );
         const stream = new ReadableStream({
           start(controller) {
             controller.enqueue(new TextEncoder().encode("data"));
@@ -327,17 +386,20 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     }) as typeof fetch;
 
     const response = await customApp.handle(
-      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
-          "Content-Type": "application/json",
+      new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: "https://cdn.provider.com/stream/v1.mp4",
+            label: "Default Referer Source",
+          }),
         },
-        body: JSON.stringify({
-          url: "https://cdn.provider.com/stream/v1.mp4",
-          label: "Default Referer Source",
-        }),
-      })
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -352,26 +414,35 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     const { accessToken } = await registerUser(customApp);
     const episode = await insertTestEpisode();
 
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
       const url = input.toString();
       if (url.startsWith("https://broken-link.com/")) {
-        return new Response("Not Found", { status: 404, statusText: "Not Found" });
+        return new Response("Not Found", {
+          status: 404,
+          statusText: "Not Found",
+        });
       }
       return originalFetch(input, init);
     }) as typeof fetch;
 
     const response = await customApp.handle(
-      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
-          "Content-Type": "application/json",
+      new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: "https://broken-link.com/video-404.mp4",
+            label: "Broken Source",
+          }),
         },
-        body: JSON.stringify({
-          url: "https://broken-link.com/video-404.mp4",
-          label: "Broken Source",
-        }),
-      })
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -396,7 +467,11 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     let s3UploadAborted = false;
 
     const mockS3Service = createMockS3({
-      uploadStream: async (_key: string, bodyStream: ReadableStream<Uint8Array> | Readable, options?: StreamUploadOptions) => {
+      uploadStream: async (
+        _key: string,
+        bodyStream: ReadableStream<Uint8Array> | Readable,
+        options?: StreamUploadOptions,
+      ) => {
         if (options?.signal?.aborted) {
           s3UploadAborted = true;
           throw new Error("Upload aborted");
@@ -429,7 +504,10 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     const episode = await insertTestEpisode();
 
     let fetchSignalAborted = false;
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
       const url = input.toString();
       if (url.startsWith("https://abort-test.com/")) {
         const signal = init?.signal;
@@ -450,18 +528,21 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     const clientAbortController = new AbortController();
 
     const responsePromise = customApp.handle(
-      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
-          "Content-Type": "application/json",
+      new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: "https://abort-test.com/large-file.mp4",
+            label: "Abort Source",
+          }),
+          signal: clientAbortController.signal,
         },
-        body: JSON.stringify({
-          url: "https://abort-test.com/large-file.mp4",
-          label: "Abort Source",
-        }),
-        signal: clientAbortController.signal,
-      })
+      ),
     );
 
     // Give the request a moment to start streaming
@@ -486,11 +567,15 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
   });
 
   it("handles S3 uploadStream exception cleanly, logs error, and flushes error event over SSE", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     const mockS3Service = createMockS3({
       uploadStream: async () => {
-        throw new Error("S3 connection timeout during multipart upload completion");
+        throw new Error(
+          "S3 connection timeout during multipart upload completion",
+        );
       },
     });
 
@@ -498,7 +583,10 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     const { accessToken } = await registerUser(customApp);
     const episode = await insertTestEpisode();
 
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
       const url = input.toString();
       if (url.startsWith("https://s3-error-test.com/")) {
         const stream = new ReadableStream({
@@ -513,17 +601,20 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     }) as typeof fetch;
 
     const response = await customApp.handle(
-      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
-          "Content-Type": "application/json",
+      new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: "https://s3-error-test.com/large-video.mp4",
+            label: "S3 Error Source",
+          }),
         },
-        body: JSON.stringify({
-          url: "https://s3-error-test.com/large-video.mp4",
-          label: "S3 Error Source",
-        }),
-      })
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -534,11 +625,13 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     expect(errorEvent).toBeDefined();
     const errorData = errorEvent?.data as unknown as ErrorEventData;
     expect(errorData.code).toBe("INGEST_FAILED");
-    expect(errorData.message).toBe("S3 connection timeout during multipart upload completion");
+    expect(errorData.message).toBe(
+      "S3 connection timeout during multipart upload completion",
+    );
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "[remote-ingest] Remote video ingestion failed with exception:",
-      expect.any(Error)
+      expect.any(Error),
     );
 
     // Verify DB row not written
@@ -552,7 +645,8 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
   });
 
   it("assigns storageProviderId when ingesting remote video stream targeting a specific provider", async () => {
-    const { storageProviders, series, seasons, episodes } = await import("@repo/db");
+    const { storageProviders, series, seasons, episodes } =
+      await import("@repo/db");
     const { encryptCredential } = await import("@repo/media-service");
 
     const [provider] = await db
@@ -591,30 +685,54 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     };
 
     const app = await buildApp({
-      storageProviderRegistry: mockRegistry as unknown as StorageProviderRegistry,
+      storageProviderRegistry:
+        mockRegistry as unknown as StorageProviderRegistry,
     });
     const { accessToken } = await registerUser(app);
 
     const now = new Date();
     const [sRow] = await db
       .insert(series)
-      .values({ id: crypto.randomUUID(), title: "Series Ingest", createdAt: now, updatedAt: now })
+      .values({
+        id: crypto.randomUUID(),
+        title: "Series Ingest",
+        createdAt: now,
+        updatedAt: now,
+      })
       .returning();
     const [seaRow] = await db
       .insert(seasons)
-      .values({ id: crypto.randomUUID(), seriesId: sRow.id, title: "Season Ingest", createdAt: now, updatedAt: now })
+      .values({
+        id: crypto.randomUUID(),
+        seriesId: sRow.id,
+        title: "Season Ingest",
+        createdAt: now,
+        updatedAt: now,
+      })
       .returning();
     const [episode] = await db
       .insert(episodes)
-      .values({ id: crypto.randomUUID(), seasonId: seaRow.id, title: "Ep Ingest", order: 1, createdAt: now, updatedAt: now })
+      .values({
+        id: crypto.randomUUID(),
+        seasonId: seaRow.id,
+        title: "Ep Ingest",
+        order: 1,
+        createdAt: now,
+        updatedAt: now,
+      })
       .returning();
 
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
       const url = input.toString();
       if (url.startsWith("https://remote-host.com/files/")) {
         const stream = new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode("provider-specific-chunk"));
+            controller.enqueue(
+              new TextEncoder().encode("provider-specific-chunk"),
+            );
             controller.close();
           },
         });
@@ -630,18 +748,21 @@ describe("POST /api/episodes/:id/sources/remote-ingest (SSE)", () => {
     }) as typeof fetch;
 
     const response = await app.handle(
-      new Request(`http://localhost/api/episodes/${episode.id}/sources/remote-ingest`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
-          "Content-Type": "application/json",
+      new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/remote-ingest`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: "https://remote-host.com/files/test-movie.mp4",
+            label: "R2 Ingest 1080p",
+            storageProviderId: provider.id,
+          }),
         },
-        body: JSON.stringify({
-          url: "https://remote-host.com/files/test-movie.mp4",
-          label: "R2 Ingest 1080p",
-          storageProviderId: provider.id,
-        }),
-      })
+      ),
     );
 
     if (response.status !== 200) {

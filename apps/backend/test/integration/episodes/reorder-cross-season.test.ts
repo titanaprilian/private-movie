@@ -48,7 +48,7 @@ async function createSeriesWithSeasons(): Promise<{
 async function insertEpisode(
   seasonId: string,
   title: string,
-  order: number
+  order: number,
 ): Promise<{ id: string }> {
   const id = crypto.randomUUID();
   await db.insert(episodes).values({
@@ -89,7 +89,9 @@ describe("PATCH /series/:id/episodes/order — cross-season moves", () => {
     });
 
     expect(response.status).toBe(200);
-    expect((response.body as { data: unknown }).data).toEqual({ success: true });
+    expect((response.body as { data: unknown }).data).toEqual({
+      success: true,
+    });
 
     const moved = await getEpisode(ep2.id);
     expect(moved.seasonId).toBe(season1Id);
@@ -164,9 +166,9 @@ describe("PATCH /series/:id/episodes/order — cross-season moves", () => {
     });
 
     expect(response.status).toBe(404);
-    expect(
-      (response.body as { error: { code: string } }).error.code
-    ).toBe("EPISODE_NOT_FOUND");
+    expect((response.body as { error: { code: string } }).error.code).toBe(
+      "EPISODE_NOT_FOUND",
+    );
 
     const unchanged = await getEpisode(s1ep1.id);
     expect(unchanged.seasonId).toBe(season1Id);

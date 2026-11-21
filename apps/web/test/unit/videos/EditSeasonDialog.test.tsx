@@ -40,21 +40,29 @@ describe('EditSeasonDialog Component', () => {
     );
 
     expect(screen.getByLabelText('Title')).toHaveValue('Season 1');
-    expect(screen.getByLabelText('Description')).toHaveValue('Initial description');
-    expect(screen.getByLabelText('Scraper URL')).toHaveValue('https://otakudesu.cloud/anime/my-hero');
+    expect(screen.getByLabelText('Description')).toHaveValue(
+      'Initial description'
+    );
+    expect(screen.getByLabelText('Scraper URL')).toHaveValue(
+      'https://otakudesu.cloud/anime/my-hero'
+    );
     expect(screen.getByLabelText('Episode Offset')).toHaveValue(12);
     expect(screen.getByText(/Last Scraped:/i)).toBeInTheDocument();
-    expect(screen.getByText(/Connection timeout error from provider/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Connection timeout error from provider/i)
+    ).toBeInTheDocument();
   });
 
   it('auto-detects provider source from scraper URL when modified', async () => {
     const onOpenChange = vi.fn();
-    const updateSeasonSpy = vi.spyOn(apiModule, 'updateSeason').mockResolvedValue({
-      ...mockSeason,
-      scraperUrl: 'https://dramula.com/watch/drama-show',
-      source: 'dramula',
-      episodeOffset: 5,
-    });
+    const updateSeasonSpy = vi
+      .spyOn(apiModule, 'updateSeason')
+      .mockResolvedValue({
+        ...mockSeason,
+        scraperUrl: 'https://dramula.com/watch/drama-show',
+        source: 'dramula',
+        episodeOffset: 5,
+      });
 
     const { user } = renderWithProviders(
       <>
@@ -96,7 +104,9 @@ describe('EditSeasonDialog Component', () => {
 
   it('submits updated values and closes dialog on success', async () => {
     const onOpenChange = vi.fn();
-    const updateSeasonSpy = vi.spyOn(apiModule, 'updateSeason').mockResolvedValue(mockSeason);
+    const updateSeasonSpy = vi
+      .spyOn(apiModule, 'updateSeason')
+      .mockResolvedValue(mockSeason);
 
     const { user } = renderWithProviders(
       <>
@@ -116,11 +126,14 @@ describe('EditSeasonDialog Component', () => {
     const saveButton = screen.getByRole('button', { name: /save changes/i });
     await user.click(saveButton);
 
-    expect(updateSeasonSpy).toHaveBeenCalledWith('season-123', expect.objectContaining({
-      title: 'Season 1 Updated',
-      scraperUrl: 'https://otakudesu.cloud/anime/my-hero',
-      source: 'otakudesu',
-      episodeOffset: 12,
-    }));
+    expect(updateSeasonSpy).toHaveBeenCalledWith(
+      'season-123',
+      expect.objectContaining({
+        title: 'Season 1 Updated',
+        scraperUrl: 'https://otakudesu.cloud/anime/my-hero',
+        source: 'otakudesu',
+        episodeOffset: 12,
+      })
+    );
   });
 });

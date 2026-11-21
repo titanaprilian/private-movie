@@ -61,11 +61,7 @@ export function SeriesGrid() {
             Manage and browse your series catalog.
           </p>
         </div>
-        <ChunkyButton
-          type="button"
-          variant="primary"
-          onClick={openDialog}
-        >
+        <ChunkyButton type="button" variant="primary" onClick={openDialog}>
           <Plus size={14} strokeWidth={2} aria-hidden="true" />
           Add series
         </ChunkyButton>
@@ -88,7 +84,10 @@ export function SeriesGrid() {
       {activeTab === 'ongoing' && (
         <div className="bg-[var(--surface)] border-2 border-[var(--border)] rounded-[16px] p-3 space-y-2.5">
           {bigGenres.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap" aria-label="Filter by big genre">
+            <div
+              className="flex items-center gap-1.5 flex-wrap"
+              aria-label="Filter by big genre"
+            >
               {bigGenres.map((genre) => {
                 const isActive = selectedSlugs.includes(genre.slug);
                 const highlightedCount =
@@ -169,7 +168,10 @@ export function SeriesGrid() {
               className="ml-auto h-5 w-20"
             />
           ) : (
-            <span className="ml-auto font-extrabold text-[14px] text-[var(--muted)]" aria-live="polite">
+            <span
+              className="ml-auto font-extrabold text-[14px] text-[var(--muted)]"
+              aria-live="polite"
+            >
               {meta.total} series
             </span>
           )}
@@ -178,54 +180,54 @@ export function SeriesGrid() {
 
       {/* Grid view */}
       <div ref={gridTopRef} className="scroll-mt-20">
-      {isLoading ? (
-        <div
-          data-testid="series-grid"
-          className="grid gap-4"
-          style={{
-            gridTemplateColumns:
-              'repeat(auto-fill, minmax(max(210px, calc((100% - 60px) / 4)), 1fr))',
-          }}
-        >
-          {Array.from({ length: 12 }).map((_, index) => (
-            <div
-              key={index}
-              data-testid="series-card-skeleton"
-              className="bg-card border border-c rounded-[16px] overflow-hidden flex flex-col"
-            >
-              <ChunkySkeleton className="aspect-[3/4] w-full rounded-none border-0" />
-              <div className="space-y-2 p-3">
-                <ChunkySkeleton className="h-4 w-3/4" />
-                <ChunkySkeleton className="h-3 w-1/2" />
+        {isLoading ? (
+          <div
+            data-testid="series-grid"
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns:
+                'repeat(auto-fill, minmax(max(210px, calc((100% - 60px) / 4)), 1fr))',
+            }}
+          >
+            {Array.from({ length: 12 }).map((_, index) => (
+              <div
+                key={index}
+                data-testid="series-card-skeleton"
+                className="bg-card border border-c rounded-[16px] overflow-hidden flex flex-col"
+              >
+                <ChunkySkeleton className="aspect-[3/4] w-full rounded-none border-0" />
+                <div className="space-y-2 p-3">
+                  <ChunkySkeleton className="h-4 w-3/4" />
+                  <ChunkySkeleton className="h-3 w-1/2" />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : seriesList.length === 0 ? (
-        <div className="bg-card border border-c rounded p-8 text-center text-xs text-muted mono">
-          No series match your filter.
-        </div>
-      ) : (
-        <div
-          data-testid="series-grid"
-          className="grid gap-4"
-          style={{
-            gridTemplateColumns:
-              'repeat(auto-fill, minmax(max(210px, calc((100% - 60px) / 4)), 1fr))',
-          }}
-        >
-          {seriesList.map((item: SeriesCardItem) => (
-            <SeriesCard
-              key={item.id}
-              item={item}
-              onToggleFeatured={handleToggleFeatured}
-              onEdit={handleOpenEdit}
-              onDelete={handleOpenDelete}
-              onToggleHighlight={handleToggleHighlight}
-            />
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : seriesList.length === 0 ? (
+          <div className="bg-card border border-c rounded p-8 text-center text-xs text-muted mono">
+            No series match your filter.
+          </div>
+        ) : (
+          <div
+            data-testid="series-grid"
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns:
+                'repeat(auto-fill, minmax(max(210px, calc((100% - 60px) / 4)), 1fr))',
+            }}
+          >
+            {seriesList.map((item: SeriesCardItem) => (
+              <SeriesCard
+                key={item.id}
+                item={item}
+                onToggleFeatured={handleToggleFeatured}
+                onEdit={handleOpenEdit}
+                onDelete={handleOpenDelete}
+                onToggleHighlight={handleToggleHighlight}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Pagination Bar */}

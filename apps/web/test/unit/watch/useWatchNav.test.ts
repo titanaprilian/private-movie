@@ -19,7 +19,9 @@ describe('useWatchNav', () => {
   });
 
   it('initial zone is controls and focusIndex is 0', () => {
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     expect(result.current.activeZone).toBe('controls');
     expect(result.current.focusIndex).toBe(0);
   });
@@ -34,13 +36,17 @@ describe('useWatchNav', () => {
       writable: true,
       configurable: true,
     });
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     dispatchKey('ArrowUp');
     expect(result.current.activeZone).toBe('player');
   });
 
   it('ArrowUp from player transitions to back', () => {
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     dispatchKey('ArrowUp');
     expect(result.current.activeZone).toBe('player');
     dispatchKey('ArrowUp');
@@ -57,7 +63,9 @@ describe('useWatchNav', () => {
       writable: true,
       configurable: true,
     });
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     dispatchKey('ArrowUp');
     dispatchKey('ArrowUp');
     expect(result.current.activeZone).toBe('back');
@@ -67,7 +75,9 @@ describe('useWatchNav', () => {
   });
 
   it('ArrowDown from player transitions to controls', () => {
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     dispatchKey('ArrowUp');
     expect(result.current.activeZone).toBe('player');
     dispatchKey('ArrowDown');
@@ -84,7 +94,9 @@ describe('useWatchNav', () => {
       writable: true,
       configurable: true,
     });
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     dispatchKey('ArrowUp');
     expect(result.current.activeZone).toBe('player');
     dispatchKey('ArrowRight');
@@ -92,7 +104,9 @@ describe('useWatchNav', () => {
   });
 
   it('ArrowRight at the last item of controls transitions to episodes', () => {
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 3, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 3, episodesCount: 5 })
+    );
     dispatchKey('ArrowRight');
     dispatchKey('ArrowRight');
     expect(result.current.activeZone).toBe('controls');
@@ -103,7 +117,9 @@ describe('useWatchNav', () => {
   });
 
   it('ArrowLeft from episodes transitions to controls', () => {
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 3, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 3, episodesCount: 5 })
+    );
     dispatchKey('ArrowRight');
     dispatchKey('ArrowRight');
     dispatchKey('ArrowRight');
@@ -124,7 +140,9 @@ describe('useWatchNav', () => {
     });
     renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
     dispatchKey('ArrowUp');
-    expect(mockDispatch).toHaveBeenCalledWith(expect.objectContaining({ key: 'f' }));
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'f' })
+    );
   });
 
   it('Enter while in player zone dispatches Space', () => {
@@ -141,7 +159,9 @@ describe('useWatchNav', () => {
     dispatchKey('ArrowUp');
     mockDispatch.mockClear();
     dispatchKey('Enter');
-    const keys = mockDispatch.mock.calls.map((c) => (c[0] as KeyboardEvent).key);
+    const keys = mockDispatch.mock.calls.map(
+      (c) => (c[0] as KeyboardEvent).key
+    );
     expect(keys.some((k) => k === ' ' || k === 'Space')).toBe(true);
   });
 
@@ -159,7 +179,9 @@ describe('useWatchNav', () => {
     dispatchKey('ArrowUp');
     mockDispatch.mockClear();
     dispatchKey('ArrowRight');
-    expect(mockDispatch).toHaveBeenCalledWith(expect.objectContaining({ key: 'ArrowRight' }));
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'ArrowRight' })
+    );
   });
 
   it('ArrowUp while in player zone transitions to back (not forwarded)', () => {
@@ -172,7 +194,9 @@ describe('useWatchNav', () => {
       writable: true,
       configurable: true,
     });
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     dispatchKey('ArrowUp');
     mockDispatch.mockClear();
     dispatchKey('ArrowUp');
@@ -194,7 +218,9 @@ describe('useWatchNav', () => {
       writable: true,
       configurable: true,
     });
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     dispatchKey('ArrowUp');
     expect(result.current.activeZone).toBe('player');
     Object.defineProperty(document, 'fullscreenElement', {
@@ -218,7 +244,9 @@ describe('useWatchNav', () => {
       },
       configurable: true,
     });
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     expect(() => dispatchKey('ArrowUp')).not.toThrow();
     expect(result.current.activeZone).toBe('player');
   });
@@ -228,12 +256,20 @@ describe('useWatchNav', () => {
     const removeSpy = vi.spyOn(window, 'removeEventListener');
     const docAdd = vi.spyOn(document, 'addEventListener');
     const docRemove = vi.spyOn(document, 'removeEventListener');
-    const { unmount } = renderHook(() => useWatchNav({ controlsCount: 4, episodesCount: 5 }));
+    const { unmount } = renderHook(() =>
+      useWatchNav({ controlsCount: 4, episodesCount: 5 })
+    );
     expect(addSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
-    expect(docAdd).toHaveBeenCalledWith('fullscreenchange', expect.any(Function));
+    expect(docAdd).toHaveBeenCalledWith(
+      'fullscreenchange',
+      expect.any(Function)
+    );
     unmount();
     expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
-    expect(docRemove).toHaveBeenCalledWith('fullscreenchange', expect.any(Function));
+    expect(docRemove).toHaveBeenCalledWith(
+      'fullscreenchange',
+      expect.any(Function)
+    );
     addSpy.mockRestore();
     removeSpy.mockRestore();
     docAdd.mockRestore();
@@ -254,11 +290,15 @@ describe('useWatchNav', () => {
     dispatchKey('ArrowUp');
     mockDispatch.mockClear();
     dispatchKey('ArrowLeft');
-    expect(mockDispatch).toHaveBeenCalledWith(expect.objectContaining({ key: 'ArrowLeft' }));
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'ArrowLeft' })
+    );
   });
 
   it('episodes ArrowUp/ArrowDown moves focusIndex', () => {
-    const { result } = renderHook(() => useWatchNav({ controlsCount: 3, episodesCount: 5 }));
+    const { result } = renderHook(() =>
+      useWatchNav({ controlsCount: 3, episodesCount: 5 })
+    );
     dispatchKey('ArrowRight');
     dispatchKey('ArrowRight');
     dispatchKey('ArrowRight');

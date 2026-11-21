@@ -1,4 +1,11 @@
-import { createTestQueryClient, renderWithProviders, screen, fireEvent, waitFor, within } from '../../utils';
+import {
+  createTestQueryClient,
+  renderWithProviders,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   SeriesGrid,
@@ -12,14 +19,19 @@ import { EditSeriesDialog } from '@/modules/videos/internal/catalog/dialogs/Edit
 import type { SeriesItem } from '@/modules/videos/internal/api';
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('@/modules/videos/internal/api')>();
+  const mod =
+    await importOriginal<typeof import('@/modules/videos/internal/api')>();
   return {
     ...mod,
-    updateSeries: vi.fn().mockImplementation(async (id: string, updates: Record<string, unknown>) => ({
-      id,
-      title: 'Updated',
-      ...updates,
-    })),
+    updateSeries: vi
+      .fn()
+      .mockImplementation(
+        async (id: string, updates: Record<string, unknown>) => ({
+          id,
+          title: 'Updated',
+          ...updates,
+        })
+      ),
     deleteSeries: vi.fn(),
   };
 });
@@ -67,9 +79,27 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const mockGenres: Genre[] = [
-  { id: 'g-anime', name: 'Anime', slug: 'anime', isBigGenre: true, displayOrder: 0 },
-  { id: 'g-kdrama', name: 'Korean Drama', slug: 'korean-drama', isBigGenre: true, displayOrder: 1 },
-  { id: 'g-action', name: 'Action', slug: 'action', isBigGenre: false, displayOrder: 2 },
+  {
+    id: 'g-anime',
+    name: 'Anime',
+    slug: 'anime',
+    isBigGenre: true,
+    displayOrder: 0,
+  },
+  {
+    id: 'g-kdrama',
+    name: 'Korean Drama',
+    slug: 'korean-drama',
+    isBigGenre: true,
+    displayOrder: 1,
+  },
+  {
+    id: 'g-action',
+    name: 'Action',
+    slug: 'action',
+    isBigGenre: false,
+    displayOrder: 2,
+  },
 ];
 
 const highlightedSeriesItem = {
@@ -117,14 +147,18 @@ function renderOngoingGrid(
   mockNavigate.mockReset();
   vi.mocked(updateSeries).mockClear();
   const queryClient = createTestQueryClient();
-  queryClient.setDefaultOptions({ queries: { retry: false, staleTime: Infinity } });
+  queryClient.setDefaultOptions({
+    queries: { retry: false, staleTime: Infinity },
+  });
   queryClient.setQueryData(
-    seriesListQueryOptions({ ...searchState, limit: SERIES_PAGE_LIMIT }).queryKey,
+    seriesListQueryOptions({ ...searchState, limit: SERIES_PAGE_LIMIT })
+      .queryKey,
     customResponse as SeriesListResponse
   );
   queryClient.setQueryData(genresQueryOptions().queryKey, mockGenres);
   queryClient.setQueryData(
-    seriesListQueryOptions({ filter: 'ongoing', highlighted: true, limit: 100 }).queryKey,
+    seriesListQueryOptions({ filter: 'ongoing', highlighted: true, limit: 100 })
+      .queryKey,
     { series: [highlightedSeriesItem], meta: { total: 1, page: 1, limit: 100 } }
   );
   return renderWithProviders(<SeriesGrid />, { queryClient });
@@ -163,7 +197,9 @@ describe('Ongoing highlight curation (admin videos)', () => {
   it('does not render Big Genre chips outside the ongoing tab', () => {
     renderOngoingGrid({ page: 1, tab: 'all' });
 
-    expect(screen.queryByLabelText('Filter by big genre')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Filter by big genre')
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('switch', { name: 'Highlighted Only' })
     ).not.toBeInTheDocument();
@@ -202,16 +238,22 @@ describe('Ongoing highlight curation (admin videos)', () => {
 
     const badges = screen.getAllByText('Highlighted Ongoing');
     expect(badges).toHaveLength(1);
-    const card = screen.getByText('Highlighted Ongoing Show').closest('div.group');
+    const card = screen
+      .getByText('Highlighted Ongoing Show')
+      .closest('div.group');
     expect(card).toHaveTextContent('Highlighted Ongoing');
-    const plainCard = screen.getByText('Plain Ongoing Show').closest('div.group');
+    const plainCard = screen
+      .getByText('Plain Ongoing Show')
+      .closest('div.group');
     expect(plainCard).not.toHaveTextContent('Highlighted Ongoing');
   });
 
   it('renders the Highlighted Ongoing badge when both isHighlighted and isOngoing are true', () => {
     renderOngoingGrid();
 
-    const card = screen.getByText('Highlighted Ongoing Show').closest('div.group');
+    const card = screen
+      .getByText('Highlighted Ongoing Show')
+      .closest('div.group');
     expect(card).toHaveTextContent('Highlighted Ongoing');
   });
 
@@ -237,7 +279,9 @@ describe('Ongoing highlight curation (admin videos)', () => {
   it('toggles highlight via the 1-click star button with optimistic update', async () => {
     renderOngoingGrid();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Highlight Plain Ongoing Show' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Highlight Plain Ongoing Show' })
+    );
 
     await waitFor(() => {
       expect(vi.mocked(updateSeries)).toHaveBeenCalledWith('series-plain', {
@@ -246,15 +290,24 @@ describe('Ongoing highlight curation (admin videos)', () => {
     });
     // Optimistic UI: badge appears immediately without waiting for invalidation
     await waitFor(() => {
-      const plainCard = screen.getByText('Plain Ongoing Show').closest('div.group');
+      const plainCard = screen
+        .getByText('Plain Ongoing Show')
+        .closest('div.group');
       expect(plainCard).toHaveTextContent('Highlighted Ongoing');
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unhighlight Highlighted Ongoing Show' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Unhighlight Highlighted Ongoing Show',
+      })
+    );
     await waitFor(() => {
-      expect(vi.mocked(updateSeries)).toHaveBeenCalledWith('series-highlighted', {
-        isOngoingHighlighted: false,
-      });
+      expect(vi.mocked(updateSeries)).toHaveBeenCalledWith(
+        'series-highlighted',
+        {
+          isOngoingHighlighted: false,
+        }
+      );
     });
   });
 });
@@ -266,7 +319,9 @@ describe('EditSeriesDialog highlight checkbox', () => {
 
   function renderDialog(series: SeriesItem) {
     const queryClient = createTestQueryClient();
-    queryClient.setDefaultOptions({ queries: { retry: false, staleTime: Infinity } });
+    queryClient.setDefaultOptions({
+      queries: { retry: false, staleTime: Infinity },
+    });
     queryClient.setQueryData(genresQueryOptions().queryKey, []);
     return renderWithProviders(
       <EditSeriesDialog open onOpenChange={() => {}} series={series} />,

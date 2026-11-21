@@ -100,7 +100,7 @@ export function SeriesDetailView({
   });
 
   const selectedEpisode = selectedEpisodeId
-    ? episodes.find((e) => e.id === selectedEpisodeId) ?? null
+    ? (episodes.find((e) => e.id === selectedEpisodeId) ?? null)
     : null;
 
   const handleSaveDrawerEpisode = async (
@@ -125,9 +125,12 @@ export function SeriesDetailView({
       <div className="space-y-4">
         <BackButton />
         <div className="bg-[var(--surface)] border-2 border-b-4 border-[var(--border)] rounded-[var(--radius)] p-6 text-center">
-          <h1 className="text-xl font-extrabold text-[var(--ink)]">Series not found</h1>
+          <h1 className="text-xl font-extrabold text-[var(--ink)]">
+            Series not found
+          </h1>
           <p className="text-sm font-semibold text-[var(--muted)] mt-1">
-            No series matches <span className="font-mono text-[var(--ink)]">{seriesId}</span>.
+            No series matches{' '}
+            <span className="font-mono text-[var(--ink)]">{seriesId}</span>.
           </p>
           <a
             href="/admin/videos"
@@ -266,15 +269,19 @@ export function SeriesDetailView({
           }}
         />
         {selectedEpisodeIds.length > 0 && (
-          <div className="bulkbar show" role="toolbar" aria-label="Bulk selection actions">
-            <b>
-              {selectedEpisodeIds.length} selected
-            </b>
+          <div
+            className="bulkbar show"
+            role="toolbar"
+            aria-label="Bulk selection actions"
+          >
+            <b>{selectedEpisodeIds.length} selected</b>
             <span className="sp" />
             <ChunkyChip
               variant="blue"
               type="button"
-              onClick={() => modals.handleOpenBulkScrape([...selectedEpisodeIds])}
+              onClick={() =>
+                modals.handleOpenBulkScrape([...selectedEpisodeIds])
+              }
             >
               <Plus className="size-4" />
               Add sources

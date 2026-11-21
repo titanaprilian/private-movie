@@ -47,9 +47,7 @@ describe('ChunkyButton component', () => {
   });
 
   it('renders outline variant styling', () => {
-    renderWithProviders(
-      <ChunkyButton variant="outline">Outline</ChunkyButton>
-    );
+    renderWithProviders(<ChunkyButton variant="outline">Outline</ChunkyButton>);
     const button = screen.getByRole('button', { name: 'Outline' });
     expect(button.className).toMatch('bg-[var(--bg)]');
     expect(button.className).toMatch('border-[var(--border)]');

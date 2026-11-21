@@ -97,11 +97,16 @@ export function AddSeasonDialog({
                     setStatus(val as 'completed' | 'ongoing' | 'pending')
                   }
                 >
-                  <ChunkySelectTrigger id="add-season-status" aria-label="Status">
+                  <ChunkySelectTrigger
+                    id="add-season-status"
+                    aria-label="Status"
+                  >
                     <ChunkySelectValue placeholder="Select status" />
                   </ChunkySelectTrigger>
                   <ChunkySelectContent>
-                    <ChunkySelectItem value="completed">Completed</ChunkySelectItem>
+                    <ChunkySelectItem value="completed">
+                      Completed
+                    </ChunkySelectItem>
                     <ChunkySelectItem value="ongoing">Ongoing</ChunkySelectItem>
                     <ChunkySelectItem value="pending">Pending</ChunkySelectItem>
                   </ChunkySelectContent>
@@ -178,8 +183,12 @@ export function AddSeasonDialog({
                     </ChunkySelectTrigger>
                     <ChunkySelectContent>
                       <ChunkySelectItem value="none">None</ChunkySelectItem>
-                      <ChunkySelectItem value="otakudesu">Otakudesu</ChunkySelectItem>
-                      <ChunkySelectItem value="dramula">Dramula</ChunkySelectItem>
+                      <ChunkySelectItem value="otakudesu">
+                        Otakudesu
+                      </ChunkySelectItem>
+                      <ChunkySelectItem value="dramula">
+                        Dramula
+                      </ChunkySelectItem>
                     </ChunkySelectContent>
                   </ChunkySelect>
                 </div>

@@ -1,11 +1,7 @@
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import {
-  createTestQueryClient,
-  renderHook,
-  act,
-} from '../../utils';
+import { createTestQueryClient, renderHook, act } from '../../utils';
 import { useSeriesGrid } from '@/modules/videos/internal/catalog/grid/hooks/useSeriesGrid';
 import {
   SERIES_PAGE_LIMIT,
@@ -50,8 +46,9 @@ function setup(searchState: Record<string, unknown> = { page: 1 }) {
     queries: { retry: false, staleTime: Infinity },
   });
   queryClient.setQueryData(
-    seriesListQueryOptions({ ...searchState, limit: SERIES_PAGE_LIMIT }).queryKey,
-    mockSeriesResponse as unknown as SeriesListResponse,
+    seriesListQueryOptions({ ...searchState, limit: SERIES_PAGE_LIMIT })
+      .queryKey,
+    mockSeriesResponse as unknown as SeriesListResponse
   );
   queryClient.setQueryData(genresQueryOptions().queryKey, []);
   const wrapper = ({ children }: { children: React.ReactNode }) => (

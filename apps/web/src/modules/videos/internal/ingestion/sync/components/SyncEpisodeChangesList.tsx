@@ -28,24 +28,18 @@ export function SyncEpisodeChangesList({
                 S{change.seasonNumber}E{change.episodeNumber}
               </span>
               <div className="flex gap-1">
-                {change.titleChanged && (
-                  <FieldBadge>Title</FieldBadge>
-                )}
-                {change.overviewChanged && (
-                  <FieldBadge>Overview</FieldBadge>
-                )}
-                {change.thumbnailChanged && (
-                  <FieldBadge>Thumbnail</FieldBadge>
-                )}
-                {change.airDateChanged && (
-                  <MetaBadge>Air Date</MetaBadge>
-                )}
+                {change.titleChanged && <FieldBadge>Title</FieldBadge>}
+                {change.overviewChanged && <FieldBadge>Overview</FieldBadge>}
+                {change.thumbnailChanged && <FieldBadge>Thumbnail</FieldBadge>}
+                {change.airDateChanged && <MetaBadge>Air Date</MetaBadge>}
               </div>
             </div>
             {change.titleChanged && (
               <div className="text-[13px] font-semibold text-[var(--muted)]">
                 <span className="line-through">{change.oldTitle}</span> →{' '}
-                <span className="font-bold text-[var(--ink)]">{change.newTitle}</span>
+                <span className="font-bold text-[var(--ink)]">
+                  {change.newTitle}
+                </span>
               </div>
             )}
           </ChunkyCard>

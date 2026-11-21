@@ -1,7 +1,10 @@
 import { renderWithProviders, screen } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddSeasonDialog } from '@/modules/videos/internal/seasons';
-import { getNextSeasonNumber, getSeasonNumber } from '@/modules/videos/internal/seasons';
+import {
+  getNextSeasonNumber,
+  getSeasonNumber,
+} from '@/modules/videos/internal/seasons';
 import type { SeasonDetails } from '@/modules/videos/internal/api';
 import * as apiModule from '@/modules/videos/internal/api';
 import { Toaster } from '@/components/ui/sonner';
@@ -70,7 +73,12 @@ describe('AddSeasonDialog Component', () => {
 
   it('renders with accessible dialog attributes and Chunky components', () => {
     renderWithProviders(
-      <AddSeasonDialog open={true} onOpenChange={() => {}} seriesId="series-1" seasons={[]} />
+      <AddSeasonDialog
+        open={true}
+        onOpenChange={() => {}}
+        seriesId="series-1"
+        seasons={[]}
+      />
     );
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -79,15 +87,17 @@ describe('AddSeasonDialog Component', () => {
     expect(screen.getByLabelText('Description')).toBeInTheDocument();
     expect(screen.getByLabelText('Scraper URL')).toBeInTheDocument();
     expect(screen.getByLabelText('Episode Offset')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create season/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /create season/i })
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
   });
 
   it('dispatches createSeason mutation and closes on success', async () => {
     const onOpenChange = vi.fn();
-    const createSpy = vi.spyOn(apiModule, 'createSeason').mockResolvedValue(
-      makeSeason({ id: 'new', title: 'Season 2' })
-    );
+    const createSpy = vi
+      .spyOn(apiModule, 'createSeason')
+      .mockResolvedValue(makeSeason({ id: 'new', title: 'Season 2' }));
 
     const { user } = renderWithProviders(
       <>
@@ -95,7 +105,9 @@ describe('AddSeasonDialog Component', () => {
           open={true}
           onOpenChange={onOpenChange}
           seriesId="series-1"
-          seasons={[makeSeason({ id: 'a', seasonNumber: 1 } as Partial<SeasonDetails>)]}
+          seasons={[
+            makeSeason({ id: 'a', seasonNumber: 1 } as Partial<SeasonDetails>),
+          ]}
         />
         <Toaster />
       </>
@@ -115,17 +127,24 @@ describe('AddSeasonDialog Component', () => {
   });
 
   it('does not submit when title is empty', async () => {
-    const createSpy = vi.spyOn(apiModule, 'createSeason').mockResolvedValue(
-      makeSeason({ id: 'new' })
-    );
+    const createSpy = vi
+      .spyOn(apiModule, 'createSeason')
+      .mockResolvedValue(makeSeason({ id: 'new' }));
 
     const { user } = renderWithProviders(
-      <AddSeasonDialog open={true} onOpenChange={() => {}} seriesId="series-1" seasons={[]} />
+      <AddSeasonDialog
+        open={true}
+        onOpenChange={() => {}}
+        seriesId="series-1"
+        seasons={[]}
+      />
     );
 
     const titleInput = screen.getByLabelText('Title');
     await user.clear(titleInput);
-    expect(screen.getByRole('button', { name: /create season/i })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: /create season/i })
+    ).toBeDisabled();
     expect(createSpy).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import type { SeriesItem } from '../../../api';
 
-import type { SeriesCardItem, UseSeriesCardOptions, UseSeriesCardReturn } from '../../types';
+import type {
+  SeriesCardItem,
+  UseSeriesCardOptions,
+  UseSeriesCardReturn,
+} from '../../types';
 export type { UseSeriesCardOptions, UseSeriesCardReturn } from '../../types';
 
 export function getSeriesCardEpisodeCount(item: SeriesCardItem): number {
@@ -9,18 +13,26 @@ export function getSeriesCardEpisodeCount(item: SeriesCardItem): number {
   return item.episodeCount ?? 0;
 }
 
-export function useSeriesCard({ item }: UseSeriesCardOptions): UseSeriesCardReturn {
+export function useSeriesCard({
+  item,
+}: UseSeriesCardOptions): UseSeriesCardReturn {
   const [imgFailed, setImgFailed] = useState(false);
   const episodeCount = getSeriesCardEpisodeCount(item);
   const isFeatured = Boolean(item.isFeatured);
   const isHighlighted = Boolean(
-    (item as SeriesItem & { isOngoingHighlighted?: boolean }).isOngoingHighlighted,
+    (item as SeriesItem & { isOngoingHighlighted?: boolean })
+      .isOngoingHighlighted
   );
   const isOngoing = Boolean(
-    (item as SeriesItem & { hasOngoing?: boolean; seasons?: { status?: string }[] }).hasOngoing ||
-      (item as SeriesItem & { seasons?: { status?: string }[] }).seasons?.some(
-        (s) => s.status === 'ongoing',
-      ),
+    (
+      item as SeriesItem & {
+        hasOngoing?: boolean;
+        seasons?: { status?: string }[];
+      }
+    ).hasOngoing ||
+    (item as SeriesItem & { seasons?: { status?: string }[] }).seasons?.some(
+      (s) => s.status === 'ongoing'
+    )
   );
   const showImg = Boolean(item.posterUrl) && !imgFailed;
   const initial = (item.title?.charAt(0) ?? '?').toUpperCase();
@@ -31,7 +43,7 @@ export function useSeriesCard({ item }: UseSeriesCardOptions): UseSeriesCardRetu
 
   const stop = <T extends SeriesCardItem>(
     fn: (item: T, e: React.MouseEvent) => void,
-    target: T,
+    target: T
   ) => {
     return (e: React.MouseEvent) => {
       e.preventDefault();

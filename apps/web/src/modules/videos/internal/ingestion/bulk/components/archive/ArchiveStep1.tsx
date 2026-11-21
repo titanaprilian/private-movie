@@ -36,7 +36,11 @@ export interface ArchiveStep1Props {
   setSelectedStorageProviderId: (id: string) => void;
   previewPhase: 'idle' | 'downloading' | 'extracting' | 'done' | 'error';
   previewError: string | null;
-  downloadProgress: { loaded: number; total?: number | null; percent?: number | null } | null;
+  downloadProgress: {
+    loaded: number;
+    total?: number | null;
+    percent?: number | null;
+  } | null;
   extractProgress: { currentFile: string; totalFiles?: number | null } | null;
   needsPassword?: boolean;
   jobErrorCode?: string | null;
@@ -74,7 +78,8 @@ export function ArchiveStep1({
   onCancelJob,
   onRetry,
 }: ArchiveStep1Props) {
-  const isPreviewing = previewPhase === 'downloading' || previewPhase === 'extracting';
+  const isPreviewing =
+    previewPhase === 'downloading' || previewPhase === 'extracting';
 
   return (
     <form
@@ -107,7 +112,9 @@ export function ArchiveStep1({
           <div className="space-y-1.5">
             <label htmlFor="archive-password" className={labelClassName}>
               Archive Password{' '}
-              <span className="text-[var(--muted)] font-semibold">(Optional)</span>
+              <span className="text-[var(--muted)] font-semibold">
+                (Optional)
+              </span>
             </label>
             <ChunkyInput
               id="archive-password"
@@ -124,7 +131,9 @@ export function ArchiveStep1({
           <div className="space-y-1.5">
             <label htmlFor="archive-referer" className={labelClassName}>
               HTTP Referer{' '}
-              <span className="text-[var(--muted)] font-semibold">(Optional)</span>
+              <span className="text-[var(--muted)] font-semibold">
+                (Optional)
+              </span>
             </label>
             <ChunkyInput
               id="archive-referer"
@@ -144,7 +153,10 @@ export function ArchiveStep1({
               Target Season
             </label>
             <ChunkySelect
-              value={selectedSeasonId || (seasonOptions.length === 0 ? 'empty' : undefined)}
+              value={
+                selectedSeasonId ||
+                (seasonOptions.length === 0 ? 'empty' : undefined)
+              }
               onValueChange={(val) => {
                 if (val !== 'empty') setSelectedSeasonId(val);
               }}
@@ -164,7 +176,9 @@ export function ArchiveStep1({
                     </ChunkySelectItem>
                   ))
                 ) : (
-                  <ChunkySelectItem value="empty">-- Default Season --</ChunkySelectItem>
+                  <ChunkySelectItem value="empty">
+                    -- Default Season --
+                  </ChunkySelectItem>
                 )}
               </ChunkySelectContent>
             </ChunkySelect>
@@ -205,7 +219,9 @@ export function ArchiveStep1({
                 <div className="flex items-center justify-between text-sm font-bold text-[var(--muted)]">
                   <span>Downloading archive…</span>
                   <span data-testid="archive-download-bytes">
-                    {downloadProgress ? formatBytes(downloadProgress.loaded) : formatBytes(0)}
+                    {downloadProgress
+                      ? formatBytes(downloadProgress.loaded)
+                      : formatBytes(0)}
                     {downloadProgress?.total
                       ? ` / ${formatBytes(downloadProgress.total)}`
                       : ''}
@@ -223,7 +239,10 @@ export function ArchiveStep1({
               </div>
             )}
             {previewPhase === 'extracting' && (
-              <div className="space-y-1.5" data-testid="archive-listing-progress">
+              <div
+                className="space-y-1.5"
+                data-testid="archive-listing-progress"
+              >
                 <div className="flex items-center gap-2 text-sm font-bold text-[var(--muted)]">
                   <span
                     className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--ink)]"
@@ -254,7 +273,9 @@ export function ArchiveStep1({
             className="p-3 border-[var(--red)] bg-[var(--red)]/10 space-y-2"
             data-testid="archive-preview-error"
           >
-            <p className="text-sm font-bold text-[var(--red)]">{previewError}</p>
+            <p className="text-sm font-bold text-[var(--red)]">
+              {previewError}
+            </p>
             {needsPassword && (
               <div className="space-y-2" data-testid="archive-password-retry">
                 <p className="text-xs font-bold text-[var(--muted)]">

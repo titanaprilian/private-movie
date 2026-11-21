@@ -46,8 +46,7 @@ const ChunkyDrawerContent = React.forwardRef<
 ));
 ChunkyDrawerContent.displayName = 'ChunkyDrawerContent';
 
-interface ChunkyDrawerHeaderProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface ChunkyDrawerHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Hides the built-in close button (e.g. for forced-choice drawers). */
   hideClose?: boolean;
 }
@@ -101,7 +100,10 @@ const ChunkyDrawerDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('font-sans text-sm font-semibold text-[var(--muted)]', className)}
+    className={cn(
+      'font-sans text-sm font-semibold text-[var(--muted)]',
+      className
+    )}
     {...props}
   />
 ));

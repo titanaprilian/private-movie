@@ -3,7 +3,8 @@ import { renderWithProviders, screen } from '../../utils';
 import { Route } from '@/routes/__root';
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  const actual =
+    await importOriginal<typeof import('@tanstack/react-router')>();
   return {
     ...actual,
     createRootRoute: (config: unknown) => config,
@@ -23,9 +24,17 @@ describe('__root route layout', () => {
     expect(screen.getByText('Public Content')).toBeInTheDocument();
 
     // Verify admin shell elements and links are not rendered in root
-    expect(screen.queryByRole('link', { name: /^series$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /^genres$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /^storage$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /toggle sidebar/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /^series$/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /^genres$/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /^storage$/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /toggle sidebar/i })
+    ).not.toBeInTheDocument();
   });
 });

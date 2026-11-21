@@ -1,4 +1,12 @@
-import { describe, expect, it, beforeAll, beforeEach, afterEach, vi } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  beforeAll,
+  beforeEach,
+  afterEach,
+  vi,
+} from "vitest";
 import { buildApp, request, type App } from "../../utils/app";
 import { authHeaders, registerUser } from "../../utils/auth";
 import { truncateAll } from "../../utils/db";
@@ -127,7 +135,10 @@ describe("POST /api/media/sources/check", () => {
         capturedRanges.push(headers["Range"]);
       }
       if (init?.method === "HEAD") {
-        return new Response(null, { status: 405, statusText: "Method Not Allowed" });
+        return new Response(null, {
+          status: 405,
+          statusText: "Method Not Allowed",
+        });
       }
       return new Response("a", { status: 206, statusText: "Partial Content" });
     });

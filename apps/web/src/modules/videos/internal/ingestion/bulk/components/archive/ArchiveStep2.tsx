@@ -62,7 +62,8 @@ export function ArchiveStep2({
         <ChunkyCard className="flex items-center justify-between gap-2 flex-wrap p-3 text-sm font-bold text-[var(--muted)]">
           <div className="flex items-center gap-4 flex-wrap">
             <span>
-              Total Files: <strong className="text-[var(--ink)]">{totalCount}</strong>
+              Total Files:{' '}
+              <strong className="text-[var(--ink)]">{totalCount}</strong>
             </span>
             <span>
               Matched:{' '}
@@ -100,7 +101,9 @@ export function ArchiveStep2({
                     {item.filename}
                   </span>
                   {item.detectedEpisodeNumber !== null && (
-                    <PillBadge>Detected Ep #{item.detectedEpisodeNumber}</PillBadge>
+                    <PillBadge>
+                      Detected Ep #{item.detectedEpisodeNumber}
+                    </PillBadge>
                   )}
                   {item.needsReview && !item.isIgnored && (
                     <WarningBadge>Needs Review</WarningBadge>
@@ -109,7 +112,9 @@ export function ArchiveStep2({
                     <PillBadge>Sample</PillBadge>
                   )}
                   {item.hasSizeAnomaly && !item.isIgnored && (
-                    <WarningBadge>Size anomaly — differs from siblings</WarningBadge>
+                    <WarningBadge>
+                      Size anomaly — differs from siblings
+                    </WarningBadge>
                   )}
                   {item.isIgnored && <PillBadge>Ignored</PillBadge>}
                   {item.fileSizeBytes > 0 && (

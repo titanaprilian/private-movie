@@ -29,11 +29,17 @@ async function insertTestSeries(): Promise<{ id: string }> {
   return { id };
 }
 
-async function insertTestEpisode(seriesId: string, order: number): Promise<{ id: string }> {
+async function insertTestEpisode(
+  seriesId: string,
+  order: number,
+): Promise<{ id: string }> {
   const id = crypto.randomUUID();
   const now = new Date();
 
-  const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, seriesId));
+  const [season] = await db
+    .select()
+    .from(seasons)
+    .where(eq(seasons.seriesId, seriesId));
 
   await db.insert(episodes).values({
     id,
@@ -66,7 +72,9 @@ describe("PATCH /series/:id/episodes/order", () => {
       });
 
       expect(response.status).toBe(401);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe("UNAUTHORIZED");
     });
@@ -100,7 +108,9 @@ describe("PATCH /series/:id/episodes/order", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("SERIES_NOT_FOUND");
     });
 
@@ -121,10 +131,15 @@ describe("PATCH /series/:id/episodes/order", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
 
-      const checkEp1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
+      const checkEp1 = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, ep1.id));
       expect(checkEp1[0].order).toBe(1);
     });
   });
@@ -152,9 +167,18 @@ describe("PATCH /series/:id/episodes/order", () => {
       const body = response.body as { data: { success: boolean } };
       expect(body.data).toEqual({ success: true });
 
-      const checkEp1 = await db.select().from(episodes).where(eq(episodes.id, ep1.id));
-      const checkEp2 = await db.select().from(episodes).where(eq(episodes.id, ep2.id));
-      const checkEp3 = await db.select().from(episodes).where(eq(episodes.id, ep3.id));
+      const checkEp1 = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, ep1.id));
+      const checkEp2 = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, ep2.id));
+      const checkEp3 = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, ep3.id));
 
       expect(checkEp1[0].order).toBe(3);
       expect(checkEp2[0].order).toBe(1);

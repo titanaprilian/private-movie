@@ -7,7 +7,8 @@ import {
 } from '@/components/ui/chunky-select';
 import type { StorageProviderSelectProps } from '../types';
 
-export const labelClassName = 'mb-1.5 block text-sm font-bold text-[var(--ink)]';
+export const labelClassName =
+  'mb-1.5 block text-sm font-bold text-[var(--ink)]';
 
 export function StorageProviderSelect({
   storageProviders,

@@ -74,5 +74,11 @@ export function useVideoShortcuts({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onTogglePlay, onSeekRelative, onAdjustVolume, onToggleMute, onToggleFullscreen]);
+  }, [
+    onTogglePlay,
+    onSeekRelative,
+    onAdjustVolume,
+    onToggleMute,
+    onToggleFullscreen,
+  ]);
 }

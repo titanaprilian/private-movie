@@ -4,13 +4,10 @@ import { cn } from '@/lib/utils';
 export type ChunkyTableProps = React.HTMLAttributes<HTMLDivElement>;
 
 function ChunkyTable({ className, ...props }: ChunkyTableProps) {
-  return (
-    <div className={cn('space-y-4', className)} {...props} />
-  );
+  return <div className={cn('space-y-4', className)} {...props} />;
 }
 
-export type ChunkyTableToolbarProps =
-  React.HTMLAttributes<HTMLDivElement>;
+export type ChunkyTableToolbarProps = React.HTMLAttributes<HTMLDivElement>;
 
 function ChunkyTableToolbar({ className, ...props }: ChunkyTableToolbarProps) {
   return (
@@ -24,8 +21,7 @@ function ChunkyTableToolbar({ className, ...props }: ChunkyTableToolbarProps) {
   );
 }
 
-export type ChunkyTableHeaderProps =
-  React.HTMLAttributes<HTMLDivElement>;
+export type ChunkyTableHeaderProps = React.HTMLAttributes<HTMLDivElement>;
 
 function ChunkyTableHeader({ className, ...props }: ChunkyTableHeaderProps) {
   return (
@@ -41,8 +37,7 @@ function ChunkyTableHeader({ className, ...props }: ChunkyTableHeaderProps) {
 
 export type ChunkyTableSortDirection = 'asc' | 'desc' | null;
 
-export interface ChunkyTableHeaderCellProps
-  extends React.HTMLAttributes<HTMLSpanElement> {
+export interface ChunkyTableHeaderCellProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** Renders a clickable sort button with a direction indicator. */
   sortable?: boolean;
   /** Current sort direction; null renders the neutral ↕ indicator. */
@@ -102,13 +97,10 @@ function ChunkyTableHeaderCell({
 export type ChunkyTableBodyProps = React.HTMLAttributes<HTMLDivElement>;
 
 function ChunkyTableBody({ className, ...props }: ChunkyTableBodyProps) {
-  return (
-    <div className={cn('flex flex-col gap-3', className)} {...props} />
-  );
+  return <div className={cn('flex flex-col gap-3', className)} {...props} />;
 }
 
-export interface ChunkyTableRowProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ChunkyTableRowProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Green border + green-tint background for selected rows. */
   selected?: boolean;
   /** Enables hover lift (`translateY(-2px)`) for interactive rows. */
@@ -119,7 +111,13 @@ export interface ChunkyTableRowProps
 
 const ChunkyTableRow = React.forwardRef<HTMLDivElement, ChunkyTableRowProps>(
   (
-    { selected = false, interactive = false, dragging = false, className, ...props },
+    {
+      selected = false,
+      interactive = false,
+      dragging = false,
+      className,
+      ...props
+    },
     ref
   ) => {
     return (
@@ -150,8 +148,7 @@ function ChunkyTableCell({ className, ...props }: ChunkyTableCellProps) {
   return <div className={cn('min-w-0', className)} {...props} />;
 }
 
-export interface ChunkyTableIndexBadgeProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ChunkyTableIndexBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   /** 1-based row number to display. */
   index: number;
 }

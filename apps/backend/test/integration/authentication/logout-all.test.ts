@@ -33,12 +33,14 @@ describe("POST /auth/logout-all", () => {
 
     const setCookieHeaders = response.headers.getSetCookie();
     const refreshTokenCookieHeader = setCookieHeaders.find((h) =>
-      h.toLowerCase().includes("refreshtoken")
+      h.toLowerCase().includes("refreshtoken"),
     );
     expect(refreshTokenCookieHeader).toBeDefined();
     expect(refreshTokenCookieHeader?.toLowerCase()).toContain("path=/");
     expect(refreshTokenCookieHeader?.toLowerCase()).toContain("httponly");
-    expect(refreshTokenCookieHeader?.toLowerCase()).toMatch(/expires=|max-age=0/);
+    expect(refreshTokenCookieHeader?.toLowerCase()).toMatch(
+      /expires=|max-age=0/,
+    );
 
     // Indirect proof: every previously-issued refresh token now fails.
     for (const token of [user.refreshToken, secondSession.refreshToken]) {

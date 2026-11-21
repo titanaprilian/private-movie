@@ -13,9 +13,8 @@ import * as api from '@/modules/videos/internal/api';
 
 const createWrapper = () => {
   const queryClient = createTestQueryClient();
-  return ({ children }: { children: React.ReactNode }) => (
-    React.createElement(QueryClientProvider, { client: queryClient }, children)
-  );
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: queryClient }, children);
 };
 
 const mockLocalEpisodes: LocalEpisodeItem[] = [
@@ -27,7 +26,9 @@ const mockLocalEpisodes: LocalEpisodeItem[] = [
 
 describe('useBulkScrapeSources hook', () => {
   it('starts at step 1 with default empty inputs and no offset state', () => {
-    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useBulkScrapeSources(), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.step).toBe(1);
     expect(result.current.sourceUrl).toBe('');
@@ -38,7 +39,9 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('updates inputs correctly', () => {
-    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useBulkScrapeSources(), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.setSourceUrl('https://otakudesu.cloud/anime/test');
@@ -51,18 +54,24 @@ describe('useBulkScrapeSources hook', () => {
 
   describe('Source type auto-detect from URL', () => {
     it('auto-selects dramula when the URL contains dramula', () => {
-      const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+      const { result } = renderHook(() => useBulkScrapeSources(), {
+        wrapper: createWrapper(),
+      });
 
       act(() => {
         result.current.setSourceUrl('https://dramula.example.com/season-1');
       });
 
-      expect(result.current.sourceUrl).toBe('https://dramula.example.com/season-1');
+      expect(result.current.sourceUrl).toBe(
+        'https://dramula.example.com/season-1'
+      );
       expect(result.current.sourceType).toBe('dramula');
     });
 
     it('auto-selects otakudesu when the URL contains otakudesu', () => {
-      const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+      const { result } = renderHook(() => useBulkScrapeSources(), {
+        wrapper: createWrapper(),
+      });
 
       act(() => {
         result.current.setSourceType('direct');
@@ -75,7 +84,9 @@ describe('useBulkScrapeSources hook', () => {
     });
 
     it('leaves the manual selection untouched for unrecognized URLs', () => {
-      const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+      const { result } = renderHook(() => useBulkScrapeSources(), {
+        wrapper: createWrapper(),
+      });
 
       act(() => {
         result.current.setSourceType('direct');
@@ -88,7 +99,9 @@ describe('useBulkScrapeSources hook', () => {
     });
 
     it('keeps a manual selection made after typing the URL', () => {
-      const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+      const { result } = renderHook(() => useBulkScrapeSources(), {
+        wrapper: createWrapper(),
+      });
 
       act(() => {
         result.current.setSourceUrl('https://dramula.example.com/season-1');
@@ -103,7 +116,9 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('fetches preview and flags decimal episodes (.5) as needing review', async () => {
-    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useBulkScrapeSources(), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.setSourceUrl('https://otakudesu.cloud/anime/test');
@@ -129,7 +144,9 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('matches scraped episodes 1:1 by order with no offset applied', async () => {
-    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useBulkScrapeSources(), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.fetchPreview(mockLocalEpisodes);
@@ -144,31 +161,36 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('calls live previewBulkSources API when seriesId is provided', async () => {
-    const previewSpy = vi.spyOn(api, 'previewBulkSources').mockResolvedValueOnce({
-      scrapedEpisodes: [
-        {
-          scrapedTitle: 'Live Ep 1',
-          scrapedUrl: 'https://otakudesu.cloud/ep1',
-          episodeNumber: 1,
-          calculatedOrder: 1,
-          matchedLocalEpisodeId: 'ep-1',
-          matchStatus: 'matched',
-        },
-      ],
-      localEpisodes: [
-        {
-          id: 'ep-1',
-          title: 'Live Local Ep 1',
-          order: 1,
-          seasonId: 'season-1',
-          seasonNumber: 1,
-          seasonTitle: 'Season 1',
-          hasSources: false,
-        },
-      ],
-    });
+    const previewSpy = vi
+      .spyOn(api, 'previewBulkSources')
+      .mockResolvedValueOnce({
+        scrapedEpisodes: [
+          {
+            scrapedTitle: 'Live Ep 1',
+            scrapedUrl: 'https://otakudesu.cloud/ep1',
+            episodeNumber: 1,
+            calculatedOrder: 1,
+            matchedLocalEpisodeId: 'ep-1',
+            matchStatus: 'matched',
+          },
+        ],
+        localEpisodes: [
+          {
+            id: 'ep-1',
+            title: 'Live Local Ep 1',
+            order: 1,
+            seasonId: 'season-1',
+            seasonNumber: 1,
+            seasonTitle: 'Season 1',
+            hasSources: false,
+          },
+        ],
+      });
 
-    const { result } = renderHook(() => useBulkScrapeSources({ seriesId: 'series-100' }), { wrapper: createWrapper() });
+    const { result } = renderHook(
+      () => useBulkScrapeSources({ seriesId: 'series-100' }),
+      { wrapper: createWrapper() }
+    );
 
     act(() => {
       result.current.setSourceUrl('https://otakudesu.cloud/anime/test');
@@ -192,37 +214,48 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('passes selectedSeasonId into live previewBulkSources API call when seasons are provided', async () => {
-    const previewSpy = vi.spyOn(api, 'previewBulkSources').mockResolvedValueOnce({
-      scrapedEpisodes: [
-        {
-          scrapedTitle: 'Live Ep 1',
-          scrapedUrl: 'https://otakudesu.cloud/ep1',
-          episodeNumber: 1,
-          calculatedOrder: 1,
-          matchedLocalEpisodeId: 'ep-s2-1',
-          matchStatus: 'matched',
-        },
-      ],
-      localEpisodes: [
-        {
-          id: 'ep-s2-1',
-          title: 'Season 2 Ep 1',
-          order: 1,
-          seasonId: 'season-2',
-          seasonNumber: 2,
-          seasonTitle: 'Season 2',
-          hasSources: false,
-        },
-      ],
-    });
+    const previewSpy = vi
+      .spyOn(api, 'previewBulkSources')
+      .mockResolvedValueOnce({
+        scrapedEpisodes: [
+          {
+            scrapedTitle: 'Live Ep 1',
+            scrapedUrl: 'https://otakudesu.cloud/ep1',
+            episodeNumber: 1,
+            calculatedOrder: 1,
+            matchedLocalEpisodeId: 'ep-s2-1',
+            matchStatus: 'matched',
+          },
+        ],
+        localEpisodes: [
+          {
+            id: 'ep-s2-1',
+            title: 'Season 2 Ep 1',
+            order: 1,
+            seasonId: 'season-2',
+            seasonNumber: 2,
+            seasonTitle: 'Season 2',
+            hasSources: false,
+          },
+        ],
+      });
 
     const mockSeasons = [
-      { id: 'season-1', title: 'Season 1', episodes: [{ id: 'ep-s1-1', title: 'S1 E1', order: 1 }] },
-      { id: 'season-2', title: 'Season 2', episodes: [{ id: 'ep-s2-1', title: 'S2 E1', order: 1 }] },
+      {
+        id: 'season-1',
+        title: 'Season 1',
+        episodes: [{ id: 'ep-s1-1', title: 'S1 E1', order: 1 }],
+      },
+      {
+        id: 'season-2',
+        title: 'Season 2',
+        episodes: [{ id: 'ep-s2-1', title: 'S2 E1', order: 1 }],
+      },
     ];
 
     const { result } = renderHook(
-      () => useBulkScrapeSources({ seriesId: 'series-100', seasons: mockSeasons }),
+      () =>
+        useBulkScrapeSources({ seriesId: 'series-100', seasons: mockSeasons }),
       { wrapper: createWrapper() }
     );
 
@@ -247,29 +280,36 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('calls live scrapeEpisodeSources API for each matched item when saveBulkSources is triggered', async () => {
-    const previewSpy = vi.spyOn(api, 'previewBulkSources').mockResolvedValueOnce({
-      scrapedEpisodes: [
-        {
-          scrapedTitle: 'Live Ep 1',
-          scrapedUrl: 'https://otakudesu.cloud/ep1',
-          episodeNumber: 1,
-          calculatedOrder: 1,
-          matchedLocalEpisodeId: 'ep-1',
-          matchStatus: 'matched',
-        },
-      ],
-      localEpisodes: [],
-    });
+    const previewSpy = vi
+      .spyOn(api, 'previewBulkSources')
+      .mockResolvedValueOnce({
+        scrapedEpisodes: [
+          {
+            scrapedTitle: 'Live Ep 1',
+            scrapedUrl: 'https://otakudesu.cloud/ep1',
+            episodeNumber: 1,
+            calculatedOrder: 1,
+            matchedLocalEpisodeId: 'ep-1',
+            matchStatus: 'matched',
+          },
+        ],
+        localEpisodes: [],
+      });
 
-    const scrapeSpy = vi.spyOn(api, 'scrapeEpisodeSources').mockResolvedValueOnce({
-      id: 'ep-1',
-      title: 'Live Ep 1',
-      videoSources: [],
-      createdAt: '',
-      updatedAt: '',
-    });
+    const scrapeSpy = vi
+      .spyOn(api, 'scrapeEpisodeSources')
+      .mockResolvedValueOnce({
+        id: 'ep-1',
+        title: 'Live Ep 1',
+        videoSources: [],
+        createdAt: '',
+        updatedAt: '',
+      });
 
-    const { result } = renderHook(() => useBulkScrapeSources({ seriesId: 'series-100' }), { wrapper: createWrapper() });
+    const { result } = renderHook(
+      () => useBulkScrapeSources({ seriesId: 'series-100' }),
+      { wrapper: createWrapper() }
+    );
 
     await act(async () => {
       result.current.fetchPreview();
@@ -279,35 +319,41 @@ describe('useBulkScrapeSources hook', () => {
       await result.current.saveBulkSources();
     });
 
-    expect(scrapeSpy).toHaveBeenCalledWith('ep-1', 'https://otakudesu.cloud/ep1');
+    expect(scrapeSpy).toHaveBeenCalledWith(
+      'ep-1',
+      'https://otakudesu.cloud/ep1'
+    );
     previewSpy.mockRestore();
     scrapeSpy.mockRestore();
   });
 
   it('handles per-item scrape network failure gracefully without stopping batch execution', async () => {
-    const previewSpy = vi.spyOn(api, 'previewBulkSources').mockResolvedValueOnce({
-      scrapedEpisodes: [
-        {
-          scrapedTitle: 'Ep 1',
-          scrapedUrl: 'https://otakudesu.cloud/ep1',
-          episodeNumber: 1,
-          calculatedOrder: 1,
-          matchedLocalEpisodeId: 'ep-1',
-          matchStatus: 'matched',
-        },
-        {
-          scrapedTitle: 'Ep 2',
-          scrapedUrl: 'https://otakudesu.cloud/ep2',
-          episodeNumber: 2,
-          calculatedOrder: 2,
-          matchedLocalEpisodeId: 'ep-2',
-          matchStatus: 'matched',
-        },
-      ],
-      localEpisodes: [],
-    });
+    const previewSpy = vi
+      .spyOn(api, 'previewBulkSources')
+      .mockResolvedValueOnce({
+        scrapedEpisodes: [
+          {
+            scrapedTitle: 'Ep 1',
+            scrapedUrl: 'https://otakudesu.cloud/ep1',
+            episodeNumber: 1,
+            calculatedOrder: 1,
+            matchedLocalEpisodeId: 'ep-1',
+            matchStatus: 'matched',
+          },
+          {
+            scrapedTitle: 'Ep 2',
+            scrapedUrl: 'https://otakudesu.cloud/ep2',
+            episodeNumber: 2,
+            calculatedOrder: 2,
+            matchedLocalEpisodeId: 'ep-2',
+            matchStatus: 'matched',
+          },
+        ],
+        localEpisodes: [],
+      });
 
-    const scrapeSpy = vi.spyOn(api, 'scrapeEpisodeSources')
+    const scrapeSpy = vi
+      .spyOn(api, 'scrapeEpisodeSources')
       .mockRejectedValueOnce(new Error('Scrape Connection Timeout'))
       .mockResolvedValueOnce({
         id: 'ep-2',
@@ -317,7 +363,10 @@ describe('useBulkScrapeSources hook', () => {
         updatedAt: '',
       });
 
-    const { result } = renderHook(() => useBulkScrapeSources({ seriesId: 'series-100' }), { wrapper: createWrapper() });
+    const { result } = renderHook(
+      () => useBulkScrapeSources({ seriesId: 'series-100' }),
+      { wrapper: createWrapper() }
+    );
 
     await act(async () => {
       result.current.fetchPreview();
@@ -329,11 +378,15 @@ describe('useBulkScrapeSources hook', () => {
 
     expect(scrapeSpy).toHaveBeenCalledTimes(2);
 
-    const ep1Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Ep 1');
+    const ep1Log = result.current.processingLogs.find(
+      (l) => l.scrapedTitle === 'Ep 1'
+    );
     expect(ep1Log?.status).toBe('error');
     expect(ep1Log?.message).toContain('Scrape Connection Timeout');
 
-    const ep2Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Ep 2');
+    const ep2Log = result.current.processingLogs.find(
+      (l) => l.scrapedTitle === 'Ep 2'
+    );
     expect(ep2Log?.status).toBe('success');
 
     previewSpy.mockRestore();
@@ -341,7 +394,9 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('allows updating mapping for a scraped item', async () => {
-    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useBulkScrapeSources(), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.fetchPreview(mockLocalEpisodes);
@@ -359,7 +414,9 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('allows toggling ignore state for a scraped item', async () => {
-    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useBulkScrapeSources(), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.fetchPreview(mockLocalEpisodes);
@@ -381,7 +438,9 @@ describe('useBulkScrapeSources hook', () => {
   });
 
   it('resets state back to step 1', async () => {
-    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useBulkScrapeSources(), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.setSourceUrl('https://example.com');
@@ -412,7 +471,9 @@ describe('useBulkScrapeSources hook', () => {
       updatedAt: '',
     });
 
-    const { result } = renderHook(() => useBulkScrapeSources(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useBulkScrapeSources(), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.fetchPreview(mockLocalEpisodes);
@@ -434,16 +495,21 @@ describe('useBulkScrapeSources hook', () => {
     expect(result.current.totalCount).toBe(4);
     expect(result.current.completedCount).toBe(4);
 
-    const ep1Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Episode 1');
+    const ep1Log = result.current.processingLogs.find(
+      (l) => l.scrapedTitle === 'Episode 1'
+    );
     expect(ep1Log?.status).toBe('skipped');
 
-    const ep2Log = result.current.processingLogs.find((l) => l.scrapedTitle === 'Episode 2');
+    const ep2Log = result.current.processingLogs.find(
+      (l) => l.scrapedTitle === 'Episode 2'
+    );
     expect(ep2Log?.status).toBe('success');
 
     scrapeSpy.mockRestore();
   });
 
-  describe('Target Season selection (no offset)', () => {    const mockSeasonsList = [
+  describe('Target Season selection (no offset)', () => {
+    const mockSeasonsList = [
       {
         id: 's1',
         title: 'Season 1',
@@ -491,8 +557,22 @@ describe('useBulkScrapeSources hook', () => {
 
     it('derives season options from localEpisodes when seasons list is absent', () => {
       const flatLocalEpisodes: LocalEpisodeItem[] = [
-        { id: 'ep-13', title: 'Ep 13', order: 13, seasonId: 's2', seasonTitle: 'Season 2', seasonNumber: 2 },
-        { id: 'ep-14', title: 'Ep 14', order: 14, seasonId: 's2', seasonTitle: 'Season 2', seasonNumber: 2 },
+        {
+          id: 'ep-13',
+          title: 'Ep 13',
+          order: 13,
+          seasonId: 's2',
+          seasonTitle: 'Season 2',
+          seasonNumber: 2,
+        },
+        {
+          id: 'ep-14',
+          title: 'Ep 14',
+          order: 14,
+          seasonId: 's2',
+          seasonTitle: 'Season 2',
+          seasonNumber: 2,
+        },
       ];
 
       const { result } = renderHook(
@@ -501,7 +581,9 @@ describe('useBulkScrapeSources hook', () => {
       );
 
       expect(result.current.selectedSeasonId).toBe('s2');
-      expect(result.current.seasonOptions).toEqual([{ id: 's2', label: 'Season 2' }]);
+      expect(result.current.seasonOptions).toEqual([
+        { id: 's2', label: 'Season 2' },
+      ]);
     });
   });
 
@@ -560,17 +642,14 @@ describe('useBulkScrapeSources hook', () => {
         { id: 'ep-1', title: 'S1 E1', order: 1, seasonId: 's1' },
         { id: 'ep-13', title: 'S2 E1', order: 1, seasonId: 's2' },
       ];
-      expect(getTargetSeasonEpisodes(undefined, flat, 's2').map((e) => e.id)).toEqual([
-        'ep-13',
-      ]);
+      expect(
+        getTargetSeasonEpisodes(undefined, flat, 's2').map((e) => e.id)
+      ).toEqual(['ep-13']);
       expect(getTargetSeasonEpisodes(undefined, flat, 'unknown')).toEqual([]);
     });
 
     it('applyPreviewSequentialFallback leaves decimals and excess items unmapped', () => {
-      const mk = (
-        order: number | null,
-        matched: string | null = null
-      ) => ({
+      const mk = (order: number | null, matched: string | null = null) => ({
         id: `scraped-${order}`,
         scrapedTitle: `Episode ${order}`,
         rawEpisodeNumber: order ?? 'x',
@@ -641,8 +720,20 @@ describe('useBulkScrapeSources hook', () => {
 
   describe('Overwrite conflict tracking', () => {
     const mockEpisodesWithSources: LocalEpisodeItem[] = [
-      { id: 'ep-1', title: 'Episode 1 Title', order: 1, seasonNumber: 1, hasSources: true },
-      { id: 'ep-2', title: 'Episode 2 Title', order: 2, seasonNumber: 1, hasSources: false },
+      {
+        id: 'ep-1',
+        title: 'Episode 1 Title',
+        order: 1,
+        seasonNumber: 1,
+        hasSources: true,
+      },
+      {
+        id: 'ep-2',
+        title: 'Episode 2 Title',
+        order: 2,
+        seasonNumber: 1,
+        hasSources: false,
+      },
     ];
 
     it('identifies if a local episode has existing sources', () => {
@@ -658,12 +749,18 @@ describe('useBulkScrapeSources hook', () => {
 
     it('identifies episode sources using videoSources array when hasSources is undefined', () => {
       const mockEpisodesWithVideoSources = [
-        { id: 'ep-10', title: 'Ep 10', order: 1, videoSources: [{ type: 'otakudesu', url: 'http://ep10' }] },
+        {
+          id: 'ep-10',
+          title: 'Ep 10',
+          order: 1,
+          videoSources: [{ type: 'otakudesu', url: 'http://ep10' }],
+        },
         { id: 'ep-20', title: 'Ep 20', order: 2, videoSources: [] },
       ];
 
       const { result } = renderHook(
-        () => useBulkScrapeSources({ localEpisodes: mockEpisodesWithVideoSources }),
+        () =>
+          useBulkScrapeSources({ localEpisodes: mockEpisodesWithVideoSources }),
         { wrapper: createWrapper() }
       );
 
@@ -693,4 +790,3 @@ describe('useBulkScrapeSources hook', () => {
     });
   });
 });
-

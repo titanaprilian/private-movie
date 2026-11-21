@@ -31,10 +31,7 @@ describe('VideoTopBar component', () => {
 
   it('omits Back button when onBack is undefined', () => {
     renderWithProviders(
-      <VideoTopBar
-        showControls={true}
-        title="Sample Video"
-      />
+      <VideoTopBar showControls={true} title="Sample Video" />
     );
 
     const backButton = screen.queryByRole('button', { name: /back/i });
@@ -51,7 +48,9 @@ describe('VideoTopBar component', () => {
       />
     );
 
-    expect(screen.getByText("Breaking Bad · S1:E3 – ...And the Bag's in the River")).toBeInTheDocument();
+    expect(
+      screen.getByText("Breaking Bad · S1:E3 – ...And the Bag's in the River")
+    ).toBeInTheDocument();
   });
 
   it('displays correctly formatted series and episode title pill without title suffix when title is omitted', () => {
@@ -63,38 +62,31 @@ describe('VideoTopBar component', () => {
       />
     );
 
-    expect(screen.getByText("Breaking Bad · S1:E3")).toBeInTheDocument();
+    expect(screen.getByText('Breaking Bad · S1:E3')).toBeInTheDocument();
   });
 
   it('falls back to title when seriesTitle or episodeLabel is missing', () => {
     renderWithProviders(
-      <VideoTopBar
-        showControls={true}
-        title="Standalone Movie"
-      />
+      <VideoTopBar showControls={true} title="Standalone Movie" />
     );
 
-    expect(screen.getByText("Standalone Movie")).toBeInTheDocument();
+    expect(screen.getByText('Standalone Movie')).toBeInTheDocument();
   });
 
   it('renders nothing in title container if no titles are provided', () => {
     const { container } = renderWithProviders(
-      <VideoTopBar
-        showControls={true}
-      />
+      <VideoTopBar showControls={true} />
     );
 
     // Should not render title pill if no title or series info is provided
-    expect(container.querySelector('[data-testid="video-top-bar-title"]')).not.toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="video-top-bar-title"]')
+    ).not.toBeInTheDocument();
   });
 
   it('fades out and disables pointer events when showControls is false', () => {
     renderWithProviders(
-      <VideoTopBar
-        showControls={false}
-        title="Sample Video"
-        onBack={vi.fn()}
-      />
+      <VideoTopBar showControls={false} title="Sample Video" onBack={vi.fn()} />
     );
 
     const topBar = screen.getByTestId('video-top-bar');
@@ -106,11 +98,7 @@ describe('VideoTopBar component', () => {
 
   it('is visible and enables pointer events when showControls is true', () => {
     renderWithProviders(
-      <VideoTopBar
-        showControls={true}
-        title="Sample Video"
-        onBack={vi.fn()}
-      />
+      <VideoTopBar showControls={true} title="Sample Video" onBack={vi.fn()} />
     );
 
     const topBar = screen.getByTestId('video-top-bar');

@@ -57,16 +57,14 @@ describe("ongoing scraper (integration)", () => {
             },
           ],
         }),
-        resolveVideoSources: vi
-          .fn()
-          .mockResolvedValue([
-            {
-              type: "direct",
-              quality: "720p",
-              label: "Direct 720p",
-              url: "https://storage.example.com/video.mp4",
-            },
-          ]),
+        resolveVideoSources: vi.fn().mockResolvedValue([
+          {
+            type: "direct",
+            quality: "720p",
+            label: "Direct 720p",
+            url: "https://storage.example.com/video.mp4",
+          },
+        ]),
       } as any);
 
       const service = createMediaService(db, {
@@ -138,16 +136,14 @@ describe("ongoing scraper (integration)", () => {
             },
           ],
         }),
-        resolveVideoSources: vi
-          .fn()
-          .mockResolvedValue([
-            {
-              type: "direct",
-              quality: "1080p",
-              label: "Direct 1080p",
-              url: "https://storage.example.com/11.mp4",
-            },
-          ]),
+        resolveVideoSources: vi.fn().mockResolvedValue([
+          {
+            type: "direct",
+            quality: "1080p",
+            label: "Direct 1080p",
+            url: "https://storage.example.com/11.mp4",
+          },
+        ]),
       } as any);
 
       const service = createMediaService(db, {
@@ -222,16 +218,14 @@ describe("ongoing scraper (integration)", () => {
                 },
               ],
             }),
-            resolveVideoSources: vi
-              .fn()
-              .mockResolvedValue([
-                {
-                  type: "direct",
-                  quality: "720p",
-                  label: "Direct 720p",
-                  url: "https://storage.example.com/b1.mp4",
-                },
-              ]),
+            resolveVideoSources: vi.fn().mockResolvedValue([
+              {
+                type: "direct",
+                quality: "720p",
+                label: "Direct 720p",
+                url: "https://storage.example.com/b1.mp4",
+              },
+            ]),
           };
         }
         throw new Error("Scraper network error on batch2");

@@ -60,9 +60,7 @@ describe('ChunkyDrawer primitive', () => {
     expect(screen.getByTestId('chunky-drawer-header')).toBeInTheDocument();
     expect(screen.getByTestId('chunky-drawer-body')).toBeInTheDocument();
     expect(screen.getByTestId('chunky-drawer-footer')).toBeInTheDocument();
-    expect(
-      screen.getByText('Update the season details.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Update the season details.')).toBeInTheDocument();
   });
 
   it('slides out from the right side with a chunky sheet', async () => {
@@ -83,9 +81,7 @@ describe('ChunkyDrawer primitive', () => {
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     await user.keyboard('{Escape}');
 
-    await waitFor(() =>
-      expect(onOpenChange).toHaveBeenCalledWith(false)
-    );
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
 
   it('closes when clicking outside (overlay pointer down)', async () => {
@@ -97,9 +93,7 @@ describe('ChunkyDrawer primitive', () => {
     const overlay = await screen.findByTestId('chunky-drawer-overlay');
     await user.click(overlay);
 
-    await waitFor(() =>
-      expect(onOpenChange).toHaveBeenCalledWith(false)
-    );
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
 
   it('moves focus into the dialog and closes via the header close button', async () => {
@@ -107,7 +101,9 @@ describe('ChunkyDrawer primitive', () => {
     await user.click(screen.getByRole('button', { name: 'Open drawer' }));
 
     const dialog = await screen.findByRole('dialog');
-    await waitFor(() => expect(dialog).toContainElement(document.activeElement as HTMLElement));
+    await waitFor(() =>
+      expect(dialog).toContainElement(document.activeElement as HTMLElement)
+    );
 
     await user.click(screen.getByRole('button', { name: 'Close' }));
     await waitFor(() =>

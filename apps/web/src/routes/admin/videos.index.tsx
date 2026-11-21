@@ -24,7 +24,9 @@ export const Route = createFileRoute('/admin/videos/')({
       typeof search.genre === 'string' ? search.genre.trim() : undefined;
     const genre = rawGenre && rawGenre.length > 0 ? rawGenre : undefined;
     const rawTab =
-      typeof search.tab === 'string' ? search.tab.trim().toLowerCase() : undefined;
+      typeof search.tab === 'string'
+        ? search.tab.trim().toLowerCase()
+        : undefined;
     const tab =
       rawTab === 'featured' || rawTab === 'ongoing' || rawTab === 'all'
         ? (rawTab as 'all' | 'featured' | 'ongoing')

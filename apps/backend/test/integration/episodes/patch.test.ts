@@ -34,10 +34,12 @@ async function ensureSeason(id: string): Promise<string> {
   return seasonRow.id;
 }
 
-async function insertTestEpisode(overrides?: Partial<{
-  id: string;
-  title: string;
-}>): Promise<{
+async function insertTestEpisode(
+  overrides?: Partial<{
+    id: string;
+    title: string;
+  }>,
+): Promise<{
   id: string;
   title: string;
 }> {
@@ -77,7 +79,9 @@ describe("PATCH /episodes/:id", () => {
       });
 
       expect(response.status).toBe(401);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe("UNAUTHORIZED");
     });
@@ -98,7 +102,7 @@ describe("PATCH /episodes/:id", () => {
 
       const expiredToken = signTestToken(
         { sub: "some-user-id" },
-        { expiresInSeconds: -3600 }
+        { expiresInSeconds: -3600 },
       );
       const expiredTokenResponse = await request(app, {
         method: "PATCH",
@@ -128,7 +132,9 @@ describe("PATCH /episodes/:id", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
@@ -162,7 +168,10 @@ describe("PATCH /episodes/:id", () => {
       expect(body.data.title).toBe("Updated Title Only");
 
       // Verify in DB
-      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
+      const rows = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, episode.id));
       expect(rows).toHaveLength(1);
       expect(rows[0].title).toBe("Updated Title Only");
     });
@@ -187,7 +196,10 @@ describe("PATCH /episodes/:id", () => {
 
       expect(body.data.description).toBe("New Episode Description");
 
-      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
+      const rows = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, episode.id));
       expect(rows[0].description).toBe("New Episode Description");
     });
 
@@ -219,7 +231,10 @@ describe("PATCH /episodes/:id", () => {
       expect(body.data.title).toBe(patchPayload.title);
       expect(body.data.description).toBe(patchPayload.description);
 
-      const rows = await db.select().from(episodes).where(eq(episodes.id, episode.id));
+      const rows = await db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, episode.id));
       expect(rows[0].title).toBe(patchPayload.title);
       expect(rows[0].description).toBe(patchPayload.description);
     });

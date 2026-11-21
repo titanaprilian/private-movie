@@ -1,5 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { createTestQueryClient, renderWithProviders, screen, fireEvent, waitFor, act } from '../../utils';
+import {
+  createTestQueryClient,
+  renderWithProviders,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '../../utils';
 import { CatalogSearch, seriesSearchQueryOptions } from '@/modules/search';
 import type { SeriesItem, SeriesListResponse } from '@/modules/videos';
 
@@ -54,7 +61,7 @@ const mockSeriesList: SeriesItem[] = [
   },
   {
     id: 'series-2',
-    title: 'Frieren: Beyond Journey\'s End',
+    title: "Frieren: Beyond Journey's End",
     source: 'otakudesu',
     sourceUrl: 'https://otakudesu.cloud/anime/frieren',
     description: 'An elf mage reflects on life after defeating the Demon King.',
@@ -84,7 +91,9 @@ describe('CatalogSearch Component', () => {
 
   it('renders search input with placeholder and search icon', () => {
     renderWithProviders(<CatalogSearch placeholder="Search catalog..." />);
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute('placeholder', 'Search catalog...');
   });
@@ -95,7 +104,9 @@ describe('CatalogSearch Component', () => {
     const queryClient = createTestQueryClient();
     renderWithProviders(<CatalogSearch />, { queryClient });
 
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     fireEvent.change(input, { target: { value: 'Solo' } });
 
     // Before 300ms, fetchSeries should not be called
@@ -122,7 +133,9 @@ describe('CatalogSearch Component', () => {
     const queryClient = createTestQueryClient();
     renderWithProviders(<CatalogSearch />, { queryClient });
 
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     fireEvent.change(input, { target: { value: 'Solo' } });
 
     // During debounce delay, skeleton is shown
@@ -142,7 +155,9 @@ describe('CatalogSearch Component', () => {
     );
 
     renderWithProviders(<CatalogSearch />, { queryClient });
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     fireEvent.change(input, { target: { value: 'Solo' } });
 
     await waitFor(() => {
@@ -154,7 +169,9 @@ describe('CatalogSearch Component', () => {
     expect(screen.getAllByTestId('rating-badge').length).toBe(2);
     expect(screen.getByText('Action')).toBeInTheDocument();
 
-    expect(screen.getByText("Frieren: Beyond Journey's End")).toBeInTheDocument();
+    expect(
+      screen.getByText("Frieren: Beyond Journey's End")
+    ).toBeInTheDocument();
     expect(screen.getByText('2023')).toBeInTheDocument();
     expect(screen.getByText('Fantasy')).toBeInTheDocument();
 
@@ -167,13 +184,15 @@ describe('CatalogSearch Component', () => {
     queryClient.setDefaultOptions({
       queries: { retry: false, staleTime: Infinity },
     });
-    queryClient.setQueryData(
-      seriesSearchQueryOptions('Unknown').queryKey,
-      { series: [], meta: { total: 0, page: 1, limit: 5 } }
-    );
+    queryClient.setQueryData(seriesSearchQueryOptions('Unknown').queryKey, {
+      series: [],
+      meta: { total: 0, page: 1, limit: 5 },
+    });
 
     renderWithProviders(<CatalogSearch />, { queryClient });
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     fireEvent.change(input, { target: { value: 'Unknown' } });
 
     await waitFor(() => {
@@ -193,7 +212,9 @@ describe('CatalogSearch Component', () => {
     );
 
     renderWithProviders(<CatalogSearch />, { queryClient });
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     fireEvent.change(input, { target: { value: 'Solo' } });
 
     await waitFor(() => {
@@ -220,12 +241,13 @@ describe('CatalogSearch Component', () => {
     );
 
     const onSelectSeries = vi.fn();
-    renderWithProviders(
-      <CatalogSearch onSelectSeries={onSelectSeries} />,
-      { queryClient }
-    );
+    renderWithProviders(<CatalogSearch onSelectSeries={onSelectSeries} />, {
+      queryClient,
+    });
 
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     fireEvent.change(input, { target: { value: 'Solo' } });
 
     await waitFor(() => {
@@ -257,7 +279,9 @@ describe('CatalogSearch Component', () => {
       { queryClient }
     );
 
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'Solo' } });
 
@@ -274,7 +298,9 @@ describe('CatalogSearch Component', () => {
     expect(screen.getByTestId('search-dropdown')).toBeInTheDocument();
 
     // Click outside
-    fireEvent.mouseDown(screen.getByRole('button', { name: 'Outside element' }));
+    fireEvent.mouseDown(
+      screen.getByRole('button', { name: 'Outside element' })
+    );
     expect(screen.queryByTestId('search-dropdown')).not.toBeInTheDocument();
   });
 });
@@ -287,7 +313,9 @@ describe('CatalogSearch Chunky UI Design System', () => {
 
   it('renders tactile ChunkyInput with Lucide icons and no raw SVGs', () => {
     const { container } = renderWithProviders(<CatalogSearch />);
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     // ChunkyInput carries chunky geometry: rounded-2xl + 3D bottom bevel
     expect(input.className).toContain('rounded-2xl');
     expect(input.className).toContain('border-b-4');
@@ -305,11 +333,15 @@ describe('CatalogSearch Chunky UI Design System', () => {
       vi.mocked(fetchSeries).mockImplementation(() => new Promise(() => {}));
 
       const { container } = renderWithProviders(<CatalogSearch />);
-      const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+      const input = screen.getByRole('textbox', {
+        name: 'Search series catalog',
+      });
       fireEvent.change(input, { target: { value: 'Solo' } });
 
       expect(screen.getByTestId('search-skeleton')).toBeInTheDocument();
-      const skeletons = container.querySelectorAll('[data-testid="chunky-skeleton"]');
+      const skeletons = container.querySelectorAll(
+        '[data-testid="chunky-skeleton"]'
+      );
       expect(skeletons.length).toBeGreaterThan(0);
       skeletons.forEach((el) => {
         expect(el.className).toContain('rounded-2xl');
@@ -321,14 +353,18 @@ describe('CatalogSearch Chunky UI Design System', () => {
 
   it('renders result items and badges with high-contrast 2px borders', async () => {
     const queryClient = createTestQueryClient();
-    queryClient.setDefaultOptions({ queries: { retry: false, staleTime: Infinity } });
+    queryClient.setDefaultOptions({
+      queries: { retry: false, staleTime: Infinity },
+    });
     queryClient.setQueryData(
       seriesSearchQueryOptions('Solo').queryKey,
       mockSearchResponse
     );
 
     renderWithProviders(<CatalogSearch />, { queryClient });
-    const input = screen.getByRole('textbox', { name: 'Search series catalog' });
+    const input = screen.getByRole('textbox', {
+      name: 'Search series catalog',
+    });
     fireEvent.change(input, { target: { value: 'Solo' } });
 
     await waitFor(() => {
@@ -344,7 +380,9 @@ describe('CatalogSearch Chunky UI Design System', () => {
     });
 
     // Dropdown popover uses chunky 3D bevel
-    expect(screen.getByTestId('search-dropdown').className).toContain('border-b-4');
+    expect(screen.getByTestId('search-dropdown').className).toContain(
+      'border-b-4'
+    );
 
     // No raw inline SVGs anywhere in the dropdown
     const dropdown = screen.getByTestId('search-dropdown');

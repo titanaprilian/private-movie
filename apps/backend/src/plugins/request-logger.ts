@@ -24,7 +24,9 @@ function getPath(request: Request): string {
   }
 }
 
-export const requestLoggerPlugin = (options: RequestLoggerPluginOptions = {}) => {
+export const requestLoggerPlugin = (
+  options: RequestLoggerPluginOptions = {},
+) => {
   const log: Pick<AppLogger, "info"> = options.logger ?? defaultLogger;
 
   return new Elysia({ name: "request-logger-plugin" })
@@ -43,17 +45,23 @@ export const requestLoggerPlugin = (options: RequestLoggerPluginOptions = {}) =>
         {
           method: request.method,
           path: getPath(request),
-          status: typeof status === "number" ? status : (set.status as number | undefined) ?? 200,
+          status:
+            typeof status === "number"
+              ? status
+              : ((set.status as number | undefined) ?? 200),
           durationMs: Date.now() - state.startTime,
           requestId: state.requestId,
         },
-        "request completed"
+        "request completed",
       );
     })
     .onError(({ request, set, status, code }) => {
       const state =
         (request ? states.get(request) : undefined) ??
-        ({ requestId: request?.headers.get(REQUEST_ID_HEADER) || randomUUID(), startTime: Date.now() } as RequestState);
+        ({
+          requestId: request?.headers.get(REQUEST_ID_HEADER) || randomUUID(),
+          startTime: Date.now(),
+        } as RequestState);
       set.headers[REQUEST_ID_HEADER] = state.requestId;
       const resolvedStatus =
         code === "NOT_FOUND"
@@ -69,7 +77,7 @@ export const requestLoggerPlugin = (options: RequestLoggerPluginOptions = {}) =>
           durationMs: Date.now() - state.startTime,
           requestId: state.requestId,
         },
-        "request completed"
+        "request completed",
       );
     })
     .as("global");

@@ -19,9 +19,7 @@ import {
   ViewerLoginPage,
   type ViewerLoginPageProps,
 } from './internal/components/ViewerLoginPage';
-import {
-  ViewerLoginShowcase,
-} from './internal/components/ViewerLoginShowcase';
+import { ViewerLoginShowcase } from './internal/components/ViewerLoginShowcase';
 import {
   AdminLoginForm,
   type AdminLoginFormProps,
@@ -30,9 +28,7 @@ import {
   AdminLoginPage,
   type AdminLoginPageProps,
 } from './internal/components/AdminLoginPage';
-import {
-  AdminLoginShowcase,
-} from './internal/components/AdminLoginShowcase';
+import { AdminLoginShowcase } from './internal/components/AdminLoginShowcase';
 import {
   registerSchema,
   loginSchema,
@@ -96,4 +92,3 @@ export {
   type RegisterSchema,
   type LoginSchema,
 };
-

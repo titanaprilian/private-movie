@@ -9,18 +9,18 @@ import {
 
 const sampleAHtml = fs.readFileSync(
   path.resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
-  "utf8"
+  "utf8",
 );
 const sampleBHtml = fs.readFileSync(
   path.resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
-  "utf8"
+  "utf8",
 );
 const sampleDirectVideoHtml = fs.readFileSync(
   path.resolve(
     import.meta.dirname,
-    "../../fixtures/episodes/sample-direct-video.html"
+    "../../fixtures/episodes/sample-direct-video.html",
   ),
-  "utf8"
+  "utf8",
 );
 
 const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
@@ -41,7 +41,10 @@ function buildMockFetchFn(options?: {
       if (url === "https://otakudesu.blog/episode/sample-b") {
         return sampleBHtml;
       }
-      if (url.startsWith(DESUSTREAM_IFRAME_BASE) || url.startsWith(ODVIDHIDE_EMBED_BASE)) {
+      if (
+        url.startsWith(DESUSTREAM_IFRAME_BASE) ||
+        url.startsWith(ODVIDHIDE_EMBED_BASE)
+      ) {
         return sampleDirectVideoHtml;
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -76,11 +79,11 @@ describe("OtakudesuProvider episode operations", () => {
       const fetchFn = buildMockFetchFn();
       const episode = await provider.parseEpisode(
         "https://otakudesu.blog/episode/sample-a",
-        fetchFn
+        fetchFn,
       );
 
       expect(episode.title).toBe(
-        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia",
       );
       expect(episode.videoSources).toEqual([
         {
@@ -100,19 +103,17 @@ describe("OtakudesuProvider episode operations", () => {
       const fetchFn = buildMockFetchFn();
       const episode = await provider.parseEpisode(
         "https://otakudesu.blog/episode/sample-b",
-        fetchFn
+        fetchFn,
       );
 
       expect(episode.title).toBe(
-        "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia"
+        "Katainaka no Ossan, Kensei ni Naru Season 2 Episode 6 Subtitle Indonesia",
       );
       expect(episode.videoType).toBe("TV");
       expect(episode.genres).toEqual(["Action", "Fantasy"]);
       expect(episode.downloadLinks).toHaveLength(6);
       expect(episode.providerData).toBeDefined();
-      expect(
-        (episode.providerData?.mirrorPayloads as unknown[])
-      ).toHaveLength(5);
+      expect(episode.providerData?.mirrorPayloads as unknown[]).toHaveLength(5);
     });
   });
 
@@ -121,7 +122,7 @@ describe("OtakudesuProvider episode operations", () => {
       const fetchFn = buildMockFetchFn();
       const sources = await provider.resolveVideoSources(
         "https://otakudesu.blog/episode/sample-b",
-        fetchFn
+        fetchFn,
       );
 
       expect(sources.filter((s) => s.type === "embed")).toHaveLength(5);
@@ -140,7 +141,7 @@ describe("OtakudesuProvider episode operations", () => {
       const sources = await provider.resolveVideoSources(
         "https://otakudesu.blog/episode/sample-b",
         fetchFn,
-        episode.providerData
+        episode.providerData,
       );
 
       expect(sources.filter((s) => s.type === "embed")).toHaveLength(5);
@@ -151,7 +152,7 @@ describe("OtakudesuProvider episode operations", () => {
       const fetchFn = buildMockFetchFn({ failMirrorIndexes: [2] });
       const sources = await provider.resolveVideoSources(
         "https://otakudesu.blog/episode/sample-b",
-        fetchFn
+        fetchFn,
       );
 
       expect(sources.filter((s) => s.type === "embed")).toHaveLength(4);
@@ -163,8 +164,8 @@ describe("OtakudesuProvider episode operations", () => {
       await expect(
         provider.resolveVideoSources(
           "https://otakudesu.blog/episode/sample-b",
-          fetchFn
-        )
+          fetchFn,
+        ),
       ).rejects.toThrow(MirrorResolveError);
     });
 
@@ -173,8 +174,8 @@ describe("OtakudesuProvider episode operations", () => {
       await expect(
         provider.resolveVideoSources(
           "https://otakudesu.blog/episode/sample-b",
-          fetchFn
-        )
+          fetchFn,
+        ),
       ).rejects.toThrow(/failed to fetch nonce/i);
     });
   });

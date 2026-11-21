@@ -6,7 +6,10 @@ import { createMockS3 } from "../../utils/s3";
 import { db } from "../../utils/db";
 import { episodes } from "@repo/db";
 import { eq } from "drizzle-orm";
-import type { StreamUploadOptions, StorageProviderRegistry } from "@repo/media-service";
+import type {
+  StreamUploadOptions,
+  StorageProviderRegistry,
+} from "@repo/media-service";
 import type { Readable } from "node:stream";
 
 async function ensureSeason(id: string): Promise<string> {
@@ -38,10 +41,12 @@ async function ensureSeason(id: string): Promise<string> {
   return seasonRow.id;
 }
 
-async function insertTestEpisode(overrides?: Partial<{
-  id: string;
-  title: string;
-}>): Promise<{ id: string; title: string }> {
+async function insertTestEpisode(
+  overrides?: Partial<{
+    id: string;
+    title: string;
+  }>,
+): Promise<{ id: string; title: string }> {
   const id = overrides?.id ?? crypto.randomUUID();
   const title = overrides?.title ?? "Sources Test Episode";
   const seasonId = await ensureSeason(crypto.randomUUID());
@@ -58,16 +63,26 @@ async function insertTestEpisode(overrides?: Partial<{
   return { id, title };
 }
 
-async function insertTestVideoSource(episodeId: string, overrides?: Partial<{
+async function insertTestVideoSource(
+  episodeId: string,
+  overrides?: Partial<{
+    id: string;
+    type: string;
+    url: string;
+    label: string;
+    quality: string | null;
+  }>,
+): Promise<{
   id: string;
   type: string;
   url: string;
   label: string;
   quality: string | null;
-}>): Promise<{ id: string; type: string; url: string; label: string; quality: string | null }> {
+}> {
   const id = overrides?.id ?? crypto.randomUUID();
   const type = overrides?.type ?? "embed";
-  const url = overrides?.url ?? `https://embed.example.com/${crypto.randomUUID()}`;
+  const url =
+    overrides?.url ?? `https://embed.example.com/${crypto.randomUUID()}`;
   const label = overrides?.label ?? "Server 1";
   const quality = overrides?.quality ?? "720p";
   const now = new Date();
@@ -96,8 +111,14 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
   describe("GET /episodes/:id", () => {
     it("returns episode detail with nested videoSources array", async () => {
       const episode = await insertTestEpisode();
-      const source1 = await insertTestVideoSource(episode.id, { label: "Server 1", type: "embed" });
-      const source2 = await insertTestVideoSource(episode.id, { label: "Server 2", type: "direct" });
+      const source1 = await insertTestVideoSource(episode.id, {
+        label: "Server 1",
+        type: "embed",
+      });
+      const source2 = await insertTestVideoSource(episode.id, {
+        label: "Server 2",
+        type: "direct",
+      });
 
       const response = await request(app, {
         path: `/episodes/${episode.id}`,
@@ -108,7 +129,13 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         data: {
           id: string;
           title: string;
-          videoSources: Array<{ id: string; type: string; url: string; label: string; quality: string | null }>;
+          videoSources: Array<{
+            id: string;
+            type: string;
+            url: string;
+            label: string;
+            quality: string | null;
+          }>;
         };
       };
 
@@ -149,15 +176,26 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const body = response.body as {
         data: {
           id: string;
-          videoSources: Array<{ id: string; type: string; url: string; label: string }>;
+          videoSources: Array<{
+            id: string;
+            type: string;
+            url: string;
+            label: string;
+          }>;
         };
       };
 
-      const resolvedS3 = body.data.videoSources.find((s) => s.id === s3Source.id);
+      const resolvedS3 = body.data.videoSources.find(
+        (s) => s.id === s3Source.id,
+      );
       expect(resolvedS3).toBeDefined();
-      expect(resolvedS3?.url).toBe(`https://s3.signed.com/${s3Key}?expires=21600`);
+      expect(resolvedS3?.url).toBe(
+        `https://s3.signed.com/${s3Key}?expires=21600`,
+      );
 
-      const resolvedDirect = body.data.videoSources.find((s) => s.id === directSource.id);
+      const resolvedDirect = body.data.videoSources.find(
+        (s) => s.id === directSource.id,
+      );
       expect(resolvedDirect?.url).toBe("https://example.com/direct.mp4");
 
       // Verify raw database row was NOT modified
@@ -176,7 +214,10 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
 
       const customApp = await buildApp({ s3StorageService: mockS3Service });
       const seasonId = await ensureSeason(crypto.randomUUID());
-      const [season] = await db.select().from(seasons).where(eq(seasons.id, seasonId));
+      const [season] = await db
+        .select()
+        .from(seasons)
+        .where(eq(seasons.id, seasonId));
       const seriesId = season.seriesId;
 
       const epId = crypto.randomUUID();
@@ -218,14 +259,22 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       };
 
       const epInEpisodes = body.data.episodes.find((e) => e.id === epId);
-      const srcInEpisodes = epInEpisodes?.videoSources.find((s) => s.id === s3Source.id);
-      expect(srcInEpisodes?.url).toBe(`https://s3.signed.com/${s3Key}?expires=21600`);
+      const srcInEpisodes = epInEpisodes?.videoSources.find(
+        (s) => s.id === s3Source.id,
+      );
+      expect(srcInEpisodes?.url).toBe(
+        `https://s3.signed.com/${s3Key}?expires=21600`,
+      );
 
       const epInSeasons = body.data.seasons
         .find((s) => s.id === seasonId)
         ?.episodes.find((e) => e.id === epId);
-      const srcInSeasons = epInSeasons?.videoSources.find((s) => s.id === s3Source.id);
-      expect(srcInSeasons?.url).toBe(`https://s3.signed.com/${s3Key}?expires=21600`);
+      const srcInSeasons = epInSeasons?.videoSources.find(
+        (s) => s.id === s3Source.id,
+      );
+      expect(srcInSeasons?.url).toBe(
+        `https://s3.signed.com/${s3Key}?expires=21600`,
+      );
 
       // Verify db key intact
       const [dbSource] = await db
@@ -243,7 +292,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
   });
@@ -273,7 +324,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
 
@@ -295,7 +348,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(503);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("S3_NOT_CONFIGURED");
     });
 
@@ -305,7 +360,8 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
           uploadUrl: `https://s3.example.com/${key}?signature=test`,
           key,
         }),
-        getPresignedPlaybackUrl: async (key: string) => `https://s3.example.com/${key}?playback=true`,
+        getPresignedPlaybackUrl: async (key: string) =>
+          `https://s3.example.com/${key}?playback=true`,
       });
 
       const customApp = await buildApp({ s3StorageService: mockS3Service });
@@ -320,9 +376,13 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(200);
-      const body = response.body as { data: { uploadUrl: string; key: string } };
+      const body = response.body as {
+        data: { uploadUrl: string; key: string };
+      };
       expect(body.data.uploadUrl).toContain("https://s3.example.com/episodes/");
-      expect(body.data.key).toMatch(new RegExp(`^episodes/${episode.id}/.+-movie\\.mp4$`));
+      expect(body.data.key).toMatch(
+        new RegExp(`^episodes/${episode.id}/.+-movie\\.mp4$`),
+      );
     });
   });
 
@@ -330,7 +390,11 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
     it("returns 401 when unauthenticated", async () => {
       const episode = await insertTestEpisode();
       const formData = new FormData();
-      formData.append("file", new Blob(["video bytes"], { type: "video/mp4" }), "episode.mp4");
+      formData.append(
+        "file",
+        new Blob(["video bytes"], { type: "video/mp4" }),
+        "episode.mp4",
+      );
       formData.append("label", "Direct Upload");
 
       const response = await request(app, {
@@ -346,7 +410,11 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const { accessToken } = await registerUser(app);
       const nonexistentId = crypto.randomUUID();
       const formData = new FormData();
-      formData.append("file", new Blob(["video bytes"], { type: "video/mp4" }), "episode.mp4");
+      formData.append(
+        "file",
+        new Blob(["video bytes"], { type: "video/mp4" }),
+        "episode.mp4",
+      );
       formData.append("label", "Direct Upload");
 
       const response = await request(app, {
@@ -357,7 +425,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
 
@@ -371,7 +441,11 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const { accessToken } = await registerUser(unconfiguredApp);
       const episode = await insertTestEpisode();
       const formData = new FormData();
-      formData.append("file", new Blob(["video bytes"], { type: "video/mp4" }), "episode.mp4");
+      formData.append(
+        "file",
+        new Blob(["video bytes"], { type: "video/mp4" }),
+        "episode.mp4",
+      );
       formData.append("label", "Direct Upload");
 
       const response = await request(unconfiguredApp, {
@@ -382,7 +456,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(503);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("S3_NOT_CONFIGURED");
     });
 
@@ -393,7 +469,11 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       let streamReceivedBytes = 0;
 
       const mockS3Service = createMockS3({
-        uploadStream: async (key: string, body: ReadableStream | Readable, options?: StreamUploadOptions) => {
+        uploadStream: async (
+          key: string,
+          body: ReadableStream | Readable,
+          options?: StreamUploadOptions,
+        ) => {
           uploadedKey = key;
           uploadedContentType = options?.contentType ?? "";
           uploadedStream = body;
@@ -415,7 +495,11 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const episode = await insertTestEpisode();
 
       const formData = new FormData();
-      formData.append("file", new Blob(["my video binary data"], { type: "video/mp4" }), "awesome-movie.mp4");
+      formData.append(
+        "file",
+        new Blob(["my video binary data"], { type: "video/mp4" }),
+        "awesome-movie.mp4",
+      );
       formData.append("label", "Main B2 Source");
       formData.append("quality", "1080p");
 
@@ -430,7 +514,13 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const body = response.body as {
         data: {
           id: string;
-          videoSources: Array<{ id: string; type: string; url: string; label: string; quality: string | null }>;
+          videoSources: Array<{
+            id: string;
+            type: string;
+            url: string;
+            label: string;
+            quality: string | null;
+          }>;
         };
       };
 
@@ -444,7 +534,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       expect(createdSource.url).toContain("https://s3.signed.com/episodes/");
 
       // Check S3 storage call
-      expect(uploadedKey).toMatch(new RegExp(`^episodes/${episode.id}/.+-awesome-movie\\.mp4$`));
+      expect(uploadedKey).toMatch(
+        new RegExp(`^episodes/${episode.id}/.+-awesome-movie\\.mp4$`),
+      );
       expect(uploadedContentType).toBe("video/mp4");
       expect(uploadedStream).toBeDefined();
       expect(streamReceivedBytes).toBe("my video binary data".length);
@@ -473,7 +565,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         const episode = await insertTestEpisode();
 
         // Create a blob larger than 10MB (11MB)
-        const largeBlob = new Blob([new Uint8Array(11 * 1024 * 1024)], { type: "video/mp4" });
+        const largeBlob = new Blob([new Uint8Array(11 * 1024 * 1024)], {
+          type: "video/mp4",
+        });
         const formData = new FormData();
         formData.append("file", largeBlob, "large-movie.mp4");
         formData.append("label", "Oversized Source");
@@ -486,10 +580,14 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         });
 
         expect(response.status).toBe(413);
-        const body = response.body as { error: { code: string; message: string } };
+        const body = response.body as {
+          error: { code: string; message: string };
+        };
         expect(body.error).toBeDefined();
         expect(body.error.code).toBe("FILE_TOO_LARGE");
-        expect(body.error.message).toBe("File size exceeds the maximum allowed limit of 10MB");
+        expect(body.error.message).toBe(
+          "File size exceeds the maximum allowed limit of 10MB",
+        );
       } finally {
         process.env.MAX_UPLOAD_SIZE_MB = originalEnv;
       }
@@ -506,7 +604,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         const { accessToken } = await registerUser(customApp);
         const episode = await insertTestEpisode();
 
-        const largeBlob = new Blob([new Uint8Array(2 * 1024 * 1024)], { type: "video/mp4" });
+        const largeBlob = new Blob([new Uint8Array(2 * 1024 * 1024)], {
+          type: "video/mp4",
+        });
         const formData = new FormData();
         formData.append("file", largeBlob, "2mb-movie.mp4");
         formData.append("label", "Oversized Source");
@@ -519,10 +619,14 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         });
 
         expect(response.status).toBe(413);
-        const body = response.body as { error: { code: string; message: string } };
+        const body = response.body as {
+          error: { code: string; message: string };
+        };
         expect(body.error).toBeDefined();
         expect(body.error.code).toBe("FILE_TOO_LARGE");
-        expect(body.error.message).toBe("File size exceeds the maximum allowed limit of 1MB");
+        expect(body.error.message).toBe(
+          "File size exceeds the maximum allowed limit of 1MB",
+        );
       } finally {
         if (originalEnv !== undefined) {
           process.env.MAX_UPLOAD_SIZE_MB = originalEnv;
@@ -536,7 +640,11 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       let signalAborted = false;
 
       const mockS3Service = createMockS3({
-        uploadStream: async (_key: string, _body: ReadableStream | Readable, options?: StreamUploadOptions) => {
+        uploadStream: async (
+          _key: string,
+          _body: ReadableStream | Readable,
+          options?: StreamUploadOptions,
+        ) => {
           if (options?.signal) {
             if (options.signal.aborted) {
               signalAborted = true;
@@ -559,17 +667,24 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       controller.abort();
 
       const formData = new FormData();
-      formData.append("file", new Blob(["video bytes"], { type: "video/mp4" }), "movie.mp4");
+      formData.append(
+        "file",
+        new Blob(["video bytes"], { type: "video/mp4" }),
+        "movie.mp4",
+      );
       formData.append("label", "Abort Test");
 
-      const req = new Request(`http://localhost/api/episodes/${episode.id}/sources/upload`, {
-        method: "POST",
-        headers: {
-          ...authHeaders(accessToken),
+      const req = new Request(
+        `http://localhost/api/episodes/${episode.id}/sources/upload`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeaders(accessToken),
+          },
+          body: formData,
+          signal: controller.signal,
         },
-        body: formData,
-        signal: controller.signal,
-      });
+      );
 
       const response = await customApp.handle(req);
       expect(response.status).toBeDefined();
@@ -610,7 +725,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
 
@@ -624,9 +741,24 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
         headers: authHeaders(accessToken),
         body: {
           videoSources: [
-            { type: "embed", url: "https://embed.test/1080p", label: "Server 1080p", quality: "1080p" },
-            { type: "direct", url: "https://direct.test/720p.mp4", label: "Direct MP4", quality: "720p" },
-            { type: "s3", url: `episodes/${episode.id}/file.mp4`, label: "S3 Storage", quality: "1080p" },
+            {
+              type: "embed",
+              url: "https://embed.test/1080p",
+              label: "Server 1080p",
+              quality: "1080p",
+            },
+            {
+              type: "direct",
+              url: "https://direct.test/720p.mp4",
+              label: "Direct MP4",
+              quality: "720p",
+            },
+            {
+              type: "s3",
+              url: `episodes/${episode.id}/file.mp4`,
+              label: "S3 Storage",
+              quality: "1080p",
+            },
           ],
         },
       });
@@ -635,7 +767,13 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const body = response.body as {
         data: {
           id: string;
-          videoSources: Array<{ id: string; type: string; url: string; label: string; quality: string | null }>;
+          videoSources: Array<{
+            id: string;
+            type: string;
+            url: string;
+            label: string;
+            quality: string | null;
+          }>;
         };
       };
 
@@ -643,10 +781,25 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       expect(body.data.videoSources).toHaveLength(3);
       expect(body.data.videoSources).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ type: "embed", url: "https://embed.test/1080p", label: "Server 1080p", quality: "1080p" }),
-          expect.objectContaining({ type: "direct", url: "https://direct.test/720p.mp4", label: "Direct MP4", quality: "720p" }),
-          expect.objectContaining({ type: "s3", url: `episodes/${episode.id}/file.mp4`, label: "S3 Storage", quality: "1080p" }),
-        ])
+          expect.objectContaining({
+            type: "embed",
+            url: "https://embed.test/1080p",
+            label: "Server 1080p",
+            quality: "1080p",
+          }),
+          expect.objectContaining({
+            type: "direct",
+            url: "https://direct.test/720p.mp4",
+            label: "Direct MP4",
+            quality: "720p",
+          }),
+          expect.objectContaining({
+            type: "s3",
+            url: `episodes/${episode.id}/file.mp4`,
+            label: "S3 Storage",
+            quality: "1080p",
+          }),
+        ]),
       );
     });
   });
@@ -679,7 +832,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
 
@@ -696,7 +851,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("VIDEO_SOURCE_NOT_FOUND");
     });
 
@@ -714,14 +871,20 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("VIDEO_SOURCE_NOT_FOUND");
     });
 
     it("successfully updates video source label, quality, and type to/from s3", async () => {
       const { accessToken } = await registerUser(app);
       const episode = await insertTestEpisode();
-      const source = await insertTestVideoSource(episode.id, { type: "embed", label: "Old Label", quality: "480p" });
+      const source = await insertTestVideoSource(episode.id, {
+        type: "embed",
+        label: "Old Label",
+        quality: "480p",
+      });
 
       const response1 = await request(app, {
         method: "PATCH",
@@ -734,7 +897,12 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const body1 = response1.body as {
         data: {
           id: string;
-          videoSources: Array<{ id: string; type: string; label: string; quality: string | null }>;
+          videoSources: Array<{
+            id: string;
+            type: string;
+            label: string;
+            quality: string | null;
+          }>;
         };
       };
 
@@ -755,7 +923,12 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const body2 = response2.body as {
         data: {
           id: string;
-          videoSources: Array<{ id: string; type: string; label: string; quality: string | null }>;
+          videoSources: Array<{
+            id: string;
+            type: string;
+            label: string;
+            quality: string | null;
+          }>;
         };
       };
       const updated2 = body2.data.videoSources.find((s) => s.id === source.id);
@@ -789,7 +962,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_NOT_FOUND");
     });
 
@@ -805,7 +980,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("VIDEO_SOURCE_NOT_FOUND");
     });
 
@@ -822,14 +999,18 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("VIDEO_SOURCE_NOT_FOUND");
     });
 
     it("successfully deletes video source and returns updated episode without deleted source", async () => {
       const { accessToken } = await registerUser(app);
       const episode = await insertTestEpisode();
-      const s1 = await insertTestVideoSource(episode.id, { label: "To Delete" });
+      const s1 = await insertTestVideoSource(episode.id, {
+        label: "To Delete",
+      });
       const s2 = await insertTestVideoSource(episode.id, { label: "To Keep" });
 
       const response = await request(app, {
@@ -903,9 +1084,16 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
 
       expect(createSourceRes.status).toBe(200);
       const createBody = createSourceRes.body as {
-        data: { videoSources: Array<{ label: string; storageProviderId?: string | null }> };
+        data: {
+          videoSources: Array<{
+            label: string;
+            storageProviderId?: string | null;
+          }>;
+        };
       };
-      const createdSource = createBody.data.videoSources.find((s) => s.label === "1080p B2");
+      const createdSource = createBody.data.videoSources.find(
+        (s) => s.label === "1080p B2",
+      );
       expect(createdSource).toBeDefined();
       expect(createdSource?.storageProviderId).toBe(prov.id);
     });
@@ -923,7 +1111,8 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
 
       const customApp = await buildApp({
         s3StorageService: createMockS3(),
-        storageProviderRegistry: mockRegistry as unknown as StorageProviderRegistry,
+        storageProviderRegistry:
+          mockRegistry as unknown as StorageProviderRegistry,
       });
 
       const { accessToken } = await registerUser(customApp);
@@ -947,7 +1136,9 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       const prov = (provRes.body as { data: { id: string } }).data;
 
       const fileContent = new Uint8Array([0, 1, 2, 3, 4]);
-      const file = new File([fileContent], "video-test.mp4", { type: "video/mp4" });
+      const file = new File([fileContent], "video-test.mp4", {
+        type: "video/mp4",
+      });
       const formData = new FormData();
       formData.append("file", file);
       formData.append("label", "Uploaded R2 Video");
@@ -955,18 +1146,30 @@ describe("Video Sources API (CRUD & Episode Detail)", () => {
       formData.append("storageProviderId", prov.id);
 
       const uploadRes = await customApp.handle(
-        new Request(`http://localhost/api/episodes/${episode.id}/sources/upload`, {
-          method: "POST",
-          headers: authHeaders(accessToken),
-          body: formData,
-        })
+        new Request(
+          `http://localhost/api/episodes/${episode.id}/sources/upload`,
+          {
+            method: "POST",
+            headers: authHeaders(accessToken),
+            body: formData,
+          },
+        ),
       );
 
       expect(uploadRes.status).toBe(200);
       const uploadBody = (await uploadRes.json()) as {
-        data: { id: string; videoSources: Array<{ id: string; label: string; storageProviderId?: string | null }> };
+        data: {
+          id: string;
+          videoSources: Array<{
+            id: string;
+            label: string;
+            storageProviderId?: string | null;
+          }>;
+        };
       };
-      const createdSource = uploadBody.data.videoSources.find((s) => s.label === "Uploaded R2 Video");
+      const createdSource = uploadBody.data.videoSources.find(
+        (s) => s.label === "Uploaded R2 Video",
+      );
       expect(createdSource).toBeDefined();
       expect(createdSource?.storageProviderId).toBe(prov.id);
 

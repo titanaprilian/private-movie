@@ -21,8 +21,20 @@ const mockSeriesResponse = {
       s3SourceCount: 2,
       s3SizeBytes: 6442450944,
       seasons: [
-        { id: 'season-1', seasonNumber: 1, title: 'Season 1', s3SourceCount: 1, s3SizeBytes: 100 },
-        { id: 'season-2', seasonNumber: 2, title: 'Season 2', s3SourceCount: 1, s3SizeBytes: 200 },
+        {
+          id: 'season-1',
+          seasonNumber: 1,
+          title: 'Season 1',
+          s3SourceCount: 1,
+          s3SizeBytes: 100,
+        },
+        {
+          id: 'season-2',
+          seasonNumber: 2,
+          title: 'Season 2',
+          s3SourceCount: 1,
+          s3SizeBytes: 200,
+        },
       ],
     },
   ],
@@ -31,40 +43,101 @@ const mockSeriesResponse = {
 
 const mockBackendItems = [
   {
-    key: 's1e1.mp4', filename: 's1e1.mp4', sizeBytes: 100,
-    lastModified: '2026-09-01T10:00:00.000Z', status: 'linked' as const,
-    videoSourceId: 'src-1', label: 'Main', quality: '1080p',
-    episodeId: 'ep-1', episodeTitle: 'Ep One', episodeOrder: 1,
-    seasonId: 'season-1', seasonNumber: 1, seasonTitle: 'Season 1',
-    seriesId: 'series-1', seriesTitle: 'Cyberpunk Series', isLoneSource: false,
+    key: 's1e1.mp4',
+    filename: 's1e1.mp4',
+    sizeBytes: 100,
+    lastModified: '2026-09-01T10:00:00.000Z',
+    status: 'linked' as const,
+    videoSourceId: 'src-1',
+    label: 'Main',
+    quality: '1080p',
+    episodeId: 'ep-1',
+    episodeTitle: 'Ep One',
+    episodeOrder: 1,
+    seasonId: 'season-1',
+    seasonNumber: 1,
+    seasonTitle: 'Season 1',
+    seriesId: 'series-1',
+    seriesTitle: 'Cyberpunk Series',
+    isLoneSource: false,
   },
   {
-    key: 's2e1.mp4', filename: 's2e1.mp4', sizeBytes: 200,
-    lastModified: '2026-09-02T10:00:00.000Z', status: 'linked' as const,
-    videoSourceId: 'src-2', label: 'Main', quality: '1080p',
-    episodeId: 'ep-2', episodeTitle: 'Ep Two', episodeOrder: 1,
-    seasonId: 'season-2', seasonNumber: 2, seasonTitle: 'Season 2',
-    seriesId: 'series-1', seriesTitle: 'Cyberpunk Series', isLoneSource: false,
+    key: 's2e1.mp4',
+    filename: 's2e1.mp4',
+    sizeBytes: 200,
+    lastModified: '2026-09-02T10:00:00.000Z',
+    status: 'linked' as const,
+    videoSourceId: 'src-2',
+    label: 'Main',
+    quality: '1080p',
+    episodeId: 'ep-2',
+    episodeTitle: 'Ep Two',
+    episodeOrder: 1,
+    seasonId: 'season-2',
+    seasonNumber: 2,
+    seasonTitle: 'Season 2',
+    seriesId: 'series-1',
+    seriesTitle: 'Cyberpunk Series',
+    isLoneSource: false,
   },
 ];
 
 function mockFetch() {
-  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    if (url.includes('/api/storage/providers')) {
-      return new Response(JSON.stringify({ data: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  vi.spyOn(globalThis, 'fetch').mockImplementation(
+    async (input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      if (url.includes('/api/storage/providers')) {
+        return new Response(JSON.stringify({ data: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/api/storage/metrics')) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              totalBytes: 300,
+              limitBytes: 1000,
+              percentUsed: 30,
+              totalCount: 2,
+              linkedCount: 2,
+              orphanCount: 0,
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (url.includes('/api/storage/series')) {
+        return new Response(JSON.stringify({ data: mockSeriesResponse }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/api/storage/resources')) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              items: mockBackendItems,
+              total: 2,
+              page: 1,
+              limit: 25,
+              totalPages: 1,
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response(JSON.stringify({ data: { success: true } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-    if (url.includes('/api/storage/metrics')) {
-      return new Response(JSON.stringify({ data: { totalBytes: 300, limitBytes: 1000, percentUsed: 30, totalCount: 2, linkedCount: 2, orphanCount: 0 } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }
-    if (url.includes('/api/storage/series')) {
-      return new Response(JSON.stringify({ data: mockSeriesResponse }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }
-    if (url.includes('/api/storage/resources')) {
-      return new Response(JSON.stringify({ data: { items: mockBackendItems, total: 2, page: 1, limit: 25, totalPages: 1 } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }
-    return new Response(JSON.stringify({ data: { success: true } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  });
+  );
 }
 
 describe('Standalone series storage detail view', () => {
@@ -95,10 +168,14 @@ describe('Standalone series storage detail view', () => {
   it('renders series title, season chips bar, and scoped resource table', async () => {
     renderWithProviders(<StorageSeriesDetailView seriesId="series-1" />);
     await screen.findByTestId('series-drilldown-view');
-    expect(screen.getByTestId('drilldown-series-title')).toHaveTextContent('Cyberpunk Series');
+    expect(screen.getByTestId('drilldown-series-title')).toHaveTextContent(
+      'Cyberpunk Series'
+    );
     expect(screen.getByTestId('season-chip-bar')).toBeInTheDocument();
     expect(screen.getByTestId('season-chip-all')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getAllByText('s1e1.mp4').length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText('s1e1.mp4').length).toBeGreaterThan(0)
+    );
   });
 
   it('retains the rescan action on the detail view', async () => {
@@ -113,15 +190,20 @@ describe('Standalone series storage detail view', () => {
     );
     await screen.findByTestId('series-drilldown-view');
     await waitFor(() => {
-      const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((c) => String(c[0]));
+      const calls = (
+        globalThis.fetch as unknown as { mock: { calls: unknown[][] } }
+      ).mock.calls.map((c) => String(c[0]));
       expect(
         calls.some(
-          (u) => u.includes('/api/storage/series') && u.includes('providerId=prov-1')
+          (u) =>
+            u.includes('/api/storage/series') && u.includes('providerId=prov-1')
         )
       ).toBe(true);
       expect(
         calls.some(
-          (u) => u.includes('/api/storage/resources') && u.includes('providerId=prov-1')
+          (u) =>
+            u.includes('/api/storage/resources') &&
+            u.includes('providerId=prov-1')
         )
       ).toBe(true);
     });
@@ -129,8 +211,12 @@ describe('Standalone series storage detail view', () => {
 
   it('shows a not-found state for an unknown series id', async () => {
     renderWithProviders(<StorageSeriesDetailView seriesId="nope" />);
-    expect(await screen.findByTestId('storage-detail-not-found')).toBeInTheDocument();
-    expect(screen.queryByTestId('series-drilldown-view')).not.toBeInTheDocument();
+    expect(
+      await screen.findByTestId('storage-detail-not-found')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('series-drilldown-view')
+    ).not.toBeInTheDocument();
   });
 
   it('retains edit-metadata and batch-delete file actions in the detail table', async () => {
@@ -138,10 +224,14 @@ describe('Standalone series storage detail view', () => {
       <StorageSeriesDetailView seriesId="series-1" />
     );
     await screen.findByTestId('series-drilldown-view');
-    await waitFor(() => expect(screen.getAllByText('s1e1.mp4').length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText('s1e1.mp4').length).toBeGreaterThan(0)
+    );
 
     // Edit source metadata for a linked video file
-    await user.click(screen.getByRole('button', { name: 'Actions for s1e1.mp4' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Actions for s1e1.mp4' })
+    );
     const menu = await screen.findByRole('menu');
     expect(
       within(menu).getByRole('menuitem', { name: 'Edit metadata' })

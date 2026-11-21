@@ -56,7 +56,10 @@ export function BulkScrapeStepSource({
             onValueChange={onSourceTypeChange}
             disabled={isFetchingPreview}
           >
-            <ChunkySelectTrigger id="bulk-scrape-source-type" aria-label="Source Type">
+            <ChunkySelectTrigger
+              id="bulk-scrape-source-type"
+              aria-label="Source Type"
+            >
               <ChunkySelectValue placeholder="Select source type" />
             </ChunkySelectTrigger>
             <ChunkySelectContent>
@@ -73,13 +76,19 @@ export function BulkScrapeStepSource({
             Target Season
           </label>
           <ChunkySelect
-            value={selectedSeasonId || (seasonOptions.length === 0 ? 'empty' : undefined)}
+            value={
+              selectedSeasonId ||
+              (seasonOptions.length === 0 ? 'empty' : undefined)
+            }
             onValueChange={(val) => {
               if (val !== 'empty') onSelectSeason(val);
             }}
             disabled={isFetchingPreview || seasonOptions.length === 0}
           >
-            <ChunkySelectTrigger id="bulk-scrape-target-season" aria-label="Target Season">
+            <ChunkySelectTrigger
+              id="bulk-scrape-target-season"
+              aria-label="Target Season"
+            >
               <ChunkySelectValue placeholder="Select target season" />
             </ChunkySelectTrigger>
             <ChunkySelectContent>
@@ -90,7 +99,9 @@ export function BulkScrapeStepSource({
                   </ChunkySelectItem>
                 ))
               ) : (
-                <ChunkySelectItem value="empty">-- No Seasons --</ChunkySelectItem>
+                <ChunkySelectItem value="empty">
+                  -- No Seasons --
+                </ChunkySelectItem>
               )}
             </ChunkySelectContent>
           </ChunkySelect>

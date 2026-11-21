@@ -2,13 +2,19 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { DropResult } from '@hello-pangea/dnd';
+import { updateEpisodeOrders, type SeriesDetails } from '../../../api';
 import {
-  updateEpisodeOrders,
-  type SeriesDetails,
-} from '../../../api';
-import { buildCrossSeasonMove, buildBulkCrossSeasonMove } from '../../../seasons';
-import type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../../types';
-export type { SeriesDetailEpisode, UseSeriesDetailDndOptions } from '../../types';
+  buildCrossSeasonMove,
+  buildBulkCrossSeasonMove,
+} from '../../../seasons';
+import type {
+  SeriesDetailEpisode,
+  UseSeriesDetailDndOptions,
+} from '../../types';
+export type {
+  SeriesDetailEpisode,
+  UseSeriesDetailDndOptions,
+} from '../../types';
 
 const SEASON_TAB_PREFIX = 'season-tab-';
 
@@ -163,7 +169,9 @@ export function useSeriesDetailDnd({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['series', seriesId] });
         onBulkMoveSuccess();
-        toast.success(`Moved ${move.orders.filter((o) => o.seasonId).length} episodes`);
+        toast.success(
+          `Moved ${move.orders.filter((o) => o.seasonId).length} episodes`
+        );
       },
       onError: (error) => {
         setLocalEpisodes(previousEpisodes);

@@ -45,7 +45,7 @@ describe("Ad suppression proxy no-op", () => {
       });
     });
     const response = await app.handle(
-      new Request("http://localhost:3000/embed/abc123")
+      new Request("http://localhost:3000/embed/abc123"),
     );
     expect(response.status).toBe(200);
     const html = await response.text();

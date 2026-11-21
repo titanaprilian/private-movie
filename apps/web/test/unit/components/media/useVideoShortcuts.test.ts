@@ -24,7 +24,10 @@ describe('useVideoShortcuts', () => {
   it('invokes play/pause on Space and k/K, preventing default scroll', () => {
     const h = setup();
     // fireEvent returns false when preventDefault() was called on a cancelable event
-    const spacePrevented = fireEvent.keyDown(document, { key: ' ', cancelable: true });
+    const spacePrevented = fireEvent.keyDown(document, {
+      key: ' ',
+      cancelable: true,
+    });
     expect(spacePrevented).toBe(false);
     expect(h.onTogglePlay).toHaveBeenCalledTimes(1);
 
@@ -53,11 +56,17 @@ describe('useVideoShortcuts', () => {
 
   it('adjusts volume on ArrowUp/ArrowDown and prevents page scrolling', () => {
     const h = setup();
-    const upPrevented = fireEvent.keyDown(document, { key: 'ArrowUp', cancelable: true });
+    const upPrevented = fireEvent.keyDown(document, {
+      key: 'ArrowUp',
+      cancelable: true,
+    });
     expect(h.onAdjustVolume).toHaveBeenLastCalledWith(0.1);
     expect(upPrevented).toBe(false);
 
-    const downPrevented = fireEvent.keyDown(document, { key: 'ArrowDown', cancelable: true });
+    const downPrevented = fireEvent.keyDown(document, {
+      key: 'ArrowDown',
+      cancelable: true,
+    });
     expect(h.onAdjustVolume).toHaveBeenLastCalledWith(-0.1);
     expect(downPrevented).toBe(false);
   });
@@ -79,35 +88,55 @@ describe('useVideoShortcuts', () => {
 
     const input = document.createElement('input');
     document.body.appendChild(input);
-    Object.defineProperty(document, 'activeElement', { value: input, configurable: true });
+    Object.defineProperty(document, 'activeElement', {
+      value: input,
+      configurable: true,
+    });
     press('k');
     press('f');
     expect(h.onTogglePlay).not.toHaveBeenCalled();
     expect(h.onToggleFullscreen).not.toHaveBeenCalled();
 
     const textarea = document.createElement('textarea');
-    Object.defineProperty(document, 'activeElement', { value: textarea, configurable: true });
+    Object.defineProperty(document, 'activeElement', {
+      value: textarea,
+      configurable: true,
+    });
     press('k');
     expect(h.onTogglePlay).not.toHaveBeenCalled();
 
     const select = document.createElement('select');
-    Object.defineProperty(document, 'activeElement', { value: select, configurable: true });
+    Object.defineProperty(document, 'activeElement', {
+      value: select,
+      configurable: true,
+    });
     press('m');
     expect(h.onToggleMute).not.toHaveBeenCalled();
 
     const editable = document.createElement('div');
-    Object.defineProperty(editable, 'isContentEditable', { value: true, configurable: true });
-    Object.defineProperty(document, 'activeElement', { value: editable, configurable: true });
+    Object.defineProperty(editable, 'isContentEditable', {
+      value: true,
+      configurable: true,
+    });
+    Object.defineProperty(document, 'activeElement', {
+      value: editable,
+      configurable: true,
+    });
     press('l');
     expect(h.onSeekRelative).not.toHaveBeenCalled();
 
-    Object.defineProperty(document, 'activeElement', { value: document.body, configurable: true });
+    Object.defineProperty(document, 'activeElement', {
+      value: document.body,
+      configurable: true,
+    });
     input.remove();
   });
 
   it('cleans up the keydown listener on unmount', () => {
     const removeSpy = vi.spyOn(document, 'removeEventListener');
-    const { unmount } = renderHook(() => useVideoShortcuts({ onTogglePlay: vi.fn() }));
+    const { unmount } = renderHook(() =>
+      useVideoShortcuts({ onTogglePlay: vi.fn() })
+    );
     unmount();
     expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
     removeSpy.mockRestore();

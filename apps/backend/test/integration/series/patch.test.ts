@@ -5,12 +5,14 @@ import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
 
-async function insertTestSeries(overrides?: Partial<{
-  id: string;
-  title: string;
-  description: string | null;
-  posterUrl: string | null;
-}>): Promise<{
+async function insertTestSeries(
+  overrides?: Partial<{
+    id: string;
+    title: string;
+    description: string | null;
+    posterUrl: string | null;
+  }>,
+): Promise<{
   id: string;
   title: string;
   description: string | null;
@@ -19,7 +21,8 @@ async function insertTestSeries(overrides?: Partial<{
   const id = overrides?.id ?? crypto.randomUUID();
   const title = overrides?.title ?? "Original Series Title";
   const description = overrides?.description ?? "Original Description";
-  const posterUrl = overrides?.posterUrl ?? "https://example.com/original-poster.jpg";
+  const posterUrl =
+    overrides?.posterUrl ?? "https://example.com/original-poster.jpg";
   const now = new Date();
 
   await db.insert(series).values({
@@ -54,7 +57,9 @@ describe("PATCH /series/:id", () => {
       });
 
       expect(response.status).toBe(401);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe("UNAUTHORIZED");
     });
@@ -75,7 +80,7 @@ describe("PATCH /series/:id", () => {
 
       const expiredToken = signTestToken(
         { sub: "some-user-id" },
-        { expiresInSeconds: -3600 }
+        { expiresInSeconds: -3600 },
       );
       const expiredTokenResponse = await request(app, {
         method: "PATCH",
@@ -105,7 +110,9 @@ describe("PATCH /series/:id", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe("SERIES_NOT_FOUND");
     });
@@ -140,7 +147,10 @@ describe("PATCH /series/:id", () => {
       expect(body.data.description).toBe(seriesRow.description);
       expect(body.data.posterUrl).toBe(seriesRow.posterUrl);
 
-      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      const rows = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, seriesRow.id));
       expect(rows).toHaveLength(1);
       expect(rows[0].title).toBe("Updated Series Title Only");
       expect(rows[0].description).toBe(seriesRow.description);
@@ -168,7 +178,10 @@ describe("PATCH /series/:id", () => {
       expect(body.data.title).toBe(seriesRow.title);
       expect(body.data.description).toBe(newDescription);
 
-      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      const rows = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, seriesRow.id));
       expect(rows[0].description).toBe(newDescription);
       expect(rows[0].title).toBe(seriesRow.title);
     });
@@ -194,7 +207,10 @@ describe("PATCH /series/:id", () => {
 
       expect(body.data.posterUrl).toBe(newPosterUrl);
 
-      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      const rows = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, seriesRow.id));
       expect(rows[0].posterUrl).toBe(newPosterUrl);
     });
 
@@ -218,7 +234,10 @@ describe("PATCH /series/:id", () => {
 
       expect(body.data.isFeatured).toBe(true);
 
-      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      const rows = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, seriesRow.id));
       expect(rows[0].isFeatured).toBe(true);
     });
 
@@ -256,7 +275,10 @@ describe("PATCH /series/:id", () => {
       expect(body.data.posterUrl).toBe(patchPayload.posterUrl);
       expect(body.data.isFeatured).toBe(true);
 
-      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      const rows = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, seriesRow.id));
       expect(rows[0].title).toBe(patchPayload.title);
       expect(rows[0].description).toBe(patchPayload.description);
       expect(rows[0].posterUrl).toBe(patchPayload.posterUrl);
@@ -284,7 +306,10 @@ describe("PATCH /series/:id", () => {
 
       expect(body.data.logoUrl).toBe(newLogoUrl);
 
-      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      const rows = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, seriesRow.id));
       expect(rows).toHaveLength(1);
       expect(rows[0].logoUrl).toBe(newLogoUrl);
     });
@@ -315,7 +340,10 @@ describe("PATCH /series/:id", () => {
 
       expect(body.data.logoUrl).toBeNull();
 
-      const rows = await db.select().from(series).where(eq(series.id, seriesRow.id));
+      const rows = await db
+        .select()
+        .from(series)
+        .where(eq(series.id, seriesRow.id));
       expect(rows).toHaveLength(1);
       expect(rows[0].logoUrl).toBeNull();
     });

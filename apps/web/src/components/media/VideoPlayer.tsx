@@ -72,12 +72,15 @@ export function VideoPlayer({
   const [isDesktopSettingsOpen, setIsDesktopSettingsOpen] = useState(false);
   // Either popover (mobile or desktop bar instance) suppresses auto-hide.
   const isSettingsOpen = isMobileSettingsOpen || isDesktopSettingsOpen;
-  const portalContainer = isFullscreen || isPseudoFullscreen ? containerRef.current : undefined;
+  const portalContainer =
+    isFullscreen || isPseudoFullscreen ? containerRef.current : undefined;
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [selectedQualityId, setSelectedQualityId] = useState<string | undefined>(
-    qualities && qualities.length > 0 ? qualities[0].id : undefined,
+  const [selectedQualityId, setSelectedQualityId] = useState<
+    string | undefined
+  >(qualities && qualities.length > 0 ? qualities[0].id : undefined);
+  const [selectedSubtitleId, setSelectedSubtitleId] = useState<string | null>(
+    null
   );
-  const [selectedSubtitleId, setSelectedSubtitleId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [cancelledNextEpisode, setCancelledNextEpisode] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -199,7 +202,10 @@ export function VideoPlayer({
   const handleSeekKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!videoRef.current) return;
     if (e.key === 'ArrowRight') {
-      const newTime = Math.min(videoRef.current.duration || 100, currentTime + 5);
+      const newTime = Math.min(
+        videoRef.current.duration || 100,
+        currentTime + 5
+      );
       setCurrentTime(newTime);
       videoRef.current.currentTime = newTime;
     } else if (e.key === 'ArrowLeft') {
@@ -298,7 +304,10 @@ export function VideoPlayer({
     // Read from the element, not React state: state can lag behind seeks
     // made through the scrubber or consecutive rapid taps.
     const max = videoRef.current.duration || 100;
-    const next = Math.min(Math.max(0, videoRef.current.currentTime + seconds), max);
+    const next = Math.min(
+      Math.max(0, videoRef.current.currentTime + seconds),
+      max
+    );
     setCurrentTime(next);
     videoRef.current.currentTime = next;
   }, []);
@@ -322,7 +331,7 @@ export function VideoPlayer({
       videoRef.current.volume = next;
       videoRef.current.muted = next === 0;
     },
-    [volume],
+    [volume]
   );
 
   useVideoShortcuts({
@@ -338,7 +347,8 @@ export function VideoPlayer({
       setIsFullscreen(Boolean(document.fullscreenElement));
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    return () =>
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   const wakeControls = useCallback(() => {
@@ -374,14 +384,11 @@ export function VideoPlayer({
       target.closest('[data-testid="video-settings-popover"]') !== null ||
       target.closest('[role="dialog"]') !== null);
 
-  const toggleControlsForTouch = useCallback(
-    (target: EventTarget | null) => {
-      if (isInsideControlBar(target)) return;
-      lastTouchRef.current = Date.now();
-      setShowControls((prev) => !prev);
-    },
-    [],
-  );
+  const toggleControlsForTouch = useCallback((target: EventTarget | null) => {
+    if (isInsideControlBar(target)) return;
+    lastTouchRef.current = Date.now();
+    setShowControls((prev) => !prev);
+  }, []);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (isSettingsOpen && !isInsideControlBar(e.target)) {
@@ -395,7 +402,8 @@ export function VideoPlayer({
     // must be checked before the single-tap visibility toggle.
     const touch = e.touches?.[0] as unknown as { clientX?: number } | undefined;
     const clientX =
-      touch?.clientX ?? (e.target instanceof Element ? e.target.getBoundingClientRect().left : 0);
+      touch?.clientX ??
+      (e.target instanceof Element ? e.target.getBoundingClientRect().left : 0);
     const width = containerRef.current?.getBoundingClientRect().width ?? 0;
     const pointerType =
       (e as unknown as { pointerType?: string }).pointerType ?? 'touch';
@@ -449,8 +457,8 @@ export function VideoPlayer({
       e.nativeEvent as globalThis.MouseEvent & { pointerType?: string }
     ).pointerType;
     const pointerType =
-      (e as React.MouseEvent<HTMLDivElement> & { pointerType?: string }).pointerType ??
-      nativePointerType;
+      (e as React.MouseEvent<HTMLDivElement> & { pointerType?: string })
+        .pointerType ?? nativePointerType;
     gestures.handleDoubleClick(pointerType ?? 'mouse');
   };
 
@@ -470,7 +478,12 @@ export function VideoPlayer({
       onTouchStart={handleTouchStart}
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
-      onMouseLeave={() => isPlaying && !isSettingsOpen && !isShortcutsOpen && setShowControls(false)}
+      onMouseLeave={() =>
+        isPlaying &&
+        !isSettingsOpen &&
+        !isShortcutsOpen &&
+        setShowControls(false)
+      }
       className={`relative aspect-video w-full @container bg-black overflow-hidden group select-none flex flex-col justify-end ${
         isPseudoFullscreen
           ? 'fixed inset-0 z-50 rounded-none border-0'
@@ -611,7 +624,11 @@ export function VideoPlayer({
             <button
               type="button"
               onClick={toggleFullscreen}
-              aria-label={isFullscreen || isPseudoFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+              aria-label={
+                isFullscreen || isPseudoFullscreen
+                  ? 'Exit Fullscreen'
+                  : 'Fullscreen'
+              }
               className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
             >
               {isFullscreen || isPseudoFullscreen ? (
@@ -628,7 +645,9 @@ export function VideoPlayer({
       <div
         data-testid="video-control-bar"
         className={`hidden @md:flex absolute inset-x-3 sm:inset-x-6 bottom-3 sm:bottom-6 z-20 rounded-full border-2 border-[var(--border-strong)]/80 bg-zinc-950/85 backdrop-blur-md px-3 sm:px-5 py-2 sm:py-2.5 shadow-2xl transition-all duration-300 flex-col gap-2 min-w-0 ${
-          showControls || !isPlaying || isSettingsOpen || isShortcutsOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          showControls || !isPlaying || isSettingsOpen || isShortcutsOpen
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-2 pointer-events-none'
         }`}
       >
         {/* Chunky 3-Layer Progress Scrubber Bar */}
@@ -689,7 +708,10 @@ export function VideoPlayer({
                 className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX data-testid="volume-icon-muted" className="w-4 h-4" />
+                  <VolumeX
+                    data-testid="volume-icon-muted"
+                    className="w-4 h-4"
+                  />
                 ) : volume <= 0.5 ? (
                   <Volume1 data-testid="volume-icon-low" className="w-4 h-4" />
                 ) : (
@@ -742,7 +764,11 @@ export function VideoPlayer({
             <button
               type="button"
               onClick={toggleFullscreen}
-              aria-label={isFullscreen || isPseudoFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+              aria-label={
+                isFullscreen || isPseudoFullscreen
+                  ? 'Exit Fullscreen'
+                  : 'Fullscreen'
+              }
               className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
             >
               {isFullscreen || isPseudoFullscreen ? (

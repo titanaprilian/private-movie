@@ -1,11 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import {
-  updateSeries,
-  deleteSeries,
-  type SeriesItem,
-} from '../../../api';
+import { updateSeries, deleteSeries, type SeriesItem } from '../../../api';
 import type {
   SeriesListQueryData,
   UseSeriesGridMutationsOptions,
@@ -79,10 +75,10 @@ export function useSeriesGridMutations({
           return {
             ...old,
             series: old.series.map((item) =>
-              item.id === id ? { ...item, isFeatured: featured } : item,
+              item.id === id ? { ...item, isFeatured: featured } : item
             ),
           };
-        },
+        }
       );
       return { previous };
     },
@@ -123,10 +119,10 @@ export function useSeriesGridMutations({
             series: old.series.map((item) =>
               item.id === id
                 ? { ...item, isOngoingHighlighted: highlighted }
-                : item,
+                : item
             ),
           };
-        },
+        }
       );
       return { previous };
     },

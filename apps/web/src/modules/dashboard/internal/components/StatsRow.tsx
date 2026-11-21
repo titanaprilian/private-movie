@@ -1,14 +1,22 @@
 import { Link } from '@tanstack/react-router';
 import { Clapperboard, Film, HardDrive, LayoutGrid } from 'lucide-react';
 import { StatCard } from './StatCard';
-import { formatGb, formatSeriesFooter, formatStorageValue, isStorageTracked } from '../formatters';
+import {
+  formatGb,
+  formatSeriesFooter,
+  formatStorageValue,
+  isStorageTracked,
+} from '../formatters';
 import type { StatsRowProps } from '../types';
 
 export function StatsRow({ catalog, storage }: StatsRowProps) {
   const tracked = isStorageTracked(storage ?? undefined);
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="stats-row">
+    <div
+      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      data-testid="stats-row"
+    >
       <StatCard
         testId="kpi-total-series"
         label="Total series"
@@ -25,10 +33,19 @@ export function StatsRow({ catalog, storage }: StatsRowProps) {
         footer={
           catalog ? (
             <span data-testid="kpi-series-footer">
-              <span data-testid="kpi-ongoing-badge">{catalog.ongoingSeriesCount} ongoing</span>
+              <span data-testid="kpi-ongoing-badge">
+                {catalog.ongoingSeriesCount} ongoing
+              </span>
               {' · '}
-              <span data-testid="kpi-featured-badge">{catalog.featuredSeriesCount} featured</span>
-              <span className="sr-only">{formatSeriesFooter(catalog.ongoingSeriesCount, catalog.featuredSeriesCount)}</span>
+              <span data-testid="kpi-featured-badge">
+                {catalog.featuredSeriesCount} featured
+              </span>
+              <span className="sr-only">
+                {formatSeriesFooter(
+                  catalog.ongoingSeriesCount,
+                  catalog.featuredSeriesCount
+                )}
+              </span>
             </span>
           ) : undefined
         }
@@ -49,7 +66,8 @@ export function StatsRow({ catalog, storage }: StatsRowProps) {
         footer={
           catalog ? (
             <span data-testid="kpi-episodes-footer">
-              Across {catalog.totalSeries} {catalog.totalSeries === 1 ? 'series' : 'series'}
+              Across {catalog.totalSeries}{' '}
+              {catalog.totalSeries === 1 ? 'series' : 'series'}
             </span>
           ) : undefined
         }
@@ -95,7 +113,8 @@ export function StatsRow({ catalog, storage }: StatsRowProps) {
           footer={
             tracked && storage ? (
               <span data-testid="kpi-storage-percent">
-                of {formatGb(storage.totalLimitBytes)} used ({storage.percentUsed.toFixed(1)}%)
+                of {formatGb(storage.totalLimitBytes)} used (
+                {storage.percentUsed.toFixed(1)}%)
               </span>
             ) : undefined
           }

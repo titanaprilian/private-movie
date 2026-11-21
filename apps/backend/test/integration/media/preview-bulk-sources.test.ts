@@ -8,15 +8,18 @@ import { registerUser, authHeaders } from "../../utils/auth";
 import { db } from "../../utils/db";
 
 const sampleOneSeasonHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
-  "utf8"
+  resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-one-season.html",
+  ),
+  "utf8",
 );
 const sampleDramulaHtml = readFileSync(
   resolve(
     import.meta.dirname,
-    "../../../../../packages/media-scraper/test/fixtures/episodes/sample-dramula.html"
+    "../../../../../packages/media-scraper/test/fixtures/episodes/sample-dramula.html",
   ),
-  "utf8"
+  "utf8",
 );
 
 describe("POST /series/:id/preview-bulk-sources", () => {
@@ -46,7 +49,10 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     headers = authHeaders(user.accessToken);
   });
 
-  async function createSeriesWithEpisodes(title: string, episodeOrders: number[]) {
+  async function createSeriesWithEpisodes(
+    title: string,
+    episodeOrders: number[],
+  ) {
     const seriesId = crypto.randomUUID();
     const now = new Date();
     await db.insert(series).values({
@@ -67,7 +73,8 @@ describe("POST /series/:id/preview-bulk-sources", () => {
       updatedAt: now,
     });
 
-    const createdEpisodes: Array<{ id: string; order: number; title: string }> = [];
+    const createdEpisodes: Array<{ id: string; order: number; title: string }> =
+      [];
     for (const order of episodeOrders) {
       const epId = crypto.randomUUID();
       const epTitle = `Episode ${order}`;
@@ -118,7 +125,7 @@ describe("POST /series/:id/preview-bulk-sources", () => {
   it("previews bulk scrape, applies offset 0, matches by order, and returns local episode list", async () => {
     const { seriesId, episodes: createdEps } = await createSeriesWithEpisodes(
       "Grand Blue Season 3",
-      [1, 2, 3, 4, 5, 6, 7]
+      [1, 2, 3, 4, 5, 6, 7],
     );
 
     const sourceUrl = "https://otakudesu.blog/anime/grand-blue-s3-sub-indo/";
@@ -162,7 +169,9 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     expect(body.data.localEpisodes[0]?.hasSources).toBe(false);
 
     // Verify Ep 1 matching
-    const scrapedEp1 = body.data.scrapedEpisodes.find((e) => e.episodeNumber === 1);
+    const scrapedEp1 = body.data.scrapedEpisodes.find(
+      (e) => e.episodeNumber === 1,
+    );
     const localEp1 = createdEps.find((e) => e.order === 1);
     expect(scrapedEp1).toBeDefined();
     expect(scrapedEp1?.calculatedOrder).toBe(1);
@@ -175,7 +184,7 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     // DB has local episodes starting at order 13 (Season 2 offset by 12)
     const { seriesId, episodes: createdEps } = await createSeriesWithEpisodes(
       "Grand Blue S2 Continuous",
-      [13, 14, 15, 16, 17, 18, 19]
+      [13, 14, 15, 16, 17, 18, 19],
     );
 
     const sourceUrl = "https://otakudesu.blog/anime/grand-blue-s3-sub-indo/";
@@ -202,7 +211,9 @@ describe("POST /series/:id/preview-bulk-sources", () => {
       };
     };
 
-    const scrapedEp1 = body.data.scrapedEpisodes.find((e) => e.episodeNumber === 1);
+    const scrapedEp1 = body.data.scrapedEpisodes.find(
+      (e) => e.episodeNumber === 1,
+    );
     const localEp13 = createdEps.find((e) => e.order === 13);
     expect(scrapedEp1?.calculatedOrder).toBe(13);
     expect(scrapedEp1?.matchedLocalEpisodeId).toBe(localEp13?.id);
@@ -210,7 +221,10 @@ describe("POST /series/:id/preview-bulk-sources", () => {
   });
 
   it("handles decimal episodes (7.5) and unmatched IDs by setting matchStatus: unmatched and matchedLocalEpisodeId: null", async () => {
-    const { seriesId } = await createSeriesWithEpisodes("Decimal Series", [1, 2]);
+    const { seriesId } = await createSeriesWithEpisodes(
+      "Decimal Series",
+      [1, 2],
+    );
 
     const customHtml = `
       <div id="venkonten">
@@ -260,13 +274,17 @@ describe("POST /series/:id/preview-bulk-sources", () => {
       };
     };
 
-    const decimalEp = body.data.scrapedEpisodes.find((e) => e.episodeNumber === 7.5);
+    const decimalEp = body.data.scrapedEpisodes.find(
+      (e) => e.episodeNumber === 7.5,
+    );
     expect(decimalEp).toBeDefined();
     expect(decimalEp?.calculatedOrder).toBeNull();
     expect(decimalEp?.matchedLocalEpisodeId).toBeNull();
     expect(decimalEp?.matchStatus).toBe("unmatched");
 
-    const unmatchedEp = body.data.scrapedEpisodes.find((e) => e.episodeNumber === 99);
+    const unmatchedEp = body.data.scrapedEpisodes.find(
+      (e) => e.episodeNumber === 99,
+    );
     expect(unmatchedEp).toBeDefined();
     expect(unmatchedEp?.calculatedOrder).toBe(99);
     expect(unmatchedEp?.matchedLocalEpisodeId).toBeNull();
@@ -276,7 +294,7 @@ describe("POST /series/:id/preview-bulk-sources", () => {
   it("accepts dramula source type and previews bulk sources returning 200 OK", async () => {
     const { seriesId } = await createSeriesWithEpisodes(
       "Dramula Test Series",
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     );
 
     const sourceUrl = "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1";
@@ -308,14 +326,14 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     expect(body.data.scrapedEpisodes.length).toBe(10);
     expect(body.data.scrapedEpisodes[0]?.scrapedTitle).toBe("1");
     expect(body.data.scrapedEpisodes[0]?.scrapedUrl).toBe(
-      "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1"
+      "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1",
     );
   });
 
   it("indicates hasSources: true for local episodes that have existing video sources", async () => {
     const { seriesId, episodes: createdEps } = await createSeriesWithEpisodes(
       "Series With Sources",
-      [1, 2]
+      [1, 2],
     );
 
     // Insert a video source for Ep 1 only
@@ -448,11 +466,15 @@ describe("POST /series/:id/preview-bulk-sources", () => {
     };
 
     // Scraped episode 1 should match S2 Ep 1, NOT S1 Ep 1
-    const scrapedEp1 = body.data.scrapedEpisodes.find((e) => e.episodeNumber === 1);
+    const scrapedEp1 = body.data.scrapedEpisodes.find(
+      (e) => e.episodeNumber === 1,
+    );
     expect(scrapedEp1?.matchedLocalEpisodeId).toBe(s2Ep1Id);
 
     // Only S2 episodes should be in localEpisodes
-    expect(body.data.localEpisodes.every((e) => e.seasonId === s2Id)).toBe(true);
+    expect(body.data.localEpisodes.every((e) => e.seasonId === s2Id)).toBe(
+      true,
+    );
     const localS2Ep1 = body.data.localEpisodes.find((e) => e.id === s2Ep1Id);
     expect(localS2Ep1?.hasSources).toBe(false);
   });

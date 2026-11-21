@@ -27,32 +27,37 @@ ChunkyDialogOverlay.displayName = 'ChunkyDialogOverlay';
 
 const ChunkyDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null }
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    container?: HTMLElement | null;
+  }
 >(({ className, children, container, ...props }, ref) => {
-  const defaultContainer = typeof document !== 'undefined' && document.fullscreenElement ? (document.fullscreenElement as HTMLElement) : undefined;
-  const portalContainer = container !== undefined ? container : defaultContainer;
+  const defaultContainer =
+    typeof document !== 'undefined' && document.fullscreenElement
+      ? (document.fullscreenElement as HTMLElement)
+      : undefined;
+  const portalContainer =
+    container !== undefined ? container : defaultContainer;
 
   return (
-  <DialogPrimitive.Portal container={portalContainer}>
-    <ChunkyDialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      data-testid="chunky-dialog-content"
-      className={cn(
-        'fixed left-[50%] top-[50%] z-50 flex max-h-[85vh] w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-[24px] border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </DialogPrimitive.Content>
-  </DialogPrimitive.Portal>
+    <DialogPrimitive.Portal container={portalContainer}>
+      <ChunkyDialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        data-testid="chunky-dialog-content"
+        className={cn(
+          'fixed left-[50%] top-[50%] z-50 flex max-h-[85vh] w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-[24px] border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
   );
 });
 ChunkyDialogContent.displayName = 'ChunkyDialogContent';
 
-interface ChunkyDialogHeaderProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface ChunkyDialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Hides the built-in close button (e.g. for forced-choice dialogs). */
   hideClose?: boolean;
 }

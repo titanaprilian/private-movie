@@ -20,7 +20,13 @@ const series: StorageSeriesItem[] = [
     s3SourceCount: 2,
     s3SizeBytes: 6442450944,
     seasons: [
-      { id: 'season-1', seasonNumber: 1, title: 'Season 1', s3SourceCount: 1, s3SizeBytes: 100 },
+      {
+        id: 'season-1',
+        seasonNumber: 1,
+        title: 'Season 1',
+        s3SourceCount: 1,
+        s3SizeBytes: 100,
+      },
     ],
   } as StorageSeriesItem,
   {
@@ -44,7 +50,9 @@ describe('StorageSeriesTable episode styling', () => {
     const badge = screen.getByTestId('series-row-index-series-1');
     expect(badge).toHaveClass('ep-num');
     expect(badge).toHaveTextContent('1');
-    expect(screen.getByTestId('series-row-index-series-2')).toHaveTextContent('2');
+    expect(screen.getByTestId('series-row-index-series-2')).toHaveTextContent(
+      '2'
+    );
   });
 
   it('styles rows as interactive ChunkyTableRow cards with hover lift effects', () => {
@@ -103,7 +111,9 @@ describe('StorageSeriesTable episode styling', () => {
       screen.getByRole('button', { name: 'Actions for Cyberpunk Series' })
     );
     const menu = await screen.findByRole('menu');
-    const item = within(menu).getByRole('menuitem', { name: 'Inspect Storage' });
+    const item = within(menu).getByRole('menuitem', {
+      name: 'Inspect Storage',
+    });
     await user.click(item);
     expect(onSelectSeries).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'series-1' })

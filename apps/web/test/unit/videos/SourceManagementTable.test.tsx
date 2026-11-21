@@ -66,7 +66,10 @@ describe('SourceManagementTable Component', () => {
       }
 
       // Add source mock
-      if (url.includes('/api/episodes/ep-test-1/sources') && method === 'POST') {
+      if (
+        url.includes('/api/episodes/ep-test-1/sources') &&
+        method === 'POST'
+      ) {
         return new Response(
           JSON.stringify({
             data: {
@@ -88,7 +91,10 @@ describe('SourceManagementTable Component', () => {
       }
 
       // Update source mock
-      if (url.includes('/api/episodes/ep-test-1/sources/src-1') && method === 'PATCH') {
+      if (
+        url.includes('/api/episodes/ep-test-1/sources/src-1') &&
+        method === 'PATCH'
+      ) {
         return new Response(
           JSON.stringify({
             data: {
@@ -103,12 +109,17 @@ describe('SourceManagementTable Component', () => {
       }
 
       // Delete source mock
-      if (url.includes('/api/episodes/ep-test-1/sources/src-1') && method === 'DELETE') {
+      if (
+        url.includes('/api/episodes/ep-test-1/sources/src-1') &&
+        method === 'DELETE'
+      ) {
         return new Response(
           JSON.stringify({
             data: {
               ...mockEpisode,
-              videoSources: mockEpisode.videoSources.filter((s) => s.id !== 'src-1'),
+              videoSources: mockEpisode.videoSources.filter(
+                (s) => s.id !== 'src-1'
+              ),
             },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
@@ -135,10 +146,16 @@ describe('SourceManagementTable Component', () => {
     expect(screen.getByText('Videobello Backup')).toBeInTheDocument();
     expect(screen.getByText('1080p')).toBeInTheDocument();
     expect(screen.getByText('720p')).toBeInTheDocument();
-    expect(screen.getByText('https://stream.example.com/working.mp4')).toBeInTheDocument();
-    expect(screen.getByText('https://videobello.net/embed/broken404')).toBeInTheDocument();
+    expect(
+      screen.getByText('https://stream.example.com/working.mp4')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('https://videobello.net/embed/broken404')
+    ).toBeInTheDocument();
 
-    expect(screen.getByLabelText('Copy URL for Server 1 Fast')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Copy URL for Server 1 Fast')
+    ).toBeInTheDocument();
   });
 
   it('probes health check automatically and renders semantic Working / Broken badges', async () => {
@@ -184,7 +201,9 @@ describe('SourceManagementTable Component', () => {
     const copyBtn = screen.getByLabelText('Copy URL for Server 1 Fast');
     await user.click(copyBtn);
 
-    expect(writeTextSpy).toHaveBeenCalledWith('https://stream.example.com/working.mp4');
+    expect(writeTextSpy).toHaveBeenCalledWith(
+      'https://stream.example.com/working.mp4'
+    );
     expect(screen.getByLabelText('Copied')).toBeInTheDocument();
   });
 
@@ -246,7 +265,9 @@ describe('SourceManagementTable Component', () => {
     await user.click(confirmDeleteBtn);
 
     await waitFor(() => {
-      expect(screen.queryByText('Remove "Server 1 Fast"?')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Remove "Server 1 Fast"?')
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -254,7 +275,9 @@ describe('SourceManagementTable Component', () => {
     const user = userEvent.setup();
     renderWithProviders(<SourceManagementTable episode={mockEpisode} />);
 
-    const previewButtons = screen.getAllByRole('button', { name: /^preview$/i });
+    const previewButtons = screen.getAllByRole('button', {
+      name: /^preview$/i,
+    });
     await user.click(previewButtons[0]);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();

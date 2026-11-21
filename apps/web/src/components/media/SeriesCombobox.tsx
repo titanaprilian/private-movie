@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -15,15 +19,17 @@ import { ChunkyButton } from '@/components/ui/chunky-button';
 import { cn } from '@/lib/utils';
 import type { MediaSeriesMetadata } from '@repo/contracts';
 
-export type SeriesItem = MediaSeriesMetadata | {
-  id: string;
-  title: string;
-  source?: string;
-  sourceUrl?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  [key: string]: unknown;
-};
+export type SeriesItem =
+  | MediaSeriesMetadata
+  | {
+      id: string;
+      title: string;
+      source?: string;
+      sourceUrl?: string;
+      createdAt?: string;
+      updatedAt?: string;
+      [key: string]: unknown;
+    };
 
 export interface SeriesComboboxProps {
   value: string;
@@ -63,7 +69,10 @@ export function SeriesCombobox({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const raw = (res.data as any)?.data;
       if (!raw) return { series: [], meta: { total: 0, page: 1, limit: 20 } };
-      return raw as { series: SeriesItem[]; meta: { total: number; page: number; limit: number } };
+      return raw as {
+        series: SeriesItem[];
+        meta: { total: number; page: number; limit: number };
+      };
     },
     enabled: Boolean(debouncedQuery),
   });
@@ -78,9 +87,7 @@ export function SeriesCombobox({
   // If user entered a search query, show search results from query. Otherwise fallback to initialSeriesList.
   const rawList = debouncedQuery ? querySeries : initialSeriesList;
 
-  const availableSeries = rawList.filter(
-    (item) => item.id !== excludeSeriesId
-  );
+  const availableSeries = rawList.filter((item) => item.id !== excludeSeriesId);
 
   const selectedItem = knownSeriesMap.get(value);
 
@@ -103,7 +110,10 @@ export function SeriesCombobox({
           <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50 text-muted" />
         </ChunkyButton>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[240px] max-w-[calc(100vw-2rem)] p-0" align="start">
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] min-w-[240px] max-w-[calc(100vw-2rem)] p-0"
+        align="start"
+      >
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Search series..."
@@ -137,7 +147,12 @@ export function SeriesCombobox({
                         isSelected ? 'opacity-100' : 'opacity-0'
                       )}
                     />
-                    <span className="truncate min-w-0 flex-1 block" title={series.title}>{series.title}</span>
+                    <span
+                      className="truncate min-w-0 flex-1 block"
+                      title={series.title}
+                    >
+                      {series.title}
+                    </span>
                   </CommandItem>
                 );
               })}

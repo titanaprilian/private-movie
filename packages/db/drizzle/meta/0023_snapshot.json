@@ -64,12 +64,8 @@
           "name": "refresh_tokens_user_id_users_id_fk",
           "tableFrom": "refresh_tokens",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -79,9 +75,7 @@
         "refresh_tokens_token_unique": {
           "name": "refresh_tokens_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -149,9 +143,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -194,9 +186,7 @@
         "system_key_unique": {
           "name": "system_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -281,12 +271,8 @@
           "name": "episodes_season_id_seasons_id_fk",
           "tableFrom": "episodes",
           "tableTo": "seasons",
-          "columnsFrom": [
-            "season_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["season_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -296,10 +282,7 @@
         "episodes_season_id_order_unique": {
           "name": "episodes_season_id_order_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "season_id",
-            "order"
-          ]
+          "columns": ["season_id", "order"]
         }
       },
       "policies": {},
@@ -350,16 +333,12 @@
         "genres_name_unique": {
           "name": "genres_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         },
         "genres_slug_unique": {
           "name": "genres_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -470,12 +449,8 @@
           "name": "seasons_series_id_series_id_fk",
           "tableFrom": "seasons",
           "tableTo": "series",
-          "columnsFrom": [
-            "series_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["series_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -485,10 +460,7 @@
         "seasons_series_id_season_number_unique": {
           "name": "seasons_series_id_season_number_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "series_id",
-            "season_number"
-          ]
+          "columns": ["series_id", "season_number"]
         }
       },
       "policies": {},
@@ -588,9 +560,7 @@
         "series_tmdb_id_unique": {
           "name": "series_tmdb_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tmdb_id"
-          ]
+          "columns": ["tmdb_id"]
         }
       },
       "policies": {},
@@ -620,12 +590,8 @@
           "name": "series_to_genres_series_id_series_id_fk",
           "tableFrom": "series_to_genres",
           "tableTo": "series",
-          "columnsFrom": [
-            "series_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["series_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -633,12 +599,8 @@
           "name": "series_to_genres_genre_id_genres_id_fk",
           "tableFrom": "series_to_genres",
           "tableTo": "genres",
-          "columnsFrom": [
-            "genre_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["genre_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -646,10 +608,7 @@
       "compositePrimaryKeys": {
         "series_to_genres_series_id_genre_id_pk": {
           "name": "series_to_genres_series_id_genre_id_pk",
-          "columns": [
-            "series_id",
-            "genre_id"
-          ]
+          "columns": ["series_id", "genre_id"]
         }
       },
       "uniqueConstraints": {},
@@ -722,12 +681,8 @@
           "name": "video_sources_episode_id_episodes_id_fk",
           "tableFrom": "video_sources",
           "tableTo": "episodes",
-          "columnsFrom": [
-            "episode_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["episode_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -735,12 +690,8 @@
           "name": "video_sources_storage_provider_id_storage_providers_id_fk",
           "tableFrom": "video_sources",
           "tableTo": "storage_providers",
-          "columnsFrom": [
-            "storage_provider_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["storage_provider_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -750,10 +701,7 @@
         "video_sources_episode_id_url_unique": {
           "name": "video_sources_episode_id_url_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "episode_id",
-            "url"
-          ]
+          "columns": ["episode_id", "url"]
         }
       },
       "policies": {},

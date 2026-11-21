@@ -54,17 +54,28 @@ describe('StatsRow', () => {
     expect(screen.getByTestId('kpi-total-genres')).toBeInTheDocument();
     expect(screen.getByTestId('kpi-storage')).toBeInTheDocument();
     // Interactive hover lift from ChunkyCard
-    for (const testId of ['kpi-total-series', 'kpi-total-episodes', 'kpi-total-genres', 'kpi-storage']) {
-      expect(screen.getByTestId(testId).className).toContain('hover:-translate-y-[2px]');
+    for (const testId of [
+      'kpi-total-series',
+      'kpi-total-episodes',
+      'kpi-total-genres',
+      'kpi-storage',
+    ]) {
+      expect(screen.getByTestId(testId).className).toContain(
+        'hover:-translate-y-[2px]'
+      );
     }
     // Sentence case labels (no ALL-CAPS)
     expect(screen.getByText('Total series')).toBeInTheDocument();
     expect(screen.getByText('Total episodes')).toBeInTheDocument();
     expect(screen.getByText('Genres')).toBeInTheDocument();
     expect(screen.getByText('Storage')).toBeInTheDocument();
-    expect(container.textContent).not.toMatch(/TOTAL SERIES|TOTAL EPISODES|STORAGE USAGE/);
+    expect(container.textContent).not.toMatch(
+      /TOTAL SERIES|TOTAL EPISODES|STORAGE USAGE/
+    );
     // Series footer
-    expect(screen.getByTestId('kpi-series-footer')).toHaveTextContent('3 ongoing · 4 featured');
+    expect(screen.getByTestId('kpi-series-footer')).toHaveTextContent(
+      '3 ongoing · 4 featured'
+    );
   });
 
   it('shows Not tracked when storage is zero and hides the subtitle', () => {
@@ -78,10 +89,17 @@ describe('StatsRow', () => {
           totalEpisodes: 1,
           totalGenres: 1,
         }}
-        storage={{ totalUsedBytes: 0, totalLimitBytes: 107374182400, percentUsed: 0, providerCount: 1 }}
+        storage={{
+          totalUsedBytes: 0,
+          totalLimitBytes: 107374182400,
+          percentUsed: 0,
+          providerCount: 1,
+        }}
       />
     );
-    expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent('Not tracked');
+    expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent(
+      'Not tracked'
+    );
     expect(screen.queryByTestId('kpi-storage-percent')).not.toBeInTheDocument();
   });
 
@@ -104,8 +122,12 @@ describe('StatsRow', () => {
         }}
       />
     );
-    expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent('10.0 GB');
-    expect(screen.getByTestId('kpi-storage-percent')).toHaveTextContent('of 100.0 GB used (10.0%)');
+    expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent(
+      '10.0 GB'
+    );
+    expect(screen.getByTestId('kpi-storage-percent')).toHaveTextContent(
+      'of 100.0 GB used (10.0%)'
+    );
   });
 
   it('renders subtitles for total episodes and genres matching mockup', () => {
@@ -121,8 +143,12 @@ describe('StatsRow', () => {
         }}
       />
     );
-    expect(screen.getByTestId('kpi-episodes-footer')).toHaveTextContent('Across 12 series');
-    expect(screen.getByTestId('kpi-genres-footer')).toHaveTextContent('Used across the catalog');
+    expect(screen.getByTestId('kpi-episodes-footer')).toHaveTextContent(
+      'Across 12 series'
+    );
+    expect(screen.getByTestId('kpi-genres-footer')).toHaveTextContent(
+      'Used across the catalog'
+    );
   });
 
   it('wraps the Storage card in a link to /admin/storage preserving metrics', () => {
@@ -150,13 +176,23 @@ describe('StatsRow', () => {
     // Storage card content preserved inside the link
     expect(screen.getByTestId('kpi-storage')).toBeInTheDocument();
     expect(link).toContainElement(screen.getByTestId('kpi-storage'));
-    expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent('10.0 GB');
-    expect(screen.getByTestId('kpi-storage-percent')).toHaveTextContent('of 100.0 GB used (10.0%)');
+    expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent(
+      '10.0 GB'
+    );
+    expect(screen.getByTestId('kpi-storage-percent')).toHaveTextContent(
+      'of 100.0 GB used (10.0%)'
+    );
     // Interactive affordance on the link wrapper (focus ring), inner card keeps hover lift
     expect(link.className).toMatch(/focus-visible:outline/);
-    expect(screen.getByTestId('kpi-storage').className).toContain('hover:-translate-y-[2px]');
+    expect(screen.getByTestId('kpi-storage').className).toContain(
+      'hover:-translate-y-[2px]'
+    );
     // Other KPI cards are not links
-    for (const testId of ['kpi-total-series', 'kpi-total-episodes', 'kpi-total-genres']) {
+    for (const testId of [
+      'kpi-total-series',
+      'kpi-total-episodes',
+      'kpi-total-genres',
+    ]) {
       expect(screen.getByTestId(testId).closest('a')).not.toBeInTheDocument();
     }
   });

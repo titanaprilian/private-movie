@@ -45,31 +45,31 @@ describe("OpenAPI route tagging and internal route exclusion", () => {
     for (const path of paths) {
       expect(
         path.includes("_app"),
-        `internal route ${path} must be hidden from the spec`
+        `internal route ${path} must be hidden from the spec`,
       ).toBe(false);
       expect(
         path.includes("player"),
-        `internal route ${path} must be hidden from the spec`
+        `internal route ${path} must be hidden from the spec`,
       ).toBe(false);
       // The embed sandbox (/embed/:hash) and its relay helpers are internal plumbing.
       expect(
         /(^|\/)embed/.test(path),
-        `internal route ${path} must be hidden from the spec`
+        `internal route ${path} must be hidden from the spec`,
       ).toBe(false);
       expect(
         path.includes("proxy") || path.includes("relay"),
-        `internal route ${path} must be hidden from the spec`
+        `internal route ${path} must be hidden from the spec`,
       ).toBe(false);
       expect(
         path.includes("debug-log") || path.includes("crypto-subtle"),
-        `internal route ${path} must be hidden from the spec`
+        `internal route ${path} must be hidden from the spec`,
       ).toBe(false);
     }
   });
 
   it("assigns every exposed /api/* endpoint to a recognized domain tag", () => {
     const apiPaths = Object.entries(spec.paths).filter(([path]) =>
-      path.startsWith("/api/")
+      path.startsWith("/api/"),
     );
     expect(apiPaths.length).toBeGreaterThan(0);
 
@@ -77,12 +77,12 @@ describe("OpenAPI route tagging and internal route exclusion", () => {
       for (const [method, operation] of Object.entries(operations)) {
         expect(
           Array.isArray(operation.tags) && operation.tags.length > 0,
-          `${method.toUpperCase()} ${path} must declare at least one tag`
+          `${method.toUpperCase()} ${path} must declare at least one tag`,
         ).toBe(true);
         for (const tag of operation.tags ?? []) {
           expect(
             RECOGNIZED_TAGS.has(tag),
-            `${method.toUpperCase()} ${path} uses unrecognized tag "${tag}"`
+            `${method.toUpperCase()} ${path} uses unrecognized tag "${tag}"`,
           ).toBe(true);
         }
       }
@@ -91,7 +91,7 @@ describe("OpenAPI route tagging and internal route exclusion", () => {
 
   it("gives every exposed /api/* endpoint a non-empty summary", () => {
     const apiPaths = Object.entries(spec.paths).filter(([path]) =>
-      path.startsWith("/api/")
+      path.startsWith("/api/"),
     );
     expect(apiPaths.length).toBeGreaterThan(0);
 
@@ -100,7 +100,7 @@ describe("OpenAPI route tagging and internal route exclusion", () => {
         expect(
           typeof operation.summary === "string" &&
             operation.summary.trim().length > 0,
-          `${method.toUpperCase()} ${path} must have a non-empty summary`
+          `${method.toUpperCase()} ${path} must have a non-empty summary`,
         ).toBe(true);
       }
     }

@@ -1,5 +1,12 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { genres, series, seasons, episodes, videoSources, seriesToGenres } from "@repo/db";
+import {
+  genres,
+  series,
+  seasons,
+  episodes,
+  videoSources,
+  seriesToGenres,
+} from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
 
@@ -240,7 +247,7 @@ describe("sourceTypes filtering on home feed and series details", () => {
     const allSources = [
       ...body.data.episodes.flatMap((e) => e.videoSources),
       ...body.data.seasons.flatMap((s) =>
-        s.episodes.flatMap((e) => e.videoSources)
+        s.episodes.flatMap((e) => e.videoSources),
       ),
     ];
     expect(allSources.length).toBeGreaterThan(0);
@@ -263,7 +270,7 @@ describe("sourceTypes filtering on home feed and series details", () => {
     const body = response.body as SeriesDetailsBody;
 
     const types = new Set(
-      body.data.episodes.flatMap((e) => e.videoSources.map((s) => s.type))
+      body.data.episodes.flatMap((e) => e.videoSources.map((s) => s.type)),
     );
     expect(types.has("direct")).toBe(true);
     expect(types.has("s3")).toBe(true);

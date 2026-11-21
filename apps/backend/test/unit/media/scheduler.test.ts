@@ -45,7 +45,9 @@ describe("OngoingSeasonScheduler", () => {
   };
 
   it("runs periodically at configured interval (default 30 mins)", async () => {
-    const scrapeAllOngoingSeasons = vi.fn().mockResolvedValue(sampleBatchResult);
+    const scrapeAllOngoingSeasons = vi
+      .fn()
+      .mockResolvedValue(sampleBatchResult);
     const mediaService = { scrapeAllOngoingSeasons };
 
     const scheduler = createOngoingSeasonScheduler({
@@ -71,7 +73,9 @@ describe("OngoingSeasonScheduler", () => {
   });
 
   it("runs immediately if runImmediately is set to true", async () => {
-    const scrapeAllOngoingSeasons = vi.fn().mockResolvedValue(sampleBatchResult);
+    const scrapeAllOngoingSeasons = vi
+      .fn()
+      .mockResolvedValue(sampleBatchResult);
     const mediaService = { scrapeAllOngoingSeasons };
 
     const scheduler = createOngoingSeasonScheduler({
@@ -90,9 +94,11 @@ describe("OngoingSeasonScheduler", () => {
 
   it("prevents overlapping runs with isJobRunning concurrency lock", async () => {
     let resolveFirstScrape: (value: BatchOngoingScrapeResult) => void;
-    const slowScrapePromise = new Promise<BatchOngoingScrapeResult>((resolve) => {
-      resolveFirstScrape = resolve;
-    });
+    const slowScrapePromise = new Promise<BatchOngoingScrapeResult>(
+      (resolve) => {
+        resolveFirstScrape = resolve;
+      },
+    );
 
     const scrapeAllOngoingSeasons = vi
       .fn()
@@ -119,7 +125,9 @@ describe("OngoingSeasonScheduler", () => {
     // Should still have been called only once because first run is still executing
     expect(scrapeAllOngoingSeasons).toHaveBeenCalledTimes(1);
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Previous scrape run is still active; skipping scheduled iteration.")
+      expect.stringContaining(
+        "Previous scrape run is still active; skipping scheduled iteration.",
+      ),
     );
 
     // Also test runNow() returns null when job is already running
@@ -158,8 +166,10 @@ describe("OngoingSeasonScheduler", () => {
     await vi.advanceTimersByTimeAsync(1000);
     expect(scrapeAllOngoingSeasons).toHaveBeenCalledTimes(1);
     expect(mockLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining("Unexpected error during ongoing season scraping:"),
-      expect.any(Error)
+      expect.stringContaining(
+        "Unexpected error during ongoing season scraping:",
+      ),
+      expect.any(Error),
     );
     expect(scheduler.isRunning()).toBe(true);
     expect(scheduler.isExecuting()).toBe(false);
@@ -168,7 +178,9 @@ describe("OngoingSeasonScheduler", () => {
     await vi.advanceTimersByTimeAsync(1000);
     expect(scrapeAllOngoingSeasons).toHaveBeenCalledTimes(2);
     expect(mockLogger.info).toHaveBeenCalledWith(
-      expect.stringContaining("Scrape run finished. Processed: 2, Success: 2, Failed: 0")
+      expect.stringContaining(
+        "Scrape run finished. Processed: 2, Success: 2, Failed: 0",
+      ),
     );
 
     await scheduler.stop();
@@ -180,7 +192,9 @@ describe("OngoingSeasonScheduler", () => {
       resolveScrape = resolve;
     });
 
-    const scrapeAllOngoingSeasons = vi.fn().mockImplementation(() => pendingScrape);
+    const scrapeAllOngoingSeasons = vi
+      .fn()
+      .mockImplementation(() => pendingScrape);
     const mediaService = { scrapeAllOngoingSeasons };
 
     const scheduler = createOngoingSeasonScheduler({

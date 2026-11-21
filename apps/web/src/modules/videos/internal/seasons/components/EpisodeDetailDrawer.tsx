@@ -1,6 +1,4 @@
-import {
-  useEpisodeDetailDrawer,
-} from '../hooks/useEpisodeDetailDrawer';
+import { useEpisodeDetailDrawer } from '../hooks/useEpisodeDetailDrawer';
 import type { EpisodeDetailDrawerProps } from '../types';
 import {
   ChunkyDrawer,

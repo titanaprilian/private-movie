@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { UseWatchNavOptions, UseWatchNavReturn, WatchZone } from '../types';
+import type {
+  UseWatchNavOptions,
+  UseWatchNavReturn,
+  WatchZone,
+} from '../types';
 
 function dispatchToIframe(
   iframeRef: React.RefObject<HTMLIFrameElement | null> | undefined,
@@ -8,8 +12,11 @@ function dispatchToIframe(
   try {
     const iframe =
       iframeRef?.current ??
-      (document.querySelector('[data-testid="watch-player"]') as HTMLIFrameElement | null);
-    const cw = (iframe as unknown as { contentWindow?: Window | null })?.contentWindow;
+      (document.querySelector(
+        '[data-testid="watch-player"]'
+      ) as HTMLIFrameElement | null);
+    const cw = (iframe as unknown as { contentWindow?: Window | null })
+      ?.contentWindow;
     if (!cw) return;
     const event = new KeyboardEvent('keydown', { key, bubbles: true });
     cw.dispatchEvent(event);
@@ -18,11 +25,15 @@ function dispatchToIframe(
   }
 }
 
-function focusIframe(iframeRef: React.RefObject<HTMLIFrameElement | null> | undefined) {
+function focusIframe(
+  iframeRef: React.RefObject<HTMLIFrameElement | null> | undefined
+) {
   try {
     const iframe =
       iframeRef?.current ??
-      (document.querySelector('[data-testid="watch-player"]') as HTMLIFrameElement | null);
+      (document.querySelector(
+        '[data-testid="watch-player"]'
+      ) as HTMLIFrameElement | null);
     (iframe as unknown as HTMLElement | null)?.focus();
   } catch {
     // ignore focus errors
@@ -61,8 +72,12 @@ export function useWatchNav(options?: UseWatchNavOptions): UseWatchNavReturn {
         setFocusIndex(0);
         try {
           const firstControl =
-            document.querySelector<HTMLElement>('[data-testid="watch-controls"] button') ??
-            document.querySelector<HTMLElement>('[aria-label="Prev episode"]') ??
+            document.querySelector<HTMLElement>(
+              '[data-testid="watch-controls"] button'
+            ) ??
+            document.querySelector<HTMLElement>(
+              '[aria-label="Prev episode"]'
+            ) ??
             document.querySelector<HTMLElement>('button[aria-label*="Prev"]');
           firstControl?.focus();
         } catch {

@@ -163,7 +163,9 @@ describe('SeriesWatchView hoisted sticky top navigation', () => {
 
     fireEvent.click(seriesTag);
 
-    expect(screen.queryByTestId('active-episode-overview')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('active-episode-overview')
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId('watch-top-nav')).toHaveTextContent('Back');
   });
 

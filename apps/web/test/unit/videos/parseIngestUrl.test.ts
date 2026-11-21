@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseIngestUrl, detectEpisodeNumber, formatBytes } from '@/modules/videos/internal/ingestion';
+import {
+  parseIngestUrl,
+  detectEpisodeNumber,
+  formatBytes,
+} from '@/modules/videos/internal/ingestion';
 
 describe('parseIngestUrl utility', () => {
   it('handles empty or blank input gracefully', () => {
@@ -18,7 +22,9 @@ describe('parseIngestUrl utility', () => {
   });
 
   it('extracts filename and infers 1080p quality & episode number', () => {
-    const res = parseIngestUrl('https://example.com/videos/Episode.01.1080p.mp4');
+    const res = parseIngestUrl(
+      'https://example.com/videos/Episode.01.1080p.mp4'
+    );
     expect(res.filename).toBe('Episode.01.1080p.mp4');
     expect(res.quality).toBe('1080p');
     expect(res.label).toBe('S3 1080p');
@@ -26,7 +32,9 @@ describe('parseIngestUrl utility', () => {
   });
 
   it('extracts filename and infers 720p quality & ep pattern', () => {
-    const res = parseIngestUrl('https://stream.host.org/files/show_ep2_720.mkv');
+    const res = parseIngestUrl(
+      'https://stream.host.org/files/show_ep2_720.mkv'
+    );
     expect(res.filename).toBe('show_ep2_720.mkv');
     expect(res.quality).toBe('720p');
     expect(res.label).toBe('S3 720p');
@@ -42,7 +50,9 @@ describe('parseIngestUrl utility', () => {
   });
 
   it('detects episode numbers across various common patterns', () => {
-    expect(detectEpisodeNumber('https://cdn.com/Teach.You.a.Lesson.E03.720.mp4')).toBe(3);
+    expect(
+      detectEpisodeNumber('https://cdn.com/Teach.You.a.Lesson.E03.720.mp4')
+    ).toBe(3);
     expect(detectEpisodeNumber('https://cdn.com/anime-ep2-1080p.mp4')).toBe(2);
     expect(detectEpisodeNumber('https://cdn.com/show_episode-03.mkv')).toBe(3);
     expect(detectEpisodeNumber('https://cdn.com/series.s01e12.mp4')).toBe(12);

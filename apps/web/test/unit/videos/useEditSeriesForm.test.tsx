@@ -97,7 +97,10 @@ describe('useEditSeriesForm', () => {
   });
 
   it('uses genreIds directly when present on the series', async () => {
-    const { result } = setup({}, { ...mockSeries, genreIds: ['g-1'] } as SeriesItem);
+    const { result } = setup({}, {
+      ...mockSeries,
+      genreIds: ['g-1'],
+    } as SeriesItem);
 
     await waitFor(() => {
       expect(result.current.selectedGenreIds).toEqual(['g-1']);
@@ -105,10 +108,10 @@ describe('useEditSeriesForm', () => {
   });
 
   it('maps string genres to ids via slug and name lookup', async () => {
-    const { result } = setup(
-      {},
-      { ...mockSeries, genres: ['action', 'Sci-Fi'] } as unknown as SeriesItem
-    );
+    const { result } = setup({}, {
+      ...mockSeries,
+      genres: ['action', 'Sci-Fi'],
+    } as unknown as SeriesItem);
 
     await waitFor(() => {
       expect(result.current.selectedGenreIds).toEqual(['g-1', 'g-2']);
@@ -210,7 +213,9 @@ describe('useEditSeriesForm', () => {
     });
 
     act(() => {
-      result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
+      result.current.handleSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent);
     });
 
     await waitFor(() => {
@@ -281,7 +286,9 @@ describe('useEditSeriesForm', () => {
     });
 
     act(() => {
-      result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
+      result.current.handleSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent);
     });
 
     await waitFor(() => {

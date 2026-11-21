@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { SERIES_PAGE_LIMIT, seriesListQueryOptions, type SeriesItem } from '../../../api';
+import {
+  SERIES_PAGE_LIMIT,
+  seriesListQueryOptions,
+  type SeriesItem,
+} from '../../../api';
 import { genresQueryOptions } from '@/modules/genres';
 import { useAddMediaStore } from '../../dialogs';
 import { useSeriesGridSearch } from './useSeriesGridSearch';
@@ -25,7 +29,11 @@ export function useSeriesGrid(): UseSeriesGridResult {
   const bigGenres = genres.filter((genre) => Boolean(genre.isBigGenre));
 
   const highlightedCountsQuery = useQuery({
-    ...seriesListQueryOptions({ filter: 'ongoing', highlighted: true, limit: 100 }),
+    ...seriesListQueryOptions({
+      filter: 'ongoing',
+      highlighted: true,
+      limit: 100,
+    }),
     enabled: search.activeTab === 'ongoing',
     staleTime: 30_000,
   });
@@ -38,7 +46,7 @@ export function useSeriesGrid(): UseSeriesGridResult {
       if (slug) {
         highlightedCountByGenreSlug.set(
           slug,
-          (highlightedCountByGenreSlug.get(slug) ?? 0) + 1,
+          (highlightedCountByGenreSlug.get(slug) ?? 0) + 1
         );
       }
     }

@@ -65,6 +65,6 @@ export interface MediaProvider {
     url: string,
     fetchFn: FetchFn,
     context?: Record<string, unknown>,
-    browserFn?: BrowserFn
+    browserFn?: BrowserFn,
   ): Promise<ScrapedVideoSource[]>;
 }

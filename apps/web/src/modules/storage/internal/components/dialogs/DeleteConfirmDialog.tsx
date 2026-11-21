@@ -172,8 +172,14 @@ export function DeleteConfirmDialog({
                     const fullLabel = `${ep.seriesTitle ? `${ep.seriesTitle} — ` : ''}S${ep.seasonNumber ?? 1}E${ep.episodeNumber ?? 1}: ${ep.title}`;
                     return (
                       <li key={i} className="min-w-0">
-                        <ChunkyTooltip content={<span className="break-words">{fullLabel}</span>}>
-                          <span className="line-clamp-2 break-words">{fullLabel}</span>
+                        <ChunkyTooltip
+                          content={
+                            <span className="break-words">{fullLabel}</span>
+                          }
+                        >
+                          <span className="line-clamp-2 break-words">
+                            {fullLabel}
+                          </span>
                         </ChunkyTooltip>
                       </li>
                     );

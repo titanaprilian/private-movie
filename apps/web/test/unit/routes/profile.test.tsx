@@ -3,7 +3,6 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProfilePage } from '@/routes/admin/profile';
 import { useAuthStore } from '@/modules/auth/internal/store';
 
-
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (config: unknown) => config,
   useNavigate: () => vi.fn(),

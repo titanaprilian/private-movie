@@ -84,7 +84,10 @@ describe("Ongoing highlight curation", () => {
   });
 
   it("GET /series?filter=ongoing&highlighted=true returns only highlighted series", async () => {
-    await insertOngoingSeries({ title: "Highlighted Only A", isOngoingHighlighted: true });
+    await insertOngoingSeries({
+      title: "Highlighted Only A",
+      isOngoingHighlighted: true,
+    });
     await insertOngoingSeries({ title: "Plain Ongoing B" });
 
     const response = await request(app, {
@@ -129,7 +132,11 @@ describe("Ongoing highlight curation", () => {
     const titles = body.data.series.map((s) => s.title);
     const highlightedIdx = titles.indexOf("Newer Highlighted Ongoing");
     expect(highlightedIdx).toBe(0);
-    expect(titles.indexOf("Newest Plain Ongoing")).toBeGreaterThan(highlightedIdx);
-    expect(titles.indexOf("Older Plain Ongoing")).toBeGreaterThan(highlightedIdx);
+    expect(titles.indexOf("Newest Plain Ongoing")).toBeGreaterThan(
+      highlightedIdx,
+    );
+    expect(titles.indexOf("Older Plain Ongoing")).toBeGreaterThan(
+      highlightedIdx,
+    );
   });
 });

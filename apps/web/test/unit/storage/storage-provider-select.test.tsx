@@ -143,9 +143,7 @@ describe('Storage provider select controlled state (ticket 776)', () => {
     window.history.replaceState(null, '', '/admin/storage');
     setAccessToken('test-access-token');
     mockFetch();
-    consoleErrorSpy = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {

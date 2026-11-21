@@ -31,7 +31,9 @@ export function useEditSeasonForm({
       setScraperUrl(season.scraperUrl ?? '');
       setSource(
         season.source ??
-          (season.scraperUrl ? detectProviderFromUrl(season.scraperUrl) ?? 'none' : 'none')
+          (season.scraperUrl
+            ? (detectProviderFromUrl(season.scraperUrl) ?? 'none')
+            : 'none')
       );
       setEpisodeOffset(season.episodeOffset ?? 0);
     }
@@ -75,7 +77,9 @@ export function useEditSeasonForm({
       status,
       scraperUrl: scraperUrl.trim() || null,
       source: source === 'none' ? null : source,
-      episodeOffset: Number.isFinite(Number(episodeOffset)) ? Number(episodeOffset) : 0,
+      episodeOffset: Number.isFinite(Number(episodeOffset))
+        ? Number(episodeOffset)
+        : 0,
     });
   };
 

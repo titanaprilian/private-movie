@@ -7,7 +7,8 @@ import { setAccessToken } from '@/lib/api';
 
 const mockNavigate = vi.fn();
 vi.mock('@tanstack/react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  const actual =
+    await importOriginal<typeof import('@tanstack/react-router')>();
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -18,7 +19,8 @@ const mockHomeFeedDataWithMultipleHeroes = {
   hero: {
     id: 'hero-aot',
     title: 'Attack on Titan: The Final Season',
-    description: 'The truth outside the walls and the identity of the Titans have been revealed.',
+    description:
+      'The truth outside the walls and the identity of the Titans have been revealed.',
     type: 'tv',
     posterUrl: 'https://example.com/poster.jpg',
     backdropUrl: 'https://example.com/banner.jpg',
@@ -39,7 +41,8 @@ const mockHomeFeedDataWithMultipleHeroes = {
     {
       id: 'hero-aot',
       title: 'Attack on Titan: The Final Season',
-      description: 'The truth outside the walls and the identity of the Titans have been revealed.',
+      description:
+        'The truth outside the walls and the identity of the Titans have been revealed.',
       type: 'tv',
       posterUrl: 'https://example.com/poster.jpg',
       backdropUrl: 'https://example.com/banner.jpg',
@@ -59,7 +62,8 @@ const mockHomeFeedDataWithMultipleHeroes = {
     {
       id: 'hero-jujutsu',
       title: 'Jujutsu Kaisen Season 2',
-      description: 'The past comes back to haunt Gojo and Geto in the Hidden Inventory arc.',
+      description:
+        'The past comes back to haunt Gojo and Geto in the Hidden Inventory arc.',
       type: 'tv',
       posterUrl: 'https://example.com/jjk-poster.jpg',
       backdropUrl: 'https://example.com/jjk-banner.jpg',
@@ -78,8 +82,9 @@ const mockHomeFeedDataWithMultipleHeroes = {
     },
     {
       id: 'hero-frieren',
-      title: 'Frieren: Beyond Journey\'s End',
-      description: 'An elf mage discovers the true meaning of time and human connections.',
+      title: "Frieren: Beyond Journey's End",
+      description:
+        'An elf mage discovers the true meaning of time and human connections.',
       type: 'tv',
       posterUrl: 'https://example.com/frieren-poster.jpg',
       backdropUrl: 'https://example.com/frieren-banner.jpg',
@@ -126,7 +131,8 @@ const mockHomeFeedData = {
   hero: {
     id: 'hero-aot',
     title: 'Attack on Titan: The Final Season',
-    description: 'The truth outside the walls and the identity of the Titans have been revealed.',
+    description:
+      'The truth outside the walls and the identity of the Titans have been revealed.',
     type: 'tv',
     posterUrl: 'https://example.com/poster.jpg',
     backdropUrl: 'https://example.com/banner.jpg',
@@ -186,22 +192,38 @@ describe('CinematicHome component', () => {
     renderWithProviders(<CinematicHome />);
 
     expect(screen.getByTestId('hero-skeleton')).toBeInTheDocument();
-    expect(screen.getAllByTestId('carousel-row-skeleton').length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByTestId('carousel-row-skeleton').length
+    ).toBeGreaterThan(0);
   });
 
   it('renders error state UI when network request fails and retries on click', async () => {
     let callCount = 0;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         callCount++;
         if (callCount === 1) {
-          return new Response(JSON.stringify({ error: { message: 'Network error' } }), { status: 500 });
+          return new Response(
+            JSON.stringify({ error: { message: 'Network error' } }),
+            { status: 500 }
+          );
         }
-        return new Response(JSON.stringify({ data: mockHomeFeedData }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ data: mockHomeFeedData }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
       return new Response(JSON.stringify({ data: null }), { status: 200 });
     });
@@ -218,15 +240,25 @@ describe('CinematicHome component', () => {
     await user.click(retryBtn);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+      ).toBeInTheDocument();
     });
   });
 
   it('renders hero section with title, synopsis, tags and quick actions when payload resolves', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(JSON.stringify({ data: mockHomeFeedData }), {
@@ -240,7 +272,9 @@ describe('CinematicHome component', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+      ).toBeInTheDocument();
     });
 
     expect(screen.getByText(/truth outside the walls/i)).toBeInTheDocument();
@@ -251,9 +285,17 @@ describe('CinematicHome component', () => {
 
   it('renders carousel categories with series cards and simplified UI', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(JSON.stringify({ data: mockHomeFeedData }), {
@@ -267,7 +309,9 @@ describe('CinematicHome component', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Trending Now' })
+      ).toBeInTheDocument();
     });
 
     const seriesCards = screen.getAllByTestId('series-card');
@@ -275,14 +319,24 @@ describe('CinematicHome component', () => {
 
     expect(screen.getByText('S4')).toBeInTheDocument();
     expect(screen.getByText('TV')).toBeInTheDocument();
-    expect(screen.getByText('Demon Slayer: Hashira Training Arc')).toBeInTheDocument();
+    expect(
+      screen.getByText('Demon Slayer: Hashira Training Arc')
+    ).toBeInTheDocument();
   });
 
   it('handles null hero gracefully when DB is empty', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(
@@ -301,16 +355,28 @@ describe('CinematicHome component', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByText(/No Featured Series Available/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/No Featured Series Available/i)
+      ).toBeInTheDocument();
     });
-    expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Trending Now' })
+    ).toBeInTheDocument();
   });
 
   it('scrolls carousel rows left and right on button click', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(JSON.stringify({ data: mockHomeFeedData }), {
@@ -324,11 +390,17 @@ describe('CinematicHome component', () => {
     const { user } = renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Trending Now' })
+      ).toBeInTheDocument();
     });
 
-    const scrollLeftBtn = screen.getByRole('button', { name: /scroll trending now left/i });
-    const scrollRightBtn = screen.getByRole('button', { name: /scroll trending now right/i });
+    const scrollLeftBtn = screen.getByRole('button', {
+      name: /scroll trending now left/i,
+    });
+    const scrollRightBtn = screen.getByRole('button', {
+      name: /scroll trending now right/i,
+    });
 
     expect(scrollLeftBtn).toBeInTheDocument();
     expect(scrollRightBtn).toBeInTheDocument();
@@ -339,9 +411,17 @@ describe('CinematicHome component', () => {
 
   it('does not render My List or Mute buttons in hero banner', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(JSON.stringify({ data: mockHomeFeedData }), {
@@ -355,18 +435,32 @@ describe('CinematicHome component', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+      ).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole('button', { name: /my list/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /mute/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /my list/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /mute/i })
+    ).not.toBeInTheDocument();
   });
 
   it('navigates hero play button and carousel cards via D-pad spatial mode focus ring', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(JSON.stringify({ data: mockHomeFeedData }), {
@@ -380,12 +474,16 @@ describe('CinematicHome component', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+      ).toBeInTheDocument();
     });
 
     // Activate spatial mode via arrow key press
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     const heroPlayButton = screen.getByRole('button', { name: /play/i });
@@ -393,7 +491,9 @@ describe('CinematicHome component', () => {
 
     // Press ArrowDown again to move focus to first carousel row card (row 1, item 0)
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+      );
     });
 
     expect(heroPlayButton).not.toHaveClass('ring-2');
@@ -410,14 +510,18 @@ describe('CinematicHome component', () => {
 
     // Reactivate spatial mode via arrow key press (restores focus at row 1)
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true })
+      );
     });
 
     expect(firstCard).toHaveClass('ring-2', 'ring-white');
 
     // Press ArrowUp again to move up to hero row 0
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true })
+      );
     });
 
     expect(heroPlayButton).toHaveClass('ring-2', 'ring-white');
@@ -426,15 +530,26 @@ describe('CinematicHome component', () => {
   describe('Hero Slider interactive features', () => {
     it('renders hero slider controls and pagination dots when multiple heroes are provided', async () => {
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
         if (url.includes('/auth/refresh')) {
-          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+          return new Response(
+            JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+            { status: 200 }
+          );
         }
         if (url.includes('/series/home-feed')) {
-          return new Response(JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return new Response(
+            JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
         }
         return new Response(JSON.stringify({ data: null }), { status: 200 });
       });
@@ -442,12 +557,16 @@ describe('CinematicHome component', () => {
       renderWithProviders(<CinematicHome />);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+        ).toBeInTheDocument();
       });
 
       const prevBtn = screen.getByRole('button', { name: /previous slide/i });
       const nextBtn = screen.getByRole('button', { name: /next slide/i });
-      const dots = within(screen.getByTestId('hero-pagination-desktop')).getAllByRole('button', {
+      const dots = within(
+        screen.getByTestId('hero-pagination-desktop')
+      ).getAllByRole('button', {
         name: /go to slide/i,
       });
 
@@ -458,9 +577,17 @@ describe('CinematicHome component', () => {
 
     it('does not render prev/next buttons or dots when only a single hero is present', async () => {
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
         if (url.includes('/auth/refresh')) {
-          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+          return new Response(
+            JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+            { status: 200 }
+          );
         }
         if (url.includes('/series/home-feed')) {
           return new Response(JSON.stringify({ data: mockHomeFeedData }), {
@@ -474,25 +601,44 @@ describe('CinematicHome component', () => {
       renderWithProviders(<CinematicHome />);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+        ).toBeInTheDocument();
       });
 
-      expect(screen.queryByRole('button', { name: /previous slide/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /next slide/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /go to slide/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /previous slide/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /next slide/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /go to slide/i })
+      ).not.toBeInTheDocument();
     });
 
     it('cycles slides via Next and Previous arrow buttons with wrap-around', async () => {
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
         if (url.includes('/auth/refresh')) {
-          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+          return new Response(
+            JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+            { status: 200 }
+          );
         }
         if (url.includes('/series/home-feed')) {
-          return new Response(JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return new Response(
+            JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
         }
         return new Response(JSON.stringify({ data: null }), { status: 200 });
       });
@@ -500,7 +646,9 @@ describe('CinematicHome component', () => {
       const { user } = renderWithProviders(<CinematicHome />);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+        ).toBeInTheDocument();
       });
 
       const nextBtn = screen.getByRole('button', { name: /next slide/i });
@@ -508,32 +656,51 @@ describe('CinematicHome component', () => {
 
       // Click next -> Jujutsu Kaisen
       await user.click(nextBtn);
-      expect(screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })
+      ).toBeInTheDocument();
 
       // Click next -> Frieren
       await user.click(nextBtn);
-      expect(screen.getByRole('heading', { level: 1, name: /Frieren/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Frieren/i })
+      ).toBeInTheDocument();
 
       // Click next (wrap around) -> Attack on Titan
       await user.click(nextBtn);
-      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+      ).toBeInTheDocument();
 
       // Click prev (wrap around backwards) -> Frieren
       await user.click(prevBtn);
-      expect(screen.getByRole('heading', { level: 1, name: /Frieren/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Frieren/i })
+      ).toBeInTheDocument();
     });
 
     it('jumps directly to a slide when clicking pagination indicator dots', async () => {
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
         if (url.includes('/auth/refresh')) {
-          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+          return new Response(
+            JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+            { status: 200 }
+          );
         }
         if (url.includes('/series/home-feed')) {
-          return new Response(JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return new Response(
+            JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
         }
         return new Response(JSON.stringify({ data: null }), { status: 200 });
       });
@@ -541,35 +708,54 @@ describe('CinematicHome component', () => {
       const { user } = renderWithProviders(<CinematicHome />);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+        ).toBeInTheDocument();
       });
 
-      const dots = within(screen.getByTestId('hero-pagination-desktop')).getAllByRole('button', {
+      const dots = within(
+        screen.getByTestId('hero-pagination-desktop')
+      ).getAllByRole('button', {
         name: /go to slide/i,
       });
 
       // Click dot 2 (3rd slide) -> Frieren
       await user.click(dots[2]);
-      expect(screen.getByRole('heading', { level: 1, name: /Frieren/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Frieren/i })
+      ).toBeInTheDocument();
 
       // Click dot 1 (2nd slide) -> Jujutsu Kaisen
       await user.click(dots[1]);
-      expect(screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })
+      ).toBeInTheDocument();
     });
 
     it('auto-advances slides every 6 seconds and pauses on hover', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true });
 
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
         if (url.includes('/auth/refresh')) {
-          return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+          return new Response(
+            JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+            { status: 200 }
+          );
         }
         if (url.includes('/series/home-feed')) {
-          return new Response(JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return new Response(
+            JSON.stringify({ data: mockHomeFeedDataWithMultipleHeroes }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
         }
         return new Response(JSON.stringify({ data: null }), { status: 200 });
       });
@@ -577,7 +763,9 @@ describe('CinematicHome component', () => {
       const { user } = renderWithProviders(<CinematicHome />);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+        ).toBeInTheDocument();
       });
 
       // Advance time by 6 seconds
@@ -585,7 +773,9 @@ describe('CinematicHome component', () => {
         vi.advanceTimersByTime(6000);
       });
 
-      expect(screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })
+      ).toBeInTheDocument();
 
       // Mouse enter to pause timer
       const sliderContainer = screen.getByTestId('hero-slider');
@@ -596,7 +786,9 @@ describe('CinematicHome component', () => {
       });
 
       // Should still be Jujutsu Kaisen because timer was paused
-      expect(screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Jujutsu Kaisen/i })
+      ).toBeInTheDocument();
 
       // Mouse unhover to resume timer
       await user.unhover(sliderContainer);
@@ -606,7 +798,9 @@ describe('CinematicHome component', () => {
       });
 
       // Should advance to Frieren
-      expect(screen.getByRole('heading', { level: 1, name: /Frieren/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Frieren/i })
+      ).toBeInTheDocument();
 
       vi.useRealTimers();
     });
@@ -625,9 +819,17 @@ describe('Index route page', () => {
 
   it('renders CinematicHome layout by default', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(JSON.stringify({ data: mockHomeFeedData }), {
@@ -641,9 +843,13 @@ describe('Index route page', () => {
     renderWithProviders(<IndexPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+      ).toBeInTheDocument();
     });
-    expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Trending Now' })
+    ).toBeInTheDocument();
   });
 });
 
@@ -761,9 +967,17 @@ describe('Recently Added Episodes carousel', () => {
 
   function mockFeedFetch(feedData: unknown) {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(JSON.stringify({ data: feedData }), {
@@ -791,7 +1005,12 @@ describe('Recently Added Episodes carousel', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 2, name: 'Recently Added Episodes' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', {
+          level: 2,
+          name: 'Recently Added Episodes',
+        })
+      ).toBeInTheDocument();
     });
 
     expect(screen.getAllByTestId('episode-card')).toHaveLength(2);
@@ -803,12 +1022,23 @@ describe('Recently Added Episodes carousel', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 2, name: 'Recently Added Episodes' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', {
+          level: 2,
+          name: 'Recently Added Episodes',
+        })
+      ).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 2, name: 'Recently Added' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Legacy Series Row Item')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Trending Now' })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { level: 2, name: 'Recently Added' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Legacy Series Row Item')
+    ).not.toBeInTheDocument();
   });
 
   it('renders 16:9 landscape cards with S{season} E{episode} badge overlay', async () => {
@@ -824,7 +1054,9 @@ describe('Recently Added Episodes carousel', () => {
     expect(screen.getByText('EP 3')).toBeInTheDocument();
 
     const cards = screen.getAllByTestId('episode-card');
-    const thumbnails = cards.map((card) => card.querySelector('[data-testid="episode-thumbnail"]'));
+    const thumbnails = cards.map((card) =>
+      card.querySelector('[data-testid="episode-thumbnail"]')
+    );
     for (const thumb of thumbnails) {
       expect(thumb).toHaveClass('aspect-video');
     }
@@ -841,7 +1073,9 @@ describe('Recently Added Episodes carousel', () => {
 
     const card = screen.getAllByTestId('episode-card')[0];
     const episodeTitle = card.querySelector('[data-testid="episode-title"]');
-    const seriesTitle = card.querySelector('[data-testid="episode-series-title"]');
+    const seriesTitle = card.querySelector(
+      '[data-testid="episode-series-title"]'
+    );
     expect(episodeTitle).toHaveTextContent('The Final Battle');
     expect(seriesTitle).toHaveTextContent('Attack on Titan');
     // Episode title node precedes series title node in DOM order
@@ -863,7 +1097,10 @@ describe('Recently Added Episodes carousel', () => {
     // First episode uses its own thumbnail
     expect(images[0]).toHaveAttribute('src', 'https://example.com/ep12.jpg');
     // Second episode has no thumbnail/backdrop -> falls back to series poster
-    expect(images[1]).toHaveAttribute('src', 'https://example.com/fallback-poster.jpg');
+    expect(images[1]).toHaveAttribute(
+      'src',
+      'https://example.com/fallback-poster.jpg'
+    );
   });
 
   it('uses placeholder image when episode, backdrop, and poster are all missing', async () => {
@@ -917,24 +1154,41 @@ describe('Recently Added Episodes carousel', () => {
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Trending Now' })
+      ).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole('heading', { level: 2, name: 'Recently Added Episodes' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', {
+        level: 2,
+        name: 'Recently Added Episodes',
+      })
+    ).not.toBeInTheDocument();
     expect(screen.queryByTestId('episode-card')).not.toBeInTheDocument();
   });
 
   it('omits the carousel when recentlyAddedEpisodes is undefined', async () => {
-    const feedWithoutEpisodes = { ...mockFeedWithRecentEpisodes, recentlyAddedEpisodes: undefined };
+    const feedWithoutEpisodes = {
+      ...mockFeedWithRecentEpisodes,
+      recentlyAddedEpisodes: undefined,
+    };
     mockFeedFetch(feedWithoutEpisodes);
 
     renderWithProviders(<CinematicHome />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Trending Now' })
+      ).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole('heading', { level: 2, name: 'Recently Added Episodes' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', {
+        level: 2,
+        name: 'Recently Added Episodes',
+      })
+    ).not.toBeInTheDocument();
     expect(screen.queryByTestId('episode-card')).not.toBeInTheDocument();
   });
 });
@@ -951,9 +1205,17 @@ describe('Index route page', () => {
 
   it('renders CinematicHome layout by default', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/auth/refresh')) {
-        return new Response(JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }), { status: 200 });
+        return new Response(
+          JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
+          { status: 200 }
+        );
       }
       if (url.includes('/series/home-feed')) {
         return new Response(JSON.stringify({ data: mockHomeFeedData }), {
@@ -967,8 +1229,12 @@ describe('Index route page', () => {
     renderWithProviders(<IndexPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Attack on Titan/i })
+      ).toBeInTheDocument();
     });
-    expect(screen.getByRole('heading', { level: 2, name: 'Trending Now' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Trending Now' })
+    ).toBeInTheDocument();
   });
 });

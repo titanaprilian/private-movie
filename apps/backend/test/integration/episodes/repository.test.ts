@@ -74,9 +74,9 @@ describe("episode repository list", () => {
     expect(result.episodes).toHaveLength(20);
     expect(result.total).toBe(25);
     for (let i = 1; i < result.episodes.length; i++) {
-      expect(
-        result.episodes[i - 1].order <= result.episodes[i].order
-      ).toBe(true);
+      expect(result.episodes[i - 1].order <= result.episodes[i].order).toBe(
+        true,
+      );
     }
   });
 
@@ -148,7 +148,11 @@ describe("episode repository list", () => {
       createdAt: new Date("2026-08-02T00:00:00.000Z"),
     });
 
-    const result = await repository.list({ page: 2, limit: 1, seasonId: "season-20" });
+    const result = await repository.list({
+      page: 2,
+      limit: 1,
+      seasonId: "season-20",
+    });
 
     expect(result.episodes).toHaveLength(1);
     expect(result.total).toBe(2);

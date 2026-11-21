@@ -10,12 +10,15 @@ import {
 describe("OtakudesuProvider series parsing", () => {
   const sampleSeriesListHtml = fs.readFileSync(
     path.resolve(import.meta.dirname, "../../fixtures/sample-series-list.html"),
-    "utf8"
+    "utf8",
   );
 
   const sampleOneSeasonHtml = fs.readFileSync(
-    path.resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
-    "utf8"
+    path.resolve(
+      import.meta.dirname,
+      "../../fixtures/episodes/sample-one-season.html",
+    ),
+    "utf8",
   );
 
   const provider = new OtakudesuProvider();
@@ -28,7 +31,9 @@ describe("OtakudesuProvider series parsing", () => {
   it("identifies matching URLs with canHandle", () => {
     expect(provider.canHandle("https://otakudesu.blog/anime/test")).toBe(true);
     expect(provider.canHandle("https://otakudesu.cloud/anime/test")).toBe(true);
-    expect(provider.canHandle("https://other-domain.com/anime/test")).toBe(false);
+    expect(provider.canHandle("https://other-domain.com/anime/test")).toBe(
+      false,
+    );
   });
 
   it("extracts series title and poster from sample-series-list.html using targetUrl", async () => {
@@ -38,10 +43,10 @@ describe("OtakudesuProvider series parsing", () => {
     const result = await provider.parseSeries(targetUrl, fetchFn);
 
     expect(result.title).toBe(
-      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru"
+      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru",
     );
     expect(result.posterUrl).toBe(
-      "https://otakudesu.blog/wp-content/uploads/2026/07/Tsuihou-sareta-Tensei-Juukishi-wa-Game-Chishiki-de-Musou-suru.jpg"
+      "https://otakudesu.blog/wp-content/uploads/2026/07/Tsuihou-sareta-Tensei-Juukishi-wa-Game-Chishiki-de-Musou-suru.jpg",
     );
   });
 
@@ -52,10 +57,10 @@ describe("OtakudesuProvider series parsing", () => {
     const result = await provider.parseSeries(targetUrl, fetchFn);
 
     expect(result.title).toBe(
-      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru"
+      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru",
     );
     expect(result.posterUrl).toBe(
-      "https://otakudesu.blog/wp-content/uploads/2026/07/Tsuihou-sareta-Tensei-Juukishi-wa-Game-Chishiki-de-Musou-suru.jpg"
+      "https://otakudesu.blog/wp-content/uploads/2026/07/Tsuihou-sareta-Tensei-Juukishi-wa-Game-Chishiki-de-Musou-suru.jpg",
     );
   });
 
@@ -66,7 +71,7 @@ describe("OtakudesuProvider series parsing", () => {
 
     expect(result.title).toBe("Uchi no Otouto-domo ga Sumimasen");
     expect(result.posterUrl).toBe(
-      "https://otakudesu.blog/wp-content/uploads/2026/07/Uchi-no-Otouto-domo-ga-Sumimasen.jpg"
+      "https://otakudesu.blog/wp-content/uploads/2026/07/Uchi-no-Otouto-domo-ga-Sumimasen.jpg",
     );
   });
 
@@ -84,7 +89,10 @@ describe("OtakudesuProvider series parsing", () => {
     `;
 
     const fetchFn = createMockFetchFn(html);
-    const result = await provider.parseSeries("https://otakudesu.blog/anime/my-awesome-anime", fetchFn);
+    const result = await provider.parseSeries(
+      "https://otakudesu.blog/anime/my-awesome-anime",
+      fetchFn,
+    );
     expect(result.title).toBe("My Awesome Anime");
     expect(result.posterUrl).toBe("https://example.com/poster.jpg");
     expect(result.description).toBe("This is a great anime series summary.");
@@ -104,7 +112,10 @@ describe("OtakudesuProvider series parsing", () => {
     `;
 
     const fetchFn = createMockFetchFn(html);
-    const result = await provider.parseSeries("https://otakudesu.blog/anime/alt-anime", fetchFn);
+    const result = await provider.parseSeries(
+      "https://otakudesu.blog/anime/alt-anime",
+      fetchFn,
+    );
     expect(result.title).toBe("Alternative Title Anime");
     expect(result.posterUrl).toBe("https://example.com/alt-poster.jpg");
     expect(result.description).toBe("Alternative synopsis description text.");
@@ -123,7 +134,7 @@ describe("OtakudesuProvider series parsing", () => {
     const fetchFn = createMockFetchFn(html);
     const result = await provider.parseSeries(
       "https://otakudesu.blog/anime/my-series/",
-      fetchFn
+      fetchFn,
     );
     expect(result.title).toBe("Title From Attribute");
     expect(result.posterUrl).toBe("https://example.com/container-poster.png");
@@ -140,7 +151,10 @@ describe("OtakudesuProvider series parsing", () => {
     `;
 
     const fetchFn = createMockFetchFn(html);
-    const result = await provider.parseSeries("https://otakudesu.blog/anime/some-series", fetchFn);
+    const result = await provider.parseSeries(
+      "https://otakudesu.blog/anime/some-series",
+      fetchFn,
+    );
     expect(result.title).toBe("Fallback Series Title");
     expect(result.posterUrl).toBe("https://example.com/fallback-poster.jpg");
     expect(result.description).toBeNull();
@@ -150,7 +164,7 @@ describe("OtakudesuProvider series parsing", () => {
     const html = `<div><p>Empty page with no title</p></div>`;
     const fetchFn = createMockFetchFn(html);
     await expect(
-      provider.parseSeries("https://otakudesu.blog/anime/empty", fetchFn)
+      provider.parseSeries("https://otakudesu.blog/anime/empty", fetchFn),
     ).rejects.toThrowError(new SeriesParseError("missing series title"));
   });
 
@@ -228,14 +242,20 @@ describe("OtakudesuProvider series parsing", () => {
     const result = provider.parseSeriesHtml(html);
     expect(result.episodes).toHaveLength(1);
     expect(result.episodes[0].title).toBe("Fallback Episode");
-    expect(result.episodes[0].url).toBe("https://otakudesu.blog/episode/ep-fallback/");
+    expect(result.episodes[0].url).toBe(
+      "https://otakudesu.blog/episode/ep-fallback/",
+    );
   });
 
   it("parses sample-one-season.html fixture without batch links", () => {
     const result = provider.parseSeriesHtml(sampleOneSeasonHtml);
     expect(result.title).toBe("Grand Blue Season 3 Subtitle Indonesia");
     expect(result.episodes).toHaveLength(7);
-    expect(result.episodes[0].title).toBe("Grand Blue Season 3 Episode 7 Subtitle Indonesia");
-    expect(result.episodes[6].title).toBe("Grand Blue Season 3 Episode 1 Subtitle Indonesia");
+    expect(result.episodes[0].title).toBe(
+      "Grand Blue Season 3 Episode 7 Subtitle Indonesia",
+    );
+    expect(result.episodes[6].title).toBe(
+      "Grand Blue Season 3 Episode 1 Subtitle Indonesia",
+    );
   });
 });

@@ -65,10 +65,11 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "List series",
-          description: "Returns a paginated library listing of series with optional filters.",
+          description:
+            "Returns a paginated library listing of series with optional filters.",
         },
         query: seriesListQuerySchema,
-      }
+      },
     )
     .get(
       "/series/home-feed",
@@ -81,18 +82,24 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "Get home feed",
-          description: "Returns curated home feed sections for the series library.",
+          description:
+            "Returns curated home feed sections for the series library.",
         },
         query: homeFeedQuerySchema,
-      }
+      },
     )
     .get(
       "/series/:id",
       async ({ params, query }) => {
         const sourceTypes = parseSourceTypesParam(query?.sourceTypes);
-        const s = await seriesRepository.findByIdWithEpisodes(params.id, sourceTypes);
+        const s = await seriesRepository.findByIdWithEpisodes(
+          params.id,
+          sourceTypes,
+        );
         if (!s) {
-          throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
+          throw new SeriesNotFoundError(
+            `Series with id ${params.id} not found`,
+          );
         }
         return successResponse(s);
       },
@@ -103,7 +110,7 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
           description: "Returns a single series by id including its episodes.",
         },
         params: seriesIdParamsSchema,
-      }
+      },
     )
     .put(
       "/series/:id",
@@ -116,11 +123,12 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "Update series",
-          description: "Performs a full update of a series by id. Requires authentication.",
+          description:
+            "Performs a full update of a series by id. Requires authentication.",
         },
         params: seriesUuidParamsSchema,
         body: updateSeriesBodySchema,
-      }
+      },
     )
     .patch(
       "/series/:id",
@@ -133,11 +141,12 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "Patch series",
-          description: "Partially updates a series by id. Requires authentication.",
+          description:
+            "Partially updates a series by id. Requires authentication.",
         },
         params: seriesUuidParamsSchema,
         body: updateSeriesBodySchema,
-      }
+      },
     )
     .delete(
       "/series/:id",
@@ -153,23 +162,31 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
           description: "Deletes a series by id. Requires authentication.",
         },
         params: seriesUuidParamsSchema,
-      }
+      },
     )
     .post(
       "/series/:id/seasons",
       async ({ params, body }) => {
         const seriesRow = await seriesRepository.findById(params.id);
         if (!seriesRow) {
-          throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
+          throw new SeriesNotFoundError(
+            `Series with id ${params.id} not found`,
+          );
         }
         const created = await seasonsRepository.create({
           seriesId: params.id,
           title: body.title,
           seasonNumber: body.seasonNumber,
-          ...(body.description !== undefined ? { description: body.description } : {}),
-          ...(body.posterUrl !== undefined ? { posterUrl: body.posterUrl } : {}),
+          ...(body.description !== undefined
+            ? { description: body.description }
+            : {}),
+          ...(body.posterUrl !== undefined
+            ? { posterUrl: body.posterUrl }
+            : {}),
           status: body.status ?? "completed",
-          ...(body.scraperUrl !== undefined ? { scraperUrl: body.scraperUrl } : {}),
+          ...(body.scraperUrl !== undefined
+            ? { scraperUrl: body.scraperUrl }
+            : {}),
           ...(body.source !== undefined ? { source: body.source } : {}),
           episodeOffset: body.episodeOffset ?? 0,
         });
@@ -180,18 +197,21 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "Create season for series",
-          description: "Creates a new season for the given series. Requires authentication.",
+          description:
+            "Creates a new season for the given series. Requires authentication.",
         },
         params: seriesUuidParamsSchema,
         body: createSeasonBodySchema,
-      }
+      },
     )
     .patch(
       "/series/:id/episodes/order",
       async ({ params, body }) => {
         const seriesRow = await seriesRepository.findById(params.id);
         if (!seriesRow) {
-          throw new SeriesNotFoundError(`Series with id ${params.id} not found`);
+          throw new SeriesNotFoundError(
+            `Series with id ${params.id} not found`,
+          );
         }
         await episodeRepository.updateOrders(body);
         return successResponse({ success: true });
@@ -201,10 +221,11 @@ export const catalogRoutes = (options: SeriesRoutesOptions) => {
         detail: {
           tags: ["Series"],
           summary: "Reorder episodes",
-          description: "Updates the ordering of episodes within a series. Requires authentication.",
+          description:
+            "Updates the ordering of episodes within a series. Requires authentication.",
         },
         params: seriesUuidParamsSchema,
         body: reorderEpisodesBodySchema,
-      }
+      },
     );
 };

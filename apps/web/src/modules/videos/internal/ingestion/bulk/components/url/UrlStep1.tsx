@@ -76,11 +76,17 @@ export function UrlStep1({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label htmlFor="bulk-ingest-target-season" className={labelClassName}>
+            <label
+              htmlFor="bulk-ingest-target-season"
+              className={labelClassName}
+            >
               Target Season
             </label>
             <ChunkySelect
-              value={urlSelectedSeasonId || (seasonOptions.length === 0 ? 'empty' : undefined)}
+              value={
+                urlSelectedSeasonId ||
+                (seasonOptions.length === 0 ? 'empty' : undefined)
+              }
               onValueChange={(val) => {
                 if (val !== 'empty') {
                   setUrlSelectedSeasonId(val);
@@ -102,19 +108,26 @@ export function UrlStep1({
                     </ChunkySelectItem>
                   ))
                 ) : (
-                  <ChunkySelectItem value="empty">-- Default Season --</ChunkySelectItem>
+                  <ChunkySelectItem value="empty">
+                    -- Default Season --
+                  </ChunkySelectItem>
                 )}
               </ChunkySelectContent>
             </ChunkySelect>
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="bulk-ingest-default-quality" className={labelClassName}>
+            <label
+              htmlFor="bulk-ingest-default-quality"
+              className={labelClassName}
+            >
               Default Quality
             </label>
             <ChunkySelect
               value={defaultQuality || 'auto'}
-              onValueChange={(val) => setDefaultQuality(val === 'auto' ? '' : val)}
+              onValueChange={(val) =>
+                setDefaultQuality(val === 'auto' ? '' : val)
+              }
             >
               <ChunkySelectTrigger
                 id="bulk-ingest-default-quality"
@@ -123,7 +136,9 @@ export function UrlStep1({
                 <ChunkySelectValue placeholder="Select default quality" />
               </ChunkySelectTrigger>
               <ChunkySelectContent>
-                <ChunkySelectItem value="auto">Auto / Extracted</ChunkySelectItem>
+                <ChunkySelectItem value="auto">
+                  Auto / Extracted
+                </ChunkySelectItem>
                 <ChunkySelectItem value="2160p">2160p (4K)</ChunkySelectItem>
                 <ChunkySelectItem value="1080p">1080p</ChunkySelectItem>
                 <ChunkySelectItem value="720p">720p</ChunkySelectItem>
@@ -137,7 +152,10 @@ export function UrlStep1({
         {/* Target S3 Storage Provider (Conditional) */}
         {storageProviders.length > 0 && (
           <div className="space-y-1.5">
-            <label htmlFor="bulk-ingest-storage-provider" className={labelClassName}>
+            <label
+              htmlFor="bulk-ingest-storage-provider"
+              className={labelClassName}
+            >
               Target S3 Storage Provider
             </label>
             <ChunkySelect
@@ -166,7 +184,10 @@ export function UrlStep1({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label htmlFor="bulk-ingest-default-label" className={labelClassName}>
+            <label
+              htmlFor="bulk-ingest-default-label"
+              className={labelClassName}
+            >
               Default Source Label
             </label>
             <ChunkyInput
@@ -181,7 +202,9 @@ export function UrlStep1({
           <div className="space-y-1.5">
             <label htmlFor="bulk-ingest-referer" className={labelClassName}>
               Shared HTTP Referer{' '}
-              <span className="text-[var(--muted)] font-semibold">(Optional)</span>
+              <span className="text-[var(--muted)] font-semibold">
+                (Optional)
+              </span>
             </label>
             <ChunkyInput
               id="bulk-ingest-referer"
@@ -195,14 +218,14 @@ export function UrlStep1({
       </ChunkyDialogBody>
 
       <ChunkyDialogFooter>
-        <ChunkyButton
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
+        <ChunkyButton type="button" variant="outline" onClick={onCancel}>
           Cancel
         </ChunkyButton>
-        <ChunkyButton type="submit" variant="primary" data-testid="bulk-ingest-parse-btn">
+        <ChunkyButton
+          type="submit"
+          variant="primary"
+          data-testid="bulk-ingest-parse-btn"
+        >
           Parse & Review URLs
         </ChunkyButton>
       </ChunkyDialogFooter>

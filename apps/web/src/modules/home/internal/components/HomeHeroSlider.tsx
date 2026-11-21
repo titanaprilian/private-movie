@@ -187,10 +187,7 @@ export function HomeHeroSlider({
             <span data-testid="hero-seasons-episodes">
               {currentHero.seasons}{' '}
               {currentHero.seasons === 1 ? 'Season' : 'Seasons'}{' '}
-              <span
-                data-testid="hero-episodes"
-                className="hidden md:inline"
-              >
+              <span data-testid="hero-episodes" className="hidden md:inline">
                 {currentHero.episodes}{' '}
                 {currentHero.episodes === 1 ? 'Episode' : 'Episodes'}
               </span>

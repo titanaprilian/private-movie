@@ -19,11 +19,19 @@ export interface ChunkySpinnerProps extends React.HTMLAttributes<SVGSVGElement> 
  * Always spins and is hidden from assistive tech (pair it with
  * adjacent loading text or an aria-live region instead).
  */
-export function ChunkySpinner({ size = 'md', className, ...props }: ChunkySpinnerProps) {
+export function ChunkySpinner({
+  size = 'md',
+  className,
+  ...props
+}: ChunkySpinnerProps) {
   return (
     <Loader2
       aria-hidden="true"
-      className={cn('animate-spin shrink-0', chunkySpinnerSizes[size], className)}
+      className={cn(
+        'animate-spin shrink-0',
+        chunkySpinnerSizes[size],
+        className
+      )}
       {...props}
     />
   );

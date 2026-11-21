@@ -6,11 +6,7 @@ import type { VideoSource } from '@/modules/videos/internal/api';
 describe('VideoPreviewModal Component', () => {
   it('does not render when source is null', () => {
     renderWithProviders(
-      <VideoPreviewModal
-        open={true}
-        onOpenChange={vi.fn()}
-        source={null}
-      />
+      <VideoPreviewModal open={true} onOpenChange={vi.fn()} source={null} />
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -34,13 +30,20 @@ describe('VideoPreviewModal Component', () => {
     );
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/Server Direct 1080p — Episode 1/)).toBeInTheDocument();
-    expect(screen.getByText('https://stream.example.com/video.mp4')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Server Direct 1080p — Episode 1/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('https://stream.example.com/video.mp4')
+    ).toBeInTheDocument();
 
     // Check video element rendered by VideoPlayer
     const video = screen.getByTestId('custom-video-element');
     expect(video).toBeInTheDocument();
-    expect(video).toHaveAttribute('src', 'https://stream.example.com/video.mp4');
+    expect(video).toHaveAttribute(
+      'src',
+      'https://stream.example.com/video.mp4'
+    );
   });
 
   it('renders VideoPlayer for s3 video sources', () => {
@@ -53,11 +56,7 @@ describe('VideoPreviewModal Component', () => {
     };
 
     renderWithProviders(
-      <VideoPreviewModal
-        open={true}
-        onOpenChange={vi.fn()}
-        source={s3Source}
-      />
+      <VideoPreviewModal open={true} onOpenChange={vi.fn()} source={s3Source} />
     );
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();

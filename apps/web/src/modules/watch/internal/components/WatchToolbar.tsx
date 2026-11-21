@@ -168,8 +168,7 @@ export function WatchToolbar({
               </div>
             )}
             {sources.map((source, index) => {
-              const isDirect =
-                source.type === 's3' || source.type === 'direct';
+              const isDirect = source.type === 's3' || source.type === 'direct';
               return (
                 <ChunkySelectItem
                   key={source.id}

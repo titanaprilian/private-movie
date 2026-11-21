@@ -4,7 +4,11 @@ import { OngoingCard } from './OngoingCard';
 import { sortOngoingFailedFirst } from '../formatters';
 import { ONGOING_PAGE_SIZE, type OngoingSeriesGridProps } from '../types';
 
-export function OngoingSeriesGrid({ seasons, scrapingSeasonId, onScrape }: OngoingSeriesGridProps) {
+export function OngoingSeriesGrid({
+  seasons,
+  scrapingSeasonId,
+  onScrape,
+}: OngoingSeriesGridProps) {
   const [page, setPage] = useState(1);
   const sorted = sortOngoingFailedFirst(seasons);
   if (sorted.length === 0) {
@@ -13,7 +17,8 @@ export function OngoingSeriesGrid({ seasons, scrapingSeasonId, onScrape }: Ongoi
         data-testid="ongoing-empty"
         className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 font-sans text-sm font-semibold text-[var(--muted)]"
       >
-        No seasons are marked as ongoing. Mark a season as ongoing to enable auto-scraping.
+        No seasons are marked as ongoing. Mark a season as ongoing to enable
+        auto-scraping.
       </div>
     );
   }

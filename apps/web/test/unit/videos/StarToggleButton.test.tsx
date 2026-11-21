@@ -41,7 +41,9 @@ describe('StarToggleButton', () => {
         inactiveLabel="Mark Dune as featured"
       />
     );
-    const btn = screen.getByRole('button', { name: 'Remove Dune from featured' });
+    const btn = screen.getByRole('button', {
+      name: 'Remove Dune from featured',
+    });
     expect(btn).toHaveAttribute('aria-pressed', 'true');
     expect(btn.className).toContain('bg-[var(--gold-tint)]');
     expect(btn.className).toContain('opacity-100');
@@ -71,7 +73,9 @@ describe('StarToggleButton', () => {
   it('also toggles via fireEvent click', () => {
     const onToggle = vi.fn();
     renderWithProviders(<StarToggleButton active onToggle={onToggle} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Remove from featured' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Remove from featured' })
+    );
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 

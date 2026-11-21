@@ -4,7 +4,11 @@ export interface VideoNextEpisodeCardProps {
   onCancel: () => void;
 }
 
-export function VideoNextEpisodeCard({ countdown, onPlayNow, onCancel }: VideoNextEpisodeCardProps) {
+export function VideoNextEpisodeCard({
+  countdown,
+  onPlayNow,
+  onCancel,
+}: VideoNextEpisodeCardProps) {
   return (
     <div
       data-testid="next-episode-card"
@@ -13,7 +17,9 @@ export function VideoNextEpisodeCard({ countdown, onPlayNow, onCancel }: VideoNe
       <p className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold font-sans">
         Up Next
       </p>
-      <p className="mt-1 text-sm font-bold font-sans">Next episode in {countdown}s</p>
+      <p className="mt-1 text-sm font-bold font-sans">
+        Next episode in {countdown}s
+      </p>
       <div className="mt-3 flex items-center gap-2">
         <button
           type="button"

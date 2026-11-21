@@ -74,21 +74,25 @@ describe("db schema exports", () => {
     const statusIdx = config.indexes.find(
       (i) => i.config.name === "seasons_status_idx",
     );
-    expect(seriesIdx?.config.columns.map((c) => c.name)).toEqual([
-      "series_id",
-    ]);
+    expect(seriesIdx?.config.columns.map((c) => c.name)).toEqual(["series_id"]);
     expect(statusIdx?.config.columns.map((c) => c.name)).toEqual(["status"]);
   });
 
   describe("slugifyGenre", () => {
     it("normalizes 'Sci-Fi & Fantasy' to 'sci-fi-and-fantasy'", () => {
-      expect(schema.slugifyGenre("Sci-Fi & Fantasy")).toBe("sci-fi-and-fantasy");
+      expect(schema.slugifyGenre("Sci-Fi & Fantasy")).toBe(
+        "sci-fi-and-fantasy",
+      );
     });
 
     it("normalizes string with special characters and spaces correctly", () => {
-      expect(schema.slugifyGenre("Action & Adventure")).toBe("action-and-adventure");
+      expect(schema.slugifyGenre("Action & Adventure")).toBe(
+        "action-and-adventure",
+      );
       expect(schema.slugifyGenre("Slice of Life")).toBe("slice-of-life");
-      expect(schema.slugifyGenre("  Comedy / Romance  ")).toBe("comedy-romance");
+      expect(schema.slugifyGenre("  Comedy / Romance  ")).toBe(
+        "comedy-romance",
+      );
       expect(schema.slugifyGenre("Boys' Love")).toBe("boys-love");
     });
   });

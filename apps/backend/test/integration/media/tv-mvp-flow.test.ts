@@ -1,5 +1,12 @@
 import { describe, expect, it, beforeAll, beforeEach } from "vitest";
-import { episodes, genres, seasons, series, seriesToGenres, videoSources } from "@repo/db";
+import {
+  episodes,
+  genres,
+  seasons,
+  series,
+  seriesToGenres,
+  videoSources,
+} from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db, truncateAll } from "../../utils/db";
 
@@ -125,14 +132,18 @@ describe("Android TV MVP flow: home-feed -> series details -> playback targets (
           id: string;
           episodes: Array<{
             id: string;
-            videoSources: Array<{ id: string; type: string; url: string; label: string }>;
+            videoSources: Array<{
+              id: string;
+              type: string;
+              url: string;
+              label: string;
+            }>;
           }>;
         }>;
       };
     };
     expect(detailBody.data.id).toBe(seriesId);
-    const detailSources =
-      detailBody.data.seasons[0].episodes[0].videoSources;
+    const detailSources = detailBody.data.seasons[0].episodes[0].videoSources;
     expect(detailSources).toHaveLength(2);
 
     // Step 3 (Player handoff): normalized targets let the TV client choose

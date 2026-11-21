@@ -8,7 +8,13 @@ function tmdbResponse(payload: unknown) {
 }
 
 const tableName = (t: any) =>
-  t === series ? "series" : t === seasons ? "seasons" : t === episodes ? "episodes" : "other";
+  t === series
+    ? "series"
+    : t === seasons
+      ? "seasons"
+      : t === episodes
+        ? "episodes"
+        : "other";
 
 describe("ongoing scrape auto-creation for early episode releases", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -25,7 +31,12 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
       source: "otakudesu",
       episodeOffset: 0,
     };
-    const seriesRow = { id: "series-1", title: "Example Anime", type: "tv", tmdbId: null };
+    const seriesRow = {
+      id: "series-1",
+      title: "Example Anime",
+      type: "tv",
+      tmdbId: null,
+    };
     const ep18 = {
       id: "ep-18",
       seasonId: "s-1",
@@ -41,21 +52,34 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
       parseSeries: vi.fn().mockResolvedValue({
         title: "Example Anime",
         episodes: [
-          { title: "Episode 18 Sub Indo", url: "https://otakudesu.cloud/episode/ep-18" },
-          { title: "Episode 19 Sub Indo", url: "https://otakudesu.cloud/episode/ep-19" },
+          {
+            title: "Episode 18 Sub Indo",
+            url: "https://otakudesu.cloud/episode/ep-18",
+          },
+          {
+            title: "Episode 19 Sub Indo",
+            url: "https://otakudesu.cloud/episode/ep-19",
+          },
         ],
       }),
       parseEpisode: vi.fn(),
       resolveVideoSources: vi.fn().mockImplementation((url: string) => {
         if (url === "https://otakudesu.cloud/episode/ep-19") {
           return Promise.resolve([
-            { type: "embed", url: "https://stream.com/embed19", label: "StreamSB", quality: "720p" },
+            {
+              type: "embed",
+              url: "https://stream.com/embed19",
+              label: "StreamSB",
+              quality: "720p",
+            },
           ]);
         }
         return Promise.resolve([]);
       }),
     };
-    vi.spyOn(MediaScraper, "getProviderForUrl").mockReturnValue(mockProvider as any);
+    vi.spyOn(MediaScraper, "getProviderForUrl").mockReturnValue(
+      mockProvider as any,
+    );
 
     const episodeRows: any[] = [ep18];
     const insertedVideoSources: any[] = [];
@@ -88,7 +112,9 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
             return [];
           }),
           innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({ orderBy: vi.fn().mockResolvedValue([]) }),
+            where: vi
+              .fn()
+              .mockReturnValue({ orderBy: vi.fn().mockResolvedValue([]) }),
           }),
         })),
       })),
@@ -113,7 +139,8 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
       })),
       update: vi.fn().mockImplementation((table: any) => ({
         set: vi.fn().mockImplementation((data: any) => {
-          if (table === seasons && data.status) updatedSeasonStatus = data.status;
+          if (table === seasons && data.status)
+            updatedSeasonStatus = data.status;
           return {
             where: vi.fn().mockReturnValue({
               returning: vi.fn().mockResolvedValue([{ ...seasonRow, ...data }]),
@@ -148,8 +175,20 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
   it("enriches the placeholder on subsequent TMDB sync without deleting video sources", async () => {
     const seriesRow = { id: "s1", title: "Show", type: "tv", tmdbId: 100 };
     const seasonRows = [
-      { id: "season-1", seriesId: "s1", seasonNumber: 1, title: "Season 1", status: "completed" },
-      { id: "season-4", seriesId: "s1", seasonNumber: 4, title: "S4", status: "ongoing" },
+      {
+        id: "season-1",
+        seriesId: "s1",
+        seasonNumber: 1,
+        title: "Season 1",
+        status: "completed",
+      },
+      {
+        id: "season-4",
+        seriesId: "s1",
+        seasonNumber: 4,
+        title: "S4",
+        status: "ongoing",
+      },
     ];
     const episodeRows = [
       {
@@ -189,14 +228,25 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
       insert: vi.fn((table: any) => ({
         values: (values: any) => {
           const vals = Array.isArray(values) ? values : [values];
-          for (const v of vals) txCalls.inserts.push({ table: tableName(table), values: v });
+          for (const v of vals)
+            txCalls.inserts.push({ table: tableName(table), values: v });
           const first = vals[0] ?? {};
           const returned =
             tableName(table) === "seasons"
-              ? [{ ...first, id: seasonRows.find((s) => s.seasonNumber === first.seasonNumber)?.id ?? "season-1" }]
+              ? [
+                  {
+                    ...first,
+                    id:
+                      seasonRows.find(
+                        (s) => s.seasonNumber === first.seasonNumber,
+                      )?.id ?? "season-1",
+                  },
+                ]
               : [{ id: "genre-id-1" }];
           return {
-            onConflictDoUpdate: vi.fn(() => ({ returning: vi.fn(async () => returned) })),
+            onConflictDoUpdate: vi.fn(() => ({
+              returning: vi.fn(async () => returned),
+            })),
             onConflictDoNothing: vi.fn(async () => []),
           };
         },
@@ -214,13 +264,23 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
             innerJoin: vi.fn(() => builder),
             where: vi.fn(() => {
               const rows =
-                name === "series" ? [seriesRow] : name === "seasons" ? seasonRows : name === "episodes" ? episodeRows : [];
+                name === "series"
+                  ? [seriesRow]
+                  : name === "seasons"
+                    ? seasonRows
+                    : name === "episodes"
+                      ? episodeRows
+                      : [];
               const p: any = Promise.resolve(rows);
               p.orderBy = vi.fn(async () => rows);
               return p;
             }),
             orderBy: vi.fn(async () =>
-              name === "seasons" ? seasonRows : name === "episodes" ? episodeRows : []
+              name === "seasons"
+                ? seasonRows
+                : name === "episodes"
+                  ? episodeRows
+                  : [],
             ),
           };
           return builder;
@@ -229,19 +289,43 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
       transaction: vi.fn(async (cb: any) => cb(mockTx)),
     };
 
-    const fetchSpy = vi.spyOn(global, "fetch").mockImplementation((async (url: string) => {
+    const fetchSpy = vi.spyOn(global, "fetch").mockImplementation((async (
+      url: string,
+    ) => {
       if (url === "https://api.themoviedb.org/3/tv/100")
         return tmdbResponse({
-          id: 100, name: "Show", overview: "d", poster_path: null,
-          backdrop_path: null, vote_average: 8, genres: [],
+          id: 100,
+          name: "Show",
+          overview: "d",
+          poster_path: null,
+          backdrop_path: null,
+          vote_average: 8,
+          genres: [],
           seasons: [{ season_number: 1, name: "Season 1", episode_count: 2 }],
         });
       if (url === "https://api.themoviedb.org/3/tv/100/season/1")
         return tmdbResponse({
-          season_number: 1, name: "Season 1",
+          season_number: 1,
+          name: "Season 1",
           episodes: [
-            { episode_number: 80, name: "E80", overview: null, still_path: null, vote_average: null, air_date: null, runtime: null },
-            { episode_number: 81, name: "E81 official", overview: "official overview", still_path: null, vote_average: null, air_date: null, runtime: null },
+            {
+              episode_number: 80,
+              name: "E80",
+              overview: null,
+              still_path: null,
+              vote_average: null,
+              air_date: null,
+              runtime: null,
+            },
+            {
+              episode_number: 81,
+              name: "E81 official",
+              overview: "official overview",
+              still_path: null,
+              vote_average: null,
+              air_date: null,
+              runtime: null,
+            },
           ],
         });
       if (url.includes("/images")) return tmdbResponse({ logos: [] });
@@ -255,7 +339,9 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
       const epUpdates = txCalls.updates.filter((u) => u.table === "episodes");
       // E80 matched in place + placeholder enriched in place; no inserts
       expect(epUpdates).toHaveLength(2);
-      const placeholderUpdate = epUpdates.find((u) => u.set.tmdbEpisodeNumber === 81);
+      const placeholderUpdate = epUpdates.find(
+        (u) => u.set.tmdbEpisodeNumber === 81,
+      );
       expect(placeholderUpdate).toBeDefined();
       expect(placeholderUpdate.set).toMatchObject({
         title: "E81 official",
@@ -266,7 +352,9 @@ describe("ongoing scrape auto-creation for early episode releases", () => {
       const epInserts = txCalls.inserts.filter((i) => i.table === "episodes");
       expect(epInserts).toHaveLength(0);
       // Video sources are never deleted or rewritten by TMDB sync
-      expect(txCalls.deletes.filter((d) => d.table === "videoSources")).toHaveLength(0);
+      expect(
+        txCalls.deletes.filter((d) => d.table === "videoSources"),
+      ).toHaveLength(0);
     } finally {
       fetchSpy.mockRestore();
     }

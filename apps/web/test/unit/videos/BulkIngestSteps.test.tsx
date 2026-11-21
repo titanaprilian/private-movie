@@ -1,4 +1,10 @@
-import { renderWithProviders, renderHook, createTestQueryClient, screen, waitFor } from '../../utils';
+import {
+  renderWithProviders,
+  renderHook,
+  createTestQueryClient,
+  screen,
+  waitFor,
+} from '../../utils';
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { cleanup } from '@testing-library/react';
@@ -168,8 +174,12 @@ describe('bulk ingest step components', () => {
     );
     expect(screen.getByTestId('archive-review-row-0')).toBeInTheDocument();
     expect(screen.getByTestId('archive-review-row-1')).toBeInTheDocument();
-    expect(screen.getByTestId('archive-ingest-target-provider-badge')).toHaveTextContent('Backblaze B2 Main');
-    expect(screen.getByTestId('archive-commit-btn')).toHaveTextContent('Commit to S3 (1)');
+    expect(
+      screen.getByTestId('archive-ingest-target-provider-badge')
+    ).toHaveTextContent('Backblaze B2 Main');
+    expect(screen.getByTestId('archive-commit-btn')).toHaveTextContent(
+      'Commit to S3 (1)'
+    );
   });
 
   it('ArchiveStep3 renders upload progress, counter and logs', () => {
@@ -193,7 +203,14 @@ describe('bulk ingest step components', () => {
         commitCompletedCount={0}
         progressPercentage={50}
         activeCommitItem={null}
-        uploadView={{ currentIndex: 1, totalFiles: 1, activeFilename: 'Show.S01E01.1080p.mkv', percent: 50, loaded: 50, total: 100 }}
+        uploadView={{
+          currentIndex: 1,
+          totalFiles: 1,
+          activeFilename: 'Show.S01E01.1080p.mkv',
+          percent: 50,
+          loaded: 50,
+          total: 100,
+        }}
         selectedProviderName="Backblaze B2 Main"
         isCommitting
         onCancel={noop}
@@ -202,7 +219,9 @@ describe('bulk ingest step components', () => {
     );
     expect(screen.getByTestId('archive-upload-progress')).toBeInTheDocument();
     expect(screen.getByTestId('archive-upload-counter')).toBeInTheDocument();
-    expect(screen.getByTestId('archive-upload-active-file')).toHaveTextContent('Show.S01E01.1080p.mkv');
+    expect(screen.getByTestId('archive-upload-active-file')).toHaveTextContent(
+      'Show.S01E01.1080p.mkv'
+    );
     expect(screen.getByTestId('archive-commit-logs')).toBeInTheDocument();
     expect(screen.getByTestId('archive-cancel-commit-btn')).toBeInTheDocument();
   });
@@ -266,8 +285,12 @@ describe('bulk ingest step components', () => {
       />
     );
     expect(screen.getByTestId('bulk-ingest-row-0')).toBeInTheDocument();
-    expect(screen.getByTestId('bulk-ingest-target-provider-badge')).toBeInTheDocument();
-    expect(screen.getByTestId('bulk-ingest-start-btn')).toHaveTextContent('Start Bulk Ingestion (1)');
+    expect(
+      screen.getByTestId('bulk-ingest-target-provider-badge')
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('bulk-ingest-start-btn')).toHaveTextContent(
+      'Start Bulk Ingestion (1)'
+    );
   });
 
   it('UrlStep3 renders queue progress and logs with cancel button', () => {
@@ -299,12 +322,16 @@ describe('bulk ingest step components', () => {
       />
     );
     expect(screen.getByTestId('bulk-ingest-logs')).toBeInTheDocument();
-    expect(screen.getByTestId('bulk-ingest-progress-provider')).toHaveTextContent('Backblaze B2 Main');
+    expect(
+      screen.getByTestId('bulk-ingest-progress-provider')
+    ).toHaveTextContent('Backblaze B2 Main');
     expect(screen.getByTestId('cancel-queue-btn')).toBeInTheDocument();
   });
 
   it('BulkIngestTabs renders both tabs', () => {
-    renderWithProviders(<BulkIngestTabs activeTab="archive" onTabChange={noop} />);
+    renderWithProviders(
+      <BulkIngestTabs activeTab="archive" onTabChange={noop} />
+    );
     expect(screen.getByTestId('tab-archive')).toBeInTheDocument();
     expect(screen.getByTestId('tab-url')).toBeInTheDocument();
   });
@@ -314,12 +341,21 @@ describe('useBulkIngestModal hook', () => {
   const createWrapper = () => {
     const queryClient = createTestQueryClient();
     return ({ children }: { children: React.ReactNode }) =>
-      React.createElement(QueryClientProvider, { client: queryClient }, children);
+      React.createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        children
+      );
   };
 
   it('defaults to archive tab with archive description and switches tabs', async () => {
     const { result } = renderHook(
-      () => useBulkIngestModal({ seriesId: 'series-1', seasons: mockSeasons, localEpisodes: mockLocalEpisodes }),
+      () =>
+        useBulkIngestModal({
+          seriesId: 'series-1',
+          seasons: mockSeasons,
+          localEpisodes: mockLocalEpisodes,
+        }),
       { wrapper: createWrapper() }
     );
     expect(result.current.activeTab).toBe('archive');

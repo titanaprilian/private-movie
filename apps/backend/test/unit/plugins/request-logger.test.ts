@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { Elysia } from "elysia";
-import { requestLoggerPlugin, REQUEST_ID_HEADER } from "@/plugins/request-logger";
+import {
+  requestLoggerPlugin,
+  REQUEST_ID_HEADER,
+} from "@/plugins/request-logger";
 
 function memoryLogger() {
   const records: Array<{ obj: unknown; msg?: string }> = [];
@@ -46,7 +49,7 @@ describe("requestLoggerPlugin", () => {
     const res = await app.handle(
       new Request("http://localhost/ping", {
         headers: { [REQUEST_ID_HEADER]: "incoming-id-123" },
-      })
+      }),
     );
     expect(res.headers.get(REQUEST_ID_HEADER)).toBe("incoming-id-123");
     const logged = (records[0].obj ?? {}) as Record<string, unknown>;
@@ -91,7 +94,7 @@ describe("requestLoggerPlugin", () => {
     const app = new Elysia()
       .use(requestLoggerPlugin({ logger: logger as never }))
       .group("/api", (group) =>
-        group.get("/late", () => "late").get("/later", () => "later")
+        group.get("/late", () => "late").get("/later", () => "later"),
       );
 
     for (const path of ["/api/late", "/api/later"]) {
@@ -101,9 +104,13 @@ describe("requestLoggerPlugin", () => {
     }
 
     expect(records).toHaveLength(2);
-    const paths = (records.map((r) => (r.obj as Record<string, unknown>).path) as string[]).sort();
+    const paths = (
+      records.map((r) => (r.obj as Record<string, unknown>).path) as string[]
+    ).sort();
     expect(paths).toEqual(["/api/late", "/api/later"]);
-    const ids = records.map((r) => (r.obj as Record<string, unknown>).requestId);
+    const ids = records.map(
+      (r) => (r.obj as Record<string, unknown>).requestId,
+    );
     expect(new Set(ids).size).toBe(2);
   });
 });

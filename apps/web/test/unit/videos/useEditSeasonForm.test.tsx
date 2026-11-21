@@ -29,7 +29,8 @@ function setup(season: SeasonDetails = mockSeason, open = true) {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
   const utils = renderHook(
-    (p: { open: boolean }) => useEditSeasonForm({ open: p.open, season, onOpenChange }),
+    (p: { open: boolean }) =>
+      useEditSeasonForm({ open: p.open, season, onOpenChange }),
     { wrapper, initialProps: { open } }
   );
   return { ...utils, queryClient, onOpenChange };
@@ -76,17 +77,23 @@ describe('useEditSeasonForm', () => {
     let patchedBody: Record<string, unknown> | null = null;
     let patchedUrl = '';
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url =
-        typeof input === 'string' ? input : (input as Request).url;
-      if (url.includes('/seasons/season-1') && init?.method?.toUpperCase() === 'PATCH') {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (
+        url.includes('/seasons/season-1') &&
+        init?.method?.toUpperCase() === 'PATCH'
+      ) {
         patchedUrl = url;
         patchedBody = JSON.parse(init?.body as string);
         return new Response(
-          JSON.stringify({ data: { ...mockSeason, ...(patchedBody as object) } }),
+          JSON.stringify({
+            data: { ...mockSeason, ...(patchedBody as object) },
+          }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
     const { result, queryClient, onOpenChange } = setup();
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
@@ -94,16 +101,24 @@ describe('useEditSeasonForm', () => {
       result.current.setTitle('Renamed');
     });
     act(() => {
-      result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
+      result.current.handleSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent);
     });
     await waitFor(() => {
       expect(patchedBody).toEqual(
-        expect.objectContaining({ title: 'Renamed', status: 'ongoing', source: 'otakudesu' })
+        expect.objectContaining({
+          title: 'Renamed',
+          status: 'ongoing',
+          source: 'otakudesu',
+        })
       );
     });
     expect(patchedUrl).toContain('/seasons/season-1');
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series', 'series-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['series', 'series-1'],
+      });
       expect(toast.success).toHaveBeenCalledWith(
         'Season updated successfully',
         expect.objectContaining({ description: 'Renamed' })
@@ -113,18 +128,22 @@ describe('useEditSeasonForm', () => {
   });
 
   it('blocks submit when title is blank', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
-      return new Response(JSON.stringify({ data: {} }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => {
+        return new Response(JSON.stringify({ data: {} }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       });
-    });
     const { result } = setup();
     act(() => {
       result.current.setTitle('   ');
     });
     act(() => {
-      result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
+      result.current.handleSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent);
     });
     expect(fetchSpy).not.toHaveBeenCalled();
   });

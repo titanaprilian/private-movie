@@ -89,7 +89,12 @@ export function AddMediaDialog() {
                 onClick={() => void submitPreview()}
                 disabled={isLoading || !tmdbId.trim()}
               >
-                {isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+                {isLoading && (
+                  <Loader2
+                    className="h-3.5 w-3.5 animate-spin"
+                    aria-hidden="true"
+                  />
+                )}
                 {isLoading ? 'Fetching preview...' : 'Next'}
               </ChunkyButton>
             </>
@@ -115,8 +120,15 @@ export function AddMediaDialog() {
                 }}
                 disabled={importTmdbMutation.isPending || !tmdbPreviewData}
               >
-                {importTmdbMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
-                {importTmdbMutation.isPending ? 'Importing...' : 'Import Series'}
+                {importTmdbMutation.isPending && (
+                  <Loader2
+                    className="h-3.5 w-3.5 animate-spin"
+                    aria-hidden="true"
+                  />
+                )}
+                {importTmdbMutation.isPending
+                  ? 'Importing...'
+                  : 'Import Series'}
               </ChunkyButton>
             </>
           )}

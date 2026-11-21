@@ -52,7 +52,7 @@ const UNSAFE_FORWARD_HEADERS = [
 
 export function buildProxyOutboundHeaders(
   request: Request,
-  referer: string
+  referer: string,
 ): Record<string, string> {
   const outboundHeaders: Record<string, string> = {
     Referer: referer,

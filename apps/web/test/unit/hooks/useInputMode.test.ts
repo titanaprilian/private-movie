@@ -89,15 +89,33 @@ describe('useInputMode', () => {
 
     const { unmount } = renderHook(() => useInputMode());
 
-    expect(addEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
-    expect(addEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
-    expect(addEventListenerSpy).toHaveBeenCalledWith('touchstart', expect.any(Function));
+    expect(addEventListenerSpy).toHaveBeenCalledWith(
+      'keydown',
+      expect.any(Function)
+    );
+    expect(addEventListenerSpy).toHaveBeenCalledWith(
+      'mousemove',
+      expect.any(Function)
+    );
+    expect(addEventListenerSpy).toHaveBeenCalledWith(
+      'touchstart',
+      expect.any(Function)
+    );
 
     unmount();
 
-    expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
-    expect(removeEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
-    expect(removeEventListenerSpy).toHaveBeenCalledWith('touchstart', expect.any(Function));
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'keydown',
+      expect.any(Function)
+    );
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'mousemove',
+      expect.any(Function)
+    );
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'touchstart',
+      expect.any(Function)
+    );
 
     addEventListenerSpy.mockRestore();
     removeEventListenerSpy.mockRestore();

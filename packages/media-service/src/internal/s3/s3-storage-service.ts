@@ -72,17 +72,23 @@ export interface AbortStaleMultipartUploadsResult {
 
 export interface S3StorageService {
   isConfigured(): boolean;
-  getPresignedUploadUrl(key: string, contentType?: string): Promise<{ uploadUrl: string; key: string }>;
-  getPresignedPlaybackUrl(key: string, expiresInSeconds?: number): Promise<string>;
+  getPresignedUploadUrl(
+    key: string,
+    contentType?: string,
+  ): Promise<{ uploadUrl: string; key: string }>;
+  getPresignedPlaybackUrl(
+    key: string,
+    expiresInSeconds?: number,
+  ): Promise<string>;
   uploadObject(
     key: string,
     body: ReadableStream | Buffer | Blob | Uint8Array,
-    contentType?: string
+    contentType?: string,
   ): Promise<void>;
   uploadStream(
     key: string,
     body: ReadableStream | Readable,
-    options?: StreamUploadOptions
+    options?: StreamUploadOptions,
   ): Promise<void>;
   deleteObject(key: string): Promise<void>;
   deleteObjects(keys: string[]): Promise<void>;
@@ -90,7 +96,9 @@ export interface S3StorageService {
   listAllObjects(prefix?: string): Promise<S3ObjectSummary[]>;
   getBucketStorageUsage(): Promise<BucketStorageUsage>;
   purgeDanglingVersions(prefix?: string): Promise<PurgeDanglingResult>;
-  abortStaleMultipartUploads(options?: AbortStaleMultipartUploadsOptions): Promise<AbortStaleMultipartUploadsResult>;
+  abortStaleMultipartUploads(
+    options?: AbortStaleMultipartUploadsOptions,
+  ): Promise<AbortStaleMultipartUploadsResult>;
   testConnection(): Promise<{ success: boolean; latencyMs: number }>;
   getPublicBaseUrl(): string | null;
 }
@@ -157,22 +165,42 @@ class DefaultS3StorageService implements S3StorageService {
 
   constructor(options?: S3StorageServiceOptions) {
     let endpoint = (options?.endpoint ?? process.env.S3_ENDPOINT ?? "").trim();
-    if (endpoint && !endpoint.startsWith("http://") && !endpoint.startsWith("https://")) {
+    if (
+      endpoint &&
+      !endpoint.startsWith("http://") &&
+      !endpoint.startsWith("https://")
+    ) {
       endpoint = `https://${endpoint}`;
     }
-    const region = (options?.region ?? process.env.S3_REGION ?? "us-east-005").trim();
+    const region = (
+      options?.region ??
+      process.env.S3_REGION ??
+      "us-east-005"
+    ).trim();
     const bucket = (options?.bucket ?? process.env.S3_BUCKET ?? "").trim();
-    const accessKeyId = (options?.accessKeyId ?? process.env.S3_ACCESS_KEY_ID ?? "").trim();
+    const accessKeyId = (
+      options?.accessKeyId ??
+      process.env.S3_ACCESS_KEY_ID ??
+      ""
+    ).trim();
     const secretAccessKey = (
-      options?.secretAccessKey ?? process.env.S3_SECRET_ACCESS_KEY ?? ""
+      options?.secretAccessKey ??
+      process.env.S3_SECRET_ACCESS_KEY ??
+      ""
     ).trim();
 
     const envExpires = process.env.S3_PRESIGNED_GET_EXPIRES_IN;
-    const defaultGetExpires = options?.presignedGetExpiresIn ?? (envExpires ? Number(envExpires) : 21600);
+    const defaultGetExpires =
+      options?.presignedGetExpiresIn ??
+      (envExpires ? Number(envExpires) : 21600);
 
     this.bucket = bucket;
-    this.defaultExpiresIn = Number.isNaN(defaultGetExpires) ? 21600 : defaultGetExpires;
-    this.publicBaseUrl = options?.publicBaseUrl ? options.publicBaseUrl.trim().replace(/\/+$/, "") : null;
+    this.defaultExpiresIn = Number.isNaN(defaultGetExpires)
+      ? 21600
+      : defaultGetExpires;
+    this.publicBaseUrl = options?.publicBaseUrl
+      ? options.publicBaseUrl.trim().replace(/\/+$/, "")
+      : null;
 
     if (endpoint && bucket && accessKeyId && secretAccessKey) {
       this.configured = true;
@@ -216,7 +244,7 @@ class DefaultS3StorageService implements S3StorageService {
       const latencyMs = Date.now() - startTime;
       throw Object.assign(
         error instanceof Error ? error : new Error(String(error)),
-        { latencyMs }
+        { latencyMs },
       );
     }
   }
@@ -234,7 +262,7 @@ class DefaultS3StorageService implements S3StorageService {
 
   async getPresignedUploadUrl(
     key: string,
-    contentType?: string
+    contentType?: string,
   ): Promise<{ uploadUrl: string; key: string }> {
     const client = this.ensureConfigured();
     if (!key) {
@@ -257,7 +285,7 @@ class DefaultS3StorageService implements S3StorageService {
 
   async getPresignedPlaybackUrl(
     key: string,
-    expiresInSeconds?: number
+    expiresInSeconds?: number,
   ): Promise<string> {
     const client = this.ensureConfigured();
     if (!key) {
@@ -276,7 +304,7 @@ class DefaultS3StorageService implements S3StorageService {
   async uploadObject(
     key: string,
     body: ReadableStream | Buffer | Blob | Uint8Array,
-    contentType?: string
+    contentType?: string,
   ): Promise<void> {
     const client = this.ensureConfigured();
     if (!key) {
@@ -296,7 +324,7 @@ class DefaultS3StorageService implements S3StorageService {
   async uploadStream(
     key: string,
     body: ReadableStream | Readable,
-    options?: StreamUploadOptions
+    options?: StreamUploadOptions,
   ): Promise<void> {
     const client = this.ensureConfigured();
     if (!key) {
@@ -370,7 +398,7 @@ class DefaultS3StorageService implements S3StorageService {
             Prefix: key,
             KeyMarker: keyMarker,
             VersionIdMarker: versionIdMarker,
-          })
+          }),
         );
 
         const toDelete: Array<{ Key: string; VersionId?: string }> = [];
@@ -396,7 +424,7 @@ class DefaultS3StorageService implements S3StorageService {
                   Objects: batch,
                   Quiet: true,
                 },
-              })
+              }),
             );
           }
         }
@@ -436,14 +464,15 @@ class DefaultS3StorageService implements S3StorageService {
         let keyMarker: string | undefined = undefined;
         let versionIdMarker: string | undefined = undefined;
         do {
-          const versionsRes: ListObjectVersionsCommandOutput = await client.send(
-            new ListObjectVersionsCommand({
-              Bucket: this.bucket,
-              Prefix: key,
-              KeyMarker: keyMarker,
-              VersionIdMarker: versionIdMarker,
-            })
-          );
+          const versionsRes: ListObjectVersionsCommandOutput =
+            await client.send(
+              new ListObjectVersionsCommand({
+                Bucket: this.bucket,
+                Prefix: key,
+                KeyMarker: keyMarker,
+                VersionIdMarker: versionIdMarker,
+              }),
+            );
 
           for (const v of versionsRes.Versions ?? []) {
             if (v.Key === key) {
@@ -476,7 +505,7 @@ class DefaultS3StorageService implements S3StorageService {
                 Objects: batch,
                 Quiet: true,
               },
-            })
+            }),
           );
         }
       }
@@ -534,7 +563,9 @@ class DefaultS3StorageService implements S3StorageService {
         continuationToken,
       });
       allObjects.push(...result.objects);
-      continuationToken = result.isTruncated ? result.nextContinuationToken : undefined;
+      continuationToken = result.isTruncated
+        ? result.nextContinuationToken
+        : undefined;
     } while (continuationToken);
 
     return allObjects;
@@ -561,7 +592,7 @@ class DefaultS3StorageService implements S3StorageService {
           Prefix: prefix,
           KeyMarker: keyMarker,
           VersionIdMarker: versionIdMarker,
-        })
+        }),
       );
 
       for (const v of versionsRes.Versions ?? []) {
@@ -598,7 +629,7 @@ class DefaultS3StorageService implements S3StorageService {
               Objects: batch,
               Quiet: true,
             },
-          })
+          }),
         );
       }
     }
@@ -610,7 +641,7 @@ class DefaultS3StorageService implements S3StorageService {
   }
 
   async abortStaleMultipartUploads(
-    options?: AbortStaleMultipartUploadsOptions
+    options?: AbortStaleMultipartUploadsOptions,
   ): Promise<AbortStaleMultipartUploadsResult> {
     const client = this.ensureConfigured();
     const maxAgeSeconds = options?.maxAgeSeconds ?? 86400; // default 24 hours
@@ -627,12 +658,14 @@ class DefaultS3StorageService implements S3StorageService {
           Prefix: options?.prefix,
           KeyMarker: keyMarker,
           UploadIdMarker: uploadIdMarker,
-        })
+        }),
       );
 
       for (const upload of response.Uploads ?? []) {
         if (!upload.Key || !upload.UploadId) continue;
-        const initiatedTime = upload.Initiated ? new Date(upload.Initiated).getTime() : 0;
+        const initiatedTime = upload.Initiated
+          ? new Date(upload.Initiated).getTime()
+          : 0;
         if (initiatedTime <= cutoffTime) {
           try {
             await client.send(
@@ -640,7 +673,7 @@ class DefaultS3StorageService implements S3StorageService {
                 Bucket: this.bucket,
                 Key: upload.Key,
                 UploadId: upload.UploadId,
-              })
+              }),
             );
             abortedUploadsCount++;
           } catch {
@@ -665,7 +698,10 @@ class DefaultS3StorageService implements S3StorageService {
 
   async getBucketStorageUsage(): Promise<BucketStorageUsage> {
     const objects = await this.listAllObjects();
-    const totalSizeBytes = objects.reduce((sum, obj) => sum + (obj.size || 0), 0);
+    const totalSizeBytes = objects.reduce(
+      (sum, obj) => sum + (obj.size || 0),
+      0,
+    );
     return {
       totalSizeBytes,
       objectCount: objects.length,
@@ -674,7 +710,7 @@ class DefaultS3StorageService implements S3StorageService {
 }
 
 export function createS3StorageService(
-  options?: S3StorageServiceOptions
+  options?: S3StorageServiceOptions,
 ): S3StorageService {
   return new DefaultS3StorageService(options);
 }

@@ -67,11 +67,14 @@ export function useDashboard(): UseDashboardReturn {
     },
   });
 
-  const isScrapeAllRunning = scrapeAllMutation.isPending || scheduler?.isExecuting === true;
+  const isScrapeAllRunning =
+    scrapeAllMutation.isPending || scheduler?.isExecuting === true;
   const scrapingSeasonId = scrapeMutation.isPending
-    ? (scrapeMutation.variables as string | undefined) ?? null
+    ? ((scrapeMutation.variables as string | undefined) ?? null)
     : null;
-  const ongoingFailureCount = ongoingSeasons.filter((s) => Boolean(s.lastScrapeError)).length;
+  const ongoingFailureCount = ongoingSeasons.filter((s) =>
+    Boolean(s.lastScrapeError)
+  ).length;
 
   return {
     dashboardQuery,

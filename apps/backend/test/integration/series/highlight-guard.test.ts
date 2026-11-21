@@ -5,7 +5,10 @@ import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders } from "../../utils/auth";
 import { db } from "../../utils/db";
 
-async function insertSeries(title: string, highlighted: boolean): Promise<string> {
+async function insertSeries(
+  title: string,
+  highlighted: boolean,
+): Promise<string> {
   const id = crypto.randomUUID();
   const now = new Date();
   await db.insert(series).values({

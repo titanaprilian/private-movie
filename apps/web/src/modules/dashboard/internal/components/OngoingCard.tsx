@@ -11,7 +11,13 @@ import {
   truncateErrorMessage,
 } from '../formatters';
 
-function Poster({ title, posterUrl }: { title: string; posterUrl: string | null }) {
+function Poster({
+  title,
+  posterUrl,
+}: {
+  title: string;
+  posterUrl: string | null;
+}) {
   if (posterUrl) {
     return (
       <img
@@ -104,8 +110,12 @@ export function OngoingCard({ item, isScraping, onScrape }: OngoingCardProps) {
             </span>
           </div>
           {/* Back-compat episode count badge for existing tests */}
-          <span data-testid={`ongoing-episodes-${item.seasonId}`} className="sr-only">
-            {item.episodeCount} {item.episodeCount === 1 ? 'episode' : 'episodes'}
+          <span
+            data-testid={`ongoing-episodes-${item.seasonId}`}
+            className="sr-only"
+          >
+            {item.episodeCount}{' '}
+            {item.episodeCount === 1 ? 'episode' : 'episodes'}
           </span>
         </div>
         <button
@@ -116,7 +126,10 @@ export function OngoingCard({ item, isScraping, onScrape }: OngoingCardProps) {
           data-testid={`ongoing-scrape-${item.seasonId}`}
           className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface-raised)] text-[var(--ink)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--blue)]"
         >
-          <RefreshCw aria-hidden="true" className={`h-4 w-4 ${isScraping ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            aria-hidden="true"
+            className={`h-4 w-4 ${isScraping ? 'animate-spin' : ''}`}
+          />
           <span className="sr-only">{isScraping ? 'Scraping…' : 'Scrape'}</span>
         </button>
       </div>
@@ -157,7 +170,10 @@ export function OngoingCard({ item, isScraping, onScrape }: OngoingCardProps) {
             data-testid={`ongoing-retry-${item.seasonId}`}
             className="mt-2 w-full"
           >
-            <RotateCcw aria-hidden="true" className={isScraping ? 'animate-spin' : ''} />
+            <RotateCcw
+              aria-hidden="true"
+              className={isScraping ? 'animate-spin' : ''}
+            />
             {isScraping ? 'Retrying…' : 'Retry'}
           </ChunkyButton>
         </div>
@@ -165,4 +181,3 @@ export function OngoingCard({ item, isScraping, onScrape }: OngoingCardProps) {
     </ChunkyCard>
   );
 }
-

@@ -29,7 +29,7 @@ describe("loadServerConfig", () => {
     expect(config.port).toBe(4000);
     expect(config.hostname).toBe("127.0.0.1");
     expect(config.maxRequestBodySize).toBe(
-      512 * BYTES_PER_MIB + MULTIPART_OVERHEAD_BYTES
+      512 * BYTES_PER_MIB + MULTIPART_OVERHEAD_BYTES,
     );
     expect(config.idleTimeout).toBe(0);
   });
@@ -52,7 +52,7 @@ describe("loadServerConfig", () => {
   it("falls back to the default hostname only when unset", () => {
     expect(loadServerConfig({}).hostname).toBe("0.0.0.0");
     expect(loadServerConfig({ HOST: "example.internal" }).hostname).toBe(
-      "example.internal"
+      "example.internal",
     );
   });
 
@@ -60,17 +60,17 @@ describe("loadServerConfig", () => {
     const expected =
       DEFAULT_MAX_UPLOAD_MB * BYTES_PER_MIB + MULTIPART_OVERHEAD_BYTES;
     expect(loadServerConfig({}).maxRequestBodySize).toBe(expected);
-    expect(loadServerConfig({ MAX_UPLOAD_SIZE_MB: "" }).maxRequestBodySize).toBe(
-      expected
-    );
     expect(
-      loadServerConfig({ MAX_UPLOAD_SIZE_MB: "huge" }).maxRequestBodySize
+      loadServerConfig({ MAX_UPLOAD_SIZE_MB: "" }).maxRequestBodySize,
     ).toBe(expected);
-    expect(loadServerConfig({ MAX_UPLOAD_SIZE_MB: "0" }).maxRequestBodySize).toBe(
-      expected
-    );
     expect(
-      loadServerConfig({ MAX_UPLOAD_SIZE_MB: "-10" }).maxRequestBodySize
+      loadServerConfig({ MAX_UPLOAD_SIZE_MB: "huge" }).maxRequestBodySize,
+    ).toBe(expected);
+    expect(
+      loadServerConfig({ MAX_UPLOAD_SIZE_MB: "0" }).maxRequestBodySize,
+    ).toBe(expected);
+    expect(
+      loadServerConfig({ MAX_UPLOAD_SIZE_MB: "-10" }).maxRequestBodySize,
     ).toBe(expected);
   });
 

@@ -58,7 +58,6 @@ export class UserNotFoundError extends Error {
   }
 }
 
-
 export interface AuthenticationService {
   register(input: RegisterInput | Record<string, any>): Promise<any>;
   verifyCredentials(input: VerifyCredentialsInput): Promise<any>;

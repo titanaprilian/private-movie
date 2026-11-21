@@ -108,7 +108,7 @@ describe("POST /series/tmdb-import", () => {
               },
             ],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       if (url.includes("/tv/100")) {
@@ -131,7 +131,7 @@ describe("POST /series/tmdb-import", () => {
             ],
             genres: [{ id: 1, name: "Action" }],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -171,7 +171,7 @@ describe("POST /series/tmdb-import", () => {
             vote_average: 9.0,
             genres: [{ id: 2, name: "Sci-Fi" }],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -199,9 +199,11 @@ describe("POST /series/tmdb-import", () => {
   it("returns 404 when TMDB returns 404 Not Found", async () => {
     vi.spyOn(global, "fetch").mockResolvedValueOnce(
       new Response(
-        JSON.stringify({ status_message: "The resource you requested could not be found." }),
-        { status: 404 }
-      )
+        JSON.stringify({
+          status_message: "The resource you requested could not be found.",
+        }),
+        { status: 404 },
+      ),
     );
 
     const reqOptions = {

@@ -726,7 +726,9 @@ describe('SeriesWatchView', () => {
       expect(trigger).not.toHaveTextContent('available');
 
       await user.click(trigger);
-      expect(screen.queryByTestId('server-count-badge')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('server-count-badge')
+      ).not.toBeInTheDocument();
     });
 
     it('constrains the player container to fit short viewports without scrolling', () => {

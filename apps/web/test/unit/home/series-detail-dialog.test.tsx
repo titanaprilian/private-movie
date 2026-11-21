@@ -229,7 +229,9 @@ describe('Home hero showcase & series detail dialog', () => {
     expect(layout.className).toMatch(/overflow-hidden/);
 
     const header = screen.getByTestId('series-detail-header');
-    expect(header).toContainElement(screen.getByTestId('series-detail-backdrop'));
+    expect(header).toContainElement(
+      screen.getByTestId('series-detail-backdrop')
+    );
     expect(header).toContainElement(screen.getByTestId('series-detail-close'));
     expect(header).toHaveClass('shrink-0');
   });

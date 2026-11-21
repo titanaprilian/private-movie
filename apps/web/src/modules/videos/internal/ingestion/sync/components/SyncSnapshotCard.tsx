@@ -35,23 +35,20 @@ export function SyncSnapshotCard({
             {previewData.releaseDate && (
               <MetaBadge>{previewData.releaseDate}</MetaBadge>
             )}
-            {seriesType === 'movie' && typeof previewData.runtime === 'number' && (
-              <MetaBadge>{previewData.runtime} mins</MetaBadge>
-            )}
+            {seriesType === 'movie' &&
+              typeof previewData.runtime === 'number' && (
+                <MetaBadge>{previewData.runtime} mins</MetaBadge>
+              )}
             {seriesType === 'tv' && (
               <>
                 {previewData.status && (
                   <MetaBadge>{previewData.status}</MetaBadge>
                 )}
                 {typeof previewData.totalSeasons === 'number' && (
-                  <MetaBadge>
-                    {previewData.totalSeasons} Seasons
-                  </MetaBadge>
+                  <MetaBadge>{previewData.totalSeasons} Seasons</MetaBadge>
                 )}
                 {typeof previewData.totalEpisodes === 'number' && (
-                  <MetaBadge>
-                    {previewData.totalEpisodes} Episodes
-                  </MetaBadge>
+                  <MetaBadge>{previewData.totalEpisodes} Episodes</MetaBadge>
                 )}
               </>
             )}

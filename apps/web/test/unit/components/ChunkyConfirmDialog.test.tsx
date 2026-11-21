@@ -30,7 +30,9 @@ describe('ChunkyConfirmDialog primitive', () => {
     const content = screen.getByTestId('chunky-confirm-dialog');
     expect(content.className).toMatch('zoom-in-95');
     expect(content.className).toMatch('fade-in-0');
-    expect(screen.getByText('This action cannot be undone.')).toBeInTheDocument();
+    expect(
+      screen.getByText('This action cannot be undone.')
+    ).toBeInTheDocument();
   });
 
   it('supports configurable labels, ReactNode description, and confirm variants', async () => {
@@ -38,23 +40,35 @@ describe('ChunkyConfirmDialog primitive', () => {
       <ChunkyConfirmDialog
         defaultOpen
         title="Remove file"
-        description={<span>Custom <strong>rich</strong> body</span>}
+        description={
+          <span>
+            Custom <strong>rich</strong> body
+          </span>
+        }
         confirmLabel="Remove"
         cancelLabel="Keep"
         confirmVariant="primary"
       />
     );
-    expect(await screen.findByRole('dialog', { name: /remove file/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('dialog', { name: /remove file/i })
+    ).toBeInTheDocument();
     expect(screen.getByText('Remove')).toBeInTheDocument();
     expect(screen.getByText('Keep')).toBeInTheDocument();
     expect(screen.getByText('rich')).toBeInTheDocument();
     // non-danger variant hides the warning badge
-    expect(screen.queryByTestId('chunky-confirm-badge')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('chunky-confirm-badge')
+    ).not.toBeInTheDocument();
   });
 
   it('uses Delete / Cancel defaults and danger variant by default', async () => {
     renderWithProviders(
-      <ChunkyConfirmDialog defaultOpen title="Delete series" description="Sure?" />
+      <ChunkyConfirmDialog
+        defaultOpen
+        title="Delete series"
+        description="Sure?"
+      />
     );
     await screen.findByRole('dialog');
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();

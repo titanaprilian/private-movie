@@ -19,7 +19,10 @@ describe("scheduler endpoints", () => {
   });
 
   it("returns 401 without a Bearer token", async () => {
-    const runRes = await request(app, { method: "POST", path: "/api/admin/scheduler/run" });
+    const runRes = await request(app, {
+      method: "POST",
+      path: "/api/admin/scheduler/run",
+    });
     expect(runRes.status).toBe(401);
     const patchRes = await request(app, {
       method: "PATCH",
@@ -30,16 +33,28 @@ describe("scheduler endpoints", () => {
   });
 
   it("POST /api/admin/scheduler/run triggers a global scrape pass", async () => {
-    const res = await request(app, { method: "POST", path: "/api/admin/scheduler/run", headers });
+    const res = await request(app, {
+      method: "POST",
+      path: "/api/admin/scheduler/run",
+      headers,
+    });
     expect(res.status).toBe(200);
     const body = res.body as DataResponse<{
       started: boolean;
       alreadyExecuting: boolean;
-      result: { totalProcessed: number; successCount: number; failureCount: number } | null;
+      result: {
+        totalProcessed: number;
+        successCount: number;
+        failureCount: number;
+      } | null;
     }>;
     expect(body.data.started).toBe(true);
     expect(body.data.alreadyExecuting).toBe(false);
-    expect(body.data.result).toEqual({ totalProcessed: 0, successCount: 0, failureCount: 0 });
+    expect(body.data.result).toEqual({
+      totalProcessed: 0,
+      successCount: 0,
+      failureCount: 0,
+    });
   });
 
   it("POST /api/admin/scheduler/run returns 409 while a run is executing", async () => {
@@ -74,15 +89,27 @@ describe("scheduler endpoints", () => {
       body: { intervalMinutes: 60, isEnabled: false },
     });
     expect(res.status).toBe(200);
-    const body = res.body as DataResponse<{ intervalMinutes: number; isEnabled: boolean }>;
+    const body = res.body as DataResponse<{
+      intervalMinutes: number;
+      isEnabled: boolean;
+    }>;
     expect(body.data).toEqual({ intervalMinutes: 60, isEnabled: false });
 
-    const rows = await db.select().from(systemTable).where(eq(systemTable.key, "scheduler_interval_minutes"));
+    const rows = await db
+      .select()
+      .from(systemTable)
+      .where(eq(systemTable.key, "scheduler_interval_minutes"));
     expect(rows[0]?.value).toBe("60");
-    const enabledRows = await db.select().from(systemTable).where(eq(systemTable.key, "scheduler_enabled"));
+    const enabledRows = await db
+      .select()
+      .from(systemTable)
+      .where(eq(systemTable.key, "scheduler_enabled"));
     expect(enabledRows[0]?.value).toBe("false");
 
-    const dashRes = await request(app, { path: "/api/admin/dashboard", headers });
+    const dashRes = await request(app, {
+      path: "/api/admin/dashboard",
+      headers,
+    });
     expect(dashRes.status).toBe(200);
     const dashBody = dashRes.body as DataResponse<AdminDashboardDto>;
     expect(dashBody.data.scheduler.intervalMinutes).toBe(60);
@@ -114,7 +141,10 @@ describe("scheduler endpoints", () => {
       body: { isEnabled: true },
     });
     expect(res.status).toBe(200);
-    const body = res.body as DataResponse<{ intervalMinutes: number; isEnabled: boolean }>;
+    const body = res.body as DataResponse<{
+      intervalMinutes: number;
+      isEnabled: boolean;
+    }>;
     expect(body.data.isEnabled).toBe(true);
     // Interval persists from the earlier update in this test.
     expect(body.data.intervalMinutes).toBe(60);

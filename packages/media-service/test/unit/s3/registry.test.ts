@@ -24,7 +24,9 @@ describe("StorageProviderRegistry decryption failure handling", () => {
   });
 
   it("catches decryption failures gracefully and logs a warning in getServiceForProvider", () => {
-    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleWarnSpy = vi
+      .spyOn(console, "warn")
+      .mockImplementation(() => {});
     const mockDb = {} as any;
 
     const registry = createStorageProviderRegistry(mockDb);
@@ -33,14 +35,16 @@ describe("StorageProviderRegistry decryption failure handling", () => {
     expect(service).toBeNull();
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       "[StorageProviderRegistry] Failed to decrypt credentials for provider provider-1 (Corrupted Provider):",
-      expect.any(Error)
+      expect.any(Error),
     );
 
     consoleWarnSpy.mockRestore();
   });
 
   it("returns null when getDefaultProvider hits decryption failure", async () => {
-    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleWarnSpy = vi
+      .spyOn(console, "warn")
+      .mockImplementation(() => {});
     const mockDb = {
       select: () => ({
         from: () => ({

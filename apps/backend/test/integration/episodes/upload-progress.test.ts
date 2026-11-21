@@ -70,16 +70,26 @@ describe("Upload Progress API", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("UPLOAD_SESSION_NOT_FOUND");
     });
 
     it("returns live progress during active upload and cleans up 404 when upload finishes", async () => {
       const sessionId = crypto.randomUUID();
-      let progressDuringUpload: { loaded: number; total: number; percent: number } | null = null;
+      let progressDuringUpload: {
+        loaded: number;
+        total: number;
+        percent: number;
+      } | null = null;
 
       const mockS3Service = createMockS3({
-        uploadStream: async (_key: string, body: ReadableStream | Readable, options?: StreamUploadOptions) => {
+        uploadStream: async (
+          _key: string,
+          body: ReadableStream | Readable,
+          options?: StreamUploadOptions,
+        ) => {
           // Read stream and invoke progress
           options?.onProgress?.({ loaded: 500, total: 1000 });
           // Fetch live progress endpoint mid-stream
@@ -87,7 +97,11 @@ describe("Upload Progress API", () => {
             path: `/episodes/upload-progress/${sessionId}`,
           });
           if (progressRes.status === 200) {
-            progressDuringUpload = (progressRes.body as { data: { loaded: number; total: number; percent: number } }).data;
+            progressDuringUpload = (
+              progressRes.body as {
+                data: { loaded: number; total: number; percent: number };
+              }
+            ).data;
           }
 
           options?.onProgress?.({ loaded: 1000, total: 1000 });
@@ -99,7 +113,11 @@ describe("Upload Progress API", () => {
       const episode = await insertTestEpisode();
 
       const formData = new FormData();
-      formData.append("file", new Blob([new Uint8Array(1000)], { type: "video/mp4" }), "progress-video.mp4");
+      formData.append(
+        "file",
+        new Blob([new Uint8Array(1000)], { type: "video/mp4" }),
+        "progress-video.mp4",
+      );
       formData.append("label", "Progress Source");
       formData.append("uploadSessionId", sessionId);
 
@@ -125,7 +143,9 @@ describe("Upload Progress API", () => {
         path: `/episodes/upload-progress/${sessionId}`,
       });
       expect(postUploadRes.status).toBe(404);
-      expect((postUploadRes.body as { error: { code: string } }).error.code).toBe("UPLOAD_SESSION_NOT_FOUND");
+      expect(
+        (postUploadRes.body as { error: { code: string } }).error.code,
+      ).toBe("UPLOAD_SESSION_NOT_FOUND");
     });
   });
 });

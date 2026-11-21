@@ -30,7 +30,8 @@ const toneStyles: Record<
     button: 'danger',
   },
   warning: {
-    badge: 'border-[var(--gold-dark)] bg-[var(--gold)]/20 text-[var(--gold-dark)]',
+    badge:
+      'border-[var(--gold-dark)] bg-[var(--gold)]/20 text-[var(--gold-dark)]',
     button: 'gold',
   },
 };

@@ -7,7 +7,7 @@ import type { SourceProbeResult } from "../types";
  */
 export async function probeVideoSource(
   targetUrl: URL,
-  referer?: string
+  referer?: string,
 ): Promise<SourceProbeResult> {
   const startTime = Date.now();
   const outboundHeaders: Record<string, string> = {

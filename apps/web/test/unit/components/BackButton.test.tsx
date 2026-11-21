@@ -44,7 +44,10 @@ describe('BackButton primitive', () => {
 
   it('supports custom labels and aria-labels', () => {
     renderWithProviders(
-      <BackButton label="Back to Overview" aria-label="Back to series overview" />
+      <BackButton
+        label="Back to Overview"
+        aria-label="Back to series overview"
+      />
     );
     const button = screen.getByRole('button', {
       name: 'Back to series overview',

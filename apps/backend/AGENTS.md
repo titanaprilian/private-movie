@@ -37,7 +37,7 @@ Backend code is organized into three distinct layers to ensure clear separation 
 
 ### Internal Organization: Consistent on the Outside, Freedom on the Inside
 
-The public seam is fixed (`index.ts` is the single export point, `internal/` stays private), but how files are arranged *inside* `internal/` scales proportionally with module complexity. Organize internals proportionally — small modules stay flat, larger ones earn structure:
+The public seam is fixed (`index.ts` is the single export point, `internal/` stays private), but how files are arranged _inside_ `internal/` scales proportionally with module complexity. Organize internals proportionally — small modules stay flat, larger ones earn structure:
 
 - **Tier 1 — Flat Layout (Simple CRUD, 5 or fewer files)**:
   - Keep all files directly in `src/modules/<feature>/internal/`. No subdirectories.
@@ -97,6 +97,7 @@ Transport concerns live **inside** each domain module but must never leak out of
 - Bypassing the `createApp` factory by composing feature plugins elsewhere. Feature `http.ts` files are imported by path (e.g. `import { authRoutes } from "./modules/authentication/http"`) only at the composition root.
 - Defining TypeScript interfaces or TypeBox schemas directly inside `http.ts` (e.g. `<Feature>RoutesOptions`). All transport interfaces and schemas belong in `schemas.ts` and are re-exported by `http.ts`.
 - Defining domain interfaces (e.g. repository interfaces, service interfaces, database handles, options) directly inside `service.ts` or `repository.ts`. All module-internal interfaces belong in `internal/types.ts`.
+
 ## Testing
 
 Tests live in `test/` at the app root:

@@ -1,4 +1,9 @@
-import { createTestQueryClient, renderWithProviders, screen, waitFor } from '../../utils';
+import {
+  createTestQueryClient,
+  renderWithProviders,
+  screen,
+  waitFor,
+} from '../../utils';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { setAccessToken } from '@/lib/api';
 import { DashboardView } from '@/modules/dashboard';
@@ -128,11 +133,19 @@ describe('DashboardView', () => {
     renderWithProviders(<DashboardView />);
     expect(await screen.findByTestId('kpi-total-series')).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByTestId('kpi-total-series-value')).toHaveTextContent('12');
+      expect(screen.getByTestId('kpi-total-series-value')).toHaveTextContent(
+        '12'
+      );
     });
-    expect(screen.getByTestId('kpi-ongoing-badge')).toHaveTextContent('3 ongoing');
-    expect(screen.getByTestId('kpi-featured-badge')).toHaveTextContent('4 featured');
-    expect(screen.getByTestId('kpi-total-episodes-value')).toHaveTextContent('240');
+    expect(screen.getByTestId('kpi-ongoing-badge')).toHaveTextContent(
+      '3 ongoing'
+    );
+    expect(screen.getByTestId('kpi-featured-badge')).toHaveTextContent(
+      '4 featured'
+    );
+    expect(screen.getByTestId('kpi-total-episodes-value')).toHaveTextContent(
+      '240'
+    );
     expect(screen.getByTestId('kpi-total-genres-value')).toHaveTextContent('8');
   });
 
@@ -143,7 +156,9 @@ describe('DashboardView', () => {
     const addLink = screen.getByRole('link', { name: /add series/i });
     expect(addLink).toHaveAttribute('href', '/admin/videos');
 
-    const refreshBtn = screen.getByRole('button', { name: /refresh dashboard/i });
+    const refreshBtn = screen.getByRole('button', {
+      name: /refresh dashboard/i,
+    });
     expect(refreshBtn).toBeInTheDocument();
     await user.click(refreshBtn);
     await waitFor(() => {
@@ -155,26 +170,42 @@ describe('DashboardView', () => {
     renderWithProviders(<DashboardView />);
     expect(await screen.findByTestId('kpi-storage')).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent('10.0 GB');
+      expect(screen.getByTestId('kpi-storage-value')).toHaveTextContent(
+        '10.0 GB'
+      );
     });
-    expect(screen.getByTestId('kpi-storage-percent')).toHaveTextContent('of 100.0 GB used (10.0%)');
+    expect(screen.getByTestId('kpi-storage-percent')).toHaveTextContent(
+      'of 100.0 GB used (10.0%)'
+    );
   });
 
   it('renders recent series activity with links to series management pages', async () => {
     renderWithProviders(<DashboardView />);
-    expect(await screen.findByTestId('recent-series-section')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('recent-series-section')
+    ).toBeInTheDocument();
     const card = await screen.findByTestId('recent-series-card-series-1');
     expect(card).toHaveAttribute('href', '/admin/videos/series-1');
-    expect(screen.getByTestId('recent-series-episodes-series-1')).toHaveTextContent('12 episodes');
-    expect(screen.getByTestId('recent-series-episodes-series-2')).toHaveTextContent('1 episode');
-    expect(screen.getByTestId('recent-series-updated-series-1')).toHaveTextContent(/ago|just now/);
+    expect(
+      screen.getByTestId('recent-series-episodes-series-1')
+    ).toHaveTextContent('12 episodes');
+    expect(
+      screen.getByTestId('recent-series-episodes-series-2')
+    ).toHaveTextContent('1 episode');
+    expect(
+      screen.getByTestId('recent-series-updated-series-1')
+    ).toHaveTextContent(/ago|just now/);
   });
 
   it('shows an empty state when there is no recent series activity', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
       return new Response(
         JSON.stringify({
-          data: { ...dashboardPayload.data, ongoingSeasons: [], recentSeries: [] },
+          data: {
+            ...dashboardPayload.data,
+            ongoingSeasons: [],
+            recentSeries: [],
+          },
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
@@ -187,13 +218,23 @@ describe('DashboardView', () => {
 
   it('renders ongoing series cards with posters, counts, scraped times and links', async () => {
     renderWithProviders(<DashboardView />);
-    expect(await screen.findByTestId('ongoing-series-section')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('ongoing-series-section')
+    ).toBeInTheDocument();
     const card = await screen.findByTestId('ongoing-card-season-ongoing-1');
     expect(card).toBeInTheDocument();
-    expect(screen.getByTestId('ongoing-episodes-season-ongoing-1')).toHaveTextContent('8 episodes');
-    expect(screen.getByTestId('ongoing-scraped-season-ongoing-1')).toHaveTextContent(/Scraped .* ago/);
-    expect(screen.getByTestId('ongoing-scraped-season-ongoing-2')).toHaveTextContent('Never scraped');
-    const links = card.querySelectorAll('a[href="/admin/videos/series-ongoing-1"]');
+    expect(
+      screen.getByTestId('ongoing-episodes-season-ongoing-1')
+    ).toHaveTextContent('8 episodes');
+    expect(
+      screen.getByTestId('ongoing-scraped-season-ongoing-1')
+    ).toHaveTextContent(/Scraped .* ago/);
+    expect(
+      screen.getByTestId('ongoing-scraped-season-ongoing-2')
+    ).toHaveTextContent('Never scraped');
+    const links = card.querySelectorAll(
+      'a[href="/admin/videos/series-ongoing-1"]'
+    );
     expect(links.length).toBeGreaterThan(0);
   });
 
@@ -201,8 +242,13 @@ describe('DashboardView', () => {
     renderWithProviders(<DashboardView />);
     const badge = await screen.findByTestId('ongoing-error-season-ongoing-2');
     expect(badge).toHaveTextContent('Failed to fetch provider HTML: timeout');
-    expect(badge).toHaveAttribute('title', 'Failed to fetch provider HTML: timeout');
-    expect(screen.queryByTestId('ongoing-error-season-ongoing-1')).not.toBeInTheDocument();
+    expect(badge).toHaveAttribute(
+      'title',
+      'Failed to fetch provider HTML: timeout'
+    );
+    expect(
+      screen.queryByTestId('ongoing-error-season-ongoing-1')
+    ).not.toBeInTheDocument();
   });
 
   it('triggers the scrape-ongoing endpoint with loading state and refetches dashboard', async () => {
@@ -229,7 +275,9 @@ describe('DashboardView', () => {
       });
     });
     const { user } = renderWithProviders(<DashboardView />);
-    const scrapeBtn = await screen.findByTestId('ongoing-scrape-season-ongoing-1');
+    const scrapeBtn = await screen.findByTestId(
+      'ongoing-scrape-season-ongoing-1'
+    );
     await user.click(scrapeBtn);
     await waitFor(() => {
       expect(scrapeCalls).toBe(1);
@@ -274,7 +322,9 @@ describe('DashboardView', () => {
   it('shows an empty state when no seasons are ongoing', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
       return new Response(
-        JSON.stringify({ data: { ...dashboardPayload.data, ongoingSeasons: [] } }),
+        JSON.stringify({
+          data: { ...dashboardPayload.data, ongoingSeasons: [] },
+        }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     });
@@ -316,7 +366,9 @@ describe('DashboardView', () => {
     const queryClient = createTestQueryClient();
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const { user } = renderWithProviders(<DashboardView />, { queryClient });
-    const scrapeBtn = await screen.findByTestId('ongoing-scrape-season-ongoing-1');
+    const scrapeBtn = await screen.findByTestId(
+      'ongoing-scrape-season-ongoing-1'
+    );
     await user.click(scrapeBtn);
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] });

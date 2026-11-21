@@ -16,8 +16,15 @@ export interface UseHomeFeedNavReturn {
   setFocus: (row: number, item: number) => void;
 }
 
-export function useHomeFeedNav(options: UseHomeFeedNavOptions = {}): UseHomeFeedNavReturn {
-  const { heroSeriesId, rows = [], onSelectSeries, isSpatialMode: overrideSpatial } = options;
+export function useHomeFeedNav(
+  options: UseHomeFeedNavOptions = {}
+): UseHomeFeedNavReturn {
+  const {
+    heroSeriesId,
+    rows = [],
+    onSelectSeries,
+    isSpatialMode: overrideSpatial,
+  } = options;
   const { isSpatialMode: hookSpatial } = useInputMode();
   const isSpatialMode = overrideSpatial ?? hookSpatial;
 
@@ -61,7 +68,8 @@ export function useHomeFeedNav(options: UseHomeFeedNavOptions = {}): UseHomeFeed
         const nextRow = Math.max(0, curRow - 1);
         if (nextRow !== curRow) {
           const count = getItemCount(nextRow);
-          const nextItem = nextRow === 0 ? 0 : Math.min(curItem, Math.max(0, count - 1));
+          const nextItem =
+            nextRow === 0 ? 0 : Math.min(curItem, Math.max(0, count - 1));
           setFocusedRow(nextRow);
           setFocusedItem(nextItem);
         }
@@ -70,7 +78,8 @@ export function useHomeFeedNav(options: UseHomeFeedNavOptions = {}): UseHomeFeed
         const nextRow = Math.min(maxRow, curRow + 1);
         if (nextRow !== curRow) {
           const count = getItemCount(nextRow);
-          const nextItem = nextRow === 0 ? 0 : Math.min(curItem, Math.max(0, count - 1));
+          const nextItem =
+            nextRow === 0 ? 0 : Math.min(curItem, Math.max(0, count - 1));
           setFocusedRow(nextRow);
           setFocusedItem(nextItem);
         }

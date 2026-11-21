@@ -11,39 +11,64 @@ vi.mock("@aws-sdk/client-s3", () => {
     S3Client: vi.fn().mockImplementation(() => ({
       send: mockSend,
     })),
-    PutObjectCommand: vi.fn().mockImplementation((input) => ({ type: "PutObjectCommand", input })),
-    GetObjectCommand: vi.fn().mockImplementation((input) => ({ type: "GetObjectCommand", input })),
-    DeleteObjectCommand: vi.fn().mockImplementation((input) => ({ type: "DeleteObjectCommand", input })),
-    DeleteObjectsCommand: vi.fn().mockImplementation((input) => ({ type: "DeleteObjectsCommand", input })),
-    ListObjectsV2Command: vi.fn().mockImplementation((input) => ({ type: "ListObjectsV2Command", input })),
-    ListObjectVersionsCommand: vi.fn().mockImplementation((input) => ({ type: "ListObjectVersionsCommand", input })),
-    ListMultipartUploadsCommand: vi.fn().mockImplementation((input) => ({ type: "ListMultipartUploadsCommand", input })),
-    AbortMultipartUploadCommand: vi.fn().mockImplementation((input) => ({ type: "AbortMultipartUploadCommand", input })),
+    PutObjectCommand: vi
+      .fn()
+      .mockImplementation((input) => ({ type: "PutObjectCommand", input })),
+    GetObjectCommand: vi
+      .fn()
+      .mockImplementation((input) => ({ type: "GetObjectCommand", input })),
+    DeleteObjectCommand: vi
+      .fn()
+      .mockImplementation((input) => ({ type: "DeleteObjectCommand", input })),
+    DeleteObjectsCommand: vi
+      .fn()
+      .mockImplementation((input) => ({ type: "DeleteObjectsCommand", input })),
+    ListObjectsV2Command: vi
+      .fn()
+      .mockImplementation((input) => ({ type: "ListObjectsV2Command", input })),
+    ListObjectVersionsCommand: vi.fn().mockImplementation((input) => ({
+      type: "ListObjectVersionsCommand",
+      input,
+    })),
+    ListMultipartUploadsCommand: vi.fn().mockImplementation((input) => ({
+      type: "ListMultipartUploadsCommand",
+      input,
+    })),
+    AbortMultipartUploadCommand: vi.fn().mockImplementation((input) => ({
+      type: "AbortMultipartUploadCommand",
+      input,
+    })),
   };
 });
 
-const { mockUploadDone, mockUploadOn, mockUploadAbort, mockUploadConstructor } = vi.hoisted(() => {
-  const mockUploadDone = vi.fn();
-  const mockUploadOn = vi.fn();
-  const mockUploadAbort = vi.fn();
-  const mockUploadConstructor = vi.fn().mockImplementation((params) => {
-    const instance = {
-      done: mockUploadDone,
-      on: mockUploadOn,
-      abort: mockUploadAbort,
-      params,
-    };
-    mockUploadDone.mockResolvedValue({});
-    mockUploadOn.mockImplementation((event: string, listener: Function) => {
-      if (event === "httpUploadProgress") {
-        (instance as any)._progressListener = listener;
-      }
+const { mockUploadDone, mockUploadOn, mockUploadAbort, mockUploadConstructor } =
+  vi.hoisted(() => {
+    const mockUploadDone = vi.fn();
+    const mockUploadOn = vi.fn();
+    const mockUploadAbort = vi.fn();
+    const mockUploadConstructor = vi.fn().mockImplementation((params) => {
+      const instance = {
+        done: mockUploadDone,
+        on: mockUploadOn,
+        abort: mockUploadAbort,
+        params,
+      };
+      mockUploadDone.mockResolvedValue({});
+      mockUploadOn.mockImplementation((event: string, listener: Function) => {
+        if (event === "httpUploadProgress") {
+          (instance as any)._progressListener = listener;
+        }
+        return instance;
+      });
       return instance;
     });
-    return instance;
+    return {
+      mockUploadDone,
+      mockUploadOn,
+      mockUploadAbort,
+      mockUploadConstructor,
+    };
   });
-  return { mockUploadDone, mockUploadOn, mockUploadAbort, mockUploadConstructor };
-});
 
 vi.mock("@aws-sdk/lib-storage", () => {
   return {
@@ -116,33 +141,45 @@ describe("S3StorageService", () => {
   describe("Unconfigured S3StorageService operations", () => {
     it("throws S3NotConfiguredError on getPresignedUploadUrl", async () => {
       const service = createS3StorageService();
-      await expect(service.getPresignedUploadUrl("test-key")).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.getPresignedUploadUrl("test-key")).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
 
     it("throws S3NotConfiguredError on getPresignedPlaybackUrl", async () => {
       const service = createS3StorageService();
-      await expect(service.getPresignedPlaybackUrl("test-key")).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.getPresignedPlaybackUrl("test-key")).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
 
     it("throws S3NotConfiguredError on deleteObject", async () => {
       const service = createS3StorageService();
-      await expect(service.deleteObject("test-key")).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.deleteObject("test-key")).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
 
     it("throws S3NotConfiguredError on deleteObjects", async () => {
       const service = createS3StorageService();
-      await expect(service.deleteObjects(["test-key"])).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.deleteObjects(["test-key"])).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
 
     it("throws S3NotConfiguredError on uploadObject", async () => {
       const service = createS3StorageService();
-      await expect(service.uploadObject("test-key", Buffer.from("hello"))).rejects.toThrow(S3NotConfiguredError);
+      await expect(
+        service.uploadObject("test-key", Buffer.from("hello")),
+      ).rejects.toThrow(S3NotConfiguredError);
     });
 
     it("throws S3NotConfiguredError on uploadStream", async () => {
       const service = createS3StorageService();
       const stream = new ReadableStream();
-      await expect(service.uploadStream("test-key", stream)).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.uploadStream("test-key", stream)).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
 
     it("throws S3NotConfiguredError on listObjects", async () => {
@@ -152,22 +189,30 @@ describe("S3StorageService", () => {
 
     it("throws S3NotConfiguredError on listAllObjects", async () => {
       const service = createS3StorageService();
-      await expect(service.listAllObjects()).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.listAllObjects()).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
 
     it("throws S3NotConfiguredError on purgeDanglingVersions", async () => {
       const service = createS3StorageService();
-      await expect(service.purgeDanglingVersions()).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.purgeDanglingVersions()).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
 
     it("throws S3NotConfiguredError on abortStaleMultipartUploads", async () => {
       const service = createS3StorageService();
-      await expect(service.abortStaleMultipartUploads()).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.abortStaleMultipartUploads()).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
 
     it("throws S3NotConfiguredError on getBucketStorageUsage", async () => {
       const service = createS3StorageService();
-      await expect(service.getBucketStorageUsage()).rejects.toThrow(S3NotConfiguredError);
+      await expect(service.getBucketStorageUsage()).rejects.toThrow(
+        S3NotConfiguredError,
+      );
     });
   });
 
@@ -182,13 +227,19 @@ describe("S3StorageService", () => {
     };
 
     it("generates presigned upload URL", async () => {
-      mockGetSignedUrl.mockResolvedValueOnce("https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?sig=123");
+      mockGetSignedUrl.mockResolvedValueOnce(
+        "https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?sig=123",
+      );
 
       const service = createS3StorageService(validConfig);
-      const result = await service.getPresignedUploadUrl("episodes/123/video.mp4", "video/mp4");
+      const result = await service.getPresignedUploadUrl(
+        "episodes/123/video.mp4",
+        "video/mp4",
+      );
 
       expect(result).toEqual({
-        uploadUrl: "https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?sig=123",
+        uploadUrl:
+          "https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?sig=123",
         key: "episodes/123/video.mp4",
       });
       expect(mockGetSignedUrl).toHaveBeenCalledWith(
@@ -201,17 +252,23 @@ describe("S3StorageService", () => {
             ContentType: "video/mp4",
           },
         }),
-        expect.objectContaining({ expiresIn: 3600 })
+        expect.objectContaining({ expiresIn: 3600 }),
       );
     });
 
     it("generates presigned playback URL with default 6-hour TTL", async () => {
-      mockGetSignedUrl.mockResolvedValueOnce("https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?signed-get=true");
+      mockGetSignedUrl.mockResolvedValueOnce(
+        "https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?signed-get=true",
+      );
 
       const service = createS3StorageService(validConfig);
-      const url = await service.getPresignedPlaybackUrl("episodes/123/video.mp4");
+      const url = await service.getPresignedPlaybackUrl(
+        "episodes/123/video.mp4",
+      );
 
-      expect(url).toBe("https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?signed-get=true");
+      expect(url).toBe(
+        "https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?signed-get=true",
+      );
       expect(mockGetSignedUrl).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -221,12 +278,14 @@ describe("S3StorageService", () => {
             Key: "episodes/123/video.mp4",
           },
         }),
-        { expiresIn: 21600 }
+        { expiresIn: 21600 },
       );
     });
 
     it("supports custom expiration for presigned playback URL", async () => {
-      mockGetSignedUrl.mockResolvedValueOnce("https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?signed-get=true");
+      mockGetSignedUrl.mockResolvedValueOnce(
+        "https://s3.us-east-005.backblazeb2.com/my-bucket/key.mp4?signed-get=true",
+      );
 
       const service = createS3StorageService(validConfig);
       await service.getPresignedPlaybackUrl("episodes/123/video.mp4", 3600);
@@ -234,7 +293,7 @@ describe("S3StorageService", () => {
       expect(mockGetSignedUrl).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
-        { expiresIn: 3600 }
+        { expiresIn: 3600 },
       );
     });
 
@@ -245,9 +304,7 @@ describe("S3StorageService", () => {
           { Key: "episodes/123/video.mp4", VersionId: "v1" },
           { Key: "episodes/123/video.mp4", VersionId: "v2" },
         ],
-        DeleteMarkers: [
-          { Key: "episodes/123/video.mp4", VersionId: "dm1" },
-        ],
+        DeleteMarkers: [{ Key: "episodes/123/video.mp4", VersionId: "dm1" }],
         IsTruncated: false,
       });
       // 2. DeleteObjectsCommand deletes versions
@@ -265,7 +322,7 @@ describe("S3StorageService", () => {
             Bucket: "my-bucket",
             Prefix: "episodes/123/video.mp4",
           },
-        })
+        }),
       );
       expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -281,7 +338,7 @@ describe("S3StorageService", () => {
               Quiet: true,
             },
           },
-        })
+        }),
       );
     });
 
@@ -304,7 +361,10 @@ describe("S3StorageService", () => {
       mockSend.mockResolvedValueOnce({});
 
       const service = createS3StorageService(validConfig);
-      await service.deleteObjects(["episodes/123/v1.mp4", "episodes/123/v2.mp4"]);
+      await service.deleteObjects([
+        "episodes/123/v1.mp4",
+        "episodes/123/v2.mp4",
+      ]);
 
       expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -319,7 +379,7 @@ describe("S3StorageService", () => {
               Quiet: true,
             },
           },
-        })
+        }),
       );
     });
 
@@ -328,7 +388,11 @@ describe("S3StorageService", () => {
 
       const service = createS3StorageService(validConfig);
       const data = Buffer.from("test video content");
-      await service.uploadObject("episodes/123/uploaded.mp4", data, "video/mp4");
+      await service.uploadObject(
+        "episodes/123/uploaded.mp4",
+        data,
+        "video/mp4",
+      );
 
       expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -339,7 +403,7 @@ describe("S3StorageService", () => {
             Body: data,
             ContentType: "video/mp4",
           },
-        })
+        }),
       );
     });
 
@@ -357,7 +421,10 @@ describe("S3StorageService", () => {
 
       mockUploadDone.mockImplementationOnce(async () => {
         // simulate progress call
-        const instance = mockUploadConstructor.mock.results[mockUploadConstructor.mock.results.length - 1].value;
+        const instance =
+          mockUploadConstructor.mock.results[
+            mockUploadConstructor.mock.results.length - 1
+          ].value;
         if (instance._progressListener) {
           instance._progressListener({ loaded: 500, total: 1000 });
         }
@@ -378,7 +445,7 @@ describe("S3StorageService", () => {
           }),
           queueSize: 4,
           partSize: 10 * 1024 * 1024,
-        })
+        }),
       );
       expect(onProgress).toHaveBeenCalledWith({ loaded: 500, total: 1000 });
       expect(mockUploadDone).toHaveBeenCalled();
@@ -389,12 +456,18 @@ describe("S3StorageService", () => {
       const stream = new ReadableStream();
       const controller = new AbortController();
 
-      mockUploadDone.mockImplementationOnce(() => new Promise((resolve) => setTimeout(resolve, 50)));
+      mockUploadDone.mockImplementationOnce(
+        () => new Promise((resolve) => setTimeout(resolve, 50)),
+      );
       mockUploadAbort.mockResolvedValueOnce(undefined);
 
-      const uploadPromise = service.uploadStream("episodes/123/stream.mp4", stream, {
-        signal: controller.signal,
-      });
+      const uploadPromise = service.uploadStream(
+        "episodes/123/stream.mp4",
+        stream,
+        {
+          signal: controller.signal,
+        },
+      );
 
       controller.abort();
 
@@ -413,7 +486,7 @@ describe("S3StorageService", () => {
       await expect(
         service.uploadStream("episodes/123/stream.mp4", stream, {
           signal: controller.signal,
-        })
+        }),
       ).rejects.toThrow();
 
       expect(mockUploadAbort).toHaveBeenCalled();
@@ -423,8 +496,18 @@ describe("S3StorageService", () => {
       const date = new Date("2026-01-01T00:00:00.000Z");
       mockSend.mockResolvedValueOnce({
         Contents: [
-          { Key: "episodes/123/video.mp4", Size: 1048576, LastModified: date, ETag: '"etag1"' },
-          { Key: "episodes/123/thumb.jpg", Size: 2048, LastModified: date, ETag: '"etag2"' },
+          {
+            Key: "episodes/123/video.mp4",
+            Size: 1048576,
+            LastModified: date,
+            ETag: '"etag1"',
+          },
+          {
+            Key: "episodes/123/thumb.jpg",
+            Size: 2048,
+            LastModified: date,
+            ETag: '"etag2"',
+          },
         ],
         IsTruncated: true,
         NextContinuationToken: "next-token-123",
@@ -439,8 +522,18 @@ describe("S3StorageService", () => {
 
       expect(result).toEqual({
         objects: [
-          { key: "episodes/123/video.mp4", size: 1048576, lastModified: date, eTag: '"etag1"' },
-          { key: "episodes/123/thumb.jpg", size: 2048, lastModified: date, eTag: '"etag2"' },
+          {
+            key: "episodes/123/video.mp4",
+            size: 1048576,
+            lastModified: date,
+            eTag: '"etag1"',
+          },
+          {
+            key: "episodes/123/thumb.jpg",
+            size: 2048,
+            lastModified: date,
+            eTag: '"etag2"',
+          },
         ],
         isTruncated: true,
         nextContinuationToken: "next-token-123",
@@ -454,7 +547,7 @@ describe("S3StorageService", () => {
             MaxKeys: 10,
             ContinuationToken: "prev-token",
           },
-        })
+        }),
       );
     });
 
@@ -462,12 +555,16 @@ describe("S3StorageService", () => {
       const date = new Date("2026-01-01T00:00:00.000Z");
       mockSend
         .mockResolvedValueOnce({
-          Contents: [{ Key: "episodes/1/v.mp4", Size: 100, LastModified: date }],
+          Contents: [
+            { Key: "episodes/1/v.mp4", Size: 100, LastModified: date },
+          ],
           IsTruncated: true,
           NextContinuationToken: "token-2",
         })
         .mockResolvedValueOnce({
-          Contents: [{ Key: "episodes/2/v.mp4", Size: 200, LastModified: date }],
+          Contents: [
+            { Key: "episodes/2/v.mp4", Size: 200, LastModified: date },
+          ],
           IsTruncated: false,
         });
 
@@ -475,8 +572,18 @@ describe("S3StorageService", () => {
       const allObjects = await service.listAllObjects("episodes/");
 
       expect(allObjects).toEqual([
-        { key: "episodes/1/v.mp4", size: 100, lastModified: date, eTag: undefined },
-        { key: "episodes/2/v.mp4", size: 200, lastModified: date, eTag: undefined },
+        {
+          key: "episodes/1/v.mp4",
+          size: 100,
+          lastModified: date,
+          eTag: undefined,
+        },
+        {
+          key: "episodes/2/v.mp4",
+          size: 200,
+          lastModified: date,
+          eTag: undefined,
+        },
       ]);
       expect(mockSend).toHaveBeenCalledTimes(2);
     });
@@ -516,12 +623,28 @@ describe("S3StorageService", () => {
         // - "episodes/3/stale-marker.mp4" delete marker (isLatest: true) -> PURGE
         mockSend.mockResolvedValueOnce({
           Versions: [
-            { Key: "episodes/1/active.mp4", VersionId: "v-active", IsLatest: true },
-            { Key: "episodes/2/deleted.mp4", VersionId: "v-deleted", IsLatest: false },
+            {
+              Key: "episodes/1/active.mp4",
+              VersionId: "v-active",
+              IsLatest: true,
+            },
+            {
+              Key: "episodes/2/deleted.mp4",
+              VersionId: "v-deleted",
+              IsLatest: false,
+            },
           ],
           DeleteMarkers: [
-            { Key: "episodes/2/deleted.mp4", VersionId: "dm-deleted", IsLatest: true },
-            { Key: "episodes/3/stale-marker.mp4", VersionId: "dm-stale", IsLatest: true },
+            {
+              Key: "episodes/2/deleted.mp4",
+              VersionId: "dm-deleted",
+              IsLatest: true,
+            },
+            {
+              Key: "episodes/3/stale-marker.mp4",
+              VersionId: "dm-stale",
+              IsLatest: true,
+            },
           ],
           IsTruncated: false,
         });
@@ -551,7 +674,7 @@ describe("S3StorageService", () => {
                 Quiet: true,
               },
             },
-          })
+          }),
         );
       });
 
@@ -562,7 +685,9 @@ describe("S3StorageService", () => {
         });
 
         mockSend.mockResolvedValueOnce({
-          Versions: [{ Key: "episodes/1/active.mp4", VersionId: "v1", IsLatest: true }],
+          Versions: [
+            { Key: "episodes/1/active.mp4", VersionId: "v1", IsLatest: true },
+          ],
           DeleteMarkers: [],
           IsTruncated: false,
         });
@@ -603,7 +728,9 @@ describe("S3StorageService", () => {
 
         const service = createS3StorageService(validConfig);
         // Default threshold 24 hours (86400s)
-        const result = await service.abortStaleMultipartUploads({ maxAgeSeconds: 86400 });
+        const result = await service.abortStaleMultipartUploads({
+          maxAgeSeconds: 86400,
+        });
 
         expect(result).toEqual({
           abortedUploadsCount: 1,
@@ -618,7 +745,7 @@ describe("S3StorageService", () => {
               KeyMarker: undefined,
               UploadIdMarker: undefined,
             },
-          })
+          }),
         );
 
         expect(mockSend).toHaveBeenCalledWith(
@@ -629,7 +756,7 @@ describe("S3StorageService", () => {
               Key: "episodes/1/stale.mp4",
               UploadId: "upload-stale-1",
             },
-          })
+          }),
         );
       });
 
@@ -651,16 +778,20 @@ describe("S3StorageService", () => {
 
   describe("extractS3Key", () => {
     it("returns plain object keys as-is", () => {
-      expect(extractS3Key("episodes/123/video.mp4")).toBe("episodes/123/video.mp4");
+      expect(extractS3Key("episodes/123/video.mp4")).toBe(
+        "episodes/123/video.mp4",
+      );
     });
 
     it("strips a leading slash from plain keys", () => {
-      expect(extractS3Key("/episodes/123/video.mp4")).toBe("episodes/123/video.mp4");
+      expect(extractS3Key("/episodes/123/video.mp4")).toBe(
+        "episodes/123/video.mp4",
+      );
     });
 
     it("strips the bucket from s3:// URIs", () => {
       expect(extractS3Key("s3://my-bucket/episodes/123/video.mp4")).toBe(
-        "episodes/123/video.mp4"
+        "episodes/123/video.mp4",
       );
     });
 

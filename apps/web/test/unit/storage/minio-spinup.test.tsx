@@ -12,7 +12,15 @@ import { MinioSpinUpModal } from '@/modules/storage/internal/components/dialogs/
 import { StorageView } from '@/modules/storage';
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to, className }: { children: React.ReactNode; to: string; className?: string }) => (
+  Link: ({
+    children,
+    to,
+    className,
+  }: {
+    children: React.ReactNode;
+    to: string;
+    className?: string;
+  }) => (
     <a href={to} className={className}>
       {children}
     </a>
@@ -46,11 +54,22 @@ const spinUpSuccessPayload = {
   },
 };
 
-function mockFetch(handler: (url: string, init?: RequestInit) => Response | Promise<Response>) {
-  return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    return handler(url, init);
-  });
+function mockFetch(
+  handler: (url: string, init?: RequestInit) => Response | Promise<Response>
+) {
+  return vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return handler(url, init);
+      }
+    );
 }
 
 function json(data: unknown, status = 200) {
@@ -85,11 +104,15 @@ describe('MinIO spin-up API helpers', () => {
 
   it('posts spin-up payload and parses provider response', async () => {
     const fetchSpy = mockFetch((url) => {
-      if (url.includes('/api/storage/minio/spin-up')) return json(spinUpSuccessPayload);
+      if (url.includes('/api/storage/minio/spin-up'))
+        return json(spinUpSuccessPayload);
       return json({ data: null }, 500);
     });
 
-    const res = await spinMinioUp({ bucket: 'private-movie-videos', isDefault: true });
+    const res = await spinMinioUp({
+      bucket: 'private-movie-videos',
+      isDefault: true,
+    });
     expect(res.provider.id).toBe('prov-minio');
     expect(res.consoleUrl).toBe('http://localhost:9001');
     expect(fetchSpy).toHaveBeenCalledWith(
@@ -121,10 +144,18 @@ describe('MinioSpinUpModal', () => {
     );
 
     expect(screen.getByTestId('minio-spinup-modal')).toBeInTheDocument();
-    expect(screen.getByTestId('minio-endpoint-input')).toHaveValue('http://localhost:9000');
-    expect(screen.getByTestId('minio-bucket-input')).toHaveValue(DEFAULT_MINIO_BUCKET);
-    expect(screen.getByTestId('minio-access-key-input')).toHaveValue('minioadmin');
-    const secret = screen.getByTestId('minio-secret-key-input') as HTMLInputElement;
+    expect(screen.getByTestId('minio-endpoint-input')).toHaveValue(
+      'http://localhost:9000'
+    );
+    expect(screen.getByTestId('minio-bucket-input')).toHaveValue(
+      DEFAULT_MINIO_BUCKET
+    );
+    expect(screen.getByTestId('minio-access-key-input')).toHaveValue(
+      'minioadmin'
+    );
+    const secret = screen.getByTestId(
+      'minio-secret-key-input'
+    ) as HTMLInputElement;
     expect(secret.value).toHaveLength(24);
     // Default-checked when zero providers exist
     expect(screen.getByTestId('minio-default-checkbox')).toBeChecked();
@@ -145,7 +176,9 @@ describe('MinioSpinUpModal', () => {
       <MinioSpinUpModal open={true} onOpenChange={vi.fn()} providerCount={0} />
     );
 
-    const secret = screen.getByTestId('minio-secret-key-input') as HTMLInputElement;
+    const secret = screen.getByTestId(
+      'minio-secret-key-input'
+    ) as HTMLInputElement;
     const toggle = screen.getByTestId('minio-toggle-secret-visibility-btn');
     expect(secret.type).toBe('password');
 
@@ -174,7 +207,11 @@ describe('MinioSpinUpModal', () => {
     });
 
     const { user } = renderWithProviders(
-      <MinioSpinUpModal open={true} onOpenChange={onOpenChange} providerCount={0} />,
+      <MinioSpinUpModal
+        open={true}
+        onOpenChange={onOpenChange}
+        providerCount={0}
+      />,
       { queryClient }
     );
 
@@ -196,7 +233,9 @@ describe('MinioSpinUpModal', () => {
     });
 
     // Cache invalidation for metrics, providers, resources (+ minio status)
-    const keys = invalidateSpy.mock.calls.map((c) => JSON.stringify((c[0] as { queryKey?: unknown })?.queryKey));
+    const keys = invalidateSpy.mock.calls.map((c) =>
+      JSON.stringify((c[0] as { queryKey?: unknown })?.queryKey)
+    );
     expect(keys.some((k) => k.includes('metrics'))).toBe(true);
     expect(keys.some((k) => k.includes('providers'))).toBe(true);
     expect(keys.some((k) => k.includes('resources'))).toBe(true);
@@ -217,7 +256,9 @@ describe('MinioSpinUpModal', () => {
     await user.click(screen.getByTestId('minio-spinup-submit-btn'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('minio-spinup-error')).toHaveTextContent(/Port 9000 already in use/i);
+      expect(screen.getByTestId('minio-spinup-error')).toHaveTextContent(
+        /Port 9000 already in use/i
+      );
     });
     // Modal stays open on failure
     expect(screen.getByTestId('minio-spinup-modal')).toBeInTheDocument();
@@ -236,11 +277,14 @@ describe('StorageView MinIO spin-up entry points', () => {
       orphanCount: 0,
     },
   };
-  const emptyResources = { data: { items: [], total: 0, page: 1, limit: 10, totalPages: 0 } };
+  const emptyResources = {
+    data: { items: [], total: 0, page: 1, limit: 10, totalPages: 0 },
+  };
 
   function baseHandler(statusPayload: unknown) {
     return (url: string) => {
-      if (url.includes('/api/storage/minio/status')) return json({ data: statusPayload });
+      if (url.includes('/api/storage/minio/status'))
+        return json({ data: statusPayload });
       if (url.includes('/api/storage/providers')) return json(emptyProviders);
       if (url.includes('/api/storage/metrics')) return json(emptyMetrics);
       if (url.includes('/api/storage/resources')) return json(emptyResources);
@@ -263,8 +307,12 @@ describe('StorageView MinIO spin-up entry points', () => {
     );
     renderWithProviders(<StorageView />);
 
-    expect(await screen.findByTestId('minio-empty-state-hero')).toBeInTheDocument();
-    expect(screen.getByTestId('minio-empty-state-spinup-btn')).toHaveTextContent(/Spin Up MinIO/i);
+    expect(
+      await screen.findByTestId('minio-empty-state-hero')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('minio-empty-state-spinup-btn')
+    ).toHaveTextContent(/Spin Up MinIO/i);
     // Header action offers spin-up when MinIO is not running
     expect(await screen.findByTestId('spin-up-minio-btn')).toBeInTheDocument();
   });
@@ -305,7 +353,9 @@ describe('StorageView MinIO spin-up entry points', () => {
     const { user } = renderWithProviders(<StorageView />);
 
     await user.click(await screen.findByTestId('manage-providers-btn'));
-    expect(await screen.findByTestId('manage-providers-drawer')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manage-providers-drawer')
+    ).toBeInTheDocument();
 
     // Drawer spin-up button opens the modal and closes the drawer
     await user.click(screen.getByTestId('drawer-spin-up-minio-btn'));

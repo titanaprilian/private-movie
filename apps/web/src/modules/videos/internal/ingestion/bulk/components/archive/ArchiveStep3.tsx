@@ -47,13 +47,19 @@ export function ArchiveStep3({
       ? Math.min(commitCompletedCount + 1, displayTotal)
       : (uploadView?.currentIndex ?? commitCompletedCount);
   const displayPercent = uploadView?.percent ?? progressPercentage;
-  const displayFilename = uploadView?.activeFilename ?? activeCommitItem?.filename ?? null;
-  const displayLoaded = uploadView?.loaded ?? activeCommitItem?.commitProgress?.loaded ?? null;
-  const displayTotalBytes = uploadView?.total ?? activeCommitItem?.commitProgress?.total ?? null;
+  const displayFilename =
+    uploadView?.activeFilename ?? activeCommitItem?.filename ?? null;
+  const displayLoaded =
+    uploadView?.loaded ?? activeCommitItem?.commitProgress?.loaded ?? null;
+  const displayTotalBytes =
+    uploadView?.total ?? activeCommitItem?.commitProgress?.total ?? null;
   return (
     <>
       <ChunkyDialogBody className="space-y-4">
-        <ChunkyCard className="space-y-2 p-3" data-testid="archive-upload-progress">
+        <ChunkyCard
+          className="space-y-2 p-3"
+          data-testid="archive-upload-progress"
+        >
           <div className="flex items-center justify-between font-sans text-sm font-bold text-[var(--muted)]">
             <span data-testid="archive-upload-counter">
               Uploading file{' '}
@@ -73,13 +79,14 @@ export function ArchiveStep3({
             {selectedProviderName && (
               <span data-testid="archive-commit-progress-provider">
                 Target Provider:{' '}
-                <strong className="text-[var(--ink)]">{selectedProviderName}</strong>
+                <strong className="text-[var(--ink)]">
+                  {selectedProviderName}
+                </strong>
               </span>
             )}
             {displayLoaded !== null && (
               <span className="ml-auto" data-testid="archive-upload-bytes">
-                {displayPercent}% -{' '}
-                {formatBytes(displayLoaded)}
+                {displayPercent}% - {formatBytes(displayLoaded)}
                 {displayTotalBytes
                   ? ` / ${formatBytes(displayTotalBytes)}`
                   : ''}

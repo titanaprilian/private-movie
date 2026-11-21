@@ -23,7 +23,7 @@ export function isBlockedAdAsset(target: string): boolean {
     if (path.includes("/cdn/runtime.js")) return true;
     if (
       KNOWN_AD_SCRIPT_PATTERNS.some(
-        (pattern) => pattern.test(target) || pattern.test(`${host}${path}`)
+        (pattern) => pattern.test(target) || pattern.test(`${host}${path}`),
       )
     ) {
       // Only treat as a blocked asset when the match looks like a script /
@@ -38,7 +38,7 @@ export function isBlockedAdAsset(target: string): boolean {
       // Known ad network hosts are always blocked regardless of path.
       if (
         /daly2024|effectivecpmnetwork|bvtpk|humeraldurezza|googletagmanager|yandex|clarity|exoclick|adcash|propeller|popunder|onclickads|cpmnetwork|whos\.amung\.us|amung/i.test(
-          host
+          host,
         )
       ) {
         return true;
@@ -56,10 +56,10 @@ export function stripKnownAdScripts(html: string): string {
     (match, scriptContent) => {
       const isAdScript = KNOWN_AD_SCRIPT_PATTERNS.some(
         (pattern) =>
-          pattern.test(match) || pattern.test(scriptContent as string)
+          pattern.test(match) || pattern.test(scriptContent as string),
       );
       return isAdScript ? "" : match;
-    }
+    },
   );
 }
 

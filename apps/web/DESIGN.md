@@ -7,6 +7,7 @@ Design system specification for the Private Movie streaming application. This do
 ## 1. Core Rule for All UI Work
 
 > **Mandatory Chunky UI Policy:**
+>
 > 1. **Always use the Chunky UI primitives** (`@/components/ui/chunky-*`) for any new feature, page, modal, or refactored view.
 > 2. **Never introduce legacy flat / raw shadcn components** (`button.tsx`, `dialog.tsx`, `input.tsx`, `checkbox.tsx`, `select.tsx`, raw `<input>`, raw `<textarea>`).
 > 3. **If a needed component does not yet exist in chunky style**: You **must build the chunky component first** in `apps/web/src/components/ui/` (following the 3D border geometry, theme tokens, and accessible headless Radix pattern) before consuming it in features.
@@ -157,7 +158,6 @@ All components reside in `apps/web/src/components/ui/`.
 - **`ChunkySkeleton` (`chunky-skeleton.tsx`)**:
   - Tactile pulse placeholder: `rounded-2xl border-2 border-[var(--border)] bg-[var(--surface-raised)] animate-pulse`.
 
-
 ### 5.5 Chunky Tables & Data Grids (Card-Row Pattern)
 
 When implementing a tabular dataset (as seen in `@apps/web/src/modules/videos/internal/EpisodeTable.tsx`), **do NOT use flat unstyled HTML `<table>` elements**. Instead, follow the **Chunky Card-Row Grid pattern**:
@@ -179,6 +179,7 @@ When implementing a tabular dataset (as seen in `@apps/web/src/modules/videos/in
    - Row Actions: `ChunkyActionMenu` (40x40 3D kebab trigger with portaled popover items) in the trailing column.
 4. **Empty State**:
    - 3D tactile empty container: `p-8 text-center rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)]` with bold title and muted explanation text.
+
 ---
 
 ## 6. What NOT to Do

@@ -11,10 +11,16 @@ export interface BulkIngestTabsProps {
   onTabChange: (tab: IngestTab) => void;
 }
 
-export function BulkIngestTabs({ activeTab, onTabChange }: BulkIngestTabsProps) {
+export function BulkIngestTabs({
+  activeTab,
+  onTabChange,
+}: BulkIngestTabsProps) {
   return (
     <div className="px-6 pt-2 pb-0">
-      <ChunkyTabs value={activeTab} onValueChange={(v) => onTabChange(v as IngestTab)}>
+      <ChunkyTabs
+        value={activeTab}
+        onValueChange={(v) => onTabChange(v as IngestTab)}
+      >
         <ChunkyTabsList>
           <ChunkyTabsTrigger value="archive" data-testid="tab-archive">
             ZIP / RAR Archive

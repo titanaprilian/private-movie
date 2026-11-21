@@ -54,7 +54,11 @@ function Harness({
       >
         {text}
       </p>
-      {showToggle && <button onClick={toggleExpanded} {...toggleProps}>{toggleLabel}</button>}
+      {showToggle && (
+        <button onClick={toggleExpanded} {...toggleProps}>
+          {toggleLabel}
+        </button>
+      )}
     </div>
   );
 }
@@ -85,7 +89,9 @@ describe('useClampedText', () => {
     setGeometry(desc, { clientHeight: 42, scrollHeight: 42 });
     triggerResize();
     expect(desc).toHaveAttribute('data-truncated', 'false');
-    expect(screen.queryByRole('button', { name: /show more/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /show more/i })
+    ).not.toBeInTheDocument();
   });
 
   it('detects truncation via scrollHeight > clientHeight + 1 and shows a toggle', () => {
@@ -94,7 +100,9 @@ describe('useClampedText', () => {
     setGeometry(desc, { clientHeight: 42, scrollHeight: 120 });
     triggerResize();
     expect(desc).toHaveAttribute('data-truncated', 'true');
-    expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Show more' })
+    ).toBeInTheDocument();
   });
 
   it('ignores a 1px rounding difference (no truncation)', () => {
@@ -103,7 +111,9 @@ describe('useClampedText', () => {
     setGeometry(desc, { clientHeight: 42, scrollHeight: 43 });
     triggerResize();
     expect(desc).toHaveAttribute('data-truncated', 'false');
-    expect(screen.queryByRole('button', { name: /show more/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /show more/i })
+    ).not.toBeInTheDocument();
   });
 
   it('toggles aria-expanded and the label between Show more and Show less', () => {
@@ -125,7 +135,9 @@ describe('useClampedText', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Show less' }));
     expect(desc).toHaveAttribute('data-expanded', 'false');
-    expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Show more' })
+    ).toBeInTheDocument();
   });
 
   it('bypasses truncation re-measurement while expanded', () => {
@@ -141,24 +153,37 @@ describe('useClampedText', () => {
     triggerResize();
     expect(desc).toHaveAttribute('data-expanded', 'true');
     expect(desc).toHaveAttribute('data-truncated', 'true');
-    expect(screen.getByRole('button', { name: 'Show less' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Show less' })
+    ).toBeInTheDocument();
   });
 
   it('resets to collapsed when the text content changes', () => {
-    const { rerender } = render(<Harness text={'Long description. '.repeat(50)} />);
+    const { rerender } = render(
+      <Harness text={'Long description. '.repeat(50)} />
+    );
     const desc = screen.getByTestId('desc');
     setGeometry(desc, { clientHeight: 42, scrollHeight: 120 });
     triggerResize();
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
     expect(desc).toHaveAttribute('data-expanded', 'true');
 
-    rerender(<Harness text={'A totally different long description. '.repeat(50)} />);
-    expect(screen.getByTestId('desc')).toHaveAttribute('data-expanded', 'false');
+    rerender(
+      <Harness text={'A totally different long description. '.repeat(50)} />
+    );
+    expect(screen.getByTestId('desc')).toHaveAttribute(
+      'data-expanded',
+      'false'
+    );
   });
 
   it('resets to collapsed when the series ID or season ID changes', () => {
     const { rerender } = render(
-      <Harness text={'Long description. '.repeat(50)} seriesId="s1" seasonId="season-1" />
+      <Harness
+        text={'Long description. '.repeat(50)}
+        seriesId="s1"
+        seasonId="season-1"
+      />
     );
     const desc = screen.getByTestId('desc');
     setGeometry(desc, { clientHeight: 42, scrollHeight: 120 });
@@ -167,19 +192,35 @@ describe('useClampedText', () => {
     expect(desc).toHaveAttribute('data-expanded', 'true');
 
     rerender(
-      <Harness text={'Long description. '.repeat(50)} seriesId="s2" seasonId="season-1" />
+      <Harness
+        text={'Long description. '.repeat(50)}
+        seriesId="s2"
+        seasonId="season-1"
+      />
     );
-    expect(screen.getByTestId('desc')).toHaveAttribute('data-expanded', 'false');
+    expect(screen.getByTestId('desc')).toHaveAttribute(
+      'data-expanded',
+      'false'
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
     rerender(
-      <Harness text={'Long description. '.repeat(50)} seriesId="s2" seasonId="season-2" />
+      <Harness
+        text={'Long description. '.repeat(50)}
+        seriesId="s2"
+        seasonId="season-2"
+      />
     );
-    expect(screen.getByTestId('desc')).toHaveAttribute('data-expanded', 'false');
+    expect(screen.getByTestId('desc')).toHaveAttribute(
+      'data-expanded',
+      'false'
+    );
   });
 
   it('re-measures truncation when the text changes', () => {
-    const { rerender } = render(<Harness text={'Long description. '.repeat(50)} />);
+    const { rerender } = render(
+      <Harness text={'Long description. '.repeat(50)} />
+    );
     const desc = screen.getByTestId('desc');
     setGeometry(desc, { clientHeight: 42, scrollHeight: 120 });
     triggerResize();
@@ -190,6 +231,8 @@ describe('useClampedText', () => {
     setGeometry(updated, { clientHeight: 42, scrollHeight: 21 });
     triggerResize();
     expect(updated).toHaveAttribute('data-truncated', 'false');
-    expect(screen.queryByRole('button', { name: /show more/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /show more/i })
+    ).not.toBeInTheDocument();
   });
 });

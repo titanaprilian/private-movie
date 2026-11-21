@@ -24,7 +24,11 @@ function makeEpisode(id: string, order: number): SeriesDetailEpisode {
   return { id, seasonId: 'season-a', order, title: id } as SeriesDetailEpisode;
 }
 
-const episodes = [makeEpisode('e1', 1), makeEpisode('e2', 2), makeEpisode('e3', 3)];
+const episodes = [
+  makeEpisode('e1', 1),
+  makeEpisode('e2', 2),
+  makeEpisode('e3', 3),
+];
 
 function setup(
   localEpisodes = episodes,

@@ -32,7 +32,12 @@ function makeSeries(id: string, overrides: SeriesFixtureOverrides = {}) {
   };
 }
 
-function makePage(items: unknown[], page: number, limit: number, total: number) {
+function makePage(
+  items: unknown[],
+  page: number,
+  limit: number,
+  total: number
+) {
   return { data: { series: items, meta: { total, page, limit } } };
 }
 
@@ -52,34 +57,41 @@ function installFetchMock(
   opts: { seriesStatus?: number } = {}
 ) {
   const requests: CapturedSeriesRequest[] = [];
-  const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  const spy = vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (input) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
 
-    if (url.includes('/api/genres')) {
-      return new Response(JSON.stringify(genresPayload), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+      if (url.includes('/api/genres')) {
+        return new Response(JSON.stringify(genresPayload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
 
-    if (url.includes('/api/series')) {
-      const parsed = new URL(url, 'http://localhost');
-      const captured: CapturedSeriesRequest = {
-        genre: parsed.searchParams.get('genre'),
-        filter: parsed.searchParams.get('filter'),
-        page: parsed.searchParams.get('page'),
-        limit: parsed.searchParams.get('limit'),
-      };
-      requests.push(captured);
-      const status = opts.seriesStatus ?? 200;
-      return new Response(JSON.stringify(handleSeries(captured)), {
-        status,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+      if (url.includes('/api/series')) {
+        const parsed = new URL(url, 'http://localhost');
+        const captured: CapturedSeriesRequest = {
+          genre: parsed.searchParams.get('genre'),
+          filter: parsed.searchParams.get('filter'),
+          page: parsed.searchParams.get('page'),
+          limit: parsed.searchParams.get('limit'),
+        };
+        requests.push(captured);
+        const status = opts.seriesStatus ?? 200;
+        return new Response(JSON.stringify(handleSeries(captured)), {
+          status,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
 
-    return new Response(JSON.stringify({ data: null }), { status: 200 });
-  });
+      return new Response(JSON.stringify({ data: null }), { status: 200 });
+    });
   return { spy, requests };
 }
 
@@ -152,29 +164,49 @@ describe('GenreSeriesCatalog', () => {
 
     renderCatalog({ slug: 'korean-drama', filter: 'all', onFilterChange });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Korean Drama' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'All Series' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: 'Ongoing' })).toHaveAttribute('aria-selected', 'false');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Korean Drama' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'All Series' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(screen.getByRole('tab', { name: 'Ongoing' })).toHaveAttribute(
+      'aria-selected',
+      'false'
+    );
     expect(await screen.findByText('Series s-1')).toBeInTheDocument();
   });
 
   it('falls back to a formatted slug when the genre is not in the genres list', async () => {
     installFetchMock(() => makePage([makeSeries('s-1')], 1, 20, 1));
 
-    renderCatalog({ slug: 'unknown-genre', filter: 'all', onFilterChange: vi.fn() });
+    renderCatalog({
+      slug: 'unknown-genre',
+      filter: 'all',
+      onFilterChange: vi.fn(),
+    });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Unknown Genre' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Unknown Genre' })
+    ).toBeInTheDocument();
   });
 
   it('does not render hero, carousel rows, or recently added episodes sections', async () => {
     installFetchMock(() => makePage([makeSeries('s-1')], 1, 20, 1));
 
-    renderCatalog({ slug: 'korean-drama', filter: 'all', onFilterChange: vi.fn() });
+    renderCatalog({
+      slug: 'korean-drama',
+      filter: 'all',
+      onFilterChange: vi.fn(),
+    });
 
     await screen.findByText('Series s-1');
     expect(screen.queryByText('Recently Added')).not.toBeInTheDocument();
     expect(screen.queryByText('Top Rated')).not.toBeInTheDocument();
-    expect(screen.queryByText(/recently added episodes/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/recently added episodes/i)
+    ).not.toBeInTheDocument();
   });
 
   it('notifies the parent when the Ongoing tab is clicked and queries with filter=ongoing', async () => {
@@ -185,23 +217,41 @@ describe('GenreSeriesCatalog', () => {
       return makePage([makeSeries('s-1')], 1, 20, 1);
     });
     const onFilterChange = vi.fn();
-    const { user } = renderCatalog({ slug: 'korean-drama', filter: 'all', onFilterChange });
+    const { user } = renderCatalog({
+      slug: 'korean-drama',
+      filter: 'all',
+      onFilterChange,
+    });
 
     await screen.findByText('Series s-1');
     await user.click(screen.getByRole('tab', { name: 'Ongoing' }));
 
     expect(onFilterChange).toHaveBeenCalledWith('ongoing');
-    expect(requests[0]).toMatchObject({ genre: 'korean-drama', page: '1', limit: '20' });
+    expect(requests[0]).toMatchObject({
+      genre: 'korean-drama',
+      page: '1',
+      limit: '20',
+    });
   });
 
   it('fetches the next page when the sentinel scrolls into view and appends cards', async () => {
-    const pageOne = Array.from({ length: 20 }, (_, i) => makeSeries(`s-p1-${i}`));
-    const pageTwo = Array.from({ length: 5 }, (_, i) => makeSeries(`s-p2-${i}`));
+    const pageOne = Array.from({ length: 20 }, (_, i) =>
+      makeSeries(`s-p1-${i}`)
+    );
+    const pageTwo = Array.from({ length: 5 }, (_, i) =>
+      makeSeries(`s-p2-${i}`)
+    );
     installFetchMock((req) =>
-      req.page === '2' ? makePage(pageTwo, 2, 20, 25) : makePage(pageOne, 1, 20, 25)
+      req.page === '2'
+        ? makePage(pageTwo, 2, 20, 25)
+        : makePage(pageOne, 1, 20, 25)
     );
 
-    renderCatalog({ slug: 'korean-drama', filter: 'all', onFilterChange: vi.fn() });
+    renderCatalog({
+      slug: 'korean-drama',
+      filter: 'all',
+      onFilterChange: vi.fn(),
+    });
 
     await waitFor(() => {
       expect(screen.getAllByTestId('series-card')).toHaveLength(20);
@@ -233,7 +283,11 @@ describe('GenreSeriesCatalog', () => {
       )
     );
 
-    renderCatalog({ slug: 'korean-drama', filter: 'all', onFilterChange: vi.fn() });
+    renderCatalog({
+      slug: 'korean-drama',
+      filter: 'all',
+      onFilterChange: vi.fn(),
+    });
 
     const cards = await screen.findAllByTestId('series-card');
     expect(cards).toHaveLength(2);
@@ -257,7 +311,12 @@ describe('GenreSeriesCatalog', () => {
   it('shows skeleton cards while the initial page loads', async () => {
     let resolveFetch!: (value: Response) => void;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/api/genres')) {
         return new Response(JSON.stringify(genresPayload), { status: 200 });
       }
@@ -266,13 +325,21 @@ describe('GenreSeriesCatalog', () => {
       });
     });
 
-    renderCatalog({ slug: 'korean-drama', filter: 'all', onFilterChange: vi.fn() });
+    renderCatalog({
+      slug: 'korean-drama',
+      filter: 'all',
+      onFilterChange: vi.fn(),
+    });
 
-    expect(await screen.findAllByTestId('series-card-skeleton')).not.toHaveLength(0);
+    expect(
+      await screen.findAllByTestId('series-card-skeleton')
+    ).not.toHaveLength(0);
 
     await act(async () => {
       resolveFetch(
-        new Response(JSON.stringify(makePage([makeSeries('s-1')], 1, 20, 1)), { status: 200 })
+        new Response(JSON.stringify(makePage([makeSeries('s-1')], 1, 20, 1)), {
+          status: 200,
+        })
       );
     });
 
@@ -282,7 +349,12 @@ describe('GenreSeriesCatalog', () => {
   it('shows a Retry button when the initial fetch fails', async () => {
     let shouldFail = true;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/api/genres')) {
         return new Response(JSON.stringify(genresPayload), { status: 200 });
       }
@@ -293,13 +365,20 @@ describe('GenreSeriesCatalog', () => {
             { status: 500 }
           );
         }
-        return new Response(JSON.stringify(makePage([makeSeries('s-retry')], 1, 20, 1)), {
-          status: 200,
-        });
+        return new Response(
+          JSON.stringify(makePage([makeSeries('s-retry')], 1, 20, 1)),
+          {
+            status: 200,
+          }
+        );
       }
       return new Response(JSON.stringify({ data: null }), { status: 200 });
     });
-    const { user } = renderCatalog({ slug: 'korean-drama', filter: 'all', onFilterChange: vi.fn() });
+    const { user } = renderCatalog({
+      slug: 'korean-drama',
+      filter: 'all',
+      onFilterChange: vi.fn(),
+    });
 
     const retryButton = await screen.findByRole('button', { name: 'Retry' });
     shouldFail = false;
@@ -309,11 +388,20 @@ describe('GenreSeriesCatalog', () => {
   });
 
   it('keeps loaded cards and shows an inline Retry when an incremental page fails', async () => {
-    const pageOne = Array.from({ length: 20 }, (_, i) => makeSeries(`s-p1-${i}`));
-    const pageTwo = Array.from({ length: 5 }, (_, i) => makeSeries(`s-p2-${i}`));
+    const pageOne = Array.from({ length: 20 }, (_, i) =>
+      makeSeries(`s-p1-${i}`)
+    );
+    const pageTwo = Array.from({ length: 5 }, (_, i) =>
+      makeSeries(`s-p2-${i}`)
+    );
     let failPageTwo = true;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/api/genres')) {
         return new Response(JSON.stringify(genresPayload), { status: 200 });
       }
@@ -326,13 +414,21 @@ describe('GenreSeriesCatalog', () => {
               { status: 500 }
             );
           }
-          return new Response(JSON.stringify(makePage(pageTwo, 2, 20, 25)), { status: 200 });
+          return new Response(JSON.stringify(makePage(pageTwo, 2, 20, 25)), {
+            status: 200,
+          });
         }
-        return new Response(JSON.stringify(makePage(pageOne, 1, 20, 25)), { status: 200 });
+        return new Response(JSON.stringify(makePage(pageOne, 1, 20, 25)), {
+          status: 200,
+        });
       }
       return new Response(JSON.stringify({ data: null }), { status: 200 });
     });
-    const { user } = renderCatalog({ slug: 'korean-drama', filter: 'all', onFilterChange: vi.fn() });
+    const { user } = renderCatalog({
+      slug: 'korean-drama',
+      filter: 'all',
+      onFilterChange: vi.fn(),
+    });
 
     await waitFor(() => {
       expect(screen.getAllByTestId('series-card')).toHaveLength(20);
@@ -356,9 +452,15 @@ describe('GenreSeriesCatalog', () => {
   it('renders an empty state with a Show All Series action when nothing matches the ongoing filter', async () => {
     installFetchMock(() => makePage([], 1, 20, 0));
     const onFilterChange = vi.fn();
-    const { user } = renderCatalog({ slug: 'korean-drama', filter: 'ongoing', onFilterChange });
+    const { user } = renderCatalog({
+      slug: 'korean-drama',
+      filter: 'ongoing',
+      onFilterChange,
+    });
 
-    expect(await screen.findByText(/no ongoing series found/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/no ongoing series found/i)
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Show All Series' }));
     expect(onFilterChange).toHaveBeenCalledWith('all');

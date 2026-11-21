@@ -4,24 +4,20 @@ import { renderWithProviders, screen } from '../../utils';
 import { vi } from 'vitest';
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  const actual =
+    await importOriginal<typeof import('@tanstack/react-router')>();
   return {
     ...actual,
     createFileRoute: () => (config: unknown) => config,
-    Link: ({
-      children,
-      to,
-    }: {
-      children: React.ReactNode;
-      to: string;
-    }) => <a href={to}>{children}</a>,
+    Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+      <a href={to}>{children}</a>
+    ),
     useNavigate: () => vi.fn(),
   };
 });
 
 vi.mock('@/lib/api', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@/lib/api')>();
+  const actual = await importOriginal<typeof import('@/lib/api')>();
   return {
     ...actual,
     api: {

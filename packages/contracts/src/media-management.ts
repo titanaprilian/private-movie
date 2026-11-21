@@ -444,5 +444,4 @@ export type ArchiveIngestCommitSseEvent =
   | { type: "error"; data: ArchiveIngestErrorPayload };
 
 export type ArchiveIngestSseEvent =
-  | ArchiveIngestPreviewSseEvent
-  | ArchiveIngestCommitSseEvent;
+  ArchiveIngestPreviewSseEvent | ArchiveIngestCommitSseEvent;

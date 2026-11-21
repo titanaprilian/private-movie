@@ -1,6 +1,10 @@
 import { renderWithProviders, screen, waitFor, fireEvent } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRouter, createMemoryHistory, RouterProvider } from '@tanstack/react-router';
+import {
+  createRouter,
+  createMemoryHistory,
+  RouterProvider,
+} from '@tanstack/react-router';
 import { routeTree } from '@/routeTree.gen';
 import { setAccessToken } from '@/lib/api';
 import { useUIStore } from '@/store/uiStore';
@@ -87,7 +91,10 @@ describe('PublicNavbar component', () => {
         }
         return new Response(
           JSON.stringify({
-            data: { series: mockSeriesList, meta: { total: 1, page: 1, limit: 10 } },
+            data: {
+              series: mockSeriesList,
+              meta: { total: 1, page: 1, limit: 10 },
+            },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
@@ -143,13 +150,23 @@ describe('PublicNavbar component', () => {
 
     renderWithProviders(<RouterProvider router={router} />);
 
-    expect(await screen.findByRole('link', { name: 'Home' })).toBeInTheDocument();
-    expect(await screen.findByRole('link', { name: 'Animation' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Korean Drama' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Chinese Drama' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'Home' })
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'Animation' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Korean Drama' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Chinese Drama' })
+    ).toBeInTheDocument();
 
     // Standard genre (Action & Adventure) should not be in top navbar
-    expect(screen.queryByRole('link', { name: 'Action & Adventure' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Action & Adventure' })
+    ).not.toBeInTheDocument();
   });
 
   it('highlights Home as active pill link when at route /', async () => {
@@ -196,7 +213,9 @@ describe('PublicNavbar component', () => {
     renderWithProviders(<RouterProvider router={router} />);
 
     fireEvent.click(await screen.findByTestId('search-toggle'));
-    const searchInput = await screen.findByRole('textbox', { name: /search series catalog/i });
+    const searchInput = await screen.findByRole('textbox', {
+      name: /search series catalog/i,
+    });
     expect(searchInput).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: 'Solo' } });
@@ -212,13 +231,17 @@ describe('PublicNavbar component', () => {
   });
 
   it('scopes search query to current genre when on /genres/$slug route', async () => {
-    const history = createMemoryHistory({ initialEntries: ['/genres/animation'] });
+    const history = createMemoryHistory({
+      initialEntries: ['/genres/animation'],
+    });
     const router = createRouter({ routeTree, history });
 
     renderWithProviders(<RouterProvider router={router} />);
 
     fireEvent.click(await screen.findByTestId('search-toggle'));
-    const searchInput = await screen.findByRole('textbox', { name: /search series catalog/i });
+    const searchInput = await screen.findByRole('textbox', {
+      name: /search series catalog/i,
+    });
     expect(searchInput).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: 'Solo' } });

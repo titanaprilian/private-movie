@@ -22,7 +22,10 @@ export interface VideoGesturesOptions {
   hintDurationMs?: number;
 }
 
-export function getGestureZone(clientX: number, containerWidth: number): GestureZone {
+export function getGestureZone(
+  clientX: number,
+  containerWidth: number
+): GestureZone {
   if (!containerWidth || containerWidth <= 0) return 'middle';
   const ratio = clientX / containerWidth;
   if (ratio < 0.4) return 'left';
@@ -54,7 +57,9 @@ export function useVideoGestures({
   hintDurationMs = 2500,
 }: VideoGesturesOptions = {}) {
   const [ripple, setRipple] = useState<GestureRipple | null>(null);
-  const [hintVisible, setHintVisible] = useState<boolean>(() => !readHintSeen());
+  const [hintVisible, setHintVisible] = useState<boolean>(
+    () => !readHintSeen()
+  );
 
   const seekRef = useRef(onSeekRelative);
   seekRef.current = onSeekRelative;
@@ -95,7 +100,7 @@ export function useVideoGestures({
         rippleTimerRef.current = null;
       }, rippleDurationMs);
     },
-    [rippleDurationMs],
+    [rippleDurationMs]
   );
 
   /**
@@ -103,7 +108,11 @@ export function useVideoGestures({
    * consumed as a double-tap skip (caller must NOT toggle controls for it).
    */
   const handleTap = useCallback(
-    (clientX: number, containerWidth: number, pointerType?: string): boolean => {
+    (
+      clientX: number,
+      containerWidth: number,
+      pointerType?: string
+    ): boolean => {
       if (pointerType === 'mouse') return false;
       const zone = getGestureZone(clientX, containerWidth);
       if (zone === 'middle') {
@@ -122,17 +131,14 @@ export function useVideoGestures({
       lastTapRef.current = { time: now, zone };
       return false;
     },
-    [doubleTapWindowMs, showRipple],
+    [doubleTapWindowMs, showRipple]
   );
 
   /** Desktop double-click toggles fullscreen. Touch double-taps seek instead. */
-  const handleDoubleClick = useCallback(
-    (pointerType?: string): void => {
-      if (pointerType !== undefined && pointerType !== 'mouse') return;
-      fullscreenRef.current?.();
-    },
-    [],
-  );
+  const handleDoubleClick = useCallback((pointerType?: string): void => {
+    if (pointerType !== undefined && pointerType !== 'mouse') return;
+    fullscreenRef.current?.();
+  }, []);
 
   return { ripple, hintVisible, dismissHint, handleTap, handleDoubleClick };
 }

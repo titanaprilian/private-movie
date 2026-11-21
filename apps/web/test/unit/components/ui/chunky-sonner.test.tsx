@@ -57,7 +57,7 @@ describe('ChunkySonner Toaster component', () => {
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toBeInTheDocument();
     expect(
-      (toastCard as HTMLElement).style.getPropertyValue('--border-radius'),
+      (toastCard as HTMLElement).style.getPropertyValue('--border-radius')
     ).toBe('16px');
   });
 
@@ -72,13 +72,13 @@ describe('ChunkySonner Toaster component', () => {
       toastElement.closest('[data-sonner-toast]') || toastElement.closest('li');
     expect(toastCard).toBeInTheDocument();
     expect(
-      (toastCard as HTMLElement).style.getPropertyValue('--normal-bg'),
+      (toastCard as HTMLElement).style.getPropertyValue('--normal-bg')
     ).toBe('var(--surface)');
     expect(
-      (toastCard as HTMLElement).style.getPropertyValue('--normal-text'),
+      (toastCard as HTMLElement).style.getPropertyValue('--normal-text')
     ).toBe('var(--ink)');
     expect(
-      (toastCard as HTMLElement).style.getPropertyValue('--normal-border'),
+      (toastCard as HTMLElement).style.getPropertyValue('--normal-border')
     ).toBe('var(--border)');
   });
 
@@ -233,8 +233,12 @@ describe('ChunkySonner Toaster component', () => {
     const tokens = ['--green-soft', '--red-soft', '--blue-soft', '--gold-soft'];
     const opaqueHex = /^#[0-9a-fA-F]{6}$/;
     for (const token of tokens) {
-      const rootValue = rootBlock.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1]?.trim();
-      const darkValue = darkBlock.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1]?.trim();
+      const rootValue = rootBlock
+        .match(new RegExp(`${token}:\\s*([^;]+);`))?.[1]
+        ?.trim();
+      const darkValue = darkBlock
+        .match(new RegExp(`${token}:\\s*([^;]+);`))?.[1]
+        ?.trim();
       expect(rootValue, `${token} light mode value`).toMatch(opaqueHex);
       expect(darkValue, `${token} dark mode value`).toMatch(opaqueHex);
       expect(rootValue).not.toMatch(/rgba?\(/);

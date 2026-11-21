@@ -73,4 +73,3 @@ export type {
   MinioSpinUpResponseData,
   FormatBytesOptions,
 } from './internal/api';
-

@@ -27,7 +27,9 @@ describe("initSentry", () => {
   });
 
   it("initializes Sentry and returns true when SENTRY_DSN is set", () => {
-    expect(initSentry({ SENTRY_DSN: "https://key@o0.ingest.sentry.io/0" })).toBe(true);
+    expect(
+      initSentry({ SENTRY_DSN: "https://key@o0.ingest.sentry.io/0" }),
+    ).toBe(true);
     expect(sentryInit).toHaveBeenCalledTimes(1);
     expect(sentryInit).toHaveBeenCalledWith({
       dsn: "https://key@o0.ingest.sentry.io/0",

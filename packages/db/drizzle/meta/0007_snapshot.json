@@ -8,14 +8,55 @@
       "name": "refresh_tokens",
       "schema": "",
       "columns": {
-        "id": { "name": "id", "type": "text", "primaryKey": true, "notNull": true },
-        "token": { "name": "token", "type": "text", "primaryKey": false, "notNull": true },
-        "user_id": { "name": "user_id", "type": "text", "primaryKey": false, "notNull": true },
-        "device_info": { "name": "device_info", "type": "text", "primaryKey": false, "notNull": false },
-        "expires_at": { "name": "expires_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true },
-        "revoked": { "name": "revoked", "type": "boolean", "primaryKey": false, "notNull": true, "default": false },
-        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true },
-        "revoked_at": { "name": "revoked_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": false }
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "device_info": {
+          "name": "device_info",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked": {
+          "name": "revoked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
       },
       "indexes": {},
       "foreignKeys": {
@@ -31,7 +72,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "refresh_tokens_token_unique": { "name": "refresh_tokens_token_unique", "nullsNotDistinct": false, "columns": ["token"] }
+        "refresh_tokens_token_unique": {
+          "name": "refresh_tokens_token_unique",
+          "nullsNotDistinct": false,
+          "columns": ["token"]
+        }
       },
       "policies": {},
       "checkConstraints": {},
@@ -41,20 +86,65 @@
       "name": "users",
       "schema": "",
       "columns": {
-        "id": { "name": "id", "type": "text", "primaryKey": true, "notNull": true },
-        "name": { "name": "name", "type": "text", "primaryKey": false, "notNull": true },
-        "email": { "name": "email", "type": "text", "primaryKey": false, "notNull": true },
-        "password_hash": { "name": "password_hash", "type": "text", "primaryKey": false, "notNull": true },
-        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true },
-        "failed_attempts": { "name": "failed_attempts", "type": "integer", "primaryKey": false, "notNull": true, "default": 0 },
-        "locked_until": { "name": "locked_until", "type": "timestamp with time zone", "primaryKey": false, "notNull": false },
-        "sessions_valid_after": { "name": "sessions_valid_after", "type": "timestamp with time zone", "primaryKey": false, "notNull": false }
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "failed_attempts": {
+          "name": "failed_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sessions_valid_after": {
+          "name": "sessions_valid_after",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "users_email_unique": { "name": "users_email_unique", "nullsNotDistinct": false, "columns": ["email"] }
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": ["email"]
+        }
       },
       "policies": {},
       "checkConstraints": {},
@@ -64,16 +154,40 @@
       "name": "system",
       "schema": "",
       "columns": {
-        "id": { "name": "id", "type": "text", "primaryKey": true, "notNull": true },
-        "key": { "name": "key", "type": "text", "primaryKey": false, "notNull": true },
-        "value": { "name": "value", "type": "text", "primaryKey": false, "notNull": true },
-        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true }
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "system_key_unique": { "name": "system_key_unique", "nullsNotDistinct": false, "columns": ["key"] }
+        "system_key_unique": {
+          "name": "system_key_unique",
+          "nullsNotDistinct": false,
+          "columns": ["key"]
+        }
       },
       "policies": {},
       "checkConstraints": {},
@@ -83,20 +197,64 @@
       "name": "series",
       "schema": "",
       "columns": {
-        "id": { "name": "id", "type": "text", "primaryKey": true, "notNull": true },
-        "source_url": { "name": "source_url", "type": "text", "primaryKey": false, "notNull": true },
-        "source": { "name": "source", "type": "text", "primaryKey": false, "notNull": true },
-        "title": { "name": "title", "type": "text", "primaryKey": false, "notNull": true },
-        "description": { "name": "description", "type": "text", "primaryKey": false, "notNull": false },
-        "poster_url": { "name": "poster_url", "type": "text", "primaryKey": false, "notNull": false },
-        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true },
-        "updated_at": { "name": "updated_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true }
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poster_url": {
+          "name": "poster_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "series_source_url_unique": { "name": "series_source_url_unique", "nullsNotDistinct": false, "columns": ["source_url"] }
+        "series_source_url_unique": {
+          "name": "series_source_url_unique",
+          "nullsNotDistinct": false,
+          "columns": ["source_url"]
+        }
       },
       "policies": {},
       "checkConstraints": {},
@@ -106,22 +264,102 @@
       "name": "episodes",
       "schema": "",
       "columns": {
-        "id": { "name": "id", "type": "text", "primaryKey": true, "notNull": true },
-        "source_url": { "name": "source_url", "type": "text", "primaryKey": false, "notNull": true },
-        "source": { "name": "source", "type": "text", "primaryKey": false, "notNull": true },
-        "title": { "name": "title", "type": "text", "primaryKey": false, "notNull": true },
-        "video_type": { "name": "video_type", "type": "text", "primaryKey": false, "notNull": false },
-        "video_url": { "name": "video_url", "type": "text", "primaryKey": false, "notNull": true },
-        "description": { "name": "description", "type": "text", "primaryKey": false, "notNull": false },
-        "duration": { "name": "duration", "type": "text", "primaryKey": false, "notNull": false },
-        "tags": { "name": "tags", "type": "text[]", "primaryKey": false, "notNull": false },
-        "resolution": { "name": "resolution", "type": "text", "primaryKey": false, "notNull": false },
-        "format": { "name": "format", "type": "text", "primaryKey": false, "notNull": false },
-        "size": { "name": "size", "type": "text", "primaryKey": false, "notNull": false },
-        "metadata": { "name": "metadata", "type": "jsonb", "primaryKey": false, "notNull": false },
-        "series_id": { "name": "series_id", "type": "text", "primaryKey": false, "notNull": false },
-        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true },
-        "updated_at": { "name": "updated_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true }
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "video_type": {
+          "name": "video_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "video_url": {
+          "name": "video_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration": {
+          "name": "duration",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "name": "tags",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolution": {
+          "name": "resolution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "size": {
+          "name": "size",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "series_id": {
+          "name": "series_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
       },
       "indexes": {},
       "foreignKeys": {
@@ -137,7 +375,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "episodes_source_url_unique": { "name": "episodes_source_url_unique", "nullsNotDistinct": false, "columns": ["source_url"] }
+        "episodes_source_url_unique": {
+          "name": "episodes_source_url_unique",
+          "nullsNotDistinct": false,
+          "columns": ["source_url"]
+        }
       },
       "policies": {},
       "checkConstraints": {},

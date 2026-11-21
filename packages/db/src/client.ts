@@ -6,11 +6,16 @@ export type DbClient = PostgresJsDatabase & {
   $client: postgres.Sql;
 };
 
-export const DEFAULT_DATABASE_URL = "postgres://postgres:root_password@localhost:5432/private_movie";
+export const DEFAULT_DATABASE_URL =
+  "postgres://postgres:root_password@localhost:5432/private_movie";
 
-export const MIGRATIONS_FOLDER = fileURLToPath(new URL("../drizzle", import.meta.url));
+export const MIGRATIONS_FOLDER = fileURLToPath(
+  new URL("../drizzle", import.meta.url),
+);
 
 export function createDbClient(databaseUrl?: string): DbClient {
-  const sql = postgres(databaseUrl ?? process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL);
+  const sql = postgres(
+    databaseUrl ?? process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL,
+  );
   return drizzle(sql);
 }

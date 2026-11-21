@@ -21,7 +21,7 @@ export class DramulaProvider implements MediaProvider {
 
   public async parseSeries(
     url: string,
-    fetchFn: FetchFn
+    fetchFn: FetchFn,
   ): Promise<ScrapedSeries> {
     const html = await fetchFn.get(url);
     const episode = await this.parseEpisodeHtml(html, url, fetchFn);
@@ -34,14 +34,14 @@ export class DramulaProvider implements MediaProvider {
   public async parseEpisodeHtml(
     html: string,
     url?: string,
-    fetchFn?: FetchFn
+    fetchFn?: FetchFn,
   ): Promise<ScrapedEpisode> {
     return await parseDramulaEpisodeHtml(html, url, fetchFn);
   }
 
   public async parseEpisode(
     url: string,
-    fetchFn: FetchFn
+    fetchFn: FetchFn,
   ): Promise<ScrapedEpisode> {
     const html = await fetchFn.get(url);
     return await this.parseEpisodeHtml(html, url, fetchFn);
@@ -51,7 +51,7 @@ export class DramulaProvider implements MediaProvider {
     url: string,
     fetchFn: FetchFn,
     context?: Record<string, unknown>,
-    browserFn?: BrowserFn
+    browserFn?: BrowserFn,
   ): Promise<ScrapedVideoSource[]> {
     let sources: ScrapedVideoSource[] = [];
 
@@ -110,18 +110,18 @@ export class DramulaProvider implements MediaProvider {
           } catch (err) {
             console.error(
               `[dramula] browserFn failed to resolve videobello source for ${url}:`,
-              err
+              err,
             );
             throw new EpisodeParseError(
-              `Failed to resolve videobello source for ${url}: browser rendering failed`
+              `Failed to resolve videobello source for ${url}: browser rendering failed`,
             );
           }
         }
 
         throw new EpisodeParseError(
-          `Failed to resolve videobello source for ${url}: browser rendering is required but browserFn did not resolve the .00000000 placeholder`
+          `Failed to resolve videobello source for ${url}: browser rendering is required but browserFn did not resolve the .00000000 placeholder`,
         );
-      })
+      }),
     );
 
     return resolvedSources;

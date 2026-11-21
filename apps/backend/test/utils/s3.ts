@@ -2,7 +2,7 @@ import { vi } from "vitest";
 import type { S3StorageService, S3ObjectSummary } from "@repo/media-service";
 
 export function createMockS3(
-  overrides?: Partial<S3StorageService>
+  overrides?: Partial<S3StorageService>,
 ): S3StorageService {
   const objects: S3ObjectSummary[] = [];
   return {

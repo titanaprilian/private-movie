@@ -11,7 +11,7 @@ export class MediaScraper {
     providers: MediaProvider[] = [
       new OtakudesuProvider(),
       new DramulaProvider(),
-    ]
+    ],
   ) {
     this.providers = [...providers];
   }

@@ -44,8 +44,12 @@ describe('ChunkyTabs component', () => {
   it('shows active green-tint highlight on the selected tab', () => {
     renderWithProviders(<TestTabs />);
     const active = screen.getByRole('tab', { name: 'All' });
-    expect(active.className).toMatch('data-[state=active]:bg-[var(--green-soft)]');
-    expect(active.className).toMatch('data-[state=active]:border-[var(--green)]');
+    expect(active.className).toMatch(
+      'data-[state=active]:bg-[var(--green-soft)]'
+    );
+    expect(active.className).toMatch(
+      'data-[state=active]:border-[var(--green)]'
+    );
   });
 
   it('applies tactile press physics to triggers', () => {
