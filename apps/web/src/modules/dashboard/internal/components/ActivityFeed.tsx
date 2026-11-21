@@ -3,7 +3,10 @@ import { ActivityTag } from './ActivityTag';
 import { deriveActivityEvents, formatRelativeTime } from '../formatters';
 import type { ActivityFeedProps } from '../types';
 
-export function ActivityFeed({ ongoingSeasons, recentSeries }: ActivityFeedProps) {
+export function ActivityFeed({
+  ongoingSeasons,
+  recentSeries,
+}: ActivityFeedProps) {
   const events = deriveActivityEvents(ongoingSeasons, recentSeries);
   if (events.length === 0) {
     return (
@@ -27,7 +30,10 @@ export function ActivityFeed({ ongoingSeasons, recentSeries }: ActivityFeedProps
             data-testid={`activity-row-${event.key}`}
             className="flex items-center gap-3 px-4 py-3"
           >
-            <span data-testid={`activity-tag-${event.key}`} className="contents">
+            <span
+              data-testid={`activity-tag-${event.key}`}
+              className="contents"
+            >
               <ActivityTag kind="failed" />
             </span>
             <Link
@@ -37,10 +43,14 @@ export function ActivityFeed({ ongoingSeasons, recentSeries }: ActivityFeedProps
               className="min-w-0 flex-1 truncate font-sans text-sm font-bold text-[var(--ink)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--blue)]"
             >
               {event.title}
-              <span className="ml-2 font-semibold text-[var(--muted)]">{event.detail}</span>
+              <span className="ml-2 font-semibold text-[var(--muted)]">
+                {event.detail}
+              </span>
             </Link>
             <span className="shrink-0 font-sans text-xs font-semibold text-[var(--muted)]">
-              {event.timeIso ? formatRelativeTime(event.timeIso) : 'never synced'}
+              {event.timeIso
+                ? formatRelativeTime(event.timeIso)
+                : 'never synced'}
             </span>
           </li>
         ) : (
@@ -52,7 +62,10 @@ export function ActivityFeed({ ongoingSeasons, recentSeries }: ActivityFeedProps
               aria-label={`Manage ${event.title}`}
               className="flex items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:outline-[var(--blue)]"
             >
-              <span data-testid={`activity-tag-${event.key}`} className="contents">
+              <span
+                data-testid={`activity-tag-${event.key}`}
+                className="contents"
+              >
                 <ActivityTag kind="updated" />
               </span>
               <span className="min-w-0 flex-1 truncate font-sans text-sm font-bold text-[var(--ink)]">

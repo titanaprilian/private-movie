@@ -28,7 +28,8 @@ const GUIDES: PlatformGuide[] = [
     id: 'desktop',
     title: 'Desktop',
     icon: Monitor,
-    description: 'Setup instructions for Google Chrome, Mozilla Firefox, Microsoft Edge, and Brave Browser.',
+    description:
+      'Setup instructions for Google Chrome, Mozilla Firefox, Microsoft Edge, and Brave Browser.',
     recommendations: [
       {
         name: 'uBlock Origin (Recommended)',
@@ -68,7 +69,8 @@ const GUIDES: PlatformGuide[] = [
     id: 'android',
     title: 'Android',
     icon: Smartphone,
-    description: 'Recommendations for Android devices including mobile browsers and system-wide private DNS.',
+    description:
+      'Recommendations for Android devices including mobile browsers and system-wide private DNS.',
     recommendations: [
       {
         name: 'Brave Browser for Android',
@@ -105,7 +107,8 @@ const GUIDES: PlatformGuide[] = [
     id: 'ios',
     title: 'iOS & iPadOS',
     icon: Tablet,
-    description: 'Recommendations for iPhone and iPad devices using Safari or dedicated privacy browsers.',
+    description:
+      'Recommendations for iPhone and iPad devices using Safari or dedicated privacy browsers.',
     recommendations: [
       {
         name: 'Brave Browser for iOS',
@@ -154,12 +157,19 @@ export function AdblockGuideView() {
               <ShieldCheck className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">Adblock Setup Guide</h1>
-              <p className="text-xs mono text-muted mt-0.5">DOCS_REF: GUIDE-ADB-01</p>
+              <h1 className="text-xl font-semibold tracking-tight">
+                Adblock Setup Guide
+              </h1>
+              <p className="text-xs mono text-muted mt-0.5">
+                DOCS_REF: GUIDE-ADB-01
+              </p>
             </div>
           </div>
           <p className="text-sm text-muted mt-3 leading-relaxed">
-            Third-party video mirrors and embed providers often attempt to open intrusive popup windows or redirect your browser during playback. Setting up an ad blocker eliminates these disruptions and provides a clean, continuous streaming experience.
+            Third-party video mirrors and embed providers often attempt to open
+            intrusive popup windows or redirect your browser during playback.
+            Setting up an ad blocker eliminates these disruptions and provides a
+            clean, continuous streaming experience.
           </p>
         </div>
 
@@ -170,7 +180,10 @@ export function AdblockGuideView() {
             const Icon = guide.icon;
 
             return (
-              <div key={guide.id} className="bg-card border border-c rounded overflow-hidden">
+              <div
+                key={guide.id}
+                className="bg-card border border-c rounded overflow-hidden"
+              >
                 <button
                   type="button"
                   onClick={() => toggleSection(guide.id)}
@@ -181,7 +194,9 @@ export function AdblockGuideView() {
                     <Icon className="w-5 h-5 text-primary" />
                     <div>
                       <h2 className="text-sm font-medium">{guide.title}</h2>
-                      <p className="text-xs text-muted mt-0.5">{guide.description}</p>
+                      <p className="text-xs text-muted mt-0.5">
+                        {guide.description}
+                      </p>
                     </div>
                   </div>
                   <div className="text-muted p-1">
@@ -218,7 +233,9 @@ export function AdblockGuideView() {
                           )}
                         </div>
 
-                        <p className="text-xs text-muted leading-relaxed">{rec.description}</p>
+                        <p className="text-xs text-muted leading-relaxed">
+                          {rec.description}
+                        </p>
 
                         {rec.steps && rec.steps.length > 0 && (
                           <div className="pt-2 border-t border-c/60">

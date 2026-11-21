@@ -1,13 +1,29 @@
 import { renderWithProviders, screen, waitFor, fireEvent } from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRouter, createMemoryHistory, RouterProvider } from '@tanstack/react-router';
+import {
+  createRouter,
+  createMemoryHistory,
+  RouterProvider,
+} from '@tanstack/react-router';
 import { routeTree } from '@/routeTree.gen';
 import { setAccessToken } from '@/lib/api';
 import { useUIStore } from '@/store/uiStore';
 
 const mockGenres = [
-  { id: 'g-2', name: 'Animation', slug: 'animation', isBigGenre: true, displayOrder: 1 },
-  { id: 'g-3', name: 'Korean Drama', slug: 'korean-drama', isBigGenre: true, displayOrder: 2 },
+  {
+    id: 'g-2',
+    name: 'Animation',
+    slug: 'animation',
+    isBigGenre: true,
+    displayOrder: 1,
+  },
+  {
+    id: 'g-3',
+    name: 'Korean Drama',
+    slug: 'korean-drama',
+    isBigGenre: true,
+    displayOrder: 2,
+  },
 ];
 
 describe('PublicNavbar mobile', () => {
@@ -17,7 +33,11 @@ describe('PublicNavbar mobile', () => {
     useUIStore.setState({ theme: 'dark' });
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url =
-        typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/api/genres') || url.includes('/genres')) {
         return new Response(JSON.stringify({ data: mockGenres }), {
           status: 200,
@@ -26,13 +46,18 @@ describe('PublicNavbar mobile', () => {
       }
       if (url.includes('/api/series') || url.includes('/series')) {
         if (url.includes('/series/home-feed')) {
-          return new Response(JSON.stringify({ data: { hero: null, rows: [] } }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
+          return new Response(
+            JSON.stringify({ data: { hero: null, rows: [] } }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
         }
         return new Response(
-          JSON.stringify({ data: { series: [], meta: { total: 0, page: 1, limit: 10 } } }),
+          JSON.stringify({
+            data: { series: [], meta: { total: 0, page: 1, limit: 10 } },
+          }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
       }
@@ -55,7 +80,9 @@ describe('PublicNavbar mobile', () => {
     await renderAt('/');
     expect(screen.getByTestId('mobile-menu-button')).toBeInTheDocument();
     expect(screen.getByTestId('search-toggle')).toBeInTheDocument();
-    expect(screen.getByTestId('search-toggle').className).toContain('rounded-full');
+    expect(screen.getByTestId('search-toggle').className).toContain(
+      'rounded-full'
+    );
     expect(screen.getByTestId('desktop-nav')).toHaveClass('hidden', 'md:flex');
     expect(screen.getByTestId('mobile-menu-button')).toHaveClass('md:hidden');
   });
@@ -81,12 +108,20 @@ describe('PublicNavbar mobile', () => {
     fireEvent.click(screen.getByTestId('mobile-menu-button'));
     const drawer = await screen.findByTestId('mobile-drawer');
     expect(drawer).toBeInTheDocument();
-    expect(screen.getByRole('dialog', { name: 'Mobile navigation' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('dialog', { name: 'Mobile navigation' })
+    ).toBeInTheDocument();
 
-    const mobileNav = screen.getByRole('navigation', { name: 'Mobile Navigation' });
+    const mobileNav = screen.getByRole('navigation', {
+      name: 'Mobile Navigation',
+    });
     const { getAllByRole } = await import('@testing-library/react');
     const links = getAllByRole(mobileNav as HTMLElement, 'link');
-    expect(links.map((l) => l.textContent)).toEqual(['Home', 'Animation', 'Korean Drama']);
+    expect(links.map((l) => l.textContent)).toEqual([
+      'Home',
+      'Animation',
+      'Korean Drama',
+    ]);
 
     // Dismiss via close button
     await user.click(screen.getByTestId('mobile-drawer-close'));
@@ -98,7 +133,9 @@ describe('PublicNavbar mobile', () => {
     fireEvent.click(screen.getByTestId('mobile-menu-button'));
     await screen.findByTestId('mobile-drawer');
     const nav2 = screen.getByRole('navigation', { name: 'Mobile Navigation' });
-    const homeLink = getAllByRole(nav2 as HTMLElement, 'link', { name: 'Home' })[0];
+    const homeLink = getAllByRole(nav2 as HTMLElement, 'link', {
+      name: 'Home',
+    })[0];
     fireEvent.click(homeLink);
     await waitFor(() => {
       expect(screen.queryByTestId('mobile-drawer')).not.toBeInTheDocument();

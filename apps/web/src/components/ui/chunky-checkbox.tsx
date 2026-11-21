@@ -2,11 +2,10 @@ import * as React from 'react';
 import { Check, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export interface ChunkyCheckboxProps
-  extends Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    'onChange' | 'checked' | 'value'
-  > {
+export interface ChunkyCheckboxProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onChange' | 'checked' | 'value'
+> {
   /** Controlled checked state. */
   checked?: boolean;
   /** Indeterminate (mixed) state. Rendered with a dash; sets `aria-checked="mixed"`. */
@@ -15,10 +14,7 @@ export interface ChunkyCheckboxProps
   onCheckedChange?: (checked: boolean) => void;
 }
 
-const ChunkyCheckbox = React.forwardRef<
-  HTMLButtonElement,
-  ChunkyCheckboxProps
->(
+const ChunkyCheckbox = React.forwardRef<HTMLButtonElement, ChunkyCheckboxProps>(
   (
     {
       checked = false,
@@ -47,7 +43,9 @@ const ChunkyCheckbox = React.forwardRef<
         role="checkbox"
         aria-checked={indeterminate ? 'mixed' : checked}
         aria-label={props['aria-label'] ?? 'Checkbox'}
-        data-state={indeterminate ? 'indeterminate' : checked ? 'checked' : 'unchecked'}
+        data-state={
+          indeterminate ? 'indeterminate' : checked ? 'checked' : 'unchecked'
+        }
         disabled={disabled}
         onClick={handleClick}
         className={cn(
@@ -63,10 +61,7 @@ const ChunkyCheckbox = React.forwardRef<
           <Minus className="h-4 w-4 stroke-[3]" aria-hidden="true" />
         ) : (
           <Check
-            className={cn(
-              'h-4 w-4 stroke-[3]',
-              !isChecked && 'opacity-0'
-            )}
+            className={cn('h-4 w-4 stroke-[3]', !isChecked && 'opacity-0')}
             aria-hidden="true"
           />
         )}

@@ -57,9 +57,13 @@ describe('EpisodeDetailDrawer Component', () => {
     expect(screen.getByTestId('chunky-drawer-body')).toBeInTheDocument();
     expect(screen.getByTestId('chunky-drawer-footer')).toBeInTheDocument();
 
-    expect(screen.getByRole('dialog', { name: 'Pilot Episode' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('dialog', { name: 'Pilot Episode' })
+    ).toBeInTheDocument();
     expect(screen.getByDisplayValue('Pilot Episode')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('An exciting start to our series adventure.')).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue('An exciting start to our series adventure.')
+    ).toBeInTheDocument();
     expect(screen.getByDisplayValue('24:10')).toBeInTheDocument();
 
     // Pruned fields must not render

@@ -13,7 +13,8 @@ function buildDb(existing: any, remainingOngoing: any[], episodeCount = 0) {
         if (table === seasons && args.length > 0) {
           return { limit: async () => remainingOngoing };
         }
-        if (table === seasons) return Promise.resolve(existing ? [existing] : []);
+        if (table === seasons)
+          return Promise.resolve(existing ? [existing] : []);
         // episodes count query
         return Promise.resolve([{ value: episodeCount }]);
       },
@@ -26,7 +27,9 @@ function buildDb(existing: any, remainingOngoing: any[], episodeCount = 0) {
         if (table === series) seriesUpdates.push(data);
         return {
           where: vi.fn(() => ({
-            returning: vi.fn(async () => [{ ...existing, status: "completed" }]),
+            returning: vi.fn(async () => [
+              { ...existing, status: "completed" },
+            ]),
           })),
         };
       }),
@@ -42,7 +45,12 @@ function buildDb(existing: any, remainingOngoing: any[], episodeCount = 0) {
 
 describe("seasons repository auto-clears highlighted ongoing series", () => {
   it("clears highlight when updateSeason completes the last ongoing season", async () => {
-    const existing = { id: "s1", seriesId: "series-1", title: "S1", status: "ongoing" };
+    const existing = {
+      id: "s1",
+      seriesId: "series-1",
+      title: "S1",
+      status: "ongoing",
+    };
     const { db, seriesUpdates } = buildDb(existing, []);
     const repo = createSeasonsRepositoryInternal(db);
     await repo.updateSeason("s1", { status: "completed" });
@@ -51,7 +59,12 @@ describe("seasons repository auto-clears highlighted ongoing series", () => {
   });
 
   it("keeps highlight when another ongoing season remains", async () => {
-    const existing = { id: "s1", seriesId: "series-1", title: "S1", status: "ongoing" };
+    const existing = {
+      id: "s1",
+      seriesId: "series-1",
+      title: "S1",
+      status: "ongoing",
+    };
     const { db, seriesUpdates } = buildDb(existing, [{ id: "s2" }]);
     const repo = createSeasonsRepositoryInternal(db);
     await repo.updateSeason("s1", { status: "completed" });
@@ -59,7 +72,12 @@ describe("seasons repository auto-clears highlighted ongoing series", () => {
   });
 
   it("clears highlight when deleteSeason removes the last ongoing season", async () => {
-    const existing = { id: "s1", seriesId: "series-1", title: "S1", status: "ongoing" };
+    const existing = {
+      id: "s1",
+      seriesId: "series-1",
+      title: "S1",
+      status: "ongoing",
+    };
     const { db, seriesUpdates } = buildDb(existing, [], 0);
     const repo = createSeasonsRepositoryInternal(db);
     await repo.deleteSeason("s1");

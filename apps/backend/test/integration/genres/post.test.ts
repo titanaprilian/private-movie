@@ -52,7 +52,7 @@ describe("POST /genres", () => {
     it("returns 401 when authorization token is invalid or expired", async () => {
       const expiredToken = signTestToken(
         { sub: "some-user-id" },
-        { expiresInSeconds: -3600 }
+        { expiresInSeconds: -3600 },
       );
 
       const response = await request(app, {
@@ -89,7 +89,13 @@ describe("POST /genres", () => {
 
       expect([200, 201]).toContain(response.status);
       const body = response.body as {
-        data: { id: string; name: string; slug: string; isBigGenre: boolean; displayOrder: number };
+        data: {
+          id: string;
+          name: string;
+          slug: string;
+          isBigGenre: boolean;
+          displayOrder: number;
+        };
       };
 
       expect(body.data).toBeDefined();
@@ -175,7 +181,12 @@ describe("POST /genres", () => {
       expect(duplicateResponse.status).toBe(409);
       const body = duplicateResponse.body as { error: { code: string } };
       expect(body.error).toBeDefined();
-      expect(["409", "GENRE_ALREADY_EXISTS", "CONFLICT", "DUPLICATE_GENRE"]).toContain(body.error.code);
+      expect([
+        "409",
+        "GENRE_ALREADY_EXISTS",
+        "CONFLICT",
+        "DUPLICATE_GENRE",
+      ]).toContain(body.error.code);
     });
   });
 });

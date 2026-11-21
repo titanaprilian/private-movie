@@ -18,13 +18,8 @@ export type ArchiveIngestJobStatus =
 
 export type ArchiveIngestJobStage = ArchiveIngestJobStatus | string;
 
-export const ARCHIVE_INGEST_ACTIVE_STATUSES: readonly ArchiveIngestJobStatus[] = [
-  "queued",
-  "downloading",
-  "listing",
-  "ready",
-  "uploading",
-] as const;
+export const ARCHIVE_INGEST_ACTIVE_STATUSES: readonly ArchiveIngestJobStatus[] =
+  ["queued", "downloading", "listing", "ready", "uploading"] as const;
 
 export interface ArchiveIngestJobEntry {
   filename: string;

@@ -1,18 +1,14 @@
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import {
-  createTestQueryClient,
-  renderHook,
-  act,
-  waitFor,
-} from '../../utils';
+import { createTestQueryClient, renderHook, act, waitFor } from '../../utils';
 import { useSeriesGridMutations } from '@/modules/videos/internal/catalog/grid/hooks/useSeriesGridMutations';
 import { updateSeries, deleteSeries } from '@/modules/videos/internal/api';
 import type { SeriesItem } from '@/modules/videos/internal/api';
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('@/modules/videos/internal/api')>();
+  const mod =
+    await importOriginal<typeof import('@/modules/videos/internal/api')>();
   return {
     ...mod,
     updateSeries: vi.fn().mockResolvedValue({ id: 'series-1' }),
@@ -40,7 +36,7 @@ const seriesItem = (overrides: Partial<SeriesItem> = {}): SeriesItem =>
   }) as SeriesItem;
 
 function setup(
-  options: Partial<Parameters<typeof useSeriesGridMutations>[0]> = {},
+  options: Partial<Parameters<typeof useSeriesGridMutations>[0]> = {}
 ) {
   mockNavigate.mockReset();
   vi.clearAllMocks();
@@ -60,7 +56,7 @@ function setup(
         setDeletingSeries,
         ...options,
       }),
-    { wrapper },
+    { wrapper }
   );
   return { ...utils, queryClient, setDeletingSeries };
 }
@@ -81,7 +77,7 @@ describe('useSeriesGridMutations', () => {
 
     await waitFor(() => expect(deleteSeries).toHaveBeenCalledWith('series-1'));
     await waitFor(() =>
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] }),
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['series'] })
     );
   });
 
@@ -123,7 +119,9 @@ describe('useSeriesGridMutations', () => {
     });
 
     await waitFor(() =>
-      expect(updateSeries).toHaveBeenCalledWith('series-1', { isFeatured: true }),
+      expect(updateSeries).toHaveBeenCalledWith('series-1', {
+        isFeatured: true,
+      })
     );
     expect(mockNavigate).not.toHaveBeenCalled();
   });
@@ -135,22 +133,25 @@ describe('useSeriesGridMutations', () => {
       () =>
         new Promise<unknown>((resolve) => {
           resolveUpdate = resolve;
-        }) as Promise<never>,
+        }) as Promise<never>
     );
     queryClient.setQueryData(['series', 'featured'], {
-      series: [seriesItem({ isFeatured: true }), seriesItem({ id: 'series-2' })],
+      series: [
+        seriesItem({ isFeatured: true }),
+        seriesItem({ id: 'series-2' }),
+      ],
       meta: { total: 2, page: 1, limit: 12 },
     });
 
     act(() => {
-      result.current.handleToggleFeatured(
-        seriesItem({ isFeatured: true }),
-      );
+      result.current.handleToggleFeatured(seriesItem({ isFeatured: true }));
     });
 
     // While the mutation is still pending, the optimistic write applies.
     await waitFor(() =>
-      expect(updateSeries).toHaveBeenCalledWith('series-1', { isFeatured: false }),
+      expect(updateSeries).toHaveBeenCalledWith('series-1', {
+        isFeatured: false,
+      })
     );
     const cached = queryClient.getQueryData<{
       series: SeriesItem[];
@@ -172,7 +173,7 @@ describe('useSeriesGridMutations', () => {
     act(() => {
       result.current.handleToggleHighlight(
         seriesItem({ isOngoingHighlighted: false }),
-        { preventDefault, stopPropagation } as unknown as React.MouseEvent,
+        { preventDefault, stopPropagation } as unknown as React.MouseEvent
       );
     });
 
@@ -181,7 +182,7 @@ describe('useSeriesGridMutations', () => {
     await waitFor(() =>
       expect(updateSeries).toHaveBeenCalledWith('series-1', {
         isOngoingHighlighted: true,
-      }),
+      })
     );
   });
 });

@@ -57,9 +57,7 @@ export function WatchPlayerFrame({
               src={activeSource.url}
               title={episodeTitle}
               autoPlay
-              onNextEpisode={
-                hasNextEpisode ? onNextEpisode : undefined
-              }
+              onNextEpisode={hasNextEpisode ? onNextEpisode : undefined}
               hasNextEpisode={hasNextEpisode}
             />
           </div>

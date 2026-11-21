@@ -19,7 +19,10 @@ export function DashboardSkeletons() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="dashboard-skeleton-stats">
+      <div
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        data-testid="dashboard-skeleton-stats"
+      >
         <ChunkySkeleton className="h-32" />
         <ChunkySkeleton className="h-32" />
         <ChunkySkeleton className="h-32" />
@@ -28,7 +31,10 @@ export function DashboardSkeletons() {
 
       <section aria-label="Loading scheduler">
         <ChunkySkeleton className="h-7 w-32" />
-        <ChunkySkeleton className="mt-4 h-36 w-full" data-testid="dashboard-skeleton-scheduler" />
+        <ChunkySkeleton
+          className="mt-4 h-36 w-full"
+          data-testid="dashboard-skeleton-scheduler"
+        />
       </section>
 
       <section aria-label="Loading catalog">

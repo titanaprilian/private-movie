@@ -1,16 +1,8 @@
-const PROXIED_PROVIDER_DOMAINS = [
-  'onenesuhd.com',
-];
+const PROXIED_PROVIDER_DOMAINS = ['onenesuhd.com'];
 
-const PATH_PROXIED_PROVIDER_DOMAINS = [
-  'desustream.net',
-  'odstream.net',
-];
+const PATH_PROXIED_PROVIDER_DOMAINS = ['desustream.net', 'odstream.net'];
 
-const AD_SUPPRESSED_PROVIDER_KEYWORDS = [
-  'vidhide',
-  'filedon',
-];
+const AD_SUPPRESSED_PROVIDER_KEYWORDS = ['vidhide', 'filedon'];
 
 /**
  * Restrictive sandbox policy for BelloCloud/videobello embed iframes.
@@ -20,10 +12,7 @@ const AD_SUPPRESSED_PROVIDER_KEYWORDS = [
 export const BELLOCLOUD_IFRAME_SANDBOX =
   'allow-scripts allow-same-origin allow-forms allow-presentation';
 
-const BELLOCLOUD_PROVIDER_KEYWORDS = [
-  'videobello.net',
-  'bellocloud',
-];
+const BELLOCLOUD_PROVIDER_KEYWORDS = ['videobello.net', 'bellocloud'];
 
 /**
  * Returns true when a video source URL belongs to the BelloCloud/videobello
@@ -90,8 +79,8 @@ export function formatEmbedUrl(url: string): string {
   }
 
   const lowerUrl = url.toLowerCase();
-  const isAdSuppressedProvider = AD_SUPPRESSED_PROVIDER_KEYWORDS.some((keyword) =>
-    lowerUrl.includes(keyword)
+  const isAdSuppressedProvider = AD_SUPPRESSED_PROVIDER_KEYWORDS.some(
+    (keyword) => lowerUrl.includes(keyword)
   );
   const isPathProxiedProvider = PATH_PROXIED_PROVIDER_DOMAINS.some((domain) =>
     lowerUrl.includes(domain)

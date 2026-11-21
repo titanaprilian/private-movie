@@ -90,7 +90,9 @@ describe('useEpisodeBatchOperations', () => {
     expect(onCloseBatchDeleteDialog).toHaveBeenCalledTimes(1);
     expect(result.current.selectedEpisodeIds).toEqual([]);
     expect(result.current.isBatchOperating).toBe(false);
-    expect(toast.success).toHaveBeenCalledWith('Successfully deleted 2 episodes');
+    expect(toast.success).toHaveBeenCalledWith(
+      'Successfully deleted 2 episodes'
+    );
   });
 
   it('handles partial failures and notifies both success and error toasts', async () => {
@@ -112,7 +114,9 @@ describe('useEpisodeBatchOperations', () => {
     });
 
     expect(onInvalidateDetail).toHaveBeenCalledTimes(1);
-    expect(toast.success).toHaveBeenCalledWith('Successfully deleted 1 episode');
+    expect(toast.success).toHaveBeenCalledWith(
+      'Successfully deleted 1 episode'
+    );
     expect(toast.error).toHaveBeenCalledWith('Failed to delete 1 episode');
   });
 });

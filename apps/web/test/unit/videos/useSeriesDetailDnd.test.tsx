@@ -56,7 +56,10 @@ function setup(
         onCloseMoveDialog,
         onBulkMoveSuccess,
       }),
-    { wrapper, initialProps: { serverEpisodes: episodes, selected: selectedEpisodeIds } }
+    {
+      wrapper,
+      initialProps: { serverEpisodes: episodes, selected: selectedEpisodeIds },
+    }
   );
   return { ...utils, onCloseMoveDialog, onBulkMoveSuccess };
 }
@@ -74,7 +77,10 @@ describe('useSeriesDetailDnd', () => {
             : (input as Request).url;
       const method = init?.method?.toUpperCase() ?? 'GET';
 
-      if (url.includes('/series/series-1/episodes/order') && method === 'PATCH') {
+      if (
+        url.includes('/series/series-1/episodes/order') &&
+        method === 'PATCH'
+      ) {
         return new Response(JSON.stringify({ data: { success: true } }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -94,7 +100,10 @@ describe('useSeriesDetailDnd', () => {
     ]);
 
     await waitFor(() => {
-      expect(result.current.localEpisodes.map((e) => e.id)).toEqual(['e1', 'e2']);
+      expect(result.current.localEpisodes.map((e) => e.id)).toEqual([
+        'e1',
+        'e2',
+      ]);
     });
   });
 
@@ -208,10 +217,7 @@ describe('useSeriesDetailDnd', () => {
     });
 
     const { result } = setup(
-      [
-        makeEpisode('e1', 'season-a', 1),
-        makeEpisode('e2', 'season-b', 1),
-      ],
+      [makeEpisode('e1', 'season-a', 1), makeEpisode('e2', 'season-b', 1)],
       [seasonA, seasonB],
       seasonA
     );
@@ -281,7 +287,9 @@ describe('useSeriesDetailDnd', () => {
       expect(onBulkMoveSuccess).toHaveBeenCalled();
     });
     expect(onCloseMoveDialog).not.toHaveBeenCalled();
-    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Moved'));
+    expect(toast.success).toHaveBeenCalledWith(
+      expect.stringContaining('Moved')
+    );
   });
 
   it('closes the move dialog without side effects when there is nothing to move', async () => {

@@ -29,7 +29,7 @@ describe("cors", () => {
 
       expect(response.status).toBe(204);
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
-        allowedOrigin
+        allowedOrigin,
       );
     });
 
@@ -44,7 +44,7 @@ describe("cors", () => {
       });
 
       expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
-        "GET, POST, PUT, DELETE, PATCH"
+        "GET, POST, PUT, DELETE, PATCH",
       );
     });
 
@@ -60,7 +60,7 @@ describe("cors", () => {
       });
 
       expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
-        "Content-Type, Authorization"
+        "Content-Type, Authorization",
       );
     });
 
@@ -75,7 +75,7 @@ describe("cors", () => {
       });
 
       expect(response.headers.get("Access-Control-Allow-Credentials")).toBe(
-        "true"
+        "true",
       );
     });
 
@@ -102,7 +102,7 @@ describe("cors", () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
-        allowedOrigin
+        allowedOrigin,
       );
     });
   });
@@ -133,7 +133,7 @@ describe("cors", () => {
       });
 
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
-        devOrigin
+        devOrigin,
       );
     });
 
@@ -147,7 +147,7 @@ describe("cors", () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
-        devOrigin
+        devOrigin,
       );
     });
   });

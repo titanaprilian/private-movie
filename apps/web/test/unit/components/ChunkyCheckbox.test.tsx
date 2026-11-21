@@ -9,7 +9,13 @@ describe('ChunkyCheckbox primitive', () => {
     expect(box).toBeInTheDocument();
     expect(box).toHaveAttribute('aria-checked', 'false');
     expect(box).toHaveAttribute('data-state', 'unchecked');
-    expect(box).toHaveClass('h-6', 'w-6', 'rounded-[8px]', 'border-2', 'border-b-4');
+    expect(box).toHaveClass(
+      'h-6',
+      'w-6',
+      'rounded-[8px]',
+      'border-2',
+      'border-b-4'
+    );
   });
 
   it('renders checked state with green background', () => {
@@ -21,7 +27,9 @@ describe('ChunkyCheckbox primitive', () => {
   });
 
   it('renders indeterminate state with mixed aria-checked', () => {
-    renderWithProviders(<ChunkyCheckbox indeterminate aria-label="Select all" />);
+    renderWithProviders(
+      <ChunkyCheckbox indeterminate aria-label="Select all" />
+    );
     const box = screen.getByRole('checkbox', { name: 'Select all' });
     expect(box).toHaveAttribute('aria-checked', 'mixed');
     expect(box).toHaveAttribute('data-state', 'indeterminate');
@@ -30,7 +38,10 @@ describe('ChunkyCheckbox primitive', () => {
   it('calls onCheckedChange with toggled value on click', async () => {
     const handleChange = vi.fn();
     const { user } = renderWithProviders(
-      <ChunkyCheckbox aria-label="Select episode" onCheckedChange={handleChange} />
+      <ChunkyCheckbox
+        aria-label="Select episode"
+        onCheckedChange={handleChange}
+      />
     );
     await user.click(screen.getByRole('checkbox', { name: 'Select episode' }));
     expect(handleChange).toHaveBeenCalledWith(true);
@@ -39,7 +50,11 @@ describe('ChunkyCheckbox primitive', () => {
   it('toggles from checked to unchecked on click', async () => {
     const handleChange = vi.fn();
     const { user } = renderWithProviders(
-      <ChunkyCheckbox checked aria-label="Select episode" onCheckedChange={handleChange} />
+      <ChunkyCheckbox
+        checked
+        aria-label="Select episode"
+        onCheckedChange={handleChange}
+      />
     );
     await user.click(screen.getByRole('checkbox', { name: 'Select episode' }));
     expect(handleChange).toHaveBeenCalledWith(false);
@@ -48,7 +63,10 @@ describe('ChunkyCheckbox primitive', () => {
   it('activates via spacebar when focused', async () => {
     const handleChange = vi.fn();
     const { user } = renderWithProviders(
-      <ChunkyCheckbox aria-label="Select episode" onCheckedChange={handleChange} />
+      <ChunkyCheckbox
+        aria-label="Select episode"
+        onCheckedChange={handleChange}
+      />
     );
     const box = screen.getByRole('checkbox', { name: 'Select episode' });
     box.focus();
@@ -60,7 +78,11 @@ describe('ChunkyCheckbox primitive', () => {
   it('respects disabled state', async () => {
     const handleChange = vi.fn();
     const { user } = renderWithProviders(
-      <ChunkyCheckbox disabled aria-label="Select episode" onCheckedChange={handleChange} />
+      <ChunkyCheckbox
+        disabled
+        aria-label="Select episode"
+        onCheckedChange={handleChange}
+      />
     );
     const box = screen.getByRole('checkbox', { name: 'Select episode' });
     expect(box).toBeDisabled();

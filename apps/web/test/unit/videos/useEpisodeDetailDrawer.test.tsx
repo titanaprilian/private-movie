@@ -46,7 +46,11 @@ describe('useEpisodeDetailDrawer', () => {
     act(() => {
       result.current.updateField('title', 'dirty');
     });
-    const next = { ...mockEpisode, id: 'ep-2', title: 'Second' } as typeof mockEpisode;
+    const next = {
+      ...mockEpisode,
+      id: 'ep-2',
+      title: 'Second',
+    } as typeof mockEpisode;
     rerender({ episode: next });
     expect(result.current.formState.title).toBe('Second');
     expect(result.current.isDirty).toBe(false);
@@ -61,7 +65,9 @@ describe('useEpisodeDetailDrawer', () => {
       result.current.updateField('description', 'Updated desc');
     });
     await act(async () => {
-      await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
+      await result.current.handleSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent);
     });
     expect(onSave).toHaveBeenCalledWith(
       'ep-1',
@@ -82,7 +88,9 @@ describe('useEpisodeDetailDrawer', () => {
       result.current.updateField('title', 'changed');
     });
     await act(async () => {
-      await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
+      await result.current.handleSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent);
     });
     expect(onSave).not.toHaveBeenCalled();
 

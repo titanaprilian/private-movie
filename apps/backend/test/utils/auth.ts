@@ -35,7 +35,7 @@ export interface SignTestTokenOptions {
  */
 export async function registerUser(
   app: App,
-  overrides: RegisterUserOptions = {}
+  overrides: RegisterUserOptions = {},
 ): Promise<AuthResult> {
   const payload = {
     name: overrides.name ?? "Test User",
@@ -55,8 +55,8 @@ export async function registerUser(
   if (response.status !== 200) {
     throw new Error(
       `registerUser failed with status ${response.status}: ${JSON.stringify(
-        response.body
-      )}`
+        response.body,
+      )}`,
     );
   }
 
@@ -69,7 +69,7 @@ export async function registerUser(
   const refreshToken =
     overrides.clientType === "mobile"
       ? data.data.tokens.refreshToken
-      : response.cookies.refreshToken ?? "";
+      : (response.cookies.refreshToken ?? "");
 
   return {
     user: data.data.user,
@@ -86,7 +86,7 @@ export async function registerUser(
 export async function loginUser(
   app: App,
   creds: LoginCredentials,
-  clientType: "web" | "mobile" = "web"
+  clientType: "web" | "mobile" = "web",
 ): Promise<AuthResult> {
   const response = await request(app, {
     method: "POST",
@@ -98,8 +98,8 @@ export async function loginUser(
   if (response.status !== 200) {
     throw new Error(
       `loginUser failed with status ${response.status}: ${JSON.stringify(
-        response.body
-      )}`
+        response.body,
+      )}`,
     );
   }
 
@@ -112,7 +112,7 @@ export async function loginUser(
   const refreshToken =
     clientType === "mobile"
       ? data.data.tokens.refreshToken
-      : response.cookies.refreshToken ?? "";
+      : (response.cookies.refreshToken ?? "");
 
   return {
     user: data.data.user,
@@ -137,7 +137,7 @@ export function authHeaders(accessToken: string): Record<string, string> {
  */
 export function signTestToken(
   payload: object,
-  options: SignTestTokenOptions = {}
+  options: SignTestTokenOptions = {},
 ): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
@@ -149,10 +149,10 @@ export function signTestToken(
     Math.floor(Date.now() / 1000) + (options.expiresInSeconds ?? 15 * 60);
 
   const encodedHeader = Buffer.from(JSON.stringify(header)).toString(
-    "base64url"
+    "base64url",
   );
   const encodedPayload = Buffer.from(
-    JSON.stringify({ ...payload, exp })
+    JSON.stringify({ ...payload, exp }),
   ).toString("base64url");
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
   const signature = createHmac("sha256", secret)

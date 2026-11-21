@@ -38,7 +38,9 @@ export function genresQueryOptions() {
   });
 }
 
-export async function createGenre(input: CreateGenreRequest): Promise<GenreItem> {
+export async function createGenre(
+  input: CreateGenreRequest
+): Promise<GenreItem> {
   const res = await api.genres.post(input);
 
   if (res.error || !res.data || !('data' in res.data) || !res.data.data) {

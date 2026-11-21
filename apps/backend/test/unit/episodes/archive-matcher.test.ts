@@ -15,7 +15,14 @@ describe("archive-matcher video filtering", () => {
       expect(isVideoFile(`episode-01${ext}`)).toBe(true);
       expect(isVideoFile(`episode-01${ext.toUpperCase()}`)).toBe(true);
     }
-    for (const name of ["notes.txt", "cover.png", "info.nfo", "subs.srt", "readme.md", "video.mp5"]) {
+    for (const name of [
+      "notes.txt",
+      "cover.png",
+      "info.nfo",
+      "subs.srt",
+      "readme.md",
+      "video.mp5",
+    ]) {
       expect(isVideoFile(name)).toBe(false);
     }
   });
@@ -84,7 +91,7 @@ describe("archive-matcher episode mapping", () => {
         { fileId: "f1", filename: "Show.S01E01.1080p.mkv", fileSizeBytes: 100 },
         { fileId: "f2", filename: "Show.S01E02.1080p.mkv", fileSizeBytes: 200 },
       ],
-      episodes
+      episodes,
     );
     expect(items[0]).toMatchObject({
       detectedEpisodeNumber: 1,
@@ -92,7 +99,10 @@ describe("archive-matcher episode mapping", () => {
       quality: "1080p",
       needsReview: false,
     });
-    expect(items[1]).toMatchObject({ matchedEpisodeId: "ep-2", needsReview: false });
+    expect(items[1]).toMatchObject({
+      matchedEpisodeId: "ep-2",
+      needsReview: false,
+    });
   });
 
   it("flags unmapped or unknown files as needing review", () => {
@@ -101,7 +111,7 @@ describe("archive-matcher episode mapping", () => {
         { fileId: "f1", filename: "Show.S01E99.1080p.mkv", fileSizeBytes: 100 },
         { fileId: "f2", filename: "random-clip.mkv", fileSizeBytes: 100 },
       ],
-      episodes
+      episodes,
     );
     expect(items[0]).toMatchObject({
       detectedEpisodeNumber: 99,
@@ -121,7 +131,7 @@ describe("archive-matcher episode mapping", () => {
         { fileId: "f1", filename: "Show.S01E01.1080p.mkv", fileSizeBytes: 100 },
         { fileId: "f2", filename: "Show.S01E01.720p.mkv", fileSizeBytes: 80 },
       ],
-      episodes
+      episodes,
     );
     expect(items[0]?.needsReview).toBe(true);
     expect(items[1]?.needsReview).toBe(true);

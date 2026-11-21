@@ -10,11 +10,14 @@ import { db } from "../../utils/db";
 
 const sampleAHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
-  "utf8"
+  "utf8",
 );
 const sampleDirectVideoHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/episodes/sample-direct-video.html"),
-  "utf8"
+  resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-direct-video.html",
+  ),
+  "utf8",
 );
 const DESUSTREAM_IFRAME_BASE = "https://desustream.net/dstream/arcg/?id=";
 const ODVIDHIDE_EMBED_BASE = "https://odvidhide.com/embed/";
@@ -29,7 +32,9 @@ describe("POST /episodes/:id/scrape-sources", () => {
     app = await buildApp({
       fetchHtml: {
         async get(url) {
-          if (url === "https://otakudesu.blog/episode/test-scrape-sources-ep-1/") {
+          if (
+            url === "https://otakudesu.blog/episode/test-scrape-sources-ep-1/"
+          ) {
             return sampleAHtml;
           }
           if (
@@ -50,7 +55,9 @@ describe("POST /episodes/:id/scrape-sources", () => {
           if (action === MIRROR_ACTION) {
             const i = parseInt(params.get("i") ?? "-1", 10);
             const html = `<div id="pembed"><iframe src="https://player.example.com/embed/mirror-${i}" frameborder="0"></iframe></div>`;
-            return JSON.stringify({ data: Buffer.from(html).toString("base64") });
+            return JSON.stringify({
+              data: Buffer.from(html).toString("base64"),
+            });
           }
           throw new Error(`unknown action: ${action}`);
         },
@@ -167,7 +174,9 @@ describe("POST /episodes/:id/scrape-sources", () => {
     });
 
     expect(res.status).toBe(200);
-    const body = res.body as { data: { id: string; videoSources: Array<{ id: string }> } };
+    const body = res.body as {
+      data: { id: string; videoSources: Array<{ id: string }> };
+    };
     expect(body.data).toBeDefined();
     expect(body.data.id).toBe(episodeId);
     expect(Array.isArray(body.data.videoSources)).toBe(true);
@@ -204,8 +213,10 @@ describe("POST /episodes/:id/scrape-sources", () => {
     });
 
     expect(res.status).toBe(200);
-    const body = res.body as { data: { id: string; videoSources: Array<{ id: string; url: string }> } };
-    
+    const body = res.body as {
+      data: { id: string; videoSources: Array<{ id: string; url: string }> };
+    };
+
     const savedSources = await db
       .select()
       .from(videoSources)
@@ -242,7 +253,8 @@ describe("POST /episodes/:id/scrape-sources", () => {
     const dramulaApp = await buildApp({
       browserFn: mockBrowserFn,
       fetchHtml: {
-        get: async () => "<html><body><iframe src='https://dramula.com/video.00000000'></iframe></body></html>",
+        get: async () =>
+          "<html><body><iframe src='https://dramula.com/video.00000000'></iframe></body></html>",
         post: async () => "",
       },
     });
@@ -264,13 +276,17 @@ describe("POST /episodes/:id/scrape-sources", () => {
     });
 
     expect(res.status).toBe(200);
-    expect(mockBrowserFn).toHaveBeenCalledWith("https://dramula.com/watch/teach-you-a-lesson-2026/s1e1");
+    expect(mockBrowserFn).toHaveBeenCalledWith(
+      "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1",
+    );
 
     const savedSources = await db
       .select()
       .from(videoSources)
       .where(eq(videoSources.episodeId, episodeId));
 
-    expect(savedSources.some((vs) => vs.url.includes("videobello.example.com"))).toBe(true);
+    expect(
+      savedSources.some((vs) => vs.url.includes("videobello.example.com")),
+    ).toBe(true);
   });
 });

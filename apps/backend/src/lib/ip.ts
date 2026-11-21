@@ -1,6 +1,8 @@
 export function getClientIp(
   request: Request,
-  server?: { requestIP?: (req: Request) => { address: string } | null | undefined } | null
+  server?: {
+    requestIP?: (req: Request) => { address: string } | null | undefined;
+  } | null,
 ): string {
   const xForwardedFor = request.headers.get("x-forwarded-for");
   if (xForwardedFor) {

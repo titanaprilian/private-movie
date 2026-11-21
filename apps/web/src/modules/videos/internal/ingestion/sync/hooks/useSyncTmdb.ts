@@ -25,8 +25,10 @@ export function useSyncTmdb({
   const queryClient = useQueryClient();
 
   const [includeSpecials, setIncludeSpecials] = useState(false);
-  const [tmdbPreviewData, setTmdbPreviewData] = useState<TmdbPreviewResult | null>(null);
-  const [syncPreviewData, setSyncPreviewData] = useState<TmdbSyncPreviewResult | null>(null);
+  const [tmdbPreviewData, setTmdbPreviewData] =
+    useState<TmdbPreviewResult | null>(null);
+  const [syncPreviewData, setSyncPreviewData] =
+    useState<TmdbSyncPreviewResult | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
 
@@ -45,7 +47,9 @@ export function useSyncTmdb({
     if (!tmdbId) {
       setTmdbPreviewData(null);
       setSyncPreviewData(null);
-      setPreviewError('This series does not have a linked TMDB ID. Please link it in Edit Series first.');
+      setPreviewError(
+        'This series does not have a linked TMDB ID. Please link it in Edit Series first.'
+      );
       return;
     }
 

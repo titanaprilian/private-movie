@@ -33,7 +33,10 @@ async function insertSeriesRow(): Promise<{ id: string }> {
 
 async function insertEpisodeRow(seriesId: string): Promise<{ id: string }> {
   const now = new Date();
-  const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, seriesId));
+  const [season] = await db
+    .select()
+    .from(seasons)
+    .where(eq(seasons.seriesId, seriesId));
   const [row] = await db
     .insert(episodes)
     .values({
@@ -78,7 +81,7 @@ describe("DELETE /series/:id", () => {
 
       const expiredToken = signTestToken(
         { sub: "some-user-id" },
-        { expiresInSeconds: -3600 }
+        { expiresInSeconds: -3600 },
       );
       const expiredTokenResponse = await request(app, {
         method: "DELETE",
@@ -101,7 +104,9 @@ describe("DELETE /series/:id", () => {
       });
 
       expect(response.status).toBe(404);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error).toBeDefined();
       expect(body.error.code).toBe("SERIES_NOT_FOUND");
     });

@@ -1,5 +1,9 @@
 import { Check, ChevronDown, Filter, Search } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -14,7 +18,10 @@ import type { GenreFilterProps } from '../../types';
 import { useGenreFilter } from '../hooks/useGenreFilter';
 export type { GenreFilterProps } from '../../types';
 
-export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterProps) {
+export function GenreFilter({
+  selectedSlugs,
+  onSelectionChange,
+}: GenreFilterProps) {
   const {
     open,
     search,
@@ -43,13 +50,19 @@ export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterPro
           aria-haspopup="listbox"
           aria-label={triggerLabel}
           variant={isActive ? 'active' : 'default'}
-          className={cn('min-w-[170px] shrink-0', open && 'border-[var(--blue)]')}
+          className={cn(
+            'min-w-[170px] shrink-0',
+            open && 'border-[var(--blue)]'
+          )}
         >
           <Filter aria-hidden="true" className="h-4 w-4 shrink-0" />
           <span className="truncate">{triggerLabel}</span>
           <ChevronDown
             aria-hidden="true"
-            className={cn('h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
+            className={cn(
+              'h-4 w-4 shrink-0 transition-transform',
+              open && 'rotate-180'
+            )}
           />
         </ChunkyChip>
       </PopoverTrigger>
@@ -65,7 +78,10 @@ export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterPro
           className="rounded-2xl bg-transparent"
         >
           <div className="flex items-center gap-2 border-b-2 border-[var(--border)] px-3">
-            <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+            <Search
+              aria-hidden="true"
+              className="h-4 w-4 shrink-0 text-[var(--muted)]"
+            />
             <input
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -75,7 +91,11 @@ export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterPro
             />
           </div>
           {isLoading ? (
-            <div role="status" aria-label="Loading genres" className="space-y-2 p-3">
+            <div
+              role="status"
+              aria-label="Loading genres"
+              className="space-y-2 p-3"
+            >
               <span className="sr-only">Loading genres</span>
               {[0, 1, 2].map((i) => (
                 <div
@@ -87,7 +107,9 @@ export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterPro
             </div>
           ) : isError ? (
             <div role="alert" className="space-y-2 p-4 text-center">
-              <p className="text-sm font-bold text-[var(--ink)]">Failed to load genres</p>
+              <p className="text-sm font-bold text-[var(--ink)]">
+                Failed to load genres
+              </p>
               <ChunkyButton
                 type="button"
                 variant="outline"
@@ -122,7 +144,11 @@ export function GenreFilter({ selectedSlugs, onSelectionChange }: GenreFilterPro
                         )}
                       >
                         {selected && (
-                          <Check aria-hidden="true" className="h-4 w-4 text-white" strokeWidth={3} />
+                          <Check
+                            aria-hidden="true"
+                            className="h-4 w-4 text-white"
+                            strokeWidth={3}
+                          />
                         )}
                       </span>
                       <span className="truncate">{genre.name}</span>

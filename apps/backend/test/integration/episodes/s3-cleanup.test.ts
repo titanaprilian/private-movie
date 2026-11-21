@@ -62,11 +62,12 @@ async function insertTestVideoSource(
     url: string;
     label: string;
     quality: string | null;
-  }>
+  }>,
 ) {
   const id = overrides?.id ?? crypto.randomUUID();
   const type = overrides?.type ?? "embed";
-  const url = overrides?.url ?? `https://embed.example.com/${crypto.randomUUID()}`;
+  const url =
+    overrides?.url ?? `https://embed.example.com/${crypto.randomUUID()}`;
   const label = overrides?.label ?? "Server 1";
   const quality = overrides?.quality ?? "720p";
   const now = new Date();
@@ -85,7 +86,9 @@ async function insertTestVideoSource(
   return { id, type, url, label, quality };
 }
 
-function createMockS3(overrides?: Partial<S3StorageService>): S3StorageService & {
+function createMockS3(
+  overrides?: Partial<S3StorageService>,
+): S3StorageService & {
   deleteObject: ReturnType<typeof vi.fn>;
   deleteObjects: ReturnType<typeof vi.fn>;
 } {

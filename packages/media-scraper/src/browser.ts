@@ -25,7 +25,7 @@ export interface StealthBrowserHandle {
 }
 
 export async function createStealthBrowser(
-  options: CreateStealthBrowserOptions = {}
+  options: CreateStealthBrowserOptions = {},
 ): Promise<StealthBrowserHandle> {
   const {
     headless = true,
@@ -74,7 +74,7 @@ export async function createStealthBrowser(
       try {
         await page.waitForSelector(
           "iframe[src*='videobello'], iframe[src*='embed'], iframe[src]",
-          { timeout }
+          { timeout },
         );
       } catch {
         // Fallback delay if selector wait times out

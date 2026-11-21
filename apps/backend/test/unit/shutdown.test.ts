@@ -131,7 +131,10 @@ describe("createShutdownManager", () => {
       logger: silentLogger,
     });
     manager.prependStep({ name: "db", run: () => void order.push("db") });
-    manager.prependStep({ name: "browser", run: () => void order.push("browser") });
+    manager.prependStep({
+      name: "browser",
+      run: () => void order.push("browser"),
+    });
     manager.prependStep({ name: "http", run: () => void order.push("http") });
 
     await manager.shutdown();
@@ -166,7 +169,7 @@ describe("createShutdownManager", () => {
     expect(order).toEqual(["http", "db"]);
     expect(logger.error).toHaveBeenCalledWith(
       '[Shutdown] step "scheduler" failed',
-      failure
+      failure,
     );
     expect(proc.exits).toEqual([1]);
   });
@@ -317,7 +320,7 @@ describe("createShutdownManager", () => {
       (res) => {
         received.push(res);
         order.push("sync");
-      }
+      },
     );
     const asyncRes = await manager.manage(
       "async",
@@ -329,7 +332,7 @@ describe("createShutdownManager", () => {
         await Promise.resolve();
         received.push(res);
         order.push("async");
-      }
+      },
     );
 
     expect(syncRes).toEqual({ id: "sync" });
@@ -354,9 +357,13 @@ describe("createShutdownManager", () => {
 
     const failure = new Error("factory boom");
     await expect(
-      manager.manage("broken", () => Promise.reject(failure), () => {
-        order.push("broken");
-      })
+      manager.manage(
+        "broken",
+        () => Promise.reject(failure),
+        () => {
+          order.push("broken");
+        },
+      ),
     ).rejects.toThrow(failure);
     await expect(
       manager.manage(
@@ -366,8 +373,8 @@ describe("createShutdownManager", () => {
         },
         () => {
           order.push("broken-sync");
-        }
-      )
+        },
+      ),
     ).rejects.toThrow(failure);
 
     await manager.shutdown();
@@ -390,8 +397,10 @@ describe("createShutdownManager", () => {
     manager.track("flaky", { id: "flaky" }, () => {
       throw new Error("cleanup boom");
     });
-    await manager.manage("http", () => ({ id: "http" }), () =>
-      void order.push("http")
+    await manager.manage(
+      "http",
+      () => ({ id: "http" }),
+      () => void order.push("http"),
     );
 
     await manager.shutdown();
@@ -399,7 +408,7 @@ describe("createShutdownManager", () => {
     expect(order).toEqual(["http", "db"]);
     expect(logger.error).toHaveBeenCalledWith(
       '[Shutdown] step "flaky" failed',
-      expect.any(Error)
+      expect.any(Error),
     );
     expect(proc.exits).toEqual([1]);
   });

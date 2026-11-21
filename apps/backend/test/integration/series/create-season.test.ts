@@ -98,7 +98,10 @@ describe("POST /series/:id/seasons", () => {
     expect(data.status).toBe("completed");
     expect(data.episodeOffset).toBe(0);
 
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, data.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, data.id));
     expect(dbRow.seriesId).toBe(seriesRow.id);
     expect(dbRow.seasonNumber).toBe(2);
     expect(dbRow.status).toBe("completed");
@@ -153,7 +156,9 @@ describe("POST /series/:id/seasons", () => {
     const rows = await db
       .select()
       .from(seasons)
-      .where(and(eq(seasons.seriesId, seriesRow.id), eq(seasons.seasonNumber, 1)));
+      .where(
+        and(eq(seasons.seriesId, seriesRow.id), eq(seasons.seasonNumber, 1)),
+      );
     expect(rows).toHaveLength(1);
   });
 
@@ -211,13 +216,18 @@ describe("POST /series/:id/seasons", () => {
     expect(result.status).toBe(200);
     expect(bodyData(result.body).status).toBe("ongoing");
 
-    const [demoted] = await db.select().from(seasons).where(eq(seasons.id, oldOngoing.id));
+    const [demoted] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, oldOngoing.id));
     expect(demoted.status).toBe("completed");
 
     const ongoing = await db
       .select()
       .from(seasons)
-      .where(and(eq(seasons.seriesId, seriesRow.id), eq(seasons.status, "ongoing")));
+      .where(
+        and(eq(seasons.seriesId, seriesRow.id), eq(seasons.status, "ongoing")),
+      );
     expect(ongoing).toHaveLength(1);
     expect(ongoing[0].seasonNumber).toBe(4);
   });
@@ -258,13 +268,18 @@ describe("POST /series/:id/seasons", () => {
 
     expect(result.status).toBe(200);
 
-    const [demoted] = await db.select().from(seasons).where(eq(seasons.id, first.id));
+    const [demoted] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, first.id));
     expect(demoted.status).toBe("completed");
 
     const ongoing = await db
       .select()
       .from(seasons)
-      .where(and(eq(seasons.seriesId, seriesRow.id), eq(seasons.status, "ongoing")));
+      .where(
+        and(eq(seasons.seriesId, seriesRow.id), eq(seasons.status, "ongoing")),
+      );
     expect(ongoing).toHaveLength(1);
     expect(ongoing[0].id).toBe(second.id);
   });

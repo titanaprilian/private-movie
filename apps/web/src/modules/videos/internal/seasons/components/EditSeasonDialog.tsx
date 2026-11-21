@@ -48,11 +48,16 @@ export function EditSeasonDialog({
         <ChunkyDialogHeader>
           <ChunkyDialogTitle>Edit Season</ChunkyDialogTitle>
           <ChunkyDialogDescription>
-            Update this season&apos;s metadata to correct scraped data or configure ongoing automated scraping.
+            Update this season&apos;s metadata to correct scraped data or
+            configure ongoing automated scraping.
           </ChunkyDialogDescription>
         </ChunkyDialogHeader>
         <ChunkyDialogBody>
-          <form id="edit-season-form" onSubmit={handleSubmit} className="space-y-4 py-2">
+          <form
+            id="edit-season-form"
+            onSubmit={handleSubmit}
+            className="space-y-4 py-2"
+          >
             <div className="space-y-1.5">
               <label
                 htmlFor="edit-season-title"
@@ -92,13 +97,20 @@ export function EditSeasonDialog({
               </label>
               <ChunkySelect
                 value={status}
-                onValueChange={(val) => setStatus(val as 'completed' | 'ongoing' | 'pending')}
+                onValueChange={(val) =>
+                  setStatus(val as 'completed' | 'ongoing' | 'pending')
+                }
               >
-                <ChunkySelectTrigger id="edit-season-status" aria-label="Status">
+                <ChunkySelectTrigger
+                  id="edit-season-status"
+                  aria-label="Status"
+                >
                   <ChunkySelectValue placeholder="Select status" />
                 </ChunkySelectTrigger>
                 <ChunkySelectContent>
-                  <ChunkySelectItem value="completed">Completed</ChunkySelectItem>
+                  <ChunkySelectItem value="completed">
+                    Completed
+                  </ChunkySelectItem>
                   <ChunkySelectItem value="ongoing">Ongoing</ChunkySelectItem>
                   <ChunkySelectItem value="pending">Pending</ChunkySelectItem>
                 </ChunkySelectContent>
@@ -106,7 +118,9 @@ export function EditSeasonDialog({
             </div>
 
             <div className="pt-2 border-t-2 border-[var(--border)] space-y-3">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">Scraper Configuration</h4>
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+                Scraper Configuration
+              </h4>
               <div className="space-y-1.5">
                 <label
                   htmlFor="edit-season-scraper-url"
@@ -134,13 +148,20 @@ export function EditSeasonDialog({
                     value={source}
                     onValueChange={(val) => setSource(val)}
                   >
-                    <ChunkySelectTrigger id="edit-season-source" aria-label="Provider Source">
+                    <ChunkySelectTrigger
+                      id="edit-season-source"
+                      aria-label="Provider Source"
+                    >
                       <ChunkySelectValue placeholder="Select provider" />
                     </ChunkySelectTrigger>
                     <ChunkySelectContent>
                       <ChunkySelectItem value="none">None</ChunkySelectItem>
-                      <ChunkySelectItem value="otakudesu">Otakudesu</ChunkySelectItem>
-                      <ChunkySelectItem value="dramula">Dramula</ChunkySelectItem>
+                      <ChunkySelectItem value="otakudesu">
+                        Otakudesu
+                      </ChunkySelectItem>
+                      <ChunkySelectItem value="dramula">
+                        Dramula
+                      </ChunkySelectItem>
                     </ChunkySelectContent>
                   </ChunkySelect>
                 </div>
@@ -155,7 +176,9 @@ export function EditSeasonDialog({
                     id="edit-season-episode-offset"
                     type="number"
                     value={episodeOffset}
-                    onChange={(e) => setEpisodeOffset(parseInt(e.target.value, 10) || 0)}
+                    onChange={(e) =>
+                      setEpisodeOffset(parseInt(e.target.value, 10) || 0)
+                    }
                     placeholder="0"
                   />
                 </div>
@@ -165,13 +188,16 @@ export function EditSeasonDialog({
                 <div className="rounded-2xl border-2 border-[var(--border)] bg-[var(--bg)] p-2.5 space-y-1 text-xs">
                   {season.lastScrapedAt && (
                     <div className="text-[var(--muted)]">
-                      <span className="font-extrabold text-[var(--ink)]">Last Scraped:</span>{' '}
+                      <span className="font-extrabold text-[var(--ink)]">
+                        Last Scraped:
+                      </span>{' '}
                       {new Date(season.lastScrapedAt).toLocaleString()}
                     </div>
                   )}
                   {season.lastScrapeError && (
                     <div className="text-[var(--red)] font-mono text-[11px] break-words">
-                      <span className="font-semibold">Last Error:</span> {season.lastScrapeError}
+                      <span className="font-semibold">Last Error:</span>{' '}
+                      {season.lastScrapeError}
                     </div>
                   )}
                 </div>

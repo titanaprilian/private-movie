@@ -112,7 +112,9 @@ describe('useVideoGestures', () => {
 
   it('double-clicking with mouse toggles fullscreen; touch double-clicks do not', () => {
     const onToggleFullscreen = vi.fn();
-    const { result } = renderHook(() => useVideoGestures({ onToggleFullscreen }));
+    const { result } = renderHook(() =>
+      useVideoGestures({ onToggleFullscreen })
+    );
 
     act(() => {
       result.current.handleDoubleClick('mouse');
@@ -127,7 +129,7 @@ describe('useVideoGestures', () => {
     // Mouse taps never seek
     const onSeekRelative = vi.fn();
     const { result: touchResult } = renderHook(() =>
-      useVideoGestures({ onSeekRelative }),
+      useVideoGestures({ onSeekRelative })
     );
     act(() => {
       expect(touchResult.current.handleTap(100, 1000, 'touch')).toBe(false);
@@ -144,7 +146,9 @@ describe('useVideoGestures', () => {
       vi.advanceTimersByTime(2500);
     });
     expect(result.current.hintVisible).toBe(false);
-    expect(window.localStorage.getItem(GESTURE_HINT_STORAGE_KEY)).not.toBeNull();
+    expect(
+      window.localStorage.getItem(GESTURE_HINT_STORAGE_KEY)
+    ).not.toBeNull();
   });
 
   it('hides the hint when it was already seen and supports manual dismiss', () => {
@@ -160,6 +164,8 @@ describe('useVideoGestures', () => {
       result.current.dismissHint();
     });
     expect(result.current.hintVisible).toBe(false);
-    expect(window.localStorage.getItem(GESTURE_HINT_STORAGE_KEY)).not.toBeNull();
+    expect(
+      window.localStorage.getItem(GESTURE_HINT_STORAGE_KEY)
+    ).not.toBeNull();
   });
 });

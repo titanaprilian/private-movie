@@ -1,9 +1,6 @@
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { eq } from "drizzle-orm";
-import {
-  storageProviders,
-  type StorageProviderRow,
-} from "@repo/db";
+import { storageProviders, type StorageProviderRow } from "@repo/db";
 import {
   createS3StorageService,
   type S3StorageService,
@@ -29,11 +26,13 @@ export function createStorageProviderRegistry<
   TSchema extends Record<string, unknown>,
 >(
   db: PgDatabase<THKT, TSchema>,
-  defaultS3Fallback?: S3StorageService
+  defaultS3Fallback?: S3StorageService,
 ): StorageProviderRegistry {
   const serviceCache = new Map<string, S3StorageService>();
 
-  function instantiateService(provider: StorageProviderRow): S3StorageService | null {
+  function instantiateService(
+    provider: StorageProviderRow,
+  ): S3StorageService | null {
     try {
       const accessKeyId = decryptCredential(provider.accessKeyIdEnc);
       const secretAccessKey = decryptCredential(provider.secretAccessKeyEnc);
@@ -50,13 +49,15 @@ export function createStorageProviderRegistry<
     } catch (error) {
       console.warn(
         `[StorageProviderRegistry] Failed to decrypt credentials for provider ${provider.id} (${provider.name}):`,
-        error
+        error,
       );
       return null;
     }
   }
 
-  function getServiceForProvider(provider: StorageProviderRow): S3StorageService | null {
+  function getServiceForProvider(
+    provider: StorageProviderRow,
+  ): S3StorageService | null {
     const cached = serviceCache.get(provider.id);
     if (cached) return cached;
 
@@ -104,10 +105,7 @@ export function createStorageProviderRegistry<
     }
 
     // 3. Fall back to first provider row
-    const [firstRow] = await db
-      .select()
-      .from(storageProviders)
-      .limit(1);
+    const [firstRow] = await db.select().from(storageProviders).limit(1);
 
     if (firstRow) {
       const service = getServiceForProvider(firstRow);
@@ -148,7 +146,9 @@ export function createStorageProviderRegistry<
     };
   }
 
-  async function getService(providerId?: string | null): Promise<S3StorageService | null> {
+  async function getService(
+    providerId?: string | null,
+  ): Promise<S3StorageService | null> {
     const res = await getProvider(providerId);
     if (res) {
       return res.service;

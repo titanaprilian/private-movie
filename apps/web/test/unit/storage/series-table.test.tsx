@@ -58,7 +58,8 @@ describe('StorageSeriesTable rows', () => {
     mockNavigate.mockClear();
   });
 
-  it('renders an index number column header (#)', () => {    renderWithProviders(
+  it('renders an index number column header (#)', () => {
+    renderWithProviders(
       <StorageSeriesTable series={mockSeries} onSelectSeries={vi.fn()} />
     );
     expect(screen.getByTestId('series-header-index')).toHaveTextContent('#');

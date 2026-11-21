@@ -17,6 +17,7 @@ function useCurrentPath() {
   }
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 function SafeLink({
   to,
   params,
@@ -26,7 +27,6 @@ function SafeLink({
   ariaLabel,
 }: {
   to: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params?: any;
   className?: string;
   children: React.ReactNode;
@@ -37,29 +37,47 @@ function SafeLink({
     useLocation();
     if (params && to.includes('$')) {
       return (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        <Link to={to as any} params={params as any} className={className} onClick={onClick} aria-label={ariaLabel}>
+        <Link
+          to={to as any}
+          params={params as any}
+          className={className}
+          onClick={onClick}
+          aria-label={ariaLabel}
+        >
           {children}
         </Link>
       );
     }
     return (
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      <Link to={to as any} className={className} onClick={onClick} aria-label={ariaLabel}>
+      <Link
+        to={to as any}
+        className={className}
+        onClick={onClick}
+        aria-label={ariaLabel}
+      >
         {children}
       </Link>
     );
   } catch {
     const href = params
-      ? Object.entries(params).reduce((acc: string, [k, v]) => acc.replace(`$${k}`, String(v)), to)
+      ? Object.entries(params).reduce(
+          (acc: string, [k, v]) => acc.replace(`$${k}`, String(v)),
+          to
+        )
       : to;
     return (
-      <a href={href} className={className} onClick={onClick} aria-label={ariaLabel}>
+      <a
+        href={href}
+        className={className}
+        onClick={onClick}
+        aria-label={ariaLabel}
+      >
         {children}
       </a>
     );
   }
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function PublicNavbar() {
   const { data: genres = [] } = useQuery(genresQueryOptions());
@@ -80,11 +98,14 @@ export function PublicNavbar() {
   useEffect(() => {
     if (!searchOpen) return;
 
-    const handlePointerDown = (event: PointerEvent | MouseEvent | TouchEvent) => {
+    const handlePointerDown = (
+      event: PointerEvent | MouseEvent | TouchEvent
+    ) => {
       const target = event.target as Node | null;
       if (!target) return;
 
-      const clickedInsideContainer = searchContainerRef.current?.contains(target);
+      const clickedInsideContainer =
+        searchContainerRef.current?.contains(target);
       const clickedToggle = searchToggleRef.current?.contains(target);
 
       if (!clickedInsideContainer && !clickedToggle) {
@@ -148,7 +169,11 @@ export function PublicNavbar() {
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] rounded-full px-1 shrink-0"
               ariaLabel="Private Movie home"
             >
-              <img src={brandLogoSrc} alt="Private Movie" className="h-10 w-auto" />
+              <img
+                src={brandLogoSrc}
+                alt="Private Movie"
+                className="h-10 w-auto"
+              />
             </SafeLink>
 
             <nav
@@ -215,7 +240,10 @@ export function PublicNavbar() {
 
         {/* Search popover dialog card */}
         {searchOpen && (
-          <div ref={searchContainerRef} className="absolute top-[76px] left-0 right-0 z-50 px-8 md:px-16">
+          <div
+            ref={searchContainerRef}
+            className="absolute top-[76px] left-0 right-0 z-50 px-8 md:px-16"
+          >
             <div
               role="dialog"
               aria-label="Catalog search"
@@ -244,7 +272,10 @@ export function PublicNavbar() {
 
       {/* Mobile drawer */}
       {mobileMenuOpen && (
-        <div data-testid="mobile-drawer-backdrop" className="fixed inset-0 z-[60]">
+        <div
+          data-testid="mobile-drawer-backdrop"
+          className="fixed inset-0 z-[60]"
+        >
           <div
             aria-hidden="true"
             data-testid="mobile-drawer-overlay"
@@ -259,7 +290,11 @@ export function PublicNavbar() {
             className="absolute top-4 left-4 bottom-4 w-72 max-w-[80vw] rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2 overflow-y-auto shadow-2xl"
           >
             <div className="flex items-center justify-between mb-2">
-              <img src={brandLogoSrc} alt="Private Movie" className="h-9 w-auto" />
+              <img
+                src={brandLogoSrc}
+                alt="Private Movie"
+                className="h-9 w-auto"
+              />
               <ChunkyButton
                 variant="outline"
                 size="icon"

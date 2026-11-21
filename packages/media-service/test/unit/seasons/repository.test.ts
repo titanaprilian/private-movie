@@ -42,7 +42,7 @@ function buildMockDb(existing: any, updated: any, calls: { sets: any[] }) {
             returning: vi.fn().mockResolvedValue([updated]),
           }),
         }),
-      })
+      }),
     ),
   };
 }

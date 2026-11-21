@@ -56,7 +56,9 @@ export function GenreTable({
           <ChunkyTableHeader className="grid-cols-[48px_minmax(0,1fr)_auto_72px_48px]">
             <ChunkyTableHeaderCell
               sortable
-              sortDirection={sortField === 'displayOrder' ? sortDirection : null}
+              sortDirection={
+                sortField === 'displayOrder' ? sortDirection : null
+              }
               onSort={() => onSort('displayOrder')}
               aria-label="Sort by #"
               className="text-center"
@@ -81,7 +83,9 @@ export function GenreTable({
             </ChunkyTableHeaderCell>
             <ChunkyTableHeaderCell
               sortable
-              sortDirection={sortField === 'displayOrder' ? sortDirection : null}
+              sortDirection={
+                sortField === 'displayOrder' ? sortDirection : null
+              }
               onSort={() => onSort('displayOrder')}
               aria-label="Sort by Order"
               className="text-center"

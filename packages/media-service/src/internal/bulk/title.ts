@@ -11,7 +11,7 @@ export function stripSeasonDescriptors(title: string): string {
   // episode number in e.g. "Second Season 7" isn't mistaken for a season.
   out = out.replace(
     /\b(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+seasons?\b/gi,
-    " "
+    " ",
   );
   // "Season 2", "Season 02"
   out = out.replace(/\bseasons?\s+\d+\b/gi, " ");

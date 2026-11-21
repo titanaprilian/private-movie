@@ -18,7 +18,13 @@ function buildMockDb(opts: {
   } = { updates: [], inserts: [] };
 
   const tableName = (t: any) =>
-    t === series ? "series" : t === seasons ? "seasons" : t === episodes ? "episodes" : "other";
+    t === series
+      ? "series"
+      : t === seasons
+        ? "seasons"
+        : t === episodes
+          ? "episodes"
+          : "other";
 
   const mockTx: any = {
     update: vi.fn((table: any) => ({
@@ -32,7 +38,8 @@ function buildMockDb(opts: {
     insert: vi.fn((table: any) => ({
       values: (values: any) => {
         const vals = Array.isArray(values) ? values : [values];
-        for (const v of vals) txCalls.inserts.push({ table: tableName(table), values: v });
+        for (const v of vals)
+          txCalls.inserts.push({ table: tableName(table), values: v });
         const first = vals[0] ?? {};
         // Mimic returning the inserted season row for canonical id resolution
         const returned =
@@ -41,13 +48,16 @@ function buildMockDb(opts: {
                 {
                   ...first,
                   id:
-                    seasonRows.find((s) => s.seasonNumber === first.seasonNumber)?.id ??
-                    `season-${first.seasonNumber}`,
+                    seasonRows.find(
+                      (s) => s.seasonNumber === first.seasonNumber,
+                    )?.id ?? `season-${first.seasonNumber}`,
                 },
               ]
             : [{ id: "genre-id-1" }];
         return {
-          onConflictDoUpdate: vi.fn(() => ({ returning: vi.fn(async () => returned) })),
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn(async () => returned),
+          })),
           onConflictDoNothing: vi.fn(async () => []),
         };
       },
@@ -96,8 +106,20 @@ describe("syncTmdb passport matching & routing", () => {
   it("updates a moved episode in-place without re-inserting into Season 1", async () => {
     const seriesRow = { id: "s1", title: "Show", type: "tv", tmdbId: 100 };
     const seasonRows = [
-      { id: "season-1", seriesId: "s1", seasonNumber: 1, title: "Season 1", status: "completed" },
-      { id: "season-2", seriesId: "s1", seasonNumber: 2, title: "Custom S2", status: "completed" },
+      {
+        id: "season-1",
+        seriesId: "s1",
+        seasonNumber: 1,
+        title: "Season 1",
+        status: "completed",
+      },
+      {
+        id: "season-2",
+        seriesId: "s1",
+        seasonNumber: 2,
+        title: "Custom S2",
+        status: "completed",
+      },
     ];
     const episodeRows = [
       {
@@ -111,18 +133,40 @@ describe("syncTmdb passport matching & routing", () => {
         isUnassigned: false,
       },
     ];
-    const { mockDb, txCalls } = buildMockDb({ seriesRow, seasonRows, episodeRows });
-    fetchSpy = vi.spyOn(global, "fetch").mockImplementation((async (url: string) => {
+    const { mockDb, txCalls } = buildMockDb({
+      seriesRow,
+      seasonRows,
+      episodeRows,
+    });
+    fetchSpy = vi.spyOn(global, "fetch").mockImplementation((async (
+      url: string,
+    ) => {
       if (url === "https://api.themoviedb.org/3/tv/100")
         return tmdbResponse({
-          id: 100, name: "Show", overview: "desc", poster_path: null,
-          backdrop_path: null, vote_average: 8, genres: [],
+          id: 100,
+          name: "Show",
+          overview: "desc",
+          poster_path: null,
+          backdrop_path: null,
+          vote_average: 8,
+          genres: [],
           seasons: [{ season_number: 1, name: "Season 1", episode_count: 1 }],
         });
       if (url === "https://api.themoviedb.org/3/tv/100/season/1")
         return tmdbResponse({
-          season_number: 1, name: "Season 1",
-          episodes: [{ episode_number: 26, name: "New Title", overview: "new", still_path: null, vote_average: 7, air_date: null, runtime: null }],
+          season_number: 1,
+          name: "Season 1",
+          episodes: [
+            {
+              episode_number: 26,
+              name: "New Title",
+              overview: "new",
+              still_path: null,
+              vote_average: 7,
+              air_date: null,
+              runtime: null,
+            },
+          ],
         });
       if (url.includes("/images")) return tmdbResponse({ logos: [] });
       throw new Error(`Unexpected ${url}`);
@@ -133,7 +177,11 @@ describe("syncTmdb passport matching & routing", () => {
 
     const epUpdates = txCalls.updates.filter((u) => u.table === "episodes");
     expect(epUpdates).toHaveLength(1);
-    expect(epUpdates[0].set).toMatchObject({ title: "New Title", tmdbSeasonNumber: 1, tmdbEpisodeNumber: 26 });
+    expect(epUpdates[0].set).toMatchObject({
+      title: "New Title",
+      tmdbSeasonNumber: 1,
+      tmdbEpisodeNumber: 26,
+    });
     const epInserts = txCalls.inserts.filter((i) => i.table === "episodes");
     expect(epInserts).toHaveLength(0);
   });
@@ -141,26 +189,74 @@ describe("syncTmdb passport matching & routing", () => {
   it("routes new episodes to the ongoing season sequentially", async () => {
     const seriesRow = { id: "s1", title: "Show", type: "tv", tmdbId: 100 };
     const seasonRows = [
-      { id: "season-1", seriesId: "s1", seasonNumber: 1, title: "Season 1", status: "completed" },
-      { id: "season-4", seriesId: "s1", seasonNumber: 4, title: "S4", status: "ongoing" },
+      {
+        id: "season-1",
+        seriesId: "s1",
+        seasonNumber: 1,
+        title: "Season 1",
+        status: "completed",
+      },
+      {
+        id: "season-4",
+        seriesId: "s1",
+        seasonNumber: 4,
+        title: "S4",
+        status: "ongoing",
+      },
     ];
     const episodeRows = [
-      { id: "e1", seasonId: "season-4", order: 18, title: "E18", tmdbSeasonNumber: 1, tmdbEpisodeNumber: 80, isUnassigned: false },
+      {
+        id: "e1",
+        seasonId: "season-4",
+        order: 18,
+        title: "E18",
+        tmdbSeasonNumber: 1,
+        tmdbEpisodeNumber: 80,
+        isUnassigned: false,
+      },
     ];
-    const { mockDb, txCalls } = buildMockDb({ seriesRow, seasonRows, episodeRows });
-    fetchSpy = vi.spyOn(global, "fetch").mockImplementation((async (url: string) => {
+    const { mockDb, txCalls } = buildMockDb({
+      seriesRow,
+      seasonRows,
+      episodeRows,
+    });
+    fetchSpy = vi.spyOn(global, "fetch").mockImplementation((async (
+      url: string,
+    ) => {
       if (url === "https://api.themoviedb.org/3/tv/100")
         return tmdbResponse({
-          id: 100, name: "Show", overview: "d", poster_path: null,
-          backdrop_path: null, vote_average: 8, genres: [],
+          id: 100,
+          name: "Show",
+          overview: "d",
+          poster_path: null,
+          backdrop_path: null,
+          vote_average: 8,
+          genres: [],
           seasons: [{ season_number: 1, name: "Season 1", episode_count: 2 }],
         });
       if (url === "https://api.themoviedb.org/3/tv/100/season/1")
         return tmdbResponse({
-          season_number: 1, name: "Season 1",
+          season_number: 1,
+          name: "Season 1",
           episodes: [
-            { episode_number: 80, name: "E80", overview: null, still_path: null, vote_average: null, air_date: null, runtime: null },
-            { episode_number: 81, name: "E81 brand new", overview: null, still_path: null, vote_average: null, air_date: null, runtime: null },
+            {
+              episode_number: 80,
+              name: "E80",
+              overview: null,
+              still_path: null,
+              vote_average: null,
+              air_date: null,
+              runtime: null,
+            },
+            {
+              episode_number: 81,
+              name: "E81 brand new",
+              overview: null,
+              still_path: null,
+              vote_average: null,
+              air_date: null,
+              runtime: null,
+            },
           ],
         });
       if (url.includes("/images")) return tmdbResponse({ logos: [] });
@@ -184,25 +280,67 @@ describe("syncTmdb passport matching & routing", () => {
   it("flags new episodes as unassigned when no ongoing season exists", async () => {
     const seriesRow = { id: "s1", title: "Show", type: "tv", tmdbId: 100 };
     const seasonRows = [
-      { id: "season-1", seriesId: "s1", seasonNumber: 1, title: "Season 1", status: "completed" },
+      {
+        id: "season-1",
+        seriesId: "s1",
+        seasonNumber: 1,
+        title: "Season 1",
+        status: "completed",
+      },
     ];
     const episodeRows = [
-      { id: "e1", seasonId: "season-1", order: 1, title: "E1", tmdbSeasonNumber: 1, tmdbEpisodeNumber: 1, isUnassigned: false },
+      {
+        id: "e1",
+        seasonId: "season-1",
+        order: 1,
+        title: "E1",
+        tmdbSeasonNumber: 1,
+        tmdbEpisodeNumber: 1,
+        isUnassigned: false,
+      },
     ];
-    const { mockDb, txCalls } = buildMockDb({ seriesRow, seasonRows, episodeRows });
-    fetchSpy = vi.spyOn(global, "fetch").mockImplementation((async (url: string) => {
+    const { mockDb, txCalls } = buildMockDb({
+      seriesRow,
+      seasonRows,
+      episodeRows,
+    });
+    fetchSpy = vi.spyOn(global, "fetch").mockImplementation((async (
+      url: string,
+    ) => {
       if (url === "https://api.themoviedb.org/3/tv/100")
         return tmdbResponse({
-          id: 100, name: "Show", overview: "d", poster_path: null,
-          backdrop_path: null, vote_average: 8, genres: [],
+          id: 100,
+          name: "Show",
+          overview: "d",
+          poster_path: null,
+          backdrop_path: null,
+          vote_average: 8,
+          genres: [],
           seasons: [{ season_number: 1, name: "Season 1", episode_count: 2 }],
         });
       if (url === "https://api.themoviedb.org/3/tv/100/season/1")
         return tmdbResponse({
-          season_number: 1, name: "Season 1",
+          season_number: 1,
+          name: "Season 1",
           episodes: [
-            { episode_number: 1, name: "E1", overview: null, still_path: null, vote_average: null, air_date: null, runtime: null },
-            { episode_number: 2, name: "E2 new", overview: null, still_path: null, vote_average: null, air_date: null, runtime: null },
+            {
+              episode_number: 1,
+              name: "E1",
+              overview: null,
+              still_path: null,
+              vote_average: null,
+              air_date: null,
+              runtime: null,
+            },
+            {
+              episode_number: 2,
+              name: "E2 new",
+              overview: null,
+              still_path: null,
+              vote_average: null,
+              air_date: null,
+              runtime: null,
+            },
           ],
         });
       if (url.includes("/images")) return tmdbResponse({ logos: [] });

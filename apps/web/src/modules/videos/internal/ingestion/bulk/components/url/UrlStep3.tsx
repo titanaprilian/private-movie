@@ -39,7 +39,8 @@ export function UrlStep3({
         <ChunkyCard className="space-y-2 p-3">
           <div className="flex items-center justify-between font-sans text-sm font-bold text-[var(--muted)]">
             <span>
-              Processing: Item <strong className="text-[var(--ink)]">{completedCount}</strong> of{' '}
+              Processing: Item{' '}
+              <strong className="text-[var(--ink)]">{completedCount}</strong> of{' '}
               {urlTotalCount} ({urlProgressPercentage}%)
             </span>
             <span className="font-extrabold text-[var(--green)]">

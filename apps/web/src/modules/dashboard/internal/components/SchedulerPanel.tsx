@@ -26,7 +26,10 @@ export function SchedulerPanel({
   const successCount = scheduler?.lastRunResult?.successCount ?? null;
 
   return (
-    <section aria-labelledby="scheduler-panel-heading" data-testid="scheduler-controls-section">
+    <section
+      aria-labelledby="scheduler-panel-heading"
+      data-testid="scheduler-controls-section"
+    >
       <h2
         id="scheduler-panel-heading"
         className="font-display text-xl font-extrabold tracking-tight text-[var(--ink)]"
@@ -41,7 +44,9 @@ export function SchedulerPanel({
                 aria-hidden="true"
                 data-testid="scheduler-status-dot"
                 className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                  isEnabled ? 'animate-pulse bg-[var(--green)]' : 'bg-[var(--muted)]'
+                  isEnabled
+                    ? 'animate-pulse bg-[var(--green)]'
+                    : 'bg-[var(--muted)]'
                 }`}
               />
               <p
@@ -108,7 +113,10 @@ export function SchedulerPanel({
               </ChunkySelectTrigger>
               <ChunkySelectContent>
                 {SCHEDULER_INTERVAL_PRESETS.map((preset) => (
-                  <ChunkySelectItem key={preset.minutes} value={String(preset.minutes)}>
+                  <ChunkySelectItem
+                    key={preset.minutes}
+                    value={String(preset.minutes)}
+                  >
                     {preset.label}
                   </ChunkySelectItem>
                 ))}
@@ -146,7 +154,10 @@ export function SchedulerPanel({
               aria-label="Scrape all ongoing series now"
               data-testid="scheduler-scrape-all"
             >
-              <RefreshCw aria-hidden="true" className={isScrapeAllRunning ? 'animate-spin' : ''} />
+              <RefreshCw
+                aria-hidden="true"
+                className={isScrapeAllRunning ? 'animate-spin' : ''}
+              />
               {isScrapeAllRunning ? 'Scraping…' : 'Scrape all ongoing'}
             </ChunkyButton>
           </div>

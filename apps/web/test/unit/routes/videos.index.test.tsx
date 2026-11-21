@@ -11,8 +11,20 @@ describe('videos.index route search validation', () => {
     const validate = (Route as any).validateSearch;
     expect(typeof validate).toBe('function');
 
-    expect(validate({})).toEqual({ page: 1, q: undefined, genre: undefined, tab: undefined });
-    expect(validate({ page: '2', q: '  naruto  ', genre: '  sci-fi  ', tab: 'featured' })).toEqual({
+    expect(validate({})).toEqual({
+      page: 1,
+      q: undefined,
+      genre: undefined,
+      tab: undefined,
+    });
+    expect(
+      validate({
+        page: '2',
+        q: '  naruto  ',
+        genre: '  sci-fi  ',
+        tab: 'featured',
+      })
+    ).toEqual({
       page: 2,
       q: 'naruto',
       genre: 'sci-fi',
@@ -30,13 +42,17 @@ describe('videos.index route search validation', () => {
       genre: undefined,
       tab: 'all',
     });
-    expect(validate({ page: 'invalid', q: '', genre: '', tab: 'unknown' })).toEqual({
+    expect(
+      validate({ page: 'invalid', q: '', genre: '', tab: 'unknown' })
+    ).toEqual({
       page: 1,
       q: undefined,
       genre: undefined,
       tab: undefined,
     });
-    expect(validate({ page: -5, q: '  ', genre: '   ', tab: '  featured  ' })).toEqual({
+    expect(
+      validate({ page: -5, q: '  ', genre: '   ', tab: '  featured  ' })
+    ).toEqual({
       page: 1,
       q: undefined,
       genre: undefined,

@@ -28,7 +28,8 @@ export async function setup() {
 
   const adminSql = postgres(adminUrl);
   try {
-    const result = await adminSql`SELECT 1 FROM pg_database WHERE datname = ${dbName}`;
+    const result =
+      await adminSql`SELECT 1 FROM pg_database WHERE datname = ${dbName}`;
     if (result.length === 0) {
       await adminSql.unsafe(`CREATE DATABASE "${dbName}"`);
       console.log(`Created database: ${dbName}`);

@@ -3,10 +3,18 @@ import type { App } from '@repo/backend/client';
 
 export function getApiBaseUrl(): string {
   let envApiUrl = import.meta.env.VITE_API_URL;
-  if (typeof window !== 'undefined' && envApiUrl === 'http://localhost:3000' && window.location.hostname !== 'localhost') {
+  if (
+    typeof window !== 'undefined' &&
+    envApiUrl === 'http://localhost:3000' &&
+    window.location.hostname !== 'localhost'
+  ) {
     envApiUrl = window.location.origin;
   }
-  const rawBase = envApiUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+  const rawBase =
+    envApiUrl ||
+    (typeof window !== 'undefined'
+      ? window.location.origin
+      : 'http://localhost:3000');
   return rawBase.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 }
 
@@ -157,13 +165,16 @@ export function extractErrorMessage(error: unknown, fallback: string): string {
   if (typeof err === 'string' && err !== '[object Object]') return err;
 
   if (err.value) {
-    if (typeof err.value === 'string' && err.value !== '[object Object]') return err.value;
-    if (typeof err.value.error?.message === 'string') return err.value.error.message;
+    if (typeof err.value === 'string' && err.value !== '[object Object]')
+      return err.value;
+    if (typeof err.value.error?.message === 'string')
+      return err.value.error.message;
     if (typeof err.value.message === 'string') return err.value.message;
     if (typeof err.value.error === 'string') return err.value.error;
   }
   if (typeof err.error?.message === 'string') return err.error.message;
   if (typeof err.error === 'string') return err.error;
-  if (typeof err.message === 'string' && err.message !== '[object Object]') return err.message;
+  if (typeof err.message === 'string' && err.message !== '[object Object]')
+    return err.message;
   return fallback;
 }

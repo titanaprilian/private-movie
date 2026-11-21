@@ -8,29 +8,30 @@ describe("Multi-Provider Playback URL Normalization", () => {
     isConfigured: () => true,
     getPublicBaseUrl: () => "https://cdn.provider1.com",
     getPresignedPlaybackUrl: async (k) => `https://signed.p1.com/${k}`,
-    getPresignedUploadUrl: async () => ({} as any),
+    getPresignedUploadUrl: async () => ({}) as any,
     uploadObject: async () => {},
     uploadStream: async () => {},
     deleteObject: async () => {},
     deleteObjects: async () => {},
-    listObjects: async () => ({} as any),
+    listObjects: async () => ({}) as any,
     listAllObjects: async () => [],
-    getBucketStorageUsage: async () => ({} as any),
+    getBucketStorageUsage: async () => ({}) as any,
     testConnection: async () => ({ success: true, latencyMs: 10 }),
   };
 
   const dummyService2: S3StorageService = {
     isConfigured: () => true,
     getPublicBaseUrl: () => null,
-    getPresignedPlaybackUrl: async (k) => `https://signed.p2.com/${k}?token=secret`,
-    getPresignedUploadUrl: async () => ({} as any),
+    getPresignedPlaybackUrl: async (k) =>
+      `https://signed.p2.com/${k}?token=secret`,
+    getPresignedUploadUrl: async () => ({}) as any,
     uploadObject: async () => {},
     uploadStream: async () => {},
     deleteObject: async () => {},
     deleteObjects: async () => {},
-    listObjects: async () => ({} as any),
+    listObjects: async () => ({}) as any,
     listAllObjects: async () => [],
-    getBucketStorageUsage: async () => ({} as any),
+    getBucketStorageUsage: async () => ({}) as any,
     testConnection: async () => ({ success: true, latencyMs: 10 }),
   };
 
@@ -58,7 +59,9 @@ describe("Multi-Provider Playback URL Normalization", () => {
       storageProviderRegistry: mockRegistry,
     });
 
-    expect(normalized.url).toBe("https://cdn.provider1.com/episodes/ep1/video.mp4");
+    expect(normalized.url).toBe(
+      "https://cdn.provider1.com/episodes/ep1/video.mp4",
+    );
   });
 
   it("normalizes to presigned playback URL when provider has no publicBaseUrl", async () => {
@@ -73,6 +76,8 @@ describe("Multi-Provider Playback URL Normalization", () => {
       storageProviderRegistry: mockRegistry,
     });
 
-    expect(normalized.url).toBe("https://signed.p2.com/episodes/ep2/video.mp4?token=secret");
+    expect(normalized.url).toBe(
+      "https://signed.p2.com/episodes/ep2/video.mp4?token=secret",
+    );
   });
 });

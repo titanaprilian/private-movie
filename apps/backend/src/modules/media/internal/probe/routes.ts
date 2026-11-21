@@ -14,11 +14,7 @@ export const probeRoutes = (options: MediaRoutesOptions) => {
       try {
         targetUrl = new URL(body.url);
       } catch {
-        return errorResponse(
-          set,
-          400,
-          new Error("Invalid URL format")
-        );
+        return errorResponse(set, 400, new Error("Invalid URL format"));
       }
 
       return successResponse(await probeVideoSource(targetUrl, body.referer));
@@ -29,8 +25,9 @@ export const probeRoutes = (options: MediaRoutesOptions) => {
       detail: {
         tags: ["Media & Playback"],
         summary: "Check video source",
-        description: "Probes a video source URL and reports whether it is reachable. Requires authentication.",
+        description:
+          "Probes a video source URL and reports whether it is reachable. Requires authentication.",
       },
-    }
+    },
   );
 };

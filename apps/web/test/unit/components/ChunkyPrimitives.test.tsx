@@ -10,7 +10,12 @@ describe('ChunkySkeleton primitive', () => {
     );
     const skeleton = container.querySelector('[data-testid="chunky-skeleton"]');
     expect(skeleton).toBeInTheDocument();
-    expect(skeleton).toHaveClass('animate-pulse', 'rounded-2xl', 'h-20', 'w-full');
+    expect(skeleton).toHaveClass(
+      'animate-pulse',
+      'rounded-2xl',
+      'h-20',
+      'w-full'
+    );
   });
 
   it('accepts custom sizes', () => {

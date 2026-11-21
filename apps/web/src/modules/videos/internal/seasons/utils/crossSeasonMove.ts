@@ -91,7 +91,11 @@ export function buildBulkCrossSeasonMove(
       order: nextTargetOrder,
     };
     updates.set(ep.id, moved);
-    orders.push({ id: ep.id, order: nextTargetOrder, seasonId: targetSeasonId });
+    orders.push({
+      id: ep.id,
+      order: nextTargetOrder,
+      seasonId: targetSeasonId,
+    });
     nextTargetOrder += 1;
   }
 

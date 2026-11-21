@@ -1,4 +1,10 @@
-import { renderHook, renderWithProviders, screen, fireEvent, act } from '../../utils';
+import {
+  renderHook,
+  renderWithProviders,
+  screen,
+  fireEvent,
+  act,
+} from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
 import { SeriesCard } from '@/modules/videos/internal/catalog/grid/components/SeriesCard';
 import {
@@ -50,8 +56,12 @@ function makeItem(overrides: Partial<SeriesItem> = {}): SeriesCardItem {
 
 describe('getSeriesCardEpisodeCount', () => {
   it('prefers episodes array length, falls back to episodeCount, defaults 0', () => {
-    expect(getSeriesCardEpisodeCount(makeItem({ episodes: [{}, {}] } as never))).toBe(2);
-    expect(getSeriesCardEpisodeCount(makeItem({ episodeCount: 7 } as never))).toBe(7);
+    expect(
+      getSeriesCardEpisodeCount(makeItem({ episodes: [{}, {}] } as never))
+    ).toBe(2);
+    expect(
+      getSeriesCardEpisodeCount(makeItem({ episodeCount: 7 } as never))
+    ).toBe(7);
     expect(getSeriesCardEpisodeCount(makeItem())).toBe(0);
   });
 });
@@ -102,7 +112,9 @@ describe('useSeriesCard hook', () => {
 
   it('falls back to initial when poster missing', () => {
     const { result } = renderHook(() =>
-      useSeriesCard({ item: makeItem({ posterUrl: null as unknown as string }) })
+      useSeriesCard({
+        item: makeItem({ posterUrl: null as unknown as string }),
+      })
     );
     expect(result.current.showImg).toBe(false);
   });
@@ -113,14 +125,23 @@ describe('useSeriesCard hook', () => {
     const parentClick = vi.fn();
     const { user } = renderWithProviders(
       <div onClick={parentClick}>
-        <SeriesCard item={makeItem()} onToggleFeatured={vi.fn()} onEdit={onEdit} onDelete={onDelete} />
+        <SeriesCard
+          item={makeItem()}
+          onToggleFeatured={vi.fn()}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       </div>
     );
     expect(screen.getByTestId('series-card')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Edit Solo Leveling' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Solo Leveling' })
+    );
     expect(onEdit).toHaveBeenCalledTimes(1);
     expect(parentClick).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Delete Solo Leveling' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Delete Solo Leveling' })
+    );
     expect(onDelete).toHaveBeenCalledTimes(1);
     expect(parentClick).not.toHaveBeenCalled();
 

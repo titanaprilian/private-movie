@@ -42,9 +42,9 @@ export function MoveEpisodesDialog({
         <ChunkyDialogHeader>
           <ChunkyDialogTitle>Move Episodes to Season</ChunkyDialogTitle>
           <ChunkyDialogDescription>
-            Move {selectedCount} {selectedCount === 1 ? 'episode' : 'episodes'} to
-            another season. Episodes are appended to the end of the destination
-            season in order.
+            Move {selectedCount} {selectedCount === 1 ? 'episode' : 'episodes'}{' '}
+            to another season. Episodes are appended to the end of the
+            destination season in order.
           </ChunkyDialogDescription>
         </ChunkyDialogHeader>
         <ChunkyDialogBody>
@@ -103,7 +103,9 @@ export function MoveEpisodesDialog({
             disabled={!targetSeasonId || isPending}
             onClick={handleConfirm}
           >
-            {isPending ? 'Moving...' : `Move ${selectedCount} ${selectedCount === 1 ? 'Episode' : 'Episodes'}`}
+            {isPending
+              ? 'Moving...'
+              : `Move ${selectedCount} ${selectedCount === 1 ? 'Episode' : 'Episodes'}`}
           </ChunkyButton>
         </ChunkyDialogFooter>
       </ChunkyDialogContent>

@@ -161,8 +161,12 @@ export function CatalogSearch({
                 const seasonsCount = item.seasons?.length ?? 1;
                 const rawRating = (item as { rating?: string | null }).rating;
                 const ratingText = rawRating
-                  ? (!isNaN(Number(rawRating)) ? Number(rawRating).toFixed(1) : rawRating)
-                  : (item.type === 'movie' ? 'PG-13' : 'TV-14');
+                  ? !isNaN(Number(rawRating))
+                    ? Number(rawRating).toFixed(1)
+                    : rawRating
+                  : item.type === 'movie'
+                    ? 'PG-13'
+                    : 'TV-14';
                 const genreNames = Array.isArray(item.genres)
                   ? item.genres.map((g) => (typeof g === 'string' ? g : g.name))
                   : [];
@@ -198,8 +202,16 @@ export function CatalogSearch({
                           {item.type === 'movie' ? 'Movie' : 'TV'}
                         </span>
                         <span aria-hidden="true">•</span>
-                        <span className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--gold-dark)] bg-[var(--gold)]/15 px-1.5 py-px font-sans text-[10px] font-extrabold text-[var(--ink)]" data-testid="rating-badge">
-                          <Star size={10} strokeWidth={2.5} aria-hidden="true" className="text-[var(--gold-dark)]" />
+                        <span
+                          className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--gold-dark)] bg-[var(--gold)]/15 px-1.5 py-px font-sans text-[10px] font-extrabold text-[var(--ink)]"
+                          data-testid="rating-badge"
+                        >
+                          <Star
+                            size={10}
+                            strokeWidth={2.5}
+                            aria-hidden="true"
+                            className="text-[var(--gold-dark)]"
+                          />
                           {ratingText}
                         </span>
                         <span aria-hidden="true">•</span>

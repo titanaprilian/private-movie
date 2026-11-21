@@ -13,7 +13,11 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   };
 });
 
-function seriesItem(id: string, title: string, overrides: Record<string, unknown> = {}) {
+function seriesItem(
+  id: string,
+  title: string,
+  overrides: Record<string, unknown> = {}
+) {
   return {
     id,
     title,
@@ -39,7 +43,10 @@ const mockMultiOngoingFeed = {
   rows: [
     {
       title: 'Ongoing Animation',
-      items: [seriesItem('anim-1', 'Solo Leveling'), seriesItem('anim-2', 'Frieren')],
+      items: [
+        seriesItem('anim-1', 'Solo Leveling'),
+        seriesItem('anim-2', 'Frieren'),
+      ],
     },
     {
       title: 'Ongoing Korean Drama',
@@ -59,7 +66,11 @@ const mockMultiOngoingFeed = {
 function mockFetchWithFeed(feed: unknown) {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const url =
-      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
     if (url.includes('/auth/refresh')) {
       return new Response(
         JSON.stringify({ data: { tokens: { accessToken: 'mock-token' } } }),
@@ -123,9 +134,16 @@ describe('CinematicHome multi-ongoing rows', () => {
     });
 
     // Ongoing Animation row has 2 cards, Ongoing Korean Drama has 1
-    const animHeading = screen.getByRole('heading', { level: 2, name: /Ongoing Animation/ });
-    const animRow = animHeading.closest('div.relative.group\\/row') ?? animHeading.parentElement!;
-    const animCards = within(animRow.parentElement as HTMLElement).getAllByTestId('series-card');
+    const animHeading = screen.getByRole('heading', {
+      level: 2,
+      name: /Ongoing Animation/,
+    });
+    const animRow =
+      animHeading.closest('div.relative.group\\/row') ??
+      animHeading.parentElement!;
+    const animCards = within(
+      animRow.parentElement as HTMLElement
+    ).getAllByTestId('series-card');
     // Total cards across all rows: 2 + 1 + 1 = 4 (legacy "Recently Added"
     // series row is filtered out on Web per #501)
     expect(screen.getAllByTestId('series-card')).toHaveLength(4);
@@ -218,10 +236,14 @@ describe('CinematicHome multi-ongoing rows', () => {
 
     for (const title of ['Ongoing Animation', 'Ongoing Korean Drama']) {
       expect(
-        screen.getByRole('button', { name: new RegExp(`Scroll ${title} left`, 'i') })
+        screen.getByRole('button', {
+          name: new RegExp(`Scroll ${title} left`, 'i'),
+        })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole('button', { name: new RegExp(`Scroll ${title} right`, 'i') })
+        screen.getByRole('button', {
+          name: new RegExp(`Scroll ${title} right`, 'i'),
+        })
       ).toBeInTheDocument();
     }
 

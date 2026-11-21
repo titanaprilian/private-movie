@@ -12,7 +12,10 @@ async function insertSeries(overrides?: {
 }): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
   const title = overrides?.title ?? `Series ${id}`;
-  const description = overrides?.description !== undefined ? overrides.description : "Test Description";
+  const description =
+    overrides?.description !== undefined
+      ? overrides.description
+      : "Test Description";
   const now = overrides?.createdAt ?? new Date();
 
   const [row] = await db
@@ -27,24 +30,22 @@ async function insertSeries(overrides?: {
     })
     .returning();
 
-  await db
-    .insert(seasons)
-    .values({
-      id: crypto.randomUUID(),
-      seriesId: id,
-      title,
-      description,
-      posterUrl: "https://example.com/poster.jpg",
-      createdAt: now,
-      updatedAt: now,
-    });
+  await db.insert(seasons).values({
+    id: crypto.randomUUID(),
+    seriesId: id,
+    title,
+    description,
+    posterUrl: "https://example.com/poster.jpg",
+    createdAt: now,
+    updatedAt: now,
+  });
 
   return row;
 }
 
 async function insertEpisodeForSeries(
   seriesId: string,
-  overrides?: { title?: string; createdAt?: Date; order?: number }
+  overrides?: { title?: string; createdAt?: Date; order?: number },
 ): Promise<{ id: string }> {
   const id = crypto.randomUUID();
   const now = overrides?.createdAt ?? new Date();
@@ -131,19 +132,37 @@ describe("series repository list", () => {
   });
 
   it("filters by q parameter matching title or description case-insensitively", async () => {
-    await insertSeries({ title: "Naruto Shippuden", description: "Ninja adventures" });
-    await insertSeries({ title: "One Piece", description: "Pirate king search for treasure" });
+    await insertSeries({
+      title: "Naruto Shippuden",
+      description: "Ninja adventures",
+    });
+    await insertSeries({
+      title: "One Piece",
+      description: "Pirate king search for treasure",
+    });
     await insertSeries({ title: "Bleach", description: "Soul Reaper story" });
 
-    const titleMatch = await repository.list({ page: 1, limit: 10, q: "naruto" });
+    const titleMatch = await repository.list({
+      page: 1,
+      limit: 10,
+      q: "naruto",
+    });
     expect(titleMatch.total).toBe(1);
     expect(titleMatch.series[0].title).toBe("Naruto Shippuden");
 
-    const descMatch = await repository.list({ page: 1, limit: 10, q: "TREASURE" });
+    const descMatch = await repository.list({
+      page: 1,
+      limit: 10,
+      q: "TREASURE",
+    });
     expect(descMatch.total).toBe(1);
     expect(descMatch.series[0].title).toBe("One Piece");
 
-    const noMatch = await repository.list({ page: 1, limit: 10, q: "nonexistent" });
+    const noMatch = await repository.list({
+      page: 1,
+      limit: 10,
+      q: "nonexistent",
+    });
     expect(noMatch.total).toBe(0);
     expect(noMatch.series).toHaveLength(0);
   });
@@ -234,7 +253,12 @@ describe("series repository findByIdWithEpisodes", () => {
 
     const result = await repository.findByIdWithEpisodes(s.id);
     expect(result).not.toBeNull();
-    expect(result?.seasons.map((season) => season.seasonNumber)).toEqual([1, 3, 0, null]);
+    expect(result?.seasons.map((season) => season.seasonNumber)).toEqual([
+      1,
+      3,
+      0,
+      null,
+    ]);
     expect(result?.seasons.map((season) => season.title)).toEqual([
       "Season 1",
       "Season 3",
@@ -277,7 +301,7 @@ describe("series repository updateSeries", () => {
 
   it("throws SeriesNotFoundError when updating non-existent series", async () => {
     await expect(
-      repository.updateSeries(crypto.randomUUID(), { title: "New Title" })
+      repository.updateSeries(crypto.randomUUID(), { title: "New Title" }),
     ).rejects.toThrow("Series with id");
   });
 });
@@ -316,8 +340,8 @@ describe("series repository deleteSeries", () => {
   });
 
   it("throws SeriesNotFoundError when deleting non-existent series", async () => {
-    await expect(
-      repository.deleteSeries(crypto.randomUUID())
-    ).rejects.toThrow("Series with id");
+    await expect(repository.deleteSeries(crypto.randomUUID())).rejects.toThrow(
+      "Series with id",
+    );
   });
 });

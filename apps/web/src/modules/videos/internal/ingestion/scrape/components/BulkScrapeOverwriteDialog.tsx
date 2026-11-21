@@ -25,13 +25,17 @@ export function BulkScrapeOverwriteDialog({
         <ChunkyDialogHeader>
           <ChunkyDialogTitle>Overwrite Existing Sources?</ChunkyDialogTitle>
           <ChunkyDialogDescription>
-            One or more mapped local episodes already contain video sources. Proceeding will
-            overwrite their existing video sources. Please double-check your target mappings
-            before confirming.
+            One or more mapped local episodes already contain video sources.
+            Proceeding will overwrite their existing video sources. Please
+            double-check your target mappings before confirming.
           </ChunkyDialogDescription>
         </ChunkyDialogHeader>
         <ChunkyDialogFooter>
-          <ChunkyButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <ChunkyButton
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </ChunkyButton>
           <ChunkyButton type="button" variant="danger" onClick={onConfirm}>

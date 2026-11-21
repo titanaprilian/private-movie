@@ -11,7 +11,8 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 function episodeResource(
-  overrides: Partial<StorageResource> & Pick<StorageResource, 'key' | 'filename'>,
+  overrides: Partial<StorageResource> &
+    Pick<StorageResource, 'key' | 'filename'>
 ): StorageResource {
   return {
     id: overrides.key,
@@ -28,7 +29,12 @@ const linkedResources: StorageResource[] = [
     filename: 's1e3.mp4',
     sizeBytes: 300,
     lastModified: '2026-09-03T10:00:00.000Z',
-    videoSource: { id: 'src-3', label: 'Main', quality: '1080p', episodeId: 'ep-3' },
+    videoSource: {
+      id: 'src-3',
+      label: 'Main',
+      quality: '1080p',
+      episodeId: 'ep-3',
+    },
     episode: {
       id: 'ep-3',
       title: 'Ep Three',
@@ -44,7 +50,12 @@ const linkedResources: StorageResource[] = [
     filename: 's2e1.mp4',
     sizeBytes: 100,
     lastModified: '2026-09-01T10:00:00.000Z',
-    videoSource: { id: 'src-4', label: 'Main', quality: '1080p', episodeId: 'ep-4' },
+    videoSource: {
+      id: 'src-4',
+      label: 'Main',
+      quality: '1080p',
+      episodeId: 'ep-4',
+    },
     episode: {
       id: 'ep-4',
       title: 'Season Two Premiere',
@@ -60,7 +71,12 @@ const linkedResources: StorageResource[] = [
     filename: 's1e1.mp4',
     sizeBytes: 200,
     lastModified: '2026-09-02T10:00:00.000Z',
-    videoSource: { id: 'src-1', label: 'Main', quality: '1080p', episodeId: 'ep-1' },
+    videoSource: {
+      id: 'src-1',
+      label: 'Main',
+      quality: '1080p',
+      episodeId: 'ep-1',
+    },
     episode: {
       id: 'ep-1',
       title: 'Ep One',
@@ -123,9 +139,7 @@ describe('ChunkyCopyButton primitive', () => {
     );
     const btn = screen.getByTestId('copy-btn');
     expect(btn).toHaveAccessibleName('Copy shows/s1e1.mp4');
-    expect(
-      screen.getByTestId('chunky-copy-icon')
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('chunky-copy-icon')).toBeInTheDocument();
 
     await user.hover(btn);
     expect(await screen.findByText('shows/s1e1.mp4')).toBeInTheDocument();
@@ -218,7 +232,9 @@ describe('StorageResourceTable polish', () => {
     expect(screen.queryByTestId('filter-tab-all')).not.toBeInTheDocument();
     expect(screen.queryByTestId('filter-tab-linked')).not.toBeInTheDocument();
     expect(screen.queryByTestId('filter-tab-orphaned')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('storage-search-input')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('storage-search-input')
+    ).not.toBeInTheDocument();
     expect(screen.queryByTestId('refresh-scan-btn')).not.toBeInTheDocument();
   });
 
@@ -241,7 +257,10 @@ describe('StorageResourceTable polish', () => {
 
   it('suppresses the entire top bar when hideToolbar is true', () => {
     renderWithProviders(
-      <StorageResourceTable {...defaultProps({ orphanedCount: 2 })} hideToolbar />
+      <StorageResourceTable
+        {...defaultProps({ orphanedCount: 2 })}
+        hideToolbar
+      />
     );
     expect(screen.queryByTestId('storage-toolbar')).not.toBeInTheDocument();
     expect(screen.queryByTestId('purge-orphans-btn')).not.toBeInTheDocument();
@@ -265,100 +284,118 @@ describe('StorageResourceTable polish', () => {
     ]);
   });
 
-function makeResources(count: number): StorageResource[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `file-${i}`,
-    key: `file-${String(i).padStart(2, '0')}.mp4`,
-    filename: `file-${String(i).padStart(2, '0')}.mp4`,
-    sizeBytes: 1000 - i,
-    lastModified: '2026-09-01T10:00:00.000Z',
-    status: 'orphaned',
-  }) as StorageResource);
-}
-
-describe('StorageResourceTable pagination', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('displays at most 20 rows per page when more than 20 resources are present', () => {
-    renderWithProviders(
-      <StorageResourceTable {...defaultProps({ resources: makeResources(25) })} />
+  function makeResources(count: number): StorageResource[] {
+    return Array.from(
+      { length: count },
+      (_, i) =>
+        ({
+          id: `file-${i}`,
+          key: `file-${String(i).padStart(2, '0')}.mp4`,
+          filename: `file-${String(i).padStart(2, '0')}.mp4`,
+          sizeBytes: 1000 - i,
+          lastModified: '2026-09-01T10:00:00.000Z',
+          status: 'orphaned',
+        }) as StorageResource
     );
-    const container = screen.getByTestId('storage-table-container');
-    expect(
-      container.querySelectorAll('[data-testid^="row-"]').length
-    ).toBe(20);
-    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
-  });
+  }
 
-  it('renders ChunkyPaginationBar and navigates to the next page', async () => {
-    const { user } = renderWithProviders(
-      <StorageResourceTable {...defaultProps({ resources: makeResources(25) })} />
-    );
-    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Next page' }));
-    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
-    const container = screen.getByTestId('storage-table-container');
-    expect(
-      container.querySelectorAll('[data-testid^="row-"]').length
-    ).toBe(5);
-    // Previous navigates back
-    await user.click(screen.getByRole('button', { name: 'Previous page' }));
-    expect(await screen.findByText('Page 1 of 2')).toBeInTheDocument();
-  });
+  describe('StorageResourceTable pagination', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
 
-  it('does not render pagination when total rows fit on one page', () => {
-    renderWithProviders(
-      <StorageResourceTable {...defaultProps({ resources: makeResources(5) })} />
-    );
-    expect(screen.queryByText(/Page \d+ of/)).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Next page' })
-    ).not.toBeInTheDocument();
-  });
+    it('displays at most 20 rows per page when more than 20 resources are present', () => {
+      renderWithProviders(
+        <StorageResourceTable
+          {...defaultProps({ resources: makeResources(25) })}
+        />
+      );
+      const container = screen.getByTestId('storage-table-container');
+      expect(container.querySelectorAll('[data-testid^="row-"]').length).toBe(
+        20
+      );
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    });
 
-  it('resets the current page to 1 when sort changes', async () => {
-    const { user } = renderWithProviders(
-      <StorageResourceTable {...defaultProps({ resources: makeResources(25) })} />
-    );
-    await user.click(screen.getByRole('button', { name: 'Next page' }));
-    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /filename \/ key/i }));
-    expect(await screen.findByText('Page 1 of 2')).toBeInTheDocument();
-  });
+    it('renders ChunkyPaginationBar and navigates to the next page', async () => {
+      const { user } = renderWithProviders(
+        <StorageResourceTable
+          {...defaultProps({ resources: makeResources(25) })}
+        />
+      );
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Next page' }));
+      expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+      const container = screen.getByTestId('storage-table-container');
+      expect(container.querySelectorAll('[data-testid^="row-"]').length).toBe(
+        5
+      );
+      // Previous navigates back
+      await user.click(screen.getByRole('button', { name: 'Previous page' }));
+      expect(await screen.findByText('Page 1 of 2')).toBeInTheDocument();
+    });
 
-  it('select-all header checkbox selects current page only', async () => {
-    const { user } = renderWithProviders(
-      <StorageResourceTable {...defaultProps({ resources: makeResources(25) })} />
-    );
-    await user.click(screen.getByTestId('select-all-checkbox'));
-    expect(await screen.findByTestId('batch-toolbar')).toBeInTheDocument();
-    expect(screen.getByText('20 files selected')).toBeInTheDocument();
-    // Page 2 rows are not selected
-    await user.click(screen.getByRole('button', { name: 'Next page' }));
-    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
-    expect(screen.getByText('20 files selected')).toBeInTheDocument();
-  });
+    it('does not render pagination when total rows fit on one page', () => {
+      renderWithProviders(
+        <StorageResourceTable
+          {...defaultProps({ resources: makeResources(5) })}
+        />
+      );
+      expect(screen.queryByText(/Page \d+ of/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Next page' })
+      ).not.toBeInTheDocument();
+    });
 
-  it('keeps batch selection and delete toolbar across page navigation', async () => {
-    const props = defaultProps({ resources: makeResources(25) });
-    const { user } = renderWithProviders(<StorageResourceTable {...props} />);
-    await user.click(screen.getByTestId('checkbox-file-00.mp4'));
-    expect(await screen.findByTestId('batch-toolbar')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Next page' }));
-    expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
-    expect(screen.getByTestId('batch-toolbar')).toBeInTheDocument();
-    expect(screen.getByText('1 file selected')).toBeInTheDocument();
-    await user.click(screen.getByTestId('checkbox-file-24.mp4'));
-    expect(screen.getByText('2 files selected')).toBeInTheDocument();
-    await user.click(screen.getByTestId('delete-selected-btn'));
-    expect(props.onDeleteBatch).toHaveBeenCalledTimes(1);
-    expect(props.onDeleteBatch.mock.calls[0][0]).toHaveLength(2);
+    it('resets the current page to 1 when sort changes', async () => {
+      const { user } = renderWithProviders(
+        <StorageResourceTable
+          {...defaultProps({ resources: makeResources(25) })}
+        />
+      );
+      await user.click(screen.getByRole('button', { name: 'Next page' }));
+      expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+      await user.click(
+        screen.getByRole('button', { name: /filename \/ key/i })
+      );
+      expect(await screen.findByText('Page 1 of 2')).toBeInTheDocument();
+    });
+
+    it('select-all header checkbox selects current page only', async () => {
+      const { user } = renderWithProviders(
+        <StorageResourceTable
+          {...defaultProps({ resources: makeResources(25) })}
+        />
+      );
+      await user.click(screen.getByTestId('select-all-checkbox'));
+      expect(await screen.findByTestId('batch-toolbar')).toBeInTheDocument();
+      expect(screen.getByText('20 files selected')).toBeInTheDocument();
+      // Page 2 rows are not selected
+      await user.click(screen.getByRole('button', { name: 'Next page' }));
+      expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+      expect(screen.getByText('20 files selected')).toBeInTheDocument();
+    });
+
+    it('keeps batch selection and delete toolbar across page navigation', async () => {
+      const props = defaultProps({ resources: makeResources(25) });
+      const { user } = renderWithProviders(<StorageResourceTable {...props} />);
+      await user.click(screen.getByTestId('checkbox-file-00.mp4'));
+      expect(await screen.findByTestId('batch-toolbar')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Next page' }));
+      expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument();
+      expect(screen.getByTestId('batch-toolbar')).toBeInTheDocument();
+      expect(screen.getByText('1 file selected')).toBeInTheDocument();
+      await user.click(screen.getByTestId('checkbox-file-24.mp4'));
+      expect(screen.getByText('2 files selected')).toBeInTheDocument();
+      await user.click(screen.getByTestId('delete-selected-btn'));
+      expect(props.onDeleteBatch).toHaveBeenCalledTimes(1);
+      expect(props.onDeleteBatch.mock.calls[0][0]).toHaveLength(2);
+    });
   });
-});
   it('keeps row selection, batch delete, and row action menus working', async () => {
-    const props = defaultProps({ resources: [...linkedResources, orphanResource] });
+    const props = defaultProps({
+      resources: [...linkedResources, orphanResource],
+    });
     const { user } = renderWithProviders(<StorageResourceTable {...props} />);
 
     // Batch row selection

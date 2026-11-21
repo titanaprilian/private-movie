@@ -2,7 +2,11 @@ import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { videoSources, type VideoSourceRow } from "@repo/db";
-import { normalizeVideoSource, normalizeVideoSources, sortVideoSources } from "../playback/normalization";
+import {
+  normalizeVideoSource,
+  normalizeVideoSources,
+  sortVideoSources,
+} from "../playback/normalization";
 import { extractS3Key, type S3StorageService } from "../s3/s3-storage-service";
 import type { StorageProviderRegistry } from "../s3/registry";
 
@@ -40,7 +44,10 @@ export interface VideoSourceRepository {
   upsert(input: VideoSourceUpsertInput): Promise<VideoSourceRow>;
   findById(id: string): Promise<VideoSourceRow | null>;
   findByEpisodeId(episodeId: string): Promise<VideoSourceRow[]>;
-  update(id: string, input: Partial<UpdateVideoSourceInput>): Promise<VideoSourceRow>;
+  update(
+    id: string,
+    input: Partial<UpdateVideoSourceInput>,
+  ): Promise<VideoSourceRow>;
   delete(id: string): Promise<VideoSourceRow>;
   deleteByEpisodeId(episodeId: string): Promise<VideoSourceRow[]>;
 }
@@ -112,7 +119,7 @@ export function createVideoSourceRepositoryInternal<
 
     async update(
       id: string,
-      input: Partial<UpdateVideoSourceInput>
+      input: Partial<UpdateVideoSourceInput>,
     ): Promise<VideoSourceRow> {
       const now = new Date();
       const updateData: Record<string, unknown> = {
@@ -123,7 +130,8 @@ export function createVideoSourceRepositoryInternal<
       if (input.url !== undefined) updateData.url = input.url;
       if (input.label !== undefined) updateData.label = input.label;
       if (input.quality !== undefined) updateData.quality = input.quality;
-      if (input.storageProviderId !== undefined) updateData.storageProviderId = input.storageProviderId;
+      if (input.storageProviderId !== undefined)
+        updateData.storageProviderId = input.storageProviderId;
 
       const [row] = await db
         .update(videoSources)
@@ -132,7 +140,9 @@ export function createVideoSourceRepositoryInternal<
         .returning();
 
       if (!row) {
-        throw new VideoSourceNotFoundError(`Video source with id ${id} not found`);
+        throw new VideoSourceNotFoundError(
+          `Video source with id ${id} not found`,
+        );
       }
 
       return await normalizeVideoSource(row, {
@@ -148,7 +158,9 @@ export function createVideoSourceRepositoryInternal<
         .returning();
 
       if (!row) {
-        throw new VideoSourceNotFoundError(`Video source with id ${id} not found`);
+        throw new VideoSourceNotFoundError(
+          `Video source with id ${id} not found`,
+        );
       }
 
       // Best-effort S3 object cleanup: DB deletion must succeed even if the
@@ -156,7 +168,9 @@ export function createVideoSourceRepositoryInternal<
       if (row.type === "s3") {
         let s3 = options?.s3StorageService;
         if (options?.storageProviderRegistry) {
-          const regS3 = await options.storageProviderRegistry.getService(row.storageProviderId);
+          const regS3 = await options.storageProviderRegistry.getService(
+            row.storageProviderId,
+          );
           if (regS3) s3 = regS3;
         }
 
@@ -168,7 +182,7 @@ export function createVideoSourceRepositoryInternal<
             } catch (err) {
               console.warn(
                 `[media-service] Failed to delete S3 object for video source ${id} (key: ${key}):`,
-                err instanceof Error ? err.message : err
+                err instanceof Error ? err.message : err,
               );
             }
           }

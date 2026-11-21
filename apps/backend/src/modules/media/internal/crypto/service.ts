@@ -16,7 +16,7 @@ export class CryptoSubtleError extends Error {
  * Returns the base64-encoded result (or boolean for verify).
  */
 export async function executeCryptoSubtleOperation(
-  payload: CryptoSubtleRequestPayload
+  payload: CryptoSubtleRequestPayload,
 ): Promise<string | boolean> {
   const { op, algorithm, keyRaw, keyAlgorithm, data } = payload;
 
@@ -34,9 +34,11 @@ export async function executeCryptoSubtleOperation(
     const importedKey = await globalThis.crypto.subtle.importKey(
       "raw",
       keyBuf,
-      (keyAlgorithm as unknown as AlgorithmIdentifier) || { name: algObj.name as string },
+      (keyAlgorithm as unknown as AlgorithmIdentifier) || {
+        name: algObj.name as string,
+      },
       false,
-      [op as KeyUsage]
+      [op as KeyUsage],
     );
 
     const result =
@@ -44,12 +46,12 @@ export async function executeCryptoSubtleOperation(
         ? await globalThis.crypto.subtle.decrypt(
             algObj as unknown as AesCbcParams,
             importedKey,
-            dataBuf
+            dataBuf,
           )
         : await globalThis.crypto.subtle.encrypt(
             algObj as unknown as AesCbcParams,
             importedKey,
-            dataBuf
+            dataBuf,
           );
 
     return Buffer.from(result).toString("base64");
@@ -57,11 +59,9 @@ export async function executeCryptoSubtleOperation(
 
   if (op === "digest") {
     const dataBuf = Buffer.from(data, "base64");
-    const algName = (algorithm.name as string) || (algorithm as unknown as string);
-    const result = await globalThis.crypto.subtle.digest(
-      algName,
-      dataBuf
-    );
+    const algName =
+      (algorithm.name as string) || (algorithm as unknown as string);
+    const result = await globalThis.crypto.subtle.digest(algName, dataBuf);
     return Buffer.from(result).toString("base64");
   }
 
@@ -73,15 +73,17 @@ export async function executeCryptoSubtleOperation(
     const importedKey = await globalThis.crypto.subtle.importKey(
       "raw",
       keyBuf,
-      (keyAlgorithm as unknown as AlgorithmIdentifier) || { name: (algObj.name as string) || "HMAC" },
+      (keyAlgorithm as unknown as AlgorithmIdentifier) || {
+        name: (algObj.name as string) || "HMAC",
+      },
       false,
-      ["sign"]
+      ["sign"],
     );
 
     const result = await globalThis.crypto.subtle.sign(
       algObj as unknown as AlgorithmIdentifier,
       importedKey,
-      dataBuf
+      dataBuf,
     );
 
     return Buffer.from(result).toString("base64");
@@ -96,16 +98,18 @@ export async function executeCryptoSubtleOperation(
     const importedKey = await globalThis.crypto.subtle.importKey(
       "raw",
       keyBuf,
-      (keyAlgorithm as unknown as AlgorithmIdentifier) || { name: (algObj.name as string) || "HMAC" },
+      (keyAlgorithm as unknown as AlgorithmIdentifier) || {
+        name: (algObj.name as string) || "HMAC",
+      },
       false,
-      ["verify"]
+      ["verify"],
     );
 
     const result = await globalThis.crypto.subtle.verify(
       algObj as unknown as AlgorithmIdentifier,
       importedKey,
       sigBuf,
-      dataBuf
+      dataBuf,
     );
 
     return result;

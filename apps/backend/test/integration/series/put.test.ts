@@ -5,7 +5,9 @@ import { buildApp, request, type App } from "../../utils/app";
 import { registerUser, authHeaders, signTestToken } from "../../utils/auth";
 import { db } from "../../utils/db";
 
-async function insertSeriesRow(title?: string): Promise<{ id: string; title: string }> {
+async function insertSeriesRow(
+  title?: string,
+): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
   const now = new Date();
 
@@ -21,7 +23,10 @@ async function insertSeriesRow(title?: string): Promise<{ id: string; title: str
   return { id, title: title ?? `Series ${id}` };
 }
 
-async function insertGenreRow(name: string, slug: string): Promise<{ id: string; name: string; slug: string }> {
+async function insertGenreRow(
+  name: string,
+  slug: string,
+): Promise<{ id: string; name: string; slug: string }> {
   const id = crypto.randomUUID();
   const now = new Date();
 
@@ -65,7 +70,7 @@ describe("PUT /series/:id", () => {
       const s = await insertSeriesRow();
       const expiredToken = signTestToken(
         { sub: "some-user-id" },
-        { expiresInSeconds: -3600 }
+        { expiresInSeconds: -3600 },
       );
 
       const response = await request(app, {

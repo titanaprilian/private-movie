@@ -15,7 +15,6 @@ export function ProfileView() {
     navigate({ to: '/login' });
   };
 
-
   const formattedDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-US', {
         year: 'numeric',

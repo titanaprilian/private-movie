@@ -20,7 +20,7 @@ export const SCHEDULER_DEFAULT_ENABLED = true;
  * minutes to milliseconds, and returns the running scheduler handle.
  */
 export async function startOngoingSeasonScheduler(
-  options: StartOngoingSeasonSchedulerOptions
+  options: StartOngoingSeasonSchedulerOptions,
 ): Promise<OngoingSeasonScheduler> {
   const { db, mediaService, runImmediately = true, logger } = options;
   const config = await loadSchedulerConfig(db);
@@ -36,7 +36,7 @@ export async function startOngoingSeasonScheduler(
 }
 
 export function createOngoingSeasonScheduler(
-  options: OngoingSeasonSchedulerOptions
+  options: OngoingSeasonSchedulerOptions,
 ): OngoingSeasonScheduler {
   const {
     mediaService,
@@ -48,7 +48,8 @@ export function createOngoingSeasonScheduler(
 
   let timer: ReturnType<typeof setInterval> | null = null;
   let isExecutingJob = false;
-  let currentExecutionPromise: Promise<BatchOngoingScrapeResult | null> | null = null;
+  let currentExecutionPromise: Promise<BatchOngoingScrapeResult | null> | null =
+    null;
   let isStarted = false;
   let isSchedulerEnabled = enabled;
   let currentIntervalMs = intervalMs;
@@ -61,7 +62,10 @@ export function createOngoingSeasonScheduler(
       clearInterval(timer);
       timer = null;
     }
-    nextRunAt = isStarted && isSchedulerEnabled ? new Date(Date.now() + currentIntervalMs) : null;
+    nextRunAt =
+      isStarted && isSchedulerEnabled
+        ? new Date(Date.now() + currentIntervalMs)
+        : null;
     if (!isStarted || !isSchedulerEnabled) {
       return;
     }
@@ -82,20 +86,22 @@ export function createOngoingSeasonScheduler(
   async function executeJob(): Promise<BatchOngoingScrapeResult | null> {
     if (isExecutingJob) {
       logger.warn(
-        "[OngoingSeasonScheduler] Previous scrape run is still active; skipping scheduled iteration."
+        "[OngoingSeasonScheduler] Previous scrape run is still active; skipping scheduled iteration.",
       );
       return null;
     }
 
     isExecutingJob = true;
     const runPromise = (async () => {
-      logger.info("[OngoingSeasonScheduler] Starting ongoing season scrape run...");
+      logger.info(
+        "[OngoingSeasonScheduler] Starting ongoing season scrape run...",
+      );
       lastRunAt = new Date();
       try {
         const batchResult = await mediaService.scrapeAllOngoingSeasons();
         logger.info(
           `[OngoingSeasonScheduler] Scrape run finished. Processed: ${batchResult.totalProcessed}, ` +
-            `Success: ${batchResult.successCount}, Failed: ${batchResult.failureCount}`
+            `Success: ${batchResult.successCount}, Failed: ${batchResult.failureCount}`,
         );
         lastRunResult = {
           totalProcessed: batchResult.totalProcessed,
@@ -106,7 +112,7 @@ export function createOngoingSeasonScheduler(
       } catch (error) {
         logger.error(
           "[OngoingSeasonScheduler] Unexpected error during ongoing season scraping:",
-          error
+          error,
         );
         return null;
       } finally {
@@ -126,7 +132,7 @@ export function createOngoingSeasonScheduler(
       }
       isStarted = true;
       logger.info(
-        `[OngoingSeasonScheduler] Initialized with interval ${currentIntervalMs}ms.`
+        `[OngoingSeasonScheduler] Initialized with interval ${currentIntervalMs}ms.`,
       );
 
       if (runImmediately && isSchedulerEnabled) {
@@ -147,7 +153,7 @@ export function createOngoingSeasonScheduler(
         timer = null;
       }
       logger.info(
-        "[OngoingSeasonScheduler] Scheduler stopped. Waiting for active run to wrap up..."
+        "[OngoingSeasonScheduler] Scheduler stopped. Waiting for active run to wrap up...",
       );
       if (currentExecutionPromise) {
         await currentExecutionPromise;

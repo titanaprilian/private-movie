@@ -10,14 +10,22 @@ import {
   type ArchiveProcessRunner,
 } from "../../../src/modules/episodes";
 
-function runnerWith(result: { exitCode: number; stdout?: string; stderr?: string }): {
+function runnerWith(result: {
+  exitCode: number;
+  stdout?: string;
+  stderr?: string;
+}): {
   runner: ArchiveProcessRunner;
   calls: string[][];
 } {
   const calls: string[][] = [];
   const runner: ArchiveProcessRunner = async (args) => {
     calls.push(args);
-    return { exitCode: result.exitCode, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+    return {
+      exitCode: result.exitCode,
+      stdout: result.stdout ?? "",
+      stderr: result.stderr ?? "",
+    };
   };
   return { runner, calls };
 }
@@ -34,7 +42,10 @@ describe("archive-extractor format support", () => {
 
 describe("archive-extractor 7z invocation", () => {
   it("extracts with 7z and passes the password flag when provided", async () => {
-    const { runner, calls } = runnerWith({ exitCode: 0, stdout: "Everything is Ok" });
+    const { runner, calls } = runnerWith({
+      exitCode: 0,
+      stdout: "Everything is Ok",
+    });
     const result = await extractArchive({
       archivePath: "/tmp/pack.zip",
       destDir: "/tmp/out",
@@ -42,7 +53,14 @@ describe("archive-extractor 7z invocation", () => {
       runner,
     });
     expect(result.extractedDir).toBe("/tmp/out");
-    expect(calls[0]).toEqual(["x", "-y", "-bb3", "-o/tmp/out", "-psecret", "/tmp/pack.zip"]);
+    expect(calls[0]).toEqual([
+      "x",
+      "-y",
+      "-bb3",
+      "-o/tmp/out",
+      "-psecret",
+      "/tmp/pack.zip",
+    ]);
   });
 
   it("omits the password flag when no password is provided", async () => {
@@ -52,16 +70,27 @@ describe("archive-extractor 7z invocation", () => {
       destDir: "/tmp/out",
       runner,
     });
-    expect(calls[0]).toEqual(["x", "-y", "-bb3", "-o/tmp/out", "/tmp/pack.zip"]);
+    expect(calls[0]).toEqual([
+      "x",
+      "-y",
+      "-bb3",
+      "-o/tmp/out",
+      "/tmp/pack.zip",
+    ]);
   });
 
   it("throws ARCHIVE_PASSWORD_REQUIRED when extraction needs a password", async () => {
     const { runner } = runnerWith({
       exitCode: 2,
-      stderr: "ERROR: Enter password (will not be echoed): Data Error in encrypted file",
+      stderr:
+        "ERROR: Enter password (will not be echoed): Data Error in encrypted file",
     });
     await expect(
-      extractArchive({ archivePath: "/tmp/pack.zip", destDir: "/tmp/out", runner })
+      extractArchive({
+        archivePath: "/tmp/pack.zip",
+        destDir: "/tmp/out",
+        runner,
+      }),
     ).rejects.toBeInstanceOf(ArchivePasswordRequiredError);
   });
 
@@ -76,14 +105,21 @@ describe("archive-extractor 7z invocation", () => {
         destDir: "/tmp/out",
         password: "wrong",
         runner,
-      })
+      }),
     ).rejects.toBeInstanceOf(InvalidArchivePasswordError);
   });
 
   it("throws a generic extraction error for non-password failures", async () => {
-    const { runner } = runnerWith({ exitCode: 2, stderr: "ERROR: Cannot open file as archive" });
+    const { runner } = runnerWith({
+      exitCode: 2,
+      stderr: "ERROR: Cannot open file as archive",
+    });
     await expect(
-      extractArchive({ archivePath: "/tmp/broken.zip", destDir: "/tmp/out", runner })
+      extractArchive({
+        archivePath: "/tmp/broken.zip",
+        destDir: "/tmp/out",
+        runner,
+      }),
     ).rejects.toBeInstanceOf(ArchiveExtractionError);
   });
 
@@ -92,29 +128,49 @@ describe("archive-extractor 7z invocation", () => {
       throw new Error("7z not found");
     };
     await expect(
-      extractArchive({ archivePath: "/tmp/pack.zip", destDir: "/tmp/out", runner: failing })
+      extractArchive({
+        archivePath: "/tmp/pack.zip",
+        destDir: "/tmp/out",
+        runner: failing,
+      }),
     ).rejects.toBeInstanceOf(ArchiveExtractionError);
   });
 });
 
 describe("archive-extractor magic byte detection", () => {
   it("detects RAR magic bytes (52 61 72 21)", () => {
-    expect(detectArchiveFormatFromBytes(new Uint8Array([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07]))).toBe("rar");
+    expect(
+      detectArchiveFormatFromBytes(
+        new Uint8Array([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07]),
+      ),
+    ).toBe("rar");
   });
 
   it("detects ZIP magic bytes (50 4b 03 04)", () => {
-    expect(detectArchiveFormatFromBytes(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x14]))).toBe("zip");
+    expect(
+      detectArchiveFormatFromBytes(
+        new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x14]),
+      ),
+    ).toBe("zip");
   });
 
   it("returns unknown for unrecognized bytes", () => {
-    expect(detectArchiveFormatFromBytes(new Uint8Array([0x00, 0x01, 0x02, 0x03]))).toBe("unknown");
+    expect(
+      detectArchiveFormatFromBytes(new Uint8Array([0x00, 0x01, 0x02, 0x03])),
+    ).toBe("unknown");
     expect(detectArchiveFormatFromBytes(new Uint8Array([]))).toBe("unknown");
   });
 
   it("detects format by reading file header bytes", async () => {
-    const rar = await detectArchiveFormat("/any/path", async () => new Uint8Array([0x52, 0x61, 0x72, 0x21]));
+    const rar = await detectArchiveFormat(
+      "/any/path",
+      async () => new Uint8Array([0x52, 0x61, 0x72, 0x21]),
+    );
     expect(rar).toBe("rar");
-    const dl = await detectArchiveFormat("/download", async () => new Uint8Array([0x52, 0x61, 0x72, 0x21]));
+    const dl = await detectArchiveFormat(
+      "/download",
+      async () => new Uint8Array([0x52, 0x61, 0x72, 0x21]),
+    );
     expect(dl).toBe("rar");
   });
 
@@ -128,7 +184,10 @@ describe("archive-extractor magic byte detection", () => {
 
 describe("archive-extractor RAR via the native 7-Zip process", () => {
   it("routes RAR archives through 7-Zip", async () => {
-    const { runner, calls } = runnerWith({ exitCode: 0, stdout: "Everything is Ok" });
+    const { runner, calls } = runnerWith({
+      exitCode: 0,
+      stdout: "Everything is Ok",
+    });
 
     const result = await extractArchive({
       archivePath: "/tmp/pack.rar",
@@ -137,13 +196,23 @@ describe("archive-extractor RAR via the native 7-Zip process", () => {
     });
 
     expect(result.extractedDir).toBe("/tmp/out");
-    expect(calls[0]).toEqual(["x", "-y", "-bb3", "-o/tmp/out", "/tmp/pack.rar"]);
+    expect(calls[0]).toEqual([
+      "x",
+      "-y",
+      "-bb3",
+      "-o/tmp/out",
+      "/tmp/pack.rar",
+    ]);
   });
 
   it("routes 7z archives through 7-Zip", async () => {
     const { runner, calls } = runnerWith({ exitCode: 0 });
 
-    await extractArchive({ archivePath: "/tmp/pack.7z", destDir: "/tmp/out", runner });
+    await extractArchive({
+      archivePath: "/tmp/pack.7z",
+      destDir: "/tmp/out",
+      runner,
+    });
 
     expect(calls[0]).toEqual(["x", "-y", "-bb3", "-o/tmp/out", "/tmp/pack.7z"]);
   });
@@ -151,7 +220,12 @@ describe("archive-extractor RAR via the native 7-Zip process", () => {
   it("reports progress per extracted file", async () => {
     const { runner } = runnerWith({
       exitCode: 0,
-      stdout: ["Extracting archive: pack.rar", "- a.mkv", "- b.mkv", "Everything is Ok"].join("\n"),
+      stdout: [
+        "Extracting archive: pack.rar",
+        "- a.mkv",
+        "- b.mkv",
+        "Everything is Ok",
+      ].join("\n"),
     });
     const seen: string[] = [];
 
@@ -181,11 +255,16 @@ describe("archive-extractor RAR via the native 7-Zip process", () => {
   it("throws ARCHIVE_PASSWORD_REQUIRED when a RAR needs a password", async () => {
     const { runner } = runnerWith({
       exitCode: 2,
-      stderr: "ERROR: Enter password (will not be echoed): Data Error in encrypted file",
+      stderr:
+        "ERROR: Enter password (will not be echoed): Data Error in encrypted file",
     });
 
     await expect(
-      extractArchive({ archivePath: "/tmp/pack.rar", destDir: "/tmp/out", runner })
+      extractArchive({
+        archivePath: "/tmp/pack.rar",
+        destDir: "/tmp/out",
+        runner,
+      }),
     ).rejects.toBeInstanceOf(ArchivePasswordRequiredError);
   });
 
@@ -201,7 +280,7 @@ describe("archive-extractor RAR via the native 7-Zip process", () => {
         destDir: "/tmp/out",
         password: "wrong",
         runner,
-      })
+      }),
     ).rejects.toBeInstanceOf(InvalidArchivePasswordError);
   });
 });

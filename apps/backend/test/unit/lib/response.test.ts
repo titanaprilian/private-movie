@@ -42,7 +42,7 @@ describe("response helpers", () => {
     const response = errorResponse(
       set,
       409,
-      new EmailAlreadyRegisteredError("already registered")
+      new EmailAlreadyRegisteredError("already registered"),
     );
 
     expect(response.error.code).toBe("EMAIL_ALREADY_REGISTERED");
@@ -53,7 +53,7 @@ describe("response helpers", () => {
     const response = errorResponse(
       set,
       400,
-      new InvalidRegistrationInputError("bad input")
+      new InvalidRegistrationInputError("bad input"),
     );
 
     expect(response.error.code).toBe("INVALID_REGISTRATION_INPUT");
@@ -64,7 +64,7 @@ describe("response helpers", () => {
     const response = errorResponse(
       set,
       401,
-      new InvalidCredentialsError("nope")
+      new InvalidCredentialsError("nope"),
     );
 
     expect(response.error.code).toBe("INVALID_CREDENTIALS");
@@ -72,11 +72,7 @@ describe("response helpers", () => {
 
   it("derives ACCOUNT_LOCKED from AccountLockedError", () => {
     const set = { status: 0 };
-    const response = errorResponse(
-      set,
-      429,
-      new AccountLockedError("locked")
-    );
+    const response = errorResponse(set, 429, new AccountLockedError("locked"));
 
     expect(response.error.code).toBe("ACCOUNT_LOCKED");
   });

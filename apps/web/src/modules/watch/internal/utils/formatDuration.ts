@@ -1,10 +1,14 @@
-export function formatDuration(duration?: number | string | null): string | null {
-  if (duration === null || duration === undefined || duration === '') return null;
+export function formatDuration(
+  duration?: number | string | null
+): string | null {
+  if (duration === null || duration === undefined || duration === '')
+    return null;
 
   if (typeof duration === 'number') {
     if (isNaN(duration) || duration <= 0) return null;
     // Assuming duration in seconds or minutes; if > 300 likely seconds
-    const totalMinutes = duration > 300 ? Math.round(duration / 60) : Math.round(duration);
+    const totalMinutes =
+      duration > 300 ? Math.round(duration / 60) : Math.round(duration);
     if (totalMinutes <= 0) return null;
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;

@@ -154,8 +154,12 @@ const mockSeries: SeriesDetails = {
 
 describe('buildCrossSeasonMove pure function unit logic', () => {
   it('returns null if dragged episode is not found or already in target season', () => {
-    expect(buildCrossSeasonMove(mockEpisodes, 'missing-id', 'season-2-id')).toBeNull();
-    expect(buildCrossSeasonMove(mockEpisodes, 's1-ep1', 'season-1-id')).toBeNull();
+    expect(
+      buildCrossSeasonMove(mockEpisodes, 'missing-id', 'season-2-id')
+    ).toBeNull();
+    expect(
+      buildCrossSeasonMove(mockEpisodes, 's1-ep1', 'season-1-id')
+    ).toBeNull();
   });
 
   it('calculates gap-closing in source season and appends at end of target season', () => {
@@ -204,7 +208,10 @@ describe('Cross-Season Drop integration in SeriesDetailView', () => {
             : input.url;
       const method = init?.method?.toUpperCase() ?? 'GET';
 
-      if (url.includes('/series/cross-drop-series/episodes/order') && method === 'PATCH') {
+      if (
+        url.includes('/series/cross-drop-series/episodes/order') &&
+        method === 'PATCH'
+      ) {
         patchCalled = true;
         patchPayload = JSON.parse(init?.body as string);
         return new Response(JSON.stringify({ data: { success: true } }), {
@@ -236,11 +243,16 @@ describe('Cross-Season Drop integration in SeriesDetailView', () => {
     await screen.findByRole('heading', { level: 1, name: 'Cross Drop Anime' });
 
     // Verify Season Tabs rendered as droppable targets
-    expect(screen.getByTestId('droppable-season-tab-season-1-id')).toBeInTheDocument();
-    expect(screen.getByTestId('droppable-season-tab-season-2-id')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('droppable-season-tab-season-1-id')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('droppable-season-tab-season-2-id')
+    ).toBeInTheDocument();
 
     // Trigger onDragEnd dropping s1-ep1 onto season-2 tab
-    const handleDragEnd = dndHoisted.onDragEndCallbacks[dndHoisted.onDragEndCallbacks.length - 1];
+    const handleDragEnd =
+      dndHoisted.onDragEndCallbacks[dndHoisted.onDragEndCallbacks.length - 1];
     expect(handleDragEnd).toBeDefined();
 
     act(() => {

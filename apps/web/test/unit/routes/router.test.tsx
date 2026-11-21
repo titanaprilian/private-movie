@@ -3,7 +3,6 @@ import { createRouter, createMemoryHistory } from '@tanstack/react-router';
 import { routeTree } from '@/routeTree.gen';
 import { useAuthStore } from '@/modules/auth/internal/store';
 
-
 describe('Router integration - /admin auth guard & relocated pages', () => {
   beforeEach(() => {
     useAuthStore.setState({

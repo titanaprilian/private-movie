@@ -14,7 +14,9 @@ async function insertSeriesRow(options?: {
   const id = crypto.randomUUID();
   const title = options?.title ?? `Series ${id}`;
   const description =
-    options?.description !== undefined ? options.description : "Sample Description";
+    options?.description !== undefined
+      ? options.description
+      : "Sample Description";
   const now = options?.createdAt ?? new Date();
 
   await db.insert(series).values({
@@ -52,18 +54,29 @@ async function insertEpisodeRow(options: {
 
   let seasonId: string | null = null;
   if (options.seriesId) {
-    const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, options.seriesId));
+    const [season] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.seriesId, options.seriesId));
     seasonId = season?.id ?? null;
   }
   if (!seasonId) {
-    const sId = options.seriesId ?? (await insertSeriesRow({ title: "Series For Ep" })).id;
-    const [season] = await db.select().from(seasons).where(eq(seasons.seriesId, sId));
+    const sId =
+      options.seriesId ??
+      (await insertSeriesRow({ title: "Series For Ep" })).id;
+    const [season] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.seriesId, sId));
     seasonId = season.id;
   }
 
   let order = options.order;
   if (order === undefined && seasonId) {
-    const existing = await db.select().from(episodes).where(eq(episodes.seasonId, seasonId));
+    const existing = await db
+      .select()
+      .from(episodes)
+      .where(eq(episodes.seasonId, seasonId));
     order = existing.length + 1;
   }
 
@@ -109,7 +122,11 @@ describe("GET /series", () => {
     expect(response.status).toBe(200);
     const body = response.body as {
       data: {
-        series: { id: string; title: string; seasons: { id: string; seriesId: string }[] }[];
+        series: {
+          id: string;
+          title: string;
+          seasons: { id: string; seriesId: string }[];
+        }[];
       };
     };
 
@@ -152,7 +169,7 @@ describe("GET /series", () => {
       await insertSeriesRow({
         title: `Series ${i}`,
         createdAt: new Date(
-          `2026-07-${String((i % 28) + 1).padStart(2, "0")}T00:00:00.000Z`
+          `2026-07-${String((i % 28) + 1).padStart(2, "0")}T00:00:00.000Z`,
         ),
       });
     }
@@ -280,7 +297,9 @@ describe("GET /series", () => {
     // Test single genre: action
     const actionRes = await request(app, { path: "/series?genre=action" });
     expect(actionRes.status).toBe(200);
-    const actionBody = actionRes.body as { data: { series: { id: string }[]; meta: { total: number } } };
+    const actionBody = actionRes.body as {
+      data: { series: { id: string }[]; meta: { total: number } };
+    };
     const actionIds = actionBody.data.series.map((s) => s.id);
     expect(actionIds).toContain(sActionOnly.id);
     expect(actionIds).toContain(sBoth.id);
@@ -289,22 +308,42 @@ describe("GET /series", () => {
     // Test multi-genre: action,comedy (AND logic)
     const bothRes = await request(app, { path: "/series?genre=action,comedy" });
     expect(bothRes.status).toBe(200);
-    const bothBody = bothRes.body as { data: { series: { id: string }[]; meta: { total: number } } };
+    const bothBody = bothRes.body as {
+      data: { series: { id: string }[]; meta: { total: number } };
+    };
     const bothIds = bothBody.data.series.map((s) => s.id);
     expect(bothIds).toEqual([sBoth.id]);
     expect(bothBody.data.meta.total).toBe(1);
   });
 
   it("filters series by filter=featured, filter=ongoing, or filter=all", async () => {
-    const sNormal = await insertSeriesRow({ title: "Normal Show", isFeatured: false, seasonStatus: "completed" });
-    const sFeatured = await insertSeriesRow({ title: "Featured Show", isFeatured: true, seasonStatus: "completed" });
-    const sOngoing = await insertSeriesRow({ title: "Ongoing Show", isFeatured: false, seasonStatus: "ongoing" });
-    const sBoth = await insertSeriesRow({ title: "Featured Ongoing Show", isFeatured: true, seasonStatus: "ongoing" });
+    const sNormal = await insertSeriesRow({
+      title: "Normal Show",
+      isFeatured: false,
+      seasonStatus: "completed",
+    });
+    const sFeatured = await insertSeriesRow({
+      title: "Featured Show",
+      isFeatured: true,
+      seasonStatus: "completed",
+    });
+    const sOngoing = await insertSeriesRow({
+      title: "Ongoing Show",
+      isFeatured: false,
+      seasonStatus: "ongoing",
+    });
+    const sBoth = await insertSeriesRow({
+      title: "Featured Ongoing Show",
+      isFeatured: true,
+      seasonStatus: "ongoing",
+    });
 
     // filter=all or omitted
     const allRes = await request(app, { path: "/series?filter=all" });
     expect(allRes.status).toBe(200);
-    const allBody = allRes.body as { data: { series: { id: string }[]; meta: { total: number } } };
+    const allBody = allRes.body as {
+      data: { series: { id: string }[]; meta: { total: number } };
+    };
     const allIds = allBody.data.series.map((s) => s.id);
     expect(allIds).toContain(sNormal.id);
     expect(allIds).toContain(sFeatured.id);
@@ -314,7 +353,12 @@ describe("GET /series", () => {
     // filter=featured
     const featuredRes = await request(app, { path: "/series?filter=featured" });
     expect(featuredRes.status).toBe(200);
-    const featuredBody = featuredRes.body as { data: { series: { id: string; isFeatured: boolean }[]; meta: { total: number } } };
+    const featuredBody = featuredRes.body as {
+      data: {
+        series: { id: string; isFeatured: boolean }[];
+        meta: { total: number };
+      };
+    };
     const featuredIds = featuredBody.data.series.map((s) => s.id);
     expect(featuredIds).toContain(sFeatured.id);
     expect(featuredIds).toContain(sBoth.id);
@@ -325,32 +369,53 @@ describe("GET /series", () => {
     // filter=ongoing
     const ongoingRes = await request(app, { path: "/series?filter=ongoing" });
     expect(ongoingRes.status).toBe(200);
-    const ongoingBody = ongoingRes.body as { data: { series: { id: string; seasons: { status: string }[] }[]; meta: { total: number } } };
+    const ongoingBody = ongoingRes.body as {
+      data: {
+        series: { id: string; seasons: { status: string }[] }[];
+        meta: { total: number };
+      };
+    };
     const ongoingIds = ongoingBody.data.series.map((s) => s.id);
     expect(ongoingIds).toContain(sOngoing.id);
     expect(ongoingIds).toContain(sBoth.id);
     expect(ongoingIds).not.toContain(sNormal.id);
     expect(ongoingIds).not.toContain(sFeatured.id);
     expect(ongoingBody.data.meta.total).toBe(2);
-    expect(ongoingBody.data.series.every((s) => s.seasons.some((sea) => sea.status === "ongoing"))).toBe(true);
+    expect(
+      ongoingBody.data.series.every((s) =>
+        s.seasons.some((sea) => sea.status === "ongoing"),
+      ),
+    ).toBe(true);
   });
 
   it("composes filter parameter with q search and genre query params", async () => {
     const dramaGenreId = crypto.randomUUID();
-    await db.insert(genres).values([
-      { id: dramaGenreId, name: "Drama", slug: "drama" },
-    ]);
+    await db
+      .insert(genres)
+      .values([{ id: dramaGenreId, name: "Drama", slug: "drama" }]);
 
-    const s1 = await insertSeriesRow({ title: "My Hero Drama", isFeatured: true, seasonStatus: "ongoing" });
-    await insertSeriesRow({ title: "My Hero Comedy", isFeatured: true, seasonStatus: "completed" });
-    await db.insert(seriesToGenres).values([
-      { seriesId: s1.id, genreId: dramaGenreId },
-    ]);
+    const s1 = await insertSeriesRow({
+      title: "My Hero Drama",
+      isFeatured: true,
+      seasonStatus: "ongoing",
+    });
+    await insertSeriesRow({
+      title: "My Hero Comedy",
+      isFeatured: true,
+      seasonStatus: "completed",
+    });
+    await db
+      .insert(seriesToGenres)
+      .values([{ seriesId: s1.id, genreId: dramaGenreId }]);
 
     // filter=ongoing & q=hero & genre=drama
-    const res = await request(app, { path: "/series?filter=ongoing&q=hero&genre=drama" });
+    const res = await request(app, {
+      path: "/series?filter=ongoing&q=hero&genre=drama",
+    });
     expect(res.status).toBe(200);
-    const body = res.body as { data: { series: { id: string }[]; meta: { total: number } } };
+    const body = res.body as {
+      data: { series: { id: string }[]; meta: { total: number } };
+    };
     expect(body.data.series.map((s) => s.id)).toEqual([s1.id]);
     expect(body.data.meta.total).toBe(1);
   });

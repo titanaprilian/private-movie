@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { episodes, videoSources, seasons, series } from "@repo/db";
-import {
-  createVideoSourceRepositoryInternal,
-} from "@repo/media-service";
+import { createVideoSourceRepositoryInternal } from "@repo/media-service";
 import { db } from "../../utils/db";
 
 async function ensureSeason(id: string): Promise<string> {
@@ -194,10 +192,10 @@ describe("videoSources repository", () => {
     it("throws VideoSourceNotFoundError when updating non-existent id", async () => {
       const missingId = crypto.randomUUID();
       await expect(
-        repository.update(missingId, { label: "New Label" })
+        repository.update(missingId, { label: "New Label" }),
       ).rejects.toSatisfy(
         (err: unknown) =>
-          err instanceof Error && err.name === "VideoSourceNotFoundError"
+          err instanceof Error && err.name === "VideoSourceNotFoundError",
       );
     });
   });
@@ -223,7 +221,7 @@ describe("videoSources repository", () => {
       const missingId = crypto.randomUUID();
       await expect(repository.delete(missingId)).rejects.toSatisfy(
         (err: unknown) =>
-          err instanceof Error && err.name === "VideoSourceNotFoundError"
+          err instanceof Error && err.name === "VideoSourceNotFoundError",
       );
     });
   });

@@ -4,16 +4,10 @@ import { cn } from '@/lib/utils';
 export type ChunkyCardListProps = React.HTMLAttributes<HTMLDivElement>;
 
 function ChunkyCardList({ className, ...props }: ChunkyCardListProps) {
-  return (
-    <div
-      className={cn('flex flex-col gap-3', className)}
-      {...props}
-    />
-  );
+  return <div className={cn('flex flex-col gap-3', className)} {...props} />;
 }
 
-export interface ChunkyCardProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ChunkyCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Green border + green-tint background for selected rows. */
   selected?: boolean;
   /** Enables hover lift (`translateY(-2px)`) for interactive rows. */
@@ -34,7 +28,8 @@ function ChunkyCard({
         selected
           ? 'border-[var(--green)] bg-[var(--green-soft)]'
           : 'border-[var(--border)]',
-        interactive && 'hover:-translate-y-[2px] hover:shadow-lg cursor-pointer',
+        interactive &&
+          'hover:-translate-y-[2px] hover:shadow-lg cursor-pointer',
         className
       )}
       {...props}

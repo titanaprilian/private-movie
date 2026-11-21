@@ -21,9 +21,7 @@ describe('ErrorBanner', () => {
   });
 
   it('keeps the chunky error styling', () => {
-    const { container } = renderWithProviders(
-      <ErrorBanner message="Boom" />
-    );
+    const { container } = renderWithProviders(<ErrorBanner message="Boom" />);
     const banner = container.firstElementChild;
     expect(banner?.className).toContain('border-[var(--red)]');
     expect(banner?.className).toContain('rounded-2xl');

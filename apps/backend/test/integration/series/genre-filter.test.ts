@@ -3,7 +3,9 @@ import { genres, seasons, series, seriesToGenres } from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
 
-async function insertSeriesRow(title: string): Promise<{ id: string; title: string }> {
+async function insertSeriesRow(
+  title: string,
+): Promise<{ id: string; title: string }> {
   const id = crypto.randomUUID();
   const now = new Date();
 
@@ -20,7 +22,10 @@ async function insertSeriesRow(title: string): Promise<{ id: string; title: stri
   return { id, title };
 }
 
-async function insertGenreRow(name: string, slug: string): Promise<{ id: string; name: string; slug: string }> {
+async function insertGenreRow(
+  name: string,
+  slug: string,
+): Promise<{ id: string; name: string; slug: string }> {
   const id = crypto.randomUUID();
   const now = new Date();
 
@@ -35,7 +40,10 @@ async function insertGenreRow(name: string, slug: string): Promise<{ id: string;
   return { id, name, slug };
 }
 
-async function linkSeriesToGenre(seriesId: string, genreId: string): Promise<void> {
+async function linkSeriesToGenre(
+  seriesId: string,
+  genreId: string,
+): Promise<void> {
   await db.insert(seriesToGenres).values({
     seriesId,
     genreId,
@@ -99,7 +107,9 @@ describe("GET /series?genre=slug", () => {
     await insertSeriesRow("Standalone Series");
     await insertGenreRow("Action", "action");
 
-    const response = await request(app, { path: "/series?genre=non-existent-slug" });
+    const response = await request(app, {
+      path: "/series?genre=non-existent-slug",
+    });
 
     expect(response.status).toBe(200);
     const body = response.body as {
@@ -116,7 +126,10 @@ describe("GET /series?genre=slug", () => {
   it("combines genre with filter=ongoing / filter=all and pagination metadata", async () => {
     const actionGenre = await insertGenreRow("Action", "action");
 
-    async function insertGenreSeries(title: string, status: "ongoing" | "completed") {
+    async function insertGenreSeries(
+      title: string,
+      status: "ongoing" | "completed",
+    ) {
       const row = await insertSeriesRow(title);
       await linkSeriesToGenre(row.id, actionGenre.id);
       const now = new Date();

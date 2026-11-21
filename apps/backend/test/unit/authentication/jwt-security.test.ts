@@ -17,20 +17,28 @@ describe("validateJwtSecret in production", () => {
     process.env.NODE_ENV = "production";
     delete process.env.JWT_SECRET;
 
-    expect(() => validateJwtSecret()).toThrow("FATAL: Insecure or missing JWT_SECRET in production environment");
+    expect(() => validateJwtSecret()).toThrow(
+      "FATAL: Insecure or missing JWT_SECRET in production environment",
+    );
 
     process.env.JWT_SECRET = "   ";
-    expect(() => validateJwtSecret()).toThrow("FATAL: Insecure or missing JWT_SECRET in production environment");
+    expect(() => validateJwtSecret()).toThrow(
+      "FATAL: Insecure or missing JWT_SECRET in production environment",
+    );
   });
 
   it("throws error in production mode when JWT_SECRET is an insecure placeholder", () => {
     process.env.NODE_ENV = "production";
     process.env.JWT_SECRET = "default-jwt-secret-key-change-in-production";
 
-    expect(() => validateJwtSecret()).toThrow("FATAL: Insecure or missing JWT_SECRET in production environment");
+    expect(() => validateJwtSecret()).toThrow(
+      "FATAL: Insecure or missing JWT_SECRET in production environment",
+    );
 
     process.env.JWT_SECRET = "secret";
-    expect(() => validateJwtSecret()).toThrow("FATAL: Insecure or missing JWT_SECRET in production environment");
+    expect(() => validateJwtSecret()).toThrow(
+      "FATAL: Insecure or missing JWT_SECRET in production environment",
+    );
   });
 
   it("does not throw in production when JWT_SECRET is a strong secret", () => {
@@ -56,7 +64,7 @@ describe("createAuthenticationService fail-fast validation", () => {
 
     const fakeDb = {} as never;
     expect(() => createAuthenticationService(fakeDb)).toThrow(
-      "FATAL: Insecure or missing JWT_SECRET in production environment"
+      "FATAL: Insecure or missing JWT_SECRET in production environment",
     );
   });
 
@@ -66,7 +74,7 @@ describe("createAuthenticationService fail-fast validation", () => {
 
     const fakeDb = {} as never;
     expect(() => createAuthenticationService(fakeDb)).toThrow(
-      "FATAL: Insecure or missing JWT_SECRET in production environment"
+      "FATAL: Insecure or missing JWT_SECRET in production environment",
     );
   });
 

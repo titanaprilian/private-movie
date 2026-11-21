@@ -15,7 +15,7 @@ export const GENRE_FILTER_NO_HIGHLIGHT = '__genre-filter-no-highlight__';
 
 export function formatGenreTriggerLabel(
   selectedSlugs: string[],
-  namesBySlug: Map<string, string>,
+  namesBySlug: Map<string, string>
 ): string {
   if (selectedSlugs.length === 0) return 'Filter by genre';
   if (selectedSlugs.length === 1) {
@@ -35,7 +35,12 @@ export function useGenreFilter({
   // search filter changing (unmount-driven auto-select), not user intent.
   const searchChangedRef = useRef(false);
 
-  const { data: genres = [], isLoading, isError, refetch } = useQuery(genresQueryOptions());
+  const {
+    data: genres = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery(genresQueryOptions());
 
   // Reset the suppression flag after commit: cmdk's filter-driven auto-select
   // runs in layout effects, so passive effects observe it as still suppressed.
@@ -51,7 +56,7 @@ export function useGenreFilter({
       : genres.filter(
           (g) =>
             g.name.toLowerCase().includes(normalizedSearch) ||
-            g.slug.toLowerCase().includes(normalizedSearch),
+            g.slug.toLowerCase().includes(normalizedSearch)
         );
 
   const toggleGenre = (slug: string) => {

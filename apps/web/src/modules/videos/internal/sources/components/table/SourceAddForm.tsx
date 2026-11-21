@@ -17,7 +17,11 @@ import {
   type SourceType,
 } from '../../types';
 
-export function SourceAddForm({ isPending, onCancel, onSave }: SourceAddFormProps) {
+export function SourceAddForm({
+  isPending,
+  onCancel,
+  onSave,
+}: SourceAddFormProps) {
   const [type, setType] = useState<SourceType>('direct');
   const [label, setLabel] = useState('');
   const [url, setUrl] = useState('');
@@ -41,7 +45,9 @@ export function SourceAddForm({ isPending, onCancel, onSave }: SourceAddFormProp
     <ChunkyCard className="p-4 space-y-3">
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-extrabold text-[var(--ink)]">New Video Source</span>
+          <span className="text-sm font-extrabold text-[var(--ink)]">
+            New Video Source
+          </span>
           <ChunkyButton
             type="button"
             variant="outline"
@@ -55,10 +61,16 @@ export function SourceAddForm({ isPending, onCancel, onSave }: SourceAddFormProp
 
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1.5">
-            <label htmlFor="add-source-type" className="text-xs font-extrabold text-[var(--ink)]">
+            <label
+              htmlFor="add-source-type"
+              className="text-xs font-extrabold text-[var(--ink)]"
+            >
               Type
             </label>
-            <ChunkySelect value={type} onValueChange={(val) => setType(val as SourceType)}>
+            <ChunkySelect
+              value={type}
+              onValueChange={(val) => setType(val as SourceType)}
+            >
               <ChunkySelectTrigger id="add-source-type" aria-label="Type">
                 <ChunkySelectValue placeholder="Select type" />
               </ChunkySelectTrigger>
@@ -73,7 +85,10 @@ export function SourceAddForm({ isPending, onCancel, onSave }: SourceAddFormProp
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="add-source-label" className="text-xs font-extrabold text-[var(--ink)]">
+            <label
+              htmlFor="add-source-label"
+              className="text-xs font-extrabold text-[var(--ink)]"
+            >
               Label
             </label>
             <ChunkyInput
@@ -88,7 +103,10 @@ export function SourceAddForm({ isPending, onCancel, onSave }: SourceAddFormProp
 
         <div className="grid grid-cols-3 gap-2">
           <div className="col-span-2 space-y-1.5">
-            <label htmlFor="add-source-url" className="text-xs font-extrabold text-[var(--ink)]">
+            <label
+              htmlFor="add-source-url"
+              className="text-xs font-extrabold text-[var(--ink)]"
+            >
               URL / Embed / Key
             </label>
             <ChunkyInput
@@ -101,7 +119,10 @@ export function SourceAddForm({ isPending, onCancel, onSave }: SourceAddFormProp
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="add-source-quality" className="text-xs font-extrabold text-[var(--ink)]">
+            <label
+              htmlFor="add-source-quality"
+              className="text-xs font-extrabold text-[var(--ink)]"
+            >
               Quality
             </label>
             <ChunkyInput
@@ -114,7 +135,12 @@ export function SourceAddForm({ isPending, onCancel, onSave }: SourceAddFormProp
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-1">
-          <ChunkyButton type="button" variant="outline" size="sm" onClick={onCancel}>
+          <ChunkyButton
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+          >
             Cancel
           </ChunkyButton>
           <ChunkyButton type="submit" size="sm" disabled={isPending}>

@@ -14,7 +14,8 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/modules/videos/internal/api')>();
+  const actual =
+    await importOriginal<typeof import('@/modules/videos/internal/api')>();
   return {
     ...actual,
     previewBulkSources: vi.fn(),
@@ -73,9 +74,33 @@ const mockPreviewResult = {
     },
   ],
   localEpisodes: [
-    { id: 'ep-1', title: 'Intro to Deep Modules', order: 1, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
-    { id: 'ep-2', title: 'TanStack Router Setup', order: 2, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
-    { id: 'ep-3', title: 'State Management', order: 3, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
+    {
+      id: 'ep-1',
+      title: 'Intro to Deep Modules',
+      order: 1,
+      seasonId: 's1',
+      seasonNumber: 1,
+      seasonTitle: 'Season 1',
+      hasSources: false,
+    },
+    {
+      id: 'ep-2',
+      title: 'TanStack Router Setup',
+      order: 2,
+      seasonId: 's1',
+      seasonNumber: 1,
+      seasonTitle: 'Season 1',
+      hasSources: false,
+    },
+    {
+      id: 'ep-3',
+      title: 'State Management',
+      order: 3,
+      seasonId: 's1',
+      seasonNumber: 1,
+      seasonTitle: 'Season 1',
+      hasSources: false,
+    },
   ],
 };
 
@@ -120,21 +145,31 @@ describe('BulkScrapeModal component', () => {
 
     expect(screen.getByText('Bulk Add Sources')).toBeInTheDocument();
     expect(screen.getByLabelText(/Season \/ Scraper URL/i)).toBeInTheDocument();
-    const sourceTypeTrigger = screen.getByRole('combobox', { name: /Source Type/i });
+    const sourceTypeTrigger = screen.getByRole('combobox', {
+      name: /Source Type/i,
+    });
     expect(sourceTypeTrigger).toBeInTheDocument();
     expect(sourceTypeTrigger).toHaveTextContent('Otakudesu');
 
     await user.click(sourceTypeTrigger);
-    const dramulaOption = await screen.findByRole('option', { name: 'Dramula' });
+    const dramulaOption = await screen.findByRole('option', {
+      name: 'Dramula',
+    });
     expect(dramulaOption).toBeInTheDocument();
 
     await user.click(dramulaOption);
     expect(sourceTypeTrigger).toHaveTextContent('Dramula');
 
-    expect(screen.getByRole('combobox', { name: /Target Season/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: /Target Season/i })
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText(/Episode Offset/i)).not.toBeInTheDocument();
-    expect(screen.queryByTestId('bulk-scrape-offset-helper')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Preview/i })).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('bulk-scrape-offset-helper')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Preview/i })
+    ).toBeInTheDocument();
   });
 
   it('auto-selects the source type when the URL identifies the provider', async () => {
@@ -147,7 +182,9 @@ describe('BulkScrapeModal component', () => {
       />
     );
 
-    const sourceTypeTrigger = screen.getByRole('combobox', { name: /Source Type/i });
+    const sourceTypeTrigger = screen.getByRole('combobox', {
+      name: /Source Type/i,
+    });
     expect(sourceTypeTrigger).toHaveTextContent('Otakudesu');
 
     const urlInput = screen.getByLabelText(/Season \/ Scraper URL/i);
@@ -181,7 +218,9 @@ describe('BulkScrapeModal component', () => {
       />
     );
 
-    const targetSeasonTrigger = screen.getByRole('combobox', { name: /Target Season/i });
+    const targetSeasonTrigger = screen.getByRole('combobox', {
+      name: /Target Season/i,
+    });
 
     // Default first season is Season 1, no offset input rendered
     expect(targetSeasonTrigger).toHaveTextContent('Season 1');
@@ -189,12 +228,16 @@ describe('BulkScrapeModal component', () => {
 
     // Select Season 2 -> trigger updates, still no offset field
     await user.click(targetSeasonTrigger);
-    const season2Option = await screen.findByRole('option', { name: 'Season 2' });
+    const season2Option = await screen.findByRole('option', {
+      name: 'Season 2',
+    });
     await user.click(season2Option);
 
     expect(targetSeasonTrigger).toHaveTextContent('Season 2');
     expect(screen.queryByLabelText(/Episode Offset/i)).not.toBeInTheDocument();
-    expect(screen.queryByTestId('bulk-scrape-offset-helper')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('bulk-scrape-offset-helper')
+    ).not.toBeInTheDocument();
   });
 
   it('transitions to Step 2 upon submitting valid URL', async () => {
@@ -223,7 +266,9 @@ describe('BulkScrapeModal component', () => {
   });
 
   it('shows error toast if preview fetch fails', async () => {
-    vi.mocked(api.previewBulkSources).mockRejectedValueOnce(new Error('Network connection failed'));
+    vi.mocked(api.previewBulkSources).mockRejectedValueOnce(
+      new Error('Network connection failed')
+    );
 
     const { user } = renderWithProviders(
       <BulkScrapeModal
@@ -268,7 +313,9 @@ describe('BulkScrapeModal component', () => {
     });
 
     // Ep 7.5 combobox
-    const ep75Trigger = screen.getByLabelText('Target episode for Episode 7.5 (Recap OVA)');
+    const ep75Trigger = screen.getByLabelText(
+      'Target episode for Episode 7.5 (Recap OVA)'
+    );
     expect(ep75Trigger).toHaveTextContent('-- Skip / Unmapped --');
 
     // Select ep-3 for Ep 7.5
@@ -320,7 +367,9 @@ describe('BulkScrapeModal component', () => {
     });
 
     // Default target season is s1 — combobox lists only s1 episodes
-    const ep75Trigger = screen.getByLabelText('Target episode for Episode 7.5 (Recap OVA)');
+    const ep75Trigger = screen.getByLabelText(
+      'Target episode for Episode 7.5 (Recap OVA)'
+    );
     await user.click(ep75Trigger);
     const s1Options = await screen.findAllByText('Ep 1: S1 Premiere');
     expect(s1Options.length).toBeGreaterThanOrEqual(1);
@@ -354,7 +403,9 @@ describe('BulkScrapeModal component', () => {
     expect(autoAlignBtn).toBeInTheDocument();
 
     // Ep 7.5 starts unmapped...
-    const ep75Trigger = screen.getByLabelText('Target episode for Episode 7.5 (Recap OVA)');
+    const ep75Trigger = screen.getByLabelText(
+      'Target episode for Episode 7.5 (Recap OVA)'
+    );
     expect(ep75Trigger).toHaveTextContent('-- Skip / Unmapped --');
 
     await user.click(autoAlignBtn);
@@ -391,7 +442,9 @@ describe('BulkScrapeModal component', () => {
 
     await user.click(screen.getByRole('button', { name: /Back/i }));
 
-    expect(screen.getByRole('button', { name: /Preview/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Preview/i })
+    ).toBeInTheDocument();
   });
 
   it('transitions to Step 3 processing view when Save is clicked, displays progress and log, and closes via Close button', async () => {
@@ -442,12 +495,38 @@ describe('BulkScrapeModal component', () => {
     const mockPreviewResultWithConflict = {
       ...mockPreviewResult,
       localEpisodes: [
-        { id: 'ep-1', title: 'Intro to Deep Modules', order: 1, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: true },
-        { id: 'ep-2', title: 'TanStack Router Setup', order: 2, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
-        { id: 'ep-3', title: 'State Management', order: 3, seasonId: 's1', seasonNumber: 1, seasonTitle: 'Season 1', hasSources: false },
+        {
+          id: 'ep-1',
+          title: 'Intro to Deep Modules',
+          order: 1,
+          seasonId: 's1',
+          seasonNumber: 1,
+          seasonTitle: 'Season 1',
+          hasSources: true,
+        },
+        {
+          id: 'ep-2',
+          title: 'TanStack Router Setup',
+          order: 2,
+          seasonId: 's1',
+          seasonNumber: 1,
+          seasonTitle: 'Season 1',
+          hasSources: false,
+        },
+        {
+          id: 'ep-3',
+          title: 'State Management',
+          order: 3,
+          seasonId: 's1',
+          seasonNumber: 1,
+          seasonTitle: 'Season 1',
+          hasSources: false,
+        },
       ],
     };
-    vi.mocked(api.previewBulkSources).mockResolvedValueOnce(mockPreviewResultWithConflict);
+    vi.mocked(api.previewBulkSources).mockResolvedValueOnce(
+      mockPreviewResultWithConflict
+    );
 
     const { user } = renderWithProviders(
       <BulkScrapeModal
@@ -471,21 +550,27 @@ describe('BulkScrapeModal component', () => {
     await user.click(screen.getByRole('button', { name: /Preview/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('⚠️ Overwrites existing sources')).toBeInTheDocument();
+      expect(
+        screen.getByText('⚠️ Overwrites existing sources')
+      ).toBeInTheDocument();
     });
 
     // Click Save -> Intercept modal should open
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Overwrite Existing Sources?')).toBeInTheDocument();
+      expect(
+        screen.getByText('Overwrite Existing Sources?')
+      ).toBeInTheDocument();
     });
 
     // Click Cancel -> stays on Step 2
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() => {
-      expect(screen.queryByText('Overwrite Existing Sources?')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Overwrite Existing Sources?')
+      ).not.toBeInTheDocument();
     });
     expect(screen.getByRole('button', { name: /Save/i })).toBeInTheDocument();
 
@@ -493,7 +578,9 @@ describe('BulkScrapeModal component', () => {
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Overwrite Existing Sources?')).toBeInTheDocument();
+      expect(
+        screen.getByText('Overwrite Existing Sources?')
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole('button', { name: 'Confirm & Save' }));

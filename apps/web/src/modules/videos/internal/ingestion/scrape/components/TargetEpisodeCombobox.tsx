@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -33,7 +37,8 @@ export function TargetEpisodeCombobox({
   let selectedLabel = '-- Skip / Unmapped --';
   if (value) {
     const foundEp =
-      scopedEpisodes.find((ep) => ep.id === value) ?? allEpisodes.find((ep) => ep.id === value);
+      scopedEpisodes.find((ep) => ep.id === value) ??
+      allEpisodes.find((ep) => ep.id === value);
     if (foundEp) {
       selectedLabel = formatEpisodeLabel(foundEp);
     }
@@ -52,8 +57,13 @@ export function TargetEpisodeCombobox({
           size="sm"
           className="w-full justify-between rounded-2xl border-2 border-b-4 border-[var(--border)] bg-[var(--surface)] px-3 font-sans text-xs font-bold normal-case tracking-normal text-[var(--ink)] hover:border-[var(--border-strong)]"
         >
-          <span className="min-w-0 flex-1 truncate text-left">{selectedLabel}</span>
-          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-left">
+            {selectedLabel}
+          </span>
+          <ChevronsUpDown
+            className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50"
+            aria-hidden="true"
+          />
         </ChunkyButton>
       </PopoverTrigger>
       <PopoverContent
@@ -89,7 +99,10 @@ export function TargetEpisodeCombobox({
                 <span>-- Skip / Unmapped --</span>
               </CommandItem>
             </CommandGroup>
-            <CommandGroup heading={seasonHeading ?? undefined} className="[&_[cmdk-group-heading]]:font-sans [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-extrabold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-[var(--muted)]">
+            <CommandGroup
+              heading={seasonHeading ?? undefined}
+              className="[&_[cmdk-group-heading]]:font-sans [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-extrabold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-[var(--muted)]"
+            >
               {scopedEpisodes.map((ep) => {
                 const isSelected = value === ep.id;
                 const itemLabel = formatEpisodeLabel(ep);

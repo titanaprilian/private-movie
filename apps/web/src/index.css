@@ -215,8 +215,8 @@ body {
   color: var(--primary);
   border-left: 2px solid var(--primary);
 }
-[role="tab"][data-state="active"],
-[role="tab"][aria-selected="true"] {
+[role='tab'][data-state='active'],
+[role='tab'][aria-selected='true'] {
   background-color: var(--primary);
   color: var(--primary-fg);
   font-weight: 600;
@@ -461,7 +461,6 @@ body {
   background: rgba(255, 150, 0, 0.15);
   border: 1px solid rgba(255, 150, 0, 0.4);
 }
-
 
 /* Sticky bulk selection bar */
 .bulkbar {

@@ -37,7 +37,8 @@ export function BulkScrapeStepReview({
     <div className="space-y-4">
       <ChunkyCard className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm font-bold text-[var(--muted)]">
         <span>
-          Total Scraped: <strong className="text-[var(--ink)]">{previewItems.length}</strong>
+          Total Scraped:{' '}
+          <strong className="text-[var(--ink)]">{previewItems.length}</strong>
         </span>
         <span>
           Pending Review:{' '}
@@ -50,7 +51,11 @@ export function BulkScrapeStepReview({
           variant="blue"
           size="sm"
           onClick={onAutoAlign}
-          disabled={isSaving || previewItems.length === 0 || targetSeasonEpisodes.length === 0}
+          disabled={
+            isSaving ||
+            previewItems.length === 0 ||
+            targetSeasonEpisodes.length === 0
+          }
         >
           Auto-align sequentially (1..{targetSeasonEpisodes.length})
         </ChunkyButton>
@@ -73,12 +78,18 @@ export function BulkScrapeStepReview({
               >
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-[var(--ink)]">{item.scrapedTitle}</span>
+                    <span className="font-bold text-[var(--ink)]">
+                      {item.scrapedTitle}
+                    </span>
                     <PillBadge>Ep #{item.rawEpisodeNumber}</PillBadge>
                     {item.needsReview && !item.isIgnored && (
                       <WarningBadge>Needs Review</WarningBadge>
                     )}
-                    {isConflict && <WarningBadge>⚠️ Overwrites existing sources</WarningBadge>}
+                    {isConflict && (
+                      <WarningBadge>
+                        ⚠️ Overwrites existing sources
+                      </WarningBadge>
+                    )}
                     {item.isIgnored && <PillBadge>Ignored</PillBadge>}
                   </div>
                 </div>

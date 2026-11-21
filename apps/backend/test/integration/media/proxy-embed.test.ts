@@ -24,7 +24,7 @@ describe("GET /media/proxy-embed", () => {
         {
           status: 200,
           headers: { "Content-Type": "text/html" },
-        }
+        },
       );
     });
 
@@ -40,7 +40,9 @@ describe("GET /media/proxy-embed", () => {
     expect(response.headers.get("content-type")).toContain("text/html");
     expect(response.body).toContain('<base href="https://videobello.net/">');
     expect(response.body).toContain("Object.defineProperty(window, 'open'");
-    expect(response.body).toContain("document.addEventListener(eventType, handleBlankLink, true)");
+    expect(response.body).toContain(
+      "document.addEventListener(eventType, handleBlankLink, true)",
+    );
   });
 
   it("injects hardened ad suppression script shim into <head>", async () => {
@@ -50,7 +52,7 @@ describe("GET /media/proxy-embed", () => {
         {
           status: 200,
           headers: { "Content-Type": "text/html" },
-        }
+        },
       );
     });
 

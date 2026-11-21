@@ -38,7 +38,7 @@ describe("POST /auth/refresh", () => {
 
     const setCookies = response.headers.getSetCookie?.() ?? [];
     const refreshCookie = setCookies.find((cookie) =>
-      cookie.startsWith("refreshToken=")
+      cookie.startsWith("refreshToken="),
     );
     expect(refreshCookie).toBeDefined();
     expect(refreshCookie).toMatch(/HttpOnly/i);

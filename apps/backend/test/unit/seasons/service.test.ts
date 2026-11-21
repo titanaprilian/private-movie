@@ -10,7 +10,6 @@ import {
 import { db } from "../../utils/db";
 import type { ScrapeSeasonDelegate } from "@/modules/seasons/internal/types";
 
-
 async function createOngoingSeason(overrides?: {
   status?: string;
   scraperUrl?: string | null;
@@ -18,14 +17,19 @@ async function createOngoingSeason(overrides?: {
 }) {
   const now = new Date();
   const seriesId = crypto.randomUUID();
-  await db.insert(series).values({ id: seriesId, title: "Series", createdAt: now, updatedAt: now });
+  await db
+    .insert(series)
+    .values({ id: seriesId, title: "Series", createdAt: now, updatedAt: now });
   const repository = createSeasonRepository(db);
   return repository.create({
     seriesId,
     title: "Season 1",
     seasonNumber: 1,
     status: overrides?.status ?? "ongoing",
-    scraperUrl: overrides && "scraperUrl" in overrides ? overrides.scraperUrl : "https://example.com/scrape",
+    scraperUrl:
+      overrides && "scraperUrl" in overrides
+        ? overrides.scraperUrl
+        : "https://example.com/scrape",
     source: overrides && "source" in overrides ? overrides.source : "example",
   });
 }
@@ -39,9 +43,9 @@ describe("season service scrapeOngoingSeason", () => {
 
   it("throws SeasonNotFoundError for unknown season", async () => {
     const service = createSeasonService(db, { scrapeSeason: vi.fn() });
-    await expect(service.scrapeOngoingSeason(crypto.randomUUID())).rejects.toBeInstanceOf(
-      SeasonNotFoundError,
-    );
+    await expect(
+      service.scrapeOngoingSeason(crypto.randomUUID()),
+    ).rejects.toBeInstanceOf(SeasonNotFoundError);
   });
 
   it("throws SeasonNotOngoingError when season is not ongoing", async () => {
@@ -53,7 +57,10 @@ describe("season service scrapeOngoingSeason", () => {
   });
 
   it("throws SeasonMissingScraperUrlError when scraperUrl or source is missing", async () => {
-    const season = await createOngoingSeason({ scraperUrl: null, source: null });
+    const season = await createOngoingSeason({
+      scraperUrl: null,
+      source: null,
+    });
     const service = createSeasonService(db, { scrapeSeason: vi.fn() });
     await expect(service.scrapeOngoingSeason(season.id)).rejects.toBeInstanceOf(
       SeasonMissingScraperUrlError,

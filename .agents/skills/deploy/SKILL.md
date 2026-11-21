@@ -27,6 +27,7 @@ Deploy and manage services on the production VPS over SSH (`hostdataid`).
 A webhook listener runs on the VPS (`private-movie-webhook.service` on port `9000`), reverse-proxied by Caddy at `https://pmov.titanaprilian.me/deploy-webhook`.
 
 When commits are pushed or merged to `main`:
+
 1. GitHub Actions `CI` (`.github/workflows/ci.yml`) runs tests, typechecks, lints, and builds.
 2. If all CI checks pass, it triggers `docker-publish.yml` via `workflow_call`.
 3. Docker images are built and pushed to GHCR for changed services (`backend` and/or `web`).
@@ -41,7 +42,9 @@ When commits are pushed or merged to `main`:
 ---
 
 ## 2. Manual Deployment Workflow (SSH Alternative)
+
 ### Step 1: Verify GitHub Actions Build
+
 Before deploying to VPS, verify that the GitHub Actions `Docker Publish` workflow has completed successfully for the latest commit on `main`:
 
 ```bash
@@ -52,11 +55,14 @@ gh run list --workflow=docker-publish.yml --branch=main --limit=1 --json status,
 - If `conclusion` is `failure`, stop immediately and report the build failure to the user. Do not deploy failed builds.
 
 ### Step 2: Determine Deployment Scope
+
 Ask the user (or confirm if already requested):
+
 - **Full deployment**: deploy both `backend` and `web`.
 - **Selective deployment**: deploy only `backend` or only `web`.
 
 ### Step 3: Pull Latest Project Files on VPS
+
 Synchronize `docker-compose.yml` and repository configs on the VPS:
 
 ```bash
@@ -64,6 +70,7 @@ ssh hostdataid "cd /home/titanic/project/private-movie && git pull origin main"
 ```
 
 ### Step 4: Pull New Images from GHCR
+
 Pull the updated Docker images on the VPS:
 
 - For full deployment:
@@ -76,7 +83,9 @@ Pull the updated Docker images on the VPS:
   ```
 
 ### Step 5: Database Migrations Check (Backend Only)
+
 If the deployment includes backend changes:
+
 - Check if new migration files exist in `packages/db/src/migrations/`.
 - If new migrations exist, ask the user for explicit confirmation before running migration.
 - **NEVER** run `db:seed` against production data.
@@ -86,6 +95,7 @@ If the deployment includes backend changes:
   ```
 
 ### Step 6: Start & Recreate Containers
+
 Start the updated containers:
 
 - For full deployment:
@@ -98,6 +108,7 @@ Start the updated containers:
   ```
 
 ### Step 7: Post-Deployment Verification
+
 Verify the deployment succeeded:
 
 1. **Check container status**:
@@ -122,12 +133,15 @@ Verify the deployment succeeded:
 When pointing an existing domain or adding a new domain for frontend or backend:
 
 ### Step 1: Inspect Remote Caddyfile
+
 ```bash
 ssh hostdataid "cat /home/titanic/config/caddy/Caddyfile"
 ```
 
 ### Step 2: Prepare Proposed Change
+
 Generate the Caddy block. For example:
+
 ```caddyfile
 your-domain.com {
     reverse_proxy localhost:80
@@ -139,9 +153,11 @@ api.your-domain.com {
 ```
 
 ### Step 3: Confirm with User
+
 Show the proposed diff or additions to the user and request explicit confirmation before applying.
 
 ### Step 4: Apply & Reload Caddy
+
 Update the Caddyfile on the VPS and reload Caddy:
 
 ```bash
@@ -150,7 +166,9 @@ ssh hostdataid "cd /home/titanic/config/caddy && docker compose exec caddy caddy
 ```
 
 ### Step 5: Verify Domain
+
 Run a test request to confirm Caddy routes traffic properly:
+
 ```bash
 curl -I https://<domain>
 ```
@@ -160,6 +178,7 @@ curl -I https://<domain>
 ## 3. Database Sync Workflow (Local ⇄ VPS)
 
 ### VPS → Local (Pull Database)
+
 Use this to bring production/staging data from VPS down to local development.
 
 1. **Safety Backup Local First**:
@@ -179,6 +198,7 @@ Use this to bring production/staging data from VPS down to local development.
    Remove temporary dump file `/tmp/vps_dump.sql`.
 
 ### Local → VPS (Push Database)
+
 Use with extreme caution when seeding or restoring data up to the VPS.
 
 1. **Safety Backup Remote VPS Database (MANDATORY)**:

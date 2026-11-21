@@ -15,7 +15,8 @@ export function useAdblockDetector(): AdblockDetectorResult {
 
       // Probe 1: Network bait (request to known ad script URL)
       try {
-        const baitUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+        const baitUrl =
+          'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
         const res = await fetch(baitUrl, {
           method: 'HEAD',
           mode: 'no-cors',

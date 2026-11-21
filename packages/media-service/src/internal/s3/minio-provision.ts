@@ -35,7 +35,8 @@ export interface EnsureMinioBucketInput {
 export function isBucketCorsNotImplementedError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   if (error.name === "NotImplemented") return true;
-  const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+  const status = (error as { $metadata?: { httpStatusCode?: number } })
+    .$metadata?.httpStatusCode;
   if (status === 501) return true;
   // Fall back to message matching for untyped / wrapped SDK errors.
   return /notimplemented|\b501\b/i.test(error.message);
@@ -43,7 +44,8 @@ export function isBucketCorsNotImplementedError(error: unknown): boolean {
 
 function normalizeEndpoint(endpoint: string): string {
   const trimmed = endpoint.trim();
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://"))
+    return trimmed;
   return `http://${trimmed}`;
 }
 
@@ -52,7 +54,9 @@ function normalizeEndpoint(endpoint: string): string {
  * permissive CORS policy required for HTML5 video range streaming.
  * Idempotent: existing buckets are left untouched apart from the CORS update.
  */
-export async function ensureMinioBucketWithCors(input: EnsureMinioBucketInput): Promise<void> {
+export async function ensureMinioBucketWithCors(
+  input: EnsureMinioBucketInput,
+): Promise<void> {
   const region = input.region?.trim() || MINIO_DEFAULT_REGION;
   const client = new S3Client({
     endpoint: normalizeEndpoint(input.endpoint),
@@ -77,7 +81,7 @@ export async function ensureMinioBucketWithCors(input: EnsureMinioBucketInput): 
       new PutBucketCorsCommand({
         Bucket: input.bucket,
         CORSConfiguration: { CORSRules: [MINIO_VIDEO_CORS_RULE] },
-      })
+      }),
     );
   } catch (error) {
     if (isBucketCorsNotImplementedError(error)) {
@@ -86,7 +90,7 @@ export async function ensureMinioBucketWithCors(input: EnsureMinioBucketInput): 
       // requests, so a rejected PutBucketCors is informational only.
       // eslint-disable-next-line no-console
       console.info(
-        `MinIO bucket "${input.bucket}" does not support PutBucketCors (NotImplemented/501); relying on MinIO native CORS handling.`
+        `MinIO bucket "${input.bucket}" does not support PutBucketCors (NotImplemented/501); relying on MinIO native CORS handling.`,
       );
       return;
     }

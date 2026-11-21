@@ -23,9 +23,10 @@ export function SourceTableRow({
   onPreview,
   onCopy,
 }: SourceTableRowProps) {
-  const { healthResult, isTesting, healthStatus, handleTestProbe } = useSourceHealthProbe({
-    source,
-  });
+  const { healthResult, isTesting, healthStatus, handleTestProbe } =
+    useSourceHealthProbe({
+      source,
+    });
 
   if (isEditing) {
     return (
@@ -42,8 +43,12 @@ export function SourceTableRow({
     return (
       <ChunkyCard className="p-4 border-[var(--red)] bg-[var(--red)]/5 text-xs flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-extrabold text-[var(--red)]">Remove "{source.label}"?</p>
-          <p className="font-mono text-[11px] text-[var(--muted)] truncate">{source.url}</p>
+          <p className="font-extrabold text-[var(--red)]">
+            Remove "{source.label}"?
+          </p>
+          <p className="font-mono text-[11px] text-[var(--muted)] truncate">
+            {source.url}
+          </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <ChunkyButton
@@ -79,7 +84,9 @@ export function SourceTableRow({
               {source.quality}
             </span>
           )}
-          <span className="font-extrabold text-[var(--ink)] truncate text-xs">{source.label}</span>
+          <span className="font-extrabold text-[var(--ink)] truncate text-xs">
+            {source.label}
+          </span>
         </div>
         <div className="shrink-0 flex items-center gap-1">
           <SourceHealthBadge

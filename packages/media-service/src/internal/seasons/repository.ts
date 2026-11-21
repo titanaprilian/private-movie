@@ -27,7 +27,9 @@ export class SeasonMissingScraperUrlError extends Error {
 export class SeasonNotEmptyError extends Error {
   readonly episodeCount: number;
   constructor(episodeCount: number) {
-    super(`Season still contains ${episodeCount} episode(s) and cannot be deleted`);
+    super(
+      `Season still contains ${episodeCount} episode(s) and cannot be deleted`,
+    );
     this.name = "SeasonNotEmptyError";
     this.episodeCount = episodeCount;
   }
@@ -83,7 +85,10 @@ export interface UpdateSeasonInput {
 
 export interface SeasonsRepository {
   upsert(input: SeasonUpsertInput): Promise<SeasonRow>;
-  findBySeriesIdAndSeasonNumber(seriesId: string, seasonNumber: number): Promise<SeasonRow | null>;
+  findBySeriesIdAndSeasonNumber(
+    seriesId: string,
+    seasonNumber: number,
+  ): Promise<SeasonRow | null>;
   findById(id: string): Promise<SeasonRow | null>;
   updateSeason(id: string, input: UpdateSeasonInput): Promise<SeasonRow>;
   reparentSeasons(fromSeriesId: string, toSeriesId: string): Promise<void>;
@@ -104,7 +109,9 @@ export function createSeasonsRepositoryInternal<
     const remainingQuery = client
       .select({ id: seasons.id })
       .from(seasons)
-      .where(and(eq(seasons.seriesId, seriesId), eq(seasons.status, "ongoing")));
+      .where(
+        and(eq(seasons.seriesId, seriesId), eq(seasons.status, "ongoing")),
+      );
     // Support mock db shapes in unit tests that lack `.limit()`.
     const remaining =
       typeof remainingQuery?.limit === "function"
@@ -114,7 +121,9 @@ export function createSeasonsRepositoryInternal<
       await client
         .update(series)
         .set({ isOngoingHighlighted: false, updatedAt: new Date() })
-        .where(and(eq(series.id, seriesId), eq(series.isOngoingHighlighted, true)));
+        .where(
+          and(eq(series.id, seriesId), eq(series.isOngoingHighlighted, true)),
+        );
     }
   }
 
@@ -131,11 +140,19 @@ export function createSeasonsRepositoryInternal<
           posterUrl: input.posterUrl ?? null,
           seasonNumber: input.seasonNumber ?? null,
           ...(input.status !== undefined ? { status: input.status } : {}),
-          ...(input.scraperUrl !== undefined ? { scraperUrl: input.scraperUrl } : {}),
+          ...(input.scraperUrl !== undefined
+            ? { scraperUrl: input.scraperUrl }
+            : {}),
           ...(input.source !== undefined ? { source: input.source } : {}),
-          ...(input.episodeOffset !== undefined ? { episodeOffset: input.episodeOffset } : {}),
-          ...(input.lastScrapedAt !== undefined ? { lastScrapedAt: input.lastScrapedAt } : {}),
-          ...(input.lastScrapeError !== undefined ? { lastScrapeError: input.lastScrapeError } : {}),
+          ...(input.episodeOffset !== undefined
+            ? { episodeOffset: input.episodeOffset }
+            : {}),
+          ...(input.lastScrapedAt !== undefined
+            ? { lastScrapedAt: input.lastScrapedAt }
+            : {}),
+          ...(input.lastScrapeError !== undefined
+            ? { lastScrapeError: input.lastScrapeError }
+            : {}),
           tmdbSyncStatus: input.tmdbSyncStatus ?? "PENDING",
           createdAt: now,
           updatedAt: now,
@@ -147,14 +164,26 @@ export function createSeasonsRepositoryInternal<
             title: input.title,
             description: input.description ?? null,
             posterUrl: input.posterUrl ?? null,
-            ...(input.seasonNumber !== undefined ? { seasonNumber: input.seasonNumber } : {}),
+            ...(input.seasonNumber !== undefined
+              ? { seasonNumber: input.seasonNumber }
+              : {}),
             ...(input.status !== undefined ? { status: input.status } : {}),
-            ...(input.scraperUrl !== undefined ? { scraperUrl: input.scraperUrl } : {}),
+            ...(input.scraperUrl !== undefined
+              ? { scraperUrl: input.scraperUrl }
+              : {}),
             ...(input.source !== undefined ? { source: input.source } : {}),
-            ...(input.episodeOffset !== undefined ? { episodeOffset: input.episodeOffset } : {}),
-            ...(input.lastScrapedAt !== undefined ? { lastScrapedAt: input.lastScrapedAt } : {}),
-            ...(input.lastScrapeError !== undefined ? { lastScrapeError: input.lastScrapeError } : {}),
-            ...(input.tmdbSyncStatus !== undefined ? { tmdbSyncStatus: input.tmdbSyncStatus } : {}),
+            ...(input.episodeOffset !== undefined
+              ? { episodeOffset: input.episodeOffset }
+              : {}),
+            ...(input.lastScrapedAt !== undefined
+              ? { lastScrapedAt: input.lastScrapedAt }
+              : {}),
+            ...(input.lastScrapeError !== undefined
+              ? { lastScrapeError: input.lastScrapeError }
+              : {}),
+            ...(input.tmdbSyncStatus !== undefined
+              ? { tmdbSyncStatus: input.tmdbSyncStatus }
+              : {}),
             updatedAt: now,
           },
         })
@@ -162,28 +191,31 @@ export function createSeasonsRepositoryInternal<
       return row;
     },
 
-    async findBySeriesIdAndSeasonNumber(seriesId: string, seasonNumber: number): Promise<SeasonRow | null> {
+    async findBySeriesIdAndSeasonNumber(
+      seriesId: string,
+      seasonNumber: number,
+    ): Promise<SeasonRow | null> {
       const [row] = await db
         .select()
         .from(seasons)
         .where(
           and(
             eq(seasons.seriesId, seriesId),
-            eq(seasons.seasonNumber, seasonNumber)
-          )
+            eq(seasons.seasonNumber, seasonNumber),
+          ),
         );
       return row ?? null;
     },
 
     async findById(id: string): Promise<SeasonRow | null> {
-      const [row] = await db
-        .select()
-        .from(seasons)
-        .where(eq(seasons.id, id));
+      const [row] = await db.select().from(seasons).where(eq(seasons.id, id));
       return row ?? null;
     },
 
-    async updateSeason(id: string, input: UpdateSeasonInput): Promise<SeasonRow> {
+    async updateSeason(
+      id: string,
+      input: UpdateSeasonInput,
+    ): Promise<SeasonRow> {
       const now = new Date();
       const [existing] = await db
         .select()
@@ -198,16 +230,23 @@ export function createSeasonsRepositoryInternal<
       };
 
       if (input.title !== undefined) updateData.title = input.title;
-      if (input.description !== undefined) updateData.description = input.description;
+      if (input.description !== undefined)
+        updateData.description = input.description;
       if (input.posterUrl !== undefined) updateData.posterUrl = input.posterUrl;
-      if (input.seasonNumber !== undefined) updateData.seasonNumber = input.seasonNumber;
+      if (input.seasonNumber !== undefined)
+        updateData.seasonNumber = input.seasonNumber;
       if (input.status !== undefined) updateData.status = input.status;
-      if (input.scraperUrl !== undefined) updateData.scraperUrl = input.scraperUrl;
+      if (input.scraperUrl !== undefined)
+        updateData.scraperUrl = input.scraperUrl;
       if (input.source !== undefined) updateData.source = input.source;
-      if (input.episodeOffset !== undefined) updateData.episodeOffset = input.episodeOffset;
-      if (input.lastScrapedAt !== undefined) updateData.lastScrapedAt = input.lastScrapedAt;
-      if (input.lastScrapeError !== undefined) updateData.lastScrapeError = input.lastScrapeError;
-      if (input.tmdbSyncStatus !== undefined) updateData.tmdbSyncStatus = input.tmdbSyncStatus;
+      if (input.episodeOffset !== undefined)
+        updateData.episodeOffset = input.episodeOffset;
+      if (input.lastScrapedAt !== undefined)
+        updateData.lastScrapedAt = input.lastScrapedAt;
+      if (input.lastScrapeError !== undefined)
+        updateData.lastScrapeError = input.lastScrapeError;
+      if (input.tmdbSyncStatus !== undefined)
+        updateData.tmdbSyncStatus = input.tmdbSyncStatus;
 
       // Enforce single-ongoing invariant atomically with the status change.
       if (input.status === "ongoing") {
@@ -219,8 +258,8 @@ export function createSeasonsRepositoryInternal<
               and(
                 eq(seasons.seriesId, existing.seriesId),
                 eq(seasons.status, "ongoing"),
-                ne(seasons.id, id)
-              )
+                ne(seasons.id, id),
+              ),
             );
           const [row] = await tx
             .update(seasons)
@@ -251,7 +290,10 @@ export function createSeasonsRepositoryInternal<
       return row;
     },
 
-    async reparentSeasons(fromSeriesId: string, toSeriesId: string): Promise<void> {
+    async reparentSeasons(
+      fromSeriesId: string,
+      toSeriesId: string,
+    ): Promise<void> {
       await db
         .update(seasons)
         .set({ seriesId: toSeriesId, updatedAt: new Date() })
@@ -276,7 +318,10 @@ export function createSeasonsRepositoryInternal<
         throw new SeasonNotEmptyError(value);
       }
 
-      const result = await db.delete(seasons).where(eq(seasons.id, id)).returning();
+      const result = await db
+        .delete(seasons)
+        .where(eq(seasons.id, id))
+        .returning();
       if (result.length === 0) {
         throw new SeasonNotFoundError(`Season with id ${id} not found`);
       }
@@ -291,10 +336,7 @@ export function createSeasonsRepositoryInternal<
         .select()
         .from(seasons)
         .where(
-          and(
-            eq(seasons.status, "ongoing"),
-            isNotNull(seasons.scraperUrl)
-          )
+          and(eq(seasons.status, "ongoing"), isNotNull(seasons.scraperUrl)),
         );
     },
 
@@ -312,12 +354,12 @@ export function createSeasonsRepositoryInternal<
             .where(
               and(
                 eq(seasons.seriesId, input.seriesId),
-                eq(seasons.seasonNumber, input.seasonNumber)
-              )
+                eq(seasons.seasonNumber, input.seasonNumber),
+              ),
             );
           if (conflict) {
             throw new SeasonAlreadyExistsError(
-              `Season number ${input.seasonNumber} already exists for this series`
+              `Season number ${input.seasonNumber} already exists for this series`,
             );
           }
         }
@@ -331,8 +373,8 @@ export function createSeasonsRepositoryInternal<
             .where(
               and(
                 eq(seasons.seriesId, input.seriesId),
-                eq(seasons.status, "ongoing")
-              )
+                eq(seasons.status, "ongoing"),
+              ),
             );
         }
 
@@ -346,9 +388,13 @@ export function createSeasonsRepositoryInternal<
             posterUrl: input.posterUrl ?? null,
             seasonNumber: input.seasonNumber ?? null,
             ...(input.status !== undefined ? { status: input.status } : {}),
-            ...(input.scraperUrl !== undefined ? { scraperUrl: input.scraperUrl } : {}),
+            ...(input.scraperUrl !== undefined
+              ? { scraperUrl: input.scraperUrl }
+              : {}),
             ...(input.source !== undefined ? { source: input.source } : {}),
-            ...(input.episodeOffset !== undefined ? { episodeOffset: input.episodeOffset } : {}),
+            ...(input.episodeOffset !== undefined
+              ? { episodeOffset: input.episodeOffset }
+              : {}),
             tmdbSyncStatus: "PENDING",
             createdAt: now,
             updatedAt: now,

@@ -1,4 +1,9 @@
-import { createTestQueryClient, renderWithProviders, screen, waitFor } from '../../utils';
+import {
+  createTestQueryClient,
+  renderWithProviders,
+  screen,
+  waitFor,
+} from '../../utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SeriesDetailView } from '@/modules/videos/internal/catalog';
 import type { SeriesDetails } from '@/modules/videos/internal/api';
@@ -97,7 +102,11 @@ const mockSeries: SeriesDetails = {
   posterUrl: null,
   createdAt: '2026-08-10',
   updatedAt: '2026-08-10',
-  seasons: [ongoingSeasonWithScraper, completedSeasonWithScraper, ongoingSeasonWithoutScraper],
+  seasons: [
+    ongoingSeasonWithScraper,
+    completedSeasonWithScraper,
+    ongoingSeasonWithoutScraper,
+  ],
   episodes: ongoingSeasonWithScraper.episodes,
 };
 
@@ -109,101 +118,154 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
 
   it('renders "Run Auto-Scrape Now" when active season is ongoing and has scraperUrl', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/ongoing-series-id')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     });
 
     const { user } = renderWithProviders(
       <>
         <Toaster />
-        <SeriesDetailView seriesId="ongoing-series-id" initialSeasonId="season-ongoing-id" />
+        <SeriesDetailView
+          seriesId="ongoing-series-id"
+          initialSeasonId="season-ongoing-id"
+        />
       </>
     );
 
-    await screen.findByRole('heading', { level: 1, name: 'Ongoing Anime Series' });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Ongoing Anime Series',
+    });
 
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     expect(menuBtn).toBeInTheDocument();
     await user.click(menuBtn);
 
-    const autoScrapeBtn = await screen.findByRole('menuitem', { name: /run auto-scrape now/i });
+    const autoScrapeBtn = await screen.findByRole('menuitem', {
+      name: /run auto-scrape now/i,
+    });
     expect(autoScrapeBtn).toBeInTheDocument();
   });
 
   it('does NOT render "Run Auto-Scrape Now" when active season is completed', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/ongoing-series-id')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     });
 
     const { user } = renderWithProviders(
       <>
         <Toaster />
-        <SeriesDetailView seriesId="ongoing-series-id" initialSeasonId="season-completed-id" />
+        <SeriesDetailView
+          seriesId="ongoing-series-id"
+          initialSeasonId="season-completed-id"
+        />
       </>
     );
 
-    await screen.findByRole('heading', { level: 1, name: 'Ongoing Anime Series' });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Ongoing Anime Series',
+    });
 
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    expect(screen.queryByRole('menuitem', { name: /run auto-scrape now/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('menuitem', { name: /run auto-scrape now/i })
+    ).not.toBeInTheDocument();
   });
 
   it('does NOT render "Run Auto-Scrape Now" when active season lacks scraperUrl', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/ongoing-series-id')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     });
 
     const { user } = renderWithProviders(
       <>
         <Toaster />
-        <SeriesDetailView seriesId="ongoing-series-id" initialSeasonId="season-no-scraper-id" />
+        <SeriesDetailView
+          seriesId="ongoing-series-id"
+          initialSeasonId="season-no-scraper-id"
+        />
       </>
     );
 
-    await screen.findByRole('heading', { level: 1, name: 'Ongoing Anime Series' });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Ongoing Anime Series',
+    });
 
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    expect(screen.queryByRole('menuitem', { name: /run auto-scrape now/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('menuitem', { name: /run auto-scrape now/i })
+    ).not.toBeInTheDocument();
   });
 
   it('triggers scrape-ongoing endpoint, disables button while in progress, and displays success toast', async () => {
     let scrapeEndpointCalled = false;
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/ongoing-series-id')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
@@ -231,34 +293,54 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
           }
         );
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     });
 
     const { user } = renderWithProviders(
       <>
         <Toaster />
-        <SeriesDetailView seriesId="ongoing-series-id" initialSeasonId="season-ongoing-id" />
+        <SeriesDetailView
+          seriesId="ongoing-series-id"
+          initialSeasonId="season-ongoing-id"
+        />
       </>
     );
 
-    await screen.findByRole('heading', { level: 1, name: 'Ongoing Anime Series' });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Ongoing Anime Series',
+    });
 
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    const autoScrapeBtn = await screen.findByRole('menuitem', { name: /run auto-scrape now/i });
+    const autoScrapeBtn = await screen.findByRole('menuitem', {
+      name: /run auto-scrape now/i,
+    });
     await user.click(autoScrapeBtn);
 
     expect(scrapeEndpointCalled).toBe(true);
-    expect(await screen.findByText(/Auto-scrape completed: 2 sources saved across 1 episode/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        /Auto-scrape completed: 2 sources saved across 1 episode/i
+      )
+    ).toBeInTheDocument();
   });
 
   it("invalidates the ['series'] query when auto-scrape succeeds", async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/ongoing-series-id')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
@@ -284,10 +366,13 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
           }
         );
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     });
 
     const queryClient = createTestQueryClient();
@@ -295,17 +380,25 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
     const { user } = renderWithProviders(
       <>
         <Toaster />
-        <SeriesDetailView seriesId="ongoing-series-id" initialSeasonId="season-ongoing-id" />
+        <SeriesDetailView
+          seriesId="ongoing-series-id"
+          initialSeasonId="season-ongoing-id"
+        />
       </>,
       { queryClient }
     );
 
-    await screen.findByRole('heading', { level: 1, name: 'Ongoing Anime Series' });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Ongoing Anime Series',
+    });
 
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    const autoScrapeBtn = await screen.findByRole('menuitem', { name: /run auto-scrape now/i });
+    const autoScrapeBtn = await screen.findByRole('menuitem', {
+      name: /run auto-scrape now/i,
+    });
     await user.click(autoScrapeBtn);
 
     await waitFor(() => {
@@ -315,7 +408,12 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
 
   it('displays error toast when scrape-ongoing fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/ongoing-series-id')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
@@ -336,27 +434,42 @@ describe('Run Auto-Scrape Now in SeriesDetailView', () => {
           }
         );
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     });
 
     const { user } = renderWithProviders(
       <>
         <Toaster />
-        <SeriesDetailView seriesId="ongoing-series-id" initialSeasonId="season-ongoing-id" />
+        <SeriesDetailView
+          seriesId="ongoing-series-id"
+          initialSeasonId="season-ongoing-id"
+        />
       </>
     );
 
-    await screen.findByRole('heading', { level: 1, name: 'Ongoing Anime Series' });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Ongoing Anime Series',
+    });
 
     const menuBtn = screen.getByRole('button', { name: /season actions/i });
     await user.click(menuBtn);
 
-    const autoScrapeBtn = await screen.findByRole('menuitem', { name: /run auto-scrape now/i });
+    const autoScrapeBtn = await screen.findByRole('menuitem', {
+      name: /run auto-scrape now/i,
+    });
     await user.click(autoScrapeBtn);
 
-    expect(await screen.findByText(/Failed to fetch provider HTML: Cloudflare challenge/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        /Failed to fetch provider HTML: Cloudflare challenge/i
+      )
+    ).toBeInTheDocument();
   });
 });

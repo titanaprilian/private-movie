@@ -24,5 +24,11 @@ function GenreCatalogPage() {
     navigate({ search: { filter: next }, replace: true });
   };
 
-  return <GenreSeriesCatalog slug={slug} filter={filter} onFilterChange={handleFilterChange} />;
+  return (
+    <GenreSeriesCatalog
+      slug={slug}
+      filter={filter}
+      onFilterChange={handleFilterChange}
+    />
+  );
 }

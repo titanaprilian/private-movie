@@ -3,11 +3,10 @@ import { Check, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 
-export interface ChunkyCopyButtonProps
-  extends Omit<
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    'onCopy' | 'value'
-  > {
+export interface ChunkyCopyButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onCopy' | 'value'
+> {
   /** Exact text copied to the clipboard on click. */
   value: string;
   /** Accessible label for the button. Defaults to `Copy <value>`. */
@@ -97,9 +96,17 @@ function ChunkyCopyButton({
         {...props}
       >
         {copied ? (
-          <Check className="w-3.5 h-3.5" aria-hidden="true" data-testid="chunky-copy-check" />
+          <Check
+            className="w-3.5 h-3.5"
+            aria-hidden="true"
+            data-testid="chunky-copy-check"
+          />
         ) : (
-          <Copy className="w-3.5 h-3.5" aria-hidden="true" data-testid="chunky-copy-icon" />
+          <Copy
+            className="w-3.5 h-3.5"
+            aria-hidden="true"
+            data-testid="chunky-copy-icon"
+          />
         )}
       </button>
     </ChunkyTooltip>

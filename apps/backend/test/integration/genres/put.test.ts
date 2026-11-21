@@ -109,7 +109,12 @@ describe("PUT /genres/:id", () => {
       expect(duplicateResponse.status).toBe(409);
       const body = duplicateResponse.body as { error: { code: string } };
       expect(body.error).toBeDefined();
-      expect(["409", "GENRE_ALREADY_EXISTS", "CONFLICT", "DUPLICATE_GENRE"]).toContain(body.error.code);
+      expect([
+        "409",
+        "GENRE_ALREADY_EXISTS",
+        "CONFLICT",
+        "DUPLICATE_GENRE",
+      ]).toContain(body.error.code);
     });
   });
 
@@ -134,7 +139,13 @@ describe("PUT /genres/:id", () => {
 
       expect(response.status).toBe(200);
       const body = response.body as {
-        data: { id: string; name: string; slug: string; isBigGenre: boolean; displayOrder: number };
+        data: {
+          id: string;
+          name: string;
+          slug: string;
+          isBigGenre: boolean;
+          displayOrder: number;
+        };
       };
 
       expect(body.data.id).toBe(genre.id);

@@ -15,7 +15,8 @@ vi.mock('@/lib/api', () => ({
   api: {},
   getAccessToken: () => 'test-token',
   getApiBaseUrl: () => 'https://api.example.test',
-  extractErrorMessage: (e: unknown) => (e instanceof Error ? e.message : String(e)),
+  extractErrorMessage: (e: unknown) =>
+    e instanceof Error ? e.message : String(e),
   authFetch: authFetchMock,
 }));
 
@@ -46,9 +47,17 @@ function makeJob(): ArchiveIngestJob {
 
 describe('createArchiveIngestJob referer passthrough', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: makeJob() }), { status: 200 })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ data: makeJob() }), { status: 200 })
+      )
+    );
     authFetchMock.mockReset();
-    authFetchMock.mockImplementation(async (url: string, init?: RequestInit) => fetch(url, init));
+    authFetchMock.mockImplementation(async (url: string, init?: RequestInit) =>
+      fetch(url, init)
+    );
   });
 
   it('includes referer in the POST body when provided', async () => {
@@ -68,7 +77,9 @@ describe('createArchiveIngestJob referer passthrough', () => {
   });
 
   it('omits referer from the POST body when undefined', async () => {
-    await createArchiveIngestJob('series-1', { sourceUrl: 'https://example.com/pack.zip' });
+    await createArchiveIngestJob('series-1', {
+      sourceUrl: 'https://example.com/pack.zip',
+    });
 
     const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
     expect(JSON.parse(init.body as string)).not.toHaveProperty('referer');
@@ -77,13 +88,23 @@ describe('createArchiveIngestJob referer passthrough', () => {
 
 describe('archive ingest job calls use authFetch', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: makeJob() }), { status: 200 })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ data: makeJob() }), { status: 200 })
+      )
+    );
     authFetchMock.mockReset();
-    authFetchMock.mockImplementation(async (url: string, init?: RequestInit) => fetch(url, init));
+    authFetchMock.mockImplementation(async (url: string, init?: RequestInit) =>
+      fetch(url, init)
+    );
   });
 
   it('routes create/get/confirm/cancel/retry through authFetch', async () => {
-    await createArchiveIngestJob('series-1', { sourceUrl: 'https://example.com/pack.zip' });
+    await createArchiveIngestJob('series-1', {
+      sourceUrl: 'https://example.com/pack.zip',
+    });
     await getArchiveIngestJob('series-1', 'job-1');
     await confirmArchiveIngestJob('series-1', 'job-1', {
       selection: [{ filename: 'f.mp4', episodeId: 'ep-1' }],
@@ -92,7 +113,9 @@ describe('archive ingest job calls use authFetch', () => {
     await retryArchiveIngestJob('series-1', 'job-1', null);
 
     expect(authFetchMock).toHaveBeenCalledTimes(5);
-    const urls = authFetchMock.mock.calls.map((call: unknown[]) => call[0] as string);
+    const urls = authFetchMock.mock.calls.map(
+      (call: unknown[]) => call[0] as string
+    );
     expect(urls[0]).toContain('/api/series/series-1/archive-ingest/jobs');
     expect(urls[1]).toContain('/api/series/series-1/archive-ingest/jobs/job-1');
     expect(urls[2]).toContain('/jobs/job-1/confirm');
@@ -136,7 +159,12 @@ describe('getArchiveIngestJobProgress', () => {
     const result = await getArchiveIngestJobProgress('series-1', 'job-1');
     expect(authFetchMock).toHaveBeenCalledOnce();
     const [url] = authFetchMock.mock.calls[0] as [string, unknown];
-    expect(url).toContain('/api/series/series-1/archive-ingest/jobs/job-1?summary=true');
-    expect(result).toMatchObject({ activeFilename: 'ep02.mp4', completedFilenames: ['ep01.mp4'] });
+    expect(url).toContain(
+      '/api/series/series-1/archive-ingest/jobs/job-1?summary=true'
+    );
+    expect(result).toMatchObject({
+      activeFilename: 'ep02.mp4',
+      completedFilenames: ['ep01.mp4'],
+    });
   });
 });

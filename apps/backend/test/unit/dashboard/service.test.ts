@@ -23,7 +23,10 @@ function stubRepository(
     getOngoingSeasons: vi.fn(async () => []),
     getRecentSeries: vi.fn(async () => []),
     getStorageProviderLimits: vi.fn(async () => []),
-    getSchedulerConfig: vi.fn(async () => ({ intervalMinutes: 30, isEnabled: true })),
+    getSchedulerConfig: vi.fn(async () => ({
+      intervalMinutes: 30,
+      isEnabled: true,
+    })),
     ...overrides,
   };
 }
@@ -34,7 +37,11 @@ describe("dashboard service storage orchestration", () => {
       getStorageProviderLimits: vi.fn(async () => [{ storageLimitGb: 50 }]),
     });
     const stats = await getStorageStats(repo, null);
-    expect(stats).toMatchObject({ totalUsedBytes: 0, percentUsed: 0, providerCount: 1 });
+    expect(stats).toMatchObject({
+      totalUsedBytes: 0,
+      percentUsed: 0,
+      providerCount: 1,
+    });
     expect(stats.totalLimitBytes).toBe(50 * 1024 * 1024 * 1024);
   });
 
@@ -42,10 +49,9 @@ describe("dashboard service storage orchestration", () => {
     const repo = stubRepository({
       getStorageProviderLimits: vi.fn(async () => [{ storageLimitGb: 50 }]),
     });
-    const stats = await getStorageStats(
-      repo,
-      { getTotalUsedBytes: () => Promise.reject(new Error("S3 down")) },
-    );
+    const stats = await getStorageStats(repo, {
+      getTotalUsedBytes: () => Promise.reject(new Error("S3 down")),
+    });
     expect(stats.totalUsedBytes).toBe(0);
     expect(stats.percentUsed).toBe(0);
   });
@@ -54,7 +60,9 @@ describe("dashboard service storage orchestration", () => {
     const repo = stubRepository({
       getStorageProviderLimits: vi.fn(async () => [{ storageLimitGb: 50 }]),
     });
-    const stats = await getStorageStats(repo, { getTotalUsedBytes: async () => null });
+    const stats = await getStorageStats(repo, {
+      getTotalUsedBytes: async () => null,
+    });
     expect(stats.totalUsedBytes).toBe(0);
     expect(stats.percentUsed).toBe(0);
   });
@@ -64,7 +72,9 @@ describe("dashboard service storage orchestration", () => {
       getStorageProviderLimits: vi.fn(async () => [{ storageLimitGb: 50 }]),
     });
     for (const used of [-100, 0, Number.NaN]) {
-      const stats = await getStorageStats(repo, { getTotalUsedBytes: async () => used });
+      const stats = await getStorageStats(repo, {
+        getTotalUsedBytes: async () => used,
+      });
       expect(stats.totalUsedBytes).toBe(0);
     }
   });
@@ -113,7 +123,11 @@ describe("dashboard service scheduler telemetry", () => {
       isExecuting: () => true,
       getIntervalMs: () => 3_600_000,
       getLastRunAt: () => new Date("2026-01-01T00:00:00.000Z"),
-      getLastRunResult: () => ({ totalProcessed: 5, successCount: 4, failureCount: 1 }),
+      getLastRunResult: () => ({
+        totalProcessed: 5,
+        successCount: 4,
+        failureCount: 1,
+      }),
       getNextRunAt: () => new Date("2026-01-01T01:00:00.000Z"),
     });
     expect(telemetry).toEqual({
@@ -128,7 +142,10 @@ describe("dashboard service scheduler telemetry", () => {
 
   it("loads persisted scheduler config when no live provider exists", async () => {
     const repo = stubRepository({
-      getSchedulerConfig: vi.fn(async () => ({ intervalMinutes: 60, isEnabled: false })),
+      getSchedulerConfig: vi.fn(async () => ({
+        intervalMinutes: 60,
+        isEnabled: false,
+      })),
     });
     const telemetry = await getSchedulerTelemetry(repo, null);
     expect(telemetry).toMatchObject({

@@ -5,7 +5,8 @@ import { useAuthStore } from '@/modules/auth/internal/store';
 import { redirect } from '@tanstack/react-router';
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  const actual =
+    await importOriginal<typeof import('@tanstack/react-router')>();
   return {
     ...actual,
     createFileRoute: () => (config: unknown) => config,

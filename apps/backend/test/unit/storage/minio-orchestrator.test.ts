@@ -21,7 +21,12 @@ interface CapturedCall {
 
 function respondWith(status: number) {
   requestMock.mockImplementationOnce(
-    (opts: CapturedCall["opts"], cb: (res: EventEmitter & { statusCode: number; resume: () => void }) => void) => {
+    (
+      opts: CapturedCall["opts"],
+      cb: (
+        res: EventEmitter & { statusCode: number; resume: () => void },
+      ) => void,
+    ) => {
       const captured: CapturedCall = { opts };
       const res = Object.assign(new EventEmitter(), {
         statusCode: status,
@@ -35,16 +40,21 @@ function respondWith(status: number) {
           captured.body = (captured.body ?? "") + chunk;
         },
       });
-      (requestMock as unknown as { __captured?: CapturedCall[] }).__captured ??= [];
-      (requestMock as unknown as { __captured: CapturedCall[] }).__captured.push(captured);
+      (requestMock as unknown as { __captured?: CapturedCall[] }).__captured ??=
+        [];
+      (
+        requestMock as unknown as { __captured: CapturedCall[] }
+      ).__captured.push(captured);
       queueMicrotask(() => cb(res));
       return req;
-    }
+    },
   );
 }
 
 function capturedCalls(): CapturedCall[] {
-  return (requestMock as unknown as { __captured?: CapturedCall[] }).__captured ?? [];
+  return (
+    (requestMock as unknown as { __captured?: CapturedCall[] }).__captured ?? []
+  );
 }
 
 describe("startMinioContainerViaDockerSocket", () => {
@@ -84,12 +94,23 @@ describe("startMinioContainerViaDockerSocket", () => {
       path: "/containers/create?name=private-movie-minio",
     });
 
-    const createBody = JSON.parse(calls[2].body ?? "{}") as Record<string, unknown>;
+    const createBody = JSON.parse(calls[2].body ?? "{}") as Record<
+      string,
+      unknown
+    >;
     expect(createBody.Image).toBe(`${MINIO_IMAGE}:${MINIO_IMAGE_TAG}`);
-    expect(createBody.Cmd).toEqual(["server", "/data", "--console-address", ":9001"]);
+    expect(createBody.Cmd).toEqual([
+      "server",
+      "/data",
+      "--console-address",
+      ":9001",
+    ]);
     const hostConfig = createBody.HostConfig as Record<string, unknown>;
     expect(hostConfig.Binds).toEqual(["minio_data:/data"]);
-    const portBindings = hostConfig.PortBindings as Record<string, { HostPort: string }[]>;
+    const portBindings = hostConfig.PortBindings as Record<
+      string,
+      { HostPort: string }[]
+    >;
     expect(portBindings["9000/tcp"]).toEqual([{ HostPort: "9000" }]);
     expect(portBindings["9001/tcp"]).toEqual([{ HostPort: "9001" }]);
 
@@ -103,7 +124,9 @@ describe("startMinioContainerViaDockerSocket", () => {
     respondWith(404); // initial start → not found
     respondWith(500); // image pull fails
 
-    await expect(startMinioContainerViaDockerSocket()).rejects.toThrow(MinioDockerUnavailableError);
+    await expect(startMinioContainerViaDockerSocket()).rejects.toThrow(
+      MinioDockerUnavailableError,
+    );
     expect(capturedCalls()).toHaveLength(2);
   });
 
@@ -112,7 +135,9 @@ describe("startMinioContainerViaDockerSocket", () => {
     respondWith(200);
     respondWith(500); // create fails (e.g. name conflict)
 
-    await expect(startMinioContainerViaDockerSocket()).rejects.toThrow(MinioDockerUnavailableError);
+    await expect(startMinioContainerViaDockerSocket()).rejects.toThrow(
+      MinioDockerUnavailableError,
+    );
     expect(capturedCalls()).toHaveLength(3);
   });
 
@@ -122,13 +147,17 @@ describe("startMinioContainerViaDockerSocket", () => {
     respondWith(201);
     respondWith(500); // start still failing (e.g. port conflict)
 
-    await expect(startMinioContainerViaDockerSocket()).rejects.toThrow(MinioDockerUnavailableError);
+    await expect(startMinioContainerViaDockerSocket()).rejects.toThrow(
+      MinioDockerUnavailableError,
+    );
     expect(capturedCalls()).toHaveLength(4);
   });
 
   it("throws MinioDockerUnavailableError on non-404 start failures without provisioning", async () => {
     respondWith(500);
-    await expect(startMinioContainerViaDockerSocket()).rejects.toThrow(MinioDockerUnavailableError);
+    await expect(startMinioContainerViaDockerSocket()).rejects.toThrow(
+      MinioDockerUnavailableError,
+    );
     expect(capturedCalls()).toHaveLength(1);
   });
 });

@@ -21,7 +21,9 @@ export function useAddMediaDialog(): UseAddMediaDialogReturn {
   const resetStore = useAddMediaStore((state) => state.reset);
   const setTmdbType = useAddMediaStore((state) => state.setTmdbType);
   const setTmdbId = useAddMediaStore((state) => state.setTmdbId);
-  const setIncludeSpecials = useAddMediaStore((state) => state.setIncludeSpecials);
+  const setIncludeSpecials = useAddMediaStore(
+    (state) => state.setIncludeSpecials
+  );
   const submitPreview = useAddMediaStore((state) => state.submitPreview);
   const backToStep1 = useAddMediaStore((state) => state.backToStep1);
 

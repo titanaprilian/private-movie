@@ -39,7 +39,9 @@ describe("archive_ingest_jobs schema", () => {
     const colNames = index?.config.columns.map((c) => c.name) ?? [];
     expect(colNames).toContain("owner_id");
     expect(colNames).toContain("source_key");
-    expect(index?.config.name).toContain("archive_ingest_jobs_owner_source_active_unique");
+    expect(index?.config.name).toContain(
+      "archive_ingest_jobs_owner_source_active_unique",
+    );
     expect(index?.config.where).toBeDefined();
   });
 });

@@ -18,8 +18,11 @@ describe('formatEmbedUrl', () => {
   });
 
   it('preserves query parameters when transforming videobello.net embed URLs', () => {
-    const url = 'https://videobello.net/embed/ZXBpc29kZS0xMjM=?autoplay=1&muted=1';
-    expect(formatEmbedUrl(url)).toBe('/embed/ZXBpc29kZS0xMjM=?autoplay=1&muted=1');
+    const url =
+      'https://videobello.net/embed/ZXBpc29kZS0xMjM=?autoplay=1&muted=1';
+    expect(formatEmbedUrl(url)).toBe(
+      '/embed/ZXBpc29kZS0xMjM=?autoplay=1&muted=1'
+    );
   });
 
   it('falls back to proxy-embed when videobello.net URL has no hash', () => {
@@ -38,9 +41,7 @@ describe('formatEmbedUrl', () => {
 
   it('transforms filedon provider URLs to /api/media/proxy/:domain/*', () => {
     const url = 'https://filedon.co/v/xyz987';
-    expect(formatEmbedUrl(url)).toBe(
-      '/api/media/proxy/filedon.co/v/xyz987'
-    );
+    expect(formatEmbedUrl(url)).toBe('/api/media/proxy/filedon.co/v/xyz987');
   });
 
   it('transforms desustream.net URLs to /api/media/proxy/:domain/*', () => {
@@ -66,9 +67,7 @@ describe('formatEmbedUrl', () => {
 
   it('transforms odstream.net URLs to /api/media/proxy/:domain/*', () => {
     const url = 'https://odstream.net/v/abc';
-    expect(formatEmbedUrl(url)).toBe(
-      '/api/media/proxy/odstream.net/v/abc'
-    );
+    expect(formatEmbedUrl(url)).toBe('/api/media/proxy/odstream.net/v/abc');
   });
 
   it('retains subpaths and query parameters for odstream.net URLs', () => {
@@ -87,9 +86,7 @@ describe('isBelloCloudEmbedUrl', () => {
   });
 
   it('is case-insensitive', () => {
-    expect(
-      isBelloCloudEmbedUrl('https://VIDEOBELLO.NET/embed/abc')
-    ).toBe(true);
+    expect(isBelloCloudEmbedUrl('https://VIDEOBELLO.NET/embed/abc')).toBe(true);
   });
 
   it('returns false for other providers', () => {
@@ -120,7 +117,9 @@ describe('getEmbedIframeSandbox', () => {
     expect(
       getEmbedIframeSandbox('https://odvidhide.com/v/abcd1234')
     ).toBeUndefined();
-    expect(getEmbedIframeSandbox('https://filedon.co/v/xyz987')).toBeUndefined();
+    expect(
+      getEmbedIframeSandbox('https://filedon.co/v/xyz987')
+    ).toBeUndefined();
     expect(getEmbedIframeSandbox('https://embed.com/3')).toBeUndefined();
   });
 });

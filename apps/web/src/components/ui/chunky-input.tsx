@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export type ChunkyInputProps =
-  React.InputHTMLAttributes<HTMLInputElement>;
+export type ChunkyInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 const ChunkyInput = React.forwardRef<HTMLInputElement, ChunkyInputProps>(
   ({ className, type = 'text', ...props }, ref) => {

@@ -35,7 +35,7 @@ export function isApiDocsEnabled(env: EnvDict = process.env): boolean {
 
 export function isOriginAllowed(
   origin: string | null | undefined,
-  config: AppConfig
+  config: AppConfig,
 ): boolean {
   if (config.isDevelopment) {
     return origin !== null && origin !== undefined && origin !== "";

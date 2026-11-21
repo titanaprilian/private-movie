@@ -4,14 +4,20 @@ import { authHeaders, buildApp, db, registerUser, request } from "../../utils";
 import { storageProviders } from "@repo/db";
 import { decryptCredential, encryptCredential } from "@repo/media-service";
 import type { MinioSpinUpResponseData } from "@repo/contracts";
-import { MinioDockerUnavailableError, MinioHealthTimeoutError } from "@/modules/storage";
+import {
+  MinioDockerUnavailableError,
+  MinioHealthTimeoutError,
+} from "@/modules/storage";
 
 function s3AuthError() {
-  return Object.assign(new Error("The request signature we calculated does not match"), {
-    name: "SignatureDoesNotMatch",
-    $fault: "client",
-    $metadata: { httpStatusCode: 403 },
-  });
+  return Object.assign(
+    new Error("The request signature we calculated does not match"),
+    {
+      name: "SignatureDoesNotMatch",
+      $fault: "client",
+      $metadata: { httpStatusCode: 403 },
+    },
+  );
 }
 
 function defaultRow(overrides: Record<string, unknown> = {}) {
@@ -36,25 +42,30 @@ function defaultRow(overrides: Record<string, unknown> = {}) {
   };
 }
 
-async function buildSpinUpApp(overrides: {
-  isRunning?: boolean;
-  starter?: () => Promise<void>;
-  health?: (endpoint: string) => Promise<void>;
-  provisioner?: (input: {
-    endpoint: string;
-    region: string;
-    bucket: string;
-    accessKeyId: string;
-    secretAccessKey: string;
-    forcePathStyle: boolean;
-  }) => Promise<void>;
-} = {}) {
+async function buildSpinUpApp(
+  overrides: {
+    isRunning?: boolean;
+    starter?: () => Promise<void>;
+    health?: (endpoint: string) => Promise<void>;
+    provisioner?: (input: {
+      endpoint: string;
+      region: string;
+      bucket: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+      forcePathStyle: boolean;
+    }) => Promise<void>;
+  } = {},
+) {
   const starter = vi.fn(overrides.starter ?? (async () => {}));
   const health = vi.fn(overrides.health ?? (async () => {}));
   const provisioner = vi.fn(overrides.provisioner ?? (async () => {}));
   const app = await buildApp({
     storage: {
-      minioInspector: async () => ({ isAvailable: true, isRunning: overrides.isRunning ?? false }),
+      minioInspector: async () => ({
+        isAvailable: true,
+        isRunning: overrides.isRunning ?? false,
+      }),
       minioContainerStarter: starter,
       minioHealthChecker: health,
       minioBucketProvisioner: provisioner,
@@ -120,15 +131,21 @@ describe("MinIO Spin-Up HTTP API (/api/storage/minio/spin-up)", () => {
     const minioRow = rows.find((r) => r.providerType === "minio");
     expect(minioRow).toBeDefined();
     expect(minioRow!.forcePathStyle).toBe(true);
-    expect(decryptCredential(minioRow!.accessKeyIdEnc)).toBe("TESTACCESSKEY12345");
-    expect(decryptCredential(minioRow!.secretAccessKeyEnc)).toBe("test-secret-key-24-chars!!");
+    expect(decryptCredential(minioRow!.accessKeyIdEnc)).toBe(
+      "TESTACCESSKEY12345",
+    );
+    expect(decryptCredential(minioRow!.secretAccessKeyEnc)).toBe(
+      "test-secret-key-24-chars!!",
+    );
     const oldDefault = rows.find((r) => r.id === "existing-default-1");
     expect(oldDefault!.isDefault).toBe(false);
     expect(minioRow!.isDefault).toBe(true);
   });
 
   it("skips container start when already running and defaults to container root credentials", async () => {
-    const { app, starter, provisioner } = await buildSpinUpApp({ isRunning: true });
+    const { app, starter, provisioner } = await buildSpinUpApp({
+      isRunning: true,
+    });
     const { accessToken } = await registerUser(app);
 
     const res = await request(app, {
@@ -204,10 +221,12 @@ describe("MinIO Spin-Up HTTP API (/api/storage/minio/spin-up)", () => {
       createdAt: now,
       updatedAt: now,
     });
-    await db.insert(storageProviders).values([
-      row("minio-first", "http://other-host:9000", "other-bucket"),
-      row("minio-second", "http://localhost:9000", "private-movie-videos"),
-    ]);
+    await db
+      .insert(storageProviders)
+      .values([
+        row("minio-first", "http://other-host:9000", "other-bucket"),
+        row("minio-second", "http://localhost:9000", "private-movie-videos"),
+      ]);
 
     const res = await request(app, {
       method: "POST",
@@ -227,7 +246,9 @@ describe("MinIO Spin-Up HTTP API (/api/storage/minio/spin-up)", () => {
     const rows = await db.select().from(storageProviders);
     expect(rows).toHaveLength(2);
     const updated = rows.find((r) => r.id === "minio-second")!;
-    expect(decryptCredential(updated.accessKeyIdEnc)).toBe("TESTACCESSKEY12345");
+    expect(decryptCredential(updated.accessKeyIdEnc)).toBe(
+      "TESTACCESSKEY12345",
+    );
     expect(updated.isEnabled).toBe(true);
   });
 

@@ -11,19 +11,19 @@ import type { App } from "../../utils/app";
 
 const sampleAHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
-  "utf8"
+  "utf8",
 );
 const sampleBHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
-  "utf8"
+  "utf8",
 );
 const sampleSeriesHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
-  "utf8"
+  "utf8",
 );
 const sampleMp4VideoHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-mp4-video.html"),
-  "utf8"
+  "utf8",
 );
 
 const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
@@ -99,7 +99,8 @@ describe("POST /preview-scrape", () => {
   describe("happy path", () => {
     it("previews scrape with dramula source payload returning 200 OK", async () => {
       const { accessToken } = await registerUser(app);
-      const sourceUrl = "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1";
+      const sourceUrl =
+        "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1";
 
       const response = await request(app, {
         method: "POST",
@@ -137,7 +138,7 @@ describe("POST /preview-scrape", () => {
         };
       };
       expect(body.data.episode.title).toBe(
-        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia",
       );
     });
 
@@ -188,7 +189,7 @@ describe("POST /preview-scrape", () => {
       expect(body.data.episode.sourceUrl).toBe(sourceUrl);
       expect(body.data.episode.source).toBe("otakudesu");
       expect(body.data.episode.title).toBe(
-        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia",
       );
       expect(body.data.episode.videoSources).toBeInstanceOf(Array);
       expect(body.data.episode.videoSources.length).toBeGreaterThan(0);
@@ -200,10 +201,10 @@ describe("POST /preview-scrape", () => {
 
       expect(body.data.series).not.toBeNull();
       expect(body.data.series?.sourceUrl).toBe(
-        "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+        "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/",
       );
       expect(body.data.series?.title).toBe(
-        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru"
+        "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru",
       );
 
       expect(body.data.warnings).toEqual([]);
@@ -247,7 +248,7 @@ describe("POST /preview-scrape", () => {
 
       const expiredToken = signTestToken(
         { sub: "some-user-id" },
-        { expiresInSeconds: -3600 }
+        { expiresInSeconds: -3600 },
       );
       const expiredTokenResponse = await request(app, {
         method: "POST",
@@ -302,11 +303,36 @@ describe("POST /preview-scrape", () => {
         };
       };
       expect(body.data.episode.videoSources).toEqual([
-        { type: "embed", url: "https://player.example.com/embed/mirror-0", label: "ondesu2hd", quality: "720p" },
-        { type: "embed", url: "https://player.example.com/embed/mirror-1", label: "odstream", quality: "720p" },
-        { type: "embed", url: "https://player.example.com/embed/mirror-2", label: "filedon", quality: "720p" },
-        { type: "embed", url: "https://player.example.com/embed/mirror-3", label: "vidhide", quality: "720p" },
-        { type: "embed", url: "https://player.example.com/embed/mirror-4", label: "mega", quality: "720p" },
+        {
+          type: "embed",
+          url: "https://player.example.com/embed/mirror-0",
+          label: "ondesu2hd",
+          quality: "720p",
+        },
+        {
+          type: "embed",
+          url: "https://player.example.com/embed/mirror-1",
+          label: "odstream",
+          quality: "720p",
+        },
+        {
+          type: "embed",
+          url: "https://player.example.com/embed/mirror-2",
+          label: "filedon",
+          quality: "720p",
+        },
+        {
+          type: "embed",
+          url: "https://player.example.com/embed/mirror-3",
+          label: "vidhide",
+          quality: "720p",
+        },
+        {
+          type: "embed",
+          url: "https://player.example.com/embed/mirror-4",
+          label: "mega",
+          quality: "720p",
+        },
       ]);
       expect(body.data.warnings).toEqual([]);
     });
@@ -384,7 +410,9 @@ describe("POST /preview-scrape", () => {
       });
 
       expect(response.status).toBe(400);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_FETCH");
     });
 
@@ -420,13 +448,16 @@ describe("POST /preview-scrape", () => {
       });
 
       expect(response.status).toBe(400);
-      const body = response.body as { error: { code: string; message: string } };
+      const body = response.body as {
+        error: { code: string; message: string };
+      };
       expect(body.error.code).toBe("EPISODE_PARSE");
     });
 
     it("returns 400 Bad Request with EPISODE_MISSING_FIELDS and missingFields array when HTML is missing required episode fields", async () => {
       const { accessToken } = await registerUser(app);
-      const malformedHtml = '<div id="venkonten"><p>no title or iframe</p></div>';
+      const malformedHtml =
+        '<div id="venkonten"><p>no title or iframe</p></div>';
 
       const response = await request(app, {
         method: "POST",
@@ -470,8 +501,7 @@ describe("POST /preview-scrape", () => {
         path: "/preview-scrape",
         headers: authHeaders(accessToken),
         body: {
-          sourceUrl:
-            "https://otakudesu.blog/episode/fetch-fail-ep-1-sub-indo/",
+          sourceUrl: "https://otakudesu.blog/episode/fetch-fail-ep-1-sub-indo/",
           source: "otakudesu",
           html: sampleAHtml,
         },

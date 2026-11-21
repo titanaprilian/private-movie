@@ -1,6 +1,10 @@
 import { renderWithProviders, screen, waitFor, within } from '../../utils';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { createRouter, createMemoryHistory, RouterProvider } from '@tanstack/react-router';
+import {
+  createRouter,
+  createMemoryHistory,
+  RouterProvider,
+} from '@tanstack/react-router';
 import { act } from '@testing-library/react';
 import { routeTree } from '@/routeTree.gen';
 import { setAccessToken } from '@/lib/api';
@@ -21,7 +25,12 @@ function makeSeries(id: string, overrides: Record<string, unknown> = {}) {
   };
 }
 
-function makePage(items: unknown[], page: number, limit: number, total: number) {
+function makePage(
+  items: unknown[],
+  page: number,
+  limit: number,
+  total: number
+) {
   return { data: { series: items, meta: { total, page, limit } } };
 }
 
@@ -36,10 +45,17 @@ interface CapturedSeriesRequest {
   limit: string | null;
 }
 
-function installFetchMock(handleSeries: (req: CapturedSeriesRequest) => unknown) {
+function installFetchMock(
+  handleSeries: (req: CapturedSeriesRequest) => unknown
+) {
   const requests: CapturedSeriesRequest[] = [];
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const url =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
 
     if (url.includes('/api/genres')) {
       return new Response(JSON.stringify(genresPayload), {
@@ -69,7 +85,9 @@ function installFetchMock(handleSeries: (req: CapturedSeriesRequest) => unknown)
 }
 
 function buildRouter(initialEntry: string | string[]) {
-  const initialEntries = Array.isArray(initialEntry) ? initialEntry : [initialEntry];
+  const initialEntries = Array.isArray(initialEntry)
+    ? initialEntry
+    : [initialEntry];
   const history = createMemoryHistory({ initialEntries });
   return createRouter({ routeTree, history });
 }
@@ -93,26 +111,43 @@ describe('Genre catalog route (/genres/$slug)', () => {
   });
 
   it('renders the dedicated catalog instead of CinematicHome, with genre header, tabs, and series grid', async () => {
-    installFetchMock(() => makePage([makeSeries('s-1', { title: 'Queen of Tears' })], 1, 20, 1));
+    installFetchMock(() =>
+      makePage([makeSeries('s-1', { title: 'Queen of Tears' })], 1, 20, 1)
+    );
     const router = buildRouter('/genres/korean-drama');
 
     renderWithProviders(<RouterProvider router={router} />);
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Korean Drama' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'All Series' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: 'Ongoing' })).toHaveAttribute('aria-selected', 'false');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Korean Drama' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'All Series' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(screen.getByRole('tab', { name: 'Ongoing' })).toHaveAttribute(
+      'aria-selected',
+      'false'
+    );
     expect(await screen.findByText('Queen of Tears')).toBeInTheDocument();
 
     // No homepage hero slider, carousels, or recently added episodes section.
     expect(screen.queryByText('Recently Added')).not.toBeInTheDocument();
     expect(screen.queryByText('Top Rated')).not.toBeInTheDocument();
-    expect(screen.queryByText(/recently added episodes/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/recently added episodes/i)
+    ).not.toBeInTheDocument();
   });
 
   it('syncs the Ongoing tab to search params and refetches with filter=ongoing', async () => {
     const { requests } = installFetchMock((req) =>
       req.filter === 'ongoing'
-        ? makePage([makeSeries('s-ongoing', { title: 'Ongoing Hit' })], 1, 20, 1)
+        ? makePage(
+            [makeSeries('s-ongoing', { title: 'Ongoing Hit' })],
+            1,
+            20,
+            1
+          )
         : makePage([makeSeries('s-1', { title: 'Catalog Hit' })], 1, 20, 1)
     );
     const router = buildRouter('/genres/korean-drama');
@@ -124,30 +159,44 @@ describe('Genre catalog route (/genres/$slug)', () => {
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({ filter: 'ongoing' });
     });
-    expect(screen.getByRole('tab', { name: 'Ongoing' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Ongoing' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     expect(await screen.findByText('Ongoing Hit')).toBeInTheDocument();
-    expect(requests.some((r) => r.filter === 'ongoing' && r.genre === 'korean-drama')).toBe(true);
+    expect(
+      requests.some((r) => r.filter === 'ongoing' && r.genre === 'korean-drama')
+    ).toBe(true);
   });
 
   it('restores the Ongoing filter from a shareable URL on direct navigation', async () => {
-    installFetchMock(() => makePage([makeSeries('s-ongoing', { title: 'Ongoing Hit' })], 1, 20, 1));
+    installFetchMock(() =>
+      makePage([makeSeries('s-ongoing', { title: 'Ongoing Hit' })], 1, 20, 1)
+    );
     const router = buildRouter('/genres/korean-drama?filter=ongoing');
 
     renderWithProviders(<RouterProvider router={router} />);
 
     expect(await screen.findByText('Ongoing Hit')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Ongoing' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Ongoing' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
   });
 
   it('links series cards to the watch page', async () => {
-    installFetchMock(() => makePage([makeSeries('s-1', { title: 'Queen of Tears' })], 1, 20, 1));
+    installFetchMock(() =>
+      makePage([makeSeries('s-1', { title: 'Queen of Tears' })], 1, 20, 1)
+    );
     const router = buildRouter('/genres/korean-drama');
 
     renderWithProviders(<RouterProvider router={router} />);
 
     const card = await screen.findByTestId('series-card');
     expect(card).toHaveAttribute('data-series-id', 's-1');
-    expect(within(card as HTMLElement).getByText('Queen of Tears')).toBeInTheDocument();
+    expect(
+      within(card as HTMLElement).getByText('Queen of Tears')
+    ).toBeInTheDocument();
   });
 
   it('shows an empty state with a Show All Series action that resets the filter', async () => {
@@ -159,7 +208,9 @@ describe('Genre catalog route (/genres/$slug)', () => {
     const router = buildRouter('/genres/korean-drama?filter=ongoing');
     const { user } = renderWithProviders(<RouterProvider router={router} />);
 
-    expect(await screen.findByText(/no ongoing series found/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/no ongoing series found/i)
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Show All Series' }));
 
@@ -170,7 +221,9 @@ describe('Genre catalog route (/genres/$slug)', () => {
   });
 
   it('keeps browser history entries when switching filters', async () => {
-    installFetchMock(() => makePage([makeSeries('s-1', { title: 'Catalog Hit' })], 1, 20, 1));
+    installFetchMock(() =>
+      makePage([makeSeries('s-1', { title: 'Catalog Hit' })], 1, 20, 1)
+    );
     const router = buildRouter(['/', '/genres/korean-drama']);
     const { user } = renderWithProviders(<RouterProvider router={router} />);
     await screen.findByText('Catalog Hit');

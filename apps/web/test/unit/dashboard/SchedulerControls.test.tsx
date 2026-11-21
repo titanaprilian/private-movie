@@ -85,15 +85,23 @@ describe('SchedulerControls', () => {
 
   it('renders the unified scheduler panel with status text and chips', async () => {
     renderWithProviders(<DashboardView />);
-    expect(await screen.findByTestId('scheduler-controls-section')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('scheduler-controls-section')
+    ).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByTestId('scheduler-status-text')).toHaveTextContent(
         'Auto-scraper is on'
       );
     });
-    expect(screen.getByTestId('scheduler-interval-chip')).toHaveTextContent('Every 30 min');
-    expect(screen.getByTestId('scheduler-success-chip')).toHaveTextContent('3 succeeded');
-    expect(screen.getByTestId('scheduler-failure-chip')).toHaveTextContent('1 failed');
+    expect(screen.getByTestId('scheduler-interval-chip')).toHaveTextContent(
+      'Every 30 min'
+    );
+    expect(screen.getByTestId('scheduler-success-chip')).toHaveTextContent(
+      '3 succeeded'
+    );
+    expect(screen.getByTestId('scheduler-failure-chip')).toHaveTextContent(
+      '1 failed'
+    );
   });
 
   it('hides the failure chip when failureCount is 0', async () => {
@@ -104,7 +112,11 @@ describe('SchedulerControls', () => {
             ...basePayload.data,
             scheduler: {
               ...basePayload.data.scheduler,
-              lastRunResult: { totalProcessed: 4, successCount: 4, failureCount: 0 },
+              lastRunResult: {
+                totalProcessed: 4,
+                successCount: 4,
+                failureCount: 0,
+              },
             },
           },
         }),
@@ -116,7 +128,9 @@ describe('SchedulerControls', () => {
     await waitFor(() => {
       expect(screen.getByTestId('scheduler-success-chip')).toBeInTheDocument();
     });
-    expect(screen.queryByTestId('scheduler-failure-chip')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('scheduler-failure-chip')
+    ).not.toBeInTheDocument();
   });
 
   it('shows failure chip when ongoingSeasons has scrape errors even if scheduler failureCount is 0', async () => {
@@ -127,7 +141,11 @@ describe('SchedulerControls', () => {
             ...basePayload.data,
             scheduler: {
               ...basePayload.data.scheduler,
-              lastRunResult: { totalProcessed: 4, successCount: 4, failureCount: 0 },
+              lastRunResult: {
+                totalProcessed: 4,
+                successCount: 4,
+                failureCount: 0,
+              },
             },
             ongoingSeasons: [
               {
@@ -150,18 +168,24 @@ describe('SchedulerControls', () => {
     renderWithProviders(<DashboardView />);
     await screen.findByTestId('scheduler-controls-section');
     await waitFor(() => {
-      expect(screen.getByTestId('scheduler-failure-chip')).toHaveTextContent('1 failed');
+      expect(screen.getByTestId('scheduler-failure-chip')).toHaveTextContent(
+        '1 failed'
+      );
     });
   });
 
   it('renders the scheduler controls panel with countdown and last run summary', async () => {
     renderWithProviders(<DashboardView />);
-    expect(await screen.findByTestId('scheduler-controls-section')).toBeInTheDocument();
-    expect(screen.getByTestId('scheduler-next-run')).toHaveTextContent(/Next run:/);
+    expect(
+      await screen.findByTestId('scheduler-controls-section')
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('scheduler-next-run')).toHaveTextContent(
+      /Next run:/
+    );
     await waitFor(() => {
-      expect(screen.getByTestId('scheduler-last-run-summary')).toHaveTextContent(
-        'Last run: 4 processed, 3 succeeded, 1 failed'
-      );
+      expect(
+        screen.getByTestId('scheduler-last-run-summary')
+      ).toHaveTextContent('Last run: 4 processed, 3 succeeded, 1 failed');
     });
   });
 
@@ -229,10 +253,13 @@ describe('SchedulerControls', () => {
           method: init?.method,
           body: typeof init?.body === 'string' ? init.body : undefined,
         });
-        return new Response(JSON.stringify({ data: { intervalMinutes: 60, isEnabled: true } }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ data: { intervalMinutes: 60, isEnabled: true } }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
       return new Response(JSON.stringify(basePayload), {
         status: 200,
@@ -263,6 +290,8 @@ describe('SchedulerControls', () => {
         scheduler: { ...basePayload.data.scheduler, isExecuting: false },
       } as never)
     ).toBe(SCHEDULER_POLLING_IDLE_MS);
-    expect(resolveDashboardRefetchInterval(undefined)).toBe(SCHEDULER_POLLING_IDLE_MS);
+    expect(resolveDashboardRefetchInterval(undefined)).toBe(
+      SCHEDULER_POLLING_IDLE_MS
+    );
   });
 });

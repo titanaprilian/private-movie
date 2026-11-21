@@ -16,7 +16,7 @@ import {
  * fails on insecure origins and detaches on mobile WebKit.
  */
 export function buildRelayInterceptorShim(
-  proxyDomainRoot: string = "/api/media/proxy/videobello.net/"
+  proxyDomainRoot: string = "/api/media/proxy/videobello.net/",
 ): string {
   const fragments = JSON.stringify(RELAY_CDN_HOST_FRAGMENTS);
   return `<script id="pm-relay-interceptor">
@@ -172,16 +172,14 @@ export const MOBILE_VIDEO_SHIM = `<script id="pm-mobile-video">
 </script>`;
 
 export function enforceMobileVideoAttributes(html: string): string {
-  return html.replace(
-    /<video\b([^>]*)>/gi,
-    (match, attrs) => {
-      let result = attrs as string;
-      if (!/\bplaysinline\b/i.test(result)) result += " playsinline";
-      if (!/\bwebkit-playsinline\b/i.test(result)) result += " webkit-playsinline";
-      if (!/\bpreload\s*=/i.test(result)) result += ' preload="metadata"';
-      return `<video${result}>`;
-    }
-  );
+  return html.replace(/<video\b([^>]*)>/gi, (match, attrs) => {
+    let result = attrs as string;
+    if (!/\bplaysinline\b/i.test(result)) result += " playsinline";
+    if (!/\bwebkit-playsinline\b/i.test(result))
+      result += " webkit-playsinline";
+    if (!/\bpreload\s*=/i.test(result)) result += ' preload="metadata"';
+    return `<video${result}>`;
+  });
 }
 
 /**
@@ -450,15 +448,13 @@ export const WEBCRYPTO_INSECURE_POLYFILL_SHIM = `<script id="pm-webcrypto-polyfi
   })();
 </script>`;
 
-
-
 /**
  * Compose the final server-rendered embed document: upstream player HTML +
  * base tag + SW cleanup + ad-suppression shim + relay interceptor + mobile video shim.
  */
 export function buildServerRenderedEmbedDocument(
   upstreamHtml: string,
-  origin: string = EMBED_UPSTREAM_ORIGIN
+  origin: string = EMBED_UPSTREAM_ORIGIN,
 ): string {
   let domain = "videobello.net";
   try {
@@ -469,7 +465,9 @@ export function buildServerRenderedEmbedDocument(
   const proxyDomainRoot = `/api/media/proxy/${domain}/`;
   const proxyDocumentBase = `/api/media/proxy/${domain}/embed/`;
 
-  let processed = stripKnownAdScripts(enforceMobileVideoAttributes(upstreamHtml));
+  let processed = stripKnownAdScripts(
+    enforceMobileVideoAttributes(upstreamHtml),
+  );
 
   // Rewrite root-relative asset tags (SvelteKit entry bundles under /_app/,
   // preloaded player scripts/styles under root paths) so native ES module
@@ -480,28 +478,28 @@ export function buildServerRenderedEmbedDocument(
   // ignoring <base href>. Absolute same-origin URLs ensure both Chrome and WebKit load correctly.
   processed = processed.replace(
     /import\((['"])(?:\.\.\/|\.\/|\/)?_app\//g,
-    `import($1${proxyDomainRoot}_app/`
+    `import($1${proxyDomainRoot}_app/`,
   );
   processed = processed.replace(
     /(src|href)=(["'])(?:\.\.\/|\.\/)?_app\//gi,
-    `$1=$2${proxyDomainRoot}_app/`
+    `$1=$2${proxyDomainRoot}_app/`,
   );
   processed = processed.replace(
     /(src|href)=(["'])\/(?!\/|api\/media\/proxy\/)/gi,
-    `$1=$2${proxyDomainRoot}`
+    `$1=$2${proxyDomainRoot}`,
   );
 
   // Rewrite absolute upstream URLs (https://<domain>/...) to the proxy.
   const domainEscaped = domain.replace(/\./g, "\\.");
   processed = processed.replace(
     new RegExp(`https?://${domainEscaped}/`, "gi"),
-    proxyDomainRoot
+    proxyDomainRoot,
   );
 
   // Rewrite bare stream/download paths used by inline player scripts.
   processed = processed.replace(
     /(["'])\/stream\//g,
-    `$1${proxyDomainRoot}stream/`
+    `$1${proxyDomainRoot}stream/`,
   );
   processed = processed.replace(/(["'])\/dl\?/g, `$1${proxyDomainRoot}dl?`);
 
@@ -509,14 +507,13 @@ export function buildServerRenderedEmbedDocument(
   // resolve relative to the embed document path through the backend reverse proxy.
   // Using proxyDocumentBase (/api/media/proxy/<domain>/embed/) ensures that
   // `../_app/...` resolves to `/api/media/proxy/<domain>/_app/...` without stripping the domain.
-  const injections =
-    `<base href="${proxyDocumentBase}">\n  ${DEBUG_LOGGER_SHIM}\n  ${WEBCRYPTO_INSECURE_POLYFILL_SHIM}\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${VIDHIDE_ANTI_CLICKJACK_CSS}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim(proxyDomainRoot)}\n  ${MOBILE_VIDEO_SHIM}`;
+  const injections = `<base href="${proxyDocumentBase}">\n  ${DEBUG_LOGGER_SHIM}\n  ${WEBCRYPTO_INSECURE_POLYFILL_SHIM}\n  ${EMBED_SW_CLEANUP_SHIM}\n  ${VIDHIDE_ANTI_CLICKJACK_CSS}\n  ${AD_SUPPRESSION_SHIM}\n  ${buildRelayInterceptorShim(proxyDomainRoot)}\n  ${MOBILE_VIDEO_SHIM}`;
   if (/(<head[^>]*>)/i.test(processed)) {
     processed = processed.replace(/(<head[^>]*>)/i, `$1\n  ${injections}`);
   } else if (/(<html[^>]*>)/i.test(processed)) {
     processed = processed.replace(
       /(<html[^>]*>)/i,
-      `$1\n<head>\n  ${injections}\n</head>`
+      `$1\n<head>\n  ${injections}\n</head>`,
     );
   } else {
     processed = `<head>\n  ${injections}\n</head>\n${processed}`;

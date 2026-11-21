@@ -9,12 +9,15 @@ import { db } from "../../utils/db";
 import { eq } from "drizzle-orm";
 
 const sampleOneSeasonHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
-  "utf8"
+  resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-one-season.html",
+  ),
+  "utf8",
 );
 const sampleEpisodeHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
-  "utf8"
+  "utf8",
 );
 
 function errorCode(body: unknown): string {
@@ -70,7 +73,7 @@ describe("POST /seasons/:id/scrape-ongoing", () => {
       scraperUrl?: string | null;
       source?: string | null;
       episodeOffset?: number;
-    } = {}
+    } = {},
   ) {
     const [row] = await db
       .insert(seasons)
@@ -141,18 +144,25 @@ describe("POST /seasons/:id/scrape-ongoing", () => {
     expect(result.status).toBe(400);
     expect(errorCode(result.body)).toBe("SEASON_NOT_ONGOING");
 
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbRow.lastScrapeError).toMatch(/ongoing/i);
     expect(dbRow.lastScrapedAt).toBeDefined();
   });
 
   it("returns 400 when season is missing scraperUrl or source", async () => {
     const seriesRow = await createSeries("Missing Scraper Season Series");
-    const seasonRow = await createSeason(seriesRow.id, "Missing Scraper Season", {
-      status: "ongoing",
-      scraperUrl: null,
-      source: null,
-    });
+    const seasonRow = await createSeason(
+      seriesRow.id,
+      "Missing Scraper Season",
+      {
+        status: "ongoing",
+        scraperUrl: null,
+        source: null,
+      },
+    );
 
     const result = await request(app, {
       method: "POST",
@@ -163,12 +173,16 @@ describe("POST /seasons/:id/scrape-ongoing", () => {
     expect(result.status).toBe(400);
     expect(errorCode(result.body)).toBe("SEASON_MISSING_SCRAPER_URL");
 
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbRow.lastScrapeError).toMatch(/missing scraperUrl/i);
     expect(dbRow.lastScrapedAt).toBeDefined();
   });
 
-  it("successfully triggers ongoing scrape, saves sources, and returns execution result", async () => {    const seriesRow = await createSeries("Ongoing Grand Blue Series");
+  it("successfully triggers ongoing scrape, saves sources, and returns execution result", async () => {
+    const seriesRow = await createSeries("Ongoing Grand Blue Series");
     const seasonRow = await createSeason(seriesRow.id, "Season 3", {
       status: "ongoing",
       scraperUrl: "https://otakudesu.blog/anime/grand-blue-s3-sub-indo",
@@ -209,7 +223,10 @@ describe("POST /seasons/:id/scrape-ongoing", () => {
     expect(sources.length).toBeGreaterThan(0);
 
     // Verify season timestamp updated
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbRow.lastScrapedAt).toBeDefined();
     expect(dbRow.lastScrapeError).toBeNull();
   });
@@ -262,10 +279,16 @@ describe("POST /seasons/:id/scrape-ongoing", () => {
     expect(body.data.success).toBe(true);
     expect(body.data.seasonCompleted).toBe(true);
 
-    const [dbSeason] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbSeason] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbSeason.status).toBe("completed");
 
-    const [dbSeries] = await db.select().from(series).where(eq(series.id, seriesRow.id));
+    const [dbSeries] = await db
+      .select()
+      .from(series)
+      .where(eq(series.id, seriesRow.id));
     expect(dbSeries.isOngoingHighlighted).toBe(false);
   });
 });

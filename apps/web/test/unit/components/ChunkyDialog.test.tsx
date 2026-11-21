@@ -53,7 +53,9 @@ describe('ChunkyDialog primitive', () => {
     expect(screen.getByTestId('chunky-dialog-header')).toBeInTheDocument();
     expect(screen.getByTestId('chunky-dialog-body')).toBeInTheDocument();
     expect(screen.getByTestId('chunky-dialog-footer')).toBeInTheDocument();
-    expect(screen.getByText('This action cannot be undone.')).toBeInTheDocument();
+    expect(
+      screen.getByText('This action cannot be undone.')
+    ).toBeInTheDocument();
   });
 
   it('renders a centered 3D card sheet with zoom/fade animations', async () => {

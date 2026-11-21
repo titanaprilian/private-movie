@@ -33,7 +33,7 @@ export const genreRoutes = (options: GenreRoutesOptions) => {
         set.status = 201;
         return successResponse(created);
       },
-      { beforeHandle: auth, body: createGenreBody, detail: createGenreDetail }
+      { beforeHandle: auth, body: createGenreBody, detail: createGenreDetail },
     )
     .put(
       "/genres/:id",
@@ -44,12 +44,11 @@ export const genreRoutes = (options: GenreRoutesOptions) => {
         params: genreIdParams,
         body: updateGenreBody,
         detail: updateGenreDetail,
-      }
+      },
     )
     .delete(
       "/genres/:id",
-      async ({ params }) =>
-        successResponse(await repository.delete(params.id)),
-      { beforeHandle: auth, params: genreIdParams, detail: deleteGenreDetail }
+      async ({ params }) => successResponse(await repository.delete(params.id)),
+      { beforeHandle: auth, params: genreIdParams, detail: deleteGenreDetail },
     );
 };

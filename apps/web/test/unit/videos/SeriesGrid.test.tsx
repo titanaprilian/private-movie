@@ -1,4 +1,11 @@
-import { createTestQueryClient, renderWithProviders, screen, fireEvent, within, waitFor } from '../../utils';
+import {
+  createTestQueryClient,
+  renderWithProviders,
+  screen,
+  fireEvent,
+  within,
+  waitFor,
+} from '../../utils';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   SeriesGrid,
@@ -12,7 +19,8 @@ import { genresQueryOptions, type Genre } from '@/modules/genres';
 import { useAddMediaStore as useScrapeWorkerStore } from '@/modules/videos/internal/catalog';
 
 vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('@/modules/videos/internal/api')>();
+  const mod =
+    await importOriginal<typeof import('@/modules/videos/internal/api')>();
   return {
     ...mod,
     updateSeries: vi.fn().mockResolvedValue({
@@ -35,7 +43,12 @@ vi.mock('@/modules/videos/internal/api', async (importOriginal) => {
 });
 
 const mockNavigate = vi.fn();
-let mockSearchState: { page?: number; q?: string; genre?: string; tab?: 'all' | 'featured' | 'ongoing' } = {
+let mockSearchState: {
+  page?: number;
+  q?: string;
+  genre?: string;
+  tab?: 'all' | 'featured' | 'ongoing';
+} = {
   page: 1,
   q: undefined,
   genre: undefined,
@@ -60,7 +73,8 @@ vi.mock('@tanstack/react-router', () => ({
   }) => {
     let href = params ? to.replace('$seriesId', params.seriesId) : to;
     if (search) {
-      const searchObj = typeof search === 'function' ? search(mockSearchState) : search;
+      const searchObj =
+        typeof search === 'function' ? search(mockSearchState) : search;
       const searchParams = new URLSearchParams();
       if (searchObj.page) searchParams.set('page', String(searchObj.page));
       if (searchObj.q) searchParams.set('q', searchObj.q);
@@ -80,8 +94,20 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const mockGenresList: Genre[] = [
-  { id: 'g-1', name: 'Action', slug: 'action', isBigGenre: false, displayOrder: 0 },
-  { id: 'g-2', name: 'Sci-Fi', slug: 'sci-fi', isBigGenre: false, displayOrder: 0 },
+  {
+    id: 'g-1',
+    name: 'Action',
+    slug: 'action',
+    isBigGenre: false,
+    displayOrder: 0,
+  },
+  {
+    id: 'g-2',
+    name: 'Sci-Fi',
+    slug: 'sci-fi',
+    isBigGenre: false,
+    displayOrder: 0,
+  },
 ];
 
 const mockSeriesResponse = {
@@ -104,15 +130,14 @@ const mockSeriesResponse = {
     },
     {
       id: 'series-2',
-      title: 'Frieren: Beyond Journey\'s End',
+      title: "Frieren: Beyond Journey's End",
       source: 'otakudesu',
       sourceUrl: 'https://otakudesu.cloud/anime/frieren',
-      description: 'An elf mage reflects on life after defeating the Demon King.',
+      description:
+        'An elf mage reflects on life after defeating the Demon King.',
       posterUrl: 'https://example.com/frieren.jpg',
       isFeatured: false,
-      seasons: [
-        { id: 'sea-2', title: 'Season 1', status: 'completed' },
-      ],
+      seasons: [{ id: 'sea-2', title: 'Season 1', status: 'completed' }],
       episodes: [],
       createdAt: '2025-01-10T00:00:00.000Z',
       updatedAt: '2025-01-10T00:00:00.000Z',
@@ -127,7 +152,12 @@ const mockSeriesResponse = {
 
 function renderSeriesGrid(
   customResponse: unknown = mockSeriesResponse,
-  searchState: { page?: number; q?: string; genre?: string; tab?: 'all' | 'featured' | 'ongoing' } = {
+  searchState: {
+    page?: number;
+    q?: string;
+    genre?: string;
+    tab?: 'all' | 'featured' | 'ongoing';
+  } = {
     page: 1,
     q: undefined,
     genre: undefined,
@@ -145,7 +175,8 @@ function renderSeriesGrid(
     },
   });
   queryClient.setQueryData(
-    seriesListQueryOptions({ ...searchState, limit: SERIES_PAGE_LIMIT }).queryKey,
+    seriesListQueryOptions({ ...searchState, limit: SERIES_PAGE_LIMIT })
+      .queryKey,
     customResponse as SeriesListResponse
   );
   queryClient.setQueryData(genresQueryOptions().queryKey, genresList);
@@ -180,11 +211,17 @@ describe('SeriesGrid component', () => {
 
     expect(screen.getByText('Solo Leveling')).toBeInTheDocument();
     expect(
-      screen.getByText('Sung Jinwoo ascends from E-rank hunter to shadow monarch.')
+      screen.getByText(
+        'Sung Jinwoo ascends from E-rank hunter to shadow monarch.'
+      )
     ).toBeInTheDocument();
-    expect(screen.getByText("Frieren: Beyond Journey's End")).toBeInTheDocument();
     expect(
-      screen.getByText('An elf mage reflects on life after defeating the Demon King.')
+      screen.getByText("Frieren: Beyond Journey's End")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'An elf mage reflects on life after defeating the Demon King.'
+      )
     ).toBeInTheDocument();
 
     expect(screen.getByText('2 episodes')).toBeInTheDocument();
@@ -256,8 +293,12 @@ describe('SeriesGrid component', () => {
     renderSeriesGrid(paginatedResponse);
 
     expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Next page' })).not.toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Previous page' })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Next page' })
+    ).not.toBeDisabled();
   });
 
   it('navigates to the next page via chunky Next chip and disables Next on the final page', async () => {
@@ -271,7 +312,9 @@ describe('SeriesGrid component', () => {
 
     expect(screen.getByText('Page 3 of 3')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Previous page' })).not.toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Previous page' })
+    ).not.toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: 'Previous page' }));
 
@@ -295,14 +338,20 @@ describe('SeriesGrid component', () => {
     const addBtn = screen.getByRole('button', { name: /Add Series/i });
     await user.click(addBtn);
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Add Series' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Add Series' })
+    ).toBeInTheDocument();
   });
 
   it('renders GenreFilter trigger with empty, single, and multi labels from URL state', () => {
-    renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined, genre: undefined });
-    expect(screen.getByRole('combobox', { name: 'Filter by genre' })).toHaveTextContent(
-      'Filter by genre'
-    );
+    renderSeriesGrid(mockSeriesResponse, {
+      page: 1,
+      q: undefined,
+      genre: undefined,
+    });
+    expect(
+      screen.getByRole('combobox', { name: 'Filter by genre' })
+    ).toHaveTextContent('Filter by genre');
   });
 
   it('restores combined URL state (tab, search, genre, page) into toolbar controls', () => {
@@ -313,12 +362,16 @@ describe('SeriesGrid component', () => {
       tab: 'featured',
     });
 
-    expect(screen.getByPlaceholderText('Filter series...')).toHaveValue('leveling');
+    expect(screen.getByPlaceholderText('Filter series...')).toHaveValue(
+      'leveling'
+    );
     expect(screen.getByRole('tab', { name: 'Featured' })).toHaveAttribute(
       'data-state',
       'active'
     );
-    expect(screen.getByRole('combobox', { name: 'Action' })).toHaveTextContent('Action');
+    expect(screen.getByRole('combobox', { name: 'Action' })).toHaveTextContent(
+      'Action'
+    );
     expect(screen.getByText('2 series')).toBeInTheDocument();
   });
 
@@ -329,7 +382,9 @@ describe('SeriesGrid component', () => {
       genre: 'action,sci-fi',
     });
 
-    expect(screen.getByRole('combobox', { name: '2 genres' })).toHaveTextContent('2 genres');
+    expect(
+      screen.getByRole('combobox', { name: '2 genres' })
+    ).toHaveTextContent('2 genres');
   });
 
   it('opens genre popover, filters genres by search, and navigates with multi-select ?genre= value', async () => {
@@ -345,7 +400,9 @@ describe('SeriesGrid component', () => {
     // Filter genre list by query
     await user.type(genreInput, 'Action');
     expect(screen.getByRole('option', { name: 'Action' })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'Sci-Fi' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: 'Sci-Fi' })
+    ).not.toBeInTheDocument();
 
     // Select Action
     await user.click(screen.getByRole('option', { name: 'Action' }));
@@ -369,10 +426,14 @@ describe('SeriesGrid component', () => {
       genre: 'action,sci-fi',
     });
 
-    expect(screen.getByRole('combobox', { name: '2 genres' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: '2 genres' })
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('combobox', { name: '2 genres' }));
-    expect(await screen.findByPlaceholderText('Search genres...')).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText('Search genres...')
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear' }));
 
@@ -380,16 +441,29 @@ describe('SeriesGrid component', () => {
       search: expect.any(Function),
     });
     const searchFn = mockNavigate.mock.calls[0][0].search;
-    expect(searchFn({ genre: 'action,sci-fi', page: 2 })).toEqual({ genre: undefined, page: 1 });
+    expect(searchFn({ genre: 'action,sci-fi', page: 2 })).toEqual({
+      genre: undefined,
+      page: 1,
+    });
   });
 
   it('renders Edit and Delete buttons on each series card', () => {
     renderSeriesGrid();
 
-    expect(screen.getByRole('button', { name: 'Edit Solo Leveling' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Delete Solo Leveling' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: "Edit Frieren: Beyond Journey's End" })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: "Delete Frieren: Beyond Journey's End" })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Edit Solo Leveling' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Delete Solo Leveling' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: "Edit Frieren: Beyond Journey's End" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: "Delete Frieren: Beyond Journey's End",
+      })
+    ).toBeInTheDocument();
   });
 
   it('opens pre-filled Edit Dialog when clicking Edit button and submits update', async () => {
@@ -401,18 +475,24 @@ describe('SeriesGrid component', () => {
     const dialog = screen.getByRole('dialog');
     const dialogWithin = within(dialog);
 
-    expect(dialogWithin.getByRole('heading', { name: 'Edit Series' })).toBeInTheDocument();
+    expect(
+      dialogWithin.getByRole('heading', { name: 'Edit Series' })
+    ).toBeInTheDocument();
     const titleInput = dialogWithin.getByLabelText('Title');
     expect(titleInput).toHaveValue('Solo Leveling');
 
     const descInput = dialogWithin.getByLabelText('Description');
-    expect(descInput).toHaveValue('Sung Jinwoo ascends from E-rank hunter to shadow monarch.');
+    expect(descInput).toHaveValue(
+      'Sung Jinwoo ascends from E-rank hunter to shadow monarch.'
+    );
 
     // Select genre in multi-select
     const actionGenreBtn = dialogWithin.getByRole('button', { name: 'Action' });
     fireEvent.click(actionGenreBtn);
 
-    fireEvent.change(titleInput, { target: { value: 'Solo Leveling Season 2' } });
+    fireEvent.change(titleInput, {
+      target: { value: 'Solo Leveling Season 2' },
+    });
 
     const saveBtn = dialogWithin.getByRole('button', { name: 'Save Changes' });
     await user.click(saveBtn);
@@ -474,18 +554,26 @@ describe('SeriesGrid component', () => {
   it('opens Delete Confirmation Dialog and triggers deleteSeries on confirm', async () => {
     const { user } = renderSeriesGrid();
 
-    const deleteBtn = screen.getByRole('button', { name: 'Delete Solo Leveling' });
+    const deleteBtn = screen.getByRole('button', {
+      name: 'Delete Solo Leveling',
+    });
     await user.click(deleteBtn);
 
     const dialog = screen.getByRole('dialog');
     const dialogWithin = within(dialog);
 
-    expect(dialogWithin.getByRole('heading', { name: 'Delete Series' })).toBeInTheDocument();
     expect(
-      dialogWithin.getByText(/Are you sure you want to delete "Solo Leveling"\?/i)
+      dialogWithin.getByRole('heading', { name: 'Delete Series' })
+    ).toBeInTheDocument();
+    expect(
+      dialogWithin.getByText(
+        /Are you sure you want to delete "Solo Leveling"\?/i
+      )
     ).toBeInTheDocument();
 
-    const confirmDeleteBtn = dialogWithin.getByRole('button', { name: 'Delete' });
+    const confirmDeleteBtn = dialogWithin.getByRole('button', {
+      name: 'Delete',
+    });
     await user.click(confirmDeleteBtn);
 
     expect(deleteSeries).toHaveBeenCalledWith('series-1');
@@ -500,7 +588,9 @@ describe('SeriesGrid component', () => {
     const dialog = screen.getByRole('dialog');
     const dialogWithin = within(dialog);
 
-    expect(dialogWithin.getByRole('heading', { name: 'Edit Series' })).toBeInTheDocument();
+    expect(
+      dialogWithin.getByRole('heading', { name: 'Edit Series' })
+    ).toBeInTheDocument();
     expect(dialogWithin.getByLabelText('Title')).toBeInTheDocument();
     expect(dialogWithin.getByLabelText('Description')).toBeInTheDocument();
     expect(dialogWithin.getByLabelText('Poster URL')).toBeInTheDocument();
@@ -509,7 +599,9 @@ describe('SeriesGrid component', () => {
     // No Tabs / Relations UI
     expect(dialogWithin.queryByRole('tab')).not.toBeInTheDocument();
     expect(dialogWithin.queryByText('Related Series')).not.toBeInTheDocument();
-    expect(dialogWithin.queryByRole('combobox', { name: 'Related Series' })).not.toBeInTheDocument();
+    expect(
+      dialogWithin.queryByRole('combobox', { name: 'Related Series' })
+    ).not.toBeInTheDocument();
   });
 
   it('renders top-level filter tabs (All, Featured, Ongoing) and indicates active tab', () => {
@@ -640,7 +732,9 @@ describe('SeriesGrid component', () => {
     expect(soloWithin.getByText('Ongoing')).toBeInTheDocument();
 
     // Frieren isFeatured: false, completed season -> should not have badges on its card
-    const frierenCard = screen.getByText("Frieren: Beyond Journey's End").closest('.group');
+    const frierenCard = screen
+      .getByText("Frieren: Beyond Journey's End")
+      .closest('.group');
     expect(frierenCard).not.toBeNull();
     const frierenWithin = within(frierenCard as HTMLElement);
     expect(frierenWithin.queryByText('Featured')).not.toBeInTheDocument();
@@ -662,9 +756,15 @@ describe('SeriesGrid component', () => {
       meta: { total: 0, page: 1, limit: SERIES_PAGE_LIMIT },
     });
 
-    expect(screen.getByText('No series match your filter.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Previous page' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Next page' })).not.toBeInTheDocument();
+    expect(
+      screen.getByText('No series match your filter.')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Previous page' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Next page' })
+    ).not.toBeInTheDocument();
     expect(screen.queryByTestId('series-grid')).not.toBeInTheDocument();
   });
 
@@ -694,12 +794,18 @@ describe('SeriesGrid component', () => {
       { page: 2, q: undefined, genre: undefined, tab: undefined }
     );
 
-    await user.click(screen.getByRole('button', { name: 'Delete Solo Leveling' }));
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Delete Solo Leveling' })
+    );
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' })
+    );
 
     await waitFor(() => expect(deleteSeries).toHaveBeenCalledWith('series-1'));
 
-    const navigations = mockNavigate.mock.calls.map((call) => call[0].search({ page: 2 }));
+    const navigations = mockNavigate.mock.calls.map((call) =>
+      call[0].search({ page: 2 })
+    );
     expect(navigations).toContainEqual({ page: 1 });
   });
 
@@ -720,15 +826,22 @@ describe('SeriesGrid component', () => {
     );
 
     await waitFor(() =>
-      expect(updateSeries).toHaveBeenCalledWith('series-1', { isFeatured: true })
+      expect(updateSeries).toHaveBeenCalledWith('series-1', {
+        isFeatured: true,
+      })
     );
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('does not revert or overwrite typed input when search.q changes from in-flight debounced navigation', () => {
     vi.useFakeTimers();
-    const { queryClient, rerender } = renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined });
-    const input = screen.getByPlaceholderText('Filter series...') as HTMLInputElement;
+    const { queryClient, rerender } = renderSeriesGrid(mockSeriesResponse, {
+      page: 1,
+      q: undefined,
+    });
+    const input = screen.getByPlaceholderText(
+      'Filter series...'
+    ) as HTMLInputElement;
 
     // User types 'Solo'
     fireEvent.change(input, { target: { value: 'Solo' } });
@@ -748,7 +861,8 @@ describe('SeriesGrid component', () => {
     // Route finishes updating and search.q becomes 'Solo'
     const newSearch = { page: 1, q: 'Solo' };
     queryClient.setQueryData(
-      seriesListQueryOptions({ ...newSearch, limit: SERIES_PAGE_LIMIT }).queryKey,
+      seriesListQueryOptions({ ...newSearch, limit: SERIES_PAGE_LIMIT })
+        .queryKey,
       mockSeriesResponse
     );
     mockSearchState = newSearch;
@@ -765,8 +879,14 @@ describe('SeriesGrid component', () => {
       ...mockSeriesResponse,
       meta: { total: 25, page: 1, limit: SERIES_PAGE_LIMIT },
     };
-    const { user } = renderSeriesGrid(pagedResponse, { page: 1, q: undefined, genre: 'sci-fi' });
-    const input = screen.getByPlaceholderText('Filter series...') as HTMLInputElement;
+    const { user } = renderSeriesGrid(pagedResponse, {
+      page: 1,
+      q: undefined,
+      genre: 'sci-fi',
+    });
+    const input = screen.getByPlaceholderText(
+      'Filter series...'
+    ) as HTMLInputElement;
 
     // User types 'hunter'
     await user.type(input, 'hunter');
@@ -780,18 +900,26 @@ describe('SeriesGrid component', () => {
       search: expect.any(Function),
     });
     const tabSearchFn = mockNavigate.mock.calls[0][0].search;
-    expect(
-      tabSearchFn({ genre: 'sci-fi', page: 1, tab: undefined })
-    ).toEqual({ genre: 'sci-fi', page: 1, tab: 'featured' });
+    expect(tabSearchFn({ genre: 'sci-fi', page: 1, tab: undefined })).toEqual({
+      genre: 'sci-fi',
+      page: 1,
+      tab: 'featured',
+    });
 
     // Debounce fires after typing settles, spreading current search state
     await waitFor(() => {
-      const replaceCalls = mockNavigate.mock.calls.filter((call) => call[0].replace);
+      const replaceCalls = mockNavigate.mock.calls.filter(
+        (call) => call[0].replace
+      );
       expect(replaceCalls.length).toBeGreaterThan(0);
     });
-    const replaceCalls = mockNavigate.mock.calls.filter((call) => call[0].replace);
+    const replaceCalls = mockNavigate.mock.calls.filter(
+      (call) => call[0].replace
+    );
     const debouncedSearchFn = replaceCalls[0][0].search;
-    expect(debouncedSearchFn({ genre: 'sci-fi', page: 1, tab: 'featured' })).toEqual({
+    expect(
+      debouncedSearchFn({ genre: 'sci-fi', page: 1, tab: 'featured' })
+    ).toEqual({
       genre: 'sci-fi',
       page: 1,
       tab: 'featured',
@@ -877,14 +1005,20 @@ describe('SeriesGrid component', () => {
   });
 
   it('updates search input when search.q changes externally (e.g. back button navigation)', () => {
-    const { queryClient, rerender } = renderSeriesGrid(mockSeriesResponse, { page: 1, q: undefined });
-    const input = screen.getByPlaceholderText('Filter series...') as HTMLInputElement;
+    const { queryClient, rerender } = renderSeriesGrid(mockSeriesResponse, {
+      page: 1,
+      q: undefined,
+    });
+    const input = screen.getByPlaceholderText(
+      'Filter series...'
+    ) as HTMLInputElement;
     expect(input.value).toBe('');
 
     // External URL change (e.g. Back button)
     const externalSearch = { page: 1, q: 'Frieren' };
     queryClient.setQueryData(
-      seriesListQueryOptions({ ...externalSearch, limit: SERIES_PAGE_LIMIT }).queryKey,
+      seriesListQueryOptions({ ...externalSearch, limit: SERIES_PAGE_LIMIT })
+        .queryKey,
       mockSeriesResponse
     );
     mockSearchState = externalSearch;
@@ -903,7 +1037,12 @@ describe('SeriesGrid loading state', () => {
   });
 
   function renderLoadingGrid() {
-    mockSearchState = { page: 1, q: undefined, genre: undefined, tab: undefined };
+    mockSearchState = {
+      page: 1,
+      q: undefined,
+      genre: undefined,
+      tab: undefined,
+    };
     mockNavigate.mockReset();
     // Keep the series catalog query pending so `isLoading` stays true.
     const fetchSpy = vi

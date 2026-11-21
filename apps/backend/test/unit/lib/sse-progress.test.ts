@@ -18,8 +18,15 @@ describe("sse progress throttle", () => {
   it("emits after throttle window even without percent change (unknown total)", () => {
     const t = createProgressThrottle();
     t.markEmitted({ loaded: 1, total: null, percent: null }, 0);
-    expect(t.shouldEmit({ loaded: 2, total: null, percent: null }, 10)).toBe(false);
-    expect(t.shouldEmit({ loaded: 2, total: null, percent: null }, SSE_PROGRESS_THROTTLE_MS + 1)).toBe(true);
+    expect(t.shouldEmit({ loaded: 2, total: null, percent: null }, 10)).toBe(
+      false,
+    );
+    expect(
+      t.shouldEmit(
+        { loaded: 2, total: null, percent: null },
+        SSE_PROGRESS_THROTTLE_MS + 1,
+      ),
+    ).toBe(true);
   });
 
   it("suppresses rapid same-percent bursts", () => {
@@ -28,7 +35,10 @@ describe("sse progress throttle", () => {
     let now = 0;
     for (let i = 0; i < 60; i++) {
       const p = { loaded: i, total: 100000, percent: 0 };
-      if (t.shouldEmit(p, now)) { emitted += 1; t.markEmitted(p, now); }
+      if (t.shouldEmit(p, now)) {
+        emitted += 1;
+        t.markEmitted(p, now);
+      }
       now += 5; // 5ms apart, same percent
     }
     expect(emitted).toBeLessThan(10);

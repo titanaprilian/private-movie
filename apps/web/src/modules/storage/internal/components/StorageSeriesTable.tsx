@@ -83,7 +83,10 @@ export function StorageSeriesTable({
           </p>
         </ChunkyTableBody>
       ) : filteredSeries.length === 0 ? (
-        <ChunkyCard className="p-8 text-center" data-testid="series-empty-state">
+        <ChunkyCard
+          className="p-8 text-center"
+          data-testid="series-empty-state"
+        >
           <p className="font-display font-bold text-lg text-[var(--ink)]">
             No series found
           </p>
@@ -128,11 +131,13 @@ export function StorageSeriesTable({
                     {item.title}
                   </div>
                   <div className="lg:hidden mt-1 font-mono text-xs font-bold text-[var(--ink)]">
-                    {item.s3SourceCount} file{item.s3SourceCount === 1 ? '' : 's'}
+                    {item.s3SourceCount} file
+                    {item.s3SourceCount === 1 ? '' : 's'}
                     {' · '}
                     {formatDualBytes(item.s3SizeBytes)}
                     {' · '}
-                    {item.seasons.length} season{item.seasons.length === 1 ? '' : 's'}
+                    {item.seasons.length} season
+                    {item.seasons.length === 1 ? '' : 's'}
                   </div>
                 </ChunkyTableCell>
 

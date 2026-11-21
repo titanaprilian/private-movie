@@ -15,19 +15,25 @@ describe("MediaScraper Registry", () => {
   });
 
   it("returns null when no provider matches the URL", () => {
-    expect(MediaScraper.getProviderForUrl("https://unknown.com/video")).toBeNull();
+    expect(
+      MediaScraper.getProviderForUrl("https://unknown.com/video"),
+    ).toBeNull();
   });
 
   it("returns registered provider when URL matches canHandle", () => {
     MediaScraper.registerProvider(dummyProvider);
-    const provider = MediaScraper.getProviderForUrl("https://example.com/video");
+    const provider = MediaScraper.getProviderForUrl(
+      "https://example.com/video",
+    );
     expect(provider).toBe(dummyProvider);
     expect(provider?.name).toBe("dummy");
   });
 
   it("supports instance-based provider registration and lookup", () => {
     const scraper = new MediaScraper([dummyProvider]);
-    expect(scraper.getProviderForUrl("https://example.com/item")).toBe(dummyProvider);
+    expect(scraper.getProviderForUrl("https://example.com/item")).toBe(
+      dummyProvider,
+    );
     expect(scraper.getProviderForUrl("https://other.com/item")).toBeNull();
   });
 });

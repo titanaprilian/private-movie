@@ -73,8 +73,14 @@ describe("archive ingest contracts", () => {
       items: [],
     };
     const events: ArchiveIngestSseEvent[] = [
-      { type: "download_progress", data: { loaded: 10, total: 100, percent: 10 } },
-      { type: "extract_progress", data: { currentFile: "E01.mkv", totalFiles: 12 } },
+      {
+        type: "download_progress",
+        data: { loaded: 10, total: 100, percent: 10 },
+      },
+      {
+        type: "extract_progress",
+        data: { currentFile: "E01.mkv", totalFiles: 12 },
+      },
       { type: "preview_ready", data: previewResponse },
       {
         type: "upload_progress",
@@ -87,7 +93,10 @@ describe("archive ingest contracts", () => {
           total: 10,
         },
       },
-      { type: "file_completed", data: { episodeId: "ep-1", videoSourceId: "vs-1" } },
+      {
+        type: "file_completed",
+        data: { episodeId: "ep-1", videoSourceId: "vs-1" },
+      },
       { type: "all_completed", data: { success: true, count: 2 } },
     ];
     expect(events).toHaveLength(6);

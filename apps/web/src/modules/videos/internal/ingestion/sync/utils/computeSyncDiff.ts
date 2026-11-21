@@ -34,7 +34,9 @@ export function computeSyncDiff(
     const badgeText = isNew
       ? `New (${incomingEpisodeCount} ep)`
       : `Existing (${localEpisodeCount} eps)`;
-    const badgeType: SeasonDiffItem['badgeType'] = isNew ? 'new-season' : 'existing';
+    const badgeType: SeasonDiffItem['badgeType'] = isNew
+      ? 'new-season'
+      : 'existing';
 
     return {
       seasonDiffs: [
@@ -69,7 +71,8 @@ export function computeSyncDiff(
         (s) =>
           s.tmdbSeason == null &&
           (s.title?.toLowerCase() === season.name?.toLowerCase() ||
-            s.title?.toLowerCase() === `season ${season.seasonNumber}`.toLowerCase())
+            s.title?.toLowerCase() ===
+              `season ${season.seasonNumber}`.toLowerCase())
       );
     }
 
@@ -80,7 +83,11 @@ export function computeSyncDiff(
       localEpisodeCount =
         localSeason.episodes?.length ??
         localEpisodes.filter((e) => e.seasonId === localSeason!.id).length;
-    } else if (localSeasons.length === 0 && season.seasonNumber === 1 && localEpisodes.length > 0) {
+    } else if (
+      localSeasons.length === 0 &&
+      season.seasonNumber === 1 &&
+      localEpisodes.length > 0
+    ) {
       // Single-season series without explicit season records
       localEpisodeCount = localEpisodes.length;
     } else {
@@ -121,7 +128,10 @@ export function computeSyncDiff(
     };
   });
 
-  const totalNewEpisodes = seasonDiffs.reduce((acc, item) => acc + item.diff, 0);
+  const totalNewEpisodes = seasonDiffs.reduce(
+    (acc, item) => acc + item.diff,
+    0
+  );
   const totalNewSeasons = seasonDiffs.filter((item) => item.isNewSeason).length;
 
   return {

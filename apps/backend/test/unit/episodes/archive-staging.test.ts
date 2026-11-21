@@ -16,7 +16,11 @@ describe("archive-staging sessions", () => {
   const sandboxes: string[] = [];
 
   afterEach(async () => {
-    await Promise.all(sandboxes.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+    await Promise.all(
+      sandboxes
+        .splice(0)
+        .map((dir) => rm(dir, { recursive: true, force: true })),
+    );
   });
 
   async function makeBase(): Promise<string> {
@@ -64,7 +68,9 @@ describe("archive-staging sessions", () => {
   });
 
   it("returns zero counts when the base dir does not exist", async () => {
-    const result = await pruneExpiredArchiveStagingSessions(join(tmpdir(), "no-such-dir-xyz"));
+    const result = await pruneExpiredArchiveStagingSessions(
+      join(tmpdir(), "no-such-dir-xyz"),
+    );
     expect(result).toEqual({ scanned: 0, removed: 0 });
   });
 });

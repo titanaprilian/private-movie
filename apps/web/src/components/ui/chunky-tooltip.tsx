@@ -34,11 +34,10 @@ const ChunkyTooltipContent = React.forwardRef<
 );
 ChunkyTooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
-export interface ChunkyTooltipProps
-  extends Omit<
-    React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>,
-    'children'
-  > {
+export interface ChunkyTooltipProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>,
+  'children'
+> {
   /** Tooltip body text or node. */
   content: React.ReactNode;
   /** Trigger element — rendered as-child so hover/focus handlers attach to it. */

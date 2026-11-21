@@ -12,13 +12,14 @@ Copy and fill in `<MODULE_NAME>` and `<TARGET_TIER>`:
 I want you to refactor the `@apps/backend/src/modules/<MODULE_NAME>` module to strictly follow our 3-tier architecture and Deep Modules conventions documented in `apps/backend/AGENTS.md`.
 
 ### Requirements:
+
 1. **Target Tier**: Refactor this module into **<TARGET_TIER>**.
 2. **Root Cleanliness**: Ensure the module root contains ONLY:
    - `index.ts`: The public protocol-agnostic seam.
    - `http.ts`: The Elysia router adapter.
    - `schemas.ts`: Extracted TypeBox schemas and OpenAPI definitions (if extracted).
    - `internal/`: Private implementation.
-   Move any stray root files (schedulers, subsystems, helpers) into `internal/`.
+     Move any stray root files (schedulers, subsystems, helpers) into `internal/`.
 3. **Thin HTTP Adapter**:
    - `http.ts` must contain only routing declarations, schema validations, calls to services/repositories, and `successResponse`/`errorResponse` wrappers.
    - Forbid direct database queries, third-party `fetch` calls, streaming pipes, crypto, or HTML manipulation inside `http.ts`.
@@ -52,6 +53,7 @@ Below are ready-to-copy prompts tailored for each specific module in the backend
 I want you to refactor the `apps/backend/src/modules/health` module to follow the Tier 1 conventions in `apps/backend/AGENTS.md`.
 
 ### Context & Goals:
+
 - Currently, `src/modules/health/http.ts` delegates to `src/modules/health/internal/health-http.ts`, where an Elysia router is defined inside `internal/`.
 - Per `apps/backend/AGENTS.md`, defining Elysia routes inside `internal/` outside of sub-feature `routes.ts` is strictly forbidden.
 - Move the Elysia route definition directly into `src/modules/health/http.ts`.
@@ -69,6 +71,7 @@ I want you to refactor the `apps/backend/src/modules/health` module to follow th
 I want you to refactor the `apps/backend/src/modules/genres` module to follow the Tier 1 conventions in `apps/backend/AGENTS.md`.
 
 ### Context & Goals:
+
 - The module has `internal/genres-repository.ts` and `internal/errors.ts`.
 - Drop redundant prefixes: rename `internal/genres-repository.ts` to `internal/repository.ts`.
 - Extract TypeBox schemas and OpenAPI definitions from `http.ts` into `schemas.ts` at the module root (`src/modules/genres/schemas.ts`) so `http.ts` stays under 100 lines as a clean routing table.
@@ -85,6 +88,7 @@ I want you to refactor the `apps/backend/src/modules/genres` module to follow th
 I want you to refactor the `apps/backend/src/modules/dashboard` module to follow the Tier 1 conventions in `apps/backend/AGENTS.md`.
 
 ### Context & Goals:
+
 - The module contains `internal/dashboard-service.ts` which executes direct SQL queries.
 - Drop redundant prefixes: rename `internal/dashboard-service.ts` to `internal/service.ts` (or `internal/repository.ts` if purely Drizzle queries).
 - Update imports in `http.ts` and `index.ts`.
@@ -100,6 +104,7 @@ I want you to refactor the `apps/backend/src/modules/dashboard` module to follow
 I want you to refactor the `apps/backend/src/modules/storage` module to follow the Tier 2 conventions in `apps/backend/AGENTS.md`.
 
 ### Context & Goals:
+
 - Currently, `internal/` contains `storage-service.ts`, `minio-orchestrator.ts`, and `minio-status.ts`.
 - Group by technical role inside `internal/`:
   - `internal/services/` for business logic and MinIO orchestration (`storage-service.ts`, `minio-orchestrator.ts`, `minio-status.ts`).
@@ -121,6 +126,7 @@ I want you to refactor the `apps/backend/src/modules/storage` module to follow t
 I want you to refactor the `apps/backend/src/modules/authentication` module to follow the Tier 2 conventions in `apps/backend/AGENTS.md`.
 
 ### Context & Goals:
+
 - Currently, `internal/` contains `authentication-service.ts`, `jwt.ts`, and `password.ts`.
 - Group by technical role inside `internal/`:
   - `internal/services/` for `auth-service.ts`.
@@ -141,6 +147,7 @@ I want you to refactor the `apps/backend/src/modules/authentication` module to f
 I want you to refactor the `apps/backend/src/modules/series` module to follow the Tier 3 conventions in `apps/backend/AGENTS.md`.
 
 ### Context & Goals:
+
 - Current problems:
   - `archive-subsystem.ts` sits at the module root outside `internal/`.
   - `http.ts` is 656 lines long, mixing catalog CRUD, TMDB preview/import, seasons creation, and archive ingest jobs.
@@ -170,6 +177,7 @@ I want you to refactor the `apps/backend/src/modules/series` module to follow th
 I want you to refactor the `apps/backend/src/modules/media` module to follow the Tier 3 conventions in `apps/backend/AGENTS.md`.
 
 ### Context & Goals:
+
 - Current problems:
   - `scheduler.ts` and `scheduler-config.ts` sit at the module root outside `internal/`.
   - `http.ts` is an 800-line god file containing raw WebCrypto operations, reverse streaming proxies, relay proxies, HTML sanitization, and source reachability checks.
@@ -198,6 +206,7 @@ I want you to refactor the `apps/backend/src/modules/media` module to follow the
 I want you to refactor the `apps/backend/src/modules/episodes` module to follow the Tier 3 conventions in `apps/backend/AGENTS.md`.
 
 ### Context & Goals:
+
 - Currently, `internal/` mixes ingest orchestration, archive extraction, matching, and staging in a flat directory (`archive-extractor.ts`, `archive-matcher.ts`, `archive-staging.ts`, `ingest-service.ts`).
 - Organize into sub-features:
   - `internal/catalog/`: Episode CRUD, ordering, repository queries. Sub-router in `catalog/routes.ts`.

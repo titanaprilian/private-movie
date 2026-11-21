@@ -16,19 +16,24 @@ describe("AuthenticationService.verifyAccessToken", () => {
   });
 
   it("throws UnauthorizedError when token is invalid or garbage", async () => {
-    await expect(authService.verifyAccessToken("invalid-token-string")).rejects.toThrow(
-      UnauthorizedError
-    );
+    await expect(
+      authService.verifyAccessToken("invalid-token-string"),
+    ).rejects.toThrow(UnauthorizedError);
   });
 
   it("throws UnauthorizedError when token is missing or empty", async () => {
-    await expect(authService.verifyAccessToken("")).rejects.toThrow(UnauthorizedError);
+    await expect(authService.verifyAccessToken("")).rejects.toThrow(
+      UnauthorizedError,
+    );
   });
 
   it("throws UnauthorizedError when token is expired", async () => {
-    const expiredToken = signTestToken({ sub: "user-123" }, { expiresInSeconds: -10 });
+    const expiredToken = signTestToken(
+      { sub: "user-123" },
+      { expiresInSeconds: -10 },
+    );
     await expect(authService.verifyAccessToken(expiredToken)).rejects.toThrow(
-      UnauthorizedError
+      UnauthorizedError,
     );
   });
 
@@ -36,22 +41,28 @@ describe("AuthenticationService.verifyAccessToken", () => {
     const validToken = signTestToken({ sub: "user-123" });
     const tamperedToken = `${validToken.slice(0, -5)}xxxxx`;
     await expect(authService.verifyAccessToken(tamperedToken)).rejects.toThrow(
-      UnauthorizedError
+      UnauthorizedError,
     );
   });
 
   it("throws UnauthorizedError when payload sub is missing", async () => {
     const tokenWithoutSub = signTestToken({ email: "nosub@example.com" });
-    await expect(authService.verifyAccessToken(tokenWithoutSub)).rejects.toThrow(
-      UnauthorizedError
-    );
+    await expect(
+      authService.verifyAccessToken(tokenWithoutSub),
+    ).rejects.toThrow(UnauthorizedError);
   });
 
   it("throws UnauthorizedError when token algorithm header is not HS256", async () => {
-    const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
-    const payload = Buffer.from(JSON.stringify({ sub: "user-123" })).toString("base64url");
+    const header = Buffer.from(
+      JSON.stringify({ alg: "none", typ: "JWT" }),
+    ).toString("base64url");
+    const payload = Buffer.from(JSON.stringify({ sub: "user-123" })).toString(
+      "base64url",
+    );
     const token = `${header}.${payload}.sig`;
 
-    await expect(authService.verifyAccessToken(token)).rejects.toThrow(UnauthorizedError);
+    await expect(authService.verifyAccessToken(token)).rejects.toThrow(
+      UnauthorizedError,
+    );
   });
 });

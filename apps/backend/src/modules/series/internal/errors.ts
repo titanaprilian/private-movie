@@ -15,7 +15,7 @@ export class SeriesHighlightWithoutOngoingError extends Error {
 export class TmdbFetchError extends Error {
   constructor(
     message: string,
-    public readonly status?: number
+    public readonly status?: number,
   ) {
     super(message);
     this.name = "TmdbFetchError";

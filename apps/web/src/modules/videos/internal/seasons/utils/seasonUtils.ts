@@ -23,7 +23,9 @@ export function getNextSeasonNumber(seasons: SeasonLike[]): number {
   return Math.max(...numbers) + 1;
 }
 
-export function detectProviderFromUrl(url: string): 'otakudesu' | 'dramula' | null {
+export function detectProviderFromUrl(
+  url: string
+): 'otakudesu' | 'dramula' | null {
   if (!url) return null;
   const lower = url.toLowerCase();
   if (lower.includes('otakudesu')) return 'otakudesu';

@@ -20,7 +20,7 @@ function getEncryptionKey(): Buffer {
  */
 export function encryptCredential(
   plaintext: string,
-  customKeyHex?: string
+  customKeyHex?: string,
 ): string {
   if (plaintext === undefined || plaintext === null) {
     throw new Error("Plaintext cannot be null or undefined");
@@ -55,7 +55,7 @@ export function encryptCredential(
  */
 export function decryptCredential(
   encryptedPayload: string,
-  customKeyHex?: string
+  customKeyHex?: string,
 ): string {
   if (!encryptedPayload) {
     throw new Error("Encrypted payload cannot be empty");
@@ -63,7 +63,9 @@ export function decryptCredential(
 
   const parts = encryptedPayload.split(":");
   if (parts.length !== 3) {
-    throw new Error("Invalid encrypted payload format (expected iv:authTag:ciphertext)");
+    throw new Error(
+      "Invalid encrypted payload format (expected iv:authTag:ciphertext)",
+    );
   }
 
   const [ivHex, authTagHex, cipherHex] = parts;

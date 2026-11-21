@@ -7,7 +7,8 @@ export function IngestionProgressBar({
   size = 'md',
   testId,
 }: IngestionProgressBarProps) {
-  const normalized = value == null ? null : Math.max(0, Math.min(100, Math.round(value)));
+  const normalized =
+    value == null ? null : Math.max(0, Math.min(100, Math.round(value)));
   const sizeClasses = size === 'sm' ? 'h-4 p-0.5' : 'h-5 p-1';
   const fillTone =
     tone === 'blue'
@@ -20,7 +21,11 @@ export function IngestionProgressBar({
       role="progressbar"
       aria-label={ariaLabel}
       {...(normalized != null
-        ? { 'aria-valuenow': normalized, 'aria-valuemin': 0, 'aria-valuemax': 100 }
+        ? {
+            'aria-valuenow': normalized,
+            'aria-valuemin': 0,
+            'aria-valuemax': 100,
+          }
         : {})}
       {...(testId ? { 'data-testid': testId } : {})}
     >

@@ -55,13 +55,12 @@ export function UrlStep2({
         <ChunkyCard className="flex items-center justify-between gap-2 flex-wrap p-3 text-sm font-bold text-[var(--muted)]">
           <div className="flex items-center gap-4 flex-wrap">
             <span>
-              Total URLs: <strong className="text-[var(--ink)]">{urlTotalCount}</strong>
+              Total URLs:{' '}
+              <strong className="text-[var(--ink)]">{urlTotalCount}</strong>
             </span>
             <span>
               Matched:{' '}
-              <strong className="text-[var(--green)]">
-                {urlMatchedCount}
-              </strong>
+              <strong className="text-[var(--green)]">{urlMatchedCount}</strong>
             </span>
             <span>
               Needs Review:{' '}
@@ -104,9 +103,7 @@ export function UrlStep2({
                   {item.needsReview && !item.isIgnored && (
                     <WarningBadge>Needs Review</WarningBadge>
                   )}
-                  {item.isIgnored && (
-                    <PillBadge>Ignored</PillBadge>
-                  )}
+                  {item.isIgnored && <PillBadge>Ignored</PillBadge>}
                 </div>
 
                 <ChunkyButton
@@ -161,11 +158,7 @@ export function UrlStep2({
       </ChunkyDialogBody>
 
       <ChunkyDialogFooter>
-        <ChunkyButton
-          type="button"
-          variant="outline"
-          onClick={onBack}
-        >
+        <ChunkyButton type="button" variant="outline" onClick={onBack}>
           Back
         </ChunkyButton>
         <ChunkyButton

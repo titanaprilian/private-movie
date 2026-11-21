@@ -29,8 +29,12 @@ describe('ChunkyActionMenu primitive', () => {
     expect(menu).toBeInTheDocument();
     expect(menu).toHaveClass('w-[180px]', 'border-b-4');
     expect(menu.className).toMatch('shadow-');
-    expect(within(menu).getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
-    expect(within(menu).getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument();
+    expect(
+      within(menu).getByRole('menuitem', { name: 'Edit' })
+    ).toBeInTheDocument();
+    expect(
+      within(menu).getByRole('menuitem', { name: 'Delete' })
+    ).toBeInTheDocument();
   });
 
   it('styles danger items in red', async () => {

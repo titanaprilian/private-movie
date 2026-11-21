@@ -1,24 +1,31 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createMediaService, EpisodeFetchError, type FetchFn } from "@repo/media-service";
+import {
+  createMediaService,
+  EpisodeFetchError,
+  type FetchFn,
+} from "@repo/media-service";
 import { EpisodeParseError, MirrorResolveError } from "@repo/media-scraper";
 
 const sampleAHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
-  "utf8"
+  "utf8",
 );
 const sampleBHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
-  "utf8"
+  "utf8",
 );
 const sampleSeriesHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
-  "utf8"
+  "utf8",
 );
 const sampleDirectVideoHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/episodes/sample-direct-video.html"),
-  "utf8"
+  resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-direct-video.html",
+  ),
+  "utf8",
 );
 
 const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
@@ -78,7 +85,8 @@ describe("previewScrape unit service", () => {
             return sampleAHtml;
           }
           if (
-            url === "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+            url ===
+            "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
           ) {
             return sampleSeriesHtml;
           }
@@ -99,7 +107,7 @@ describe("previewScrape unit service", () => {
 
     expect(result.episode).toBeDefined();
     expect(result.episode.title).toBe(
-      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia",
     );
   });
 
@@ -115,9 +123,10 @@ describe("previewScrape unit service", () => {
 
     await expect(
       service.previewScrape({
-        sourceUrl: "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/",
+        sourceUrl:
+          "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/",
         source: "otakudesu",
-      })
+      }),
     ).rejects.toThrow(EpisodeFetchError);
   });
 
@@ -126,7 +135,8 @@ describe("previewScrape unit service", () => {
       fetchHtml: {
         get: async (url) => {
           if (
-            url === "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+            url ===
+            "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
           ) {
             return sampleSeriesHtml;
           }
@@ -147,10 +157,10 @@ describe("previewScrape unit service", () => {
 
     expect(result.episode).toBeDefined();
     expect(result.episode.title).toBe(
-      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia"
+      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru Episode 7 Subtitle Indonesia",
     );
     expect(result.episode.sourceUrl).toBe(
-      "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/"
+      "https://otakudesu.blog/episode/tstjwgcm-episode-7-sub-indo/",
     );
     expect(result.episode.source).toBe("otakudesu");
     expect(result.episode.videoSources).toBeInstanceOf(Array);
@@ -165,13 +175,13 @@ describe("previewScrape unit service", () => {
 
     expect(result.series).not.toBeNull();
     expect(result.series?.sourceUrl).toBe(
-      "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+      "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/",
     );
     expect(result.series?.title).toBe(
-      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru"
+      "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru",
     );
     expect(result.series?.posterUrl).toBe(
-      "https://otakudesu.blog/wp-content/uploads/2026/07/Tsuihou-sareta-Tensei-Juukishi-wa-Game-Chishiki-de-Musou-suru.jpg"
+      "https://otakudesu.blog/wp-content/uploads/2026/07/Tsuihou-sareta-Tensei-Juukishi-wa-Game-Chishiki-de-Musou-suru.jpg",
     );
 
     expect(result.warnings).toEqual([]);
@@ -237,7 +247,7 @@ describe("previewScrape unit service", () => {
 
     const htmlWithoutAnimePageUrl = sampleAHtml.replace(
       /class="prevnext".*?See All Episodes.*?<\/a>/s,
-      ""
+      "",
     );
 
     const result = await service.previewScrape({
@@ -259,7 +269,7 @@ describe("previewScrape unit service", () => {
         sourceUrl: "https://otakudesu.blog/episode/invalid/",
         source: "otakudesu",
         html: "<html><body>Invalid</body></html>",
-      })
+      }),
     ).rejects.toThrow(EpisodeParseError);
   });
 });
@@ -270,8 +280,7 @@ describe("previewScrape dramula videobello hash resolution", () => {
   // by the end of previewScrape — assertions target the normalized form.
   const RESOLVED_URL =
     "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.bf0e5daa?source=0";
-  const NORMALIZED_RESOLVED_URL =
-    "/embed/ZXBpc29kZToxMDM4Nw.bf0e5daa?source=0";
+  const NORMALIZED_RESOLVED_URL = "/embed/ZXBpc29kZToxMDM4Nw.bf0e5daa?source=0";
 
   // Minimal Dramula episode page: no iframe node, SvelteKit JSON payload with
   // a matching episode id -> parseEpisode emits a `.00000000` placeholder source.
@@ -330,10 +339,10 @@ describe("previewScrape dramula videobello hash resolution", () => {
     });
 
     expect(
-      result.episode.videoSources.some((vs) => vs.url.includes(".00000000"))
+      result.episode.videoSources.some((vs) => vs.url.includes(".00000000")),
     ).toBe(false);
     expect(result.episode.videoSources).toContainEqual(
-      expect.objectContaining({ type: "embed", url: NORMALIZED_RESOLVED_URL })
+      expect.objectContaining({ type: "embed", url: NORMALIZED_RESOLVED_URL }),
     );
     expect(result.warnings).toEqual([]);
   });
@@ -353,10 +362,10 @@ describe("previewScrape dramula videobello hash resolution", () => {
     });
 
     expect(
-      result.episode.videoSources.some((vs) => vs.url.includes(".00000000"))
+      result.episode.videoSources.some((vs) => vs.url.includes(".00000000")),
     ).toBe(true);
     expect(result.warnings).toContain(
-      "Failed to resolve videobello embed hash; sources may not play correctly"
+      "Failed to resolve videobello embed hash; sources may not play correctly",
     );
   });
 
@@ -372,10 +381,10 @@ describe("previewScrape dramula videobello hash resolution", () => {
     });
 
     expect(
-      result.episode.videoSources.some((vs) => vs.url.includes(".00000000"))
+      result.episode.videoSources.some((vs) => vs.url.includes(".00000000")),
     ).toBe(true);
     expect(result.warnings).toContain(
-      "Failed to resolve videobello embed hash; sources may not play correctly"
+      "Failed to resolve videobello embed hash; sources may not play correctly",
     );
   });
 
@@ -405,7 +414,7 @@ describe("previewScrape dramula videobello hash resolution", () => {
 
     expect(browserFnCalls).toBe(0);
     expect(result.episode.videoSources).toContainEqual(
-      expect.objectContaining({ type: "embed", url: NORMALIZED_RESOLVED_URL })
+      expect.objectContaining({ type: "embed", url: NORMALIZED_RESOLVED_URL }),
     );
     expect(result.warnings).toEqual([]);
   });
@@ -425,9 +434,16 @@ describe("previewScrape mirror resolution", () => {
 
     expect(result.episode.videoSources).toHaveLength(6);
     expect(result.episode.videoSources.map((vs) => vs.type)).toEqual([
-      "direct", "embed", "embed", "embed", "embed", "embed"
+      "direct",
+      "embed",
+      "embed",
+      "embed",
+      "embed",
+      "embed",
     ]);
-    expect(result.episode.videoSources.find((vs) => vs.type === "direct")).toEqual({
+    expect(
+      result.episode.videoSources.find((vs) => vs.type === "direct"),
+    ).toEqual({
       type: "direct",
       url: "https://archive.org/download/a-menyadari-bahwdaw/Otakudesu.io_MST.S3--02_720p.mp4",
       label: "Otakudesu.io_MST.S3--02_720p",
@@ -448,11 +464,11 @@ describe("previewScrape mirror resolution", () => {
     });
 
     expect(result.episode.videoSources.map((vs) => vs.label)).toContain(
-      "Otakudesu.io_MST.S3--02_720p"
+      "Otakudesu.io_MST.S3--02_720p",
     );
-    expect(
-      result.episode.videoSources.some((vs) => vs.type === "direct")
-    ).toBe(true);
+    expect(result.episode.videoSources.some((vs) => vs.type === "direct")).toBe(
+      true,
+    );
   });
 
   it("throws MirrorResolveError when all mirrors fail to resolve", async () => {
@@ -462,10 +478,11 @@ describe("previewScrape mirror resolution", () => {
 
     await expect(
       service.previewScrape({
-        sourceUrl: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+        sourceUrl:
+          "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
         source: "otakudesu",
         html: sampleBHtml,
-      })
+      }),
     ).rejects.toThrow(MirrorResolveError);
   });
 
@@ -476,17 +493,18 @@ describe("previewScrape mirror resolution", () => {
 
     await expect(
       service.previewScrape({
-        sourceUrl: "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
+        sourceUrl:
+          "https://otakudesu.blog/episode/knoknn-s2-episode-6-sub-indo/",
         source: "otakudesu",
         html: sampleBHtml,
-      })
+      }),
     ).rejects.toThrow(/failed to fetch nonce/i);
   });
 
   it("falls back to the default embed source with a warning when AJAX actions are missing (direct sources still merged)", async () => {
     const htmlWithoutActions = sampleBHtml.replace(
       /<script>\s*window\.__x__nonce=null[\s\S]*?<\/script>/,
-      ""
+      "",
     );
     const service = createMediaService(null as never, {
       fetchHtml: buildMockFetchFn({}),
@@ -498,7 +516,9 @@ describe("previewScrape mirror resolution", () => {
       html: htmlWithoutActions,
     });
 
-    const directSrc = result.episode.videoSources.find((vs) => vs.type === "direct");
+    const directSrc = result.episode.videoSources.find(
+      (vs) => vs.type === "direct",
+    );
     expect(directSrc).toEqual({
       type: "direct",
       url: "https://archive.org/download/a-menyadari-bahwdaw/Otakudesu.io_MST.S3--02_720p.mp4",
@@ -506,14 +526,18 @@ describe("previewScrape mirror resolution", () => {
       quality: "720p",
     });
     expect(result.warnings).toContain(
-      "Failed to extract AJAX actions; mirror resolution skipped"
+      "Failed to extract AJAX actions; mirror resolution skipped",
     );
   });
 });
 
 describe("previewScrape direct video extraction", () => {
-  function buildDirectVideoFetchFn(options?: { failIframe?: boolean; failSeries?: boolean }): FetchFn {
-    const ANIME_URL = "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/";
+  function buildDirectVideoFetchFn(options?: {
+    failIframe?: boolean;
+    failSeries?: boolean;
+  }): FetchFn {
+    const ANIME_URL =
+      "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/";
     return {
       get: async (url) => {
         if (url === ANIME_URL) {
@@ -545,8 +569,12 @@ describe("previewScrape direct video extraction", () => {
       html: sampleAHtml,
     });
 
-    const embedSources = result.episode.videoSources.filter((vs) => vs.type === "embed");
-    const directSources = result.episode.videoSources.filter((vs) => vs.type === "direct");
+    const embedSources = result.episode.videoSources.filter(
+      (vs) => vs.type === "embed",
+    );
+    const directSources = result.episode.videoSources.filter(
+      (vs) => vs.type === "direct",
+    );
 
     expect(embedSources).toHaveLength(1);
     expect(embedSources[0]).toEqual({
@@ -584,7 +612,9 @@ describe("previewScrape direct video extraction", () => {
     });
     // no warning since sample-a has no mirrors to fall back to
     expect(result.warnings).toEqual([]);
-    expect(result.episode.videoSources.filter((vs) => vs.type === "direct")).toHaveLength(0);
+    expect(
+      result.episode.videoSources.filter((vs) => vs.type === "direct"),
+    ).toHaveLength(0);
   });
 
   it("handles no-video HTML gracefully (no direct sources added, no warning)", async () => {
@@ -593,7 +623,10 @@ describe("previewScrape direct video extraction", () => {
     const service = createMediaService(null as never, {
       fetchHtml: {
         get: async (url) => {
-          if (url === "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/") {
+          if (
+            url ===
+            "https://otakudesu.blog/anime/tsuihou-game-chishiki-suru-sub-indo/"
+          ) {
             return sampleSeriesHtml;
           }
           if (url.startsWith(ODVIDHIDE_EMBED_BASE)) {
@@ -611,13 +644,15 @@ describe("previewScrape direct video extraction", () => {
       html: sampleAHtml,
     });
 
-    const directSources = result.episode.videoSources.filter((vs) => vs.type === "direct");
+    const directSources = result.episode.videoSources.filter(
+      (vs) => vs.type === "direct",
+    );
     expect(directSources).toHaveLength(0);
     expect(result.warnings).toEqual([]);
 
     // embed source should still be present
     expect(result.episode.videoSources).toContainEqual(
-      expect.objectContaining({ type: "embed" })
+      expect.objectContaining({ type: "embed" }),
     );
   });
 });

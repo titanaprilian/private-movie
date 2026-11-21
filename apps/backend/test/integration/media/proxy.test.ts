@@ -85,7 +85,9 @@ describe("Reverse Proxy Route (/api/media/proxy/:domain/*)", () => {
     expect(html).toContain("player/app.js");
 
     // Link rewriting
-    expect(html).toContain('href="/api/media/proxy/vidhidepro.com/download/file123"');
+    expect(html).toContain(
+      'href="/api/media/proxy/vidhidepro.com/download/file123"',
+    );
 
     // Vidhide anti-clickjack CSS injection
     expect(html).toContain("#adbd");
@@ -147,7 +149,9 @@ describe("Reverse Proxy Route (/api/media/proxy/:domain/*)", () => {
     expect(response.status).toBe(206);
     expect(capturedUrl).toBe("https://cdn.vidhidepro.com/hls/master.m3u8");
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
-    expect(response.headers.get("content-type")).toBe("application/vnd.apple.mpegurl");
+    expect(response.headers.get("content-type")).toBe(
+      "application/vnd.apple.mpegurl",
+    );
     expect(response.headers.get("content-length")).toBe("38");
     expect(response.headers.get("content-range")).toBe("bytes 0-37/38");
     expect(response.headers.get("accept-ranges")).toBe("bytes");

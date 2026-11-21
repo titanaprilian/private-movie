@@ -109,21 +109,31 @@ describe("PATCH /seasons/:id", () => {
       method: "PATCH",
       path: `/seasons/${seasonRow.id}`,
       headers,
-      body: { title: "New Title", description: "Updated description", status: "ongoing" },
+      body: {
+        title: "New Title",
+        description: "Updated description",
+        status: "ongoing",
+      },
     });
 
     expect(result.status).toBe(200);
-    const data = (result.body as { data: SeasonPayload & { status: string } }).data;
+    const data = (result.body as { data: SeasonPayload & { status: string } })
+      .data;
     expect(data.id).toBe(seasonRow.id);
     expect(data.title).toBe("New Title");
     expect(data.description).toBe("Updated description");
     expect(data.status).toBe("ongoing");
 
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbRow.title).toBe("New Title");
     expect(dbRow.description).toBe("Updated description");
     expect(dbRow.status).toBe("ongoing");
-    expect(dbRow.updatedAt.getTime()).toBeGreaterThanOrEqual(dbRow.createdAt.getTime());
+    expect(dbRow.updatedAt.getTime()).toBeGreaterThanOrEqual(
+      dbRow.createdAt.getTime(),
+    );
   });
 
   it("allows clearing the description with null", async () => {
@@ -144,7 +154,10 @@ describe("PATCH /seasons/:id", () => {
     expect(result.status).toBe(200);
     expect(bodyData(result.body).description).toBeNull();
 
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbRow.description).toBeNull();
   });
 
@@ -164,13 +177,24 @@ describe("PATCH /seasons/:id", () => {
     });
 
     expect(result.status).toBe(200);
-    const data = (result.body as { data: SeasonPayload & { scraperUrl?: string; source?: string; episodeOffset?: number } }).data;
+    const data = (
+      result.body as {
+        data: SeasonPayload & {
+          scraperUrl?: string;
+          source?: string;
+          episodeOffset?: number;
+        };
+      }
+    ).data;
     expect(data.id).toBe(seasonRow.id);
     expect(data.scraperUrl).toBe("https://otakudesu.cloud/anime/ongoing-show");
     expect(data.source).toBe("otakudesu");
     expect(data.episodeOffset).toBe(24);
 
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbRow.scraperUrl).toBe("https://otakudesu.cloud/anime/ongoing-show");
     expect(dbRow.source).toBe("otakudesu");
     expect(dbRow.episodeOffset).toBe(24);
@@ -241,7 +265,10 @@ describe("DELETE /seasons/:id", () => {
     expect(result.status).toBe(409);
     expect(errorCode(result.body)).toBe("SEASON_NOT_EMPTY");
 
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbRow).toBeDefined();
   });
 
@@ -257,7 +284,10 @@ describe("DELETE /seasons/:id", () => {
 
     expect(result.status).toBe(200);
 
-    const [dbRow] = await db.select().from(seasons).where(eq(seasons.id, seasonRow.id));
+    const [dbRow] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, seasonRow.id));
     expect(dbRow).toBeUndefined();
   });
 });

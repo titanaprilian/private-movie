@@ -83,7 +83,9 @@ describe('VideoScrubber component', () => {
     const container = screen.getByTestId('video-scrubber');
 
     // Tooltip should not be visible before hover
-    expect(screen.queryByTestId('video-scrubber-tooltip')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('video-scrubber-tooltip')
+    ).not.toBeInTheDocument();
 
     // Mock getBoundingClientRect for scrubber container
     vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({
@@ -111,7 +113,9 @@ describe('VideoScrubber component', () => {
 
     // Mouse leave hides tooltip
     fireEvent.mouseLeave(container);
-    expect(screen.queryByTestId('video-scrubber-tooltip')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('video-scrubber-tooltip')
+    ).not.toBeInTheDocument();
   });
 
   it('seeking via input range or clicking updates current playback time', () => {

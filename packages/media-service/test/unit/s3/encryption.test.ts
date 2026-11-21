@@ -52,7 +52,7 @@ describe("AES-256-GCM Encryption Module", () => {
 
   it("throws error for invalid format", () => {
     expect(() => decryptCredential("not-valid-hex", testKey)).toThrow(
-      "Invalid encrypted payload format"
+      "Invalid encrypted payload format",
     );
   });
 

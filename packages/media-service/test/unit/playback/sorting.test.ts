@@ -33,7 +33,12 @@ describe("sortVideoSources", () => {
     const sources = [
       { id: "1", type: "embed", url: "https://embed.com/1", quality: "1080p" },
       { id: "2", type: "s3", url: "episodes/1.mp4", quality: "720p" },
-      { id: "3", type: "direct", url: "https://direct.com/1.mp4", quality: "1080p" },
+      {
+        id: "3",
+        type: "direct",
+        url: "https://direct.com/1.mp4",
+        quality: "1080p",
+      },
     ];
 
     const sorted = sortVideoSources(sources);
@@ -42,10 +47,30 @@ describe("sortVideoSources", () => {
 
   it("breaks ties within the same tier by resolution quality descending", () => {
     const sources = [
-      { id: "1", type: "direct", url: "https://direct.com/480", quality: "480p" },
-      { id: "2", type: "direct", url: "https://direct.com/1080", quality: "1080p" },
-      { id: "3", type: "direct", url: "https://direct.com/720", quality: "720p" },
-      { id: "4", type: "direct", url: "https://direct.com/none", quality: null },
+      {
+        id: "1",
+        type: "direct",
+        url: "https://direct.com/480",
+        quality: "480p",
+      },
+      {
+        id: "2",
+        type: "direct",
+        url: "https://direct.com/1080",
+        quality: "1080p",
+      },
+      {
+        id: "3",
+        type: "direct",
+        url: "https://direct.com/720",
+        quality: "720p",
+      },
+      {
+        id: "4",
+        type: "direct",
+        url: "https://direct.com/none",
+        quality: null,
+      },
     ];
 
     const sorted = sortVideoSources(sources);
@@ -58,9 +83,27 @@ describe("sortVideoSources", () => {
     const t3 = new Date("2026-01-01T12:00:00Z");
 
     const sources = [
-      { id: "3", type: "direct", url: "https://direct.com/3", quality: "1080p", createdAt: t3 },
-      { id: "1", type: "direct", url: "https://direct.com/1", quality: "1080p", createdAt: t1 },
-      { id: "2", type: "direct", url: "https://direct.com/2", quality: "1080p", createdAt: t2 },
+      {
+        id: "3",
+        type: "direct",
+        url: "https://direct.com/3",
+        quality: "1080p",
+        createdAt: t3,
+      },
+      {
+        id: "1",
+        type: "direct",
+        url: "https://direct.com/1",
+        quality: "1080p",
+        createdAt: t1,
+      },
+      {
+        id: "2",
+        type: "direct",
+        url: "https://direct.com/2",
+        quality: "1080p",
+        createdAt: t2,
+      },
     ];
 
     const sorted = sortVideoSources(sources);
@@ -69,8 +112,18 @@ describe("sortVideoSources", () => {
 
   it("handles string createdAt and missing createdAt gracefully", () => {
     const sources = [
-      { id: "2", type: "embed", url: "https://embed.com/2", createdAt: "2026-01-02T00:00:00Z" },
-      { id: "1", type: "embed", url: "https://embed.com/1", createdAt: "2026-01-01T00:00:00Z" },
+      {
+        id: "2",
+        type: "embed",
+        url: "https://embed.com/2",
+        createdAt: "2026-01-02T00:00:00Z",
+      },
+      {
+        id: "1",
+        type: "embed",
+        url: "https://embed.com/1",
+        createdAt: "2026-01-01T00:00:00Z",
+      },
       { id: "3", type: "embed", url: "https://embed.com/3" },
     ];
 

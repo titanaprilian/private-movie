@@ -4,7 +4,14 @@ import {
 } from '../hooks/useEpisodeTable';
 import type { EpisodeTableProps } from '../types';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { Search, Edit2, Link as LinkIcon, Trash2, GripVertical, AlertCircle } from 'lucide-react';
+import {
+  Search,
+  Edit2,
+  Link as LinkIcon,
+  Trash2,
+  GripVertical,
+  AlertCircle,
+} from 'lucide-react';
 import { ChunkyCheckbox } from '@/components/ui/chunky-checkbox';
 import { ChunkyTooltip } from '@/components/ui/chunky-tooltip';
 import { ChunkyActionMenu } from '@/components/ui/chunky-action-menu';
@@ -21,7 +28,8 @@ import {
 } from '@/components/ui/chunky-table';
 import { formatEpisodeDuration } from '../utils/formatEpisodeDuration';
 
-const ROW_GRID = 'grid-cols-[24px_20px_44px_minmax(0,1fr)_84px_76px_92px_116px_40px]';
+const ROW_GRID =
+  'grid-cols-[24px_20px_44px_minmax(0,1fr)_84px_76px_92px_116px_40px]';
 
 export function EpisodeTable({
   episodes,
@@ -48,7 +56,11 @@ export function EpisodeTable({
     activeSelectedIds,
     handleToggleSelectAll,
     handleRowCheckboxClick,
-  } = useEpisodeTable({ episodes, selectedEpisodeIds, onSelectedEpisodeIdsChange });
+  } = useEpisodeTable({
+    episodes,
+    selectedEpisodeIds,
+    onSelectedEpisodeIdsChange,
+  });
 
   return (
     <ChunkyTable data-testid="episode-table">
@@ -323,8 +335,11 @@ export function EpisodeTable({
                                     ? [
                                         {
                                           label: 'Sources',
-                                          icon: <LinkIcon className="w-4 h-4" />,
-                                          onSelect: () => onManageSources(episode),
+                                          icon: (
+                                            <LinkIcon className="w-4 h-4" />
+                                          ),
+                                          onSelect: () =>
+                                            onManageSources(episode),
                                         },
                                       ]
                                     : []),

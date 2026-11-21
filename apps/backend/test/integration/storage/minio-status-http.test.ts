@@ -136,7 +136,11 @@ describe("MinIO Status HTTP API (/api/storage/minio/status)", () => {
     });
     const { accessToken } = await registerUser(app);
     await db.insert(storageProviders).values([
-      minioRow({ id: "minio-disabled-default", isDefault: true, isEnabled: false }),
+      minioRow({
+        id: "minio-disabled-default",
+        isDefault: true,
+        isEnabled: false,
+      }),
       minioRow({ id: "minio-active", isDefault: false, isEnabled: true }),
     ]);
 

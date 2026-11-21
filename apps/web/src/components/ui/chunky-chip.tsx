@@ -25,7 +25,8 @@ const chunkyChipVariants = cva(
 );
 
 export interface ChunkyChipProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof chunkyChipVariants> {
   asChild?: boolean;
   pressed?: boolean;

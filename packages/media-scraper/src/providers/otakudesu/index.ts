@@ -116,13 +116,13 @@ export class OtakudesuProvider implements MediaProvider {
 
     // Strategy 2: Check single series page layout (#venkonten or .fotoanime)
     const singleTitle = load(
-      ".fotoanime h1, #venkonten h1.posttl, #venkonten h1, .jdlflm"
+      ".fotoanime h1, #venkonten h1.posttl, #venkonten h1, .jdlflm",
     )
       .first()
       .text()
       .trim();
     const singlePoster = load(
-      ".fotoanime img, #venkonten .thumb img, .imghdr img, img.wp-post-image"
+      ".fotoanime img, #venkonten .thumb img, .imghdr img, img.wp-post-image",
     )
       .first()
       .attr("src");
@@ -161,7 +161,7 @@ export class OtakudesuProvider implements MediaProvider {
 
   public async parseSeries(
     url: string,
-    fetchFn: FetchFn
+    fetchFn: FetchFn,
   ): Promise<ScrapedSeries> {
     const html = await fetchFn.get(url);
     return this.parseSeriesHtml(html, url);
@@ -174,7 +174,7 @@ export class OtakudesuProvider implements MediaProvider {
 
   public async parseEpisode(
     url: string,
-    fetchFn: FetchFn
+    fetchFn: FetchFn,
   ): Promise<ScrapedEpisode> {
     const html = await fetchFn.get(url);
     return this.parseEpisodeHtml(html);
@@ -183,15 +183,12 @@ export class OtakudesuProvider implements MediaProvider {
   public async resolveVideoSources(
     url: string,
     fetchFn: FetchFn,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ): Promise<ScrapedVideoSource[]> {
-    let mirrorPayloads: ParsedMirrorPayload[] | undefined = context?.mirrorPayloads as
-      | ParsedMirrorPayload[]
-      | undefined;
-    let ajaxActions: ParsedAjaxActions | null | undefined = context?.ajaxActions as
-      | ParsedAjaxActions
-      | null
-      | undefined;
+    let mirrorPayloads: ParsedMirrorPayload[] | undefined =
+      context?.mirrorPayloads as ParsedMirrorPayload[] | undefined;
+    let ajaxActions: ParsedAjaxActions | null | undefined =
+      context?.ajaxActions as ParsedAjaxActions | null | undefined;
     let initialSources: ScrapedVideoSource[] =
       (context?.initialSources as ScrapedVideoSource[]) ?? [];
 

@@ -16,7 +16,8 @@ export async function seed<
       id: "user-1",
       name: "Test User",
       email: "test@example.com",
-      passwordHash: "$2b$10$/W0WAoqhJkNoV5..MEq/JujDUTCAusr5xBksbG6JLv84XMq2H4bay",
+      passwordHash:
+        "$2b$10$/W0WAoqhJkNoV5..MEq/JujDUTCAusr5xBksbG6JLv84XMq2H4bay",
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       failedAttempts: 0,
       lockedUntil: null,
@@ -26,7 +27,8 @@ export async function seed<
       id: "user-2",
       name: "Standard User",
       email: "user@example.com",
-      passwordHash: "$2b$10$/W0WAoqhJkNoV5..MEq/JujDUTCAusr5xBksbG6JLv84XMq2H4bay",
+      passwordHash:
+        "$2b$10$/W0WAoqhJkNoV5..MEq/JujDUTCAusr5xBksbG6JLv84XMq2H4bay",
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       failedAttempts: 0,
       lockedUntil: null,

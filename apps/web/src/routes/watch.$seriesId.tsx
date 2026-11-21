@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { SeriesWatchView, getSeriesWithEpisodesQueryOptions } from '@/modules/watch';
+import {
+  SeriesWatchView,
+  getSeriesWithEpisodesQueryOptions,
+} from '@/modules/watch';
 import { queryClient } from '@/lib/queryClient';
 
 const searchSchema = z.object({
@@ -14,7 +17,9 @@ export const Route = createFileRoute('/watch/$seriesId')({
     return searchSchema.parse(search);
   },
   loader: ({ params }) =>
-    queryClient.ensureQueryData(getSeriesWithEpisodesQueryOptions(params.seriesId)),
+    queryClient.ensureQueryData(
+      getSeriesWithEpisodesQueryOptions(params.seriesId)
+    ),
   component: WatchSeriesPage,
 });
 

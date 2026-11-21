@@ -9,12 +9,15 @@ import { db } from "../../utils/db";
 import { eq } from "drizzle-orm";
 
 const sampleOneSeasonHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/episodes/sample-one-season.html"),
-  "utf8"
+  resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-one-season.html",
+  ),
+  "utf8",
 );
 const sampleEpisodeHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
-  "utf8"
+  "utf8",
 );
 
 describe("POST /seasons/:id/scrape-ongoing preserves series genres", () => {
@@ -63,9 +66,13 @@ describe("POST /seasons/:id/scrape-ongoing preserves series genres", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    await db.insert(seriesToGenres).values({ seriesId, genreId: customGenreId });
+    await db
+      .insert(seriesToGenres)
+      .values({ seriesId, genreId: customGenreId });
 
-    const tmdbId = (await db.select().from(series).where(eq(series.id, seriesId)))[0].tmdbId;
+    const tmdbId = (
+      await db.select().from(series).where(eq(series.id, seriesId))
+    )[0].tmdbId;
 
     const [seasonRow] = await db
       .insert(seasons)
@@ -96,7 +103,7 @@ describe("POST /seasons/:id/scrape-ongoing preserves series genres", () => {
       if (url.includes(`/tv/${tmdbId}`) && url.includes("/season/")) {
         return new Response(
           JSON.stringify({ season_number: 1, name: "Season 1", episodes: [] }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       if (url.includes(`/tv/${tmdbId}`)) {
@@ -111,7 +118,7 @@ describe("POST /seasons/:id/scrape-ongoing preserves series genres", () => {
             genres: [{ id: 99, name: "TMDB Only Genre" }],
             seasons: [],
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -125,7 +132,10 @@ describe("POST /seasons/:id/scrape-ongoing preserves series genres", () => {
 
     expect(result.status).toBe(200);
 
-    const links = await db.select().from(seriesToGenres).where(eq(seriesToGenres.seriesId, seriesId));
+    const links = await db
+      .select()
+      .from(seriesToGenres)
+      .where(eq(seriesToGenres.seriesId, seriesId));
     expect(links).toHaveLength(1);
     expect(links[0].genreId).toBe(customGenreId);
   });

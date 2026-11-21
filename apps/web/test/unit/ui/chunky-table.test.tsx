@@ -21,7 +21,9 @@ describe('ChunkyTable primitives', () => {
         </ChunkyTableHeader>
         <ChunkyTableBody data-testid="chunky-body">
           <ChunkyTableRow data-testid="chunky-row">
-            <ChunkyTableCell data-testid="chunky-cell">Cyberpunk</ChunkyTableCell>
+            <ChunkyTableCell data-testid="chunky-cell">
+              Cyberpunk
+            </ChunkyTableCell>
           </ChunkyTableRow>
         </ChunkyTableBody>
       </ChunkyTable>
@@ -103,11 +105,7 @@ describe('ChunkyTable primitives', () => {
     const onSort = vi.fn();
     const { user } = renderWithProviders(
       <ChunkyTableHeader>
-        <ChunkyTableHeaderCell
-          sortable
-          sortDirection="asc"
-          onSort={onSort}
-        >
+        <ChunkyTableHeaderCell sortable sortDirection="asc" onSort={onSort}>
           Title
         </ChunkyTableHeaderCell>
       </ChunkyTableHeader>
@@ -163,8 +161,6 @@ describe('ChunkyTable primitives', () => {
       </ChunkyTableToolbar>
     );
     expect(screen.getByTestId('chunky-toolbar')).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Search series...')
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search series...')).toBeInTheDocument();
   });
 });

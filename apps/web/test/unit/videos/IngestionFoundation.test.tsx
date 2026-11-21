@@ -13,34 +13,33 @@ import {
 } from '@/modules/videos/internal/ingestion';
 
 describe('IngestionBadges', () => {
-  it.each([
-    ['completed'],
-    ['success'],
-  ])('renders green tone for %s status', (status) => {
-    const { container } = render(<StatusBadge status={status} />);
-    expect(screen.getByText(status)).toBeInTheDocument();
-    expect(container.firstChild).toHaveClass('text-[var(--green)]');
-  });
+  it.each([['completed'], ['success']])(
+    'renders green tone for %s status',
+    (status) => {
+      const { container } = render(<StatusBadge status={status} />);
+      expect(screen.getByText(status)).toBeInTheDocument();
+      expect(container.firstChild).toHaveClass('text-[var(--green)]');
+    }
+  );
 
-  it.each([
-    ['ingesting'],
-    ['uploading'],
-    ['processing'],
-  ])('renders pulsing gold tone for %s status', (status) => {
-    const { container } = render(<StatusBadge status={status} />);
-    expect(screen.getByText(status)).toBeInTheDocument();
-    expect(container.firstChild).toHaveClass('animate-pulse');
-    expect(container.firstChild).toHaveClass('text-[var(--gold)]');
-  });
+  it.each([['ingesting'], ['uploading'], ['processing']])(
+    'renders pulsing gold tone for %s status',
+    (status) => {
+      const { container } = render(<StatusBadge status={status} />);
+      expect(screen.getByText(status)).toBeInTheDocument();
+      expect(container.firstChild).toHaveClass('animate-pulse');
+      expect(container.firstChild).toHaveClass('text-[var(--gold)]');
+    }
+  );
 
-  it.each([
-    ['failed'],
-    ['error'],
-  ])('renders red tone for %s status', (status) => {
-    const { container } = render(<StatusBadge status={status} />);
-    expect(screen.getByText(status)).toBeInTheDocument();
-    expect(container.firstChild).toHaveClass('text-[var(--red)]');
-  });
+  it.each([['failed'], ['error']])(
+    'renders red tone for %s status',
+    (status) => {
+      const { container } = render(<StatusBadge status={status} />);
+      expect(screen.getByText(status)).toBeInTheDocument();
+      expect(container.firstChild).toHaveClass('text-[var(--red)]');
+    }
+  );
 
   it('renders muted tone for pending status', () => {
     const { container } = render(<StatusBadge status="pending" />);
@@ -57,7 +56,7 @@ describe('IngestionBadges', () => {
         <MetaBadge>S1</MetaBadge>
         <CountBadge tone="green">+2 new episodes</CountBadge>
         <FieldBadge>Title</FieldBadge>
-      </>,
+      </>
     );
     expect(screen.getByText('Detected Ep #3')).toBeInTheDocument();
     expect(screen.getByText('Needs Review')).toBeInTheDocument();
@@ -80,7 +79,7 @@ describe('StorageProviderSelect', () => {
         storageProviders={providers}
         selectedStorageProviderId="p1"
         setSelectedStorageProviderId={() => {}}
-      />,
+      />
     );
     const trigger = screen.getByTestId('bulk-ingest-storage-provider-select');
     expect(trigger).toBeInTheDocument();
@@ -93,7 +92,7 @@ describe('StorageProviderSelect', () => {
         storageProviders={[]}
         selectedStorageProviderId=""
         setSelectedStorageProviderId={() => {}}
-      />,
+      />
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -112,7 +111,7 @@ describe('IngestionProgressBar', () => {
   it('renders indeterminate progress without a value', () => {
     render(<IngestionProgressBar value={null} ariaLabel="Extract progress" />);
     expect(
-      screen.getByRole('progressbar', { name: /extract progress/i }),
+      screen.getByRole('progressbar', { name: /extract progress/i })
     ).toBeInTheDocument();
   });
 });

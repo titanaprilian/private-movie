@@ -14,14 +14,17 @@ function memoryLogger() {
   return {
     records,
     logger: {
-      warn: (obj: unknown, msg?: string) => void records.push({ level: "warn", obj, msg }),
-      error: (obj: unknown, msg?: string) => void records.push({ level: "error", obj, msg }),
+      warn: (obj: unknown, msg?: string) =>
+        void records.push({ level: "warn", obj, msg }),
+      error: (obj: unknown, msg?: string) =>
+        void records.push({ level: "error", obj, msg }),
     },
   };
 }
 
 function captureSpy() {
-  const calls: Array<{ error: unknown; context?: Record<string, unknown> }> = [];
+  const calls: Array<{ error: unknown; context?: Record<string, unknown> }> =
+    [];
   return {
     calls,
     capture: (error: unknown, context?: Record<string, unknown>) =>
@@ -44,7 +47,7 @@ describe("errorHandlerPlugin observability", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: 42 }),
-      })
+      }),
     );
 
     expect(response.status).toBe(400);
@@ -123,11 +126,11 @@ describe("errorHandlerPlugin observability", () => {
     const { records, logger } = memoryLogger();
     const { calls, capture } = captureSpy();
     const app = new Elysia().use(
-      errorHandlerPlugin({ logger, captureException: capture })
+      errorHandlerPlugin({ logger, captureException: capture }),
     );
 
     const response = await app.handle(
-      new Request("http://localhost/nonexistent")
+      new Request("http://localhost/nonexistent"),
     );
 
     expect(response.status).toBe(404);

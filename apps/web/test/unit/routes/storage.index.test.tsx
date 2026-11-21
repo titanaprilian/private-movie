@@ -37,8 +37,7 @@ describe('storage routing - index/detail as siblings (no outlet-less parent)', (
     await router.load();
 
     expect(router.state.location.pathname).toBe('/admin/storage');
-    const leafRouteId =
-      router.state.matches.at(-1)?.routeId ?? '';
+    const leafRouteId = router.state.matches.at(-1)?.routeId ?? '';
     expect(leafRouteId).toBe('/admin/storage/');
   });
 
@@ -52,15 +51,10 @@ describe('storage routing - index/detail as siblings (no outlet-less parent)', (
 
     await router.load();
 
-    expect(router.state.location.pathname).toBe(
-      '/admin/storage/series-123',
-    );
+    expect(router.state.location.pathname).toBe('/admin/storage/series-123');
     const routeIds = router.state.matches.map((m) => m.routeId);
-    expect(
-      routeIds.some((id) => id.includes('$seriesId')),
-    ).toBe(true);
-    const leafRouteId =
-      router.state.matches.at(-1)?.routeId ?? '';
+    expect(routeIds.some((id) => id.includes('$seriesId'))).toBe(true);
+    const leafRouteId = router.state.matches.at(-1)?.routeId ?? '';
     expect(leafRouteId).toBe('/admin/storage/$seriesId');
     // The overview index route must not be in the match stack for a detail URL.
     expect(routeIds).not.toContain('/admin/storage/');

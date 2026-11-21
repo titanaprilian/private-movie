@@ -21,10 +21,13 @@ export function BulkScrapeStepProgress({
       <ChunkyCard className="space-y-2 p-3">
         <div className="flex items-center justify-between font-sans text-sm font-bold text-[var(--muted)]">
           <span>
-            Processing: <strong className="text-[var(--ink)]">{completedCount}</strong> /{' '}
+            Processing:{' '}
+            <strong className="text-[var(--ink)]">{completedCount}</strong> /{' '}
             {totalCount} items
           </span>
-          <span className="font-extrabold text-[var(--green)]">{progress}%</span>
+          <span className="font-extrabold text-[var(--green)]">
+            {progress}%
+          </span>
         </div>
         <IngestionProgressBar value={progress} ariaLabel="Scrape progress" />
       </ChunkyCard>
@@ -42,7 +45,9 @@ export function BulkScrapeStepProgress({
               key={log.id}
               className="flex items-center justify-between gap-2 py-1 border-b-2 border-[var(--border)] last:border-0"
             >
-              <span className="truncate text-[var(--muted)]">{log.message}</span>
+              <span className="truncate text-[var(--muted)]">
+                {log.message}
+              </span>
               <StatusBadge status={log.status} />
             </div>
           ))}

@@ -18,7 +18,7 @@ export interface SequentialFallbackItem {
  */
 export function applySequentialFallback<T extends SequentialFallbackItem>(
   scrapedItems: T[],
-  targets: SequentialFallbackTarget[]
+  targets: SequentialFallbackTarget[],
 ): T[] {
   const sortedTargets = [...targets].sort((a, b) => a.order - b.order);
   const claimed = new Set<string>();
@@ -34,7 +34,10 @@ export function applySequentialFallback<T extends SequentialFallbackItem>(
     ) {
       return item;
     }
-    while (cursor < sortedTargets.length && claimed.has(sortedTargets[cursor].id)) {
+    while (
+      cursor < sortedTargets.length &&
+      claimed.has(sortedTargets[cursor].id)
+    ) {
       cursor++;
     }
     const target = sortedTargets[cursor];

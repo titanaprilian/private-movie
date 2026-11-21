@@ -7,18 +7,13 @@ import {
   storageProvidersQueryOptions,
   type StorageProviderItem,
 } from '@/modules/storage';
-import {
-  getSeasonOptions,
-} from '../../scrape/hooks/useBulkScrapeSources';
+import { getSeasonOptions } from '../../scrape/hooks/useBulkScrapeSources';
 import type {
   BulkIngestItem,
   LocalEpisodeItem,
   UseBulkIngestSourcesOptions,
 } from '../../types';
-export type {
-  BulkIngestItem,
-  UseBulkIngestSourcesOptions,
-} from '../../types';
+export type { BulkIngestItem, UseBulkIngestSourcesOptions } from '../../types';
 
 export function useBulkIngestSources(options?: UseBulkIngestSourcesOptions) {
   const queryClient = useQueryClient();

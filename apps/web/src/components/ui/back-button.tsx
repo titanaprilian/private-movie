@@ -3,8 +3,10 @@ import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 
-export interface BackButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
+export interface BackButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onClick'
+> {
   /** Button text. Defaults to "Back". */
   label?: string;
   /** Destination used when no custom onClick is supplied. Defaults to "/admin/videos". */

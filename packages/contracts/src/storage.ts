@@ -117,12 +117,7 @@ export interface StoragePreviewUrlResponseData {
 }
 
 export type StorageProviderType =
-  | "backblaze"
-  | "cloudflare_r2"
-  | "aws_s3"
-  | "minio"
-  | "wasabi"
-  | "custom";
+  "backblaze" | "cloudflare_r2" | "aws_s3" | "minio" | "wasabi" | "custom";
 
 export interface StorageProviderItem {
   id: string;
@@ -214,15 +209,25 @@ export interface StorageSeriesResponseData {
 }
 
 export type StorageMetricsResponse = StorageSuccessEnvelope<StorageMetrics>;
-export type StorageResourcesResponse = StorageSuccessEnvelope<StorageResourcesResponseData>;
-export type StorageSeriesResponse = StorageSuccessEnvelope<StorageSeriesResponseData>;
-export type StorageLimitUpdateResponse = StorageSuccessEnvelope<StorageLimitUpdateResponseData>;
-export type StorageDeleteResponse = StorageSuccessEnvelope<StorageDeleteResponseData>;
-export type StoragePurgeOrphansResponse = StorageSuccessEnvelope<StoragePurgeOrphansResponseData>;
-export type StoragePreviewUrlResponse = StorageSuccessEnvelope<StoragePreviewUrlResponseData>;
-export type StorageProvidersResponse = StorageSuccessEnvelope<StorageProviderItem[]>;
-export type StorageProviderResponse = StorageSuccessEnvelope<StorageProviderItem>;
-export type TestStorageProviderResponse = StorageSuccessEnvelope<TestStorageProviderResponseData>;
+export type StorageResourcesResponse =
+  StorageSuccessEnvelope<StorageResourcesResponseData>;
+export type StorageSeriesResponse =
+  StorageSuccessEnvelope<StorageSeriesResponseData>;
+export type StorageLimitUpdateResponse =
+  StorageSuccessEnvelope<StorageLimitUpdateResponseData>;
+export type StorageDeleteResponse =
+  StorageSuccessEnvelope<StorageDeleteResponseData>;
+export type StoragePurgeOrphansResponse =
+  StorageSuccessEnvelope<StoragePurgeOrphansResponseData>;
+export type StoragePreviewUrlResponse =
+  StorageSuccessEnvelope<StoragePreviewUrlResponseData>;
+export type StorageProvidersResponse = StorageSuccessEnvelope<
+  StorageProviderItem[]
+>;
+export type StorageProviderResponse =
+  StorageSuccessEnvelope<StorageProviderItem>;
+export type TestStorageProviderResponse =
+  StorageSuccessEnvelope<TestStorageProviderResponseData>;
 
 export interface MinioStatusResponseData {
   isAvailable: boolean;
@@ -234,7 +239,8 @@ export interface MinioStatusResponseData {
   bucket?: string;
 }
 
-export type MinioStatusResponse = StorageSuccessEnvelope<MinioStatusResponseData>;
+export type MinioStatusResponse =
+  StorageSuccessEnvelope<MinioStatusResponseData>;
 
 export interface MinioSpinUpRequest {
   endpoint?: string;
@@ -253,4 +259,5 @@ export interface MinioSpinUpResponseData {
   secretAccessKey: string;
 }
 
-export type MinioSpinUpResponse = StorageSuccessEnvelope<MinioSpinUpResponseData>;
+export type MinioSpinUpResponse =
+  StorageSuccessEnvelope<MinioSpinUpResponseData>;

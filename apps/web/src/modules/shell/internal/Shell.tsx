@@ -60,9 +60,13 @@ const navInactiveClass = `${navBaseClass} border-transparent text-[var(--muted)]
 /** Picks the readable logo variant: dark ink on light backgrounds, light ink on dark. */
 function brandLogoSrc(theme: 'light' | 'dark', variant: 'full' | 'collapsed') {
   if (variant === 'collapsed') {
-    return theme === 'light' ? '/assets/logo-collapsed-dark.png' : '/assets/logo-collapsed.png';
+    return theme === 'light'
+      ? '/assets/logo-collapsed-dark.png'
+      : '/assets/logo-collapsed.png';
   }
-  return theme === 'light' ? '/assets/logo-full-dark.png' : '/assets/logo-full.png';
+  return theme === 'light'
+    ? '/assets/logo-full-dark.png'
+    : '/assets/logo-full.png';
 }
 
 function BrandCell({ collapsed }: { collapsed: boolean }) {
@@ -94,7 +98,10 @@ function NavLinks({
   onNavigate?: () => void;
 }) {
   return (
-    <nav aria-label="Admin navigation" className="flex-1 px-3 py-4 space-y-1.5 overflow-hidden">
+    <nav
+      aria-label="Admin navigation"
+      className="flex-1 px-3 py-4 space-y-1.5 overflow-hidden"
+    >
       {navItems.map(({ to, label, activeOptions, Icon }) => {
         const link = (
           <Link
@@ -103,12 +110,18 @@ function NavLinks({
             activeOptions={activeOptions}
             onClick={onNavigate}
             aria-label={label}
-            activeProps={{ className: `${navActiveClass}${collapsed ? ' justify-center px-0' : ''}` }}
+            activeProps={{
+              className: `${navActiveClass}${collapsed ? ' justify-center px-0' : ''}`,
+            }}
             inactiveProps={{
               className: `${navInactiveClass}${collapsed ? ' justify-center px-0' : ''}`,
             }}
           >
-            <Icon className="w-6 h-6 shrink-0" strokeWidth={2} aria-hidden="true" />
+            <Icon
+              className="w-6 h-6 shrink-0"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
             {!collapsed && <span>{label}</span>}
           </Link>
         );
@@ -219,7 +232,9 @@ export function Shell({ children }: ShellProps) {
         data-testid="mobile-overlay"
         aria-hidden="true"
         className={`fixed inset-0 bg-black/40 z-30 md:hidden transition-opacity duration-300 ${
-          isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          isMobileOpen
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
         }`}
       />
 
@@ -234,7 +249,11 @@ export function Shell({ children }: ShellProps) {
         }`}
       >
         <div className="h-20 flex items-center justify-center px-5 border-b-2 border-[var(--border)] shrink-0 relative">
-          <img src={brandLogoSrc(theme, 'full')} alt="Private Movie" className="h-[52px] w-auto" />
+          <img
+            src={brandLogoSrc(theme, 'full')}
+            alt="Private Movie"
+            className="h-[52px] w-auto"
+          />
           <button
             onClick={() => setIsMobileOpen(false)}
             type="button"
@@ -245,7 +264,10 @@ export function Shell({ children }: ShellProps) {
           </button>
         </div>
         <NavLinks collapsed={false} onNavigate={() => setIsMobileOpen(false)} />
-        <ProfileCard collapsed={false} onNavigate={() => setIsMobileOpen(false)} />
+        <ProfileCard
+          collapsed={false}
+          onNavigate={() => setIsMobileOpen(false)}
+        />
       </aside>
 
       {/* Main Container */}
@@ -314,7 +336,9 @@ export function Shell({ children }: ShellProps) {
         </header>
 
         {/* Content area */}
-        <main className="relative flex-1 min-h-0 overflow-y-auto p-4 md:p-5">{children}</main>
+        <main className="relative flex-1 min-h-0 overflow-y-auto p-4 md:p-5">
+          {children}
+        </main>
       </div>
     </div>
   );

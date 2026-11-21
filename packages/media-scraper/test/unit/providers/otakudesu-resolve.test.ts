@@ -18,7 +18,7 @@ function buildMockFetch(options?: {
   const mirrorData =
     options?.mirrorData ??
     Buffer.from(
-      '<div id="pembed"><iframe src="https://player.example.com/embed/abc123" frameborder="0"></iframe></div>'
+      '<div id="pembed"><iframe src="https://player.example.com/embed/abc123" frameborder="0"></iframe></div>',
     ).toString("base64");
 
   return {
@@ -70,8 +70,8 @@ describe("resolveMirrors", () => {
       ]);
       expect(
         mirrors.every(
-          (m) => m.url === "https://player.example.com/embed/abc123"
-        )
+          (m) => m.url === "https://player.example.com/embed/abc123",
+        ),
       ).toBe(true);
     });
   });
@@ -99,7 +99,8 @@ describe("resolveMirrors", () => {
             throw new Error("mirror request failed for vidhide");
           }
 
-          const html = '<div id="pembed"><iframe src="https://player.example.com/embed/ok" frameborder="0"></iframe></div>';
+          const html =
+            '<div id="pembed"><iframe src="https://player.example.com/embed/ok" frameborder="0"></iframe></div>';
           return JSON.stringify({ data: Buffer.from(html).toString("base64") });
         },
       };
@@ -140,7 +141,7 @@ describe("resolveMirrors", () => {
           fetchFn: neverSucceeding,
           nonceAction: NONCE_ACTION,
           mirrorAction: MIRROR_ACTION,
-        })
+        }),
       ).rejects.toThrow(MirrorResolveError);
     });
   });
@@ -155,7 +156,7 @@ describe("resolveMirrors", () => {
           fetchFn: nonceFailingFetch,
           nonceAction: NONCE_ACTION,
           mirrorAction: MIRROR_ACTION,
-        })
+        }),
       ).rejects.toThrow(/failed to fetch nonce/i);
     });
   });

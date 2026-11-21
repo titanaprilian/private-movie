@@ -412,18 +412,16 @@ describe("dashboard repository recent series", () => {
       })
       .returning();
 
-    await db
-      .insert(episodesTable)
-      .values([
-        {
-          id: crypto.randomUUID(),
-          seasonId: s5Season.id,
-          title: "E1",
-          order: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ]);
+    await db.insert(episodesTable).values([
+      {
+        id: crypto.randomUUID(),
+        seasonId: s5Season.id,
+        title: "E1",
+        order: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
 
     // Series 4, 3, 2, 1 have 0 seasons / 0 episodes
 

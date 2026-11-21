@@ -8,8 +8,11 @@ import {
 describe("playback target normalization", () => {
   describe("normalizePlaybackUrl", () => {
     it("normalizes videobello.net embed URLs to local /embed/{hash} paths", () => {
-      const url = "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0";
-      expect(normalizePlaybackUrl(url)).toBe("/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0");
+      const url =
+        "https://videobello.net/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0";
+      expect(normalizePlaybackUrl(url)).toBe(
+        "/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
+      );
     });
 
     it("normalizes videobello.net URLs without protocol", () => {
@@ -19,23 +22,29 @@ describe("playback target normalization", () => {
 
     it("preserves already normalized /embed/{hash} paths", () => {
       const url = "/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0";
-      expect(normalizePlaybackUrl(url)).toBe("/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0");
+      expect(normalizePlaybackUrl(url)).toBe(
+        "/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
+      );
     });
 
     it("preserves direct media target URLs", () => {
       const url = "https://cdn.example.com/videos/episode1.mp4";
-      expect(normalizePlaybackUrl(url)).toBe("https://cdn.example.com/videos/episode1.mp4");
+      expect(normalizePlaybackUrl(url)).toBe(
+        "https://cdn.example.com/videos/episode1.mp4",
+      );
     });
 
     it("preserves non-videobello embed target URLs", () => {
       const url = "https://otherprovider.com/embed/98765";
-      expect(normalizePlaybackUrl(url)).toBe("https://otherprovider.com/embed/98765");
+      expect(normalizePlaybackUrl(url)).toBe(
+        "https://otherprovider.com/embed/98765",
+      );
     });
 
     it("falls back to proxy-embed for videobello URLs where hash extraction fails", () => {
       const url = "https://videobello.net/v/non-standard-path";
       expect(normalizePlaybackUrl(url)).toBe(
-        `/api/media/proxy-embed?url=${encodeURIComponent(url)}`
+        `/api/media/proxy-embed?url=${encodeURIComponent(url)}`,
       );
     });
   });
@@ -140,7 +149,9 @@ describe("playback target normalization", () => {
         },
       ];
 
-      const result = await normalizeVideoSources(sources, { s3StorageService: mockS3Service });
+      const result = await normalizeVideoSources(sources, {
+        s3StorageService: mockS3Service,
+      });
 
       expect(result).toEqual([
         {
@@ -175,7 +186,9 @@ describe("playback target normalization", () => {
         },
       ];
 
-      const result = await normalizeVideoSources(sources, { s3StorageService: failingS3Service });
+      const result = await normalizeVideoSources(sources, {
+        s3StorageService: failingS3Service,
+      });
 
       expect(result).toEqual([
         {
@@ -203,10 +216,12 @@ describe("playback target normalization", () => {
         },
       ];
 
-      const result = await normalizeVideoSources(sources, { s3StorageService: mockS3Service });
+      const result = await normalizeVideoSources(sources, {
+        s3StorageService: mockS3Service,
+      });
 
       expect(result[0].url).toBe(
-        "https://s3.us-east.backblazeb2.com/bucket/episodes/ep-1/test.mp4?X-Amz-Signature=123"
+        "https://s3.us-east.backblazeb2.com/bucket/episodes/ep-1/test.mp4?X-Amz-Signature=123",
       );
     });
   });

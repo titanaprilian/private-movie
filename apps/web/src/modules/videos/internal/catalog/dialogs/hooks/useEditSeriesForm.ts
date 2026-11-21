@@ -44,13 +44,25 @@ export function useEditSeriesForm({
       }
 
       let initialGenreIds: string[] = [];
-      if ('genreIds' in series && series.genreIds && Array.isArray(series.genreIds) && series.genreIds.length > 0) {
+      if (
+        'genreIds' in series &&
+        series.genreIds &&
+        Array.isArray(series.genreIds) &&
+        series.genreIds.length > 0
+      ) {
         initialGenreIds = series.genreIds;
-      } else if ('genres' in series && series.genres && Array.isArray(series.genres)) {
+      } else if (
+        'genres' in series &&
+        series.genres &&
+        Array.isArray(series.genres)
+      ) {
         initialGenreIds = series.genres
           .map((g) => {
             if (typeof g === 'string') {
-              const found = genres.find((genre) => genre.id === g || genre.slug === g || genre.name === g);
+              const found = genres.find(
+                (genre) =>
+                  genre.id === g || genre.slug === g || genre.name === g
+              );
               return found ? found.id : g;
             }
             return g.id;

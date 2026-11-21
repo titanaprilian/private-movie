@@ -79,7 +79,9 @@ describe('VideoSettingsPopover component', () => {
     await user.click(screen.getByRole('button', { name: /video settings/i }));
 
     expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /subtitles off/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /subtitles off/i })
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'English' }));
     expect(onSubtitleChange).toHaveBeenCalledWith('en');
@@ -100,7 +102,9 @@ describe('VideoSettingsPopover component', () => {
     renderPopover({ onShortcutsOpenChange });
 
     await user.click(screen.getByRole('button', { name: /video settings/i }));
-    await user.click(screen.getByRole('button', { name: /shortcuts & gestures/i }));
+    await user.click(
+      screen.getByRole('button', { name: /shortcuts & gestures/i })
+    );
 
     expect(onShortcutsOpenChange).toHaveBeenCalledWith(true);
     const dialog = screen.getByRole('dialog');
@@ -115,7 +119,9 @@ describe('VideoSettingsPopover component', () => {
     renderPopover();
 
     await user.click(screen.getByRole('button', { name: /video settings/i }));
-    await user.click(screen.getByRole('button', { name: /shortcuts & gestures/i }));
+    await user.click(
+      screen.getByRole('button', { name: /shortcuts & gestures/i })
+    );
 
     const dialog = screen.getByTestId('shortcuts-dialog');
     expect(dialog).toBeInTheDocument();
@@ -135,7 +141,9 @@ describe('VideoSettingsPopover component', () => {
     const popover = screen.getByTestId('video-settings-popover');
     expect(customContainer.contains(popover)).toBe(true);
 
-    await user.click(screen.getByRole('button', { name: /shortcuts & gestures/i }));
+    await user.click(
+      screen.getByRole('button', { name: /shortcuts & gestures/i })
+    );
     const dialog = screen.getByRole('dialog');
     expect(customContainer.contains(dialog)).toBe(true);
 

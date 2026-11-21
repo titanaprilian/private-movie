@@ -29,7 +29,9 @@ describe('useAdblockDetector', () => {
   });
 
   it('detects adblock when network bait fetch is rejected or blocked', async () => {
-    vi.spyOn(window, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+    vi.spyOn(window, 'fetch').mockRejectedValue(
+      new TypeError('Failed to fetch')
+    );
 
     const { result } = renderHook(() => useAdblockDetector());
 

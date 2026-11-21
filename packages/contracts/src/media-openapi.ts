@@ -84,7 +84,8 @@ export const MVP_MEDIA_OPENAPI = {
         ],
         responses: {
           "200": {
-            description: "Series details wrapped in the shared success envelope.",
+            description:
+              "Series details wrapped in the shared success envelope.",
             content: {
               "application/json": {
                 schema: {
@@ -94,7 +95,8 @@ export const MVP_MEDIA_OPENAPI = {
             },
           },
           "404": {
-            description: "Series not found, wrapped in the shared error envelope.",
+            description:
+              "Series not found, wrapped in the shared error envelope.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -285,7 +287,14 @@ export const MVP_MEDIA_OPENAPI = {
       EpisodeWithSources: {
         title: "EpisodeWithSources",
         type: "object",
-        required: ["id", "title", "order", "createdAt", "updatedAt", "videoSources"],
+        required: [
+          "id",
+          "title",
+          "order",
+          "createdAt",
+          "updatedAt",
+          "videoSources",
+        ],
         properties: {
           id: { type: "string" },
           title: { type: "string" },
@@ -305,7 +314,15 @@ export const MVP_MEDIA_OPENAPI = {
       SeasonWithEpisodes: {
         title: "SeasonWithEpisodes",
         type: "object",
-        required: ["id", "seriesId", "title", "status", "createdAt", "updatedAt", "episodes"],
+        required: [
+          "id",
+          "seriesId",
+          "title",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "episodes",
+        ],
         properties: {
           id: { type: "string" },
           seriesId: { type: "string" },

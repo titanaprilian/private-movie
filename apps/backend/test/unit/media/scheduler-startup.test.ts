@@ -14,7 +14,9 @@ describe("media module scheduler config exports", () => {
     expect(typeof loadSchedulerConfig).toBe("function");
     expect(typeof saveSchedulerConfig).toBe("function");
     expect(typeof validateSchedulerConfigInput).toBe("function");
-    expect([...ALLOWED_SCHEDULER_INTERVALS]).toEqual([15, 30, 60, 180, 360, 720, 1440]);
+    expect([...ALLOWED_SCHEDULER_INTERVALS]).toEqual([
+      15, 30, 60, 180, 360, 720, 1440,
+    ]);
     expect(DEFAULT_SCHEDULER_INTERVAL_MINUTES).toBe(30);
     expect(DEFAULT_SCHEDULER_ENABLED).toBe(true);
   });

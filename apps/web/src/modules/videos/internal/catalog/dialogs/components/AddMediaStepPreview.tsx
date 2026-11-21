@@ -47,9 +47,10 @@ export function AddMediaStepPreview({
                   {previewData.releaseDate && (
                     <MetaBadge>{previewData.releaseDate}</MetaBadge>
                   )}
-                  {tmdbType === 'movie' && typeof previewData.runtime === 'number' && (
-                    <MetaBadge>{previewData.runtime} mins</MetaBadge>
-                  )}
+                  {tmdbType === 'movie' &&
+                    typeof previewData.runtime === 'number' && (
+                      <MetaBadge>{previewData.runtime} mins</MetaBadge>
+                    )}
                   {tmdbType === 'tv' && (
                     <>
                       {previewData.status && (
@@ -82,36 +83,42 @@ export function AddMediaStepPreview({
             </div>
           </ChunkyCard>
 
-          {tmdbType === 'tv' && previewData.seasons && previewData.seasons.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
-                  Season Breakdown
-                </span>
-                <span className="text-sm font-bold text-[var(--muted)]">
-                  {previewData.totalSeasons ?? previewData.seasons.length} Seasons • {previewData.totalEpisodes ?? 0} Episodes
-                </span>
+          {tmdbType === 'tv' &&
+            previewData.seasons &&
+            previewData.seasons.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">
+                    Season Breakdown
+                  </span>
+                  <span className="text-sm font-bold text-[var(--muted)]">
+                    {previewData.totalSeasons ?? previewData.seasons.length}{' '}
+                    Seasons • {previewData.totalEpisodes ?? 0} Episodes
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                  {previewData.seasons.map((season) => (
+                    <ChunkyCard
+                      key={season.seasonNumber}
+                      className="flex items-center justify-between p-2 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-sans text-[13px] font-extrabold text-[var(--muted)]">
+                          S{season.seasonNumber}
+                        </span>
+                        <span className="font-bold text-[var(--ink)]">
+                          {season.name}
+                        </span>
+                      </div>
+                      <MetaBadge>
+                        {season.episodeCount}{' '}
+                        {season.episodeCount === 1 ? 'ep' : 'eps'}
+                      </MetaBadge>
+                    </ChunkyCard>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                {previewData.seasons.map((season) => (
-                  <ChunkyCard
-                    key={season.seasonNumber}
-                    className="flex items-center justify-between p-2 text-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-sans text-[13px] font-extrabold text-[var(--muted)]">
-                        S{season.seasonNumber}
-                      </span>
-                      <span className="font-bold text-[var(--ink)]">{season.name}</span>
-                    </div>
-                    <MetaBadge>
-                      {season.episodeCount} {season.episodeCount === 1 ? 'ep' : 'eps'}
-                    </MetaBadge>
-                  </ChunkyCard>
-                ))}
-              </div>
-            </div>
-          )}
+            )}
         </>
       )}
 

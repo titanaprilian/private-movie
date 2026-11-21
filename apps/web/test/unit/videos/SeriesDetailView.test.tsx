@@ -112,7 +112,8 @@ const mockSeries: SeriesDetails = {
           label: 'Server 1',
         },
       ],
-      description: 'Episode with missing videoUrl and fallback metadata genres.',
+      description:
+        'Episode with missing videoUrl and fallback metadata genres.',
       duration: '10:00',
       tags: null,
       metadata: { genres: ['Action', 'Drama'] },
@@ -146,7 +147,12 @@ describe('SeriesDetailView component', () => {
   beforeEach(() => {
     setAccessToken('test-token');
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/deep-modules')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
@@ -154,7 +160,9 @@ describe('SeriesDetailView component', () => {
         });
       }
       return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Series not found' },
+        }),
         {
           status: 404,
           headers: { 'Content-Type': 'application/json' },
@@ -166,9 +174,13 @@ describe('SeriesDetailView component', () => {
   it('renders series title and episode count', async () => {
     renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
 
-    expect(await screen.findByRole('heading', { level: 1, name: mockSeries.title })).toBeInTheDocument();
     expect(
-      screen.getAllByText(new RegExp(`${mockSeries.episodes.length}\\s+episodes`, 'i')).length
+      await screen.findByRole('heading', { level: 1, name: mockSeries.title })
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText(
+        new RegExp(`${mockSeries.episodes.length}\\s+episodes`, 'i')
+      ).length
     ).toBeGreaterThan(0);
     expect(screen.getByText(mockSeries.description!)).toBeInTheDocument();
   });
@@ -190,12 +202,14 @@ describe('SeriesDetailView component', () => {
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-    const searchInput = screen.getByRole('textbox', { name: /search episodes/i });
+    const searchInput = screen.getByRole('textbox', {
+      name: /search episodes/i,
+    });
     await user.type(searchInput, 'TanStack');
 
-    expect(
-      screen.getAllByText('TanStack Router Setup').length
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText('TanStack Router Setup').length).toBeGreaterThan(
+      0
+    );
     expect(screen.queryByText('Intro to Deep Modules')).not.toBeInTheDocument();
   });
 
@@ -228,10 +242,14 @@ describe('SeriesDetailView component', () => {
     const editButton = await screen.findByRole('menuitem', { name: /^edit$/i });
     await user.click(editButton);
 
-    expect(await screen.findByRole('dialog', { name: firstEpisode.title })).toBeInTheDocument();
-    
+    expect(
+      await screen.findByRole('dialog', { name: firstEpisode.title })
+    ).toBeInTheDocument();
+
     const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
-    const descInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
+    const descInput = screen.getByLabelText(
+      'Description'
+    ) as HTMLTextAreaElement;
 
     expect(titleInput.value).toBe(firstEpisode.title);
     expect(descInput.value).toBe(firstEpisode.description);
@@ -242,14 +260,24 @@ describe('SeriesDetailView component', () => {
 
     // Re-open action menu for Delete Dialog
     await user.click(actionMenuButton);
-    const deleteButton = await screen.findByRole('menuitem', { name: /^delete$/i });
+    const deleteButton = await screen.findByRole('menuitem', {
+      name: /^delete$/i,
+    });
     await user.click(deleteButton);
 
-    expect(await screen.findByRole('heading', { name: 'Delete Episode' })).toBeInTheDocument();
-    expect(screen.getByText(`Are you sure you want to delete "${firstEpisode.title}"? This action cannot be undone.`)).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Delete Episode' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        `Are you sure you want to delete "${firstEpisode.title}"? This action cannot be undone.`
+      )
+    ).toBeInTheDocument();
     // Confirmation renders via the Chunky confirm dialog with tactile buttons
     expect(screen.getByTestId('chunky-confirm-dialog')).toBeInTheDocument();
-    const confirmDeleteButton = screen.getByRole('button', { name: /^delete$/i });
+    const confirmDeleteButton = screen.getByRole('button', {
+      name: /^delete$/i,
+    });
     expect(confirmDeleteButton).toHaveClass('border-b-4');
     await user.click(confirmDeleteButton);
   });
@@ -269,7 +297,9 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     for (const episode of mockSeries.episodes) {
-      expect(screen.getByLabelText(`Reorder ${episode.title}`)).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(`Reorder ${episode.title}`)
+      ).toBeInTheDocument();
     }
   });
 
@@ -278,7 +308,12 @@ describe('SeriesDetailView component', () => {
     let sourceDeleted = false;
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       const method = init?.method?.toUpperCase() ?? 'GET';
 
       if (url.includes('/episodes/dm-01/sources') && method === 'POST') {
@@ -288,9 +323,15 @@ describe('SeriesDetailView component', () => {
               ...firstEpisode,
               videoSources: [
                 ...firstEpisode.videoSources,
-                { id: 'vs-new', type: 'direct', url: 'https://stream.com/new.mp4', label: 'New Server', quality: '1080p' }
-              ]
-            }
+                {
+                  id: 'vs-new',
+                  type: 'direct',
+                  url: 'https://stream.com/new.mp4',
+                  label: 'New Server',
+                  quality: '1080p',
+                },
+              ],
+            },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
@@ -302,8 +343,10 @@ describe('SeriesDetailView component', () => {
           JSON.stringify({
             data: {
               ...firstEpisode,
-              videoSources: firstEpisode.videoSources.map(s => s.id === 'vs-1' ? { ...s, label: 'Updated Server 1' } : s)
-            }
+              videoSources: firstEpisode.videoSources.map((s) =>
+                s.id === 'vs-1' ? { ...s, label: 'Updated Server 1' } : s
+              ),
+            },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
@@ -315,8 +358,10 @@ describe('SeriesDetailView component', () => {
           JSON.stringify({
             data: {
               ...firstEpisode,
-              videoSources: firstEpisode.videoSources.filter(s => s.id !== 'vs-1')
-            }
+              videoSources: firstEpisode.videoSources.filter(
+                (s) => s.id !== 'vs-1'
+              ),
+            },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
@@ -329,7 +374,9 @@ describe('SeriesDetailView component', () => {
         });
       }
 
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
     const user = userEvent.setup();
@@ -349,20 +396,31 @@ describe('SeriesDetailView component', () => {
     await user.click(actionMenuButton);
 
     // Open manage sources dialog
-    const manageSourcesBtn = await screen.findByRole('menuitem', { name: /^sources$/i });
+    const manageSourcesBtn = await screen.findByRole('menuitem', {
+      name: /^sources$/i,
+    });
     await user.click(manageSourcesBtn);
 
-    expect(await screen.findByRole('heading', { name: 'Manage Sources' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Manage Sources' })
+    ).toBeInTheDocument();
 
     // Verify tabs exist
-    expect(screen.getByRole('tab', { name: 'Add from URL' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Edit Existing' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('tab', { name: 'Add from URL' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('tab', { name: 'Edit Existing' })
+    ).toBeInTheDocument();
 
     // Test Add from URL tab scraping flow
     const scrapeUrlInput = screen.getByLabelText(/Otakudesu URL/i);
     const previewBtn = screen.getByRole('button', { name: /Preview/i });
 
-    await user.type(scrapeUrlInput, 'https://otakudesu.cloud/episode/test-ep-1');
+    await user.type(
+      scrapeUrlInput,
+      'https://otakudesu.cloud/episode/test-ep-1'
+    );
     await user.click(previewBtn);
 
     // Switch to "Edit Existing" tab
@@ -373,13 +431,17 @@ describe('SeriesDetailView component', () => {
     expect(screen.getByDisplayValue('Server 1')).toBeInTheDocument();
 
     // Update source
-    const updateSourceBtn = screen.getAllByRole('button', { name: /Update Source|Save Source/i })[0];
+    const updateSourceBtn = screen.getAllByRole('button', {
+      name: /Update Source|Save Source/i,
+    })[0];
     await user.click(updateSourceBtn);
 
     expect(sourceUpdated).toBe(true);
 
     // Remove source
-    const removeSourceBtn = screen.getAllByRole('button', { name: /Remove Source|Delete Source/i })[0];
+    const removeSourceBtn = screen.getAllByRole('button', {
+      name: /Remove Source|Delete Source/i,
+    })[0];
     await user.click(removeSourceBtn);
 
     expect(sourceDeleted).toBe(true);
@@ -391,7 +453,9 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
     expect(screen.queryByText('Related Series')).not.toBeInTheDocument();
     // View still renders core sections
-    expect(screen.getAllByText(mockSeries.episodes[0].title).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(mockSeries.episodes[0].title).length
+    ).toBeGreaterThan(0);
   });
 
   it('renders season selector and filters episodes by selected season when multiple seasons exist', async () => {
@@ -503,24 +567,38 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/multi-season-series')) {
         return new Response(JSON.stringify({ data: mockSeriesWithSeasons }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
     const user = userEvent.setup();
     renderWithProviders(<SeriesDetailView seriesId="multi-season-series" />);
 
-    await screen.findByRole('heading', { level: 1, name: 'Multi Season Anime' });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Multi Season Anime',
+    });
 
     // Verify season tabs/buttons exist
-    expect(screen.getByRole('button', { name: 'Season 1' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Season 2' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Season 1' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Season 2' })
+    ).toBeInTheDocument();
 
     // Default season (Season 1) episodes should be visible
     expect(screen.getAllByText('S1 Episode 1').length).toBeGreaterThan(0);
@@ -578,14 +656,24 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/season-meta-series')) {
-        return new Response(JSON.stringify({ data: mockSeriesWithSeasonMetadata }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ data: mockSeriesWithSeasonMetadata }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
     const user = userEvent.setup();
@@ -594,19 +682,29 @@ describe('SeriesDetailView component', () => {
     await screen.findByRole('heading', { level: 1, name: 'Season Meta Anime' });
 
     // Initially Season 1 description & poster are shown
-    expect(screen.getByText('Season 1 specific description')).toBeInTheDocument();
-    const posterImg = screen.getByAltText('Season Meta Anime') as HTMLImageElement;
-    expect(posterImg.src).toBe('https://image.tmdb.org/t/p/w500/season1-poster.jpg');
+    expect(
+      screen.getByText('Season 1 specific description')
+    ).toBeInTheDocument();
+    const posterImg = screen.getByAltText(
+      'Season Meta Anime'
+    ) as HTMLImageElement;
+    expect(posterImg.src).toBe(
+      'https://image.tmdb.org/t/p/w500/season1-poster.jpg'
+    );
 
     // Click Season 2 button
     await user.click(screen.getByRole('button', { name: 'Season 2' }));
 
     // Season 2 description & poster should now be active
-    expect(screen.getByText('Season 2 specific description')).toBeInTheDocument();
-    expect(screen.queryByText('Season 1 specific description')).not.toBeInTheDocument();
-    expect((screen.getByAltText('Season Meta Anime') as HTMLImageElement).src).toBe(
-      'https://image.tmdb.org/t/p/w500/season2-poster.jpg'
-    );
+    expect(
+      screen.getByText('Season 2 specific description')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Season 1 specific description')
+    ).not.toBeInTheDocument();
+    expect(
+      (screen.getByAltText('Season Meta Anime') as HTMLImageElement).src
+    ).toBe('https://image.tmdb.org/t/p/w500/season2-poster.jpg');
   });
 
   it('renders season navigation bar without duplicate status badge, and disabled delete action for single-season series', async () => {
@@ -662,41 +760,63 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/single-season-series')) {
         return new Response(JSON.stringify({ data: mockSingleSeasonSeries }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
     const user = userEvent.setup();
     renderWithProviders(<SeriesDetailView seriesId="single-season-series" />);
 
-    await screen.findByRole('heading', { level: 1, name: 'Single Season Movie' });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Single Season Movie',
+    });
 
     // Season tab for "Season 1" IS rendered when series has 1 season
-    expect(screen.getByRole('button', { name: 'Season 1' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Season 1' })
+    ).toBeInTheDocument();
     // Duplicate season status badge was removed from the season-bar;
     // status is represented only in the hero header.
     expect(screen.queryByTestId('season-status-badge')).not.toBeInTheDocument();
-    const heroTitle = screen.getByRole('heading', { level: 1, name: 'Single Season Movie' }).closest('.hero-title')!;
-    expect(within(heroTitle as HTMLElement).getByText('ongoing')).toBeInTheDocument();
+    const heroTitle = screen
+      .getByRole('heading', { level: 1, name: 'Single Season Movie' })
+      .closest('.hero-title')!;
+    expect(
+      within(heroTitle as HTMLElement).getByText('ongoing')
+    ).toBeInTheDocument();
     expect(screen.getAllByText('Movie Main Stream').length).toBeGreaterThan(0);
 
     // 3-dot Season Actions menu is rendered and accessible
-    const seasonActionsBtn = screen.getByRole('button', { name: /season actions/i });
+    const seasonActionsBtn = screen.getByRole('button', {
+      name: /season actions/i,
+    });
     expect(seasonActionsBtn).toBeInTheDocument();
     await user.click(seasonActionsBtn);
 
     // Edit Season is available
-    const editSeasonBtn = await screen.findByRole('menuitem', { name: /edit season/i });
+    const editSeasonBtn = await screen.findByRole('menuitem', {
+      name: /edit season/i,
+    });
     expect(editSeasonBtn).toBeInTheDocument();
 
     // Delete Season is disabled for single-season series
-    const deleteSeasonBtn = screen.getByRole('menuitem', { name: /delete season/i });
+    const deleteSeasonBtn = screen.getByRole('menuitem', {
+      name: /delete season/i,
+    });
     expect(deleteSeasonBtn).toBeDisabled();
   });
 
@@ -726,21 +846,30 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/zero-season-series')) {
         return new Response(JSON.stringify({ data: mockZeroSeasonSeries }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
     renderWithProviders(<SeriesDetailView seriesId="zero-season-series" />);
 
     await screen.findByRole('heading', { level: 1, name: 'Zero Season Anime' });
 
-    expect(screen.queryByRole('button', { name: /season actions/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /season actions/i })
+    ).not.toBeInTheDocument();
     expect(screen.queryByTestId('season-status-badge')).not.toBeInTheDocument();
     expect(screen.getAllByText('Special Episode').length).toBeGreaterThan(0);
   });
@@ -783,22 +912,33 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/merge-seasons-series')) {
         return new Response(JSON.stringify({ data: mockMultiSeasonSeries }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
     renderWithProviders(<SeriesDetailView seriesId="merge-seasons-series" />);
 
     await screen.findByRole('heading', { level: 1, name: 'Attack on Titan' });
 
-    expect(screen.queryByRole('button', { name: /Merge Seasons/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Add season/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Merge Seasons/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Add season/i })
+    ).toBeInTheDocument();
   });
 
   it('does not render "Sync Episodes" button in season toolbar', async () => {
@@ -828,21 +968,30 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/sync-episodes-series')) {
         return new Response(JSON.stringify({ data: mockSyncSeries }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
     renderWithProviders(<SeriesDetailView seriesId="sync-episodes-series" />);
 
     await screen.findByRole('heading', { level: 1, name: 'Frieren' });
 
-    expect(screen.queryByRole('button', { name: /Sync Episodes/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Sync Episodes/i })
+    ).not.toBeInTheDocument();
   });
 
   it('renders "Bulk Add Sources" button and opens BulkScrapeModal on click', async () => {
@@ -859,14 +1008,21 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/bulk-scrape-series')) {
         return new Response(JSON.stringify({ data: mockBulkSeries }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
     const user = userEvent.setup();
@@ -879,7 +1035,9 @@ describe('SeriesDetailView component', () => {
 
     await user.click(bulkBtn);
 
-    expect(await screen.findByRole('heading', { name: 'Bulk Add Sources' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Bulk Add Sources' })
+    ).toBeInTheDocument();
   });
 
   it('renders Edit Series button and updates featured field via PATCH', async () => {
@@ -891,7 +1049,12 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       const method = init?.method?.toUpperCase() ?? 'GET';
 
       if (url.includes('/genres')) {
@@ -924,23 +1087,35 @@ describe('SeriesDetailView component', () => {
       if (url.includes('/series')) {
         return new Response(
           JSON.stringify({
-            data: { series: [mockOngoingSeries], meta: { total: 1, page: 1, limit: 20 } },
+            data: {
+              series: [mockOngoingSeries],
+              meta: { total: 1, page: 1, limit: 20 },
+            },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
       }
 
-      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), {
+        status: 404,
+      });
     });
 
-    const { user } = renderWithProviders(<SeriesDetailView seriesId="edit-series-test" />);
+    const { user } = renderWithProviders(
+      <SeriesDetailView seriesId="edit-series-test" />
+    );
 
-    await screen.findByRole('heading', { level: 1, name: mockOngoingSeries.title });
+    await screen.findByRole('heading', {
+      level: 1,
+      name: mockOngoingSeries.title,
+    });
 
     const editSeriesBtn = screen.getByRole('button', { name: /Edit Series/i });
     await user.click(editSeriesBtn);
 
-    expect(await screen.findByRole('heading', { name: 'Edit Series' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Edit Series' })
+    ).toBeInTheDocument();
 
     expect(screen.queryByLabelText('Status')).not.toBeInTheDocument();
 
@@ -966,12 +1141,22 @@ describe('SeriesDetailView component', () => {
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-    expect(screen.queryByRole('button', { name: /Match TMDB/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Add Episode/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Match TMDB/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Add Episode/i })
+    ).not.toBeInTheDocument();
 
-    expect(screen.getByRole('button', { name: /Edit Series/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Bulk Add Sources/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Bulk Ingest Sources/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Edit Series/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Bulk Add Sources/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Bulk Ingest Sources/i })
+    ).toBeInTheDocument();
   });
 
   it('renders 3-dot contextual menu for active season actions when multiple seasons exist', async () => {
@@ -1004,7 +1189,12 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/deep-modules')) {
         return new Response(JSON.stringify({ data: mockSeasonSeries }), {
           status: 200,
@@ -1012,7 +1202,9 @@ describe('SeriesDetailView component', () => {
         });
       }
       return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Series not found' },
+        }),
         {
           status: 404,
           headers: { 'Content-Type': 'application/json' },
@@ -1020,7 +1212,9 @@ describe('SeriesDetailView component', () => {
       );
     });
 
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    const { user } = renderWithProviders(
+      <SeriesDetailView seriesId={mockSeries.id} />
+    );
 
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
@@ -1029,42 +1223,69 @@ describe('SeriesDetailView component', () => {
 
     await user.click(menuBtn);
 
-    expect(await screen.findByRole('menuitem', { name: /Edit Season/i })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: /Copy Season ID/i })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: /Delete Season/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('menuitem', { name: /Edit Season/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitem', { name: /Copy Season ID/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitem', { name: /Delete Season/i })
+    ).toBeInTheDocument();
   });
 
   it('shows sticky bulk bar on selection and opens BulkScrapeModal via Add sources targeting selected episodes', async () => {
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    const { user } = renderWithProviders(
+      <SeriesDetailView seriesId={mockSeries.id} />
+    );
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     // No bulkbar when nothing is selected
-    expect(screen.queryByRole('toolbar', { name: /bulk selection actions/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('toolbar', { name: /bulk selection actions/i })
+    ).not.toBeInTheDocument();
 
     // Select row 1
     const checkbox1 = screen.getByLabelText('Select Intro to Deep Modules');
     await user.click(checkbox1);
 
     // Sticky bulk bar appears with count
-    const bulkbar = screen.getByRole('toolbar', { name: /bulk selection actions/i });
+    const bulkbar = screen.getByRole('toolbar', {
+      name: /bulk selection actions/i,
+    });
     expect(bulkbar).toBeInTheDocument();
     expect(bulkbar).toHaveClass('bulkbar', 'show');
     expect(within(bulkbar).getByText('1 selected')).toBeInTheDocument();
-    expect(within(bulkbar).getByRole('button', { name: /add sources/i })).toBeInTheDocument();
-    expect(within(bulkbar).getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+    expect(
+      within(bulkbar).getByRole('button', { name: /add sources/i })
+    ).toBeInTheDocument();
+    expect(
+      within(bulkbar).getByRole('button', { name: /^delete$/i })
+    ).toBeInTheDocument();
 
     // Bulk Move to Season action is available (#626)
-    expect(within(bulkbar).getByRole('button', { name: /move to season/i })).toBeInTheDocument();
+    expect(
+      within(bulkbar).getByRole('button', { name: /move to season/i })
+    ).toBeInTheDocument();
 
     // Click Add sources opens BulkScrapeModal
-    await user.click(within(bulkbar).getByRole('button', { name: /add sources/i }));
-    expect(await screen.findByRole('heading', { name: 'Bulk Add Sources' })).toBeInTheDocument();
+    await user.click(
+      within(bulkbar).getByRole('button', { name: /add sources/i })
+    );
+    expect(
+      await screen.findByRole('heading', { name: 'Bulk Add Sources' })
+    ).toBeInTheDocument();
   });
 
   it('handles batch delete execution via confirmation dialog', async () => {
     let deletedCount = 0;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/episodes/') && init?.method === 'DELETE') {
         deletedCount++;
         return new Response(JSON.stringify({ data: { id: 'deleted' } }), {
@@ -1079,12 +1300,16 @@ describe('SeriesDetailView component', () => {
         });
       }
       return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Series not found' },
+        }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     });
 
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    const { user } = renderWithProviders(
+      <SeriesDetailView seriesId={mockSeries.id} />
+    );
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     // Select all visible episodes via header checkbox
@@ -1092,17 +1317,25 @@ describe('SeriesDetailView component', () => {
     await user.click(headerCheckbox);
 
     // Sticky bulk bar appears with count and Delete chip
-    const bulkbar = screen.getByRole('toolbar', { name: /bulk selection actions/i });
+    const bulkbar = screen.getByRole('toolbar', {
+      name: /bulk selection actions/i,
+    });
     expect(within(bulkbar).getByText('4 selected')).toBeInTheDocument();
 
     // Click Delete in bulkbar
-    const deleteBatchBtn = within(bulkbar).getByRole('button', { name: /^delete$/i });
+    const deleteBatchBtn = within(bulkbar).getByRole('button', {
+      name: /^delete$/i,
+    });
     await user.click(deleteBatchBtn);
 
-    expect(screen.getByRole('heading', { name: /delete selected episodes/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /delete selected episodes/i })
+    ).toBeInTheDocument();
 
     // Confirm Delete
-    const confirmDeleteBtn = screen.getByRole('button', { name: /delete 4 episodes/i });
+    const confirmDeleteBtn = screen.getByRole('button', {
+      name: /delete 4 episodes/i,
+    });
     await user.click(confirmDeleteBtn);
 
     expect(deletedCount).toBe(4);
@@ -1116,14 +1349,21 @@ describe('SeriesDetailView component', () => {
 
     // Not found state renders styled chunky error card with catalog link
     expect(await screen.findByText('Series not found')).toBeInTheDocument();
-    const catalogLink = await screen.findByRole('link', { name: /back to catalog/i });
+    const catalogLink = await screen.findByRole('link', {
+      name: /back to catalog/i,
+    });
     expect(catalogLink).toBeInTheDocument();
     expect(catalogLink).toHaveAttribute('href', '/admin/videos');
   });
 
   it('opens slide-out drawer on episode row click or edit click and closes via close button', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/deep-modules')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
@@ -1131,12 +1371,16 @@ describe('SeriesDetailView component', () => {
         });
       }
       return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Series not found' },
+        }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     });
 
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    const { user } = renderWithProviders(
+      <SeriesDetailView seriesId={mockSeries.id} />
+    );
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     // Drawer is closed initially
@@ -1147,8 +1391,12 @@ describe('SeriesDetailView component', () => {
     await user.click(epRow);
 
     // Drawer is now open
-    expect(screen.getByRole('dialog', { name: 'Intro to Deep Modules' })).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Intro to Deep Modules')).toBeInTheDocument();
+    expect(
+      screen.getByRole('dialog', { name: 'Intro to Deep Modules' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue('Intro to Deep Modules')
+    ).toBeInTheDocument();
 
     // Close drawer via close button
     const closeBtn = screen.getByRole('button', { name: /^close$/i });
@@ -1159,7 +1407,12 @@ describe('SeriesDetailView component', () => {
 
   it('automatically opens drawer on initial render when initialOrder or initialEpisodeId is provided', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/deep-modules')) {
         return new Response(JSON.stringify({ data: mockSeries }), {
           status: 200,
@@ -1167,7 +1420,9 @@ describe('SeriesDetailView component', () => {
         });
       }
       return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Series not found' },
+        }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     });
@@ -1177,20 +1432,32 @@ describe('SeriesDetailView component', () => {
     );
 
     // Drawer automatically opens for dm-01
-    expect(await screen.findByRole('dialog', { name: 'Intro to Deep Modules' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('dialog', { name: 'Intro to Deep Modules' })
+    ).toBeInTheDocument();
   });
 
   it('renders "Sync with TMDB" button in disabled state when series has no tmdbId', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/deep-modules')) {
-        return new Response(JSON.stringify({ data: { ...mockSeries, tmdbId: null } }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ data: { ...mockSeries, tmdbId: null } }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
       return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Series not found' },
+        }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     });
@@ -1206,20 +1473,32 @@ describe('SeriesDetailView component', () => {
 
   it('explains the disabled "Sync with TMDB" button via chunky tooltip', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/deep-modules')) {
-        return new Response(JSON.stringify({ data: { ...mockSeries, tmdbId: null } }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ data: { ...mockSeries, tmdbId: null } }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
       return new Response(
-        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Series not found' } }),
+        JSON.stringify({
+          error: { code: 'NOT_FOUND', message: 'Series not found' },
+        }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     });
 
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    const { user } = renderWithProviders(
+      <SeriesDetailView seriesId={mockSeries.id} />
+    );
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     const syncBtn = screen.getByRole('button', { name: /Sync with TMDB/i });
@@ -1237,7 +1516,12 @@ describe('SeriesDetailView component', () => {
     };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/deep-modules')) {
         return new Response(JSON.stringify({ data: seriesWithTmdb }), {
           status: 200,
@@ -1263,7 +1547,18 @@ describe('SeriesDetailView component', () => {
               totalNewEpisodes: 1,
               totalNewSeasons: 0,
               totalUpdatedEpisodes: 0,
-              seasonDiffs: [{ seasonNumber: 1, name: 'Season 1', incomingEpisodeCount: 3, localEpisodeCount: 2, diff: 1, isNewSeason: false, badgeText: '+1 new ep (2 → 3)', badgeType: 'new-eps' }],
+              seasonDiffs: [
+                {
+                  seasonNumber: 1,
+                  name: 'Season 1',
+                  incomingEpisodeCount: 3,
+                  localEpisodeCount: 2,
+                  diff: 1,
+                  isNewSeason: false,
+                  badgeText: '+1 new ep (2 → 3)',
+                  badgeType: 'new-eps',
+                },
+              ],
               episodeChanges: [],
             },
           }),
@@ -1279,7 +1574,14 @@ describe('SeriesDetailView component', () => {
               posterUrl: null,
               releaseDate: '2026-08-10',
               status: 'Returning Series',
-              seasons: [{ seasonNumber: 1, name: 'Season 1', episodeCount: 3, posterUrl: null }],
+              seasons: [
+                {
+                  seasonNumber: 1,
+                  name: 'Season 1',
+                  episodeCount: 3,
+                  posterUrl: null,
+                },
+              ],
             },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
@@ -1291,7 +1593,9 @@ describe('SeriesDetailView component', () => {
       );
     });
 
-    const { user } = renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
+    const { user } = renderWithProviders(
+      <SeriesDetailView seriesId={mockSeries.id} />
+    );
     await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
     const syncBtn = screen.getByRole('button', { name: /Sync with TMDB/i });
@@ -1299,7 +1603,9 @@ describe('SeriesDetailView component', () => {
 
     await user.click(syncBtn);
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Sync with TMDB' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Sync with TMDB' })
+    ).toBeInTheDocument();
   });
 
   describe('Hero Card, Description Edge Cases & BackButton', () => {
@@ -1345,28 +1651,46 @@ describe('SeriesDetailView component', () => {
       renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
       await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-      const title = screen.getByRole('heading', { level: 1, name: mockSeries.title });
+      const title = screen.getByRole('heading', {
+        level: 1,
+        name: mockSeries.title,
+      });
       expect(title).toHaveClass('text-[28px]', 'font-extrabold');
 
       const heroTitle = title.closest('.hero-title')!;
       expect(heroTitle).toBeInTheDocument();
-      const epPill = within(heroTitle as HTMLElement).getByText(new RegExp(`${mockSeries.episodes.length}\\s+Episodes`, 'i'));
+      const epPill = within(heroTitle as HTMLElement).getByText(
+        new RegExp(`${mockSeries.episodes.length}\\s+Episodes`, 'i')
+      );
       expect(epPill.closest('.pill')).toBeInTheDocument();
       expect(epPill.closest('.pill')?.querySelector('svg')).toBeInTheDocument();
       // Episode count pill: blue text on surface background without border
-      expect(epPill.closest('.pill')).toHaveClass('border-0', 'text-[var(--blue)]', 'bg-[var(--surface)]');
+      expect(epPill.closest('.pill')).toHaveClass(
+        'border-0',
+        'text-[var(--blue)]',
+        'bg-[var(--surface)]'
+      );
 
-      const statusPill = within(heroTitle as HTMLElement).getByText('completed');
+      const statusPill = within(heroTitle as HTMLElement).getByText(
+        'completed'
+      );
       expect(statusPill.closest('.pill')).toHaveClass('ok');
       // Status pill: clean tinted background without shiny borders
-      expect(statusPill.closest('.pill')).toHaveClass('border-0', 'bg-[var(--green-tint)]');
+      expect(statusPill.closest('.pill')).toHaveClass(
+        'border-0',
+        'bg-[var(--green-tint)]'
+      );
 
       // Hero body layout sequence: title row, description, then actions at the bottom
       const heroBody = title.closest('.hero-body')!;
       const children = Array.from(heroBody.children).map((el) =>
         el.className.split(' ').find((c) => c.startsWith('hero-'))
       );
-      expect(children).toEqual(['hero-title', 'hero-desc-wrap', 'hero-actions']);
+      expect(children).toEqual([
+        'hero-title',
+        'hero-desc-wrap',
+        'hero-actions',
+      ]);
     });
 
     it('renders gold Featured badge when series.isFeatured is true', async () => {
@@ -1407,17 +1731,27 @@ describe('SeriesDetailView component', () => {
       const placeholder = screen.getByText('No description available.');
       expect(placeholder).toBeInTheDocument();
       expect(placeholder).toHaveClass('hero-desc', 'empty');
-      expect(screen.queryByRole('button', { name: /show more|show less/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /show more|show less/i })
+      ).not.toBeInTheDocument();
     });
 
     it('renders chunky action chips and chunky primary button', async () => {
       renderWithProviders(<SeriesDetailView seriesId={mockSeries.id} />);
       await screen.findByRole('heading', { level: 1, name: mockSeries.title });
 
-      expect(screen.getByRole('button', { name: /Edit Series/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Sync with TMDB/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Bulk Add Sources/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Bulk Ingest Sources/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Edit Series/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Sync with TMDB/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Bulk Add Sources/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Bulk Ingest Sources/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -1461,9 +1795,7 @@ describe('SeriesDetailView component', () => {
     it('renders a season bar skeleton with placeholder season chips while loading', () => {
       const { fetchSpy, unmount } = renderLoadingDetail();
 
-      const seasonBar = screen.getByTestId(
-        'series-detail-seasonbar-skeleton'
-      );
+      const seasonBar = screen.getByTestId('series-detail-seasonbar-skeleton');
       expect(seasonBar).toBeInTheDocument();
       expect(
         within(seasonBar).getAllByTestId('season-chip-skeleton').length
@@ -1476,9 +1808,7 @@ describe('SeriesDetailView component', () => {
     it('renders an episode table skeleton with toolbar, header, and placeholder rows while loading', () => {
       const { fetchSpy, unmount } = renderLoadingDetail();
 
-      const table = screen.getByTestId(
-        'series-detail-episode-table-skeleton'
-      );
+      const table = screen.getByTestId('series-detail-episode-table-skeleton');
       expect(table).toBeInTheDocument();
       expect(
         within(table).getByTestId('episode-table-toolbar-skeleton')
@@ -1497,9 +1827,7 @@ describe('SeriesDetailView component', () => {
     it('replaces skeletons with the real hero, season bar, and episode table once loaded', async () => {
       const { queryClient, fetchSpy } = renderLoadingDetail();
 
-      expect(
-        screen.getByTestId('series-detail-skeleton')
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('series-detail-skeleton')).toBeInTheDocument();
 
       queryClient.setQueryData(
         seriesDetailQueryOptions('deep-modules').queryKey,

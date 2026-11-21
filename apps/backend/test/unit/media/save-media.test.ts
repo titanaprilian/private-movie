@@ -87,7 +87,7 @@ describe("createMediaService saveMedia", () => {
           label: "Server Direct",
           quality: "1080p",
         }),
-      ])
+      ]),
     );
   });
 

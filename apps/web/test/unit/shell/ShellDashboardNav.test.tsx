@@ -46,7 +46,9 @@ describe('Shell dashboard navigation', () => {
       </Shell>
     );
 
-    const navs = screen.getAllByRole('navigation', { name: 'Admin navigation' });
+    const navs = screen.getAllByRole('navigation', {
+      name: 'Admin navigation',
+    });
     const nav = navs[0];
     const links = nav.querySelectorAll('a[href]');
     expect(links.length).toBeGreaterThan(0);

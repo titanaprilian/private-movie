@@ -22,7 +22,12 @@ describe('videos/$seriesId route component', () => {
   beforeEach(() => {
     setAccessToken('test-token');
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes('/series/deep-modules')) {
         return new Response(
           JSON.stringify({
@@ -75,8 +80,8 @@ describe('videos/$seriesId route component', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Deep Modules' })
     ).toBeInTheDocument();
-    expect(
-      screen.getAllByText('Intro to Deep Modules').length
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText('Intro to Deep Modules').length).toBeGreaterThan(
+      0
+    );
   });
 });

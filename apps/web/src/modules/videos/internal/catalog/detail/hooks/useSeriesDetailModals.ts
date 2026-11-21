@@ -49,7 +49,9 @@ export interface UseSeriesDetailModalsReturn {
   isManageSourcesOpen: boolean;
   setIsManageSourcesOpen: (open: boolean) => void;
   manageSourcesInitialTab: ManageSourcesInitialTab | undefined;
-  setManageSourcesInitialTab: (tab: ManageSourcesInitialTab | undefined) => void;
+  setManageSourcesInitialTab: (
+    tab: ManageSourcesInitialTab | undefined
+  ) => void;
   handleOpenManageSources: (tab?: ManageSourcesInitialTab) => void;
 
   // Delete Episode
@@ -63,7 +65,9 @@ export function useSeriesDetailModals(): UseSeriesDetailModalsReturn {
   const [isEditSeriesOpen, setIsEditSeriesOpen] = useState(false);
   const [isSyncTmdbOpen, setIsSyncTmdbOpen] = useState(false);
   const [isBulkScrapeOpen, setIsBulkScrapeOpen] = useState(false);
-  const [bulkScrapeEpisodeIds, setBulkScrapeEpisodeIds] = useState<string[] | null>(null);
+  const [bulkScrapeEpisodeIds, setBulkScrapeEpisodeIds] = useState<
+    string[] | null
+  >(null);
   const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false);
   const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
@@ -80,10 +84,13 @@ export function useSeriesDetailModals(): UseSeriesDetailModalsReturn {
     setIsBulkScrapeOpen(true);
   }, []);
 
-  const handleOpenManageSources = useCallback((tab?: ManageSourcesInitialTab) => {
-    setManageSourcesInitialTab(tab);
-    setIsManageSourcesOpen(true);
-  }, []);
+  const handleOpenManageSources = useCallback(
+    (tab?: ManageSourcesInitialTab) => {
+      setManageSourcesInitialTab(tab);
+      setIsManageSourcesOpen(true);
+    },
+    []
+  );
 
   return {
     isMoveEpisodesOpen,

@@ -112,16 +112,24 @@ describe("Public series contract playback target normalization (HTTP Integration
     // Direct playback target must come first due to tier priority (direct > embed)
     expect(returnedSources[0].id).toBe(directSourceId);
     expect(returnedSources[0].type).toBe("direct");
-    expect(returnedSources[0].url).toBe("https://cdn.example.com/stream/ep1.m3u8");
+    expect(returnedSources[0].url).toBe(
+      "https://cdn.example.com/stream/ep1.m3u8",
+    );
 
     // Videobello URL must be normalized to client-consumable /embed/{hash} path
-    const returnedVideobello = returnedSources.find((s) => s.id === videobelloSourceId);
+    const returnedVideobello = returnedSources.find(
+      (s) => s.id === videobelloSourceId,
+    );
     expect(returnedVideobello).toBeDefined();
     expect(returnedVideobello?.type).toBe("embed");
-    expect(returnedVideobello?.url).toBe("/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0");
+    expect(returnedVideobello?.url).toBe(
+      "/embed/ZXBpc29kZToxMDM4Nw.00000000?source=0",
+    );
 
     // Other embed target preserves type "embed" and iframe URL for WebView renderer
-    const returnedOtherEmbed = returnedSources.find((s) => s.id === otherEmbedSourceId);
+    const returnedOtherEmbed = returnedSources.find(
+      (s) => s.id === otherEmbedSourceId,
+    );
     expect(returnedOtherEmbed).toBeDefined();
     expect(returnedOtherEmbed?.type).toBe("embed");
     expect(returnedOtherEmbed?.url).toBe("https://thirdparty.com/embed/ep1");
@@ -217,7 +225,11 @@ describe("Public series contract playback target normalization (HTTP Integration
       data: {
         seasons: Array<{
           episodes: Array<{
-            videoSources: Array<{ id: string; type: string; quality: string | null }>;
+            videoSources: Array<{
+              id: string;
+              type: string;
+              quality: string | null;
+            }>;
           }>;
         }>;
       };
@@ -236,7 +248,11 @@ describe("Public series contract playback target normalization (HTTP Integration
     expect(epResponse.status).toBe(200);
     const epBody = epResponse.body as {
       data: {
-        videoSources: Array<{ id: string; type: string; quality: string | null }>;
+        videoSources: Array<{
+          id: string;
+          type: string;
+          quality: string | null;
+        }>;
       };
     };
 

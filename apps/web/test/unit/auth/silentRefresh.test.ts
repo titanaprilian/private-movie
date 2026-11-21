@@ -3,7 +3,6 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/modules/auth/internal/store';
 import type { User } from '@repo/contracts';
 
-
 const mockUser: User = {
   id: 'user-123',
   email: 'test@example.com',
@@ -202,12 +201,14 @@ describe('Silent Refresh Interceptor and Store Integration', () => {
   });
 
   it('does not trigger POST /api/auth/refresh when unauthenticated guest requests public endpoints', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
-      return new Response(JSON.stringify({ data: [] }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => {
+        return new Response(JSON.stringify({ data: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       });
-    });
 
     await api.genres.get();
     await api.series['home-feed'].get({ $query: {} });

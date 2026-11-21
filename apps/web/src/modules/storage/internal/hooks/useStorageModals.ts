@@ -61,7 +61,7 @@ export function useStorageModals(selectedProviderId: string | null) {
 
   const handleSaveSourceMetadata = async (
     sourceId: string,
-    input: { label: string; quality: string },
+    input: { label: string; quality: string }
   ) => {
     await updateSourceMetadata(sourceId, input);
     queryClient.invalidateQueries({ queryKey: ['storage'] });
@@ -92,7 +92,7 @@ export function useStorageModals(selectedProviderId: string | null) {
     } else if (deleteTargetType === 'purge') {
       const res = await purgeOrphanFiles(provId);
       toast.success(
-        `Purged ${res.deletedKeys?.length ?? 'all'} orphaned files`,
+        `Purged ${res.deletedKeys?.length ?? 'all'} orphaned files`
       );
     }
     queryClient.invalidateQueries({ queryKey: ['storage'] });

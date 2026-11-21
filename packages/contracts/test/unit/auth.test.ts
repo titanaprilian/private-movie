@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { EmailAlreadyRegisteredError, InvalidCredentialsError } from "../../src/auth";
+import {
+  EmailAlreadyRegisteredError,
+  InvalidCredentialsError,
+} from "../../src/auth";
 
 describe("auth contract errors", () => {
   it("creates EmailAlreadyRegisteredError with message", () => {

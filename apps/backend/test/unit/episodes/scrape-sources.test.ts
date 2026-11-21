@@ -4,16 +4,24 @@ import crypto from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { episodes, seasons, series, videoSources } from "@repo/db";
 import { eq } from "drizzle-orm";
-import { createMediaService, EpisodeFetchError, EpisodeNotFoundError, type FetchFn } from "@repo/media-service";
+import {
+  createMediaService,
+  EpisodeFetchError,
+  EpisodeNotFoundError,
+  type FetchFn,
+} from "@repo/media-service";
 import { db } from "../../utils/db";
 
 const sampleAHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-a.html"),
-  "utf8"
+  "utf8",
 );
 const sampleDirectVideoHtml = readFileSync(
-  resolve(import.meta.dirname, "../../fixtures/episodes/sample-direct-video.html"),
-  "utf8"
+  resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-direct-video.html",
+  ),
+  "utf8",
 );
 const DESUSTREAM_IFRAME_BASE = "https://desustream.net/dstream/arcg/?id=";
 const ODVIDHIDE_EMBED_BASE = "https://odvidhide.com/embed/";
@@ -102,8 +110,8 @@ describe("createMediaService scrapeAndSaveSources", () => {
     await expect(
       service.scrapeAndSaveSources(
         "00000000-0000-0000-0000-000000000000",
-        "https://otakudesu.blog/episode/ep-1/"
-      )
+        "https://otakudesu.blog/episode/ep-1/",
+      ),
     ).rejects.toThrow(EpisodeNotFoundError);
   });
 
@@ -111,7 +119,10 @@ describe("createMediaService scrapeAndSaveSources", () => {
     const episodeId = await createEpisodeFixture();
 
     await expect(
-      service.scrapeAndSaveSources(episodeId, "https://unknown-provider.com/ep-1/")
+      service.scrapeAndSaveSources(
+        episodeId,
+        "https://unknown-provider.com/ep-1/",
+      ),
     ).rejects.toThrow(EpisodeFetchError);
   });
 
@@ -120,7 +131,7 @@ describe("createMediaService scrapeAndSaveSources", () => {
 
     const result = await service.scrapeAndSaveSources(
       episodeId,
-      "https://otakudesu.blog/episode/test-ep-1/"
+      "https://otakudesu.blog/episode/test-ep-1/",
     );
 
     expect(result.id).toBe(episodeId);
@@ -152,7 +163,7 @@ describe("createMediaService scrapeAndSaveSources", () => {
 
     const result = await service.scrapeAndSaveSources(
       episodeId,
-      "https://otakudesu.blog/episode/test-ep-1/"
+      "https://otakudesu.blog/episode/test-ep-1/",
     );
 
     const savedVs = await db
@@ -182,10 +193,16 @@ describe("createMediaService scrapeAndSaveSources", () => {
 
     const result = await customService.scrapeAndSaveSources(
       episodeId,
-      "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1"
+      "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1",
     );
 
-    expect(mockBrowserFn).toHaveBeenCalledWith("https://dramula.com/watch/teach-you-a-lesson-2026/s1e1");
-    expect(result.videoSources.some((vs) => vs.url.includes("videobello.example.com"))).toBe(true);
+    expect(mockBrowserFn).toHaveBeenCalledWith(
+      "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1",
+    );
+    expect(
+      result.videoSources.some((vs) =>
+        vs.url.includes("videobello.example.com"),
+      ),
+    ).toBe(true);
   });
 });

@@ -60,9 +60,7 @@ describe('ViewerLoginForm', () => {
 
   it('opens the forgot-password chunky dialog with admin contact info', async () => {
     const { user } = renderWithProviders(<ViewerLoginForm />);
-    await user.click(
-      screen.getByRole('button', { name: /forgot password/i })
-    );
+    await user.click(screen.getByRole('button', { name: /forgot password/i }));
     expect(
       await screen.findByRole('dialog', { name: /forgot your password/i })
     ).toBeInTheDocument();
@@ -71,21 +69,27 @@ describe('ViewerLoginForm', () => {
 
   it('opens the ask-for-invite dialog with admin contact info instead of navigating', async () => {
     const { user } = renderWithProviders(<ViewerLoginForm />);
-    const inviteLink = screen.getByRole('button', { name: /ask for an invite/i });
+    const inviteLink = screen.getByRole('button', {
+      name: /ask for an invite/i,
+    });
     expect(inviteLink.tagName).not.toBe('A');
     expect(inviteLink).not.toHaveAttribute('href');
     await user.click(inviteLink);
     expect(
       await screen.findByRole('dialog', { name: /need an account/i })
     ).toBeInTheDocument();
-    expect(screen.getByText(/accounts are created by your admin/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/accounts are created by your admin/i)
+    ).toBeInTheDocument();
   });
 
   it('submits valid form with a mock toast and no backend call', async () => {
     const loginSpy = vi.fn();
     useAuthStore.setState({ login: loginSpy });
     const onSuccess = vi.fn();
-    const { user } = renderWithProviders(<ViewerLoginForm onSuccess={onSuccess} />);
+    const { user } = renderWithProviders(
+      <ViewerLoginForm onSuccess={onSuccess} />
+    );
     await user.type(screen.getByLabelText('Email'), 'viewer@example.com');
     await user.type(screen.getByLabelText('Password'), 'secretpassword');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
@@ -112,7 +116,10 @@ describe('ViewerLoginPage layout', () => {
     const logos = screen.getAllByAltText('Private Movie');
     expect(logos.length).toBeGreaterThanOrEqual(2);
     for (const logo of logos) {
-      expect(logo).toHaveAttribute('src', expect.stringContaining('/assets/logo-full'));
+      expect(logo).toHaveAttribute(
+        'src',
+        expect.stringContaining('/assets/logo-full')
+      );
     }
     expect(screen.queryByText(/^Private Movie$/)).not.toBeInTheDocument();
   });

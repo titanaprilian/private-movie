@@ -1,5 +1,12 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { genres, series, seasons, episodes, videoSources, seriesToGenres } from "@repo/db";
+import {
+  genres,
+  series,
+  seasons,
+  episodes,
+  videoSources,
+  seriesToGenres,
+} from "@repo/db";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
 
@@ -598,7 +605,7 @@ describe("GET /series/home-feed", () => {
       genreId: string,
       updatedAt: Date,
       withSources: boolean,
-      status: "ongoing" | "completed" = "ongoing"
+      status: "ongoing" | "completed" = "ongoing",
     ): Promise<string> {
       const sId = crypto.randomUUID();
       await db.insert(series).values({
@@ -643,17 +650,46 @@ describe("GET /series/home-feed", () => {
     }
 
     // KD: newer updates should come first; one completed (excluded), one without sources (excluded)
-    const kdNew = await seedOngoingSeries("KD New", kdId, new Date(baseTime + 3000), true);
-    const kdOld = await seedOngoingSeries("KD Old", kdId, new Date(baseTime + 1000), true);
-    await seedOngoingSeries("KD No Sources", kdId, new Date(baseTime + 5000), false);
-    await seedOngoingSeries("KD Completed", kdId, new Date(baseTime + 4000), true, "completed");
-    const animId1 = await seedOngoingSeries("Anim 1", animId, new Date(baseTime + 2000), true);
+    const kdNew = await seedOngoingSeries(
+      "KD New",
+      kdId,
+      new Date(baseTime + 3000),
+      true,
+    );
+    const kdOld = await seedOngoingSeries(
+      "KD Old",
+      kdId,
+      new Date(baseTime + 1000),
+      true,
+    );
+    await seedOngoingSeries(
+      "KD No Sources",
+      kdId,
+      new Date(baseTime + 5000),
+      false,
+    );
+    await seedOngoingSeries(
+      "KD Completed",
+      kdId,
+      new Date(baseTime + 4000),
+      true,
+      "completed",
+    );
+    const animId1 = await seedOngoingSeries(
+      "Anim 1",
+      animId,
+      new Date(baseTime + 2000),
+      true,
+    );
 
     const response = await request(app, { path: "/series/home-feed" });
     expect(response.status).toBe(200);
     const body = response.body as {
       data: {
-        rows: Array<{ title: string; items: Array<{ id: string; title: string }> }>;
+        rows: Array<{
+          title: string;
+          items: Array<{ id: string; title: string }>;
+        }>;
       };
     };
 
@@ -666,10 +702,14 @@ describe("GET /series/home-feed", () => {
     expect(titles.indexOf("Animation")).toBeGreaterThan(1);
     expect(titles).not.toContain("Recently Added");
 
-    const kdRow = body.data.rows.find((r) => r.title === "Ongoing Korean Drama")!;
+    const kdRow = body.data.rows.find(
+      (r) => r.title === "Ongoing Korean Drama",
+    )!;
     expect(kdRow.items.map((i) => i.id)).toEqual([kdNew, kdOld]);
 
-    const animRow = body.data.rows.find((r) => r.title === "Ongoing Animation")!;
+    const animRow = body.data.rows.find(
+      (r) => r.title === "Ongoing Animation",
+    )!;
     expect(animRow.items.map((i) => i.id)).toEqual([animId1]);
 
     // No generic Ongoing fallback when per-genre ongoing exists
@@ -806,19 +846,45 @@ describe("GET /series/home-feed", () => {
     }
 
     // Non-highlighted has the newest updatedAt, but highlighted must still come first
-    const plainNewest = await seedOngoing("Plain Newest", new Date(baseTime + 5000), false);
-    const highlightedOld = await seedOngoing("Highlighted Old", new Date(baseTime + 1000), true);
-    const highlightedNew = await seedOngoing("Highlighted New", new Date(baseTime + 2000), true);
+    const plainNewest = await seedOngoing(
+      "Plain Newest",
+      new Date(baseTime + 5000),
+      false,
+    );
+    const highlightedOld = await seedOngoing(
+      "Highlighted Old",
+      new Date(baseTime + 1000),
+      true,
+    );
+    const highlightedNew = await seedOngoing(
+      "Highlighted New",
+      new Date(baseTime + 2000),
+      true,
+    );
     // Highlighted but completed-only -> safety gate must exclude it
-    await seedOngoing("Highlighted Completed", new Date(baseTime + 9000), true, "completed");
+    await seedOngoing(
+      "Highlighted Completed",
+      new Date(baseTime + 9000),
+      true,
+      "completed",
+    );
     // Highlighted but sourceless -> safety gate must exclude it
-    await seedOngoing("Highlighted No Sources", new Date(baseTime + 8000), true, "ongoing", false);
+    await seedOngoing(
+      "Highlighted No Sources",
+      new Date(baseTime + 8000),
+      true,
+      "ongoing",
+      false,
+    );
 
     const response = await request(app, { path: "/series/home-feed" });
     expect(response.status).toBe(200);
     const body = response.body as {
       data: {
-        rows: Array<{ title: string; items: Array<{ id: string; title: string }> }>;
+        rows: Array<{
+          title: string;
+          items: Array<{ id: string; title: string }>;
+        }>;
       };
     };
     const row = body.data.rows.find((r) => r.title === "Ongoing Anime")!;
@@ -832,7 +898,11 @@ describe("GET /series/home-feed", () => {
     const baseTime = Date.now();
     const now = new Date(baseTime);
 
-    async function seedCase(suffix: string, highlightedCount: number, plainCount: number) {
+    async function seedCase(
+      suffix: string,
+      highlightedCount: number,
+      plainCount: number,
+    ) {
       const bigId = crypto.randomUUID();
       await db.insert(genres).values({
         id: bigId,
@@ -855,7 +925,9 @@ describe("GET /series/home-feed", () => {
           createdAt: now,
           updatedAt: new Date(baseTime + i * 1000),
         });
-        await db.insert(seriesToGenres).values({ seriesId: sId, genreId: bigId });
+        await db
+          .insert(seriesToGenres)
+          .values({ seriesId: sId, genreId: bigId });
         const seasonId = crypto.randomUUID();
         await db.insert(seasons).values({
           id: seasonId,
@@ -895,7 +967,9 @@ describe("GET /series/home-feed", () => {
           createdAt: now,
           updatedAt: new Date(baseTime + 50000 + i * 1000),
         });
-        await db.insert(seriesToGenres).values({ seriesId: sId, genreId: bigId });
+        await db
+          .insert(seriesToGenres)
+          .values({ seriesId: sId, genreId: bigId });
         const seasonId = crypto.randomUUID();
         await db.insert(seasons).values({
           id: seasonId,
@@ -971,7 +1045,11 @@ describe("GET /series/home-feed", () => {
     const baseTime = Date.now();
     const now = new Date(baseTime);
 
-    async function seedFallback(title: string, updatedAt: Date, highlighted: boolean) {
+    async function seedFallback(
+      title: string,
+      updatedAt: Date,
+      highlighted: boolean,
+    ) {
       const sId = crypto.randomUUID();
       await db.insert(series).values({
         id: sId,
@@ -1012,8 +1090,16 @@ describe("GET /series/home-feed", () => {
       return sId;
     }
 
-    const plain = await seedFallback("Fallback Plain", new Date(baseTime + 5000), false);
-    const highlighted = await seedFallback("Fallback Highlighted", new Date(baseTime + 1000), true);
+    const plain = await seedFallback(
+      "Fallback Plain",
+      new Date(baseTime + 5000),
+      false,
+    );
+    const highlighted = await seedFallback(
+      "Fallback Highlighted",
+      new Date(baseTime + 1000),
+      true,
+    );
 
     const response = await request(app, { path: "/series/home-feed" });
     expect(response.status).toBe(200);
@@ -1117,7 +1203,12 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
       seasonNumber: number | null;
       title: string;
     };
-    videoSources: Array<{ id: string; episodeId: string; type: string; url: string }>;
+    videoSources: Array<{
+      id: string;
+      episodeId: string;
+      type: string;
+      url: string;
+    }>;
   };
 
   type FeedBody = {
@@ -1237,7 +1328,9 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
     const body = response.body as FeedBody;
 
     expect(body.data.recentlyAddedEpisodes).toHaveLength(1);
-    expect(body.data.recentlyAddedEpisodes[0].series.id).not.toBe(emptySeriesId);
+    expect(body.data.recentlyAddedEpisodes[0].series.id).not.toBe(
+      emptySeriesId,
+    );
     expect(body.data.recentlyAddedEpisodes[0].title).toBe("Playable Episode");
   });
 
@@ -1341,7 +1434,7 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
     const body = response.body as FeedBody;
 
     const bulkEntries = body.data.recentlyAddedEpisodes.filter(
-      (e) => e.series.id === seriesId
+      (e) => e.series.id === seriesId,
     );
     expect(bulkEntries).toHaveLength(1);
     expect(bulkEntries[0].id).toBe(newEpId);
@@ -1435,7 +1528,11 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
     const body = response.body as FeedBody;
     const ep = body.data.recentlyAddedEpisodes.find((e) => e.id === episodeId);
     expect(ep).toBeDefined();
-    expect(ep?.videoSources.map((s) => s.id)).toEqual([s3Id, directId, embedId]);
+    expect(ep?.videoSources.map((s) => s.id)).toEqual([
+      s3Id,
+      directId,
+      embedId,
+    ]);
   });
 
   it("ignores the sourceTypes query parameter for recentlyAddedEpisodes", async () => {
@@ -1461,8 +1558,12 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
     expect(plain.status).toBe(200);
     expect(sourceFiltered.status).toBe(200);
 
-    const plainIds = (plain.body as FeedBody).data.recentlyAddedEpisodes.map((e) => e.id);
-    const sourceIds = (sourceFiltered.body as FeedBody).data.recentlyAddedEpisodes.map((e) => e.id);
+    const plainIds = (plain.body as FeedBody).data.recentlyAddedEpisodes.map(
+      (e) => e.id,
+    );
+    const sourceIds = (
+      sourceFiltered.body as FeedBody
+    ).data.recentlyAddedEpisodes.map((e) => e.id);
 
     expect(plainIds).toContain(first.episodeId);
     expect(plainIds).toContain(second.episodeId);
@@ -1471,7 +1572,9 @@ describe("GET /series/home-feed recentlyAddedEpisodes", () => {
 
   it("ignores the removed genre query parameter and serves the global feed", async () => {
     const plain = await request(app, { path: "/series/home-feed" });
-    const withGenre = await request(app, { path: "/series/home-feed?genre=action" });
+    const withGenre = await request(app, {
+      path: "/series/home-feed?genre=action",
+    });
 
     expect(plain.status).toBe(200);
     expect(withGenre.status).toBe(200);

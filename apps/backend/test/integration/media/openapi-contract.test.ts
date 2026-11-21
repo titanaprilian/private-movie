@@ -1,6 +1,13 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { episodes, genres, seasons, series, seriesToGenres, videoSources } from "@repo/db";
+import {
+  episodes,
+  genres,
+  seasons,
+  series,
+  seriesToGenres,
+  videoSources,
+} from "@repo/db";
 import { MVP_MEDIA_OPENAPI } from "@repo/contracts";
 import { buildApp, request, type App } from "../../utils/app";
 import { db } from "../../utils/db";
@@ -154,9 +161,9 @@ describe("MVP public media OpenAPI contract", () => {
     expect(body.data.seasons).toHaveLength(1);
     expect(body.data.seasons[0].episodes).toHaveLength(1);
     expect(body.data.seasons[0].episodes[0].id).toBe(episodeId);
-    expect(
-      body.data.seasons[0].episodes[0].videoSources[0].url,
-    ).toContain("https://example.com/embed/1");
+    expect(body.data.seasons[0].episodes[0].videoSources[0].url).toContain(
+      "https://example.com/embed/1",
+    );
     expect(body.data.episodes).toHaveLength(1);
     expect(Array.isArray(body.data.genres)).toBe(true);
   });

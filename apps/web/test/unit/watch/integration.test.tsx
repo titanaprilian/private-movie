@@ -309,11 +309,19 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     });
 
     expect(getPlayer().src).toBe('https://mirror-a.com/embed1');
-    expect(screen.getByRole('combobox', { name: /server selector/i })).not.toHaveTextContent('available');
+    expect(
+      screen.getByRole('combobox', { name: /server selector/i })
+    ).not.toHaveTextContent('available');
 
-    await user.click(screen.getByRole('combobox', { name: /server selector/i }));
-    expect(screen.getByTestId('server-count-badge')).toHaveTextContent('(2 available)');
-    await user.click(await screen.findByRole('option', { name: /server beta/i }));
+    await user.click(
+      screen.getByRole('combobox', { name: /server selector/i })
+    );
+    expect(screen.getByTestId('server-count-badge')).toHaveTextContent(
+      '(2 available)'
+    );
+    await user.click(
+      await screen.findByRole('option', { name: /server beta/i })
+    );
 
     expect(getPlayer().src).toBe('https://mirror-b.com/embed1');
     expect(
@@ -382,7 +390,9 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     expect(screen.getByTestId('active-episode-overview')).toBeInTheDocument();
 
     // Step 3: Click series title breadcrumb in player mode to return to overview
-    const breadcrumbBtn = screen.getByRole('button', { name: 'Real DB Series Title' });
+    const breadcrumbBtn = screen.getByRole('button', {
+      name: 'Real DB Series Title',
+    });
     await user.click(breadcrumbBtn);
 
     expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
@@ -396,19 +406,25 @@ describe('SeriesWatchView Integration (Data Fetching & State Wiring)', () => {
     expect(screen.getByTestId('watch-player')).toBeInTheDocument();
 
     // Step 5: Click top "Back to Overview" button in player mode
-    const playerBackBtn = screen.getByRole('button', { name: /back to series overview/i });
+    const playerBackBtn = screen.getByRole('button', {
+      name: /back to series overview/i,
+    });
     await user.click(playerBackBtn);
     expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
     expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
 
     // Step 6: Browser history simulation (back / forward via rerendering with updated initialEpisodeId prop)
     // Simulating user clicking Browser Forward (URL gets ?ep=ep-1)
-    rerender(<SeriesWatchView seriesId="series-real-1" initialEpisodeId="ep-1" />);
+    rerender(
+      <SeriesWatchView seriesId="series-real-1" initialEpisodeId="ep-1" />
+    );
     expect(screen.getByTestId('watch-player')).toBeInTheDocument();
     expect(screen.getByText('EP 1 — Database Episode One')).toBeInTheDocument();
 
     // Simulating user clicking Browser Back (URL removes ?ep=)
-    rerender(<SeriesWatchView seriesId="series-real-1" initialEpisodeId={undefined} />);
+    rerender(
+      <SeriesWatchView seriesId="series-real-1" initialEpisodeId={undefined} />
+    );
     expect(screen.queryByTestId('watch-player')).not.toBeInTheDocument();
     expect(screen.getByTestId('series-hero-banner')).toBeInTheDocument();
   });

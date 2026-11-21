@@ -33,8 +33,14 @@ export function RemoteIngestTab({
   const [remoteReferer, setRemoteReferer] = useState('');
   const [remoteProviderId, setRemoteProviderId] = useState<string>('');
   const [showAdvancedHeaders, setShowAdvancedHeaders] = useState(false);
-  const [remoteStatus, setRemoteStatus] = useState<'idle' | 'ingesting'>('idle');
-  const [remoteProgress, setRemoteProgress] = useState({ percent: 0, loaded: 0, total: 0 });
+  const [remoteStatus, setRemoteStatus] = useState<'idle' | 'ingesting'>(
+    'idle'
+  );
+  const [remoteProgress, setRemoteProgress] = useState({
+    percent: 0,
+    loaded: 0,
+    total: 0,
+  });
   const [remoteS3Warning, setRemoteS3Warning] = useState<string | null>(null);
   const [remoteError, setRemoteError] = useState<string | null>(null);
 
@@ -162,7 +168,9 @@ export function RemoteIngestTab({
 
   return (
     <div className="p-3 border border-c rounded bg-card space-y-3">
-      <div className="text-xs font-medium mono text-muted uppercase">Ingest Remote Video URL to S3</div>
+      <div className="text-xs font-medium mono text-muted uppercase">
+        Ingest Remote Video URL to S3
+      </div>
 
       {remoteS3Warning && (
         <div className="p-2.5 rounded border border-amber-200 dark:border-amber-900/50 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2">

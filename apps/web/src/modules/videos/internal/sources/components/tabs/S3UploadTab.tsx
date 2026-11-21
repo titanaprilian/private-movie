@@ -41,7 +41,9 @@ export function S3UploadTab({
 
   return (
     <div className="p-3 border border-c rounded bg-card space-y-3">
-      <div className="text-xs font-medium mono text-muted uppercase">Upload Video to S3</div>
+      <div className="text-xs font-medium mono text-muted uppercase">
+        Upload Video to S3
+      </div>
 
       {s3Warning && (
         <div className="p-2.5 rounded border border-amber-200 dark:border-amber-900/50 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2">
@@ -91,14 +93,18 @@ export function S3UploadTab({
         >
           {selectedFile ? (
             <div className="text-xs mono space-y-1">
-              <div className="font-semibold text-foreground truncate">{selectedFile.name}</div>
+              <div className="font-semibold text-foreground truncate">
+                {selectedFile.name}
+              </div>
               <div className="text-muted text-[11px]">
                 {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
               </div>
             </div>
           ) : (
             <div className="text-xs text-muted space-y-1">
-              <div className="font-medium text-foreground">Click to select or drag video here</div>
+              <div className="font-medium text-foreground">
+                Click to select or drag video here
+              </div>
               <div className="text-[10px]">Supports MP4, MKV, WebM</div>
             </div>
           )}
@@ -186,7 +192,8 @@ export function S3UploadTab({
             </span>
             <span className="text-muted text-[11px]">
               {(uploadProgress.loaded / (1024 * 1024)).toFixed(1)} MB /{' '}
-              {(uploadProgress.total / (1024 * 1024)).toFixed(1)} MB ({uploadProgress.percent}%)
+              {(uploadProgress.total / (1024 * 1024)).toFixed(1)} MB (
+              {uploadProgress.percent}%)
             </span>
           </div>
           <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">

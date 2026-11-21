@@ -27,7 +27,11 @@ describe("season repository create", () => {
 
   it("creates a season with defaults", async () => {
     const seriesId = await createSeriesWithTitle();
-    const row = await repository.create({ seriesId, title: "Season 1", seasonNumber: 1 });
+    const row = await repository.create({
+      seriesId,
+      title: "Season 1",
+      seasonNumber: 1,
+    });
 
     expect(row.seriesId).toBe(seriesId);
     expect(row.title).toBe("Season 1");
@@ -61,25 +65,40 @@ describe("season repository create", () => {
       status: "ongoing",
     });
 
-    const [refreshedFirst] = await db.select().from(seasons).where(eq(seasons.id, first.id));
+    const [refreshedFirst] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, first.id));
     expect(refreshedFirst.status).toBe("completed");
     expect(second.status).toBe("ongoing");
   });
 
   it("finds by series id and season number", async () => {
     const seriesId = await createSeriesWithTitle();
-    const created = await repository.create({ seriesId, title: "S1", seasonNumber: 3 });
+    const created = await repository.create({
+      seriesId,
+      title: "S1",
+      seasonNumber: 3,
+    });
 
     const found = await repository.findBySeriesIdAndSeasonNumber(seriesId, 3);
     expect(found?.id).toBe(created.id);
 
-    const missing = await repository.findBySeriesIdAndSeasonNumber(seriesId, 99);
+    const missing = await repository.findBySeriesIdAndSeasonNumber(
+      seriesId,
+      99,
+    );
     expect(missing).toBeNull();
   });
 
   it("finds ongoing seasons with scraper url", async () => {
     const seriesId = await createSeriesWithTitle();
-    await repository.create({ seriesId, title: "No scraper", seasonNumber: 1, status: "ongoing" });
+    await repository.create({
+      seriesId,
+      title: "No scraper",
+      seasonNumber: 1,
+      status: "ongoing",
+    });
     const withScraper = await repository.create({
       seriesId,
       title: "With scraper",
@@ -118,19 +137,32 @@ describe("season repository updateSeason", () => {
       seasonNumber: 1,
       status: "ongoing",
     });
-    const second = await repository.create({ seriesId, title: "S2", seasonNumber: 2 });
+    const second = await repository.create({
+      seriesId,
+      title: "S2",
+      seasonNumber: 2,
+    });
 
     await repository.updateSeason(second.id, { status: "ongoing" });
 
-    const [refreshedFirst] = await db.select().from(seasons).where(eq(seasons.id, first.id));
-    const [refreshedSecond] = await db.select().from(seasons).where(eq(seasons.id, second.id));
+    const [refreshedFirst] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, first.id));
+    const [refreshedSecond] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, second.id));
     expect(refreshedFirst.status).toBe("completed");
     expect(refreshedSecond.status).toBe("ongoing");
   });
 
   it("clears series highlight when last ongoing season completes", async () => {
     const seriesId = await createSeriesWithTitle();
-    await db.update(series).set({ isOngoingHighlighted: true }).where(eq(series.id, seriesId));
+    await db
+      .update(series)
+      .set({ isOngoingHighlighted: true })
+      .where(eq(series.id, seriesId));
     const only = await repository.create({
       seriesId,
       title: "S1",
@@ -140,7 +172,10 @@ describe("season repository updateSeason", () => {
 
     await repository.updateSeason(only.id, { status: "completed" });
 
-    const [refreshed] = await db.select().from(series).where(eq(series.id, seriesId));
+    const [refreshed] = await db
+      .select()
+      .from(series)
+      .where(eq(series.id, seriesId));
     expect(refreshed.isOngoingHighlighted).toBe(false);
   });
 
@@ -151,7 +186,10 @@ describe("season repository updateSeason", () => {
 
     await repository.reparentSeasons(fromId, toId);
 
-    const rows = await db.select().from(seasons).where(eq(seasons.seriesId, toId));
+    const rows = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.seriesId, toId));
     expect(rows).toHaveLength(1);
   });
 });
@@ -166,14 +204,18 @@ describe("season repository deleteSeason", () => {
   });
 
   it("throws SeasonNotFoundError for unknown id", async () => {
-    await expect(repository.deleteSeason(crypto.randomUUID())).rejects.toBeInstanceOf(
-      SeasonNotFoundError,
-    );
+    await expect(
+      repository.deleteSeason(crypto.randomUUID()),
+    ).rejects.toBeInstanceOf(SeasonNotFoundError);
   });
 
   it("throws SeasonNotEmptyError when episodes remain", async () => {
     const seriesId = await createSeriesWithTitle();
-    const season = await repository.create({ seriesId, title: "S1", seasonNumber: 1 });
+    const season = await repository.create({
+      seriesId,
+      title: "S1",
+      seasonNumber: 1,
+    });
     const now = new Date();
     await db.insert(episodes).values({
       id: crypto.randomUUID(),
@@ -184,12 +226,17 @@ describe("season repository deleteSeason", () => {
       updatedAt: now,
     });
 
-    await expect(repository.deleteSeason(season.id)).rejects.toBeInstanceOf(SeasonNotEmptyError);
+    await expect(repository.deleteSeason(season.id)).rejects.toBeInstanceOf(
+      SeasonNotEmptyError,
+    );
   });
 
   it("deletes an empty season and clears highlight if it was ongoing", async () => {
     const seriesId = await createSeriesWithTitle();
-    await db.update(series).set({ isOngoingHighlighted: true }).where(eq(series.id, seriesId));
+    await db
+      .update(series)
+      .set({ isOngoingHighlighted: true })
+      .where(eq(series.id, seriesId));
     const season = await repository.create({
       seriesId,
       title: "S1",
@@ -201,7 +248,10 @@ describe("season repository deleteSeason", () => {
 
     const found = await repository.findById(season.id);
     expect(found).toBeNull();
-    const [refreshed] = await db.select().from(series).where(eq(series.id, seriesId));
+    const [refreshed] = await db
+      .select()
+      .from(series)
+      .where(eq(series.id, seriesId));
     expect(refreshed.isOngoingHighlighted).toBe(false);
   });
 });

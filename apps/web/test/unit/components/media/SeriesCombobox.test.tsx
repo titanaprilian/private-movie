@@ -1,4 +1,11 @@
-import { createTestQueryClient, renderWithProviders, screen, fireEvent, within, act } from '../../../utils';
+import {
+  createTestQueryClient,
+  renderWithProviders,
+  screen,
+  fireEvent,
+  within,
+  act,
+} from '../../../utils';
 import { describe, expect, it, vi } from 'vitest';
 import { SeriesCombobox } from '@/components/media/SeriesCombobox';
 
@@ -24,7 +31,11 @@ const mockSeriesList = [
 describe('SeriesCombobox component', () => {
   it('renders ChunkyButton trigger with tactile styling and focus ring', () => {
     renderWithProviders(
-      <SeriesCombobox value="" onValueChange={vi.fn()} initialSeriesList={mockSeriesList} />
+      <SeriesCombobox
+        value=""
+        onValueChange={vi.fn()}
+        initialSeriesList={mockSeriesList}
+      />
     );
 
     const trigger = screen.getByRole('combobox', { name: 'Select series' });
@@ -36,12 +47,16 @@ describe('SeriesCombobox component', () => {
 
   it('renders placeholder when no series is selected', () => {
     renderWithProviders(
-      <SeriesCombobox value="" onValueChange={vi.fn()} initialSeriesList={mockSeriesList} />
+      <SeriesCombobox
+        value=""
+        onValueChange={vi.fn()}
+        initialSeriesList={mockSeriesList}
+      />
     );
 
-    expect(screen.getByRole('combobox', { name: 'Select series' })).toHaveTextContent(
-      'Select a series...'
-    );
+    expect(
+      screen.getByRole('combobox', { name: 'Select series' })
+    ).toHaveTextContent('Select a series...');
   });
 
   it('renders selected series title when value is matched', () => {
@@ -53,9 +68,9 @@ describe('SeriesCombobox component', () => {
       />
     );
 
-    expect(screen.getByRole('combobox', { name: 'Select series' })).toHaveTextContent(
-      'Demon Slayer'
-    );
+    expect(
+      screen.getByRole('combobox', { name: 'Select series' })
+    ).toHaveTextContent('Demon Slayer');
   });
 
   it('excludes series specified in excludeSeriesId', async () => {
@@ -92,13 +107,18 @@ describe('SeriesCombobox component', () => {
     const option = within(listbox).getByText('Attack on Titan');
     fireEvent.click(option);
 
-    expect(handleValueChange).toHaveBeenCalledWith('s-1', expect.objectContaining({ id: 's-1', title: 'Attack on Titan' }));
+    expect(handleValueChange).toHaveBeenCalledWith(
+      's-1',
+      expect.objectContaining({ id: 's-1', title: 'Attack on Titan' })
+    );
   });
 
   it('shows only search results when a search query is active, ignoring un-searched initial series', async () => {
     vi.useFakeTimers();
     const queryClient = createTestQueryClient();
-    queryClient.setDefaultOptions({ queries: { retry: false, staleTime: Infinity } });
+    queryClient.setDefaultOptions({
+      queries: { retry: false, staleTime: Infinity },
+    });
 
     const searchResults = [
       {
@@ -140,7 +160,9 @@ describe('SeriesCombobox component', () => {
 
     const listbox = screen.getByRole('listbox');
     expect(within(listbox).getByText('Bye Bye Earth')).toBeInTheDocument();
-    expect(within(listbox).queryByText('Attack on Titan')).not.toBeInTheDocument();
+    expect(
+      within(listbox).queryByText('Attack on Titan')
+    ).not.toBeInTheDocument();
     expect(within(listbox).queryByText('Demon Slayer')).not.toBeInTheDocument();
 
     vi.useRealTimers();

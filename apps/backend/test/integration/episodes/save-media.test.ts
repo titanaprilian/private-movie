@@ -11,11 +11,11 @@ import type { App } from "../../utils/app";
 
 const sampleBHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/episodes/sample-b.html"),
-  "utf8"
+  "utf8",
 );
 const sampleSeriesHtml = readFileSync(
   resolve(import.meta.dirname, "../../fixtures/series/sample-series-list.html"),
-  "utf8"
+  "utf8",
 );
 
 const NONCE_ACTION = "aa1208d27f29ca340c92c66d1926f13f";
@@ -120,8 +120,10 @@ describe("POST /save-media", () => {
   describe("happy path", () => {
     it("accepts dramula source type for episode and series payloads returning 200 OK", async () => {
       const { accessToken } = await registerUser(app);
-      const epSourceUrl = "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1";
-      const seriesSourceUrl = "https://dramula.com/watch/teach-you-a-lesson-2026";
+      const epSourceUrl =
+        "https://dramula.com/watch/teach-you-a-lesson-2026/s1e1";
+      const seriesSourceUrl =
+        "https://dramula.com/watch/teach-you-a-lesson-2026";
 
       const response = await request(app, {
         method: "POST",
@@ -240,7 +242,8 @@ describe("POST /save-media", () => {
     it("creates episode and series records and links them when series payload is provided", async () => {
       const { accessToken } = await registerUser(app);
       const epSourceUrl = "https://otakudesu.blog/episode/save-media-integ-2/";
-      const seriesSourceUrl = "https://otakudesu.blog/anime/save-media-integ-series-2/";
+      const seriesSourceUrl =
+        "https://otakudesu.blog/anime/save-media-integ-series-2/";
 
       const response = await request(app, {
         method: "POST",
@@ -380,11 +383,36 @@ describe("POST /save-media", () => {
 
   describe("resolved mirror sources", () => {
     const resolvedMirrors = [
-      { type: "embed" as const, url: "https://player.example.com/embed/mirror-0", label: "ondesu2hd", quality: "720p" },
-      { type: "embed" as const, url: "https://player.example.com/embed/mirror-1", label: "odstream", quality: "720p" },
-      { type: "embed" as const, url: "https://player.example.com/embed/mirror-2", label: "filedon", quality: "720p" },
-      { type: "embed" as const, url: "https://player.example.com/embed/mirror-3", label: "vidhide", quality: "720p" },
-      { type: "embed" as const, url: "https://player.example.com/embed/mirror-4", label: "mega", quality: "720p" },
+      {
+        type: "embed" as const,
+        url: "https://player.example.com/embed/mirror-0",
+        label: "ondesu2hd",
+        quality: "720p",
+      },
+      {
+        type: "embed" as const,
+        url: "https://player.example.com/embed/mirror-1",
+        label: "odstream",
+        quality: "720p",
+      },
+      {
+        type: "embed" as const,
+        url: "https://player.example.com/embed/mirror-2",
+        label: "filedon",
+        quality: "720p",
+      },
+      {
+        type: "embed" as const,
+        url: "https://player.example.com/embed/mirror-3",
+        label: "vidhide",
+        quality: "720p",
+      },
+      {
+        type: "embed" as const,
+        url: "https://player.example.com/embed/mirror-4",
+        label: "mega",
+        quality: "720p",
+      },
     ];
 
     it("saves all resolved mirrors as separate video source rows", async () => {
@@ -429,8 +457,8 @@ describe("POST /save-media", () => {
           (row) =>
             row.type === "embed" &&
             row.quality === "720p" &&
-            row.url.startsWith("https://player.example.com/embed/mirror-")
-        )
+            row.url.startsWith("https://player.example.com/embed/mirror-"),
+        ),
       ).toBe(true);
     });
 

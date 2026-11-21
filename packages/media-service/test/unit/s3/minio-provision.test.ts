@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const sentCommands: Array<{ name: string; input: Record<string, unknown> }> = [];
+const sentCommands: Array<{ name: string; input: Record<string, unknown> }> =
+  [];
 let corsFailure: unknown = null;
 
 vi.mock("@aws-sdk/client-s3", () => {
@@ -23,18 +24,29 @@ vi.mock("@aws-sdk/client-s3", () => {
     }
   }
   class MockS3Client {
-    send = vi.fn(async (command: { constructor: { name: string }; input: Record<string, unknown> }) => {
-      sentCommands.push({ name: command.constructor.name, input: command.input });
-      if (command.constructor.name === "MockHeadBucketCommand") {
-        const err = new Error("NotFound");
-        (err as { name: string }).name = "NotFound";
-        throw err;
-      }
-      if (command.constructor.name === "MockPutBucketCorsCommand" && corsFailure) {
-        throw corsFailure;
-      }
-      return {};
-    });
+    send = vi.fn(
+      async (command: {
+        constructor: { name: string };
+        input: Record<string, unknown>;
+      }) => {
+        sentCommands.push({
+          name: command.constructor.name,
+          input: command.input,
+        });
+        if (command.constructor.name === "MockHeadBucketCommand") {
+          const err = new Error("NotFound");
+          (err as { name: string }).name = "NotFound";
+          throw err;
+        }
+        if (
+          command.constructor.name === "MockPutBucketCorsCommand" &&
+          corsFailure
+        ) {
+          throw corsFailure;
+        }
+        return {};
+      },
+    );
   }
   return {
     S3Client: MockS3Client,
@@ -70,22 +82,36 @@ describe("ensureMinioBucketWithCors", () => {
     expect(names).toContain("MockCreateBucketCommand");
     expect(names).toContain("MockPutBucketCorsCommand");
 
-    const cors = sentCommands.find((c) => c.name === "MockPutBucketCorsCommand");
+    const cors = sentCommands.find(
+      (c) => c.name === "MockPutBucketCorsCommand",
+    );
     expect(cors!.input).toMatchObject({ Bucket: "private-movie-videos" });
-    const rules = (cors!.input as { CORSConfiguration: { CORSRules: Array<Record<string, unknown>> } })
-      .CORSConfiguration.CORSRules;
+    const rules = (
+      cors!.input as {
+        CORSConfiguration: { CORSRules: Array<Record<string, unknown>> };
+      }
+    ).CORSConfiguration.CORSRules;
     expect(rules).toHaveLength(1);
-    expect(rules[0].AllowedMethods).toEqual(expect.arrayContaining(["GET", "HEAD"]));
+    expect(rules[0].AllowedMethods).toEqual(
+      expect.arrayContaining(["GET", "HEAD"]),
+    );
     expect(rules[0].AllowedHeaders).toEqual(["*"]);
     expect(rules[0].ExposeHeaders).toEqual(
-      expect.arrayContaining(["Content-Range", "Content-Length", "ETag", "Accept-Ranges"])
+      expect.arrayContaining([
+        "Content-Range",
+        "Content-Length",
+        "ETag",
+        "Accept-Ranges",
+      ]),
     );
   });
 
   it("succeeds when PutBucketCors rejects with 501 NotImplemented (MinIO native CORS)", async () => {
     const err = new Error("NotImplemented");
     (err as { name: string }).name = "NotImplemented";
-    (err as { $metadata: { httpStatusCode: number } }).$metadata = { httpStatusCode: 501 };
+    (err as { $metadata: { httpStatusCode: number } }).$metadata = {
+      httpStatusCode: 501,
+    };
     corsFailure = err;
 
     await expect(
@@ -96,7 +122,7 @@ describe("ensureMinioBucketWithCors", () => {
         accessKeyId: "TESTACCESSKEY12345",
         secretAccessKey: "test-secret",
         forcePathStyle: true,
-      })
+      }),
     ).resolves.toBeUndefined();
 
     const names = sentCommands.map((c) => c.name);
@@ -105,7 +131,9 @@ describe("ensureMinioBucketWithCors", () => {
 
   it("succeeds when PutBucketCors rejects with bare 501 status code", async () => {
     const err = new Error("501");
-    (err as { $metadata: { httpStatusCode: number } }).$metadata = { httpStatusCode: 501 };
+    (err as { $metadata: { httpStatusCode: number } }).$metadata = {
+      httpStatusCode: 501,
+    };
     corsFailure = err;
 
     await expect(
@@ -114,14 +142,16 @@ describe("ensureMinioBucketWithCors", () => {
         bucket: "private-movie-videos",
         accessKeyId: "TESTACCESSKEY12345",
         secretAccessKey: "test-secret",
-      })
+      }),
     ).resolves.toBeUndefined();
   });
 
   it("rethrows non-NotImplemented CORS errors", async () => {
     const err = new Error("AccessDenied");
     (err as { name: string }).name = "AccessDenied";
-    (err as { $metadata: { httpStatusCode: number } }).$metadata = { httpStatusCode: 403 };
+    (err as { $metadata: { httpStatusCode: number } }).$metadata = {
+      httpStatusCode: 403,
+    };
     corsFailure = err;
 
     await expect(
@@ -130,7 +160,7 @@ describe("ensureMinioBucketWithCors", () => {
         bucket: "private-movie-videos",
         accessKeyId: "TESTACCESSKEY12345",
         secretAccessKey: "test-secret",
-      })
+      }),
     ).rejects.toThrow("AccessDenied");
   });
 

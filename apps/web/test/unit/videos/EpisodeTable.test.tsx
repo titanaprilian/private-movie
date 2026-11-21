@@ -1,4 +1,10 @@
-import { renderWithProviders, fireEvent, screen, userEvent, within } from '../../utils';
+import {
+  renderWithProviders,
+  fireEvent,
+  screen,
+  userEvent,
+  within,
+} from '../../utils';
 import { describe, expect, it, vi } from 'vitest';
 import { EpisodeTable } from '@/modules/videos/internal/seasons';
 import type { Episode } from '@/modules/videos/internal/api';
@@ -14,8 +20,18 @@ const mockEpisodes: Episode[] = [
     updatedAt: '2026-01-01T00:00:00.000Z',
     description: 'An exciting start to our story and adventures.',
     videoSources: [
-      { id: 'vs-1', type: 'direct', url: 'https://stream.example/1.mp4', label: '1080p' },
-      { id: 'vs-2', type: 'embed', url: 'https://embed.example/1', label: 'Mirror' },
+      {
+        id: 'vs-1',
+        type: 'direct',
+        url: 'https://stream.example/1.mp4',
+        label: '1080p',
+      },
+      {
+        id: 'vs-2',
+        type: 'embed',
+        url: 'https://embed.example/1',
+        label: 'Mirror',
+      },
     ],
   },
   {
@@ -37,18 +53,22 @@ const mockEpisodes: Episode[] = [
     updatedAt: '2026-01-15T00:00:00.000Z',
     description: 'The decisive final confrontation.',
     videoSources: [
-      { id: 'vs-3', type: 'direct', url: 'https://stream.example/3.mp4', label: '4K' },
+      {
+        id: 'vs-3',
+        type: 'direct',
+        url: 'https://stream.example/3.mp4',
+        label: '4K',
+      },
     ],
   },
 ];
 
-function renderEpisodeTable(props: Partial<React.ComponentProps<typeof EpisodeTable>> = {}) {
+function renderEpisodeTable(
+  props: Partial<React.ComponentProps<typeof EpisodeTable>> = {}
+) {
   return renderWithProviders(
     <DragDropContext onDragEnd={vi.fn()}>
-      <EpisodeTable
-        episodes={mockEpisodes}
-        {...props}
-      />
+      <EpisodeTable episodes={mockEpisodes} {...props} />
     </DragDropContext>
   );
 }
@@ -66,13 +86,27 @@ describe('EpisodeTable Component', () => {
     // Table header container and items (ChunkyTable primitives)
     const header = screen.getByTestId('episode-table-header');
     expect(header).toBeInTheDocument();
-    expect(within(header as HTMLElement).getByRole('checkbox', { name: /select all visible episodes/i })).toBeInTheDocument();
+    expect(
+      within(header as HTMLElement).getByRole('checkbox', {
+        name: /select all visible episodes/i,
+      })
+    ).toBeInTheDocument();
     expect(within(header as HTMLElement).getByText('#')).toBeInTheDocument();
-    expect(within(header as HTMLElement).getByText('Title')).toBeInTheDocument();
-    expect(within(header as HTMLElement).getByText('Duration')).toBeInTheDocument();
-    expect(within(header as HTMLElement).getByText('Sources')).toBeInTheDocument();
-    expect(within(header as HTMLElement).getByText('Status')).toBeInTheDocument();
-    expect(within(header as HTMLElement).getByText('Release Date')).toBeInTheDocument();
+    expect(
+      within(header as HTMLElement).getByText('Title')
+    ).toBeInTheDocument();
+    expect(
+      within(header as HTMLElement).getByText('Duration')
+    ).toBeInTheDocument();
+    expect(
+      within(header as HTMLElement).getByText('Sources')
+    ).toBeInTheDocument();
+    expect(
+      within(header as HTMLElement).getByText('Status')
+    ).toBeInTheDocument();
+    expect(
+      within(header as HTMLElement).getByText('Release Date')
+    ).toBeInTheDocument();
 
     // Header must have 9 in-flow columns matching each body row
     // (grip + kebab placeholders stay in grid flow via aria-hidden spans,
@@ -105,7 +139,9 @@ describe('EpisodeTable Component', () => {
     expect(screen.getByText('2026-01-15')).toBeInTheDocument();
 
     // Drag-and-drop refs attach cleanly to ChunkyTableRow
-    expect(container.querySelector('[data-rfd-droppable-id="episodes-list"]')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-rfd-droppable-id="episodes-list"]')
+    ).toBeInTheDocument();
     expect(firstRow).toHaveAttribute('data-rfd-draggable-id', 'ep-1');
   });
 
@@ -113,25 +149,33 @@ describe('EpisodeTable Component', () => {
     const user = userEvent.setup();
     renderEpisodeTable();
 
-    const searchInput = screen.getByRole('textbox', { name: /search episodes/i });
+    const searchInput = screen.getByRole('textbox', {
+      name: /search episodes/i,
+    });
 
     // Filter by title
     await user.type(searchInput, 'Beginning');
     expect(screen.getByText('Episode 1: The Beginning')).toBeInTheDocument();
-    expect(screen.queryByText('Episode 2: The Challenge')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Episode 2: The Challenge')
+    ).not.toBeInTheDocument();
     expect(screen.queryByText('Episode 3: The Climax')).not.toBeInTheDocument();
 
     // Filter by description
     await user.clear(searchInput);
     await user.type(searchInput, 'hurdles');
-    expect(screen.queryByText('Episode 1: The Beginning')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Episode 1: The Beginning')
+    ).not.toBeInTheDocument();
     expect(screen.getByText('Episode 2: The Challenge')).toBeInTheDocument();
     expect(screen.queryByText('Episode 3: The Climax')).not.toBeInTheDocument();
 
     // No match
     await user.clear(searchInput);
     await user.type(searchInput, 'nonexistent-query');
-    expect(screen.getByText('No episodes match your search.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No episodes match your search.')
+    ).toBeInTheDocument();
   });
 
   it('sorts episodes by Order, Title, Duration, and Release Date upon column header click', async () => {
@@ -182,7 +226,7 @@ describe('EpisodeTable Component', () => {
     expect(getRenderedTitles()).toEqual([
       'Episode 2: The Challenge', // 22:30
       'Episode 1: The Beginning', // 24:15
-      'Episode 3: The Climax',    // 01:05:00
+      'Episode 3: The Climax', // 01:05:00
     ]);
 
     // Sort by release date desc
@@ -225,7 +269,9 @@ describe('EpisodeTable Component', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       /custom sorting/i
     );
-    expect(screen.getByLabelText('Reorder Episode 1: The Beginning')).toHaveClass('cursor-not-allowed');
+    expect(
+      screen.getByLabelText('Reorder Episode 1: The Beginning')
+    ).toHaveClass('cursor-not-allowed');
 
     // Reset sort back to order asc
     const orderHeaderBtn = screen.getByRole('button', { name: /#/i });
@@ -233,7 +279,9 @@ describe('EpisodeTable Component', () => {
     expect(screen.queryByText('Reordering disabled')).not.toBeInTheDocument();
 
     // Activate search query
-    const searchInput = screen.getByRole('textbox', { name: /search episodes/i });
+    const searchInput = screen.getByRole('textbox', {
+      name: /search episodes/i,
+    });
     await user.type(searchInput, 'Episode');
     expect(screen.getByText('Reordering disabled')).toBeInTheDocument();
     await user.hover(screen.getByText('Reordering disabled'));
@@ -262,28 +310,40 @@ describe('EpisodeTable Component', () => {
     expect(onSelectEpisode).toHaveBeenCalledWith(mockEpisodes[0]);
 
     // Open action menu
-    const menuBtn = screen.getByRole('button', { name: 'Actions for Episode 1: The Beginning' });
+    const menuBtn = screen.getByRole('button', {
+      name: 'Actions for Episode 1: The Beginning',
+    });
     await user.click(menuBtn);
 
     // Edit
     const editBtn = await screen.findByRole('menuitem', { name: /^edit$/i });
     await user.click(editBtn);
     expect(onEditEpisode).toHaveBeenCalledWith(mockEpisodes[0]);
-    expect(screen.queryByRole('menuitem', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('menuitem', { name: /^edit$/i })
+    ).not.toBeInTheDocument();
 
     // Manage Sources
     await user.click(menuBtn);
-    const sourcesBtn = await screen.findByRole('menuitem', { name: /^sources$/i });
+    const sourcesBtn = await screen.findByRole('menuitem', {
+      name: /^sources$/i,
+    });
     await user.click(sourcesBtn);
     expect(onManageSources).toHaveBeenCalledWith(mockEpisodes[0]);
-    expect(screen.queryByRole('menuitem', { name: /^sources$/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('menuitem', { name: /^sources$/i })
+    ).not.toBeInTheDocument();
 
     // Delete
     await user.click(menuBtn);
-    const deleteBtn = await screen.findByRole('menuitem', { name: /^delete$/i });
+    const deleteBtn = await screen.findByRole('menuitem', {
+      name: /^delete$/i,
+    });
     await user.click(deleteBtn);
     expect(onDeleteEpisode).toHaveBeenCalledWith(mockEpisodes[0]);
-    expect(screen.queryByRole('menuitem', { name: /^delete$/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('menuitem', { name: /^delete$/i })
+    ).not.toBeInTheDocument();
   });
 
   it('supports selecting individual rows with green highlight and header indeterminate state', async () => {
@@ -378,7 +438,11 @@ describe('EpisodeTable Component', () => {
     fireEvent.click(checkbox3, { shiftKey: true });
 
     expect(selectedRows(container)).toHaveLength(3);
-    expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith(['ep-1', 'ep-2', 'ep-3']);
+    expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith([
+      'ep-1',
+      'ep-2',
+      'ep-3',
+    ]);
   });
 
   it('selects a bottom-to-top range with Shift-click', async () => {
@@ -402,7 +466,9 @@ describe('EpisodeTable Component', () => {
 
     expect(selectedRows(container)).toHaveLength(1);
     // Header reflects partial selection
-    expect(screen.getByLabelText('Select all visible episodes')).toHaveAttribute('aria-checked', 'mixed');
+    expect(
+      screen.getByLabelText('Select all visible episodes')
+    ).toHaveAttribute('aria-checked', 'mixed');
   });
 
   it('Shift-click deselects the range when the clicked row is already selected', async () => {
@@ -441,7 +507,10 @@ describe('EpisodeTable Component', () => {
     fireEvent.click(checkbox2, { shiftKey: true });
 
     expect(selectedRows(container)).toHaveLength(2);
-    expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith(['ep-3', 'ep-2']);
+    expect(onSelectedEpisodeIdsChange).toHaveBeenLastCalledWith([
+      'ep-3',
+      'ep-2',
+    ]);
   });
 
   it('range selection only affects rows visible under the active filter', async () => {
@@ -450,9 +519,13 @@ describe('EpisodeTable Component', () => {
     const { container } = renderEpisodeTable({ onSelectedEpisodeIdsChange });
 
     // Filter down to a single visible row
-    const searchInput = screen.getByRole('textbox', { name: /search episodes/i });
+    const searchInput = screen.getByRole('textbox', {
+      name: /search episodes/i,
+    });
     await user.type(searchInput, 'Challenge');
-    expect(screen.queryByText('Episode 1: The Beginning')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Episode 1: The Beginning')
+    ).not.toBeInTheDocument();
 
     const checkbox2 = screen.getByLabelText('Select Episode 2: The Challenge');
     await user.click(checkbox2);

@@ -8,7 +8,10 @@ import { useHomeFeedNav } from './hooks/useHomeFeedNav';
 import { homeFeedQueryOptions, type MediaRecentlyAddedEpisode } from './api';
 import type { SeriesItem, CarouselRowData } from './types';
 import { mapHeroToSeriesItem, mapSeriesToSeriesItem } from './mappers';
-import { HomeFeedHeroSkeleton, HomeFeedRowSkeleton } from './components/HomeFeedSkeletons';
+import {
+  HomeFeedHeroSkeleton,
+  HomeFeedRowSkeleton,
+} from './components/HomeFeedSkeletons';
 import { HomeFeedErrorState } from './components/HomeFeedErrorState';
 import { HomeCarouselRow } from './components/HomeCarouselRow';
 import { RecentlyAddedEpisodesRow } from './components/RecentlyAddedEpisodesRow';

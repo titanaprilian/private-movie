@@ -1,5 +1,8 @@
 export { SeriesWatchView } from './internal/SeriesWatchView';
-export type { SeriesWatchViewProps, WatchViewErrorStateProps } from './internal/types';
+export type {
+  SeriesWatchViewProps,
+  WatchViewErrorStateProps,
+} from './internal/types';
 
 export {
   fetchSeriesWithEpisodes,
@@ -41,7 +44,14 @@ export type {
   WatchOverviewModeProps,
   WatchPlayerModeProps,
 } from './internal/types';
-export { useWatchState, resolveDefaultSourceIndex, useWatchNav, useAdblockDetector, useWatchSpatialFocus, useSeriesWatchView } from './internal/hooks';
+export {
+  useWatchState,
+  resolveDefaultSourceIndex,
+  useWatchNav,
+  useAdblockDetector,
+  useWatchSpatialFocus,
+  useSeriesWatchView,
+} from './internal/hooks';
 export type {
   UseWatchStateOptions,
   UseWatchStateReturn,
