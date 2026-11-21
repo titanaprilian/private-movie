@@ -57,11 +57,10 @@ export function AttachOrphanDialog({
     queryKey: ['series', 'detail', selectedSeriesId],
     queryFn: async () => {
       const res = await api.series[selectedSeriesId].get();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const raw = (res.data as any)?.data;
-      return raw as
-        | { episodes: Array<{ id: string; title: string; order: number }> }
-        | undefined;
+      if (res.error || !res.data) {
+        throw new Error('Failed to fetch series episodes');
+      }
+      return res.data.data;
     },
     enabled: Boolean(selectedSeriesId),
   });

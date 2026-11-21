@@ -125,9 +125,14 @@ export function formatBytes(
 
   if (typeof optionsOrDecimals === 'number') {
     decimals = optionsOrDecimals;
-  } else if (typeof optionsOrDecimals === 'object' && optionsOrDecimals !== null) {
-    if (optionsOrDecimals.decimals !== undefined) decimals = optionsOrDecimals.decimals;
-    if (optionsOrDecimals.standard !== undefined) standard = optionsOrDecimals.standard;
+  } else if (
+    typeof optionsOrDecimals === 'object' &&
+    optionsOrDecimals !== null
+  ) {
+    if (optionsOrDecimals.decimals !== undefined)
+      decimals = optionsOrDecimals.decimals;
+    if (optionsOrDecimals.standard !== undefined)
+      standard = optionsOrDecimals.standard;
   }
 
   const dm = decimals < 0 ? 0 : decimals;
@@ -189,20 +194,20 @@ function mapResourceItem(item: StorageResourceItem): StorageResource {
   };
 }
 
-export async function fetchStorageMetrics(providerId?: string): Promise<StorageMetrics> {
-  const query = providerId ? { providerId } : undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage.metrics as any).get({
-    $query: query,
+export async function fetchStorageMetrics(
+  providerId?: string
+): Promise<StorageMetrics> {
+  const res = await api.storage.metrics.get({
+    $query: providerId ? { providerId } : {},
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StorageMetrics | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage metrics'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to fetch storage metrics')
+    );
   }
 
-  return data;
+  return res.data.data;
 }
 
 export function storageMetricsQueryOptions(providerId?: string) {
@@ -215,7 +220,17 @@ export function storageMetricsQueryOptions(providerId?: string) {
 export async function fetchStorageResources(
   params: StorageResourcesQuery = {}
 ): Promise<StorageResourcesResponse> {
-  const query: Record<string, string> = {};
+  const query: {
+    providerId?: string;
+    seriesId?: string;
+    seasonId?: string;
+    status?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    page?: string;
+    limit?: string;
+  } = {};
   if (params.providerId) query.providerId = params.providerId;
   if (params.seriesId) query.seriesId = params.seriesId;
   if (params.seasonId) query.seasonId = params.seasonId;
@@ -223,28 +238,20 @@ export async function fetchStorageResources(
   if (params.search) query.search = params.search;
   if (params.sortBy) query.sortBy = params.sortBy;
   if (params.sortOrder) query.sortOrder = params.sortOrder;
-  if (params.page) query.page = String(params.page);
-  if (params.limit) query.limit = String(params.limit);
+  if (params.page !== undefined) query.page = String(params.page);
+  if (params.limit !== undefined) query.limit = String(params.limit);
 
   const res = await api.storage.resources.get({
-    $query: query as {
-      providerId?: string;
-      seriesId?: string;
-      seasonId?: string;
-      status?: string;
-      search?: string;
-      sortBy?: string;
-      sortOrder?: string;
-      page?: string;
-      limit?: string;
-    },
+    $query: query,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StorageResourcesResponseData | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage resources'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to fetch storage resources')
+    );
   }
+
+  const data = res.data.data;
 
   return {
     data: (data.items || []).map(mapResourceItem),
@@ -257,7 +264,9 @@ export async function fetchStorageResources(
   };
 }
 
-export function storageResourcesQueryOptions(params: StorageResourcesQuery = {}) {
+export function storageResourcesQueryOptions(
+  params: StorageResourcesQuery = {}
+) {
   return queryOptions({
     queryKey: ['storage', 'resources', params],
     queryFn: () => fetchStorageResources(params),
@@ -267,21 +276,17 @@ export function storageResourcesQueryOptions(params: StorageResourcesQuery = {})
 export async function fetchStorageSeries(
   params: StorageSeriesQuery = {}
 ): Promise<StorageSeriesResponseData> {
-  const query: Record<string, string> = {};
-  if (params.providerId) query.providerId = params.providerId;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage as any).series.get({
-    $query: query as { providerId?: string },
+  const res = await api.storage.series.get({
+    $query: params.providerId ? { providerId: params.providerId } : {},
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StorageSeriesResponseData | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage series'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to fetch storage series')
+    );
   }
 
-  return data;
+  return res.data.data;
 }
 
 export function storageSeriesQueryOptions(params: StorageSeriesQuery = {}) {
@@ -291,47 +296,48 @@ export function storageSeriesQueryOptions(params: StorageSeriesQuery = {}) {
   });
 }
 
-export async function refreshStorageScan(providerId?: string): Promise<{ count: number; totalBytes: number }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage.scan as any).post(providerId ? { providerId } : {});
+export async function refreshStorageScan(
+  providerId?: string
+): Promise<{ count: number; totalBytes: number }> {
+  const res = await api.storage.scan.post(providerId ? { providerId } : {});
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as { count: number; totalBytes: number } | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to refresh storage scan'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to refresh storage scan')
+    );
   }
 
-  return data;
+  return res.data.data;
 }
 
 export async function updateStorageLimit(
   limitGb: number,
   providerId?: string
 ): Promise<{ limitGb: number; limitBytes: number }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage.limit as any).put({ limitGb, providerId });
+  const res = await api.storage.limit.put({ limitGb, providerId });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StorageLimitUpdateResponseData | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to update storage limit'));
+  if (res.error || !res.data || !('data' in res.data)) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to update storage limit')
+    );
   }
 
-  return data;
+  return res.data.data;
 }
 
 export async function updateSourceMetadata(
   id: string,
   input: StorageUpdateSourceMetadataRequest
 ): Promise<VideoSourceMetadata> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage.resources as any)[id].patch(input);
+  const res = await api.storage.resources[id].patch(input);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = (res.data as any)?.data;
-  if (res.error || !raw) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to update source metadata'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to update source metadata')
+    );
   }
+
+  const raw = res.data.data;
 
   return {
     id: raw.id,
@@ -346,11 +352,13 @@ export async function attachOrphanFile(
 ): Promise<VideoSourceMetadata> {
   const res = await api.storage.resources.attach.post(input);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = (res.data as any)?.data;
-  if (res.error || !raw) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to attach orphaned file'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to attach orphaned file')
+    );
   }
+
+  const raw = res.data.data;
 
   return {
     id: raw.id,
@@ -364,50 +372,57 @@ export async function deleteStorageResources(
   keys: string[],
   providerId?: string
 ): Promise<BatchDeleteResponse> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage.resources as any).delete.post({ keys, providerId });
+  const res = await api.storage.resources.delete.post({ keys, providerId });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StorageDeleteResponseData | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to delete storage resources'));
+  if (res.error || !res.data || !('data' in res.data)) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to delete storage resources')
+    );
   }
 
   return {
-    deletedKeys: data.deletedKeys,
-    reclaimedBytes: data.reclaimedBytes,
+    deletedKeys: res.data.data.deletedKeys,
+    reclaimedBytes: res.data.data.reclaimedBytes,
   };
 }
 
-export async function purgeOrphanFiles(providerId?: string): Promise<BatchDeleteResponse> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage.resources as any)['purge-orphans'].post(providerId ? { providerId } : {});
+export async function purgeOrphanFiles(
+  providerId?: string
+): Promise<BatchDeleteResponse> {
+  const res = await api.storage.resources['purge-orphans'].post(
+    providerId ? { providerId } : {}
+  );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StoragePurgeOrphansResponseData | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to purge orphaned files'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to purge orphaned files')
+    );
   }
 
   return {
-    deletedKeys: data.deletedKeys,
-    reclaimedBytes: data.reclaimedBytes,
+    deletedKeys: res.data.data.deletedKeys,
+    reclaimedBytes: res.data.data.reclaimedBytes,
   };
 }
 
-export async function getStoragePreviewUrl(key: string, providerId?: string): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage.resources as any)['preview-url'].get({
-    $query: { key, providerId },
+export async function getStoragePreviewUrl(
+  key: string,
+  providerId?: string
+): Promise<string> {
+  const query: { key: string; providerId?: string } = { key };
+  if (providerId) query.providerId = providerId;
+
+  const res = await api.storage.resources['preview-url'].get({
+    $query: query,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StoragePreviewUrlResponseData | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to get preview URL'));
+  if (res.error || !res.data || !('data' in res.data)) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to get preview URL')
+    );
   }
 
-  return data.previewUrl;
+  return res.data.data.previewUrl;
 }
 
 // -------------------------------------------------------------
@@ -415,16 +430,15 @@ export async function getStoragePreviewUrl(key: string, providerId?: string): Pr
 // -------------------------------------------------------------
 
 export async function fetchStorageProviders(): Promise<StorageProviderItem[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage as any).providers.get();
+  const res = await api.storage.providers.get();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StorageProviderItem[] | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to fetch storage providers'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to fetch storage providers')
+    );
   }
 
-  return data;
+  return res.data.data;
 }
 
 export function storageProvidersQueryOptions() {
@@ -437,61 +451,60 @@ export function storageProvidersQueryOptions() {
 export async function createStorageProvider(
   input: CreateStorageProviderRequest
 ): Promise<StorageProviderItem> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage as any).providers.post(input);
+  const res = await api.storage.providers.post(input);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StorageProviderItem | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to create storage provider'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to create storage provider')
+    );
   }
 
-  return data;
+  return res.data.data;
 }
 
 export async function updateStorageProvider(
   id: string,
   input: UpdateStorageProviderRequest
 ): Promise<StorageProviderItem> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage as any).providers[id].put(input);
+  const res = await api.storage.providers[id].put(input);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as StorageProviderItem | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to update storage provider'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to update storage provider')
+    );
   }
 
-  return data;
+  return res.data.data;
 }
 
 export async function deleteStorageProvider(id: string): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage as any).providers[id].delete();
+  const res = await api.storage.providers[id].delete();
 
-  if (res.error) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to delete storage provider'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to delete storage provider')
+    );
   }
 }
 
 export async function testStorageProviderConnection(
   input: TestStorageProviderRequest
 ): Promise<TestStorageProviderResponseData> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage as any).providers.test.post(input);
+  const res = await api.storage.providers.test.post(input);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as TestStorageProviderResponseData | undefined;
-  if (res.error || !data) {
+  if (res.error || !res.data) {
     throw new Error(extractErrorMessage(res.error, 'Connection test failed'));
   }
 
-  return data;
+  return res.data.data;
 }
 
-export type MinioStatusState = 'ready' | 'stopped' | 'not-configured' | 'unavailable';
+export type MinioStatusState =
+  'ready' | 'stopped' | 'not-configured' | 'unavailable';
 
-export function resolveMinioStatusState(status: MinioStatusResponseData): MinioStatusState {
+export function resolveMinioStatusState(
+  status: MinioStatusResponseData
+): MinioStatusState {
   if (!status.isAvailable) return 'unavailable';
   if (status.isRunning && status.isConfigured) return 'ready';
   if (status.isRunning && !status.isConfigured) return 'not-configured';
@@ -500,16 +513,15 @@ export function resolveMinioStatusState(status: MinioStatusResponseData): MinioS
 }
 
 export async function fetchMinioStatus(): Promise<MinioStatusResponseData> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage as any).minio.status.get();
+  const res = await api.storage.minio.status.get();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as MinioStatusResponseData | undefined;
-  if (res.error || !data) {
-    throw new Error(extractErrorMessage(res.error, 'Failed to fetch MinIO status'));
+  if (res.error || !res.data) {
+    throw new Error(
+      extractErrorMessage(res.error, 'Failed to fetch MinIO status')
+    );
   }
 
-  return data;
+  return res.data.data;
 }
 
 export function minioStatusQueryOptions() {
@@ -541,11 +553,17 @@ export function generateMinioSecret(length = 24): string {
   if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
     const bytes = new Uint32Array(length);
     cryptoObj.getRandomValues(bytes);
-    return Array.from(bytes, (b) => MINIO_SECRET_ALPHABET[b % MINIO_SECRET_ALPHABET.length]).join('');
+    return Array.from(
+      bytes,
+      (b) => MINIO_SECRET_ALPHABET[b % MINIO_SECRET_ALPHABET.length]
+    ).join('');
   }
   let out = '';
   for (let i = 0; i < length; i += 1) {
-    out += MINIO_SECRET_ALPHABET[Math.floor(Math.random() * MINIO_SECRET_ALPHABET.length)];
+    out +=
+      MINIO_SECRET_ALPHABET[
+        Math.floor(Math.random() * MINIO_SECRET_ALPHABET.length)
+      ];
   }
   return out;
 }
@@ -553,14 +571,11 @@ export function generateMinioSecret(length = 24): string {
 export async function spinMinioUp(
   input: MinioSpinUpRequest = {}
 ): Promise<MinioSpinUpResponseData> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (api.storage as any).minio['spin-up'].post(input);
+  const res = await api.storage.minio['spin-up'].post(input);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data = (res.data as any)?.data as MinioSpinUpResponseData | undefined;
-  if (res.error || !data) {
+  if (res.error || !res.data) {
     throw new Error(extractErrorMessage(res.error, 'Failed to spin up MinIO'));
   }
 
-  return data;
+  return res.data.data;
 }
