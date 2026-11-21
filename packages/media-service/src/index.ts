@@ -106,6 +106,8 @@ export {
 export type {
   SequentialFallbackItem,
   SequentialFallbackTarget,
+  BulkServiceDependencies,
+  BulkServiceOptions,
   PreviewBulkSourcesInput,
   PreviewBulkSourcesResult,
   ScrapedBulkEpisodeItem,
