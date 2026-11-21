@@ -1,52 +1,40 @@
 #!/usr/bin/env bun
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import {
+  generateCoverageReport,
+  parseCliArgs,
+  scanCoverageDirectory,
+} from "./internal/coverage-reporter";
 
-type Metric = { pct: number };
-type Summary = {
-  total: Record<"lines" | "branches" | "functions" | "statements", Metric>;
-};
+const cliOptions = parseCliArgs(process.argv.slice(2), process.env);
+const currentDir = cliOptions.currentDir
+  ? path.resolve(process.cwd(), cliOptions.currentDir)
+  : process.cwd();
 
-const roots = ["apps", "packages"];
-const rows: string[] = [];
+const currentSummaries = scanCoverageDirectory(currentDir);
 
-for (const root of roots) {
-  let entries: string[] = [];
-  try {
-    entries = await Array.fromAsync(
-      new Bun.Glob(`${root}/*`).scan({ onlyFiles: false }),
-    );
-  } catch {
-    continue;
-  }
-  for (const dir of entries.sort()) {
-    const file = path.join(dir, "coverage", "coverage-summary.json");
-    if (!existsSync(file)) continue;
-    const { total } = JSON.parse(readFileSync(file, "utf8")) as Summary;
-    rows.push(
-      `| \`${dir}\` | ${total.lines.pct}% | ${total.branches.pct}% | ${total.functions.pct}% | ${total.statements.pct}% |`,
-    );
-  }
+let baseSummaries: ReturnType<typeof scanCoverageDirectory> | null = null;
+let baseAvailable = false;
+
+if (cliOptions.baseDir) {
+  const baseDir = path.resolve(process.cwd(), cliOptions.baseDir);
+  baseSummaries = scanCoverageDirectory(baseDir);
+  baseAvailable = baseSummaries.size > 0;
 }
 
-const table = [
-  "### Coverage",
-  "",
-  "| Package | Lines | Branches | Functions | Statements |",
-  "| --- | --- | --- | --- | --- |",
-  ...(rows.length > 0 ? rows : ["| _no reports produced_ | | | | |"]),
-  "",
-].join("\n");
+const report = generateCoverageReport({
+  currentSummaries,
+  baseSummaries,
+  baseAvailable,
+});
 
-console.log(table);
-mkdirSync("coverage", { recursive: true });
-writeFileSync(path.join("coverage", "summary.md"), table);
+console.log(report.markdown);
 
-if (process.env.GITHUB_STEP_SUMMARY)
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, table);
+const outCoverageDir = path.join(currentDir, "coverage");
+mkdirSync(outCoverageDir, { recursive: true });
+writeFileSync(path.join(outCoverageDir, "summary.md"), report.markdown);
+
+if (process.env.GITHUB_STEP_SUMMARY) {
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, report.markdown);
+}
