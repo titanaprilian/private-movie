@@ -9,10 +9,10 @@ export default mergeConfig(
       passWithNoTests: true,
       coverage: {
         thresholds: {
-          lines: 48,
-          statements: 48,
-          functions: 53,
-          branches: 66,
+          lines: 51,
+          statements: 51,
+          functions: 56,
+          branches: 67,
         },
       },
     },

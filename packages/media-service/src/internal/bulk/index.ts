@@ -7,6 +7,8 @@ export {
 } from "./sequential-fallback";
 export {
   createBulkServiceInternal,
+  type BulkServiceDependencies,
+  type BulkServiceOptions,
   type PreviewBulkSourcesInput,
   type PreviewBulkSourcesResult,
   type ScrapedBulkEpisodeItem,

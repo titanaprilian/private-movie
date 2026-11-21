@@ -2,9 +2,11 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   createSeriesRepositoryInternal,
   SeriesNotFoundError,
+  type SeriesRepository,
 } from "../series/repository";
 import {
   createVideoSourceRepositoryInternal,
+  type VideoSourceRepository,
   type VideoSourceRepositoryOptions,
 } from "../video-sources/repository";
 import { parseBulkScrapedEpisodeNumber } from "./episode-number";
@@ -79,21 +81,34 @@ type PreviewScrapeSeriesFn = (input: {
   html?: string;
 }) => Promise<BulkPreviewScrapeSeriesResult>;
 
+export interface BulkServiceDependencies {
+  previewScrapeSeries: PreviewScrapeSeriesFn;
+  seriesRepository?: Pick<
+    SeriesRepository,
+    "findById" | "findByIdWithEpisodes"
+  >;
+  videoSourceRepository?: Pick<VideoSourceRepository, "upsert">;
+}
+
 export function createBulkServiceInternal<
   THKT extends PgQueryResultHKT,
   TSchema extends Record<string, unknown> = Record<string, unknown>,
 >(
   db: PgDatabase<THKT, TSchema>,
-  deps: { previewScrapeSeries: PreviewScrapeSeriesFn },
+  deps: BulkServiceDependencies,
   options?: BulkServiceOptions,
 ) {
-  const seriesRepository = createSeriesRepositoryInternal(db, {
-    s3StorageService: options?.s3StorageService,
-  });
-  const videoSourceRepository = createVideoSourceRepositoryInternal(db, {
-    s3StorageService: options?.s3StorageService,
-    storageProviderRegistry: options?.storageProviderRegistry,
-  });
+  const seriesRepository =
+    deps.seriesRepository ??
+    createSeriesRepositoryInternal(db, {
+      s3StorageService: options?.s3StorageService,
+    });
+  const videoSourceRepository =
+    deps.videoSourceRepository ??
+    createVideoSourceRepositoryInternal(db, {
+      s3StorageService: options?.s3StorageService,
+      storageProviderRegistry: options?.storageProviderRegistry,
+    });
 
   return {
     async previewBulkSources(
