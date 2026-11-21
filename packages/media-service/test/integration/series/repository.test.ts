@@ -245,4 +245,17 @@ describe("series repository (integration)", () => {
       ).rejects.toThrow(SeriesHighlightWithoutOngoingError);
     });
   });
+
+  describe("getHomeFeed", () => {
+    it("returns structured home feed payload including hero, rows and recently added episodes", async () => {
+      const feed = await repository.getHomeFeed();
+      expect(feed).toHaveProperty("hero");
+      expect(feed).toHaveProperty("heroes");
+      expect(feed).toHaveProperty("rows");
+      expect(feed).toHaveProperty("recentlyAddedEpisodes");
+      expect(Array.isArray(feed.heroes)).toBe(true);
+      expect(Array.isArray(feed.rows)).toBe(true);
+      expect(Array.isArray(feed.recentlyAddedEpisodes)).toBe(true);
+    });
+  });
 });
