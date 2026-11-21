@@ -38,8 +38,8 @@ This skill provides ready-to-use helper scripts located under `scripts/`:
 
 - **`scripts/configure-worker.sh list | set <role> <agy|omp> <model>`**
   Lists worker assignments or validates and changes one assignment in `worker-models.json`. The running orchestrator keeps its own model; changing the file affects future workers.
-- **`scripts/open-agent.sh --name <name> --role worker|coding|trivial --cwd <worktree> [--layout split|tab]`**
-  Reads the selected role from `worker-models.json` and starts it in a visible pane. To choose a model for one launch without changing the configuration, use `--kind <agy|omp> --model <model>` instead of `--role`.
+- **`scripts/open-agent.sh --name <name> --role worker|coding|trivial --cwd <worktree> [--layout tab|split]`**
+  Reads the selected role from `worker-models.json` and starts it in a visible pane or tab (defaults to `tab` to keep the orchestrator tab uncluttered). To choose a model for one launch without changing the configuration, use `--kind <agy|omp> --model <model>` instead of `--role`.
 - **`scripts/send-message.sh --target <name> --message <text> [--wait]`**
   Sends a prompt/message to a target agent in Herdr.
 - **`scripts/receive-message.sh --target <name> [--lines 40] [--status-only]`**

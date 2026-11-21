@@ -64,10 +64,30 @@ while IFS= read -r ENTRY; do
   esac
 done < <(git worktree list --porcelain)
 
+trust_worktree() {
+  local target="$1"
+  local settings="${ANTIGRAVITY_SETTINGS_FILE:-$HOME/.gemini/antigravity-cli/settings.json}"
+  if [[ -f "$settings" ]]; then
+    node - "$settings" "$target" <<'NODE' 2>/dev/null || true
+const fs = require('node:fs');
+const [settingsPath, workspace] = process.argv.slice(2);
+try {
+  const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  settings.trustedWorkspaces ??= [];
+  if (!settings.trustedWorkspaces.includes(workspace)) {
+    settings.trustedWorkspaces.push(workspace);
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+  }
+} catch {}
+NODE
+  fi
+}
+
 if [[ -e "$WORKTREE" || -L "$WORKTREE" ]]; then
   if [[ "$(git -C "$WORKTREE" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)" == "$COMMON_DIR" &&
         "$(git -C "$WORKTREE" rev-parse --show-toplevel 2>/dev/null || true)" == "$WORKTREE" &&
         "$(git -C "$WORKTREE" symbolic-ref --quiet --short HEAD 2>/dev/null || true)" == "$BRANCH" ]]; then
+    trust_worktree "$WORKTREE"
     printf '%s\n' "$WORKTREE"
     exit 0
   fi
@@ -87,4 +107,8 @@ fi
 
 mkdir -p -- "$(dirname "$WORKTREE")"
 git worktree add -b "$BRANCH" "$WORKTREE" "$BASE" >&2
+
+# Pre-trust the new worktree in Antigravity settings to prevent interactive trust dialog stalls
+trust_worktree "$WORKTREE"
+
 printf '%s\n' "$WORKTREE"

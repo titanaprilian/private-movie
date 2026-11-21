@@ -39,12 +39,13 @@ if [ -z "$TARGET" ] && [ -z "$PANE_ID" ]; then
   exit 1
 fi
 
-# 2. Resolve target to a pane_id if not explicitly provided
+# 2. Resolve target to a pane_id and tab_id if not explicitly provided
 if [ -z "$PANE_ID" ]; then
   # Check if TARGET is an active agent name
   AGENT_INFO=$(herdr agent get "$TARGET" 2>/dev/null || true)
   if [ -n "$AGENT_INFO" ]; then
     PANE_ID=$(echo "$AGENT_INFO" | jq -r '.result.agent.pane_id // empty')
+    TAB_ID=$(echo "$AGENT_INFO" | jq -r '.result.agent.tab_id // empty')
   fi
 
   # Check if TARGET itself is a valid pane_id in pane list
@@ -61,11 +62,20 @@ if [ -z "$PANE_ID" ]; then
   exit 0
 fi
 
-# 3. Close pane
-echo "Closing pane $PANE_ID (target: ${TARGET:-$PANE_ID})..."
-CLOSE_OUT=$(herdr pane close "$PANE_ID" 2>&1 || true)
+# 3. If agent has a dedicated tab separate from orchestrator, close the tab
+ORCHESTRATOR_TAB=$(herdr agent get orchestrator 2>/dev/null | jq -r '.result.agent.tab_id // empty')
+if [ -n "$TAB_ID" ] && [ -n "$ORCHESTRATOR_TAB" ] && [ "$TAB_ID" != "$ORCHESTRATOR_TAB" ]; then
+  echo "Closing dedicated tab $TAB_ID (target: ${TARGET:-$PANE_ID})..."
+  herdr tab close "$TAB_ID" 2>&1 || true
+fi
 
-# 4. Verify pane is actually closed
+# 4. Close pane if still present
+if herdr pane list 2>/dev/null | jq -e --arg p "$PANE_ID" '.result.panes[]? | select(.pane_id == $p)' >/dev/null; then
+  echo "Closing pane $PANE_ID (target: ${TARGET:-$PANE_ID})..."
+  CLOSE_OUT=$(herdr pane close "$PANE_ID" 2>&1 || true)
+fi
+
+# 5. Verify pane is actually closed
 sleep 0.5
 REMAINING=$(herdr pane list 2>/dev/null | jq -r --arg p "$PANE_ID" '.result.panes[]? | select(.pane_id == $p) | .pane_id')
 if [ -n "$REMAINING" ]; then

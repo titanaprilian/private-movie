@@ -3,7 +3,7 @@ set -euo pipefail
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 NAME=""
-LAYOUT="split"
+LAYOUT="tab"
 DIRECTION="right"
 KIND=""
 ROLE=""
@@ -98,6 +98,8 @@ if [ ! -d "$CWD" ]; then
   exit 1
 fi
 
+"$SKILL_DIR/scripts/trust-workspace.sh" "$CWD"
+
 if ! herdr agent get orchestrator >/dev/null 2>&1; then
   if [ -z "${HERDR_PANE_ID:-}" ]; then
     echo "Error: Cannot register the orchestrator without HERDR_PANE_ID" >&2
@@ -138,5 +140,13 @@ else
     exit 1
   fi
 fi
+
+# Wait for agent to become interactive_ready before returning, preventing dropped initial prompts
+for ((i=0; i<30; i++)); do
+  if [ "$(herdr agent get "$NAME" 2>/dev/null | jq -r '.result.agent.interactive_ready // false')" = "true" ]; then
+    break
+  fi
+  sleep 0.5
+done
 
 jq -n --arg name "$NAME" --arg pane_id "$PANE_ID" --arg tab_id "$TAB_ID" --arg kind "$KIND" --arg model "$MODEL" '{name: $name, pane_id: $pane_id, tab_id: $tab_id, kind: $kind, model: $model}'
