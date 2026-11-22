@@ -15,7 +15,7 @@ export function WatchPlayerFrame({
   return (
     <div
       data-testid="watch-player-container"
-      className="sticky top-0 z-20 mx-auto bg-[var(--bg)] w-[min(100%,calc((100dvh-12rem)*16/9))] aspect-video lg:static lg:z-auto"
+      className="sticky top-0 z-20 mx-auto bg-[var(--bg)] w-[min(100%,calc((100dvh-3.5rem)*16/9))] lg:w-[min(100%,calc((100dvh-12rem)*16/9))] aspect-video lg:static lg:z-auto"
     >
       {activeSource ? (
         activeSource.type === 'embed' ? (
@@ -47,11 +47,11 @@ export function WatchPlayerFrame({
           </div>
         ) : (
           <div
-            className={
+            className={`w-full h-full ${
               isPlayerFocused
                 ? 'ring-2 ring-white rounded-2xl sm:rounded-[20px]'
                 : ''
-            }
+            }`}
           >
             <VideoPlayer
               src={activeSource.url}
