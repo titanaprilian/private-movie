@@ -104,5 +104,5 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.junit4)
     // Real org.json implementation for JVM unit tests: the Android-bundled
     // org.json stubs throw "not mocked" under plain JUnit.
-    testImplementation("org.json:json:20240303")
+    testImplementation("org.json:json:20260814")
 }
