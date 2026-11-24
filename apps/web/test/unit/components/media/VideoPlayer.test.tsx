@@ -40,7 +40,7 @@ describe('VideoPlayer component', () => {
     expect(video.src).toBe('https://example.com/video.mp4');
   });
 
-  it('toggles play/pause state when 3D play button is clicked', async () => {
+  it('toggles play/pause state when play button is clicked', async () => {
     const user = userEvent.setup();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
@@ -49,9 +49,7 @@ describe('VideoPlayer component', () => {
       name: /^play$/i,
     });
     expect(playButton).toBeInTheDocument();
-    // Verify 3D tactile styling classes
     expect(playButton.className).toMatch(/rounded-full/);
-    expect(playButton.className).toMatch(/active:translate-y-/);
 
     await user.click(playButton);
     expect(window.HTMLMediaElement.prototype.play).toHaveBeenCalled();
@@ -70,15 +68,13 @@ describe('VideoPlayer component', () => {
     expect(window.HTMLMediaElement.prototype.pause).toHaveBeenCalled();
   });
 
-  it('renders floating rounded pill control bar overlay with smooth auto-hide on inactivity', () => {
+  it('renders edge-to-edge gradient scrim control bar overlay with smooth auto-hide on inactivity', () => {
     vi.useFakeTimers();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const controlBar = screen.getByTestId('video-control-bar');
     expect(controlBar).toBeInTheDocument();
-    expect(controlBar.className).toMatch(
-      /rounded-full|rounded-3xl|rounded-2xl/
-    );
+    expect(controlBar.className).toMatch(/bg-gradient-to-t/);
 
     const video = screen.getByTestId('custom-video-element');
     // Simulate playing
@@ -366,15 +362,25 @@ describe('VideoPlayer component', () => {
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const centerControls = screen.getByTestId('video-center-controls');
+    const prevBtn = within(centerControls).getByRole('button', {
+      name: /previous episode/i,
+    });
     const skipBack = within(centerControls).getByRole('button', {
-      name: /skip back 10 seconds/i,
+      name: /skip back 5 seconds/i,
     });
     const playBtn = within(centerControls).getByRole('button', {
       name: /^play$/i,
     });
     const skipForward = within(centerControls).getByRole('button', {
-      name: /skip forward 10 seconds/i,
+      name: /skip forward 5 seconds/i,
     });
+    const nextBtn = within(centerControls).getByRole('button', {
+      name: /next episode/i,
+    });
+
+    expect(prevBtn.className).toMatch(/w-9/);
+    expect(prevBtn.className).toMatch(/h-9/);
+    expect(prevBtn.className).toMatch(/bg-black\/55/);
 
     expect(skipBack.className).toMatch(/w-9/);
     expect(skipBack.className).toMatch(/h-9/);
@@ -386,28 +392,153 @@ describe('VideoPlayer component', () => {
     expect(skipForward.className).toMatch(/w-9/);
     expect(skipForward.className).toMatch(/h-9/);
     expect(skipForward.className).toMatch(/bg-black\/55/);
+
+    expect(nextBtn.className).toMatch(/w-9/);
+    expect(nextBtn.className).toMatch(/h-9/);
+    expect(nextBtn.className).toMatch(/bg-black\/55/);
   });
 
-  it('does not render a Next Episode button in the player control bar even when hasNextEpisode is true', () => {
+  it('renders Next Episode and Previous Episode buttons in player controls and handles navigation', async () => {
+    const user = userEvent.setup();
+    const onNextEpisode = vi.fn();
+    const onPrevEpisode = vi.fn();
+
     renderWithProviders(
       <VideoPlayer
         src="https://example.com/video.mp4"
         hasNextEpisode
-        onNextEpisode={noop}
+        onNextEpisode={onNextEpisode}
+        hasPrevEpisode
+        onPrevEpisode={onPrevEpisode}
       />
     );
 
-    // Episodic navigation lives in the watch toolbar + corner card only
-    expect(
-      screen.queryByRole('button', { name: /next episode/i })
-    ).not.toBeInTheDocument();
+    const controlBar = screen.getByTestId('video-control-bar');
+    const nextBtn = within(controlBar).getByRole('button', {
+      name: /next episode/i,
+    });
+    const prevBtn = within(controlBar).getByRole('button', {
+      name: /previous episode/i,
+    });
+
+    expect(nextBtn).toBeInTheDocument();
+    expect(nextBtn).not.toBeDisabled();
+    expect(prevBtn).toBeInTheDocument();
+    expect(prevBtn).not.toBeDisabled();
+
+    await user.click(nextBtn);
+    expect(onNextEpisode).toHaveBeenCalledTimes(1);
+
+    await user.click(prevBtn);
+    expect(onPrevEpisode).toHaveBeenCalledTimes(1);
+
+    // Also check mobile center controls
+    const centerControls = screen.getByTestId('video-center-controls');
+    const mobileNextBtn = within(centerControls).getByRole('button', {
+      name: /next episode/i,
+    });
+    const mobilePrevBtn = within(centerControls).getByRole('button', {
+      name: /previous episode/i,
+    });
+
+    await user.click(mobileNextBtn);
+    expect(onNextEpisode).toHaveBeenCalledTimes(2);
+
+    await user.click(mobilePrevBtn);
+    expect(onPrevEpisode).toHaveBeenCalledTimes(2);
   });
 
-  it('does not render Next Episode button when hasNextEpisode is false', () => {
-    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+  it('dims and disables Next and Previous Episode buttons at boundaries', () => {
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode={false}
+        hasPrevEpisode={false}
+      />
+    );
+
+    const controlBar = screen.getByTestId('video-control-bar');
+    const nextBtn = within(controlBar).getByRole('button', {
+      name: /next episode/i,
+    });
+    const prevBtn = within(controlBar).getByRole('button', {
+      name: /previous episode/i,
+    });
+
+    expect(nextBtn).toBeDisabled();
+    expect(nextBtn.className).toContain('disabled:opacity-40');
+    expect(prevBtn).toBeDisabled();
+    expect(prevBtn.className).toContain('disabled:opacity-40');
+
+    const centerControls = screen.getByTestId('video-center-controls');
     expect(
-      screen.queryByRole('button', { name: /next episode/i })
-    ).not.toBeInTheDocument();
+      within(centerControls).getByRole('button', { name: /next episode/i })
+    ).toBeDisabled();
+    expect(
+      within(centerControls).getByRole('button', { name: /previous episode/i })
+    ).toBeDisabled();
+  });
+
+  it('triggers next and previous episode navigation via Shift+N and Shift+P keyboard shortcuts', () => {
+    const onNextEpisode = vi.fn();
+    const onPrevEpisode = vi.fn();
+
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode
+        onNextEpisode={onNextEpisode}
+        hasPrevEpisode
+        onPrevEpisode={onPrevEpisode}
+      />
+    );
+
+    fireEvent.keyDown(document, { key: 'N', shiftKey: true });
+    expect(onNextEpisode).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(document, { key: 'P', shiftKey: true });
+    expect(onPrevEpisode).toHaveBeenCalledTimes(1);
+  });
+
+  it('functions directly inside player in fullscreen mode without exiting fullscreen', async () => {
+    const user = userEvent.setup();
+    const onNextEpisode = vi.fn();
+    const onPrevEpisode = vi.fn();
+
+    renderWithProviders(
+      <VideoPlayer
+        src="https://example.com/video.mp4"
+        hasNextEpisode
+        onNextEpisode={onNextEpisode}
+        hasPrevEpisode
+        onPrevEpisode={onPrevEpisode}
+      />
+    );
+
+    const container = screen.getByTestId('video-player-container');
+    Object.defineProperty(document, 'fullscreenElement', {
+      value: container,
+      configurable: true,
+      writable: true,
+    });
+    act(() => {
+      document.dispatchEvent(new Event('fullscreenchange'));
+    });
+
+    const controlBar = screen.getByTestId('video-control-bar');
+    const nextBtn = within(controlBar).getByRole('button', {
+      name: /next episode/i,
+    });
+    await user.click(nextBtn);
+    expect(onNextEpisode).toHaveBeenCalledTimes(1);
+    expect(document.fullscreenElement).toBe(container);
+
+    const prevBtn = within(controlBar).getByRole('button', {
+      name: /previous episode/i,
+    });
+    await user.click(prevBtn);
+    expect(onPrevEpisode).toHaveBeenCalledTimes(1);
+    expect(document.fullscreenElement).toBe(container);
   });
 
   it('shows floating corner card when playback reaches the final 25 seconds', () => {
@@ -642,26 +773,22 @@ describe('VideoPlayer component', () => {
     expect(controlBar.className).toContain('opacity-100');
   });
 
-  it('renders 3D circular skip buttons that seek video by ±10s on click', async () => {
+  it('renders skip buttons that seek video by ±5s on click', async () => {
     const user = userEvent.setup();
     window.localStorage.clear();
     renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
 
     const controlBar = screen.getByTestId('video-control-bar');
     const backButton = within(controlBar).getByRole('button', {
-      name: /skip back 10 seconds/i,
+      name: /skip back 5 seconds/i,
     });
     const forwardButton = within(controlBar).getByRole('button', {
-      name: /skip forward 10 seconds/i,
+      name: /skip forward 5 seconds/i,
     });
     expect(backButton).toBeInTheDocument();
     expect(forwardButton).toBeInTheDocument();
-    // Chunky 3D tactile styling adjacent to Play/Pause
     expect(backButton.className).toMatch(/rounded-full/);
-    expect(backButton.className).toMatch(/shadow-\[0_3px_0/);
-    expect(backButton.className).toMatch(/active:translate-y-/);
     expect(forwardButton.className).toMatch(/rounded-full/);
-    expect(forwardButton.className).toMatch(/shadow-\[0_3px_0/);
 
     const video = screen.getByTestId(
       'custom-video-element'
@@ -670,7 +797,7 @@ describe('VideoPlayer component', () => {
     video.currentTime = 50;
 
     await user.click(forwardButton);
-    expect(video.currentTime).toBe(60);
+    expect(video.currentTime).toBe(55);
 
     await user.click(backButton);
     expect(video.currentTime).toBe(50);
@@ -811,7 +938,12 @@ describe('VideoPlayer component', () => {
     const centerControls = screen.getByTestId('video-center-controls');
     expect(
       within(centerControls).getByRole('button', {
-        name: /skip back 10 seconds/i,
+        name: /previous episode/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(centerControls).getByRole('button', {
+        name: /skip back 5 seconds/i,
       })
     ).toBeInTheDocument();
     expect(
@@ -819,7 +951,12 @@ describe('VideoPlayer component', () => {
     ).toBeInTheDocument();
     expect(
       within(centerControls).getByRole('button', {
-        name: /skip forward 10 seconds/i,
+        name: /skip forward 5 seconds/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(centerControls).getByRole('button', {
+        name: /next episode/i,
       })
     ).toBeInTheDocument();
     expect(centerControls.className).toContain('opacity-100');
@@ -836,6 +973,31 @@ describe('VideoPlayer component', () => {
       touches: [{ clientX: 500, clientY: 100 }],
     });
     expect(centerControls.className).toContain('opacity-100');
+  });
+
+  it('tapping outside controls on mobile immediately dismisses controls', () => {
+    renderWithProviders(<VideoPlayer src="https://example.com/video.mp4" />);
+
+    const centerControls = screen.getByTestId('video-center-controls');
+    const mobileBar = screen.getByTestId('video-mobile-bar');
+    expect(centerControls.className).toContain('opacity-100');
+    expect(mobileBar.className).toContain('opacity-100');
+
+    const container = screen.getByTestId('video-player-container');
+    // Tap outside controls on the backdrop/container
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 500, clientY: 100 }],
+    });
+
+    expect(centerControls.className).toContain('opacity-0');
+    expect(mobileBar.className).toContain('opacity-0');
+
+    // Tapping again shows controls
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 500, clientY: 100 }],
+    });
+    expect(centerControls.className).toContain('opacity-100');
+    expect(mobileBar.className).toContain('opacity-100');
   });
 
   it('mobile bottom bar shows seek bar, time, settings and fullscreen without volume slider or title', () => {

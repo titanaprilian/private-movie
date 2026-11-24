@@ -6,6 +6,8 @@ export interface VideoShortcutsHandlers {
   onAdjustVolume?: (delta: number) => void;
   onToggleMute?: () => void;
   onToggleFullscreen?: () => void;
+  onNextEpisode?: () => void;
+  onPrevEpisode?: () => void;
 }
 
 function isFormElementFocused(): boolean {
@@ -17,32 +19,57 @@ function isFormElementFocused(): boolean {
   return false;
 }
 
+function handleEpisodeShortcuts(
+  e: KeyboardEvent,
+  onNextEpisode?: () => void,
+  onPrevEpisode?: () => void
+): boolean {
+  if (!e.shiftKey) return false;
+  const key = e.key.toUpperCase();
+  if (key === 'N') {
+    e.preventDefault();
+    onNextEpisode?.();
+    return true;
+  }
+  if (key === 'P') {
+    e.preventDefault();
+    onPrevEpisode?.();
+    return true;
+  }
+  return false;
+}
+
 export function useVideoShortcuts({
   onTogglePlay,
   onSeekRelative,
   onAdjustVolume,
   onToggleMute,
   onToggleFullscreen,
+  onNextEpisode,
+  onPrevEpisode,
 }: VideoShortcutsHandlers): void {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isFormElementFocused()) return;
 
-      switch (e.key) {
+      if (handleEpisodeShortcuts(e, onNextEpisode, onPrevEpisode)) {
+        return;
+      }
+
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+
+      switch (key) {
         case ' ':
           e.preventDefault();
           onTogglePlay?.();
           break;
         case 'k':
-        case 'K':
           onTogglePlay?.();
           break;
         case 'j':
-        case 'J':
           onSeekRelative?.(-10);
           break;
         case 'l':
-        case 'L':
           onSeekRelative?.(10);
           break;
         case 'ArrowLeft':
@@ -60,11 +87,9 @@ export function useVideoShortcuts({
           onAdjustVolume?.(-0.1);
           break;
         case 'm':
-        case 'M':
           onToggleMute?.();
           break;
         case 'f':
-        case 'F':
           onToggleFullscreen?.();
           break;
         default:
@@ -80,5 +105,7 @@ export function useVideoShortcuts({
     onAdjustVolume,
     onToggleMute,
     onToggleFullscreen,
+    onNextEpisode,
+    onPrevEpisode,
   ]);
 }

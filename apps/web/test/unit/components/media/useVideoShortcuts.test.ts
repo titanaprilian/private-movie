@@ -10,6 +10,8 @@ function setup(overrides = {}) {
     onAdjustVolume: vi.fn(),
     onToggleMute: vi.fn(),
     onToggleFullscreen: vi.fn(),
+    onNextEpisode: vi.fn(),
+    onPrevEpisode: vi.fn(),
     ...overrides,
   };
   renderHook(() => useVideoShortcuts(handlers));
@@ -81,6 +83,32 @@ describe('useVideoShortcuts', () => {
     expect(h.onToggleFullscreen).toHaveBeenCalledTimes(1);
     press('F');
     expect(h.onToggleFullscreen).toHaveBeenCalledTimes(2);
+  });
+
+  it('triggers next and previous episode navigation on Shift+N and Shift+P', () => {
+    const h = setup();
+
+    const shiftNPrevented = fireEvent.keyDown(document, {
+      key: 'N',
+      shiftKey: true,
+      cancelable: true,
+    });
+    expect(shiftNPrevented).toBe(false);
+    expect(h.onNextEpisode).toHaveBeenCalledTimes(1);
+
+    const shiftPPrevented = fireEvent.keyDown(document, {
+      key: 'P',
+      shiftKey: true,
+      cancelable: true,
+    });
+    expect(shiftPPrevented).toBe(false);
+    expect(h.onPrevEpisode).toHaveBeenCalledTimes(1);
+
+    // Regular n or p without shift should not trigger episode navigation
+    press('n');
+    expect(h.onNextEpisode).toHaveBeenCalledTimes(1);
+    press('p');
+    expect(h.onPrevEpisode).toHaveBeenCalledTimes(1);
   });
 
   it('suppresses all shortcuts when focused on input, textarea, select, or contentEditable', () => {

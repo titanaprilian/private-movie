@@ -47,6 +47,8 @@ export interface VideoSettingsPopoverProps {
 
 const KEYBOARD_SHORTCUTS: Array<{ keys: string; action: string }> = [
   { keys: 'Space / K', action: 'Play / Pause' },
+  { keys: 'Shift+N', action: 'Next Episode' },
+  { keys: 'Shift+P', action: 'Previous Episode' },
   { keys: 'J / L', action: 'Rewind / Forward 10s' },
   { keys: 'ArrowLeft / ArrowRight', action: 'Seek ∓ 5s' },
   { keys: 'ArrowUp / ArrowDown', action: 'Volume Up / Down' },
