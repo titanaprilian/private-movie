@@ -15,7 +15,7 @@ export function WatchPlayerFrame({
   return (
     <div
       data-testid="watch-player-container"
-      className="sticky top-0 z-20 mx-auto bg-[var(--bg)] w-[min(100%,calc((100dvh-3.5rem)*16/9))] lg:w-[min(100%,calc((100dvh-12rem)*16/9))] aspect-video lg:static lg:z-auto"
+      className="sticky top-[57px] z-20 mx-auto bg-[var(--bg)] w-[min(100%,calc((100dvh-3.5rem)*16/9))] lg:w-[min(100%,calc((100dvh-12rem)*16/9))] aspect-video"
     >
       {activeSource ? (
         activeSource.type === 'embed' ? (

@@ -744,6 +744,23 @@ describe('SeriesWatchView', () => {
       expect(container.className).toMatch(/mx-auto/);
     });
 
+    it('positions player sticky beneath top nav with offset and centering on mobile and desktop', () => {
+      renderWithProviders(
+        <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
+      );
+
+      const container = screen.getByTestId('watch-player-container');
+      expect(container).toHaveClass(
+        'sticky',
+        'top-[57px]',
+        'z-20',
+        'mx-auto',
+        'bg-[var(--bg)]'
+      );
+      expect(container.className).not.toMatch(/lg:static/);
+      expect(container.className).not.toMatch(/lg:z-auto/);
+    });
+
     it('renders Prev and Next buttons with minimum 44px touch targets on mobile', () => {
       renderWithProviders(
         <SeriesWatchView series={mockSeries} initialEpisodeId="ep-1" />
