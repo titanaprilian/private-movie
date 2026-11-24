@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { SeriesParseError } from "../../errors";
 import type {
+  BrowserFn,
   FetchFn,
   MediaProvider,
   ScrapedEpisode,
@@ -184,7 +185,11 @@ export class OtakudesuProvider implements MediaProvider {
     url: string,
     fetchFn: FetchFn,
     context?: Record<string, unknown>,
+    browserFn?: BrowserFn,
   ): Promise<ScrapedVideoSource[]> {
+    const effectiveBrowserFn =
+      browserFn ?? (context?.browserFn as BrowserFn | undefined);
+
     let mirrorPayloads: ParsedMirrorPayload[] | undefined =
       context?.mirrorPayloads as ParsedMirrorPayload[] | undefined;
     let ajaxActions: ParsedAjaxActions | null | undefined =
@@ -221,10 +226,20 @@ export class OtakudesuProvider implements MediaProvider {
       embedSources = initialSources;
     }
 
+    const requestHeaders: Record<string, string> = {
+      Referer: url,
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    };
+    const requestOptions = {
+      headers: requestHeaders,
+      ...requestHeaders,
+    };
+
     const directSources: ScrapedVideoSource[] = [];
     for (const source of embedSources) {
       try {
-        const iframeHtml = await fetchFn.get(source.url);
+        const iframeHtml = await fetchFn.get(source.url, requestOptions);
         const extracted = extractDirectVideoSources(iframeHtml);
         directSources.push(...extracted);
       } catch {
@@ -232,6 +247,29 @@ export class OtakudesuProvider implements MediaProvider {
       }
     }
 
-    return [...embedSources, ...directSources];
+    if (directSources.length === 0 && effectiveBrowserFn) {
+      const targets =
+        embedSources.length > 0 ? embedSources.map((s) => s.url) : [url];
+      for (const targetUrl of targets) {
+        try {
+          const browserHtml = await effectiveBrowserFn(targetUrl);
+          const extracted = extractDirectVideoSources(browserHtml);
+          directSources.push(...extracted);
+        } catch (err) {
+          console.error(`[otakudesu] browserFn failed for ${targetUrl}:`, err);
+        }
+      }
+    }
+
+    const seenUrls = new Set<string>();
+    const uniqueDirectSources: ScrapedVideoSource[] = [];
+    for (const s of directSources) {
+      if (!seenUrls.has(s.url)) {
+        seenUrls.add(s.url);
+        uniqueDirectSources.push(s);
+      }
+    }
+
+    return [...embedSources, ...uniqueDirectSources];
   }
 }

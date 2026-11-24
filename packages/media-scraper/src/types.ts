@@ -1,6 +1,18 @@
+export interface FetchOptions {
+  headers?: Record<string, string>;
+  [key: string]: unknown;
+}
+
 export interface FetchFn {
-  get(url: string): Promise<string>;
-  post(url: string, body: string): Promise<string>;
+  get(
+    url: string,
+    options?: FetchOptions | Record<string, string>,
+  ): Promise<string>;
+  post(
+    url: string,
+    body: string,
+    options?: FetchOptions | Record<string, string>,
+  ): Promise<string>;
 }
 
 export type BrowserFn = (url: string) => Promise<string>;

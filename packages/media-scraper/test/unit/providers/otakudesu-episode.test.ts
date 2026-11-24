@@ -178,5 +178,170 @@ describe("OtakudesuProvider episode operations", () => {
         ),
       ).rejects.toThrow(/failed to fetch nonce/i);
     });
+
+    it("passes Referer and User-Agent headers when fetching iframe HTML", async () => {
+      const getCalls: Array<{ url: string; options?: any }> = [];
+      const trackingFetch: FetchFn = {
+        async get(url, options) {
+          getCalls.push({ url, options });
+          if (url === "https://otakudesu.blog/episode/sample-b") {
+            return sampleBHtml;
+          }
+          if (url.startsWith(DESUSTREAM_IFRAME_BASE)) {
+            return sampleDirectVideoHtml;
+          }
+          throw new Error(`Unexpected url: ${url}`);
+        },
+        async post(_url, body) {
+          const params = new URLSearchParams(body);
+          const action = params.get("action") ?? "";
+          if (action === NONCE_ACTION) {
+            return JSON.stringify({ data: "fake-nonce" });
+          }
+          if (action === MIRROR_ACTION) {
+            const html = `<div id="pembed"><iframe src="${DESUSTREAM_IFRAME_BASE}123" frameborder="0"></iframe></div>`;
+            return JSON.stringify({
+              data: Buffer.from(html).toString("base64"),
+            });
+          }
+          throw new Error(`unknown action: ${action}`);
+        },
+      };
+
+      await provider.resolveVideoSources(
+        "https://otakudesu.blog/episode/sample-b",
+        trackingFetch,
+      );
+
+      const iframeCall = getCalls.find((call) =>
+        call.url.startsWith(DESUSTREAM_IFRAME_BASE),
+      );
+      expect(iframeCall).toBeDefined();
+      const headers = iframeCall?.options?.headers ?? iframeCall?.options;
+      expect(headers).toBeDefined();
+      expect(headers.Referer).toBe("https://otakudesu.blog/episode/sample-b");
+      expect(headers["User-Agent"]).toContain("Mozilla/5.0");
+    });
+
+    it("extracts direct video sources statically from ODCloud iframe HTML", async () => {
+      const odcloudHtml = fs.readFileSync(
+        path.resolve(
+          import.meta.dirname,
+          "../../fixtures/episodes/sample-odcloud.html",
+        ),
+        "utf8",
+      );
+      const customFetch: FetchFn = {
+        async get(url) {
+          if (url === "https://otakudesu.blog/episode/sample-b") {
+            return sampleBHtml;
+          }
+          if (url.startsWith(DESUSTREAM_IFRAME_BASE)) {
+            return odcloudHtml;
+          }
+          throw new Error(`Unexpected url: ${url}`);
+        },
+        async post(_url, body) {
+          const params = new URLSearchParams(body);
+          if (params.get("action") === NONCE_ACTION) {
+            return JSON.stringify({ data: "fake-nonce" });
+          }
+          if (params.get("action") === MIRROR_ACTION) {
+            const html = `<div id="pembed"><iframe src="${DESUSTREAM_IFRAME_BASE}odcloud" frameborder="0"></iframe></div>`;
+            return JSON.stringify({
+              data: Buffer.from(html).toString("base64"),
+            });
+          }
+          throw new Error("unknown");
+        },
+      };
+
+      const sources = await provider.resolveVideoSources(
+        "https://otakudesu.blog/episode/sample-b",
+        customFetch,
+      );
+
+      const directSources = sources.filter((s) => s.type === "direct");
+      expect(directSources).toHaveLength(2);
+      expect(directSources[0]).toEqual({
+        type: "direct",
+        url: "https://cdn.odcloud.net/stream/Otakudesu_Episode_01_720p.mp4?token=abc123xyz&expires=1700000000",
+        label: "Otakudesu_Episode_01_720p",
+        quality: "720p",
+      });
+      expect(directSources[1]).toEqual({
+        type: "direct",
+        url: "https://cdn.odcloud.net/stream/Otakudesu_Episode_01_1080p.mp4?token=def456uvw&expires=1700000000",
+        label: "Otakudesu_Episode_01_1080p",
+        quality: "1080p",
+      });
+    });
+
+    it("invokes browserFn fallback when static Cheerio extraction returns no direct sources", async () => {
+      const stubFetch: FetchFn = {
+        async get(url) {
+          if (url === "https://otakudesu.blog/episode/sample-b") {
+            return sampleBHtml;
+          }
+          return `<html><body><div id="player-mount"></div><script src="/app.js"></script></body></html>`;
+        },
+        async post(_url, body) {
+          const params = new URLSearchParams(body);
+          if (params.get("action") === NONCE_ACTION) {
+            return JSON.stringify({ data: "fake-nonce" });
+          }
+          if (params.get("action") === MIRROR_ACTION) {
+            const html = `<div id="pembed"><iframe src="${DESUSTREAM_IFRAME_BASE}dynamic" frameborder="0"></iframe></div>`;
+            return JSON.stringify({
+              data: Buffer.from(html).toString("base64"),
+            });
+          }
+          throw new Error("unknown");
+        },
+      };
+
+      const browserCalls: string[] = [];
+      const mockBrowserFn = async (iframeUrl: string) => {
+        browserCalls.push(iframeUrl);
+        return `<html><body><video controls><source src="https://cdn.odcloud.net/stream/hydrated_720p.mp4?token=xyz" type="video/mp4"></video></body></html>`;
+      };
+
+      const sources = await provider.resolveVideoSources(
+        "https://otakudesu.blog/episode/sample-b",
+        stubFetch,
+        undefined,
+        mockBrowserFn,
+      );
+
+      expect(browserCalls.length).toBeGreaterThan(0);
+      expect(browserCalls[0]).toContain(DESUSTREAM_IFRAME_BASE);
+
+      const direct = sources.find((s) => s.type === "direct");
+      expect(direct).toEqual({
+        type: "direct",
+        url: "https://cdn.odcloud.net/stream/hydrated_720p.mp4?token=xyz",
+        label: "hydrated_720p",
+        quality: "720p",
+      });
+    });
+
+    it("does not invoke browserFn when static Cheerio extraction succeeds", async () => {
+      const fetchFn = buildMockFetchFn();
+      let browserCalled = false;
+      const mockBrowserFn = async () => {
+        browserCalled = true;
+        return "";
+      };
+
+      const sources = await provider.resolveVideoSources(
+        "https://otakudesu.blog/episode/sample-b",
+        fetchFn,
+        undefined,
+        mockBrowserFn,
+      );
+
+      expect(browserCalled).toBe(false);
+      expect(sources.some((s) => s.type === "direct")).toBe(true);
+    });
   });
 });
