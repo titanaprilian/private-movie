@@ -11,6 +11,8 @@ export function WatchPlayerFrame({
   iframeRef,
   hasNextEpisode,
   onNextEpisode,
+  hasPrevEpisode,
+  onPrevEpisode,
 }: WatchPlayerFrameProps) {
   return (
     <div
@@ -59,6 +61,8 @@ export function WatchPlayerFrame({
               autoPlay
               onNextEpisode={hasNextEpisode ? onNextEpisode : undefined}
               hasNextEpisode={hasNextEpisode}
+              onPrevEpisode={hasPrevEpisode ? onPrevEpisode : undefined}
+              hasPrevEpisode={hasPrevEpisode}
             />
           </div>
         )

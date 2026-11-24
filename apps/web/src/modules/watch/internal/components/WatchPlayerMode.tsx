@@ -64,6 +64,8 @@ export function WatchPlayerMode({
           iframeRef={iframeRef}
           hasNextEpisode={hasNextEpisode}
           onNextEpisode={onNextEpisode}
+          hasPrevEpisode={hasPrevEpisode}
+          onPrevEpisode={onPrevEpisode}
         />
         {/* Docked Player Toolbar — Semantic Grouping & Single-Row Flex Flow */}
         <WatchToolbar

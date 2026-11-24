@@ -9,6 +9,8 @@ import {
   Minimize,
   RotateCcw,
   RotateCw,
+  SkipBack,
+  SkipForward,
 } from 'lucide-react';
 import { VideoScrubber, BufferedRange } from './VideoScrubber';
 import { useVideoGestures } from './useVideoGestures';
@@ -27,6 +29,10 @@ export interface VideoPlayerProps {
   autoPlay?: boolean;
   onNextEpisode?: () => void;
   hasNextEpisode?: boolean;
+  onPrevEpisode?: () => void;
+  hasPrevEpisode?: boolean;
+  onPreviousEpisode?: () => void;
+  hasPreviousEpisode?: boolean;
   /** Available video quality options. The Quality section renders when 2+ exist. */
   qualities?: QualityOption[];
   onQualityChange?: (id: string) => void;
@@ -42,6 +48,160 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+interface MobileCenterControlsProps {
+  visible: boolean;
+  isPlaying: boolean;
+  hasPrevEpisode: boolean;
+  hasNextEpisode: boolean;
+  onPrevClick: () => void;
+  onNextClick: () => void;
+  onSeek: (seconds: number) => void;
+  onTogglePlay: () => void;
+}
+
+function MobileCenterControls({
+  visible,
+  isPlaying,
+  hasPrevEpisode,
+  hasNextEpisode,
+  onPrevClick,
+  onNextClick,
+  onSeek,
+  onTogglePlay,
+}: MobileCenterControlsProps) {
+  return (
+    <div
+      data-testid="video-center-controls"
+      className={`@md:hidden absolute inset-0 z-10 flex items-center justify-center gap-3 sm:gap-4 pointer-events-none transition-all duration-300 ${
+        visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onPrevClick}
+        disabled={!hasPrevEpisode}
+        aria-label="Previous episode"
+        className="pointer-events-auto w-9 h-9 min-w-[40px] min-h-[40px] rounded-full bg-black/55 backdrop-blur-sm text-white flex items-center justify-center active:scale-95 hover:bg-black/70 transition-all duration-75 cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+      >
+        <SkipBack className="w-4 h-4 fill-current stroke-none" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onSeek(-5)}
+        aria-label="Skip back 5 seconds"
+        className="pointer-events-auto w-9 h-9 min-w-[40px] min-h-[40px] rounded-full bg-black/55 backdrop-blur-sm text-white flex items-center justify-center active:scale-95 hover:bg-black/70 transition-all duration-75 cursor-pointer shrink-0 text-[11px] font-bold"
+      >
+        <RotateCcw className="w-4 h-4" />
+        <span className="sr-only">-5s</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={onTogglePlay}
+        aria-label={isPlaying ? 'Pause' : 'Play'}
+        className="pointer-events-auto w-12 h-12 min-w-[48px] min-h-[48px] rounded-full bg-[var(--green)]/90 backdrop-blur-sm text-white flex items-center justify-center active:scale-95 hover:bg-[var(--green)] transition-all duration-75 cursor-pointer shrink-0 shadow-lg"
+      >
+        {isPlaying ? (
+          <Pause className="w-5 h-5 fill-white stroke-none" />
+        ) : (
+          <Play className="w-5 h-5 fill-white stroke-none ml-0.5" />
+        )}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onSeek(5)}
+        aria-label="Skip forward 5 seconds"
+        className="pointer-events-auto w-9 h-9 min-w-[40px] min-h-[40px] rounded-full bg-black/55 backdrop-blur-sm text-white flex items-center justify-center active:scale-95 hover:bg-black/70 transition-all duration-75 cursor-pointer shrink-0 text-[11px] font-bold"
+      >
+        <RotateCw className="w-4 h-4" />
+        <span className="sr-only">+5s</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={onNextClick}
+        disabled={!hasNextEpisode}
+        aria-label="Next episode"
+        className="pointer-events-auto w-9 h-9 min-w-[40px] min-h-[40px] rounded-full bg-black/55 backdrop-blur-sm text-white flex items-center justify-center active:scale-95 hover:bg-black/70 transition-all duration-75 cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+      >
+        <SkipForward className="w-4 h-4 fill-current stroke-none" />
+      </button>
+    </div>
+  );
+}
+
+interface FullscreenButtonProps {
+  isFullscreen: boolean;
+  onToggle: () => void;
+  className?: string;
+}
+
+function FullscreenButton({
+  isFullscreen,
+  onToggle,
+  className = 'w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95 transition cursor-pointer shrink-0',
+}: FullscreenButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+      className={className}
+    >
+      {isFullscreen ? (
+        <Minimize className="w-4 h-4" />
+      ) : (
+        <Maximize className="w-4 h-4" />
+      )}
+    </button>
+  );
+}
+
+interface VolumeControlProps {
+  volume: number;
+  isMuted: boolean;
+  onToggleMute: () => void;
+  onVolumeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+function VolumeControl({
+  volume,
+  isMuted,
+  onToggleMute,
+  onVolumeChange,
+}: VolumeControlProps) {
+  return (
+    <div className="flex items-center gap-1.5 group/vol ml-1">
+      <button
+        type="button"
+        onClick={onToggleMute}
+        aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
+        className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95 transition cursor-pointer shrink-0"
+      >
+        {isMuted || volume === 0 ? (
+          <VolumeX data-testid="volume-icon-muted" className="w-4 h-4" />
+        ) : volume <= 0.5 ? (
+          <Volume1 data-testid="volume-icon-low" className="w-4 h-4" />
+        ) : (
+          <Volume2 data-testid="volume-icon-high" className="w-4 h-4" />
+        )}
+      </button>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.05"
+        value={isMuted ? 0 : volume}
+        onChange={onVolumeChange}
+        aria-label="Volume"
+        className="w-12 sm:w-16 h-1.5 bg-zinc-700 accent-[var(--green)] rounded-full appearance-none cursor-pointer focus:outline-none"
+      />
+    </div>
+  );
+}
+
 export function VideoPlayer({
   src,
   title,
@@ -49,11 +209,19 @@ export function VideoPlayer({
   autoPlay = false,
   onNextEpisode,
   hasNextEpisode = false,
+  onPrevEpisode,
+  hasPrevEpisode = false,
+  onPreviousEpisode,
+  hasPreviousEpisode,
   qualities,
   onQualityChange,
   subtitles,
   onSubtitleChange,
 }: VideoPlayerProps) {
+  const effectiveHasPrev = hasPrevEpisode || Boolean(hasPreviousEpisode);
+  const effectiveOnPrev = onPrevEpisode ?? onPreviousEpisode;
+  const effectiveHasNext = hasNextEpisode;
+  const effectiveOnNext = onNextEpisode;
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -88,16 +256,26 @@ export function VideoPlayer({
 
   const triggerNextNavigation = useCallback(() => {
     setCountdown(null);
-    if (onNextEpisode) {
-      onNextEpisode();
+    if (effectiveOnNext) {
+      effectiveOnNext();
     }
-  }, [onNextEpisode]);
+  }, [effectiveOnNext]);
+
+  const handleNextClick = useCallback(() => {
+    setCountdown(null);
+    effectiveOnNext?.();
+  }, [effectiveOnNext]);
+
+  const handlePrevClick = useCallback(() => {
+    setCountdown(null);
+    effectiveOnPrev?.();
+  }, [effectiveOnPrev]);
 
   const handleVideoEnded = () => {
     if (onEnded) {
       onEnded();
     }
-    if (hasNextEpisode && !cancelledNextEpisode) {
+    if (effectiveHasNext && !cancelledNextEpisode) {
       triggerNextNavigation();
     }
   };
@@ -113,7 +291,7 @@ export function VideoPlayer({
   }, [src]);
 
   const showNextEpisodeCard =
-    hasNextEpisode &&
+    effectiveHasNext &&
     !cancelledNextEpisode &&
     duration > 0 &&
     currentTime >= duration - 25;
@@ -340,6 +518,8 @@ export function VideoPlayer({
     onAdjustVolume: adjustVolume,
     onToggleMute: toggleMute,
     onToggleFullscreen: toggleFullscreen,
+    onNextEpisode: effectiveHasNext ? handleNextClick : undefined,
+    onPrevEpisode: effectiveHasPrev ? handlePrevClick : undefined,
   });
 
   useEffect(() => {
@@ -379,7 +559,8 @@ export function VideoPlayer({
     target instanceof Element &&
     (target.closest('[data-testid="video-control-bar"]') !== null ||
       target.closest('[data-testid="video-mobile-bar"]') !== null ||
-      target.closest('[data-testid="video-center-controls"]') !== null ||
+      target.closest('[data-testid="video-center-controls"] button') !== null ||
+      target.closest('button') !== null ||
       target.closest('[data-testid="next-episode-card"]') !== null ||
       target.closest('[data-testid="video-settings-popover"]') !== null ||
       target.closest('[role="dialog"]') !== null);
@@ -496,7 +677,10 @@ export function VideoPlayer({
         data-testid="custom-video-element"
         autoPlay={autoPlay}
         onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onPause={() => {
+          setIsPlaying(false);
+          setShowControls(true);
+        }}
         onTimeUpdate={handleTimeUpdate}
         onProgress={handleProgress}
         onLoadedMetadata={handleLoadedMetadata}
@@ -542,55 +726,23 @@ export function VideoPlayer({
         </div>
       )}
 
-      {/* Mobile center overlay: right-sized semi-transparent transport buttons */}
-      <div
-        data-testid="video-center-controls"
-        className={`@md:hidden absolute inset-0 z-10 flex items-center justify-center gap-4 pointer-events-none transition-all duration-300 ${
-          showControls || !isPlaying ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        {/* Skip Backward Button (36px, min 40px touch target) */}
-        <button
-          type="button"
-          onClick={() => seekBy(-10)}
-          aria-label="Skip back 10 seconds"
-          className="pointer-events-auto w-9 h-9 min-w-[40px] min-h-[40px] rounded-full bg-black/55 backdrop-blur-sm text-white flex items-center justify-center active:scale-95 hover:bg-black/70 transition-all duration-75 cursor-pointer shrink-0 text-[11px] font-bold"
-        >
-          <RotateCcw className="w-4 h-4" />
-          <span className="sr-only">-10s</span>
-        </button>
-
-        {/* Play/Pause Button (48px, min 48px touch target) */}
-        <button
-          type="button"
-          onClick={togglePlay}
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-          className="pointer-events-auto w-12 h-12 min-w-[48px] min-h-[48px] rounded-full bg-[var(--green)]/90 backdrop-blur-sm text-white flex items-center justify-center active:scale-95 hover:bg-[var(--green)] transition-all duration-75 cursor-pointer shrink-0 shadow-lg"
-        >
-          {isPlaying ? (
-            <Pause className="w-5 h-5 fill-white stroke-none" />
-          ) : (
-            <Play className="w-5 h-5 fill-white stroke-none ml-0.5" />
-          )}
-        </button>
-
-        {/* Skip Forward Button (36px, min 40px touch target) */}
-        <button
-          type="button"
-          onClick={() => seekBy(10)}
-          aria-label="Skip forward 10 seconds"
-          className="pointer-events-auto w-9 h-9 min-w-[40px] min-h-[40px] rounded-full bg-black/55 backdrop-blur-sm text-white flex items-center justify-center active:scale-95 hover:bg-black/70 transition-all duration-75 cursor-pointer shrink-0 text-[11px] font-bold"
-        >
-          <RotateCw className="w-4 h-4" />
-          <span className="sr-only">+10s</span>
-        </button>
-      </div>
+      {/* Mobile center overlay: 5-button transport cluster */}
+      <MobileCenterControls
+        visible={showControls || isSettingsOpen || isShortcutsOpen}
+        isPlaying={isPlaying}
+        hasPrevEpisode={effectiveHasPrev}
+        hasNextEpisode={effectiveHasNext}
+        onPrevClick={handlePrevClick}
+        onNextClick={handleNextClick}
+        onSeek={seekBy}
+        onTogglePlay={togglePlay}
+      />
 
       {/* Mobile edge-to-edge gradient scrim: seek bar + time / settings / fullscreen */}
       <div
         data-testid="video-mobile-bar"
         className={`@md:hidden absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-2 pt-6 transition-all duration-300 flex flex-col gap-1 min-w-0 ${
-          showControls || !isPlaying || isSettingsOpen || isShortcutsOpen
+          showControls || isSettingsOpen || isShortcutsOpen
             ? 'opacity-100 translate-y-0'
             : 'opacity-0 translate-y-2 pointer-events-none'
         }`}
@@ -621,22 +773,11 @@ export function VideoPlayer({
               onOpenChange={setIsMobileSettingsOpen}
               onShortcutsOpenChange={setIsShortcutsOpen}
             />
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              aria-label={
-                isFullscreen || isPseudoFullscreen
-                  ? 'Exit Fullscreen'
-                  : 'Fullscreen'
-              }
+            <FullscreenButton
+              isFullscreen={isFullscreen || isPseudoFullscreen}
+              onToggle={toggleFullscreen}
               className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
-            >
-              {isFullscreen || isPseudoFullscreen ? (
-                <Minimize className="w-4 h-4" />
-              ) : (
-                <Maximize className="w-4 h-4" />
-              )}
-            </button>
+            />
           </div>
         </div>
       </div>
@@ -644,13 +785,13 @@ export function VideoPlayer({
       {/* Desktop unified bottom bar (wide containers only) */}
       <div
         data-testid="video-control-bar"
-        className={`hidden @md:flex absolute inset-x-3 sm:inset-x-6 bottom-3 sm:bottom-6 z-20 rounded-full border-2 border-[var(--border-strong)]/80 bg-zinc-950/85 backdrop-blur-md px-3 sm:px-5 py-2 sm:py-2.5 shadow-2xl transition-all duration-300 flex-col gap-2 min-w-0 ${
-          showControls || !isPlaying || isSettingsOpen || isShortcutsOpen
+        className={`hidden @md:flex absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-8 transition-all duration-300 flex-col gap-2 min-w-0 ${
+          showControls || isSettingsOpen || isShortcutsOpen
             ? 'opacity-100 translate-y-0'
             : 'opacity-0 translate-y-2 pointer-events-none'
         }`}
       >
-        {/* Chunky 3-Layer Progress Scrubber Bar */}
+        {/* Progress Scrubber Bar */}
         <VideoScrubber
           currentTime={currentTime}
           duration={duration}
@@ -661,74 +802,73 @@ export function VideoPlayer({
 
         {/* Controls Row */}
         <div className="flex items-center justify-between gap-2 text-white font-sans text-xs min-w-0">
-          {/* Left Controls: 3D Play Button, Skips, Volume, Time */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            {/* Tactile 3D Circular Skip Backward Button */}
+          {/* Left Controls: Prev Ep, Skips, Play/Pause, Next Ep, Volume, Time */}
+          <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+            {/* Previous Episode Button */}
             <button
               type="button"
-              onClick={() => seekBy(-10)}
-              aria-label="Skip back 10 seconds"
-              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-zinc-800 text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
+              onClick={handlePrevClick}
+              disabled={!effectiveHasPrev}
+              aria-label="Previous episode"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all duration-75 flex items-center justify-center cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="sr-only">-10s</span>
+              <SkipBack className="w-4 h-4 fill-current stroke-none" />
             </button>
 
-            {/* Tactile 3D Circular Play/Pause Button */}
+            {/* Skip Backward Button */}
+            <button
+              type="button"
+              onClick={() => seekBy(-5)}
+              aria-label="Skip back 5 seconds"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all duration-75 flex items-center justify-center cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="sr-only">-5s</span>
+            </button>
+
+            {/* Play/Pause Button */}
             <button
               type="button"
               onClick={togglePlay}
               aria-label={isPlaying ? 'Pause' : 'Play'}
-              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-[var(--green)] text-white flex items-center justify-center shadow-[0_3px_0_var(--green-dark)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--green-dark)] hover:brightness-105 transition-all duration-75 cursor-pointer shrink-0"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full text-white hover:bg-white/10 active:scale-95 transition-all duration-75 flex items-center justify-center cursor-pointer shrink-0"
             >
               {isPlaying ? (
-                <Pause className="w-4 h-4 fill-white stroke-none" />
+                <Pause className="w-5 h-5 fill-white stroke-none" />
               ) : (
-                <Play className="w-4 h-4 fill-white stroke-none ml-0.5" />
+                <Play className="w-5 h-5 fill-white stroke-none ml-0.5" />
               )}
             </button>
 
-            {/* Tactile 3D Circular Skip Forward Button */}
+            {/* Skip Forward Button */}
             <button
               type="button"
-              onClick={() => seekBy(10)}
-              aria-label="Skip forward 10 seconds"
-              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-zinc-800 text-white flex items-center justify-center border-2 border-[var(--border-strong)] shadow-[0_3px_0_var(--border-strong)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--border-strong)] hover:brightness-110 transition-all duration-75 cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
+              onClick={() => seekBy(5)}
+              aria-label="Skip forward 5 seconds"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all duration-75 flex items-center justify-center cursor-pointer shrink-0 text-[10px] sm:text-[11px] font-extrabold"
             >
-              <RotateCw className="w-3.5 h-3.5" />
-              <span className="sr-only">+10s</span>
+              <RotateCw className="w-4 h-4" />
+              <span className="sr-only">+5s</span>
+            </button>
+
+            {/* Next Episode Button */}
+            <button
+              type="button"
+              onClick={handleNextClick}
+              disabled={!effectiveHasNext}
+              aria-label="Next episode"
+              className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all duration-75 flex items-center justify-center cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+            >
+              <SkipForward className="w-4 h-4 fill-current stroke-none" />
             </button>
 
             {/* Multi-state Volume toggle + slider */}
-            <div className="flex items-center gap-1.5 group/vol">
-              <button
-                type="button"
-                onClick={toggleMute}
-                aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
-                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
-              >
-                {isMuted || volume === 0 ? (
-                  <VolumeX
-                    data-testid="volume-icon-muted"
-                    className="w-4 h-4"
-                  />
-                ) : volume <= 0.5 ? (
-                  <Volume1 data-testid="volume-icon-low" className="w-4 h-4" />
-                ) : (
-                  <Volume2 data-testid="volume-icon-high" className="w-4 h-4" />
-                )}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                aria-label="Volume"
-                className="w-12 sm:w-16 h-1.5 bg-zinc-700 accent-[var(--green)] rounded-full appearance-none cursor-pointer focus:outline-none"
-              />
-            </div>
+            <VolumeControl
+              volume={volume}
+              isMuted={isMuted}
+              onToggleMute={toggleMute}
+              onVolumeChange={handleVolumeChange}
+            />
 
             {/* Elapsed Time / Duration */}
             <span className="text-zinc-200 font-bold text-[11px] sm:text-xs mono ml-1 whitespace-nowrap tabular-nums shrink-0">
@@ -761,22 +901,10 @@ export function VideoPlayer({
             />
 
             {/* Fullscreen Button */}
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              aria-label={
-                isFullscreen || isPseudoFullscreen
-                  ? 'Exit Fullscreen'
-                  : 'Fullscreen'
-              }
-              className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer shrink-0"
-            >
-              {isFullscreen || isPseudoFullscreen ? (
-                <Minimize className="w-4 h-4" />
-              ) : (
-                <Maximize className="w-4 h-4" />
-              )}
-            </button>
+            <FullscreenButton
+              isFullscreen={isFullscreen || isPseudoFullscreen}
+              onToggle={toggleFullscreen}
+            />
           </div>
         </div>
       </div>

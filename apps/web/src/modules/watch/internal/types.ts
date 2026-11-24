@@ -203,6 +203,8 @@ export interface WatchPlayerFrameProps {
   iframeRef?: React.Ref<HTMLIFrameElement>;
   hasNextEpisode?: boolean;
   onNextEpisode?: () => void;
+  hasPrevEpisode?: boolean;
+  onPrevEpisode?: () => void;
 }
 
 export interface WatchToolbarProps {
