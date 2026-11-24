@@ -116,21 +116,28 @@ export function extractDirectVideoSources(html: string): ParsedVideoSource[] {
     const content = load(script).html();
     if (!content) continue;
 
-    // Look for `file:"https://...mp4"` or `file: "https://...mp4"` or `file:'...'`
-    const match = content.match(/file\s*:\s*["']([^"']+\.mp4)["']/i);
+    // Look for `file:"https://...mp4"` or `file: "https://...mp4?token=..."` or `file:'...'`
+    const match = content.match(
+      /file\s*:\s*["']([^"']+\.mp4(?:\?[^"']*)?)["']/i,
+    );
     if (match && match[1]) {
       const src = match[1];
       try {
-        const urlObj = new URL(src);
+        const urlObj = new URL(src, "https://otakudesu.blog");
         const pathname = urlObj.pathname;
-        const extIndex = pathname.lastIndexOf(".mp4");
-        if (extIndex !== -1) {
-          const label = pathname.substring(
+        const extIndex = pathname.toLowerCase().lastIndexOf(".mp4");
+        if (extIndex !== -1 && pathname.toLowerCase().endsWith(".mp4")) {
+          let label = pathname.substring(
             pathname.lastIndexOf("/") + 1,
             extIndex,
           );
-          const qualityMatch = label.match(QUALITY_PATTERN);
-          const quality = qualityMatch ? qualityMatch[1].toLowerCase() : null;
+          try {
+            label = decodeURIComponent(label);
+          } catch {
+            // keep raw label
+          }
+          const quality =
+            extractQualityFromLabel(label) ?? extractQualityFromLabel(src);
 
           sources.push({ type: "direct", url: src, label, quality });
           // If we found it in JS, we can stop searching scripts
@@ -142,24 +149,31 @@ export function extractDirectVideoSources(html: string): ParsedVideoSource[] {
     }
   }
 
-  // Also check for literal <video src="..."> tags (as a fallback)
-  load("video[src]").each((_, el) => {
+  // Also check for literal <video src="...">, <video><source src="...">, and <source src="..."> tags
+  load("video[src], video source[src], source[src]").each((_, el) => {
     const src = load(el).attr("src");
-    if (!src || !src.endsWith(".mp4")) return;
+    if (!src) return;
 
     // Avoid adding duplicates if we already found the same URL in JS
     if (sources.some((s) => s.url === src)) return;
 
     try {
-      const urlObj = new URL(src);
+      const urlObj = new URL(src, "https://otakudesu.blog");
       const pathname = urlObj.pathname;
-      const extIndex = pathname.lastIndexOf(".mp4");
+      if (!pathname.toLowerCase().endsWith(".mp4")) return;
+
+      const extIndex = pathname.toLowerCase().lastIndexOf(".mp4");
       if (extIndex === -1) return;
 
-      const label = pathname.substring(pathname.lastIndexOf("/") + 1, extIndex);
+      let label = pathname.substring(pathname.lastIndexOf("/") + 1, extIndex);
+      try {
+        label = decodeURIComponent(label);
+      } catch {
+        // keep raw label
+      }
 
-      const qualityMatch = label.match(QUALITY_PATTERN);
-      const quality = qualityMatch ? qualityMatch[1].toLowerCase() : null;
+      const quality =
+        extractQualityFromLabel(label) ?? extractQualityFromLabel(src);
 
       sources.push({ type: "direct", url: src, label, quality });
     } catch {

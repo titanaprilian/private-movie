@@ -295,6 +295,55 @@ describe("extractDirectVideoSources", () => {
     import.meta.dirname,
     "../../fixtures/episodes/sample-mp4-video.html",
   );
+  const odcloudFixturePath = resolve(
+    import.meta.dirname,
+    "../../fixtures/episodes/sample-odcloud.html",
+  );
+
+  it("extracts direct video sources from ODCloud fixture with <video><source>", () => {
+    const html = readFixture(odcloudFixturePath);
+    const result = extractDirectVideoSources(html);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      type: "direct",
+      url: "https://cdn.odcloud.net/stream/Otakudesu_Episode_01_720p.mp4?token=abc123xyz&expires=1700000000",
+      label: "Otakudesu_Episode_01_720p",
+      quality: "720p",
+    });
+    expect(result[1]).toEqual({
+      type: "direct",
+      url: "https://cdn.odcloud.net/stream/Otakudesu_Episode_01_1080p.mp4?token=def456uvw&expires=1700000000",
+      label: "Otakudesu_Episode_01_1080p",
+      quality: "1080p",
+    });
+  });
+
+  it("parses <video><source src='https://cdn.odcloud.net/...'> with clean label and correct quality", () => {
+    const html = `<video><source src="https://cdn.odcloud.net/files/naruto-720p.mp4" type="video/mp4"></video>`;
+    const result = extractDirectVideoSources(html);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      type: "direct",
+      url: "https://cdn.odcloud.net/files/naruto-720p.mp4",
+      label: "naruto-720p",
+      quality: "720p",
+    });
+  });
+
+  it("parses direct video URLs with query parameters", () => {
+    const html = `<video><source src="https://cdn.odcloud.net/stream/bleach_1080p.mp4?token=secret123&expires=9999" type="video/mp4"></video>`;
+    const result = extractDirectVideoSources(html);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      type: "direct",
+      url: "https://cdn.odcloud.net/stream/bleach_1080p.mp4?token=secret123&expires=9999",
+      label: "bleach_1080p",
+      quality: "1080p",
+    });
+  });
 
   it("extracts video sources from the MP4 fixture HTML", () => {
     const html = readFixture(mp4FixturePath);
