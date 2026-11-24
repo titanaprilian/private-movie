@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { ChunkyButton } from '@/components/ui/chunky-button';
@@ -16,6 +16,7 @@ import {
   type SourceAddFormProps,
   type SourceType,
 } from '../../types';
+import { inferSourceMetadata } from '../../utils/sourceUrlUtils';
 
 export function SourceAddForm({
   isPending,
@@ -26,6 +27,48 @@ export function SourceAddForm({
   const [label, setLabel] = useState('');
   const [url, setUrl] = useState('');
   const [quality, setQuality] = useState('');
+
+  const isLabelManuallyEdited = useRef(false);
+  const isQualityManuallyEdited = useRef(false);
+
+  const handleUrlChange = (newUrl: string) => {
+    setUrl(newUrl);
+
+    if (!newUrl.trim()) return;
+
+    const { label: inferredLabel, quality: inferredQuality } =
+      inferSourceMetadata(newUrl);
+
+    if ((!isLabelManuallyEdited.current || !label.trim()) && inferredLabel) {
+      setLabel(inferredLabel);
+    }
+
+    if (
+      (!isQualityManuallyEdited.current || !quality.trim()) &&
+      inferredQuality
+    ) {
+      setQuality(inferredQuality);
+    }
+  };
+
+  const handleUrlPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData?.getData('text');
+    if (pasted) {
+      handleUrlChange(pasted);
+    }
+  };
+
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLabel(val);
+    isLabelManuallyEdited.current = val.trim().length > 0;
+  };
+
+  const handleQualityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuality(val);
+    isQualityManuallyEdited.current = val.trim().length > 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +137,7 @@ export function SourceAddForm({
             <ChunkyInput
               id="add-source-label"
               value={label}
-              onChange={(e) => setLabel(e.target.value)}
+              onChange={handleLabelChange}
               placeholder="e.g. Server 1 or 1080p Stream"
               required
             />
@@ -112,7 +155,8 @@ export function SourceAddForm({
             <ChunkyInput
               id="add-source-url"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => handleUrlChange(e.target.value)}
+              onPaste={handleUrlPaste}
               placeholder="https://... or S3 key"
               required
             />
@@ -128,7 +172,7 @@ export function SourceAddForm({
             <ChunkyInput
               id="add-source-quality"
               value={quality}
-              onChange={(e) => setQuality(e.target.value)}
+              onChange={handleQualityChange}
               placeholder="1080p, 720p"
             />
           </div>
